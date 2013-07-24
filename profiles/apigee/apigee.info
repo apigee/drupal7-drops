@@ -183,4 +183,3 @@ dependencies[] = apigee_sso
 ; Features
 dependencies[] = features
 dependencies[] = devconnect_user
-dependencies[] = feeds_import
