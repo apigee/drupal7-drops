@@ -15,6 +15,11 @@ projects[devconnect][download][branch] = "7.x-4.21"
 projects[devconnect][download][revision] = "93f6c0a05bb18c4e17d596e9669ff956092e7164"
 projects[devconnect][subdir] = "custom"
 
+projects[apigee_sso][type] = "module"
+projects[apigee_sso][download][type] = "git"
+projects[apigee_sso][download][url] = "git@github.com:apigee/apigee_drupal_sso.git"
+projects[apigee_sso][subdir] = "custom"
+
 
 ; +++++ Themes +++++
 

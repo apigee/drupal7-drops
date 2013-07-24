@@ -71,11 +71,6 @@ dependencies[] = ds
 dependencies[] = ds_extras
 dependencies[] = ds_forms
 dependencies[] = ds_search
-; Feeds
-dependencies[] = feeds
-dependencies[] = feeds_tamper
-dependencies[] = feeds_tamper_ui
-dependencies[] = feeds_ui
 ; Fields
 dependencies[] = cck_phone
 dependencies[] = field_group
