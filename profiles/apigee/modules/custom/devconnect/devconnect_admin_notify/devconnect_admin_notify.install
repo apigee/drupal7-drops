@@ -1,0 +1,25 @@
+<?php
+/**
+ * @file
+ * Notifies administrator of new user registrations.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function devconnect_admin_notify_install() {
+  //  Set the weight of the module lower so modules like logintobogie don't cause problems.
+  db_query("UPDATE {system} SET weight = 1002 WHERE name = 'devconnect_admin_notify'");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function devconnect_admin_notify_uninstall() {
+  variable_del('devconnect_admin_notify_type');
+  variable_del('devconnect_admin_notify_mailto');
+  variable_del('devconnect_admin_notify_roles');
+  variable_del('devconnect_admin_notify_subject');
+  variable_del('devconnect_admin_notify_body');
+  variable_del('devconnect_admin_notify_alert');
+}

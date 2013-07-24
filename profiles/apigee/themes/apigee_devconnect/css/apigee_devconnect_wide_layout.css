@@ -1,0 +1,88 @@
+.container,
+.navbar-fixed-top .container,
+.navbar-fixed-bottom .container {
+  width: 1200px;
+}
+.span24 {
+  width: 1200px;
+}
+.span23 {
+  width: 1149px;
+}
+.span22 {
+  width: 870px;
+}
+.span21 {
+  width: 1098px;
+}
+.span20 {
+  width: 997px;
+}
+.span19 {
+  width: 947px;
+}
+.span18 {
+  width: 896px;
+}
+.span17 {
+  width: 846px;
+}
+.span16 {
+  width: 795px;
+}
+.span15 {
+  width: 745px;
+}
+.span14 {
+  width: 694px;
+}
+.span13 {
+  width: 644px;
+}
+.span12 {
+  width: 593px;
+}
+.span11 {
+  width: 543px;
+}
+.span10 {
+  width: 492px;
+}
+.span9 {
+  width: 442px;
+}
+.span8 {
+  width: 391px;
+}
+.span7 {
+  width: 341px;
+}
+.span6 {
+  width: 290px;
+}
+.span5 {
+  width: 240px;
+}
+.span4 {
+  width: 189px;
+}
+.span3 {
+  width: 138px;
+}
+.span2 {
+  width: 88px;
+}
+.span1 {
+  width: 37px;
+}
+.home-img{
+  text-align: center;
+}
+.view-recent-blog-posts .views-field-body {
+  float: left;
+  margin-left: 10px;
+  width: 270px;
+}
+.front .page-content .container{
+  background: url("/sites/all/themes/apigee_devconnect/images/homepage-content-bg-wide.png") repeat-y scroll 0 0 transparent;
+}

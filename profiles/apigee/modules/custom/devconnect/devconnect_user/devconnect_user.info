@@ -1,0 +1,17 @@
+name = DevConnect User
+description = Extra Field for User Entity
+core = 7.x
+package = DevConnect
+php = 5.2.4
+version = 7.x-4.0-dev-dev
+project = devconnect
+dependencies[] = cck_phone
+dependencies[] = devconnect
+dependencies[] = features
+dependencies[] = link
+dependencies[] = list
+dependencies[] = options
+datestamp = 1342015551
+features[features_api][] = api:1
+features[field][] = user-user-field_first_name
+features[field][] = user-user-field_last_name

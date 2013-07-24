@@ -1,0 +1,150 @@
+html, body{
+  height: 100%;
+}
+.clearfix{
+  clear: both;
+}
+
+.admin-menu #navbar{
+
+}
+.admin-menu .navbar-fixed-top {
+  position: fixed;
+  top: 26px;
+  right: 0;
+  left: 0;
+  z-index: 500; // to show the menu sequence
+}
+#admin-menu{
+  height: 26px;
+  position: fixed;
+}
+body.admin-menu {
+  margin-top: 26px !important;
+}
+
+fieldset{
+  margin-top: 10px;
+  margin-bottom: 32px;
+  padding: 0 0 10px;
+}
+.div.error{
+  background-image: none;
+  background-color: transparent;
+}
+div.error, table tr.error{
+  background-color: transparent !important;
+}
+
+/* Drupal and Bootstrap Conflicts */
+.views-row.row{
+  margin: 0;
+}
+
+/* Sidebar */
+.well {
+  background-color: #F5F5F5;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 4px 4px 4px 4px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05) inset;
+  display: block;
+  margin-bottom: 20px;
+}
+.region-sidebar-second h2{
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Homepage */
+.page-header{
+  margin-bottom: 0px;
+}
+.master-container{
+  background: #f9f9f9;
+  height: 100%;
+  min-height: 100%;
+}
+.page-content{
+  background: none repeat scroll 0 0 #FFFFFF;
+  border-bottom: 1px solid #E8E8E8;
+  padding: 40px 0px 80px;
+}
+.not-front .page-content{
+  padding: 20px 0px 80px;
+}
+
+/* Blog */
+.node-blog.node-teaser{
+  border-bottom: 1px solid #E8E8E8;
+  padding: 30px 0px;
+}
+.node-blog.node-teaser .node-date{
+  background: none repeat scroll 0 0 #F9F9F9;
+  border: 1px solid #C9C9C9;
+  border-radius: 5px 5px 5px 5px;
+  color: #959595;
+  float: left;
+  font-size: 12px;
+  margin-top: 7px;
+  padding: 0 8px;
+  text-align: center;
+  width: 3%;
+}
+.node-blog.node-teaser .node-body,
+.node-blog.node-teaser h2{
+  float: right;
+  padding-left: 17px;
+  width: 92%;
+}
+.node-blog .posted{
+  margin-bottom: 20px;
+}
+
+/* Forums */
+.node-type-forum .submitted{
+  display: block;
+  margin-bottom: 20px;
+}
+.node-type-forum .field-name-body,
+.node-type-forum article.comment{
+  border-bottom: 1px solid #E8E8E8;
+  margin-top: 10px;
+  padding-bottom: 10px;
+}
+.node-type-forum .comment-wrapper,
+.node-type-forum  .indented{
+  padding-left: 25px;
+}
+.node-type-forum  .indented {
+  margin-left: 0;
+  padding-left: 25px;
+}
+#comment-form-wrapper{
+  margin-top: 20px;
+}
+article.comment .comment-submitted{
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.node-type-forum .comment-form .btn{
+  margin-right: 10px;
+}
+
+/* Comments */
+section#comments{
+  h2.title{
+    border-bottom: 1px solid #E4E4E4;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  ul.links.inline{
+    display: block;
+    margin: 10px 0px;
+    padding: 0;
+    li{
+      margin: 0;
+      padding: 0;
+    }
+  }
+}

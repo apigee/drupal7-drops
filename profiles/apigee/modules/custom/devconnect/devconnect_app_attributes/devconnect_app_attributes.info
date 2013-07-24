@@ -1,0 +1,5 @@
+name = DevConnect App Attribute Management
+description = "Allows custom attributes to be set for Developer Apps"
+package = "DevConnect"
+core = "7.x"
+version = "7.x-1.19"

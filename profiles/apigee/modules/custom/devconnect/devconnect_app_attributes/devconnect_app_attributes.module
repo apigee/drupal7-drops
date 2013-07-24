@@ -1,0 +1,542 @@
+<?php
+
+define('APP_ATTRIBUTES_ADMIN_PATH', 'admin/config/system/app-attributes');
+define('APP_ATTRIBUTES_ADMIN_PATH_COUNT', count(explode('/', APP_ATTRIBUTES_ADMIN_PATH)));
+
+/**
+ * Implements hook_menu().
+ *
+ * @return array
+ */
+function devconnect_app_attributes_menu() {
+  $items = array();
+
+  $items[APP_ATTRIBUTES_ADMIN_PATH] = array(
+    'title' => t('DevConnect App Attributes'),
+    'page callback' => 'devconnect_app_attributes_list',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items[APP_ATTRIBUTES_ADMIN_PATH . '/add'] = array(
+    'title' => t('Add DevConnect App Attribute'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_app_attributes_edit'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items[APP_ATTRIBUTES_ADMIN_PATH . '/edit/%'] = array(
+    'title' => t('Edit DevConnect App Attribute'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_app_attributes_edit', APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+  );
+  $items[APP_ATTRIBUTES_ADMIN_PATH . '/delete/%'] = array(
+    'title' => t('Delete DevConnect App Attribute'),
+    'page callback' => 'devconnect_app_attributes_delete',
+    'page arguments' => array(APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Displays main attribute admin page. Page callback.
+ *
+ * @return string
+ */
+function devconnect_app_attributes_list() {
+
+  $attributes = variable_get('app_attributes', array());
+
+  if (count($attributes) > 0) {
+    $form = drupal_get_form('devconnect_app_attributes_listing', $attributes);
+    $output = theme_devconnect_app_attributes_listing($form);
+  }
+  else {
+    $output = '<h4>' . t('No app attributes have been defined yet.') . '</h4>';
+  }
+
+  $output .= l(t('Add Attribute'), APP_ATTRIBUTES_ADMIN_PATH . '/add', array('attributes' => array('class' => array('button', 'app-attributes-add'))));
+
+  return $output;
+}
+
+/**
+ * Form constructor for creating/editing. Called via a page callback.
+ *
+ * @param $form
+ * @param $form_state
+ * @param null|string $machine_name
+ * @return array
+ */
+function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NULL) {
+
+
+  $attribute = NULL;
+  if (isset($machine_name)) {
+    $attributes = variable_get('app_attributes', array());
+    if (isset($attributes[$machine_name])) {
+      $attribute = $attributes[$machine_name];
+    }
+  }
+
+  $form['creating'] = array(
+    '#type' => 'value',
+    '#value' => (isset($machine_name))
+  );
+
+  $form['machine_name'] = array(
+    '#title' => t('Machine Name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array(
+      'required' => 'required',
+      'pattern' => '^[0-9A-Za-z_.-]+$',
+      'title' => t('Please use only numbers, letters, underscores, hyphens and periods.')
+    ),
+    '#maxlength' => 64,
+    '#default_value' => (isset($machine_name) ? $machine_name : ''),
+    '#element_validate' => array('devconnect_app_attributes_validate_machine_name'),
+    '#description' => t('This is the attribute name as it is stored in KMS. It must be unique to this Devconnect instance, and should consist exclusively of numbers, letters, underscores, hyphens and periods.')
+  );
+
+  $form['title'] = array(
+    '#title' => t('Public Name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array(
+      'required' => 'required'
+    ),
+    '#maxlength' => 64,
+    '#default_value' => (isset($attribute) ? $attribute['title'] : ''),
+    '#description' => t('This is the name of the attribute as it is shown to the Devconnect end user.')
+  );
+
+  $form['description'] = array(
+    '#title' => t('Description'),
+    '#type' => 'textarea',
+    '#required' => FALSE,
+    '#maxlength' => 1024,
+    '#default_value' => (isset($attribute) ? $attribute['description'] : ''),
+    '#description' => t('This is shown as help text underneath the attribute\'s form element on the app creation/edit page. This is a plaintext field; please do not enter markup.')
+  );
+
+  $form['widget'] = array(
+    '#title' => t('Widget'),
+    '#type' => 'radios',
+    '#required' => TRUE,
+    '#options' => array(
+      'textfield' => t('Text Box'),
+      'textarea' => t('Text Area'),
+      // TODO: Implement other widgets:
+      //'select' => t('Drop-down Select'),
+      //'checkbox' => t('Single Checkbox'),
+      //'radios' => t('Radio Buttons')
+    ),
+    '#default_value' => (isset($attribute) ? $attribute['widget'] : 'textfield'),
+    '#description' => t('This sets the type of input field shown on the app creation/edit page.')
+  );
+
+  $form['maxlength'] = array(
+    '#title' => t('Maximum Length'),
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#default_value' => (isset($attribute) ? intval($attribute['maxlength']) : NULL),
+    '#post_render' => array('_devconnect_app_attributes_number_postrender'),
+    '#description' => t('If set, this limits the possible length of the attribute content. Leave blank to allow unlimited content length.')
+  );
+
+  $form['required'] = array(
+    '#title' => t('Require this attribute'),
+    '#type' => 'checkbox',
+    '#default_value' => (isset($attribute) ? $attribute['required'] : FALSE),
+    '#return_value' => 1,
+    '#description' => t('If this box is checked, end users will be unable to save their apps without filling in the attribute.')
+  );
+
+  $form['display'] = array(
+    '#title' => t('Display this attribute'),
+    '#type' => 'checkbox',
+    '#default_value' => (isset($attribute) ? $attribute['display'] : FALSE),
+    '#return_value' => 1,
+    '#description' => t('If this box is checked, the attribute will be displayed on the user\'s app listing page.')
+  );
+
+  $form['pattern'] = array(
+    '#title' => t('Pattern Regex'),
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#maxlength' => 64,
+    '#default_value' => (isset($attribute) ? $attribute['pattern'] : ''),
+    '#element_validate' => array('devconnect_app_attributes_validate_regex'),
+    '#description' => t('If set, this must be a valid regular expression. <strong>Please omit regex delimiters.</strong> Any input for this attribute will be validated against the regular expression; content failing to match will be rejected.')
+  );
+
+  $form['tooltip'] = array(
+    '#title' => t('Tooltip'),
+    '#description' => t('If Pattern Regex is not empty, this should contain a human-readable high-level description of the valid pattern, to be shown in the browser when the user enters an invalid pattern.'),
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#maxlength' => 256,
+    '#default_value' => (isset($attribute) ? $attribute['tooltip'] : '')
+  );
+
+  $form['default'] = array(
+    '#title' => t('Default Value'),
+    '#description' => t('When the user does not enter a value for the attribute, this value should be assumed.'),
+    '#type' => 'textarea',
+    '#required' => FALSE,
+    '#maxlength' => 1024,
+    '#default_value' => (isset($attribute) ? $attribute['default'] : '')
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save'
+  );
+
+  // rubik theme shows field descriptions as tooltips.
+  // Here we force it to show descriptions after the field label as well.
+  if ($GLOBALS['theme'] == 'rubik') {
+    foreach (array_keys($form) as $key) {
+      if (isset($form[$key]['#description'])) {
+        if (!isset($form[$key]['#post_render'])) {
+          $form[$key]['#post_render'] = array();
+        }
+        $form[$key]['#post_render'][] = '_devconnect_app_attributes_hack_rubik';
+      }
+    }
+  }
+
+  $form['#submit'] = array('devconnect_app_attributes_save');
+
+  return $form;
+}
+
+/**
+ * Validation callback for machine_name field.
+ *
+ * Makes sure machine_name conforms to the correct pattern, and also ensures
+ * that it is unique when we are creating a new attribute.
+ *
+ * @param $element
+ * @param $form_state
+ * @param $form
+ */
+function devconnect_app_attributes_validate_machine_name($element, &$form_state, $form) {
+  $machine_name = $element['#value'];
+  $pattern = '!' . str_replace('!', '\!', $element['#attributes']['pattern']) . '!';
+  if (!preg_match($pattern, $machine_name)) {
+    form_error($element, t('Invalid machine name. Please only use letters, numbers, dashes, underscores and periods.'));
+  }
+  elseif ($form['creating']['#value']) {
+    $attributes = variable_get('app_attributes', array());
+    if (isset($attributes[$machine_name])) {
+      form_error($element, t('This machine name is already in use.'));
+    }
+  }
+}
+
+/**
+ * Validation callback for regex field.
+ *
+ * Makes sure regex is a compilable regular expression.
+ *
+ * @param $element
+ * @param $form_state
+ * @param $form
+ */
+function devconnect_app_attributes_validate_regex($element, &$form_state, $form) {
+  $regex = $element['#value'];
+  if (strlen($regex) == 0) {
+    return;
+  }
+  $pattern = '/' . str_replace('/', '\\/', $regex) . '/';
+  if (@preg_match($pattern, '') === FALSE) {
+    form_error($element, t('Invalid regular expression. Please check your syntax.'));
+  }
+}
+
+/**
+ * Form submit callback for create/edit form.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_app_attributes_save($form, &$form_state) {
+  $values = $form_state['values'];
+  $machine_name = $values['machine_name'];
+  unset($values['submit'], $values['machine_name'], $values['creating'], $values['form_id'], $values['form_token'], $values['form_build_id'], $values['op']);
+
+  $attributes = variable_get('app_attributes', array());
+  $action = (isset($attributes[$machine_name]) ? t('updated') : t('created'));
+  $attributes[$machine_name] = $values;
+  variable_set('app_attributes', $attributes);
+  drupal_set_message(t('The @attr attribute has been @action.', array('@attr' => check_plain($values['title']), '@action' => $action)), 'notice');
+  $form_state['redirect'] = APP_ATTRIBUTES_ADMIN_PATH;
+}
+
+/**
+ * Page callback for deleting an attribute.
+ *
+ * @todo Show a confirm page before deleting.
+ * @param $machine_name
+ */
+function devconnect_app_attributes_delete($machine_name) {
+  $attributes = variable_get('app_attributes', array());
+  if (isset($attributes[$machine_name])) {
+    $deleted_attribute = $attributes[$machine_name];
+    unset($attributes[$machine_name]);
+    variable_set('app_attributes', $attributes);
+    drupal_set_message(t('The @attr attribute has been deleted.', array('@attr' => check_plain($deleted_attribute['title']))), 'status');
+  }
+  else {
+    drupal_set_message(t('The selected attribute could not be found.'), 'warning');
+  }
+  drupal_goto(APP_ATTRIBUTES_ADMIN_PATH);
+}
+
+/**
+ * Implements hook_devconnect_app_attributes().
+ *
+ * @return array
+ */
+function devconnect_app_attributes_devconnect_app_attributes() {
+  $attributes = variable_get('app_attributes', array());
+
+  $items = array();
+  $optional_fields = array('pattern', 'tooltip', 'description', 'default', 'maxlength');
+  foreach ($attributes as $machine_name => $attribute) {
+    $item = array(
+      'name' => $attribute['title'],
+      'type' => $attribute['widget'],
+      'required' => (bool) $attribute['required'],
+    );
+    foreach ($optional_fields as $field) {
+      if (isset($attribute[$field]) && strlen($attribute[$field]) > 0) {
+        $item[$field] = $attribute[$field];
+      }
+    }
+    $items[$machine_name] = $item;
+  }
+  return $items;
+}
+
+/**
+ * Form element post_render callback to change a text input to a number input.
+ *
+ * @param $element
+ * @param $children
+ * @return mixed
+ */
+function _devconnect_app_attributes_number_postrender($element, $children) {
+  $find = array('type="text"', 'maxlength="128"');
+  $replace = array('type="number"', '');
+  return str_replace($find, $replace, $element);
+}
+
+/**
+ * Form element post_render callback to make form field descriptions show up in
+ * the rubik theme.
+ *
+ * @param $element
+ * @param $children
+ * @return string
+ */
+function _devconnect_app_attributes_hack_rubik($element, $children) {
+  static $added_css;
+
+  if (!isset($added_css)) {
+    $css = 'div.description-text {font-size:10px;color:#999}';
+    drupal_add_css($css, array('type' => 'inline'));
+    $added_css = TRUE;
+  }
+
+  $parts = explode('</label>', $element, 2);
+  $description = '<div class="description-text">' . $children['#description'] . '</div>';
+  return $parts[0] . '</label>' . $description . $parts[1];
+}
+
+/**
+ * Implements hook_devconnect_attributes_display_list().
+ *
+ * Returns a list of attributes whose values should be displayed on the app
+ * detail page.
+ *
+ * @return array
+ */
+function devconnect_app_attributes_devconnect_attributes_display_list() {
+  $attributes = variable_get('app_attributes', array());
+  $items = array();
+  foreach ($attributes as $machine_name => $attribute) {
+    if ($attribute['display']) {
+      $items[$machine_name] = $attribute['title'];
+    }
+  }
+  return $items;
+}
+
+/**
+ * Form constructor for app listing form. Lists all attributes defined by this
+ * module and allows drag-n-drop reordering.
+ *
+ * @param $form
+ * @param $form_state
+ * @param array $attributes
+ * @return array
+ */
+function devconnect_app_attributes_listing($form, &$form_state, $attributes = array()) {
+  $curr_weight = -10;
+
+  $form = array();
+  $form['attributes']['#tree'] = TRUE;
+
+  foreach ($attributes as $machine_name => $attribute) {
+    $name = '<span class="app-attributes-name">' . check_plain($attribute['title']) . '</span> '
+      . '<span class="app-attributes-machine-name">[' . $machine_name . ']</span> ';
+    if (!empty($attribute['description'])) {
+      $name .= '<span class="app-attributes-description">' . check_plain($attribute['description']) . '</span>';
+    }
+    $edit = l(t('Edit'), APP_ATTRIBUTES_ADMIN_PATH . '/edit/' . $machine_name, array('attributes' => array('class' => array('button', 'app-attributes-action'))));
+    $delete = l(t('Delete'), APP_ATTRIBUTES_ADMIN_PATH . '/delete/' . $machine_name, array('attributes' => array('class' => array('button', 'app-attributes-action'))));
+
+    $form['attributes'][$machine_name] = array(
+      'name' => array(
+        '#type' => 'markup',
+        '#markup' => $name
+      ),
+      'widget' => array(
+        '#type' => 'markup',
+        '#markup' => $attribute['widget']
+      ),
+      'required' => array(
+        '#type' => 'markup',
+        '#markup' => ($attribute['required'] ? t('Yes') : t('No'))
+      ),
+      'display' => array(
+        '#type' => 'markup',
+        '#markup' => ($attribute['display'] ? t('Yes') : t('No'))
+      ),
+      'action' => array(
+        '#type' => 'markup',
+        '#markup' => $edit . '&nbsp;' . $delete
+      ),
+      'weight' => array(
+        '#type' => 'weight',
+        '#delta' => 10,
+        '#default_value' => $curr_weight++,
+        '#attributes' => array('class' => 'attribute-weight')
+      )
+    );
+  }
+
+  $form['actions'] = array(
+    '#type' => 'actions',
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Save Changes'),
+    )
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for attribute reordering form.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_app_attributes_listing_submit($form, &$form_state) {
+  // Read weight values from submitted data
+  $values = array();
+  foreach ($form_state['values']['attributes'] as $key => $weight) {
+    $values[$key] = $weight['weight'];
+  }
+  // Put attribute machine names in weight order
+  asort($values);
+
+  $values = array_keys($values);
+  $ordered_attributes = array();
+  $attributes = variable_get('app_attributes', array());
+
+  // put our existing data in the correct order.
+  foreach($values as $name) {
+    if (isset($attributes[$name])) {
+      $ordered_attributes[] = $attributes[$name];
+      unset($attributes[$name]);
+    }
+  }
+  // Should never happen! If we somehow missed attributes (maybe due to a
+  // race condition) make sure that at least we don't lose their data.
+  if (count($attributes) > 0) {
+    $ordered_attributes += $attributes;
+  }
+  variable_set('app_attributes', $ordered_attributes);
+  drupal_set_message(t('Your changes have been saved.'));
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * @return array
+ */
+function devconnect_app_attributes_theme() {
+  return array(
+    'devconnect_app_attributes_listing' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Theme callback for attribute reordering form.
+ *
+ * @param $form
+ * @return string
+ */
+function theme_devconnect_app_attributes_listing($form) {
+  $variables = array('element' => $form);
+
+  $table_rows = array();
+  foreach ($form['attributes'] as $machine_name => $row) {
+    if (substr($machine_name, 0, 1) == '#') {
+      continue;
+    }
+
+    $table_row = array(
+      drupal_render($row['name']),
+      drupal_render($row['widget']),
+      drupal_render($row['required']),
+      drupal_render($row['display']),
+      drupal_render($row['action']),
+      drupal_render($row['weight'])
+    );
+
+    $table_rows[] = array(
+      'data' => $table_row,
+      'class' => array('draggable')
+    );
+  }
+  $header = array(
+    t('Name'),
+    t('Widget'),
+    t('Required'),
+    t('Display'),
+    t('Action'),
+    t('Weight')
+  );
+
+  $table_id = 'app-attributes';
+  drupal_add_tabledrag($table_id, 'order', 'sibling', 'attribute-weight');
+  $variables['element'] = $form;
+  $form['attributes'] = array(
+    '#type' => 'markup',
+    '#markup' => theme('table', array('header' => $header, 'rows' => $table_rows, 'attributes' => array('id' => $table_id)))
+  );
+  $variables['element']['#children'] = drupal_render_children($form);
+  $output = theme_form($variables);
+  return $output;
+}

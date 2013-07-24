@@ -1,0 +1,16 @@
+; $Id:$
+name = "ACL Node module tests"
+description = "Support module for ACL node related testing."
+package = Testing
+version = VERSION
+core = 7.x
+hidden = TRUE
+
+files[] = acl_node_test.module
+
+; Information added by drupal.org packaging script on 2011-11-26
+version = "7.x-1.0"
+core = "7.x"
+project = "acl"
+datestamp = "1322308236"
+

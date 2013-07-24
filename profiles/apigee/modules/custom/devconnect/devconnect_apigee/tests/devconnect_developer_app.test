@@ -1,0 +1,73 @@
+<?php
+
+class DevconnectDeveloperAppTest extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Apigee 4g Developer App',
+      'description' => 'Verify CRUD operations on developer apps.',
+      'group' => 'Actions',
+    );
+  }
+
+  public function testAppList() {
+    $app = new DevConnectApigeeDeveloperApp($GLOBALS['user']);
+    $result = $app->GetList();
+    $this->assertEqual(2, $result['code_class'], 'Returned HTTP status should be in the 200 class.');
+  }
+
+  public function testAppCreateDestroy() {
+
+    $app_name = '';
+    for ($i = 0; $i < 16; $i++) {
+      $app_name .= chr(mt_rand(97,122));
+    }
+
+    $app = new DevConnectApigeeDeveloperApp($GLOBALS['user']);
+
+    $this->verbose('Test app name is ' . $app_name . '.');
+
+    $app_descriptor = array(
+      'access_type' => 'read',
+      'callback_url' => 'https://api.jupiter.apigee.net/v1/organizations/apigee-ui',
+      'name' => $app_name
+    );
+
+    $response = $app->Create($app_descriptor);
+    $this->assertEqual(2, $response['code_class'], 'Create: Returned HTTP status is in the 200 class.');
+    $this->verbose('App ' . $app_name . ' created. ' . print_r($response['data'], TRUE));
+
+    sleep(1);
+
+    $response = $app->GetInfo($app_name);
+    $this->assertEqual(2, $response['code_class'], 'GetInfo: Returned HTTP status is in the 200 class.');
+    $this->verbose('App ' . $app_name . ' verified. ' . print_r($response['data'], TRUE));
+
+    sleep(1);
+
+    $response = $app->Delete($app_name);
+    $this->assertEqual(2, $response['code_class'], 'Delete: Returned HTTP status is in the 200 class.');
+    $this->verbose('App ' . $app_name . ' deleted. ' . print_r($response['data'], TRUE));
+
+    sleep(1);
+
+    $response = $app->GetInfo($app_name);
+    $this->assertEqual(4, $response['code_class'], 'GetInfo: Returned HTTP status is in the 400 class, indicating that this app has been deleted.');
+    $this->verbose('App ' . $app_name . ' confirmed deleted. ' . print_r($response['data'], TRUE));
+
+  }
+
+  public function testApiProducts() {
+    $app = new DevConnectApigeeDeveloperApp($GLOBALS['user']);
+    try {
+      $response = $app->GetAPIProductsOptions();
+    }
+    catch (Exception $e) {
+      $this->assert('fail', $e->getMessage());
+      return;
+    }
+
+    $this->assert(is_array($response), 'GetAPIProductsOptions is an array.');
+  }
+
+}

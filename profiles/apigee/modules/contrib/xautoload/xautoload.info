@@ -1,0 +1,13 @@
+name = "X Autoload"
+description = "Autoload based on pseudo PSR-0 folder structure and module prefix."
+core = 7.x
+php = 5.2
+
+files[] = xautoload.test
+
+; Information added by drupal.org packaging script on 2012-11-13
+version = "7.x-2.7"
+core = "7.x"
+project = "xautoload"
+datestamp = "1352817214"
+

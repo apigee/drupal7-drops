@@ -1,0 +1,21 @@
+<?php
+
+
+class DevconnectApigee extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Apigee 4g Connection',
+      'description' => 'Verify Connection to Apigee Endpoint.',
+      'group' => 'Actions',
+    );
+  }
+
+  public function testApigeeVars() {
+    $this->assertNotNull(variable_get("devconnect_org", NULL), "Devconnect Org Settings should not be null");
+    $this->assertNotNull(variable_get("devconnect_endpoint", NULL), "Devconnect Endpoint should not be null.");
+    $this->assertNotNull(variable_get("devconnect_curlauth", NULL), "Devconnect Endpoint Auth should not be null.");
+    $this->assertNotNull(variable_get("devconnect_authtype", NULL), "Devconnect AuthType should not be null.");
+  }
+
+}

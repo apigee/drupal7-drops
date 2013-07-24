@@ -1,0 +1,23 @@
+name = Location Email
+package = Location
+description = Allows you to add an email address to a location.
+dependencies[] = location
+core = 7.x
+files[] = location_email.module
+files[] = location_email.install
+files[] = location_email.views.inc
+
+
+; Information added by drupal.org packaging script on 2012-09-03
+version = "7.x-3.0-alpha3+0-dev"
+core = "7.x"
+project = "location"
+datestamp = "1346676288"
+
+
+; Information added by drupal.org packaging script on 2013-04-22
+version = "7.x-3.0-alpha9"
+core = "7.x"
+project = "location"
+datestamp = "1366648521"
+

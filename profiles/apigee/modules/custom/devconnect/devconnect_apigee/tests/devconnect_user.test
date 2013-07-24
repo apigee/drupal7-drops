@@ -1,0 +1,13 @@
+<?php
+
+class DevconnectUserTest extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Verify User Classes',
+      'description' => 'Tests Creation and deletion of user.',
+      'group' => 'Actions',
+    );
+  }
+
+}

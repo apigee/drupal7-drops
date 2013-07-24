@@ -31,18 +31,6 @@ projects[connector][subdir] = "contrib"
 projects[context][version] = "3.0-beta6"
 projects[context][subdir] = "contrib"
 
-projects[devconnect][version] = "4.x-dev"
-projects[devconnect][subdir] = "contrib"
-
-projects[devconnect_apigee][version] = "1.21"
-projects[devconnect_apigee][subdir] = "contrib"
-
-projects[devconnect_developer_apps][version] = "4.21"
-projects[devconnect_developer_apps][subdir] = "contrib"
-
-projects[devconnect_wadl][version] = "4.19"
-projects[devconnect_wadl][subdir] = "contrib"
-
 projects[devel][version] = "1.3"
 projects[devel][subdir] = "contrib"
 
@@ -235,13 +223,6 @@ projects[views_slideshow][subdir] = "contrib"
 projects[webform][version] = "3.18"
 projects[webform][subdir] = "contrib"
 
-projects[apigee_sso][version] = "4.20"
-projects[apigee_sso][subdir] = "contrib"
-
-; +++++ TODO modules without versions +++++
-
-projects[feeds][version] = "" ; TODO add version
-projects[feeds][subdir] = "contrib"
 
 ; +++++ Themes +++++
 

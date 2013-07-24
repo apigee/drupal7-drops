@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Implements hook_requirements().
+ *
+ * Ensures that mcrypt is present at install time.
+ *
+ * @param $phase
+ * @return array
+ */
+function devconnect_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'install') {
+    $t = get_t();
+
+    if (!defined('MCRYPT_RIJNDAEL_128')) {
+      $requirements['mcrypt'] = array(
+        'description' => 'PHP must have the mcrypt library for DevConnect to work.',
+        'severity' => REQUIREMENT_ERROR,
+        'value' => $t('Please install the PHP mcrypt extension.'),
+        'title' => $t('Missing library'),
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Cleans up old devconnect_apigee variable and gives Drupal Admins permissions
+ * to administer org settings.
+ */
+function devconnect_install() {
+  variable_del('devconnect_oauth_policies');
+
+  $role = user_role_load_by_name('Drupal Administrator');
+  if ($role) {
+    user_role_grant_permissions($role->rid, array('administer organization settings'));
+  }
+}

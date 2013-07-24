@@ -1,0 +1,164 @@
+//@import "bootstrap.less";//This is being imported in base.html. But for some reason isn't appearing in the document.
+
+.dashboard {
+.page-header {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    }
+	h3 {
+		color: @gray;
+        background: #F3F3F3;
+        padding: 15px;
+        margin-bottom: 10px;
+        margin-top: 5px;
+        border: 1px solid #E2E2E2;
+
+	}
+
+	h5 {
+		color: @grayLight;
+		font-weight: normal;
+		font-size: @fontSizeSml;
+	}
+
+	em {
+		font-style: normal;
+		font-weight: bold;
+	}
+
+	.page-instruction {
+		margin-top: -15px;
+		font-size: @fontSizeSmlr;
+		color: @grayLight;
+	}
+
+	.charts {
+		padding: 20px 0 0;
+	}
+
+	.chart-holder {
+		padding-bottom: 10px;
+	}
+
+	.row {
+		padding-bottom: 40px;
+	}
+
+	table.chart-data {
+		width: 100%;
+		th {
+			padding: 3px 0;
+			color: @gray;
+			border-bottom: 1px solid @grayLight;
+		}
+		td {
+			padding: 3px 0;
+			border-width: 0;
+		}
+		td.center, th.center { 
+			text-align: center;
+		}
+		th.status, td.status {
+			padding-left: 10px;
+		}
+	}
+
+	.tput {
+		font-weight: bold;
+	}
+
+	hr.series-color {
+		display: inline-block;
+		min-width: 20px;
+		height: 0px;
+		border-width: 1px;
+		margin: 2px 0 2px 8px;
+		cursor: pointer;
+	}
+
+	.tput-positive { color: @tputPositiveClr; }
+	.tput-negative { color: @tputNegativeClr; }
+	.sparklines { 
+		padding-left: 20px;
+		max-width: 40px;
+	}
+	.tooltip {
+        display:none;
+        font-size:12px;
+        height:70px;
+        width:160px;
+        padding:25px;
+        color:#fff;
+    }
+	#allApiTraffic {
+		margin-bottom: 20px;
+
+        .delete-data-buttons {
+            .btn {
+                margin-right: 10px;
+            }
+        }
+	}
+/*  #environmentControlBar {
+        background: url(/public/images/environment-bar.png) repeat;
+        height: 44px;
+
+        select {
+            margin: 8px 0;
+        }
+
+        span {
+            color: #868686;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .badge {
+            float: right;
+            margin: 10px 10px;
+            border-radius: 20px;
+            line-height: 21px;
+            padding: 1px 9px 0px;
+            background: #F5DE72;
+            color: #D1B640;
+            border: 1px solid #D1B640;
+            cursor: default;
+        }
+        a {
+            margin: 8px 0;
+            font-size: @fontSizeSml;
+            font-weight: normal;
+            display: inline-block;
+            height: 100%;
+            float: right;
+        }
+    } */
+    #dashboardViewBar {
+        border-top:@shadedBorder;
+        border-bottom:@shadedBorder;
+        margin-top: 16px;
+        height: 44px;
+        span {
+            display: block;
+            float: left;
+            margin-top: 12px;
+            color: #868686;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        #environmentControlBar {
+            float: left;
+            margin: 8px 0 8px 40px;
+        }
+        #showSimulatedDataContainer {
+            float: left;
+            margin: 12px 0 0 40px;
+            label {
+                margin-left: 4px;
+                float: right;
+            }
+        }
+    }
+}

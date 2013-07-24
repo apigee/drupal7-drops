@@ -1,0 +1,12 @@
+name = X Autoload Example
+description = Example module for X Autoload
+core = 7.x
+
+dependencies[] = xautoload
+
+; Information added by drupal.org packaging script on 2012-11-13
+version = "7.x-2.7"
+core = "7.x"
+project = "xautoload"
+datestamp = "1352817214"
+

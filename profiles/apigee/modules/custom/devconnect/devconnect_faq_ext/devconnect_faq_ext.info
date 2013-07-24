@@ -1,0 +1,23 @@
+; $Id: faq.info,v 1.1.2.3.2.1 2007/09/05 14:05:48 snpower Exp $
+name = DevConnect Frequently Asked Questions Extension
+description = "Developer Connect Manages configuration of questions for a FAQ page."
+package = "DevConnect"
+dependencies[] = faq
+core = 7.x
+
+
+
+; Information added by drush on 2012-05-31
+version = "7.x-4.0-dev-dev"
+core = "7.x"
+project = "devconnect"
+datestamp = "1338474976"
+
+
+
+; Information added by drush on 2012-06-01
+version = "7.x-4.0-dev-dev"
+core = "7.x"
+project = "devconnect"
+datestamp = "1338585287"
+

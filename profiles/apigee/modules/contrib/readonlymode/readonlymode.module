@@ -1,0 +1,254 @@
+<?php
+
+/**
+ * @file
+ * The Read Only Mode module adds another option to the Site Maintenance page.
+ *
+ * With this option, it is possible to keep the site online but only disable
+ * content moderation.
+ */
+
+/**
+* Implementation of hook_permission().
+* Create permission to allow access to forms while in read only mode
+*/
+function readonlymode_permission() {
+  return array(
+    'readonlymode access forms' => array(
+      'title' => t('Access all forms while in <em>Read Only Mode</em>'),
+    ),
+  );
+}
+
+/**
+* Implementation of hook_form_alter().
+* Permit posting of content.
+*/
+function readonlymode_form_alter(&$form, $form_state, $form_id) {
+  if (!_readonlymode_form_check($form, $form['form_id']['#value'], FALSE)) {
+    // Check whether the form is a fresh form being served to the user.
+    if (!isset($form_state['input']['form_token'])) {
+      // If a redirect URL is set, then we redirect to it.
+      if ($url = variable_get('site_readonly_url', '')) {
+        drupal_goto($url);
+      }
+      else {
+        // Remove FAPI #after_build handlers.
+        $form['#after_build'] = array();
+        // Remove all elements of the form.
+        foreach (element_children($form) as $key) {
+          if(!in_array($key, array('form_id', 'form_token', 'form_build_id'))) {
+            unset($form[$key]);
+          }
+        }
+        $form['readonly_notice'] = array(
+          '#markup' => _readonlymode_notice(),
+          '#prefix' => '<div class="messages warning">',
+          '#suffix' => '</div>',
+        );
+      }
+    }
+  }
+
+  if (user_access('readonlymode access forms') && variable_get('site_readonly', FALSE)) {
+    drupal_set_message(t('The site is currently set to read-only, content moderation is disabled for all users without the "Access all forms while in Read Only Mode" permission.'), 'warning', FALSE);
+  }
+
+  $form['#validate'][] = 'readonlymode_check_form_validate';
+}
+
+/**
+* Implementation of hook_form_FORM_ID_alter().
+* Alter the Site Maintenance form
+*/
+function readonlymode_form_system_site_maintenance_mode_alter(&$form, $form_state) {
+    $form['read_only'] = array(
+      '#title' => t('Read Only Mode'),
+      '#type' => 'fieldset',
+      '#weight' => 0,
+      '#collapsible' => TRUE,
+      '#collapsed' => variable_get('site_readonly', FALSE) ? FALSE : TRUE,
+    );
+    $form['read_only']['site_readonly'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Read only mode'),
+      '#description' => t('Put the site in read-only mode. When set to "Read-only", all content moderation (add/edit) will be impossible.'),
+      '#weight' => 0,
+      '#default_value' => variable_get('site_readonly', FALSE),
+    );
+
+    // Message configuration is in a collapsed fieldset so that it doesn't clutter the display.
+    $form['read_only']['messages'] = array(
+      '#title' => t('Messages and redirects'),
+      '#type' => 'fieldset',
+      '#description' => t('Configure the redirect URL and messages to display to users while the site is in Read Only Mode.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['read_only']['messages']['site_readonly_message'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Read Only Mode warning'),
+      '#description' => t('This warning will be displayed when viewing a page that has a blocked form while in Read Only Mode.'),
+      '#default_value' => _readonlymode_notice(),
+      '#rows' => 3,
+      '#required' => TRUE,
+    );
+
+    $form['read_only']['messages']['site_readonly_message_form_not_saved'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Form submission error'),
+      '#description' => t('This error will be displayed when a blocked form is submitted while in Read Only Mode. This scenario occurs when a user starts filling out a form during normal site operation and then attempts to submit the form after Read Only Mode has been enabled.'),
+      '#default_value' => _readonlymode_notice_form_not_saved(),
+      '#rows' => 3,
+      '#required' => TRUE,
+    );
+    $form['read_only']['messages']['site_readonly_url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Redirect path'),
+      '#description' => t('When given, Drupal will redirect the user to this URL when a user tries to add/edit content instead of displaying the message above.'),
+      '#default_value' => variable_get('site_readonly_url', ''),
+    );
+
+    // Allowed forms configuration is in a collapsed fieldset so that it doesn't clutter the display.
+    $form['read_only']['forms'] = array(
+      '#title' => t('Allowed forms'),
+      '#type' => 'fieldset',
+      '#description' => t('Configure which forms will be exempt from restriction when in read-only mode.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['read_only']['forms']['site_readonly_forms_allowed'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Forms that can be submitted'),
+      '#description' => t("These forms are not restricted when in read only mode. Enter one form id per line. You may use the wildcard character '*' to use loose matches. For example: webform* will match all webforms. Note that the following forms will always be allowed: %allowed_forms.", array(
+        '%allowed_forms' => implode(', ', _readonlymode_default_forms_allowed()))),
+      '#default_value' => variable_get('site_readonly_forms_allowed', ''),
+    );
+    $form['read_only']['forms']['site_readonly_forms_viewonly'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Forms that can be viewed'),
+      '#description' => t("These forms are allowed to be viewed but will not accept form submissions. Enter one form id per line. You may use the wildcard character '*' to use loose matches. For example: webform* will match all webforms. Note that the following forms will always be allowed: %allowed_forms.", array(
+        '%allowed_forms' => implode(', ', _readonlymode_default_forms_viewonly()))),
+      '#default_value' => variable_get('site_readonly_forms_viewonly', ''),
+    );
+    $form['#validate'][] = 'readonlymode_form_validate_url';
+}
+
+/**
+* Implementation of hook_form_validate().
+*/
+function readonlymode_form_validate_url(&$form, $form_state) {
+  if ($path = $form_state['values']['site_readonly_url']) {
+    $item = menu_get_item($path);
+    if (!$item || !$item['access']) {
+      form_set_error('site_readonly_url', t('The path %link_path is either invalid or you do not have access to it.', array('%link_path' => $path)));
+    }
+  }
+}
+
+/**
+* Return the custom readonlymode warning when a page with a blocked form is viewed.
+*/
+function _readonlymode_notice() {
+  return t(variable_get('site_readonly_message', variable_get('site_name', 'drupal') . ' is currently in maintenance. During this maintenance it is not possible to change site content (like comments, pages and users).'));
+}
+
+/**
+* Return the custom readonlymode error when a user attempts to submit a blocked form.
+*/
+function _readonlymode_notice_form_not_saved() {
+  return t(variable_get('site_readonly_message_form_not_saved', 'Data not saved. ' . variable_get('site_name', 'drupal') . ' is currently in maintenance. During maintenance it is not possible to change content. Please make a note of your changes and try again later.'));
+}
+
+/**
+ * Internal handler to check whether this form is to be restricted.
+ * Returns TRUE if the form is allowed, FALSE otherwise.
+ */
+function _readonlymode_form_check(&$form, $form_id, $submitted = TRUE) {
+  // If not in read-only mode, allow the form.
+  if (!variable_get('site_readonly', FALSE)) {
+    return TRUE;
+  }
+
+  // Admins can access all forms.
+  if (user_access('readonlymode access forms')) {
+    return TRUE;
+  }
+
+  // Is the form in the list of default forms? Then allow access.
+  if (in_array($form_id, _readonlymode_default_forms_allowed())) {
+    return TRUE;
+  }
+
+  // Is the form in the list of read-only forms? Then allow access.
+  if (!$submitted && in_array($form_id, _readonlymode_default_forms_viewonly())) {
+    return TRUE;
+  }
+
+  // Check if the form is in the custom list of allowed forms. If so, allow.
+  if(_readonlymode_form_list_check($form_id, variable_get('site_readonly_forms_allowed', ''))) {
+    return TRUE;
+  }
+
+  // Check if the form is in the custom list of allowed read-only forms.
+  if (!$submitted && _readonlymode_form_list_check($form_id, variable_get('site_readonly_forms_viewonly', ''))) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Check for form_id is a given list.
+ * $list is a string of form ids separated by newlines.
+ * Returns TRUE is matched, FALSE otherwise.
+ */
+function _readonlymode_form_list_check($form_id, $list) {
+  $l = preg_split('/(\r\n|\n|\r)/', $list);
+  foreach ($l as $word) {
+    // Skip empty words.
+    if (empty($word)) {
+      continue;
+    }
+    $word = str_replace('*', '.*', $word);
+    if (preg_match('/^' . $word . '$/', $form_id) === 1) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+/**
+ * Our base forms allowed during read-only mode.
+ */
+function _readonlymode_default_forms_allowed() {
+  return array(
+    'read_only',
+    'user_pass',
+    'user_login',
+    'user_login_block',
+    'search_form',
+    'search_block_form',
+    'system_modules',
+    'system_site_maintenance_mode',
+  );
+}
+
+/**
+ * Our base forms allowed for view during read-only mode.
+ */
+function _readonlymode_default_forms_viewonly() {
+  return array(
+    'node_admin_content',
+    'comment_admin_overview',
+  );
+}
+
+/**
+ * Our validate handler for checking whether the form submission is occurring while read-only mode is enabled.
+ */
+function readonlymode_check_form_validate($form, &$form_state) {
+  // Check for read-only mode, whether we are allowed this form,
+  if (!_readonlymode_form_check($form, $form['form_id']['#value'], TRUE)) {
+    form_set_error('', _readonlymode_notice_form_not_saved());
+  }
+}

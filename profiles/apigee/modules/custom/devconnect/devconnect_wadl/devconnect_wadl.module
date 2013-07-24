@@ -1,0 +1,364 @@
+<?php
+
+/**
+ * Implements hook_init().
+ */
+function devconnect_wadl_init() {
+  spl_autoload_register('devconnect_wadl_autoload');
+}
+
+/**
+ * Autoload callback for WADL generating classes.
+ *
+ * @param $class
+ */
+function devconnect_wadl_autoload($class) {
+  $class = strtolower($class);
+  if ($class == 'xmljsonpersistable') {
+    include_once(dirname(__FILE__) . '/classes/xmljsonpersistable.iface.php');
+  }
+  elseif (substr($class, 0, 5) == 'wadl_') {
+    $filename = dirname(__FILE__) . "/classes/$class.class.php";
+    if (file_exists($filename)) {
+      include_once($filename);
+    }
+  }
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * @return array
+ */
+function devconnect_wadl_menu() {
+  $items = array();
+
+  $items['resources'] = array(
+    'title' => 'API Resources',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_wadl_provider_list'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['resources/%'] = array(
+    'title callback' => 'devconnect_wadl_generate_page_title',
+    'title arguments' => array(1),
+    'page callback' => 'devconnect_wadl_resources',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * page_title callback for resources.
+ *
+ * @param $provider
+ *
+ * @return string
+ */
+function devconnect_wadl_generate_page_title($provider) {
+  $list = _devconnect_wadl_fetch_provider_list();
+  if (isset($list[$provider])) {
+    return $list[$provider] . ' API Resources';
+  }
+  return '';
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * @return array
+ */
+function devconnect_wadl_theme() {
+  $items = array();
+
+  $items['wadl_section'] = array(
+    'variables' => array('caption' => NULL, 'content' => NULL),
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for resources.
+ *
+ * @param $provider
+ *
+ * @return string
+ */
+function devconnect_wadl_resources($provider) {
+
+  drupal_add_css(drupal_get_path('module', 'devconnect_wadl') . '/devconnect_wadl.css');
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Provider List', 'resources');
+  $breadcrumb[] = l(drupal_get_title(), base_path() . request_uri());
+  drupal_set_breadcrumb($breadcrumb);
+  $wadl_list = _devconnect_wadl_fetch_provider_list(TRUE);
+  if (!isset($wadl_list[$provider])) {
+    return drupal_not_found();
+  }
+  //$name_list = _devconnect_wadl_fetch_provider_list(FALSE);
+  //$provider_name = $name_list[$provider];
+  $json_doc = _devconnect_wadl_fetch($wadl_list[$provider]);
+  // Make things easier on ourselves by removing illegal characters from property names
+  $json_doc = str_replace('apigee:', 'apigee__', $json_doc);
+  $json_obj = json_decode($json_doc);
+
+  $sections = array();
+
+  foreach ($json_obj->application->endpoints as $endpoint) {
+    $uri_base = $endpoint->base;
+    foreach ($endpoint->resources as $resource) {
+      if (property_exists($resource->method, 'apigee__tags') && property_exists($resource->method->apigee__tags, 'primary')) {
+        $section = $resource->method->apigee__tags->primary;
+      }
+      else {
+        $section = 0; // If this occurs, it's an error on the part of Apigee's WADL.
+      }
+      if (!isset($sections[$section])) {
+        $sections[$section] = array();
+      }
+
+      $method = array(
+        'id' => $resource->method->id,
+        'uri_base' => $uri_base,
+        'path' => $resource->path,
+        'http_verb' => $resource->method->name,
+        'description' => $resource->method->doc->content,
+        'auth_required' => (property_exists($resource->method, 'apigee__authentication') && property_exists($resource->method->apigee__authentication, 'required') && $resource->method->apigee__authentication->required == 'true'),
+        'example_uri' => (property_exists($resource->method, 'apigee__example') ? $resource->method->apigee__example->url : NULL),
+        'doc_link' => (property_exists($resource->method->doc, 'apigee__url') ? $resource->method->doc->apigee__url : NULL),
+        'params' => array(),
+      );
+      // For future expansion: when we display parameter table, uncomment the following.
+      /*
+
+      //TODO: handle $resource->choice elements
+      if (is_array($resource->params)) {
+        foreach ($resource->params as $parameter) {
+          $options = array();
+          if (property_exists($parameter, 'options')) {
+            foreach ($parameter->options as $opt) {
+              $options[] = $opt->value;
+            }
+          }
+
+          $method['params'][] = array(
+            'name' => $parameter->name,
+            'type' => $parameter->type,
+            'style' => $parameter->style,
+            'description' => (property_exists($parameter, 'doc') ? $parameter->doc->content : ''),
+            'required' => $parameter->required,
+            'options' => join(', ', $options),
+          );
+        }
+      }
+      */
+
+
+      $sections[$section][] = $method;
+    }
+  }
+
+  //$output = '<span class="sub_link"><a class="expand_categories" title="expand categories" href="#">expand</a>/<a class="collapse_categories" title="collapse categories" href="#">collapse</a> all</span>' ;
+  $output = '<div id="resource-displays"><section id="resource-list">';
+
+  foreach ($sections as $caption => $section) {
+    $output .= theme('wadl_section', array('caption' => $caption, 'content' => $section));
+  }
+
+  $output .= '</section></div>';
+
+  /*
+  $output .= "\n\n" . '<script type="text/javascript">'
+    . '$(\'#page > h1\').replaceWith(\'<div id="provider-header" class="provider-icon" style="background:none"><span id="provider_header_icon" class="providers_icon ' . $provider . '_icon"></span><h1>' . $provider_name . ' API Resources</h1></div>\');'
+    . '</script>';
+*/
+
+
+  return $output;
+}
+
+/**
+ * Form constructor to display selectbox of API providers.
+ *
+ * @return array
+ */
+function devconnect_wadl_provider_list() {
+
+  // If the user is signed up for exactly one app, redirect them there.
+  $apps = _devconnect_wadl_user_app_list();
+  if (count($apps) == 1) {
+    drupal_goto('resources/' . $apps[0]);
+  }
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l(drupal_get_title(), base_path() . request_uri());
+  drupal_set_breadcrumb($breadcrumb);
+
+  $form['provider'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#title' => 'Select an API',
+    '#options' => _devconnect_wadl_fetch_provider_list(),
+    '#required' => TRUE,
+    '#attributes' => array('required' => 'required'),
+  );
+  $form['actions']["#attributes"]['class'][] = "actions";
+  $form['actions']['#attributes']['class'][] = "clear-block";
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+    "#attributes" => array(
+      "class" => array("btn", "primary")
+    )
+  );
+  return $form;
+}
+
+/**
+ * Submit handler for the above form.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_wadl_provider_list_submit($form, &$form_state) {
+  // Because this has come through Drupal's form API, we can trust the value to be valid.
+  if (!empty($form_state['values']['provider'])) {
+    $form_state['redirect'] = 'resources/' . $form_state['values']['provider'];
+  }
+}
+
+/**
+ * Uses drupal_http_request to fetch a URL.
+ *
+ * @param $url
+ *
+ * @return mixed
+ */
+function _devconnect_wadl_fetch($url) {
+  $response = drupal_http_request($url);
+  if (property_exists($response, 'error')) {
+    throw new Exception($response->error, $response->code);
+  }
+  return $response->data;
+}
+
+/**
+ * Fetches and caches a list of providers, their display names, and their WADL URIs.
+ *
+ * @param bool $get_urls
+ *
+ * @return array
+ */
+function _devconnect_wadl_fetch_provider_list($get_urls = FALSE) {
+  static $provider_list;
+  static $wadl_list;
+
+  if (empty($provider_list)) {
+    $list_document = _devconnect_wadl_fetch('http://api.apigee.com/v1/consoles.json');
+    $list_obj = json_decode($list_document);
+    $provider_list = array();
+    $wadl_list = array();
+    foreach ($list_obj->console as $provider) {
+      $provider_list[$provider->name] = $provider->displayName;
+      $wadl_list[$provider->name] = str_replace('format=wadl', 'format=internal', $provider->wadlUrl);
+    }
+    asort($provider_list);
+  }
+
+  return ($get_urls ? $wadl_list : $provider_list);
+}
+
+/**
+ * Theme function to display a section of the resources page.
+ *
+ * @param $vars
+ *
+ * @return string
+ */
+function theme_wadl_section($vars) {
+  static $verb_classes;
+  if (!isset($verb_classes)) {
+    $verb_classes = array(
+      'GET' => 'blue',
+      'POST' => 'green',
+      'PUT' => 'orange',
+      'DELETE' => 'red'
+    );
+  }
+
+  $rows = array();
+  $caption = $vars['caption'];
+  $contents = $vars['content'];
+
+  $section_id = preg_replace('![^a-z0-9]+!', '-', strtolower($caption));
+
+  $output = '<section id="section_' . $section_id . '" class="devconnect-wadl-section">' . '<h2 class="resource_title expanded_header">'
+    . check_plain($caption) . '</h2>';
+
+  foreach ($contents as $method) {
+    $row = array();
+    $path = str_replace('.{format}', '', $method['path']);
+
+    $classes = array(
+      'lozenge',
+      $verb_classes[$method['http_verb']],
+      ($method['auth_required'] ? 'auth_required' : 'no_auth')
+    );
+
+    // First cell: HTTP verb
+    $row[] = '<span class="' . join(' ', $classes) . '">' . $method['http_verb'] . '</span>';
+    // Second cell: method link (links to console), description, and (in future) param list.
+    // In future, place param list here?
+    $row[] = '<p><a class="set_request" verb="' . $method['http_verb'] . '" href="' . ltrim($path, '/') . '##' . $method['id'] . '">' . $path . '</a></p>'
+      . '<p>' . check_plain($method['description']) . "</p>";
+    // Third cell: link to documentation
+    if (!empty($method['doc_link'])) {
+      $row[] .= l('', $method['doc_link'], array(
+        'class' => 'pop_win',
+        'title' => 'Open documentation in another window'
+      ));
+    }
+    $rows[] = $row;
+  }
+
+  //$output .= kpr(func_get_args(), TRUE);
+
+  return $output . theme('table', array('headers' => array(), 'rows' => $rows)) . '</section>';
+}
+
+function _devconnect_wadl_user_app_list() {
+  global $user;
+  $apps = array();
+  if (!user_is_logged_in()) {
+    return $apps;
+  }
+
+  $dc = new DevConnectApigeeDeveloperApp($user);
+  $results = $dc->GetList();
+  if ($results['code'] == 200 && !empty($results['data']['Apps'])) {
+    $app_names = $results['data']['Apps']['App'];
+    if (!is_array($app_names)) {
+      $app_names = array($app_names);
+    }
+  }
+  $provider_list = _devconnect_wadl_fetch_provider_list();
+  foreach ($app_names as $app_name) {
+    $results = $dc->GetInfo($app_name);
+    if ($results['code'] == 200) {
+      $machine_name = $results['data']['App']['@name'];
+      if (isset($provider_list[$machine_name])) {
+        $apps[] = $machine_name;
+      }
+    }
+  }
+  return $apps;
+}

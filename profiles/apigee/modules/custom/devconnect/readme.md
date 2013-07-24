@@ -1,0 +1,1 @@
+Readme moved to Apigee-Drupal repo: [https://github.com/apigee/apigee-drupal/blob/7.x-1.x/README.md](https://github.com/apigee/apigee-drupal/blob/7.x-1.x/README.md)

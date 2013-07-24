@@ -1,0 +1,102 @@
+<?php
+
+
+
+class DevconnectDeveloperAppsTestCase extends DrupalWebTestCase {
+
+  private $user;
+  private $dc_app;
+  private $app;
+
+  public static function getInfo() {
+	  return array(
+	    'name' => t('Devconnect Developer Apps UI'),
+	    'description' => t('Tests the devconnect_develoepr_apps module\'s UI response to create and destroy an app.'),
+	    'group' => t('Devconnect'),
+	  );
+  }
+
+	public function setUp() {
+		parent::setUp('devconnect_developer_apps_tests');
+		//need connection to remote api
+		$this->user = $this->drupalCreateUser(array('access content'));
+		$this->drupalLogin($this->user);
+    $this->dc_app = new DevConnectApigeeDeveloperApp($this->user);
+	}
+
+  protected function tearDown() {
+    // Make sure remote API deletes this user.
+    user_delete($this->user->uid);
+    parent::tearDown();
+  }
+
+	public function testAppCreation() {
+    $this->app = $this->randomName(16);
+    $edit = array(
+      'machine_name' => $this->app,
+      'callback_url' => 'http://' . $this->randomName(16)
+    );
+
+    // NOTE: when set at all, api_product must be an array because this is a select-multiple field.
+    // TODO: handle situation where client-specific DC instance has set this to non-multiple.
+    $api_product_keys = array_keys($this->dc_app->GetAPIProductsOptions());
+    switch (count($api_product_keys)) {
+      case 0:
+        $this->fail('No API Products are available.');
+        // No API products available.
+        break;
+      case 1:
+        // There is only one API product, so pick it.
+        $edit['api_product'] = array($api_product_keys[0]);
+        break;
+      default:
+        // pick one at random.
+        $edit['api_product'] = array($api_product_keys[mt_rand(0, count($api_product_keys) - 1)]);
+        break;
+    }
+
+    // TODO: handle any required custom attributes in the following form.
+
+    $this->drupalPost('user/' . $this->user->uid . '/apps/add', $edit, t('Create App'), array(), array(), 'devconnect-developer-apps-edit-form');
+
+    // By now, the app should have been created.  Now we will try to fetch it.
+    // If the form submit was successful, it should have redirected to user/<uid>/apps.
+    // This page should contain a link to the newly-created app's detail page.
+    $this->assertLinkByHref('user/' . $this->user->uid . '/app-detail/' . $this->app);
+
+    // make sure consumerKey and consumerSecret are populated.
+    // These only get generated when an API Product is present (I think).
+    if (isset($edit['api_product'])) {
+      $info = $this->dc_app->GetInfo($this->app);
+      $data = $info['data'];
+      if (!isset($data['credentials']) || !is_array($data['credentials']) || empty($data['credentials'])) {
+        $this->fail('App has no credentials section.');
+      }
+      else {
+        $credential = end($data['credentials']);
+        if (!isset($credential['consumerKey']) || strlen($credential['consumerKey']) < 32) {
+          $this->fail('App has missing or malformed consumer key.');
+        }
+        if (!isset($credential['consumerSecret']) || strlen($credential['consumerSecret']) < 16) {
+          $this->fail('App has missing or malformed consumer secret.');
+        }
+        if (count($credential['apiProducts']) != 1 || $credential['apiProducts'][0]['apiproduct'] != $edit['api_product']) {
+          $this->fail('API Product was not correctly set.');
+        }
+      }
+    }
+	}
+
+  public function testAppDeletion() {
+    $this->drupalPost('user/' . $this->user->uid . '/apps/' . $this->app . '/delete', array(), t('Delete App'), array(), array(), 'devconnect_developer_application_delete');
+    // Make sure that the user/<uid>/apps page contains no link to the just-deleted app.
+    $this->assertNoLinkByHref('user/' . $this->user->uid . '/app-detail/' . $this->app);
+
+    // Now query it on the 4G side as well.
+    $info = $this->dc_app->GetInfo($this->app);
+    if ($info['code_class'] != 4) {
+      $this->fail('App ' . $this->app . ' has not been deleted from 4G. Expecting HTTP code of 404; received ' . $info['code'] . '.');
+    }
+    $this->app = NULL;
+  }
+}

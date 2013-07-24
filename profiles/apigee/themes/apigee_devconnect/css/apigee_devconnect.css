@@ -1,0 +1,572 @@
+html,
+body {
+	height: 100%;
+}
+
+/* Bootstrap */
+.caret{
+	opacity: 0.5;
+}
+
+/* Search */
+.navbar-search .search-query:-moz-placeholder{
+	color: #e5e5e5;
+}
+
+/* Navigation */
+.navbar .nav > li > a,
+.navbar .nav > li > span {
+	float: none;
+	padding: 18px 10px 19px;
+	line-height: 19px;
+	height: 19px;
+	color: white;
+	text-decoration: none;
+}
+.navbar .nav > li > a:hover, .navbar .nav > li > a.active {
+  background-color: #E02E01;
+	color: white;
+	text-decoration: none;
+}
+.navbar.navbar-fixed-top #main-menu li a:hover {
+  background: #e02e01;
+}
+.nav-tabs > li > a{
+	font-weight: 600;
+	font-size: 15px;
+}
+.navbar.navbar-fixed-top, .main-nav.navbar-inner{
+  background-color: #d64526;
+}
+.main-nav.navbar-inner{
+  height: 42px;
+}
+.main-nav.navbar-inner .nav > li > a {
+  padding: 10px 9px;
+}
+.navbar .brand {
+	float: left;
+	display: block;
+	padding: 15px 10px;
+	margin-left: -20px;
+	font-size: 20px;
+	font-weight: 200;
+	line-height: 1;
+	color: white;
+}
+.navbar .nav > li > a, .navbar .nav > li > span {
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 21px;
+  text-shadow: none;
+}
+
+/* Homepage */
+.front #block-system-main{
+	clear: both;
+	display: none;
+}
+.front .page-header{
+	height: 250px;
+}
+.front .title{
+	background: white;
+	border: 1px solid #E8E8E8;
+	border-top: none;
+	color: #484848;
+	font-size: 18px;
+	padding: 2px 14px 10px 14px;
+	position: relative;
+	top: -21px;
+}
+.front .title h1{
+	color: #484848;
+	font-size: 23px;
+	line-height: 27px;
+	margin: 0;
+	padding: 0;
+}
+h2.subtitle{
+	font-size: 16px;
+	line-height: 16px;
+	margin-top: 5px;
+}
+span.welcome{
+	font-size: 36px;
+	font-weight: 600;
+	letter-spacing: 1px;
+	line-height: 48px;
+}
+.page-header-content{
+	position: absolute;
+	top: 0;
+	width: 100%
+}
+.page-header .get{
+	color: #C9C9C9;
+	float: left;
+	font-family: "Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;
+	font-size: 171px;
+	font-weight: 600;
+	line-height: 165px;
+	position: relative;
+	top: 68px;
+	width: 37%;
+}
+.page-header .buttons{
+	float: left;
+	left: 15px;
+	position: relative;
+	width: 32%;
+}
+.home-header-btn{
+	background: #f4f4f4;
+	border: 1px solid #b6bfc3;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	font-size: 24px;
+	margin-bottom: 18px;
+	position: relative;
+}
+.home-header-btn:hover{
+	box-shadow: 0px 0px 10px #AAA;
+}
+.home-header-btn a{
+	color: #484848;
+	display: block;
+	padding: 25px 12px;
+}
+.home-header-btn a:hover{
+	text-decoration: none;
+}
+.home-header-btn .first-word {
+	font-size: 28px;
+	font-weight: 600;
+	margin-bottom: 10px;
+}
+.home-header-btn .iconbtn {
+	background-image: url(/sites/all/themes/apigee_base/images/enterprise-sprites.png);
+	height: 30px;
+	position: absolute;
+  right: 15px;
+  top: 28px;
+	width: 30px;
+}
+.home-header-btn .iconbtn.document {
+	background-position: -240px -330px;
+}
+.home-header-btn .iconbtn.key{
+	background-position: -120px -330px;
+	padding: 0;
+}
+.home-img{
+	float: left;
+	left: 35px;
+	position: relative;
+	width: 31%;
+}
+.front .page-content .container{
+	background: url(/sites/all/themes/apigee_devconnect/images/homepage-content-bg.png) repeat-y scroll 0 0 transparent;
+}
+.front .span24 .block{
+	float: left;
+}
+.develop-with-these{
+	padding-right: 25px;
+	width: 34%;
+}
+.forum-discussions{
+	padding: 0 15px;
+	width: 31%;
+}
+.recent-blog-posts{
+	padding-left: 20px;
+	width: 27%;
+}
+.develop-with-these h2{
+	font-size: 26px;
+	font-weight: 600;
+	margin-bottom: 15px;
+}
+.develop-with-these h3{
+  color: #137AAA;
+  font-size: 18px;
+  font-weight: 600;
+  padding-bottom: 5px;
+  padding-left: 50px;
+}
+.develop-with-these p{
+	padding-left: 50px;
+	margin-top: -5px;
+}
+.starter h3{
+	background: url(../images/gear-green.png) no-repeat scroll 0 0 transparent;
+}
+.provider h3{
+	background: url(/sites/all/themes/apigee_devconnect/images/gear-purple.png) no-repeat scroll 0 0 transparent;
+}
+#block-views-home-featured-forum-posts-block h2,
+#block-views-recent-blog-posts-block-1 h2{
+	font-size: 18px;
+	font-weight: 600;
+	margin-bottom: 15px;
+}
+.view-home-featured-forum-posts .views-row{
+	border-bottom: 1px solid #e3e3e3;
+	margin-bottom: 10px;
+	padding-bottom: 10px;
+	position: relative;
+}
+.view-home-featured-forum-posts .views-field-last-updated{
+	width: 230px;
+}
+.view-home-featured-forum-posts .views-field-comment-count{
+	position: absolute;
+	right: 0;
+	top: 0;
+}
+.view-home-featured-forum-posts .views-field-comment-count a{
+	background: url(/sites/all/themes/apigee_devconnect/images/comment-icon.png) no-repeat scroll 0 0 transparent;
+	padding-left: 35px;
+}
+.view-recent-blog-posts .views-row{
+	clear: both;
+	position: relative;
+}
+span.blog-icon{
+	background: url(/sites/all/themes/apigee_devconnect/images/blog-icon.png) no-repeat scroll 0 0 transparent;
+  display: inline-block;
+  height: 19px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 17px;
+}
+.view-recent-blog-posts .views-field-created-1{
+	background: none repeat scroll 0 0 #FAFAFA;
+	border: 1px solid #D6D6D6;
+	border-radius: 5px 5px 5px 5px;
+	-moz-border-radius: 5px 5px 5px 5px;
+	-webkit-border-radius: 5px 5px 5px 5px;
+	color: #959595;
+	float: left;
+	padding: 1px;
+	text-align: center;
+	width: 35px;
+}
+.view-recent-blog-posts .views-field-body{
+	float: right;
+  width: 210px;
+}
+
+/* Main Body */
+#block-system-main{
+	position: relative;
+}
+
+/* Documentation */
+#documentation ul{
+	margin: 5px 0px 15px;
+}
+#documentation li{
+	list-style: none;
+	margin-bottom: 5px;
+}
+#documentation li a{
+	font-size: 15px;
+}
+
+/* Blog */
+#block-views-hot-topics-block h2{
+	background: url(/sites/all/themes/apigee_devconnect/images/hot-icon.png) no-repeat scroll 110px center transparent;
+}
+.view-hot-topics .views-row ul{
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.view-hot-topics .views-row li{
+	margin-bottom: 5px;
+}
+
+/* Comments */
+#comments article{
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #E4E4E4;
+}
+#comments .indented article{
+  padding-left: 20px;
+}
+
+/* My Apps */
+#devconnect-developer-apps-edit-form label{
+	font-weight: 600;
+}
+.add-app{
+	background-color: #f3f3f4;
+  background-image: -moz-linear-gradient(top, #ffffff, #f3f3f4);
+  background-image: -ms-linear-gradient(top, #ffffff, #f3f3f4);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#f3f3f4));
+  background-image: -webkit-linear-gradient(top, #ffffff, #f3f3f4);
+  background-image: -o-linear-gradient(top, #ffffff, #f3f3f4);
+  background-image: linear-gradient(top, #ffffff, #f3f3f4);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f3f3f4', GradientType=0);
+  background: url(/sites/all/themes/apigee_devconnect/images/add-icon.png) no-repeat 132px 12px;
+	border: 1px solid #b7c0c5;
+	border-radius: 5px 5px 5px 5px;
+	-moz-border-radius: 5px 5px 5px 5px;
+	-webkit-border-radius: 5px 5px 5px 5px;
+	box-shadow: 0px 0px 7px #DDDDDD;
+	color: #3C3D3C;
+	font-size: 15px;
+	font-weight: 600;
+	position: absolute;
+	right: 0;
+	top: 0;
+	padding: 15px 48px 15px 20px;
+}
+.add-app:hover{
+	text-decoration: none;
+}
+.app-content{
+	float: left;
+	margin-bottom: 0;
+	width: 90%;
+	padding: 15px 0px;
+	border-bottom: 1px solid #EEE;
+}
+hr{
+	clear: both;
+}
+h4.app-title{
+	color: #167bab;
+	font-size: 24px;
+	margin-bottom: 15px;
+	text-transform: capitalize;
+}
+h4.app-title a:hover{
+	text-decoration: none;
+}
+div.app-info-wrapper {
+    display: inline-block;
+    margin-right: 3em;
+}
+h4.app-product-title{
+	color: #3c3c3c;
+	font-size: 24px;
+	line-height: 24px;
+	margin-bottom: 5px;
+	text-transform: capitalize;
+}
+div.apiproduct-status {
+  color: #3c3c3c;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.app-desc{
+	font-size: 15px;
+}
+.api-credentials-list-item-caption{
+	float: left;
+	font-weight: 600;
+}
+.app-delete{
+	float: right;
+	width: 10%;
+}
+.app-delete button,
+.app-delete button:hover{
+	background: url(/sites/all/themes/apigee_devconnect/images/delete-icon.png) no-repeat;
+	border: none;
+	float: right;
+	height: 15px;
+	width: 15px;
+}
+.cancel-link{
+	margin-left: 10px;
+}
+
+/* App Details */
+.key{
+	border-top: 1px dashed #e9eaeb;
+	border-bottom: 1px dashed #e9eaeb;
+	padding: 10px 0px 10px 10px;
+}
+.app-details h3{
+	font-size: 18px;
+	font-weight: 600;
+}
+.key .key-label{
+	font-size: 16px;
+	font-weight: 600;
+	margin-right: 25px;
+	width: 175px;
+	display: inline-block;
+	text-align: right;
+}
+
+/* App Performance */
+#performance .form-label{
+	float: left;
+	font-weight: bold;
+	margin-top: 6px;
+	margin-right: 5px;
+}
+#performance select#display{
+	border: 1px solid #B7C0C5;
+	border-radius: 5px;
+	float: left;
+}
+#performance .btn{
+	background-color: #f3f3f4;
+	background-image: -moz-linear-gradient(top, #ffffff, #f3f3f4);
+	background-image: -ms-linear-gradient(top, #ffffff, #f3f3f4);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#f3f3f4));
+	background-image: -webkit-linear-gradient(top, #ffffff, #f3f3f4);
+	background-image: -o-linear-gradient(top, #ffffff, #f3f3f4);
+	background-image: linear-gradient(top, #ffffff, #f3f3f4);
+	color: #353735;
+}
+#performance .export{
+	border: 1px solid #B7C0C5;
+	border-radius: 5px;
+	margin-bottom: 10px;
+}
+.analytics-form .control-group{
+	float: left;
+	margin-right: 15px;
+}
+.analytics-form #edit-submit{
+	margin-top: 23px;
+}
+#performance .btn.active,
+#performance .btn:active{
+	color: #3c3d3c;
+}
+#performance #edit-date-from,
+#performance #edit-date-to{
+	background-image: url(/sites/all/themes/apigee_devconnect/images/cal-icon.png);
+	background-repeat: no-repeat;
+	background-position: 155px 3px;
+}
+
+/* User Registration Form */
+.page-user-register .checkbox input[type="checkbox"]{
+	margin-left: -10px;
+	margin-right: 10px;
+}
+.page-user-register .control-label,
+.page-user-edit .control-label{
+	font-size: 18px;
+	font-weight: 600;
+}
+.page-user-edit .option.radio.control-label,
+.page-user-edit .option.checkbox.control-label{
+	font-size: 13px;
+	font-weight: 500;
+}
+.page-user-register .form-item-field-terms-and-conditions-und .control-label{
+	font-size: 13px;
+	font-weight: 500;
+	padding-left: 10px;
+}
+.page-user-edit .control-group.form-item-name,
+.page-user-edit .control-group.form-item-field-last-name-und-0-value,
+.page-user-edit .control-group.form-item-current-pass,
+.page-user-edit .control-group.form-item-mail,
+.page-user-edit .control-group.form-item-pass,
+.page-user-edit .control-group.form-item-status,
+.page-user-edit .control-group.form-item-roles,
+.page-user-edit .control-group.form-openid,
+.page-user-edit .control-group.form-item-timezone{
+	border-bottom: 1px solid #DDD;
+	margin-bottom: 18px;
+	padding-bottom: 18px;
+}
+.page-user-edit .control-group .control-group{
+	border: none;
+	margin: 0;
+	padding: 0;
+}
+.page-user-edit fieldset{
+	margin-bottom: 0;
+}
+.page-user-edit legend{
+	border-bottom: none;
+	margin-bottom: 5px;
+}
+.page-user .form-actions .btn{
+	margin-right: 10px;
+}
+.page-user .password-strength-text {
+	left: 120px;
+	position: absolute;
+}
+
+/* User Login Form */
+ul.openid-links{
+	margin: 0 0 10px 0;
+}
+
+/* User Edit Form */
+#edit-timezone a.fieldset-title,
+#edit-metatags,
+#edit-redirect{
+	display: none;
+}
+
+/* Links */
+ul.dropdown-menu{
+	padding-left: 10px;
+}
+ul.dropdown-menu a{
+	display: inline-block;
+}
+
+/* Footer */
+.footer.navbar-fixed-bottom {
+  bottom: auto;
+  position: relative;
+}
+.footer .footer-inner {
+  background: none repeat scroll 0 0 #FAFAFA;
+	border-top: medium none;
+	box-shadow: 0 6px 6px -4px rgba(0, 0, 0, 0.05) inset;
+	color: #1d7ca7;
+	opacity: 1;
+}
+.footer-inner .navbar-inner{
+	height: auto;
+}
+.footer .footer-inner .navbar .navbar-inner .container{
+	padding: 0;
+}
+.footer-inner a{
+	color: #FFFFFF;
+}
+
+/* Errors */
+div.error{
+	background: none;
+}
+.front .region-highlighted { clear:both; float: none; overflow:hidden; }
+
+input{
+	line-height: 16px !important;
+}
+
+/* css for timepicker */
+.ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
+.ui-timepicker-div dl { text-align: left; }
+.ui-timepicker-div dl dt { height: 25px; margin-bottom: -25px; }
+.ui-timepicker-div dl dd { margin: 0 10px 10px 65px; }
+.ui-timepicker-div td { font-size: 90%; }
+.ui-tpicker-grid-label { background: none; border: none; margin: 0; padding: 0; }
+
+.ui-timepicker-rtl{ direction: rtl; }
+.ui-timepicker-rtl dl { text-align: right; }
+.ui-timepicker-rtl dl dd { margin: 0 65px 10px 10px; }

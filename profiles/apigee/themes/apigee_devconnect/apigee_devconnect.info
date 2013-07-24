@@ -1,0 +1,36 @@
+name = Apigee DevConnect Theme
+description = ..
+core = 7.x
+base theme = apigee_base
+
+regions[header]         = 'Top Bar'
+regions[homepage_header]= 'Homepage Header'
+regions[highlighted]    = 'Highlighted'
+regions[help]           = 'Help'
+regions[content]        = 'Content'
+regions[sidebar_first]  = 'Primary'
+regions[sidebar_second] = 'Secondary'
+regions[footer]         = 'Footer'
+
+stylesheets[all][] = css/apigee_devconnect.css
+stylesheets[screen and (min-width : 1600px)][] = css/apigee_devconnect_wide_layout.css
+stylesheets[all][] = css/daterangepicker.css
+
+scripts[] = js/global.js
+scripts[] = js/jquery-ui-timepicker-addon.js
+
+settings[toggle_name] = 0
+settings[toggle_search] = 1
+
+settings[header_bg_color] = #FF4300
+settings[header_txt_color] = #FFFFFF
+settings[header_hover_bg_color] = #E02E01
+settings[header_hover_txt_color] = #FFFFFF
+settings[link_color] = #137AAA
+settings[link_hover_color] = #0B4965
+settings[footer_bg_color] = #FFFFFF
+settings[footer_link_color] = #0B4965
+settings[footer_link_hover_color] = #0B4965
+settings[button_background_color] = #009FD0
+settings[button_text_color] = #FFFFFF
+settings[wide_layout] = 1

@@ -1,0 +1,177 @@
+<?php
+require_once (dirname(__FILE__) . '/ManagementAPITestCase.php');
+
+use Apigee\Exceptions\ResponseException as ResponseException;
+
+class DeveloperAppTestCase extends ManagementAPITestCase {
+
+  /**
+   * @var Apigee\ManagementAPI\Developer
+   */
+  private $developer;
+
+  /**
+   * @var Apigee\ManagementAPI\DeveloperApp
+   */
+  private $app;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Devconnect Developer App'),
+      'description' => t('Tests CRUD operations on Developer Apps.'),
+      'group' => t('Devconnect'),
+    );
+  }
+
+  protected function setUp() {
+    parent::setUp();
+    $developer = new Apigee\ManagementAPI\Developer($this->client);
+
+    $username = $this->randomName(10);
+    $first_name = $this->randomName();
+    $last_name = $this->randomName();
+    $email = "$username@example.com";
+
+    $developer->set_user_name($username);
+    $developer->set_email($email);
+    $developer->set_first_name($first_name);
+    $developer->set_last_name($last_name);
+    $developer->set_status('active');
+
+    $developer->save();
+    $this->developer =& $developer;
+
+    $this->app = new Apigee\ManagementAPI\DeveloperApp($this->client, $this->developer, $this->double_escape_urls);
+  }
+
+  protected function tearDown() {
+    $this->developer->delete();
+    parent::tearDown();
+  }
+
+  public function testDeveloperAppList() {
+    try {
+      $list = $this->app->get_list();
+    }
+    catch (ResponseException $e) {
+      $this->fail($e->getMessage());
+      return;
+    }
+    $this->verbose('DeveloperApp list: ' . join(', ', $list));
+    if (!is_array($list)) {
+      $this->fail('DeveloperApp->get_list() did not result in an array.');
+      return;
+    }
+    $this->pass('DeveloperApp->get_list() resulted in an array of length ' . count($list));
+
+    try {
+      $list = $this->app->get_list_detail();
+    }
+    catch (ResponseException $e) {
+      $this->fail($e->getMessage());
+      return;
+    }
+    if (!is_array($list)) {
+      $this->fail('DeveloperApp->get_list_detail() did not result in an array.');
+      return;
+    }
+    $this->pass('DeveloperApp->get_list_detail() resulted in an array of length ' . count($list));
+  }
+
+  public function testDeveloperAppCrud() {
+    $app =& $this->app;
+
+    $api_product = new Apigee\ManagementAPI\APIProduct($this->client, $this->double_escape_urls);
+    $api_product_list = $api_product->list_products();
+    shuffle($api_product_list);
+
+    $app_name = $this->randomName(10);
+    $access_type = 'read';
+    $callback_url = 'http://' . $this->randomName(16) . '.fake/hello-world';
+    $api_products = array($api_product_list[0]);
+
+    // Create app
+    $app->set_name($app_name);
+    $app->set_access_type($access_type);
+    $app->set_api_products($api_products);
+    $app->set_callback_url($callback_url);
+    $app->set_attribute('foo', 'bar');
+
+    try {
+      $app->save();
+      $this->verbose('App ' . $app_name . ' created');
+    }
+    catch (ResponseException $e) {
+      $this->fail($e->getMessage());
+      return;
+    }
+    $consumer_key = $app->get_consumer_key();
+    $consumer_secret = $app->get_consumer_secret();
+
+    // Load app
+    $app->blank_values();
+    try {
+      $app->load($app_name);
+      $this->verbose('App ' . $app_name . ' loaded');
+    }
+    catch (ResponseException $e) {
+      $this->fail($e->getMessage());
+      return;
+    }
+    $this->assertEqual($app_name, $app->get_name(), 'Name matches');
+    $this->assertEqual($access_type, $app->get_access_type(), 'Access type matches');
+    $this->assertEqual($api_products, $app->get_api_products(), 'API Products match');
+    $this->assertEqual($callback_url, $app->get_callback_url(), 'Callback URL matches');
+    $this->assertEqual('bar', $app->get_attribute('foo'), 'Attributes match');
+    $new_api_products = $app->get_api_products();
+    if (count($new_api_products) == 1 && $new_api_products[0] == $api_product_list[0]) {
+      $this->pass('API Products list matches');
+    }
+    else {
+      $this->fail('API Products list does not match.');
+      return;
+    }
+
+    // Update app
+    $api_products[] = $api_product_list[1];
+    $app->set_api_products($api_products);
+    try {
+      $app->save();
+      $this->verbose('App ' . $app_name . ' updated');
+    }
+    catch (ResponseException $e) {
+      $this->fail($e->getMessage());
+      return;
+    }
+    $this->assertEqual($consumer_key, $app->get_consumer_key(), 'Consumer Key is unchanged');
+    $this->assertEqual($consumer_secret, $app->get_consumer_secret(), 'Consumer Secret is unchanged');
+    $new_api_products = $app->get_api_products();
+    if (count($new_api_products) == 2 && $new_api_products[0] == $api_product_list[0] && $new_api_products[1] == $api_product_list[1]) {
+      $this->pass('API Products list matches');
+    }
+    else {
+      $this->fail('API Products list does not match.');
+      return;
+    }
+
+    // Try deleting app
+    try {
+      $app->delete();
+      $this->verbose('App ' . $app_name . ' deleted');
+    }
+    catch (ResponseException $e) {
+      $this->fail('Delete failed: ' . $e->getMessage());
+      return;
+    }
+    // Now make sure app is gone
+    try {
+      $app->load($app_name);
+      $this->fail('App ' . $app_name . ' was not successfully deleted.');
+      return;
+    }
+    catch (ResponseException $e) {}
+
+    $this->pass('Developer App successfully created, retrieved, updated and deleted.');
+  }
+
+}

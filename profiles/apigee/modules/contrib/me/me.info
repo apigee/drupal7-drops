@@ -1,0 +1,22 @@
+;$Id$
+name = 'me' Aliases
+description = Provides links to current user's pages using 'me' instead of the numerical user id.
+core = 7.x
+
+dependencies[] = token
+
+files[] = me.install
+files[] = me.module
+
+; Views
+files[] = includes/views/me.views.inc
+
+; Views handlers
+files[] = includes/views/handlers/me_plugin_argument_validate_me_alias.inc
+
+; Information added by drupal.org packaging script on 2012-06-27
+version = "7.x-1.1"
+core = "7.x"
+project = "me"
+datestamp = "1340782599"
+

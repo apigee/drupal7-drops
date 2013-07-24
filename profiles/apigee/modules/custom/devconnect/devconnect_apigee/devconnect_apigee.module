@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Devconnect_apigee main module file
+ */
+
+/**
+ * Encrypts a password according to a predefined algorithm/key
+ *
+ * @deprecated
+ * use Apigee\Util\Crypto::encrypt() instead.
+ *
+ * @param $password
+ * @return string
+ */
+function devconnect_apigee_auth_encrypt($password) {
+  _devconnect_warn_deprecated();
+  return Apigee\Util\Crypto::encrypt($password);
+}
+
+/**
+ * Decrypts a password
+ *
+ * @deprecated
+ * use Apigee\Util\Crypto::decrypt() instead.
+ *
+ * @param $scrambled
+ * @return string
+ */
+function devconnect_apigee_auth_decrypt($scrambled) {
+  _devconnect_warn_deprecated();
+  return Apigee\Util\Crypto::decrypt($scrambled);
+}
+
+/**
+ * Reads and decrypts username:password pair.
+ *
+ * @deprecated
+ * use devconnect_get_endpoint_auth() instead.
+ *
+ * @param null|string $curl_auth
+ * @return string
+ */
+function devconnect_apigee_get_curl_auth($curl_auth = NULL) {
+  _devconnect_warn_deprecated();
+  return devconnect_get_endpoint_auth($curl_auth);
+}
+
+/**
+ * Encrypts password portion of username:password.
+ *
+ * @deprecated
+ * use devconnect_encrypt_endpoint_auth() instead.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_apigee_encrypt_curlauth($form, &$form_state) {
+  _devconnect_warn_deprecated();
+  return devconnect_encrypt_endpoint_auth($form, $form_state);
+}

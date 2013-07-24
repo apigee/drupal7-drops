@@ -1,0 +1,107 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the block_class module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function block_class_schema() {
+  $schema['block_class'] = array(
+    'fields' => array(
+      'module' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The module to which the block belongs.',
+      ),
+      'delta' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "The ID of the module's block.",
+      ),
+      'css_class' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'String containing the classes for the block.',
+      ),
+    ),
+    'primary key' => array('module', 'delta'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Alters the structure of {block_class} schema.
+ */
+function block_class_update_7100() {
+  // Update the schema.
+  db_drop_primary_key('block_class');
+
+  db_change_field('block_class', 'module', 'module',
+    array(
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => TRUE,
+      'default' => '',
+      'description' => 'The module to which the block belongs.',
+    )
+  );
+
+  db_change_field('block_class', 'delta', 'delta',
+    array(
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => TRUE,
+      'default' => '',
+      'description' => "The ID of the module's block.",
+    )
+  );
+
+  db_change_field('block_class', 'css_class', 'css_class',
+    array(
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => TRUE,
+      'default' => '',
+      'description' => 'String containing the classes for the block.',
+    )
+  );
+
+  // Restore the primary key.
+  db_add_primary_key('block_class', array('module', 'delta'));
+}
+
+/**
+ * Fix too long primary key length in {block_class}.
+ */
+function block_class_update_7101() {
+  // Drop current primary key.
+  db_drop_primary_key('block_class');
+
+  db_change_field('block_class', 'module', 'module', array(
+    'type' => 'varchar',
+    'length' => 64,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The module to which the block belongs.',
+  ));
+  db_change_field('block_class', 'delta', 'delta', array(
+    'type' => 'varchar',
+    'length' => 32,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => "The ID of the module's block.",
+  ));
+
+  // Create new primary key.
+  db_add_primary_key('block_class', array('module', 'delta'));
+}

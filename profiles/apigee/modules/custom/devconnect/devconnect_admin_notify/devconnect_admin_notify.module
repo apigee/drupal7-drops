@@ -1,0 +1,186 @@
+<?php
+/**
+ * @file
+ * Installation file for the devconnect_admin_notify module.
+ */
+
+if (!defined('DEVCONNECT_ADMIN_NOTIFY_SUBJECT')) {
+  define('DEVCONNECT_ADMIN_NOTIFY_SUBJECT', t('Account details for !user_name at !site'));
+}
+
+if (!defined('DEVCONNECT_ADMIN_NOTIFY_BODY')) {
+  define('DEVCONNECT_ADMIN_NOTIFY_BODY', t("!user_name (!user_view) has !action account.\n\nEdit user: !user_edit\n\nDelete User: !user_delete\n\nUser Status: !approved\n\n"));
+}
+
+/**
+ * Implements hook_help().
+ */
+function devconnect_admin_notify_help($path, $arg) {
+  if ($path == 'admin/help#devconnect_admin_notify') {
+    return '<p>' .
+      t('This module provides a way for an administrator to get' .
+        'an email when a user account is created. ' .
+        'It assumes that the Drupal mailer is configured.') .
+      '</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function devconnect_admin_notify_menu() {
+  $items['admin/config/people/admin_notify'] = array(
+    'title' => t('Admin Notification'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_admin_notify_settings'),
+    'description' => 'Configure the DevConnect admin notification module.',
+    'file' => 'devconnect_admin_notify.admin.inc',
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function devconnect_admin_notify_user_insert(&$edit, &$account, $category = NULL) {
+  if ($account->status) {
+    devconnect_admin_notify_setup_email($edit, $account);
+  }
+}
+
+/**
+ * Implements hook_user_update().
+ */
+function devconnect_admin_notify_user_update(&$edit, &$account, $category = NULL) {
+  if (variable_get('devconnect_admin_notify_alert', 'create') == 'update') {
+    devconnect_admin_notify_setup_email($edit, $account, 'update');
+  }
+}
+
+/**
+ * Generates the mail format.
+ */
+function devconnect_admin_notify_setup_email(&$edit, &$account, $action = 'insert') {
+  // Notify administrator of new user only if this is not first user and
+  // if visitors can create accounts without administrator's approval.
+  // In case when accounts must be created with administrator's approval
+  // there is already a 'pending approval' e-mail notification.
+  if ($account->uid != 1 && (variable_get('user_register', 1) == 1 ? $account->status : !$account->status)) {
+    $params = array(
+      'account' => $account,
+      'action' => $action,
+    );
+    $emails = _devconnect_admin_notify_get_receiver_mails();
+    if (empty($emails)) {
+      return;
+    }
+    $to = implode(', ', $emails);
+    // watchdog('devconnect_admin_notify', check_plain($to));
+    drupal_mail(
+      'devconnect_admin_notify',
+      'user-register-notify-admin',
+      $to,
+      language_default(),
+      $params,
+      variable_get('site_mail', NULL),
+      TRUE // Automatically send
+    );
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function devconnect_admin_notify_mail($key, &$message, $params) {
+  if ($key == 'user-register-notify-admin') {
+    $uaccount = $params['account'];
+    if ($params['action'] == 'insert') {
+      $action = 'created';
+    }
+    else {
+      $action = 'updated';
+    }
+    $variables = _devconnect_admin_notify_get_variables($uaccount, $action);
+
+    $message['subject'] = t(variable_get('devconnect_admin_notify_subject', DEVCONNECT_ADMIN_NOTIFY_SUBJECT), $variables);
+    $body = t(variable_get('devconnect_admin_notify_body', DEVCONNECT_ADMIN_NOTIFY_BODY), $variables);
+    $message['body'] [] = token_replace($body, array('user' => $uaccount));
+  }
+}
+
+/**
+ * Generates the receiver mail addresses.
+ * @return array
+ */
+function _devconnect_admin_notify_get_receiver_mails() {
+  $notify_type = variable_get('devconnect_admin_notify_type', 'Custom');
+  $emails = array();
+  $valid_emails = array();
+  switch ($notify_type) {
+    case 'Custom':
+      $emails = explode(',', variable_get('devconnect_admin_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
+      break;
+    case 'Both':
+      $emails = explode(',', variable_get('devconnect_admin_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
+    // There is no break here for a reason.
+    case 'Role':
+      $roles = implode(',', variable_get('devconnect_admin_notify_roles', array()));
+      if (!empty($roles)) {
+        $result = db_query("SELECT mail FROM {users} AS u INNER JOIN {users_roles} AS r ON u.uid = r.uid WHERE r.rid IN(:role) and u.status = '1' ", array(':role' => $roles));
+        while ($mail = $result->fetchObject()) {
+          $emails[] = $mail->mail;
+        }
+      }
+      break;
+  }
+  $emails = array_unique($emails);
+  foreach ($emails as $email) {
+    if (valid_email_address($email)) {
+      $valid_emails[] = $email;
+    }
+  }
+  return $valid_emails;
+}
+
+/**
+ * Generates the token values used in the mail.
+ *
+ * @param stdClass $uaccount
+ * @param string $action
+ * @return array
+ */
+function _devconnect_admin_notify_get_variables($uaccount, $action) {
+  global $base_url;
+  $variables['!user_name'] = isset($uaccount->realname) ? $uaccount->realname : $uaccount->name;
+  $variables['!user_mail'] = $uaccount->mail;
+  $variables['!user_view'] = url('user/' . $uaccount->uid, array('absolute' => TRUE));
+  $variables['!user_edit'] = url('user/' . $uaccount->uid . '/edit', array('absolute' => TRUE));
+  $variables['!user_delete'] = url('user/' . $uaccount->uid . '/delete', array('absolute' => TRUE));
+  $variables['!approved'] = $uaccount->status ? 'approved' : 'blocked';
+  $variables['!site'] = variable_get('site_name', 'Drupal');
+  $variables['!user_uid'] = $uaccount->uid;
+  $variables['!uri'] = $base_url;
+  $variables['!uri_brief'] = drupal_substr($base_url, drupal_strlen('http://'));
+  $variables['!date'] = format_date(REQUEST_TIME);
+  $variables['!action'] = check_plain($action);
+  return $variables;
+}
+
+/**
+ * Implements hook_mail_alter().
+ * Alters notification mail triggered to admin when user registration is in manual process
+ */
+function devconnect_admin_notify_mail_alter(&$message) {
+  if ($message['id'] == 'user_register_pending_approval_admin') {
+    $uaccount = $message['params']['account'];
+    $emails = _devconnect_admin_notify_get_receiver_mails();
+    if (!empty($emails)) {
+      $message['to'] = implode(', ', $emails);
+    }
+    $variables = _devconnect_admin_notify_get_variables($uaccount, 'created');
+    $body = t(variable_get('devconnect_admin_notify_body', DEVCONNECT_ADMIN_NOTIFY_BODY), $variables);
+    $message['subject'] = t(variable_get('devconnect_admin_notify_subject', DEVCONNECT_ADMIN_NOTIFY_SUBJECT), $variables);
+    $message['body'] [] = token_replace($body, array('user' => $uaccount));
+  }
+}

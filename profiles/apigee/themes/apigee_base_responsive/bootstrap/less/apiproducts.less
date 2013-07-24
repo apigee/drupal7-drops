@@ -1,0 +1,188 @@
+em {
+    font-style: normal;
+    font-weight: bold;
+}
+
+.header {
+
+    padding: 20px 0 30px 20px;
+    border-top: 1px solid rgb(229,229,229);
+    border-bottom: 1px solid rgb(229,229,229);
+    background: #FAFAFA;
+
+    h1 {
+        margin: 0px;
+//        font-size: 40px;
+    }
+    p {
+        margin: 0px;
+    }
+}
+
+.body {
+    padding:20px;
+}
+
+form {
+    .third {
+
+        fieldset {
+            padding-top: 0px;
+        }
+
+        width: 290px;
+
+        float: left;
+        vertical-align:top;
+        legend {
+            background-color: rgb(243,243,243);
+            border-top: 1px solid rgb(229,229,229);
+            border-bottom: 1px solid rgb(229,229,229);
+            border-left: 1px solid rgb(229,229,229);
+
+            font-size: 12px;
+            width: 270px;
+            padding: 10px;
+            height: 20px;
+            line-height: 20px;
+            font-weight: bold;
+
+            &.last-element {
+                border-right: 1px solid rgb(229,229,229);
+            }
+        }
+        .form-stacked {
+            padding-left: 0px;
+        }
+
+        .quota {
+            input {
+               width: 50px;
+            }
+            #timeUnit {
+                width: 90px;
+            }
+        }
+    }
+    .fieldsetContent {
+        height: 250px;
+        padding: 15px;
+        border-left: 1px dotted rgb(229,229,229);
+    }
+    .fieldsetContent.first-element {
+        border-left: none;
+    }
+    .third.last-element {
+        width: 318px;
+
+        legend {
+            width: 298px;
+        }
+    }
+}
+
+#addApiSpin {
+    display: inline-block;
+    margin-right: 5px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+#apiResourcesTable, #disabledApiResourcesTable {
+    width: 100%;
+    thead {
+        background: #F3F3F3;
+        border: 1px solid #E2E2E2;
+        tr {
+            th {
+                padding: 10px 0;
+
+                &:first-child {
+                    border-right: 1px solid #E2E2E2;
+                    width: 159px;
+                }
+                &:last-child {
+                    width: 65px;
+                }
+                &.select-api-container {
+                    width: 275px;
+                }
+                &.select-resources-container {
+                    width: 275px;
+                    position: relative;
+                }
+            }
+        }
+        select {
+            margin-bottom: 0px;
+        }
+
+//        tr
+    }
+    tbody {
+        border-left: 1px dotted #E2E2E2;
+        border-right: 1px dotted #E2E2E2;
+        border-bottom: 1px solid #E2E2E2;
+        // this triggers a bug on firefox when hiding rows
+//        tr:hover {
+//            background: #F3F3F3;
+//        }
+
+        tr {
+            td {
+                padding: 5px 10px;
+            }
+
+            &.disabled {
+                background: #f4f4f4;
+            }
+        }
+
+        .icon-container {
+            position: relative;
+            width: 100%;
+
+            a {
+                text-indent: -9999px;
+                width: 19px;
+                height: 19px;
+                display: inline-block;
+                position: absolute;
+            }
+
+        }
+    }
+
+    a {
+        font-weight: bold;
+
+        &.remove-path  {
+            background: url('/public/images/disable-product.png') no-repeat;
+            right: 10px;
+            top: 2px;
+        }
+        &.add-path  {
+            background: url('/public/images/add-product.png') no-repeat;
+            right: 10px;
+            top: 2px;
+        }
+        &.collapse  {
+            background: url('/public/images/collapse.png') no-repeat;
+            right: 35px;
+        }
+        &.expand {
+            background: url('/public/images/expand.png') no-repeat;
+        }
+    }
+
+    .message {
+        line-height: 28px;
+    }
+}
+
+#editApiProductForm {
+    .form-actions {
+        text-align: right;
+    }
+}

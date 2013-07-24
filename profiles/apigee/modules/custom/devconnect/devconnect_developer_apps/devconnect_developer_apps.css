@@ -1,0 +1,23 @@
+table.api-credentials-list { font: normal .8em/.9em "Arial Narrow", "Tahoma", Sans-Serif }
+
+/* Add/Edit App */
+.selectlist-list{
+  position: relative;
+}
+.selectlist-item{
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed #e8e8e7;
+  cursor: default;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+span.delete{
+  background: url(/sites/all/themes/apigee_devconnect/images/cross-circle.png) no-repeat transparent;
+  cursor: pointer;
+  position: relative;
+  float: right;
+  width: 24px;
+  height: 16px;
+  top: 0px;
+}

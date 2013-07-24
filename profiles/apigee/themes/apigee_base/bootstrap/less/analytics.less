@@ -1,0 +1,190 @@
+/*
+ * Analytics tab style
+ */
+#page-content {
+// the following is no longer needed because it is now covered globally in apigee.less
+//    .page-header {
+//
+//        .container {
+//            position: relative;
+//        }
+//
+//        h1 {
+//            color: #434343;
+//        }
+//        .addReports {
+//            background: transparent url(/public/images/add_report.png) no-repeat 20px 10px;
+//        }
+//        .addParameters {
+//            background: transparent url(/public/images/add_parameters.png) no-repeat 20px 10px;
+//        }
+//        .headerbtns {
+//            position: absolute;
+//            right: 0;
+//            top: 20px;
+//
+//            #addReportButton {
+//                padding: 45px 12px 5px 12px;
+//                color: #59656A;
+//                font-weight: 600;
+//            }
+//            #addParameterButton {
+//                padding: 45px 5px 5px 5px;
+//                color: #59656A;
+//                font-weight: 600;
+//            }
+//        }
+//    }
+
+    #reportListContainer {
+        h2 {
+            font-size: 20px;
+            small {
+                font-size: 12px;
+            }
+        }
+
+        .reportList {
+
+
+            th, td {
+                border-left: 1px dashed #DDDDDD;
+            }
+
+            th:first-child, td:first-child {
+                border-left: 1px solid #DDDDDD;
+            }
+
+            thead {
+                background-color: #F7F7F7;
+                th:first-child {
+                    color: #434343;
+                }
+                th {
+                    font-weight: 500;
+                    font-size: 12px;
+                }
+            }
+
+            tbody {
+                a {
+                    color: #2A9ED4;
+                }
+            }
+        }
+    }
+}
+
+.modal-body {
+    overflow-y: auto;
+    max-height: 600px;
+    padding: 10px;
+}
+
+/*
+ * Report Detail
+ */
+
+h2 {
+    font-size: 20px;
+    color: #494949;
+}
+
+#latestReport {
+    .report-title {
+        a {
+            font-size: inherit;
+            float: none;
+        }
+    }
+    #latest-report-spin {
+        display: inline-block;
+        padding: 6px;
+    }
+}
+
+.no-rounded-corners (@radius: 0) {
+    border-radius: @radius !important;
+    -webkit-border-radius: @radius !important;
+    -moz-border-radius: @radius !important;
+}
+
+.revenueProductHeader {
+    margin: 10px 5px 0 10px;
+    background-color: #F7F7F7;
+    border: 1px solid #DDD;
+    padding: 15px 10px;
+    
+    .span6 {
+        width: 220px;
+    }
+    .productName {
+        color: #434343;
+        font-weight: 600;
+    }
+    .productRevenue {
+        font-size: 11px;
+        color: #969696;
+    }
+    form {
+        margin: 0;
+    }
+}
+
+.revenueProduct {
+    border-top: 0;
+    .no-rounded-corners;
+
+    td {
+        border-left: 1px dashed #DDDDDD;
+    }
+
+    td:first-child {
+        border-left: 1px solid #DDDDDD;
+    }
+
+    tr:first-child {
+        .no-rounded-corners;
+        td:first-child {
+            .no-rounded-corners;
+        }
+    }
+
+    tr:last-child {
+        .no-rounded-corners;
+        td:first-child{
+            .no-rounded-corners;
+        }
+    }
+    .color {
+        width: 20px;
+        height: 5px;
+        display: inline-block;
+    }
+}
+
+#add-report-modal {
+    .form-actions {
+        text-align: right;
+    }
+}
+
+h3.report-list-title {
+    margin-bottom: 0px;
+    border-bottom: 0px solid white;
+}
+
+.no-latest-report {
+    display: none;
+}
+
+#update-custom-datespan {
+    float: right;
+}
+
+#chart-refresh-spin {
+    width: 20px;
+    height: 20px;
+    float: right;
+    margin-right: 5px;
+}

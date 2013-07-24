@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * The Read Only Mode module simpletests.
+ */
+
+class ReadonlymodeTestCase extends DrupalWebTestCase {
+
+  protected $privileged_user;
+
+  public static function getInfo() {
+    // Note that getInfo() strings are not translated with t().
+    return array(
+      'name' => 'Readonly Mode',
+      'description' => 'Test cases for read only mode module.',
+      'group' => 'Read Only Mode',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('readonlymode');
+
+    $this->privileged_user = $this->drupalCreateUser(array('create article content'));
+  }
+
+  function testNodeCreateWhenReadonlymodeDisabled() {
+    $this->testId = 1;
+    $this->drupalLogin($this->privileged_user);
+    $this->drupalGet('node/add/article');
+    $this->assertResponse('200', 'User can create article');
+  }
+
+  function testSometest() {
+    $this->testId = 2;
+    $this->assert(TRUE, 'This is test message');
+  }
+}

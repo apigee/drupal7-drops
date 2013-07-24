@@ -1,0 +1,158 @@
+<?php
+
+
+class XAutoloadUnitTestCase extends DrupalUnitTestCase {
+
+  static function getInfo() {
+    return array(
+      'name' => 'X Autoload unit test',
+      'description' => 'Test the xautoload class finder.',
+      'group' => 'X Autoload',
+    );
+  }
+
+  function assertPublic($status, $message) {
+    return $this->assert($status, $message);
+  }
+
+  function setUp() {
+    drupal_load('module', 'xautoload');
+    // _xautoload_register();
+    parent::setUp();
+  }
+
+  function testNsRegNested() {
+    $finder = new xautoload_ClassFinder_NamespaceOrPrefix();
+    $finder->registerNamespaceDeep('Drupal\\menu_block', 'sites/all/modules/contrib/menu_block/lib');
+    $finder->registerPrefixDeep('menu_block', 'sites/all/modules/contrib/menu_block/lib');
+    $finder_str = print_r($finder, TRUE);
+
+    $this->_findClass($finder, 'Drupal\\menu_block\\Abc_Def', array(
+      'sites/all/modules/contrib/menu_block/lib/Abc/Def.php',
+    ));
+    $this->_findClass($finder, 'menu_block_Abc_Def', array(
+      'sites/all/modules/contrib/menu_block/lib/Abc/Def.php',
+    ));
+
+    $this->assert(print_r($finder, TRUE) === $finder_str,
+      "Finder configuration may not change during the process.");
+    // $this->assert(TRUE, '<pre>' . print_r($finder, TRUE) . '</pre>');
+  }
+
+  function testNsReg() {
+    $finder = new xautoload_ClassFinder_NamespaceOrPrefix();
+    $finder->registerNamespaceDeep('Drupal\\dqx_adminmenu', 'sites/all/modules/contrib/dqx_adminmenu/lib');
+    $finder->registerNamespaceRoot('Drupal\\dqx_adminmenu', 'sites/all/modules/contrib/dqx_adminmenu/vendor');
+    $finder->registerPrefixDeep('dqx_adminmenu', 'sites/all/modules/contrib/dqx_adminmenu/lib');
+    $finder->registerPrefixRoot('dqx_adminmenu', 'sites/all/modules/contrib/dqx_adminmenu/vendor');
+    $finder_str = print_r($finder, TRUE);
+
+    $this->_findClass($finder, 'Drupal\\dqx_adminmenu\\Abc_Def', array(
+      'sites/all/modules/contrib/dqx_adminmenu/lib/Abc/Def.php',
+      'sites/all/modules/contrib/dqx_adminmenu/vendor/Drupal/dqx_adminmenu/Abc/Def.php',
+    ));
+    $this->_findClass($finder, 'dqx_adminmenu_Abc_Def', array(
+      'sites/all/modules/contrib/dqx_adminmenu/lib/Abc/Def.php',
+      // Yes, this is how prefix-root works: The _ in the module name becomes a dir separator.
+      'sites/all/modules/contrib/dqx_adminmenu/vendor/dqx/adminmenu/Abc/Def.php',
+    ));
+
+    $this->assert(print_r($finder, TRUE) === $finder_str,
+      "Finder configuration may not change during the process.");
+    // $this->assert(TRUE, '<pre>' . print_r($finder, TRUE) . '</pre>');
+  }
+
+  /**
+   * This was suggested once for D8, but discarded.
+   */
+  function testLibPseudoPSR0() {
+    $system = new xautoload_Mock_DrupalExtensionSystem();
+    $system->addModule('menu_block', 'sites/all/modules/contrib/menu_block');
+
+    // PSR0-style without the /lib/ folder.
+    $handler_psr0 = new xautoload_NamespaceHandler_DrupalExtensionLib($system);
+
+    $finder = new xautoload_ClassFinder_NamespaceOrPrefix();
+    $finder->registerNamespaceHandler('Drupal', $handler_psr0);
+
+    // We mix in some underscores just to make sure they work as designed.
+    $this->_findClass($finder, 'Drupal\\menu_block\\Abc_Def\\G_Hi', array(
+      'sites/all/modules/contrib/menu_block/lib/Abc_Def/G/Hi.php',
+    ));
+  }
+
+  /**
+   * This was suggested once for D8, but discarded.
+   */
+  function testPSR0() {
+    $system = new xautoload_Mock_DrupalExtensionSystem();
+    $system->addModule('menu_block', 'sites/all/modules/contrib/menu_block');
+
+    // PSR0-style without the /lib/ folder.
+    $handler_psr0 = new xautoload_NamespaceHandler_DrupalExtensionPSR0($system);
+
+    $finder = new xautoload_ClassFinder_NamespaceOrPrefix();
+    $finder->registerNamespaceHandler('Drupal', $handler_psr0);
+
+    // We mix in some underscores just to make sure they work as designed.
+    $this->_findClass($finder, 'Drupal\\menu_block\\Abc_Def\\G_Hi', array(
+      'sites/all/modules/contrib/menu_block/Drupal/menu_block/Abc_Def/G/Hi.php',
+    ));
+  }
+
+  function testLibPSR0() {
+    $system = new xautoload_Mock_DrupalExtensionSystem();
+    $system->addModule('menu_block', 'sites/all/modules/contrib/menu_block');
+    $this->assert(
+      $system->extensionExists('menu_block'),
+      'menu_block should "exist".'
+    );
+    $this->assert(
+      !$system->extensionExists('foo'),
+      'foo should not "exist".'
+    );
+    $this->assert(
+      $system->getExtensionPath('menu_block') === 'sites/all/modules/contrib/menu_block',
+      'menu_block should be located in sites/all/modules/contrib/menu_block'
+    );
+
+    $handler = new xautoload_NamespaceHandler_DrupalExtensionLib($system);
+    $handler_psr0 = new xautoload_NamespaceHandler_DrupalExtensionLibPSR0($system);
+
+    $finder = new xautoload_ClassFinder_NamespaceOrPrefix();
+    $finder->registerNamespaceHandler('Drupal', $handler_psr0);
+    $finder->registerPrefixHandler('', $handler);
+
+    // PSR0-style (D8, PHP 5.3)
+    // We mix in some underscores just to make sure they work as designed.
+    $this->_findClass($finder, 'Drupal\\menu_block\\Abc_Def\\G_Hi', array(
+      'sites/all/modules/contrib/menu_block/lib/Drupal/menu_block/Abc_Def/G/Hi.php',
+    ));
+
+    // xautoload-style (D6, D7, PHP 5.2)
+    // We mix in some lowercase characters, only to make sure they work as designed.
+    $this->_findClass($finder, 'menu_block_Abc_Def_g_hi', array(
+      'sites/all/modules/contrib/menu_block/lib/Abc/Def/g/hi.php',
+    ));
+  }
+
+  protected function _findClass($finder, $class, array $expectedSuggestions) {
+    try {
+      if (TRUE) {
+        for ($iAccept = 0; $iAccept < count($expectedSuggestions); ++$iAccept) {
+          $api = new xautoload_Mock_InjectedAPI_findFile($this, $class, $expectedSuggestions, $iAccept);
+          $finder->findFile($api, $class);
+          $api->finish();
+        }
+      }
+      $api = new xautoload_Mock_InjectedAPI_findFile($this, $class, $expectedSuggestions);
+      $finder->findFile($api, $class);
+      $api->finish();
+    }
+    catch (Exception $e) {
+      $this->assert(FALSE, 'Exception: ' . $e->getMessage());
+      return;
+    }
+    $this->assert(TRUE, "Successfully loaded $class");
+  }
+}

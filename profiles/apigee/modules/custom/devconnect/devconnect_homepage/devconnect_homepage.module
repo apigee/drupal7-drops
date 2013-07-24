@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * Implements hook_block_info().
+ */
+function devconnect_homepage_block_info() {
+  $blocks = array();
+  $blocks['homepage_header'] = array(
+    'info' => t('Homepage Header'),
+    'subject' => '<none>',
+    'status' => 1,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function devconnect_homepage_block_configure($delta='') {
+  $form = array();
+
+  switch($delta) {
+    case 'homepage_header' :
+      // Text field form element
+      $form['text_body'] = array(
+        '#type' => 'text_format',
+        '#title' => t('Body'),
+        '#default_value' => variable_get('text_variable', '<div class="get">GET</div><div class="buttons"><div class="home-header-btn document"><a href="/documentation"><strong><span style="font-size: x-large;">Started</span><br></strong><br> with documentation<span class="iconbtn document"></span></a></div><div class="home-header-btn"><a href="/user/me/apps"><strong><span style="font-size: x-large;">Building</span><br></strong><br> with access to a key<span class="iconbtn key"></span></a></div></div><div class="home-img"><img src="/sites/all/themes/apigee_devconnect/images/homepage-image.png" alt=""></div>'),
+      );
+      break;
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_info_alter().
+ */
+function devconnect_homepage_block_info_alter(&$blocks, $theme, $code_blocks) {
+  // Add the homepage_header block to the homepage_header region of the apigee_devconnect theme
+  db_update('block')
+  ->fields(array('region' => 'homepage_header'))
+  ->condition('module', 'devconnect_homepage')
+  ->condition('theme', 'apigee_devconnect')
+  ->execute();
+
+  // Remove the existing homepage block
+  db_update('block')
+  ->fields(array('status' => 0))
+  ->condition('delta', 7)
+  ->execute();
+}
+
+
+/**
+ * Implements hook_block_save().
+ */
+function devconnect_homepage_block_save($delta = '', $edit = array()) {
+  switch($delta) {
+    case 'homepage_header' :
+      // Saving the WYSIWYG text
+      variable_set('text_variable', $edit['text_body']['value']);
+      break;
+  }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function devconnect_homepage_block_view($delta='') {
+  $block = array();
+
+  switch($delta) {
+    case 'homepage_header' :
+      $block['content'] = homepage_header_view();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Custom function to assemble renderable array for block content.
+ * Returns a renderable array with the block content.
+ * @return
+ *   returns a renderable array of block content.
+ */
+function homepage_header_view() {
+  $block = array();
+
+  // Capture WYSIWYG text from the variable
+  $text = variable_get('text_variable', '<div class="get">GET</div><div class="buttons"><div class="home-header-btn document"><a href="/documentation"><strong><span style="font-size: x-large;">Started</span><br></strong><br> with documentation<span class="iconbtn document"></span></a></div><div class="home-header-btn"><a href="/user/me/apps"><strong><span style="font-size: x-large;">Building</span><br></strong><br> with access to a key<span class="iconbtn key"></span></a></div></div><div class="home-img"><img src="/sites/all/themes/apigee_devconnect/images/homepage-image.png" alt=""></div>');
+
+  // Block output in HTML
+  $block = array(
+    'message' => array(
+      '#type' => 'markup',
+      '#markup' => $text,
+    ),
+  );
+
+  return $block;
+}

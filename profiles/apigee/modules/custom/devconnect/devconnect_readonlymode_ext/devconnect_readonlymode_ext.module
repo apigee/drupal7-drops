@@ -1,0 +1,12 @@
+<?php
+/**
+ * Implements hook_form_alter().
+ */
+function devconnect_readonlymode_ext_form_alter(&$form, $form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type . '_node_form' || ($form_id == 'comment_form') || ($form_id == 'user_login') || ($form_id == 'user_register_form') || ($form_id == 'user_pass') || ($form_id == 'comment_form') || ($form_id == 'user_profile_form')) {
+    if (variable_get('site_readonly', FALSE)) {
+      drupal_set_message(variable_get('site_readonly_message', '')); // message to be displayed on the site
+      drupal_goto(variable_get('site_readonly_url', '')); // page of the warning page to displayed
+    }
+  }
+}

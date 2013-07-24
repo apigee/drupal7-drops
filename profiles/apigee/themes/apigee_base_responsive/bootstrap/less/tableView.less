@@ -1,0 +1,54 @@
+
+.filter {
+    input {
+        width: 150px;
+    }
+
+}
+
+.export {
+    line-height: 28px;
+    height: 28px;
+    margin-right: 20px;
+}
+
+.date-range {
+    margin-right: 20px;
+
+    input {
+        width: 100px;
+    }
+}
+
+
+.environment-list {
+    display: none;
+    
+    table {
+        margin-left: 10px;
+        background: white;
+        border: 1px solid gray;
+    }
+}
+@tableheaderbk:     url(/public/images/tableheaderbk.png);
+@headerSortDown:     url(/public/images/headerSortDown.png);
+@headerSortUp:     url(/public/images/headerSortUp.png);
+.sortHeader {
+    cursor: pointer;
+    vertical-align: top;
+}
+.sortHeader:hover {
+    background: @tableheaderbk;
+    background-repeat: repeat-x;
+    background-position: bottom;
+}
+.sortHeader.headerSortDown {
+    background: @headerSortDown;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+}
+.sortHeader.headerSortUp {
+    background: @headerSortUp;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+}

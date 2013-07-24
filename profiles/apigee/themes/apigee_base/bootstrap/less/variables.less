@@ -1,0 +1,252 @@
+// Variables.less
+// Variables to customize the look and feel of Bootstrap
+// -----------------------------------------------------
+
+// GLOBAL VALUES
+// --------------------------------------------------
+
+// Grays
+// -------------------------
+@black:                 #000;
+@grayDarker:            #222;
+@grayDark:              #484848;
+@gray:                  #555;
+@grayLight:             #999;
+@grayLighter:           #eee;
+@white:                 #fff;
+
+// Accent colors
+// -------------------------
+@red:                   #E50202;
+@orange:                #E49B12;
+@yellow:                #FFCD03;
+@green:                 #11A629;
+@greygreen:             #54828C;
+@blue:                  #1B97D1;
+@blueDark:              #0F5B9B;
+@purple:                #B8519E;
+
+// Scaffolding
+// -------------------------
+@bodyBackground:        @white;
+@textColor:             @grayDark;
+
+//Apigee Custom Branding Colors
+// -------------------------
+@apigeeOrange:              #FF4300;
+@apigeeDarkOrange:          #f03800;
+@apigeeNBRed:               #E02E01;
+@apigeeFooterGrey:          #494949;
+@apigeeDarkTxt:             #494949;
+@apigeeHeaderTxtGrey:       #484848;
+
+//Apigee Custom Element Colors
+// -------------------------
+@apigeeShadedBG:            #FAFAFA;
+@apigeeBorderGrey:          #ececec;
+@apigeeButtonText:          #FFFFFF;
+@apigeeButtonTextHover:     #147bab;
+
+// Links //KA
+// -------------------------
+@linkColor:             #137aaa;
+@linkColorHover:        darken(@linkColor, 15%);
+
+// Typography
+// -------------------------
+@baseFontSize:          13px;
+@baseFontFamily:        Arial, sans-serif;
+@baseLineHeight:        18px;
+@altFontFamily:         Georgia, "Times New Roman", Times, serif;
+
+@headingsFontFamily:    inherit; // empty to use BS default, @baseFontFamily
+@headingsFontWeight:    normal;    // instead of browser default, bold
+@headingsColor:         @apigeeHeaderTxtGrey; // empty to use BS default, @textColor
+
+// Tables //KAFN
+// -------------------------
+@tableBackground:                   transparent; // overall background-color
+@tableBackgroundAccent:             #FdFdFd; // for striping
+@tableBackgroundHover:              #f5f5f5; // for hover
+@tableBorder:                       #d9d9d9; // table and cell border
+@tableBorderLight:                  #e8e8e8; // table and cell border
+@tableHeader:                       @apigeeShadedBG;
+@tableText:                         #686868;
+
+// Buttons
+// -------------------------
+@btnBackground:                     #00a4d7;
+@btnBackgroundHighlight:            #0197c6;
+@btnBorder:                         none;
+
+@btnPrimaryBackground:              @linkColor;
+@btnPrimaryBackgroundHighlight:     spin(@btnPrimaryBackground, 15%);
+
+@btnInfoBackground:                 #5bc0de;
+@btnInfoBackgroundHighlight:        #2f96b4;
+
+@btnSuccessBackground:              #62c462;
+@btnSuccessBackgroundHighlight:     #51a351;
+
+@btnWarningBackground:              lighten(@orange, 15%);
+@btnWarningBackgroundHighlight:     @orange;
+
+@btnDangerBackground:               #ee5f5b;
+@btnDangerBackgroundHighlight:      #bd362f;
+
+@btnInverseBackground:              @gray;
+@btnInverseBackgroundHighlight:     @grayDarker;
+
+// Forms
+// -------------------------
+@inputBackground:               @white;
+@inputBorder:                   #ccc;
+@inputDisabledBackground:       @grayLighter;
+
+// Dropdowns
+// -------------------------
+@dropdownBackground:            @white;
+@dropdownBorder:                rgba(0,0,0,.2);
+@dropdownLinkColor:             @grayDark;
+@dropdownLinkColorHover:        @white;
+@dropdownLinkBackgroundHover:   #1B97D1;
+
+// COMPONENT VARIABLES
+// --------------------------------------------------
+
+// Z-index master list
+// -------------------------
+// Used for a bird's eye view of components dependent on the z-axis
+// Try to avoid customizing these :)
+@zindexDropdown:          1000;
+@zindexPopover:           1010;
+@zindexTooltip:           1020;
+@zindexFixedNavbar:       1030;
+@zindexModalBackdrop:     1040;
+@zindexModal:             1050;
+
+// Sprite icons path
+// -------------------------
+@iconSpritePath:          "../images/glyphicons-halflings.png";
+@iconWhiteSpritePath:     "../images/glyphicons-halflings-white.png";
+
+// Input placeholder text color
+// -------------------------
+@placeholderText:         @grayLight;
+
+// Hr border color
+// -------------------------
+@hrBorder:                @grayLighter;
+
+// Navbar
+// -------------------------
+@navbarHeight:                    56px;
+@navbarPadding:                   10px;
+@navbarLIH:                       19px;
+@navbarBackground:                @apigeeOrange;
+@navbarBackgroundHighlight:       @apigeeDarkOrange;
+@apigeeDownArrowHeight:           10px;
+
+@navGradientHeight:               8px;
+@navbarText:                      @white;
+@navbarLinkColor:                 @white;
+@navbarLinkColorHover:            @white;
+@navbarLinkColorActive:           @navbarLinkColorHover;
+@navbarLinkBackgroundHover:       #E02E01;
+@navbarLinkBackgroundActive:      #E02E01;
+
+@navbarSearchBackground:          #FFF;
+@navbarSearchBackgroundFocus:     @white;
+@navbarSearchBorder:              #e5e5e5;
+@navbarSearchPlaceholderColor:    #e5e5e5;
+
+// Hero unit
+// -------------------------
+@heroUnitBackground:              @grayLighter;
+@heroUnitHeadingColor:            inherit;
+@heroUnitLeadColor:               inherit;
+
+// Form states and alerts
+// -------------------------
+@warningText:             #c09853;
+@warningBackground:       #fcf8e3;
+@warningBorder:           darken(spin(@warningBackground, -10), 3%);
+
+@errorText:               #b94a48;
+@errorBackground:         #f2dede;
+@errorBorder:             darken(spin(@errorBackground, -10), 3%);
+
+@successText:             #468847;
+@successBackground:       #dff0d8;
+@successBorder:           darken(spin(@successBackground, -10), 5%);
+
+@infoText:                #3a87ad;
+@infoBackground:          #d9edf7;
+@infoBorder:              darken(spin(@infoBackground, -10), 7%);
+
+// GRID
+// --------------------------------------------------
+
+// Default 940px grid
+// -------------------------
+@gridColumns:             24;
+@gridColumnWidth:         30px;
+@gridGutterWidth:         10px;
+@gridRowWidth:            (@gridColumns * @gridColumnWidth) + (@gridGutterWidth * (@gridColumns - 1));
+
+
+// Fluid grid
+// -------------------------
+@fluidGridColumnWidth:    6.382978723%;
+@fluidGridGutterWidth:    2.127659574%;
+
+////////////////////////////
+//Apigee Custom Variables
+////////////////////////////
+
+//Colors
+@apigeered:         #e35600;
+
+//Full Width Page Header
+@apigeeHeaderHeight: 110px;
+@apigeeHeaderPadding: 20px;
+@apigeeHeaderBorderColor: #e8e8e8;
+
+//Font Sizes
+@fontSizeSml: 12px;
+@fontSizeSmlr: 11px;
+@basefont: 13px;
+@baseline: 18px;
+
+//Table Colors
+@tableBorderClr: #ccc;
+@tputPositiveClr: #74c14a;
+@tputNegativeClr: #dc0800;
+
+
+// Apigee Images
+@topbackground:     url(/public/images/topbackground.png);
+@apigeetopbar:      url(/public/images/apigeetopbar.png);
+@icons:             url(/public/images/icons.png);
+@smallicons:        url(/sites/all/themes/apigee_base/images/icon_sprite.png);
+@apigeelogin:       url(/public/images/apigeelogin.png);
+@loginadd:          url(/public/images/loginadd.png);
+@bubbleArrow:        url(/public/images/bubblearrow.png);
+@e4sprite:          url(/sites/all/themes/apigee_base/images/enterprise-sprites.svg);
+@e4spritePNG:       url(/sites/all/themes/apigee_base/images/enterprise-sprites.png);
+
+//Apigee Icon Position and Grid
+//Icons grid
+@icongrid:              25px;
+@icongridoffset:        1px;
+@iconsize:              @icongrid - (2 * @icongridoffset);
+
+
+.iconposition(@x: 0, @y: 0){
+	@dx: (@icongrid * @x) + @icongridoffset;
+	@dy:  (@icongrid * @y) + @icongridoffset;
+	background-position: (-@dx) -(@dy);
+	}
+
+//Apigee Borders
+@shadedBorder:1px solid #e2e2e2;
