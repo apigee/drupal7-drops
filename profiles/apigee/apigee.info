@@ -1,0 +1,191 @@
+; Packaging information for apigee
+name = "apigee"
+description = "We ♥ APIs"
+exclusive = "1"
+core = "7.x"
+; ----------
+; Dependencies
+; ----------
+; Access control
+dependencies[] = acl
+dependencies[] = content_access
+dependencies[] = content_access_rules
+; Administration
+dependencies[] = admin_devel
+dependencies[] = admin_menu
+dependencies[] = readonlymode
+; Chaos tool suite
+dependencies[] = ctools
+; Connector
+dependencies[] = connector
+dependencies[] = oauthconnector
+; Connector Action
+dependencies[] = connector_action_default_register_form
+; Context
+dependencies[] = context
+dependencies[] = context_ui
+; Core
+dependencies[] = block
+dependencies[] = blog
+dependencies[] = book
+dependencies[] = color
+dependencies[] = comment
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = dblog
+dependencies[] = field
+dependencies[] = field_sql_storage
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = filter
+dependencies[] = forum
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = node
+dependencies[] = number
+dependencies[] = openid
+dependencies[] = options
+dependencies[] = path
+dependencies[] = rdf
+dependencies[] = search
+dependencies[] = shortcut
+dependencies[] = simpletest
+dependencies[] = statistics
+dependencies[] = system
+dependencies[] = taxonomy
+dependencies[] = text
+dependencies[] = user
+; DevConnect
+dependencies[] = devconnect
+dependencies[] = devconnect_admin_notify
+dependencies[] = devconnect_apigee
+dependencies[] = devconnect_developer_apps
+dependencies[] = devconnect_faq_ext
+dependencies[] = devconnect_homepage
+dependencies[] = devconnect_validate
+dependencies[] = devconnect_wadl
+; Display suite
+dependencies[] = ds
+dependencies[] = ds_extras
+dependencies[] = ds_forms
+dependencies[] = ds_search
+; Feeds
+dependencies[] = feeds
+dependencies[] = feeds_tamper
+dependencies[] = feeds_tamper_ui
+dependencies[] = feeds_ui
+; Fields
+dependencies[] = cck_phone
+dependencies[] = field_group
+dependencies[] = link
+dependencies[] = node_reference
+dependencies[] = references
+; Input filters
+dependencies[] = markdown
+dependencies[] = toc_filter
+; Location
+dependencies[] = location
+; Mail
+dependencies[] = smtp
+; Media
+dependencies[] = file_entity
+dependencies[] = imce
+dependencies[] = media
+dependencies[] = media_internet
+dependencies[] = media_youtube
+; Monitoring
+dependencies[] = nagios
+; Node export
+dependencies[] = node_export
+dependencies[] = node_export_features
+dependencies[] = node_export_relation
+; OAuth
+dependencies[] = oauth2_common
+dependencies[] = oauth_common
+dependencies[] = oauth_common_providerui
+; Organic groups
+dependencies[] = og
+; Other
+dependencies[] = backup_migrate
+dependencies[] = block_class
+dependencies[] = diff
+dependencies[] = entity
+dependencies[] = entity_token
+dependencies[] = faq
+dependencies[] = flood_control
+dependencies[] = gravatar
+dependencies[] = job_scheduler
+dependencies[] = jquery_colorpicker
+dependencies[] = libraries
+dependencies[] = linkchecker
+dependencies[] = login_destination
+dependencies[] = me
+dependencies[] = module_filter
+dependencies[] = multiblock
+dependencies[] = pathauto
+dependencies[] = redirect
+dependencies[] = token
+dependencies[] = xautoload
+; QueryPath
+dependencies[] = qpcache
+dependencies[] = querypath
+; Rules
+dependencies[] = rules
+; SEO
+dependencies[] = metatag
+; Search Toolkit
+dependencies[] = apachesolr
+dependencies[] = apachesolr_access
+dependencies[] = apachesolr_search
+dependencies[] = facetapi
+; Services
+dependencies[] = services
+dependencies[] = services_views
+dependencies[] = xcal_format
+; Services - authentication
+dependencies[] = services_oauth
+; Services - clients
+dependencies[] = http_client
+dependencies[] = http_client_oauth
+; Services - resources
+dependencies[] = contentapi
+dependencies[] = contentapi_summary
+dependencies[] = contentapi_taxonomy_term
+dependencies[] = contentapi_taxonomy_vocab
+; Services - servers
+dependencies[] = rest_server
+dependencies[] = xmlrpc_server
+; Statistics
+dependencies[] = googleanalytics
+; UUID
+dependencies[] = uuid
+; User interface
+dependencies[] = imce_wysiwyg
+dependencies[] = jquery_update
+dependencies[] = wysiwyg
+; Util
+dependencies[] = util
+; Variable
+dependencies[] = variable
+dependencies[] = variable_admin
+dependencies[] = variable_advanced
+dependencies[] = variable_realm
+dependencies[] = variable_store
+dependencies[] = variable_views
+; Views
+dependencies[] = views
+dependencies[] = views_accordion
+dependencies[] = views_bulk_operations
+dependencies[] = views_slideshow
+dependencies[] = views_slideshow_cycle
+dependencies[] = views_ui
+; Webform
+dependencies[] = webform
+; apigee.com
+dependencies[] = apigee_sso
+; Features
+dependencies[] = features
+dependencies[] = devconnect_user
+dependencies[] = feeds_import
