@@ -41,3 +41,5 @@ Thumbs.db
 # SASS #
 ##########
 .sass-cache
+
+/sites/default/settings.php

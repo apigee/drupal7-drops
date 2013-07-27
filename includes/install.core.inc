@@ -812,7 +812,7 @@ function install_verify_completed_task() {
  */
 function install_verify_settings() {
   global $databases;
-  xdebug_break();
+  
   // Verify existing settings (if any).
   if (!empty($databases) && install_verify_pdo()) {
     $database = $databases['default']['default'];
@@ -974,7 +974,7 @@ function install_database_errors($database, $settings_file) {
  */
 function install_settings_form_submit($form, &$form_state) {
   global $install_state;
-  xdebug_break();
+  
   // Update global settings array and save.
   $settings['databases'] = array(
     'value'    => array('default' => array('default' => $form_state['storage']['database'])),
@@ -1369,7 +1369,7 @@ function install_bootstrap_full(&$install_state) {
  *   The batch definition.
  */
 function install_profile_modules(&$install_state) {
-  xdebug_break();
+  
   $modules = variable_get('install_profile_modules', array());
   $files = system_rebuild_module_data();
   variable_del('install_profile_modules');
@@ -1410,7 +1410,7 @@ function install_profile_modules(&$install_state) {
     'error_message' => st('The installation has encountered an error.'),
     'finished' => '_install_profile_modules_finished',
   );
-  xdebug_break();
+  
   return $batch;
 }
 
@@ -1424,7 +1424,7 @@ function install_profile_modules(&$install_state) {
  *   The batch definition, if there are language files to import.
  */
 function install_import_locales(&$install_state) {
-  xdebug_break();
+  
   include_once DRUPAL_ROOT . '/includes/locale.inc';
   $install_locale = $install_state['parameters']['locale'];
 
@@ -1439,7 +1439,7 @@ function install_import_locales(&$install_state) {
     // A known predefined language, details will be filled in properly.
     locale_add_language($install_locale, NULL, NULL, NULL, '', '', TRUE, TRUE);
   }
-  xdebug_break();
+  
   // Collect files to import for this language.
   $batch = locale_batch_by_language($install_locale, NULL);
   if (!empty($batch)) {
@@ -1512,7 +1512,7 @@ function install_configure_form($form, &$form_state, &$install_state) {
  *   The batch definition, if there are language files to import.
  */
 function install_import_locales_remaining(&$install_state) {
-  xdebug_break();
+  
   include_once DRUPAL_ROOT . '/includes/locale.inc';
   // Collect files to import for this language. Skip components already covered
   // in the initial batch set.
@@ -1520,7 +1520,7 @@ function install_import_locales_remaining(&$install_state) {
   $batch = locale_batch_by_language($install_locale, NULL, variable_get('install_locale_batch_components', array()));
   // Remove temporary variable.
   variable_del('install_locale_batch_components');
-  xdebug_break();
+  
   return $batch;
 }
 
@@ -1582,7 +1582,7 @@ function _install_module_batch($module, $module_name, &$context) {
  * 'Finished' callback for module installation batch.
  */
 function _install_profile_modules_finished($success, $results, $operations) {
-  xdebug_break();
+  
   // Flush all caches to complete the module installation process. Subsequent
   // installation tasks will now have full access to the profile's modules.
   drupal_flush_all_caches();
@@ -1592,7 +1592,7 @@ function _install_profile_modules_finished($success, $results, $operations) {
  * Checks installation requirements and reports any errors.
  */
 function install_check_requirements($install_state) {
-  xdebug_break();
+  
   $profile = $install_state['parameters']['profile'];
 
   // Check the profile requirements.
