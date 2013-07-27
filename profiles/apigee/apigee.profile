@@ -62,19 +62,19 @@ function apigee_install_settings(&$install_state) {
   $settings = array(
     "driver" => "mysql",
     "mysql" => array(
+      "host" => "localhost",
       "driver" => "mysql",
       "username" => "root",
       "password" => "",
-      "host" => "localhost",
-      'database' => 'drops7'
+      'database' => 'drops7',
     ),
     "save" => "Save and continue",
     "op" => "Save and continue"
   );
 
   $errors = install_database_errors($settings, $settings_file);
-  if (count($errors)) {
-    throw new DatabaseTaskException($errors);
+  if (count($errors) >= 1) {
+    throw new \Apigee\Exceptions\InstallException($errors[0]);
   } else {
     $form_state = array('values' => $settings);
     install_settings_form_submit(array(), $form_state);

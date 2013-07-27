@@ -65,7 +65,7 @@ function devconnect_default_content_menu_default_menu_links() {
     'weight' => '-46',
   );
   // Exported menu link: main-menu:node/3
-  $menu_links['main-menu:node/3'] = array(
+  $menu_links['main-menu:api-console'] = array(
     'menu_name' => 'main-menu',
     'link_path' => 'node/3',
     'router_path' => 'node/%',
@@ -81,7 +81,7 @@ function devconnect_default_content_menu_default_menu_links() {
     'weight' => '-49',
   );
   // Exported menu link: main-menu:node/954
-  $menu_links['main-menu:node/954'] = array(
+  $menu_links['main-menu:documentation'] = array(
     'menu_name' => 'main-menu',
     'link_path' => 'node/954',
     'router_path' => 'node/%',

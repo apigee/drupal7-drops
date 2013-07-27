@@ -4,6 +4,8 @@ require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Exception
 
 
 function apigee_install_tasks(&$install_state) {
+  drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css');
+  
   return array(
     "apigee_install_api_endpoint" => array(
       'display_name' => t('Configure the Apigee Endpoint'),
@@ -23,11 +25,14 @@ function apigee_install_tasks_alter(&$tasks, $install_state) {
   $tasks['install_select_locale']['function'] = 'apigee_install_select_locale';
   $tasks['install_load_profile']['function'] = 'apigee_install_load_profile';
   
-  /*$tasks['install_settings_form'] = array(
+  /*
+  $tasks['install_settings_form'] = array(
     "function" => "apigee_install_settings",
     "type" => "normal",
     "run" => INSTALL_TASK_RUN_IF_REACHED
-  ); */
+  ); 
+  */
+  
   if (!array_key_exists("PANTHEON_SITE", $_SERVER)) {
     $tasks['install_configure_form'] = array(
       "function" => "apigee_install_configure",
