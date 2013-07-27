@@ -1,0 +1,25 @@
+<?php
+
+
+
+
+function devconnect_default_content_install() {
+  devconnect_default_content_set_css_classes();
+
+}
+
+function devconnect_default_content_update_7001() {
+}
+
+function devconnect_default_content_set_css_classes() {
+  if (db_table_exists("block_class")) {
+    db_insert("block_class")
+      ->fields(
+      array(
+        "css_class" => "develop-with-these",
+        'module' => 'devconnect_default_content',
+        'delta' => 'develop-with-these'
+      )
+    )->execute();;
+  }
+}

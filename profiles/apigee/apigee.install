@@ -1,5 +1,7 @@
 <?php
 
+require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Exceptions/InstallException.php");
+
 
 function apigee_install_tasks(&$install_state) {
   return array(
@@ -41,98 +43,105 @@ function apigee_install_tasks_alter(&$tasks, $install_state) {
  *
  * Perform actions to set up the site for this profile.
  */
-function apigee_install() {
-  $default_theme = "apigee_devconnect";
-  $admin_theme = "rubik";
-  // activate admin theme when editing a node
-  variable_set('node_admin_theme', '1');
-  $blocks = array(
-    array(
-      'module' => 'system',
-      'delta' => 'main',
-      'theme' => $default_theme,
-      'status' => 1,
-      'weight' => 0,
-      'region' => 'content',
-      'pages' => '',
-      'cache' => -1,
-    ),
-    array(
-      'module' => 'system',
-      'delta' => 'help',
-      'theme' => $default_theme,
-      'status' => 1,
-      'weight' => -10,
-      'region' => 'content',
-      'pages' => '',
-      'cache' => -1,
-    ),
-    array(
-      'module' => 'system',
-      'delta' => 'main',
-      'theme' => $admin_theme,
-      'status' => 1,
-      'weight' => 0,
-      'region' => 'content',
-      'pages' => '',
-      'cache' => -1,
-    ),
-    array(
-      'module' => 'system',
-      'delta' => 'help',
-      'theme' => $admin_theme,
-      'status' => 1,
-      'weight' => 0,
-      'region' => 'help',
-      'pages' => '',
-      'cache' => -1,
-    ),
-  );
-  // drop system / user blocks to ensure correct building
-  db_delete('block')->condition('module', 'system')->execute();
-  db_delete('block')->condition('module', 'user')->execute();
-  // add in our blocks defined above
-  $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
-  foreach ($blocks as $block) {
-    $query->values($block);
-  }
-  $query->execute();
+function apigee_install(&$install_state) {
+  try{
   
-  // From shortcut.install, add shortcuts to the default set on install
-  $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
-  $shortcut_set->links = NULL;
-  $shortcut_set->links = array(
-    array(
-      'link_path' => 'admin/appearance/settings',
-      'link_title' => st('Theme'),
-      'weight' => -17,
-    ),
-  );
-  shortcut_set_save($shortcut_set);// Create a default role for site administrators, with all available permissions assigned.
-  $admin_role = new stdClass();
-  $admin_role->name = 'administrator';
-  $admin_role->weight = 10;
-  user_role_save($admin_role);
-  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
-  // Set this as the administrator role.
-  variable_set('user_admin_role', $admin_role->rid);
+    $default_theme = "apigee_devconnect";
+    $admin_theme = "rubik";
+    // activate admin theme when editing a node
+    variable_set('node_admin_theme', '1');
+    $blocks = array(
+      array(
+        'module' => 'system',
+        'delta' => 'main',
+        'theme' => $default_theme,
+        'status' => 1,
+        'weight' => 0,
+        'region' => 'content',
+        'pages' => '',
+        'cache' => -1,
+      ),
+      array(
+        'module' => 'system',
+        'delta' => 'help',
+        'theme' => $default_theme,
+        'status' => 1,
+        'weight' => -10,
+        'region' => 'content',
+        'pages' => '',
+        'cache' => -1,
+      ),
+      array(
+        'module' => 'system',
+        'delta' => 'main',
+        'theme' => $admin_theme,
+        'status' => 1,
+        'weight' => 0,
+        'region' => 'content',
+        'pages' => '',
+        'cache' => -1,
+      ),
+      array(
+        'module' => 'system',
+        'delta' => 'help',
+        'theme' => $admin_theme,
+        'status' => 1,
+        'weight' => 0,
+        'region' => 'help',
+        'pages' => '',
+        'cache' => -1,
+      ),
+    );
+    // drop system / user blocks to ensure correct building
+    db_delete('block')->condition('module', 'system')->execute();
+    db_delete('block')->condition('module', 'user')->execute();
+    // add in our blocks defined above
+    $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
+    foreach ($blocks as $block) {
+      $query->values($block);
+    }
+    $query->execute();
+  
+    // From shortcut.install, add shortcuts to the default set on install
+    $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
+    $shortcut_set->links = NULL;
+    $shortcut_set->links = array(
+      array(
+        'link_path' => 'admin/appearance/settings',
+        'link_title' => st('Theme'),
+        'weight' => -17,
+      ),
+    );
+    shortcut_set_save($shortcut_set);// Create a default role for site administrators, with all available permissions assigned.
+    $admin_role = new stdClass();
+    $admin_role->name = 'administrator';
+    $admin_role->weight = 10;
+    user_role_save($admin_role);
+    user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+    // Set this as the administrator role.
+    variable_set('user_admin_role', $admin_role->rid);
 
-  // Assign user 1 the "administrator" role.
-  db_insert('users_roles')
-    ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
-    ->execute();
-  // Update the menu router information.
-  menu_rebuild();
-  // revert features to ensure they are all installed
-  $features = array(
-    'devconnect_user'
-    
-  );
-  features_revert($features);
-  // ignore any rebuild messages
-  node_access_needs_rebuild(FALSE);
-  // ignore any other install messages
-  drupal_get_messages();
-  drupal_flush_all_caches();
+    // Assign user 1 the "administrator" role.
+    db_insert('users_roles')
+      ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+      ->execute();
+    // Update the menu router information.
+    menu_rebuild();
+    // revert features to ensure they are all installed
+    $features = array(
+      'devconnect_user',
+      'devconnect_default_content'
+    );
+    module_enable($features, true);
+    features_revert($features);
+    variable_set("site_frontpage", "home");
+    // ignore any rebuild messages
+    node_access_needs_rebuild(FALSE);
+    // ignore any other install messages
+    drupal_get_messages();
+    drupal_flush_all_caches();
+  } catch(Exception $e) {
+    throw new \Apigee\Exceptions\InstallException($e->getMessage(), 0, $_SERVER["REQUEST_URI"], $install_state);
+  }
   
 }

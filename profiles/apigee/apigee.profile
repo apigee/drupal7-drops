@@ -74,7 +74,6 @@ function apigee_install_settings(&$install_state) {
 
   $errors = install_database_errors($settings, $settings_file);
   if (count($errors)) {
-    xdebug_break();
     throw new DatabaseTaskException($errors);
   } else {
     $form_state = array('values' => $settings);
