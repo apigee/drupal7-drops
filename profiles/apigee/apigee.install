@@ -118,6 +118,11 @@ function apigee_install(&$install_state) {
     $admin_role->weight = 10;
     user_role_save($admin_role);
     user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+    $roles = array_keys(user_roles());
+    foreach($roles as $role) {
+      user_role_grant_permissions($role, array("node" => "access content"));
+    }
+    
     // Set this as the administrator role.
     variable_set('user_admin_role', $admin_role->rid);
 
