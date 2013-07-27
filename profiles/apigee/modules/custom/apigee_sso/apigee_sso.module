@@ -209,7 +209,7 @@ function apigee_sso_block_info($delta = 0) {
   $blocks[0] = array(
     'info' => t('Apigee SSO'),
     'weight' => 0,
-    'status' => 1,
+    'status' => 0,
     'region' => 'sidebar_first'
   );
   return $blocks;

@@ -1,33 +1,48 @@
 <?php
-  !function_exists('profiler_v2') ? require_once('libraries/profiler/profiler.inc') : FALSE;
-  profiler_v2('apigee');
+
+
+function apigee_install_tasks(&$install_state) {
+  return array(
+    "apigee_install_api_endpoint" => array(
+      'display_name' => t('Configure the Apigee Endpoint'),
+      'type' => 'form',
+      )
+  );
+}
+
+/**
+ * @see hook_install_tasks_alter().
+ *
+ * @param $config
+ *   The config array for a Profiler Install Profile.
+ */
+function apigee_install_tasks_alter(&$tasks, $install_state) {
+  $tasks['install_select_profile']['function'] = 'apigee_install_select_profile';
+  $tasks['install_select_locale']['function'] = 'apigee_install_select_locale';
+  $tasks['install_load_profile']['function'] = 'apigee_install_load_profile';
+  /*$tasks['install_settings_form'] = array(
+    "function" => "apigee_install_settings",
+    "type" => "normal",
+    "run" => INSTALL_TASK_RUN_IF_REACHED
+  ); */
+  if (!array_key_exists("PANTHEON_SITE", $_SERVER)) {
+    $tasks['install_configure_form'] = array(
+      "function" => "apigee_install_configure",
+      "run" => INSTALL_TASK_RUN_IF_REACHED
+    );
+  }
+  
+}
+
+
 /**
  * Implements hook_install().
  *
  * Perform actions to set up the site for this profile.
  */
 function apigee_install() {
-  // Enable some apigee blocks.
-  $default_theme = 'apigee_devconnect';
-  $admin_theme = 'rubik';
-  // disable all themes
-  db_update('system')
-    ->fields(array('status' => 0))
-    ->condition('type', 'theme')
-    ->execute();
-  // enable $default_theme
-  db_update('system')
-    ->fields(array('status' => 1))
-    ->condition('type', 'theme')
-    ->condition('name', $default_theme)
-    ->execute();
-  // enable $admin_theme
-  db_update('system')
-    ->fields(array('status' => 1))
-    ->condition('type', 'theme')
-    ->condition('name', $admin_theme)
-    ->execute();
-  variable_set('admin_theme', $admin_theme);
+  $default_theme = "apigee_devconnect";
+  $admin_theme = "rubik";
   // activate admin theme when editing a node
   variable_set('node_admin_theme', '1');
   $blocks = array(
@@ -38,16 +53,6 @@ function apigee_install() {
       'status' => 1,
       'weight' => 0,
       'region' => 'content',
-      'pages' => '',
-      'cache' => -1,
-    ),
-    array(
-      'module' => 'user',
-      'delta' => 'login',
-      'theme' => $default_theme,
-      'status' => 1,
-      'weight' => 0,
-      'region' => 'sidebar_first',
       'pages' => '',
       'cache' => -1,
     ),
@@ -119,12 +124,14 @@ function apigee_install() {
   menu_rebuild();
   // revert features to ensure they are all installed
   $features = array(
-    'devconnect_user',
-    'feeds_import'
+    'devconnect_user'
+    
   );
   features_revert($features);
   // ignore any rebuild messages
   node_access_needs_rebuild(FALSE);
   // ignore any other install messages
   drupal_get_messages();
+  drupal_flush_all_caches();
+  
 }

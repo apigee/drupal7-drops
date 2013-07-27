@@ -132,7 +132,6 @@ dependencies[] = rules
 dependencies[] = metatag
 ; Search Toolkit
 dependencies[] = apachesolr
-dependencies[] = apachesolr_access
 dependencies[] = apachesolr_search
 dependencies[] = facetapi
 ; Services
@@ -151,7 +150,6 @@ dependencies[] = contentapi_taxonomy_term
 dependencies[] = contentapi_taxonomy_vocab
 ; Services - servers
 dependencies[] = rest_server
-dependencies[] = xmlrpc_server
 ; Statistics
 dependencies[] = googleanalytics
 ; UUID
