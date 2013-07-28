@@ -24,21 +24,18 @@ function apigee_install_tasks_alter(&$tasks, $install_state) {
   $tasks['install_select_profile']['function'] = 'apigee_install_select_profile';
   $tasks['install_select_locale']['function'] = 'apigee_install_select_locale';
   $tasks['install_load_profile']['function'] = 'apigee_install_load_profile';
-  
-  /*
-  $tasks['install_settings_form'] = array(
-    "function" => "apigee_install_settings",
-    "type" => "normal",
-    "run" => INSTALL_TASK_RUN_IF_REACHED
-  ); 
-  */
-  
   if (!array_key_exists("PANTHEON_SITE", $_SERVER)) {
-    $tasks['install_configure_form'] = array(
-      "function" => "apigee_install_configure",
+    // skip db install form re-write if it's a pantheon install
+    $tasks['install_settings_form'] = array(
+      "function" => "apigee_install_settings",
+      "type" => "normal",
       "run" => INSTALL_TASK_RUN_IF_REACHED
-    );
+    ); 
   }
+  $tasks['install_configure_form'] = array(
+    "function" => "apigee_install_configure",
+    "run" => INSTALL_TASK_RUN_IF_REACHED
+  );
   
 }
 
@@ -50,7 +47,6 @@ function apigee_install_tasks_alter(&$tasks, $install_state) {
  */
 function apigee_install(&$install_state) {
   try{
-  
     $default_theme = "apigee_devconnect";
     $admin_theme = "rubik";
     // activate admin theme when editing a node

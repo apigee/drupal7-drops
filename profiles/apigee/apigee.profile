@@ -60,17 +60,13 @@ function apigee_install_settings(&$install_state) {
   //}
   
   $settings = array(
-    "driver" => "mysql",
-    "mysql" => array(
       "host" => "localhost",
       "driver" => "mysql",
       "username" => "root",
-      "password" => "",
+      "password" => null,
       'database' => 'drops7',
-    ),
-    "save" => "Save and continue",
-    "op" => "Save and continue"
-  );
+      'prefix' => null
+    );
 
   $errors = install_database_errors($settings, $settings_file);
   if (count($errors) >= 1) {
