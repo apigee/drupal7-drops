@@ -15,6 +15,11 @@ class InstallException extends \Exception {
     if (function_exists("xdebug_break")) {
       xdebug_break();
     }
+    if (function_exists("watchdog")) {
+      watchdog(__CLASS__, $this->getMessage());
+    } else {
+      error_log($this->getMessage());
+    }
     if (function_exists("install_display_output")) {
       install_display_output($this->getMessage(), $params);
     }

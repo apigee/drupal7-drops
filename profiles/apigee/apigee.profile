@@ -54,8 +54,7 @@ function apigee_install_settings(&$install_state) {
         throw new Exception($mysqli->error);
       }
     } catch(Exception $e) {
-      printf("Connect failed: %s\n", $e->getMessage());
-      exit();
+      throw new \Apigee\Exceptions\InstallException($e->getMessage());
     }
   //}
   
@@ -76,9 +75,8 @@ function apigee_install_settings(&$install_state) {
     install_settings_form_submit(array(), $form_state);
   }
   
+  $install_state['settings_verified'] = TRUE;
   $install_state['completed_task'] = install_verify_completed_task();
-  drupal_flush_all_caches();
-  drupal_get_messages();
 }
 
 /**
