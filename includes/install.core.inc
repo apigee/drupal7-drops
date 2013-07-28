@@ -953,7 +953,7 @@ function install_database_errors($database, $settings_file) {
     // Just changing the global doesn't get the new information processed.
     // We tell tell the Database class to re-parse $databases.
     Database::parseConnectionInfo();
-    xdebug_break();
+
     try {
       db_run_tasks($driver);
     }
