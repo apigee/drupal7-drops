@@ -1,8 +1,11 @@
 ; Packaging information for apigee
+
+distribution_name = Apigee
 name = "apigee"
 description = "We ♥ APIs"
 exclusive = "1"
 core = "7.x"
+
 ; ----------
 ; Dependencies
 ; ----------

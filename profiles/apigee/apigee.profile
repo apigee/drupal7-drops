@@ -1,5 +1,8 @@
 <?php
 
+require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Exceptions/InstallException.php");
+require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Util/Crypto.php");
+
 
 function apigee_install_select_profile(&$install_state) {
   $install_state['parameters']['profile'] = 'apigee';
@@ -31,7 +34,7 @@ function apigee_install_load_profile(&$install_state) {
   $install_state['profile_info']['dependencies'] = array_unique($dependencies);
   //variable_set("install_profile_modules", $install_state['profile_info']['dependencies']);
   //$install_state['profiles'] = array("apigee");  
-  drupal_get_messages();
+  //drupal_get_messages();
 }
 
 
@@ -142,26 +145,42 @@ function apigee_install_configure(&$install_state) {
 
 
 function apigee_install_api_endpoint($form, &$form_state) {
+  if (isset($_REQUEST['devconnect_org'])) {
+    $org = $_REQUEST['devconnect_org'];
+  } else {
+    if (isset($_SERVER['PANTHEON_ENVIRONMENT'])){
+      $org = str_replace($_SERVER['PANTHEON_ENVIRONMENT']."-", "", $_SERVER['HTTP_HOST']);
+      $org = str_replace(".devportal.apigee.com", "", $org);
+    } else {
+      $org = "";
+    }
+  }
+  if (isset($_REQUEST['devconnect_endpoint'])) {
+    $endpoint = $_REQUEST['devconnect_endpoint'];
+  } else {
+    $endpoint = "https://api.entierprise.apigee.com/v1";
+  }
+  
   $form = array();
   $form['devconnect_org'] = array(
     '#type' => 'textfield',
     '#title' => t("Devconnect Organization"),
-    '#default_value' => "todo: get constants from Matt",
+    '#default_value' => $org,
     '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
     '#required' => TRUE,
   );
   $form['devconnect_endpoint'] = array(
     '#type' => 'textfield',
     '#title' => t("Devconnect Endpoint"),
-    '#default_value' => "https://api.entierprise.apigee.com/v1",
-    '#description' => t('URL to which to make Apigee REST calls.'),
+    '#default_value' => $endpoint,
+    '#description' => t('URL to which to make Apigee Management UI REST calls. For on-prem installs you will need to change this value.'),
     '#required' => TRUE,
   );
   $form['devconnect_curlauth'] = array(
     '#type' => 'textfield',
     '#title' => t("Authentication for the Endpoint"),
     '#default_value' => "<USERNAME>:<PASSWORD>",
-    '#description' => t('Will be used to authenticate with the endpoint. Separate the Username and Password with a colon (e.g. "guest:secret").'),
+    '#description' => t('These values be used to authenticate with the endpoint. Separate the Username and Password with a colon (e.g. "guest:secret").'), 
     '#required' => TRUE,
   );
   $form['actions'] = array(
@@ -176,6 +195,12 @@ function apigee_install_api_endpoint($form, &$form_state) {
 }
 
 function apigee_install_api_endpoint_submit($form, &$form_state) {
+  
+  $raw_auth = $form_state['values']['devconnect_curlauth'];
+  list($username, $raw_pass) = explode(':', $raw_auth, 2);
+  $pass = Apigee\Util\Crypto::encrypt($raw_pass);
+  $form_state['values']['devconnect_curlauth'] = "{$username}:{$pass}";
+  
   $values = $form_state['values'];
   foreach($values as $key => $value) {
     if (substr($key, 0, 10) == "devconnect") {

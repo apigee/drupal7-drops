@@ -1,11 +1,11 @@
 <?php
 
 require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Exceptions/InstallException.php");
+require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Util/Crypto.php");
 
 
 function apigee_install_tasks(&$install_state) {
   drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css');
-  
   return array(
     "apigee_install_api_endpoint" => array(
       'display_name' => t('Configure the Apigee Endpoint'),
