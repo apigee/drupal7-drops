@@ -13,7 +13,6 @@ function &_devconnect_developer_apps_analytics_api_client() {
   static $dca;
 
   if (!isset($dca)) {
-    module_load_include("module", "devconnect");
     $client = devconnect_default_api_client();
     $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics($client);
   }
@@ -49,14 +48,14 @@ function devconnect_developer_apps_analytics_form() {
 
   $from = 0;
   if (isset($_GET['from'])) {
-    $from = strtotime($_GET['from']);
+    $from = $_GET['from'];
   }
   if (!$from) {
     $from = strtotime('-1 day');
   }
   $from_text = gmdate('m/d/Y H:i', $from) . ' UTC';
 
-  drupal_add_library('system','ui.datepicker');
+  drupal_add_library('system', 'ui.datepicker');
   drupal_add_js('jQuery(document).ready(function(){
     jQuery("#edit-date-from" ).datetimepicker();
     jQuery("#edit-date-to" ).datetimepicker();
@@ -74,7 +73,7 @@ function devconnect_developer_apps_analytics_form() {
 
   $to = 0;
   if (isset($_GET['to'])) {
-    $to = strtotime($_GET['to']);
+    $to = $_GET['to'];
   }
   if (!$to) {
     $to = time();
@@ -103,6 +102,13 @@ function devconnect_developer_apps_analytics_form_validate($form, &$form_state) 
   $to = $form_state['values']['date_to'];
 
   $date_error = FALSE;
+
+  if (strpos($from, 'UTC') === FALSE) {
+    $from .= ' UTC';
+  }
+  if (strpos($to, 'UTC') === FALSE) {
+    $to .= ' UTC';
+  }
 
   $parsed_from = @strtotime($from);
   $parsed_to = @strtotime($to);
@@ -138,14 +144,138 @@ function devconnect_developer_apps_analytics_form_submit($form, &$form_state) {
   drupal_goto($url, array('query' => $args, 'fragment' => 'performance'));
 }
 
-function devconnect_developer_apps_analytics_performance($app_name) {
-  $dca = _devconnect_developer_apps_analytics_api_client();
+function devconnect_developer_apps_analytics_performance($user, $app_name) {
 
-  // Are we showing proof-of-concept, or real data?
-  $debug = ($dca->get_client()->get_org() == 'enterprisestickers');
-  if ($debug) {
-    $app_name = 'APIConsole';
+  $my_data = _devconnect_developer_apps_analytics_get_datapoints($user, $app_name);
+  $datapoints = $my_data['datapoints'];
+  $date_format = $my_data['date_format'];
+  $default_datapoints = $my_data['default_datapoints'];
+  $time_points = $my_data['time_points'];
+
+  $metric_fullname = $my_data['params']['metric']['display_name'];
+  $metric_name = $my_data['params']['metric']['name'];
+
+  if (count($datapoints) == 0) {
+    // TODO: handle this differently?
+    return '';
   }
+  module_load_include('module', 'libraries', 'libraries');
+  if ($path = libraries_get_path('highcharts')) {
+    drupal_add_js($path . '/js/highcharts.js');
+  }
+
+  $chart_data = array(
+    'chart' => array(
+      'renderTo' => 'analytics-highchart',
+      'type' => 'line',
+      'marginRight' => 130, // If we suppress legend, this gets set to 0 below
+      'marginBottom' => 50,
+    ),
+    'title' => array(
+      'text' => $metric_fullname
+    ),
+    'xAxis' => array(
+      'categories' => array(), // Filled in below
+      'title' => array(
+        'text' => 'Time (UTC)',
+        'margin' => 0
+      )
+    ),
+    'yAxis' => array(
+      'title' => array('text' => $metric_fullname), // may be modified below
+      'plotLines' => array(
+        array(
+          'value' => 0,
+          'width' => 1,
+          'color' => '#808080'
+        )
+      ),
+      'min' => 0
+    ),
+    'legend' => array(
+      'layout' => 'vertical',
+      'align' => 'right',
+      'verticalAlign' => 'top',
+      'x' => -10,
+      'y' => 100,
+      'borderWidth' => 0
+    ),
+    'series' => array(), // filled in below
+    'credits' => array('enabled' => FALSE),
+    'plotOptions' => array(
+      'line' => array(
+        'marker' => array(
+          'enabled' => FALSE
+        )
+      )
+    )
+  );
+
+  if (substr($metric_name, -5) == '_time') {
+    $chart_data['yAxis']['title']['text'] = 'Milliseconds';
+  }
+
+  // Step across X-axis labels if there are too many.
+  $step = 1;
+  if (count($time_points) > DEVCONNECT_ANALYTICS_MAX_XAXIS_LINES) {
+    $step = ceil(count($time_points) / DEVCONNECT_ANALYTICS_MAX_XAXIS_LINES);
+    $chart_data['xAxis']['labels'] = array('step' => $step);
+  }
+
+  $app = $datapoints[$app_name];
+
+  $last_time = 0;
+  foreach ($time_points as $i => $time_point) {
+    $x_caption = date($date_format, $time_point);
+    // If granularity < day and date has changed, show date under time.
+    if (substr($date_format, 0, 1) == 'H' && ($i % $step == 0) && ($last_time == 0 || date('d', $time_point) != date('d', $last_time))) {
+      $x_caption .= ' <div style="font-size:0.75em;font-style:italic;margin-top:-3px">' . date('F j', $time_point) . '</div>';
+      $chart_data['xAxis']['labels']['useHTML'] = TRUE;
+      $last_time = $time_point;
+    }
+
+    $chart_data['xAxis']['categories'][] = $x_caption;
+  }
+
+  // Read in all values for all environments.
+  $data = array();
+  foreach ($app as $env => $env_datapoints) {
+    $data[$env] = $default_datapoints;
+    foreach ($env_datapoints as $time_point => $value) {
+      $data[$env][$time_point] = $value;
+    }
+  }
+
+  if (count($data) == 1) {
+    $chart_data['legend']['enabled'] = FALSE;
+    $chart_data['chart']['marginRight'] = 0;
+  }
+
+  foreach ($data as $env => $time_points) {
+    $chart_data['series'][] = array(
+      'name' => $env,
+      'data' => array_values($time_points)
+    );
+  }
+
+  $chart_json = json_encode($chart_data);
+  $script = "jQuery(document).ready(function(){chart=new Highcharts.Chart($chart_json);});";
+  drupal_add_js($script, array('type' => 'inline'));
+
+  $query = array(
+    'from' => $my_data['params']['start'],
+    'to' => $my_data['params']['end'],
+    'metric' => $metric_name,
+    'unit' => $my_data['params']['unit'],
+  );
+  drupal_static(__FUNCTION__, $query);
+
+  return '<div id="analytics-highchart" style="min-width:400px; height: 300px; margin: 0 auto"></div>';
+
+}
+
+function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
+  $dca = _devconnect_developer_apps_analytics_api_client();
 
   $metrics = _devconnect_developer_apps_analytics_metrics();
   $units = array(
@@ -159,14 +289,14 @@ function devconnect_developer_apps_analytics_performance($app_name) {
     $metric = 'total_response_time';
   }
 
-  if (isset($_GET['to']) && is_int($_GET['to'])) {
-    $end = hexdec($_GET['to']);
+  if (isset($_GET['to'])) {
+    $end = $_GET['to'];
   }
   else {
     $end = time();
   }
 
-  if (isset($_GET['from']) && is_int($_GET['from']) && $_GET['from'] < $end) {
+  if (isset($_GET['from']) && $_GET['from'] < $end) {
     $start = $_GET['from'];
   }
   else {
@@ -182,13 +312,8 @@ function devconnect_developer_apps_analytics_performance($app_name) {
   $order = 'ASC';
 
   // 4G accepts UTC dates.
-  $end_utc = strtotime(gmdate('Y-m-d H:i:s', $end));
-  $start_utc = strtotime(gmdate('Y-m-d H:i:s', $start));
-
-  // TODO: use user's configured timezone
-  // hack for now
-  $start = $start_utc;
-  $end = $end_utc;
+  $end = strtotime(gmdate('Y-m-d H:i:s', $end));
+  $start = strtotime(gmdate('Y-m-d H:i:s', $start));
 
   $time_points = array();
   switch ($unit) {
@@ -259,7 +384,8 @@ function devconnect_developer_apps_analytics_performance($app_name) {
     if (isset($_GET['env'])) {
       $dca->set_environment($_GET['env']);
     }
-    $datapoints = $dca->get_by_app_name($app_name, $metric, $start, $end, $unit, $metric, $order);
+    $developer_id = devconnect_user_get_developer_id($user);
+    $datapoints = $dca->get_by_app_name($developer_id, $app_name, $metric, $start, $end, $unit, $metric, $order);
   }
   catch (Apigee\Exceptions\EnvironmentException $e) {
     drupal_set_message($e->getMessage(), 'error');
@@ -272,211 +398,104 @@ function devconnect_developer_apps_analytics_performance($app_name) {
     exit;
   }
   catch (Exception $e) {
-    //TODO FIXME
-    print $e->getMessage(); die();
+    // TODO: this should be handled somewhat more elegantly.
+    drupal_set_message($e->getMessage(), 'error');
+    drupal_not_found();
+    exit;
   }
 
-  if (count($datapoints) == 0) {
-    $output = NULL;
-  }
-  else {
-    drupal_add_css(drupal_get_path('module', 'devconnect_developer_apps') . '/devconnect_developer_apps_analytics_svg.css');
-
-    $chart = array(
-      'chart_width' => 960,
-      'chart_height' => 250,
-      'x_translate' => 50,
-      'y_translate' => 5,
-      'vertical_lines' => array(),
-      'horizontal_lines' => array(),
-      'axis_overhang' => 5,
-      'x_axis' => NULL,
-      'y_axis' => NULL,
-      'y_axis_title' => NULL,
-      'data_lines' => array(),
-      'actual_chart_width' => 0,
-      'actual_chart_height' => 0
-    );
-
-    $app = $datapoints[$app_name];
-
-    // Read in all values for all environments.
-    $max_value = 0;
-    $data = array();
-    foreach ($app as $env => $env_datapoints) {
-      $data[$env] = $default_datapoints;
-      foreach ($env_datapoints as $time_point => $value) {
-        $data[$env][$time_point] = $value;
-      }
-      $local_max = max($data[$env]);
-      $max_value = max($local_max, $max_value);
-    }
-    $max_value = ceil($max_value);
-
-    $digit_count = strlen($max_value);
-    switch ($digit_count) {
-      case 1: case 2:
-      $round_to = 1;
-      break;
-      case 3:
-        $round_to = 5;
-        break;
-      default:
-        $round_to = pow(10, floor($digit_count / 2));
-        break;
-    }
-
-    // figure out how wide the actual chart is, with all X-points being on integral boundaries
-    $actual_chart_width = 860;
-    $x_step = ($actual_chart_width / (count($default_datapoints) - 1));
-    $actual_chart_width = $x_step * (count($default_datapoints) - 1);
-
-    // figure out how high the actual chart is, with all Y-points being on integral boundaries
-    $actual_chart_height = 200;
-    $y_step = ($actual_chart_height / $max_value); // floor?
-    $actual_chart_height = $y_step * $max_value;
-
-    // Now calculate vertical lines
-    $x_values = array();
-    for ($x = 0; floor($x) <= $actual_chart_width; $x += $x_step) {
-      $x_values[] = $x;
-    }
-    $step = ceil(count($x_values) / DEVCONNECT_ANALYTICS_MAX_XAXIS_LINES);
-    $last_time = 0;
-    $x_count = count($x_values);
-    foreach ($x_values as $index => $x) {
-      if ($index % $step != 0 && $index != $x_count - 1) {
-        continue;
-      }
-      $which_time = $time_points[$index];
-      $date = date($date_format, $which_time);
-
-      $line = new stdClass;
-      $line->x = $x;
-      $line->y1 = 0;
-      $line->y2 = $actual_chart_height;
-      $line->caption = $date;
-      // If granularity < day and date has changed, show date under time.
-      if (substr($date_format, 0, 1) == 'H' && ($last_time == 0 || date('d', $which_time) != date('d', $last_time))) {
-        $line->subcaption = date('F j', $which_time);
-      }
-      $chart['vertical_lines'][] = $line;
-      $last_time = $which_time;
-    }
-
-    // Horizontal lines next
-    $y_values = array();
-    for ($y = 0; $y <= $actual_chart_height; $y += $y_step) {
-      $y_values[] = $actual_chart_height - $y;
-    }
-    $step = ceil(count($y_values) / DEVCONNECT_ANALYTICS_MAX_YAXIS_LINES);
-    if ($round_to > 1) {
-      $difference = $step % $round_to;
-      if ($difference > 0) {
-        if ($difference < $round_to / 2) {
-          $step -= $difference;
-        }
-        else {
-          $step += ($round_to - $difference);
-        }
-      }
-    }
-    $y = $actual_chart_height;
-    $actual_value = 0;
-    do {
-      $y -= ($y_step * $step);
-      $actual_value += $step;
-      $line = new stdClass;
-      $line->y = $y;
-      $line->x1 = 0;
-      $line->x2 = $actual_chart_width;
-      $line->caption = $actual_value;
-      $chart['horizontal_lines'][] = $line;
-
-    } while ($y > 0);
-
-    $extra_y_axis = 0;
-    if ($y < 0) {
-      foreach (array_keys($chart['vertical_lines']) as $i) {
-        $chart['vertical_lines'][$i]->y1 = $y;
-      }
-      $chart['y_translate'] -= $y;
-      $extra_y_axis = $y;
-    }
-
-    // X axis
-    $axis = new stdClass;
-    $axis->x1 = 0;
-    $axis->x2 = $actual_chart_width;
-    $axis->y = $actual_chart_height;
-    $chart['x_axis'] = $axis;
-
-    // Y axis
-    $axis = new stdClass;
-    $axis->x = 0;
-    $axis->y1 = $extra_y_axis;
-    $axis->y2 = $actual_chart_height;
-    $chart['y_axis'] = $axis;
-
-    // Y axis title
-    $title = new stdClass;
-    $title->x = -40;
-    $title->y = floor($actual_chart_height / 2);
-    if (substr($metric, -5) == '_time') {
-      $title->caption = 'Milliseconds';
-    }
-    else {
-      $title->caption = $metrics[$metric];
-    }
-    $chart['y_axis_title'] = $title;
-
-    foreach ($data as $env => $points) {
-      $line = new stdClass;
-      $line->caption = $env;
-      $line->color = _devconnect_developer_apps_analytics_next_color();
-      $line->points = array();
-      foreach (array_values($points) as $x => $y) {
-        $line->points[] = (object)array('x' => $x_step * $x, 'y' => $actual_chart_height - ($y_step * $y));
-      }
-      $chart['data_lines'][] = $line;
-    }
-
-    $chart['actual_chart_width'] = $actual_chart_width;
-    $chart['actual_chart_height'] = $actual_chart_height;
-
-    $output = theme('devconnect_developer_line_chart', $chart);
-
-    if ($debug) {
-      $output .= '<h1>Debug: Sample Data Only</h1>';
-    }
-
-    //$output .= kpr($result, TRUE);
-  }
-
-  return $output;
-}
-
-function _devconnect_developer_apps_analytics_next_color() {
-  static $i = 0;
-  $colors = array(
-    '#ff8c00', // dark orange
-    '#800080', // purple
-    '#228b22', // forest green
-    '#4169e1', // royal blue
-    '#c71585', // medium violet red
-    '#a0522d', // sienna
-    '#556b2f', // dark olive green
+  return array(
+    'date_format' => $date_format,
+    'datapoints' => $datapoints,
+    'default_datapoints' => $default_datapoints,
+    'time_points' => $time_points,
+    'params' => array(
+      'metric' => array(
+        'display_name' => $metrics[$metric],
+        'name' => $metric
+      ),
+      'start' => $start,
+      'end' => $end,
+      'unit' => $unit
+    )
   );
-  if (isset($colors[$i])) {
-    $color = $colors[$i];
-  }
-  else {
-    // we're out of presets, so generate something random
-    $color = '#';
-    for ($j = 0; $j < 3; $j++) {
-      $color .= str_pad(dechex(mt_rand(0, 200)), 2, '0', STR_PAD_LEFT);
+
+}
+
+function devconnect_developer_analytics_performance_download($user, $app_name, $format) {
+
+  $my_data = _devconnect_developer_apps_analytics_get_datapoints($user, $app_name);
+  $datapoints = $my_data['datapoints'];
+  $default_datapoints = $my_data['default_datapoints'];
+
+  $app = $datapoints[$app_name];
+
+  // Read in all values for all environments.
+  $data = array();
+  foreach ($app as $env => $env_datapoints) {
+    $data[$env] = $default_datapoints;
+    foreach ($env_datapoints as $time_point => $value) {
+      $data[$env][$time_point] = $value;
     }
   }
-  $i++;
-  return $color;
+  $filename_base = preg_replace('![^A-Za-z0-9_.-]!', '_', "$app_name-" . $my_data['params']['unit'] . '-' . date('Ymd-His', $my_data['params']['start']));
+  if ($format == 'csv') {
+    $content_type = 'text/comma-separated-values';
+    $content = _devconnect_developer_apps_analytics_to_csv($my_data['params'], $data);
+    $extension = 'csv';
+  }
+  else {
+    $content_type = 'text/xml';
+    $content = _devconnect_developer_apps_analytics_to_xml($my_data['params'], $data);
+    $extension = 'xml';
+  }
+  header("Content-Type: $content_type");
+  header("Content-Disposition: attachment; filename=\"$filename_base.$extension\"");
+  header("Content-Length: " . strlen($content));
+  print $content;
+
+  module_invoke_all('exit');
+  exit;
 }
+
+
+function _devconnect_developer_apps_analytics_to_xml($params, $data) {
+  $document = '<?xml version="1.0" encoding="utf-8"?>'
+    . '<analytics>'
+    . '<params>'
+    . '<metric>' . htmlspecialchars($params['metric']['display_name']) . '</metric>'
+    . '<start>' . date('Y-m-d H:i:s', $params['start']) . ' UTC</start>'
+    . '<end>' . date('Y-m-d H:i:s', $params['end']) . ' UTC</end>'
+    . '<time-unit>' . htmlspecialchars($params['unit']) . '</time-unit>'
+    . '</params>'
+    . '<data>';
+  //kpr($data); kpr($time_points); die();
+  foreach ($data as $env => $series) {
+    $document .= '<environment name="' . htmlspecialchars($env) . '">';
+    foreach ($series as $time => $point) {
+      $document .= '<point timestamp="' . date('Y-m-d H:i:s', $time) . '">' . htmlspecialchars($point) . '</point>';
+    }
+    $document .= '</environment>';
+  }
+  $document .= '</data></analytics>';
+  return $document;
+}
+
+
+function _devconnect_developer_apps_analytics_to_csv($params, $data) {
+  $csv = 'Metric,' . $params['metric']['display_name'] . "\n"
+    . 'Start,' . date('Y-m-d H:i:s', $params['start']) . " UTC\n"
+    . 'End,' . date('Y-m-d H:i:s', $params['end']) . " UTC\n"
+    . 'Time Unit,' . $params['unit'] . "\n"
+    . "\n\n";
+
+  foreach ($data as $env => $series) {
+    $csv .= 'Environment,' . $env . "\n\n";
+    foreach ($series as $time => $point) {
+      $csv .= date('Y-m-d H:i:s', $time) . ',' . $point . "\n";
+    }
+    $csv .= "\n\n";
+  }
+  return $csv;
+}
+

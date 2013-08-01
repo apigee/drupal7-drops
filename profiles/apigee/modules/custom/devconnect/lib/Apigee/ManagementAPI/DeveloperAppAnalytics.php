@@ -1,12 +1,12 @@
 <?php
-namespace Apigee\ManagementAPI;
-
 /**
  * @file
  * Exposes Developer App Analytics data from the Management API.
  *
  * @author djohnson
  */
+
+namespace Apigee\ManagementAPI;
 
 use Apigee\Exceptions\InvalidDataException as InvalidDataException;
 use Apigee\Util\Cache as Cache;
@@ -23,10 +23,9 @@ class DeveloperAppAnalytics extends Base {
    * Initializes the environment and sets up the APIClient.
    * @param \Apigee\Util\APIClient $client
    * @param string $env
-   * @param bool $double_escape_urls
    */
-  public function __construct(\Apigee\Util\APIClient $client, $env = '*', $double_escape_urls = FALSE) {
-    $this->init($client, $double_escape_urls);
+  public function __construct(\Apigee\Util\APIClient $client, $env = '*') {
+    $this->init($client);
     $this->set_environment($env);
   }
 
@@ -82,9 +81,17 @@ class DeveloperAppAnalytics extends Base {
    * @param string $sort_order
    * @return array
    */
-  public function get_by_app_name($app_name, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order = 'ASC') {
+  public function get_by_app_name($developer_id, $app_name, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order = 'ASC') {
     $params = self::validate_parameters($metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
-    $params['filter'] = '(developer_app eq \'' . $app_name . '\')';
+
+    $filter = "(developer_app eq '$app_name'";
+    if (!empty($developer_id)) {
+      $org = $this->client->get_org();
+      $filter .= " and developer eq '$org@@@$developer_id'";
+    }
+    $filter .= ')';
+
+    $params['filter'] = $filter;
 
     $url = $this->base_url . 'apps?';
     $first = TRUE;
@@ -96,7 +103,7 @@ class DeveloperAppAnalytics extends Base {
         $url .= '&';
       }
       $url .= $name . '=' . urlencode($val);
-  }
+    }
     $this->client->get($url);
     $response = $this->get_response();
     $response = $response['Response'];
@@ -106,19 +113,21 @@ class DeveloperAppAnalytics extends Base {
     foreach ($response['TimeUnit'] as $timestamp) {
       $timestamps[] = floor($timestamp / 1000);
     }
-    foreach ($response['stats']['data'] as $response_item) {
-      $item_caption = '';
-      foreach ($response_item['identifier']['names'] as $key => $value) {
-        if ($value == 'developer_app') {
-          $item_caption = $response_item['identifier']['values'][$key];
-          break;
+    if (array_key_exists('stats', $response) && array_key_exists('data', $response['stats'])) {
+      foreach ($response['stats']['data'] as $response_item) {
+        $item_caption = '';
+        foreach ($response_item['identifier']['names'] as $key => $value) {
+          if ($value == 'developer_app') {
+            $item_caption = $response_item['identifier']['values'][$key];
+            break;
+          }
         }
-      }
-      foreach ($response_item['metric'] as $array) {
-        $env = $array['env'];
-        $i = 0;
-        foreach ($array['values'] as $metric_value) {
-          $datapoints[$item_caption][$env][$timestamps[$i++]] = $metric_value;
+        foreach ($response_item['metric'] as $array) {
+          $env = $array['env'];
+          $i = 0;
+          foreach ($array['values'] as $metric_value) {
+            $datapoints[$item_caption][$env][$timestamps[$i++]] = $metric_value;
+          }
         }
       }
     }

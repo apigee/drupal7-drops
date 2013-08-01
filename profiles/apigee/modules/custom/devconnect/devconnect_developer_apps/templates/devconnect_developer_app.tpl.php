@@ -27,6 +27,9 @@
 $credential = (isset($credentials) ? end($credentials) : NULL);
 $show_analytics = ($analytics_chart !== FALSE);
 $app_id = arg(3);
+
+$download_base = 'user/' . arg(1) . '/app-performance/' . arg(3);
+$query = drupal_static('devconnect_developer_apps_analytics_performance');
 ?>
 
 <ul class="nav nav-tabs">
@@ -88,25 +91,31 @@ $app_id = arg(3);
   <div class="tab-pane" id="details">
     <h3>App Details</h3>
     <div class="well">
-    <?php print '<div class="control-group"><strong>App Name:</strong><div>' . check_plain($name) . '</div></div>'; ?>
-    <?php print '<div class="control-group"><strong>Callback URL:</strong><div>' . check_plain($callback_url) . '</div></div>'; ?>
+    <?php print '<div class="control-group app-name"><strong>App Name:</strong><div>' . check_plain($name) . '</div></div>'; ?>
+    <?php print '<div class="control-group callback-url"><strong>Callback URL:</strong><div>' . check_plain($callback_url) . '</div></div>'; ?>
     <?php
-    print '<div class="control-group"><strong>API Products:</strong>';
-    if (isset($credential)) {
-      foreach ($credential['apiproducts'] as $apiproduct) {
-        print '<div>' . check_plain($apiproduct['display_name']) . '</div>';
-        if (strlen($apiproduct['description']) > 0) {
-          print '<div>' . check_plain($apiproduct['description']) . '</div><br>';
+    if (isset($credential['apiproducts'][0])) {
+      print '<div class="control-group api-products"><strong>API Products:</strong>';
+      if (isset($credential)) {
+        foreach ($credential['apiproducts'] as $apiproduct) {
+          print '<div class="api-product">' . check_plain($apiproduct['display_name']);
+          if (strlen($apiproduct['description']) > 0) {
+            print '&nbsp-&nbsp;' . check_plain($apiproduct['description']) . '</div>';
+          }
         }
       }
+      print '</div>';
     }
-    print '<div class="control-group"><strong>Status:</strong><div>' . check_plain($credential['status']) . '</div></div>';
+    print '<div class="control-group app-status"><strong>Status:</strong><div>' . check_plain($credential['status']) . '</div>';
     print '</div>';
     ?>
     </div>
   </div>
 <?php if ($show_analytics): ?>
   <div class="tab-pane" id="performance">
+    <div class="span24 well">
+      <?php print drupal_render(drupal_get_form('devconnect_developer_apps_analytics_form')); ?>
+    </div>
     <?php if (empty($analytics_chart)): ?>
       <p>
         No performance data is available for the criteria you supplied.
@@ -115,12 +124,9 @@ $app_id = arg(3);
     <div class="btn-group pull-right">
       <a class="export btn dropdown-toggle" data-toggle="dropdown" href="#">Export<span class="caret"></span></a>
       <ul class="dropdown-menu">
-        <li><a href="#">XML</a></li>
-        <li><a href="#">CSV</a></li>
+        <li><a href="<?php print url($download_base . '/xml', array('query' => $query)); ?>">XML</a></li>
+        <li><a href="<?php print url($download_base . '/csv', array('query' => $query)); ?>">CSV</a></li>
       </ul>
-    </div>
-    <div class="span24 well">
-      <?php print drupal_render(drupal_get_form('devconnect_developer_apps_analytics_form')); ?>
     </div>
     <div style="clear: both; margin-top:20px">
       <?php print $analytics_chart; ?>

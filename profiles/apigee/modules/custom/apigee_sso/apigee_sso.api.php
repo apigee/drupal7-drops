@@ -8,7 +8,7 @@
  *   - scheme (defaults to current scheme, http or https)
  *   - redirect (defaults to 'node' unless a 'destination' param is present in
  *               the query string)
- *   - openid_identifier (defaults to https://www.google.com/accounts/o8/id)
+ *   - google_identifier (defaults to https://www.google.com/accounts/o8/id)
  */
 function hook_apigee_sso_alter(&$params) {
   $params['redirect'] = '<front>';

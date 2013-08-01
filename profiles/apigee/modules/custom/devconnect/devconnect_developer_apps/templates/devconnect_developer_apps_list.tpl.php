@@ -52,7 +52,9 @@ $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
         $statuses = NULL;
       }
     }
-
+    print '<div class="app-delete">';
+    print '<button class="btn primary action button-processed" title="Delete App" data-url="' . $app['delete_url'] . '"></button>';
+    print '</div>';
     print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], 'user/' . $user->uid . '/app-detail/' . $app['app_name']) . '</h4>';
     if (!empty($app['attributes']['Description'])) {
       print '<div class="app-desc">' . check_plain($app['attributes']['Description']) . '</div>';
@@ -60,26 +62,12 @@ $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
     print '</div>';
 
     if ($show_status && !empty($statuses)) {
-      if (count($statuses) == 1) {
-        $status = reset($statuses);
-        print '<div class="app-status"><strong>Status: </strong>' . check_plain($status) . '</div>';
+      print '<div class="app-status"><strong>Status:</strong><br>';
+      foreach ($statuses as $apiproduct => $status) {
+        print '<div><span class="api-product-name"><strong>' . check_plain($apiproduct) . '</strong></span>&nbsp;-&nbsp;<span class="api-product-status">' . check_plain($status) . '</span></div>';
       }
-      else {
-        print '<div class="app-status"><strong>Status: </strong>';
-        print '<table>';
-        print '<tr><th scope="col">API Product</th><th scope="col">Status</th></tr>';
-        $odd = TRUE;
-        foreach ($statuses as $apiproduct => $status) {
-          print '<tr class="' . ($odd ? 'odd' : 'even') . '"><td class="api-product-name">' . check_plain($apiproduct) . '</td><td class="api-product-status">' . check_plain($status) . '</td></tr>';
-          $odd = !$odd;
-        }
-        print '</table></div>';
-      }
+      print '</div>';
     }
-
-    print '<div class="app-delete">';
-    print '<button class="btn primary action button-processed" title="Delete App" data-url="' . $app['delete_url'] . '"></button>';
-    print '</div>';
     print '<br><hr>';
   }
 ?>

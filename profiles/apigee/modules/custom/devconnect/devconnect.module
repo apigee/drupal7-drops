@@ -1,13 +1,9 @@
 <?php
 
-// The following constant should not be in use anymore, but exists here just
-// in case client-specific code uses it somewhere.
-define('DEVCONNECT_APIGEE_CRYPT_KEY', hash('SHA256', 'w3-Love_ap|s', TRUE));
-
-define('DEVCONNECT_APIGEE_DEFAULT_USER', 'guest');
+define('DEVCONNECT_APIGEE_DEFAULT_USER', 'fixme');
 define('DEVCONNECT_APIGEE_DEFAULT_PASSWORD', 'fnt996QUJucOlMGEkYOp5wGwcwNGdfcOX3dZutRJCfDQ=='); // "secret" encrypted
-define('DEVCONNECT_APIGEE_DEFAULT_ENDPOINT', 'http://api.apigeng.com/v2');
-define('DEVCONNECT_APIGEE_DEFAULT_ORG', 'apigee-pmux');
+define('DEVCONNECT_APIGEE_DEFAULT_ENDPOINT', 'https://api.enterprise.apigee.com/v1');
+define('DEVCONNECT_APIGEE_DEFAULT_ORG', 'fixme');
 
 /**
  * Implements hook_xautoload().
@@ -102,8 +98,8 @@ function devconnect_variable_info($options = array()) {
   );
   $variables['devconnect_appname_bug'] = array(
     'type' => 'boolean',
-    'title' => t('Compensate for KMS URL-encoding bug?'),
-    'default' => FALSE,
+    'title' => t('Double-URL-encode all KMS URI parameters?'),
+    'default' => TRUE,
     'description' => t('When checked, double-escapes developer app names and API Products in URLs.'),
     'group' => 'devconnect'
   );
@@ -212,7 +208,6 @@ function devconnect_cron() {
 
   $environments = $dev_app->query_environments();
   variable_set('devconnect_org_environments', $environments);
-
 }
 
 
@@ -346,7 +341,8 @@ function devconnect_default_api_client() {
   $curl_auth = devconnect_get_endpoint_auth();
   list($username, $password) = explode(':', $curl_auth, 2);
 
-  $client = Apigee\Util\APIClient::get_instance_by_endpoint($endpoint, $org, $username, $password);
+  $client = Apigee\Util\APIClient::get_instance($endpoint, $org, $username, $password);
+  $client->set_attribute('double_url_encode', (bool)variable_get('devconnect_appname_bug', TRUE));
   return $client;
 }
 
@@ -397,7 +393,7 @@ class DevConnectApigeeApiproduct {
     // Log creation of deprecated wrapper class
     _devconnect_warn_deprecated();
     $client = devconnect_default_api_client();
-    $this->api_product = new Apigee\ManagementAPI\APIProduct($client, (bool)variable_get('devconnect_appname_bug', FALSE));
+    $this->api_product = new Apigee\ManagementAPI\APIProduct($client);
     $this->current_product_name = NULL;
   }
 
@@ -441,7 +437,11 @@ class DevConnectApigeeApiproduct {
   }
 
   public function get_product_names() {
-    return $this->list_products(TRUE);
+    $names = array();
+    foreach($this->list_products(TRUE) as $product) {
+      $names[] = $product->get_name();
+    };
+    return $names;
   }
 
   public function has_oauth_policy($api_product = NULL) {
@@ -539,14 +539,20 @@ class DevConnectApigeeDeveloper {
 
 class DevConnectApigeeDeveloperApp {
 
+  /**
+   * @var Apigee\ManagementAPI\DeveloperApp
+   */
   private $app;
+  /**
+   * @var Apigee\ManagementAPI\APIProduct
+   */
   private $api_product;
 
   public function __construct(&$user) {
     // Log creation of deprecated wrapper class
     _devconnect_warn_deprecated();
     $client = devconnect_default_api_client();
-    $this->app = new Apigee\ManagementAPI\DeveloperApp($client, $user->mail, (bool)variable_get('devconnect_appname_bug', FALSE));
+    $this->app = new Apigee\ManagementAPI\DeveloperApp($client, $user->mail);
   }
 
   public function Validate($app) {
@@ -593,7 +599,7 @@ class DevConnectApigeeDeveloperApp {
 
   public function GetAPIProductDetail($api_product, $hide_private = TRUE) {
     if (!isset($this->api_product) || $this->api_product->get_name() != $api_product) {
-      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->get_client(), (bool)variable_get('devconnect_appname_bug', FALSE));
+      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->get_client());
       $this->api_product->load($api_product);
     }
     if ($hide_private && !$this->api_product->is_public()) {
@@ -605,9 +611,10 @@ class DevConnectApigeeDeveloperApp {
 
   public function GetAPIProductsOptions() {
     if (!isset($this->api_product)) {
-      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->get_client(), (bool)variable_get('devconnect_appname_bug', FALSE));
+      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->get_client());
     }
     $results = $this->api_product->list_products();
+    $options = array();
     foreach ($results as $product) {
       $key = 'prod-' . $product->get_name();
       $options[$key] = $product->get_display_name();
@@ -618,6 +625,10 @@ class DevConnectApigeeDeveloperApp {
 }
 
 class DevConnectApigeeAnalytics {
+
+  /**
+   * @var Apigee\ManagementAPI\DeveloperAppAnalytics
+   */
   private $analytics;
 
   public function __construct($environment = NULL) {
@@ -628,7 +639,7 @@ class DevConnectApigeeAnalytics {
   }
 
   public function getEnvironments() {
-    return $this->analytics->get_environments();
+    return $this->analytics->get_all_environments();
   }
 
   public function getEnvironment() {
@@ -638,7 +649,7 @@ class DevConnectApigeeAnalytics {
     $this->analytics->set_environment($env);
   }
   public function getDeveloperAppByName($appname, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order = 'ASC') {
-    return $this->analytics->get_by_app_name($appname, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
+    return $this->analytics->get_by_app_name(NULL, $appname, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
   }
 
   public static function getMetrics($call_type) {

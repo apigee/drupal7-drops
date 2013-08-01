@@ -159,45 +159,45 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     $action = 'update';
     $force_update = TRUE;
   }
+
+  $first_name = (isset($edit['field_first_name'][LANGUAGE_NONE][0]['value']) ? $edit['field_first_name'][LANGUAGE_NONE][0]['value'] : $account->field_first_name[LANGUAGE_NONE][0]['value']);
+  $last_name = (isset($edit['field_last_name'][LANGUAGE_NONE][0]['value']) ? $edit['field_last_name'][LANGUAGE_NONE][0]['value'] : $account->field_last_name[LANGUAGE_NONE][0]['value']);
+  $mail = (isset($edit['mail']) ? $edit['mail'] : $account->mail);
+  $name = (isset($edit['name']) ? $edit['name'] : $account->name);
+
+
   module_load_include("module", "devconnect");
   $client = devconnect_default_api_client();
   $dev = new Apigee\ManagementAPI\Developer($client);
-  $dev->set_email($account->mail);
-  $dev->set_user_name($account->name);
-  if (!empty($account->field_first_name[LANGUAGE_NONE][0]['value'])) {
-    $dev->set_first_name($account->field_first_name[LANGUAGE_NONE][0]['value']);
+  $dev->set_email($mail);
+  $dev->set_user_name($name);
+  if (!empty($first_name)) {
+    $dev->set_first_name($first_name);
   }
   if (!empty($account->field_last_name[LANGUAGE_NONE][0]['value'])) {
-    $dev->set_last_name($account->field_last_name[LANGUAGE_NONE][0]['value']);
+    $dev->set_last_name($last_name);
   }
 
   $attribute_fields = variable_get('devconnect_user_persisted_attributes', array());
   foreach($attribute_fields as $field) {
     $field_full_name = 'field_' . $field;
-    if(property_exists($account, $field_full_name)) {
-      $field_obj = $account->$field_full_name;
+    if(array_key_exists($field_full_name, $edit)) {
+      $field_obj = $edit[$field_full_name];
       $field_value = (isset($field_obj[LANGUAGE_NONE][0]['value']) ? $field_obj[LANGUAGE_NONE][0]['value'] : '');
-      // Ensure that field value is a string.
-      // Objects & arrays are persisted as JSON-encoded blobs.
-      if (is_object($field_value) || is_array($field_value)) {
-        $field_value = json_encode($field_value);
-      }
-      // Booleans are saved as their string value
-      elseif($field_value === TRUE) {
-        $field_value = 'true';
-      }
-      elseif($field_value === FALSE) {
-        $field_value = 'false';
-      }
-      // Force ints/floats to string too
-      else {
-        $field_value = (string)$field_value;
-      }
+      $field_value = _devconnect_user_scrub_attribute($field_value);
+      $dev->set_attribute($field, $field_value);
+    }
+  }
+  // Bring in any attributes that were defined by other hook_user_presave() implementations
+  foreach ($edit as $key => $field_value) {
+    if (substr($key, 0, 10) == 'attribute_') {
+      $field = substr($key, 10);
+      $field_value = _devconnect_user_scrub_attribute($field_value);
       $dev->set_attribute($field, $field_value);
     }
   }
 
-  $dev->set_status($account->status ? 'active' : 'inactive');
+  $dev->set_status($account->status || $edit['status'] ? 'active' : 'inactive');
 
   try {
     $dev->save($force_update);
@@ -207,17 +207,17 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     $results = $dev->get_debug_data();
     watchdog('devconnect_user', print_r($results, TRUE), array(), WATCHDOG_ERROR);
 
-    $error = '<h4>STATUS: ' . $results['code'] . ' ' . $results['code_status'] . '; '
-           . 'Communication with the Apigee endpoint is compromised. Cannot ' . $action . ' user.</h4>';
     if (user_access('administer users')) {
+      $error = '<h4>STATUS: ' . $results['code'] . ' ' . $results['code_status'] . '; '
+        . 'Communication with the Apigee endpoint is compromised. Cannot ' . $action . ' user.</h4>';
       if (function_exists('kpr')) {
         $error .= kpr($results, TRUE);
       }
       else {
         $error .= '<pre>' . print_r($results, TRUE) . '</pre>';
       }
+      drupal_set_message($error, 'error');
     }
-    drupal_set_message($error, 'error');
   }
 
   foreach (module_implements('devconnect_user_save') as $module) {
@@ -225,7 +225,25 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     $function($results, $edit, $account);
   }
 
-  watchdog('devconnect_user', print_r($results, TRUE));
+  watchdog('devconnect_user', print_r($results, TRUE), array(), WATCHDOG_DEBUG);
+}
+
+function _devconnect_user_scrub_attribute($field_value) {
+  if (is_object($field_value) || is_array($field_value)) {
+    $field_value = json_encode($field_value);
+  }
+  // Booleans are saved as their string value
+  elseif($field_value === TRUE) {
+    $field_value = 'true';
+  }
+  elseif($field_value === FALSE) {
+    $field_value = 'false';
+  }
+  // Force ints/floats to string too
+  else {
+    $field_value = (string)$field_value;
+  }
+  return $field_value;
 }
 
 /**
@@ -320,4 +338,26 @@ function devconnect_user_redirect_alter(&$redirect){
       $redirect->redirect = token_replace($redirect->redirect, array('user' => $user));
     }
   }
+}
+
+/**
+ * Checks to see if developer_id has been set in $_SESSION. If not, we look
+ * it up in KMS and set it.
+ *
+ * @param stdClass $user
+ * @return string|bool
+ */
+function devconnect_user_get_developer_id($user) {
+  if (!isset($_SESSION['developer_id'])) {
+    $client = devconnect_default_api_client();
+    $dev = new Apigee\ManagementAPI\Developer($client);
+    try {
+      $dev->load($user->mail);
+      $_SESSION['developer_id'] = $dev->get_developer_id();
+    }
+    catch (Exception $e) {
+      return FALSE;
+    }
+  }
+  return $_SESSION['developer_id'];
 }

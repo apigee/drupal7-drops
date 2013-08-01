@@ -20,7 +20,7 @@ class APIProductTestCase extends ManagementAPITestCase {
 
   protected function setUp() {
     parent::setUp();
-    $this->api_product = new Apigee\ManagementAPI\APIproduct($this->client, $this->double_escape_urls);
+    $this->api_product = new Apigee\ManagementAPI\APIproduct($this->client);
   }
 
   public function testAPIProductList() {
@@ -38,7 +38,4 @@ class APIProductTestCase extends ManagementAPITestCase {
     }
     $this->pass('APIProduct->list() resulted in an array of length ' . count($list));
   }
-
-  // TODO: Test OAuth Token related methods
-
 }

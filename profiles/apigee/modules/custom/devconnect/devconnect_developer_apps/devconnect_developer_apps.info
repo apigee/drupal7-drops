@@ -5,3 +5,4 @@ core = 7.x
 version = "7.x-4.21"
 
 dependencies[] = "devconnect"
+dependencies[] = "devconnect_user"

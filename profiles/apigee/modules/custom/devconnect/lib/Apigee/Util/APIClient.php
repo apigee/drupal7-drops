@@ -1,13 +1,12 @@
 <?php
-
-namespace Apigee\Util;
-
 /**
  * @file
  * Acts as a wrapper for all HTTP-based API invocations.
  *
  * @author djohnson
  */
+
+namespace Apigee\Util;
 
 use Apigee\Exceptions\EnvironmentException as EnvironmentException;
 use Apigee\Exceptions\ResponseException as ResponseException;
@@ -50,35 +49,10 @@ class APIClient {
   private $response_opts;
 
   /**
-   * @var float
+   * Allows implementation-specific attributes to be set on the client.
+   * @var array
    */
-  private $timeout;
-
-  /**
-   * Gets a singleton for the given endpoint/org/user/pass combo.
-   *
-   * Determines the environment based on the endpoint, then invokes
-   * self::get_instance().
-   *
-   * @static
-   * @param $endpoint
-   * @param $org
-   * @param $user
-   * @param $pass
-   * @return \Apigee\Util\APIClient
-   */
-  public static function get_instance_by_endpoint($endpoint, $org, $user, $pass) {
-    if (strpos($endpoint, 'jupiter') !== FALSE) {
-      $env = 'test';
-    }
-    elseif (strpos($endpoint, 'mars') !== FALSE) {
-      $env = 'stage';
-    }
-    else {
-      $env = 'prod';
-    }
-    return self::get_instance($env, $org, $user, $pass);
-  }
+  private $attributes;
 
   /**
    * Gets a singleton for the given environment/org/user/pass combo.
@@ -109,6 +83,30 @@ class APIClient {
    */
   public function was_successful() {
     return (floor($this->response_code / 100) == 2);
+  }
+
+  /**
+   * Gets a named attribute, or $default_value if the attribute doesn't exist.
+   *
+   * @param string $name
+   * @param mixed $default_value
+   * @return null
+   */
+  public function get_attribute($name, $default_value = NULL) {
+    if (array_key_exists($name, $this->attributes)) {
+      return $this->attributes[$name];
+    }
+    return $default_value;
+  }
+
+  /**
+   * Sets a named attribute.
+   *
+   * @param $name
+   * @param $value
+   */
+  public function set_attribute($name, $value) {
+    $this->attributes[$name] = $value;
   }
 
   /**
@@ -185,7 +183,7 @@ class APIClient {
         break;
       default:
         if (preg_match('!^https?://!', $environment)) {
-          $this->endpoint = $environment;
+          $this->endpoint = rtrim($environment, '/');
         }
         else {
           throw new EnvironmentException('Unknown environment "' . $environment . '".');
@@ -199,12 +197,7 @@ class APIClient {
     $this->response_string = NULL;
     $this->response_obj = NULL;
     $this->response_opts = array();
-
-    $this->timeout = 10.0;
-  }
-
-  public function set_timeout($t) {
-    $this->timeout = floatval($t);
+    $this->attributes = array();
   }
 
   /**
@@ -303,7 +296,9 @@ class APIClient {
     }
     // Workaround for drupal_http_request's failure to handle return codes of 201 and 202
     if (property_exists($response, 'error') && floor($response->code / 100) != 2) {
-      throw new ResponseException($response->error, $response->code, $url, $opts, (property_exists($response, 'data') ? $response->data : NULL));
+      $exc = new ResponseException($response->error, $response->code, $url, $opts, (property_exists($response, 'data') ? $response->data : NULL));
+      $exc->response_obj = $response;
+      throw $exc; 
     }
     return $response;
   }
@@ -316,10 +311,23 @@ class APIClient {
    */
   private function exec($url, $opts) {
 
+    // Save URL without authentication info for logging purposes
+    $orig_url = $url;
     // Inject user/pass into URI
-    $url = preg_replace('!^(https?://)(.*)$!i', '$1' . $this->user . ':' . $this->pass . '@$2', $url);
+    $url_parts = explode('://', $url, 2);
+    $url = $url_parts[0] . '://' . $this->user . ':' . $this->pass . '@' . $url_parts[1];
 
-    $response = self::make_http_request($url, $opts);
+    if (!empty($this->user) && !empty($this->pass)) {
+      $auth_string = base64_encode($this->user . ':' . $this->pass);
+    }
+
+    try {
+      $response = self::make_http_request($url, $opts);
+    }
+    catch (ResponseException $e) {
+      Log::write(__CLASS__, Log::LOGLEVEL_DEBUG, str_replace($auth_string, '[encrypted]', print_r($e->response_obj, TRUE)));
+      throw $e;
+    } 
 
     $raw_response = $response->data;
     $this->response_code = $response->code;
@@ -334,17 +342,13 @@ class APIClient {
     self::parse_payload($content_type, $this->response_obj);
     $this->response_string = $raw_response;
 
-    if (!empty($this->user) && !empty($this->pass)) {
-      $auth_string = base64_encode($this->user . ':' . $this->pass);
-    }
-
-    $opts['url'] = $url;
+    $opts['url'] = $orig_url;
     $opts['authentication'] = $this->user . ':[encrypted]';
     $opts['response'] = $response;
     if (isset($auth_string) && is_object($opts['response']) && property_exists($opts['response'], 'request')) {
       $opts['response']->request = str_replace($auth_string, '[encrypted]', $opts['response']->request);
     }
-    Log::write('APIClient\\exec', Log::LOGLEVEL_DEBUG, $opts);
+    Log::write(__CLASS__, Log::LOGLEVEL_DEBUG, $opts);
 
     $this->response_opts = $opts;
   }

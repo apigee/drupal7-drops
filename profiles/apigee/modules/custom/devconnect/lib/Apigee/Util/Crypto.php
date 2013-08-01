@@ -1,6 +1,4 @@
 <?php
-namespace Apigee\Util;
-
 /**
  * @file
  * Utility library for cryptological functionality.
@@ -9,6 +7,8 @@ namespace Apigee\Util;
  *
  * @author djohnson
  */
+
+namespace Apigee\Util;
 
 class Crypto {
 

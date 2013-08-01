@@ -1,6 +1,4 @@
 <?php
-namespace Apigee\ManagementAPI;
-
 /**
  * @file
  * Base class for Management API classes. Handles a bit of the APIClient
@@ -8,6 +6,8 @@ namespace Apigee\ManagementAPI;
  *
  * @author djohnson
  */
+
+namespace Apigee\ManagementAPI;
 
 use Apigee\Exceptions\ResponseException as ResponseException;
 use Apigee\Util\APIClient as APIClient;
@@ -26,6 +26,10 @@ class Base {
    */
   protected $debug_data;
 
+  /**
+   * @var bool
+   * Should we double-url-encode values that are part of a URI?
+   */
   protected $double_url_encode;
 
   /**
@@ -33,9 +37,9 @@ class Base {
    *
    * @param \Apigee\Util\APIClient $client
    */
-  protected function init(APIClient $client, $double_url_encode = FALSE) {
+  protected function init(APIClient $client) {
     $this->client =& $client;
-    $this->double_url_encode = $double_url_encode;
+    $this->double_url_encode = $client->get_attribute('double_url_encode', TRUE);
   }
 
   /**
@@ -107,8 +111,10 @@ class Base {
         $message = 'API returned HTTP code of ' . $response_code . ' when fetching from ' . $opts['url'];
       }
       $this->debug_data['exception'] = $message;
-      Log::write('Apigee\\ManagementAPI\\Base', Log::LOGLEVEL_ERROR, $this->client->get_response_string());
-      throw new ResponseException($message, $response_code, NULL, $opts);
+      Log::write(__CLASS__, Log::LOGLEVEL_ERROR, $this->client->get_response_string());
+      $uri = preg_replace('!^(https?://)[^:]*:(.*)$!', '$1$2', $opts['url']);
+
+      throw new ResponseException($message, $response_code, $uri, $opts);
     }
 
     return $response;

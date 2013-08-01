@@ -41,7 +41,7 @@ class DeveloperAppTestCase extends ManagementAPITestCase {
     $developer->save();
     $this->developer =& $developer;
 
-    $this->app = new Apigee\ManagementAPI\DeveloperApp($this->client, $this->developer, $this->double_escape_urls);
+    $this->app = new Apigee\ManagementAPI\DeveloperApp($this->client, $this->developer);
   }
 
   protected function tearDown() {
@@ -81,7 +81,7 @@ class DeveloperAppTestCase extends ManagementAPITestCase {
   public function testDeveloperAppCrud() {
     $app =& $this->app;
 
-    $api_product = new Apigee\ManagementAPI\APIProduct($this->client, $this->double_escape_urls);
+    $api_product = new Apigee\ManagementAPI\APIProduct($this->client);
     $api_product_list = $api_product->list_products();
     shuffle($api_product_list);
 
@@ -173,5 +173,29 @@ class DeveloperAppTestCase extends ManagementAPITestCase {
 
     $this->pass('Developer App successfully created, retrieved, updated and deleted.');
   }
+
+  public function testDeveloperAppKeyCreateDelete() {
+    $app =& $this->app;
+    $new_key = $this->randomName(24);
+    $new_secret = $this->randomName(24);
+
+    try {
+      $app->create_key($new_key, $new_secret);
+      $this->verbose("Key $new_key created");
+      $this->assertEqual($app->get_consumer_key(), $new_key);
+      $this->assertEqual($app->get_consumer_secret(), $new_secret);
+
+      $app->delete_key($new_key);
+      $this->verbose("Key $new_key deleted");
+      $this->assertNotEqual($app->get_consumer_key(), $new_key);
+      $this->assertNotEqual($app->get_consumer_secret(), $new_secret);
+    }
+    catch (Exception $e) {
+      $this->fail($e->getMessage());
+    }
+
+  }
+
+  // TODO: Test key approval, revocation, deletion
 
 }

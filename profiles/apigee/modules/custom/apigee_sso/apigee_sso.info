@@ -1,7 +1,6 @@
 name = Apigee SSO
-description = Slingshot to Google Apps to verify identity
+description = Slingshot to google apps to verify identity
 core = 7.x
 package = "apigee.com"
-version = "7.x-4.24"
+version = "7.x-4.20"
 
-dependencies[] = openid

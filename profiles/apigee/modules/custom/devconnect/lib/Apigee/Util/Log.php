@@ -1,13 +1,12 @@
 <?php
-
-namespace Apigee\Util;
-
 /**
  * @file
  * Provides a common logging mechanism.
  *
  * @author djohnson
  */
+
+namespace Apigee\Util;
 
 class Log {
 

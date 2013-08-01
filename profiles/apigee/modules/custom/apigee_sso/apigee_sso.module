@@ -42,6 +42,9 @@ function apigee_sso_menu() {
  * Page callback
  */
 function apigee_sso_do_sso() {
+
+  module_load_include('module', 'openid', 'openid');
+
   // Set default values for these, which may be overridden by other modules.
   $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ? 'https' : 'http');
   $destination = (isset($_GET['destination']) ? $_GET['destination'] : 'node');
@@ -49,7 +52,7 @@ function apigee_sso_do_sso() {
   $params = array(
     'scheme' => $scheme,
     'destination' => $destination,
-    'openid_identifier' => 'https:www.google.com/accounts/o8/id'
+    'google_identifier' => 'https://www.google.com/accounts/o8/id'
   );
   // Invoke hook_apigee_sso_alter in any implementing module
   drupal_alter('apigee_sso', $params);
@@ -57,13 +60,13 @@ function apigee_sso_do_sso() {
   $params['return_to'] = $params['scheme'] . '://' . $_SERVER['SERVER_NAME'] . base_path() . 'openid/authenticate?destination=' . $params['destination'];
 
   $form_values = array(
-    'openid_identifier' => $params['openid_identifier'],
+    'openid_identifier' => $params['google_identifier'],
     'openid.return_to' => $params['return_to'],
     'op' => 'Log in',
     'form_id' => 'user_login_block'
   );
 
-  openid_begin($params['openid_identifier'], $params['return_to'], $form_values);
+  openid_begin($params['google_identifier'], $params['return_to'], $form_values);
 }
 
 /**
@@ -94,57 +97,32 @@ function apigee_sso_form_alter(&$form, &$form_state, $form_id) {
 function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
   $email = $identity = NULL;
   $first_name = $last_name = NULL;
-  $language = NULL;
   if (isset($_SESSION['openid']['response']) && $_SESSION['openid']['response']['status'] == 'success') {
     // For the moment, we ignore the test for identity == claimed_id
     // so that when SERVER_NAME changes, openid logins don't fail.
     $response =& $_SESSION['openid']['response'];
     $identity = $response['openid.identity'];
 
-    // Find email from one of many possible fields
-    $mail_fields = array('email', 'mail_son', 'mail_ao');
-    foreach ($mail_fields as $field) {
-      $full_field = 'openid.ext1.value.' . $field;
-      if (array_key_exists($full_field, $response)) {
-        $email = $response[$full_field];
-        break;
-      }
+    if (isset($response['openid.ext1.value.email'])) {
+      $email = $response['openid.ext1.value.email'];
     }
-    $name_fields = array('first_name' => array('firstName', 'firstname'), 'last_name' => array('lastName', 'lastname'));
-
-    foreach ($name_fields as $field_name => $field_options) {
-      foreach ($field_options as $field) {
-        $full_field = 'openid.ext1.value.' . $field;
-        if (array_key_exists($full_field, $response)) {
-          $$field_name = $response[$full_field];
-          break;
-        }
-      }
+    if (isset($response['openid.ext1.value.firstName'])) {
+      $first_name = $response['openid.ext1.value.firstName'];
     }
-    if (empty($first_name) && empty($last_name)) {
-      $name_fields = array('fullname', 'fullName', 'nickname');
-      foreach ($name_fields as $field) {
-        $full_field = 'openid.ext1.value.' . $field;
-        if (array_key_exists($full_field, $response)) {
-          $name_parts = preg_split('!\s+!', $response[$full_field], 2);
-          if (count($name_parts) == 1) {
-            $name_parts[] = '';
-          }
-          list($first_name, $last_name) = $name_parts;
-          break;
-        }
-      }
+    if (isset($response['openid.ext1.value.lastName'])) {
+      $last_name = $response['openid.ext1.value.lastName'];
     }
-
-    if (array_key_exists('openid.ext1.value.language', $response)) {
-      $language = strtolower(substr($response['openid.ext1.value.language'], 0, 2));
-      if (!in_array($language, language_list())) {
-        $language = NULL;
+    if (empty($first_name) && empty($last_name) && isset($response['openid.ext1.value.fullname']) && !empty($response['openid.ext1.value.fullname'])) {
+      $name_parts = preg_split('!\s+!', $response['openid.ext1.value.fullname'], 2);
+      if (count($name_parts) == 1) {
+        $name_parts[] = '';
       }
+      list($first_name, $last_name) = $name_parts;
     }
   }
 
   if (!empty($identity) && !empty($email)) {
+    module_load_include('inc', 'openid');
     $u = user_load_by_mail($email);
     // On no mail match, $u will be FALSE. If mail was empty, $u->uid is 0.
     if ($u && $u->uid) {
@@ -181,9 +159,6 @@ function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
       if (isset($form['field_last_name'][LANGUAGE_NONE][0]) && !empty($last_name)) {
         $form['field_last_name'][LANGUAGE_NONE][0]['#default_value'] = $last_name;
       }
-      if (isset($form['locale']['language']) && !empty($language)) {
-        $form['locale']['language']['#default_value'] = $language;
-      }
     }
 
   }
@@ -209,7 +184,7 @@ function apigee_sso_block_info($delta = 0) {
   $blocks[0] = array(
     'info' => t('Apigee SSO'),
     'weight' => 0,
-    'status' => 0,
+    'status' => 1,
     'region' => 'sidebar_first'
   );
   return $blocks;
@@ -231,20 +206,13 @@ function apigee_sso_block_view($delta = '') {
   return $block;
 }
 
-function apigee_sso_openid($op, $request) {
-  if ($op == 'request') {
-    // Google fields
-    $request['openid.sreg.required'] = 'nickname,email,firstname,lastname';
-    $request['openid.ax.required'] = 'email,firstname,language,lastname,country,name_son,mail_son,mail_ao,name_ao';
 
-    $request['openid.ax.type.language'] = 'http://axschema.org/pref/language';
-    $request['openid.ax.type.country'] = 'http://axschema.org/contact/country/home';
+function apigee_sso_user_insert(&$edit, $account, $category) {
 
-    $request['openid.ax.type.firstname'] = 'http://axschema.org/namePerson/first';
-    $request['openid.ax.type.lastname'] = 'http://axschema.org/namePerson/last';
-    $request['openid.ax.type.email'] = 'http://axschema.org/contact/email';
-  }
-  return $request;
+}
+
+function apigee_sso_openid_response($response, $account) {
+
 }
 
 /**
@@ -272,10 +240,6 @@ function _apigee_sso_is_registration_complete($element) {
   foreach ($element as $key => $val) {
     // skip non-elements and inaccessible elements
     if (substr($key, 0, 1) == '#' || !is_array($val) || (isset($val['#access']) && $val['#access'] === FALSE)) {
-      continue;
-    }
-    // skip captcha; it is irrelevant.
-    if ($key == 'captcha_response') {
       continue;
     }
     // For form-field types, if required and empty, registration is NOT complete

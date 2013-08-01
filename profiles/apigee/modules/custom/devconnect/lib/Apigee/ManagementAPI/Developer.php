@@ -1,7 +1,4 @@
 <?php
-namespace Apigee\ManagementAPI;
-
-use \Apigee\Exceptions\ResponseException as ResponseException;
 /**
  * @file
  * Abstracts the Developer object in the Management API and allows clients to
@@ -10,6 +7,9 @@ use \Apigee\Exceptions\ResponseException as ResponseException;
  * @author djohnson
  */
 
+namespace Apigee\ManagementAPI;
+
+use \Apigee\Exceptions\ResponseException as ResponseException;
 
 class Developer extends Base {
 
@@ -24,7 +24,7 @@ class Developer extends Base {
   private $email;
   /**
    * @var string
-   * Read-only
+   * Read-only alternate unique ID. Useful when querying developer analytics.
    */
   private $developer_id;
   /**
@@ -95,7 +95,7 @@ class Developer extends Base {
     $this->first_name = $fname;
   }
   public function get_last_name() {
-    return $this->last_name();
+    return $this->last_name;
   }
   public function set_last_name($lname) {
     $this->last_name = $lname;
@@ -141,10 +141,9 @@ class Developer extends Base {
    * Initializes default values of all member variables.
    *
    * @param \Apigee\Util\APIClient $client
-   * @param bool $double_escape_urls
    */
-  public function __construct(\Apigee\Util\APIClient $client, $double_escape_urls = FALSE) {
-    $this->init($client, $double_escape_urls);
+  public function __construct(\Apigee\Util\APIClient $client) {
+    $this->init($client);
     $this->base_url = '/organizations/' . $this->url_encode($client->get_org()) . '/developers';
     $this->blank_values();
   }
@@ -178,6 +177,9 @@ class Developer extends Base {
    * successful.
    *
    * If $email is not supplied, the result will always be FALSE.
+   *
+   * As a bit of trivia, the $email parameter may either be the actual
+   * developer email, or it can be a developer_id.
    *
    * @param null|string $email
    * @return bool

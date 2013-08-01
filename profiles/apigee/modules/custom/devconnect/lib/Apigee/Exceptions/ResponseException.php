@@ -7,11 +7,15 @@ class ResponseException extends \Exception {
   private $params;
   private $response_body;
 
+  public $response_obj;
+
   public function __construct($message, $code = 0, $uri = NULL, $params = NULL, $response_body = NULL) {
     parent::__construct($message, $code);
     $this->uri = $uri;
     $this->params = $params;
     $this->response_body = $response_body;
+
+    $this->response_obj = NULL;
   }
 
   public function getUri() {

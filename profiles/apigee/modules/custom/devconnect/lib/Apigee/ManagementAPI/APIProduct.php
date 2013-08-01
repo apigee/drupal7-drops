@@ -1,9 +1,4 @@
 <?php
-namespace Apigee\ManagementAPI;
-
-use Apigee\Exceptions\ResponseException as ResponseException;
-use Apigee\Util\Cache as Cache;
-use Apigee\Util\APIClient as APIClient;
 
 /**
  * @file
@@ -15,6 +10,11 @@ use Apigee\Util\APIClient as APIClient;
  *
  * @author djohnson
  */
+namespace Apigee\ManagementAPI;
+
+use Apigee\Exceptions\ResponseException as ResponseException;
+use Apigee\Util\Cache as Cache;
+use Apigee\Util\APIClient as APIClient;
 
 class APIProduct extends Base {
 
@@ -109,18 +109,12 @@ class APIProduct extends Base {
   private $org;
 
   /**
-   * @var bool
-   */
-  private $double_escape_apiproduct_name;
-
-  /**
    * Initializes all member variables
    *
    * @param \Apigee\Util\APIClient $client
-   * @param bool $double_escape_apiproduct_name
    */
-  public function __construct(\Apigee\Util\APIClient $client, $double_escape_apiproduct_name = FALSE) {
-    $this->init($client, $double_escape_apiproduct_name);
+  public function __construct(\Apigee\Util\APIClient $client) {
+    $this->init($client);
     $this->org = $client->get_org();
     $this->base_url = '/organizations/' . $this->url_encode($this->org) . '/apiproducts';
     $this->blank_values();
@@ -250,7 +244,7 @@ class APIProduct extends Base {
       $this->client->get($this->base_url . '?expand=true');
       $response = $this->get_response();
       foreach ($response['apiProduct'] as $prod) {
-        $product = new APIProduct($this->get_client(), $this->double_escape_apiproduct_name);
+        $product = new APIProduct($this->get_client());
         $product->load(NULL, $prod);
         $api_products[] = $product;
       }
