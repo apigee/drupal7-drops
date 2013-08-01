@@ -5,10 +5,100 @@
  */
 
 /**
- * Implementation of hook_field_default_fields().
+ * Implements hook_field_default_fields().
  */
 function og_example_field_default_fields() {
   $fields = array();
+
+  // Exported field: 'message-og_new_content-field_node_reference'
+  $fields['message-og_new_content-field_node_reference'] = array(
+    'field_config' => array(
+      'active' => '1',
+      'cardinality' => '1',
+      'deleted' => '0',
+      'entity_types' => array(),
+      'field_name' => 'field_node_reference',
+      'foreign keys' => array(
+        'node' => array(
+          'columns' => array(
+            'target_id' => 'nid',
+          ),
+          'table' => 'node',
+        ),
+      ),
+      'indexes' => array(
+        'target_id' => array(
+          0 => 'target_id',
+        ),
+      ),
+      'module' => 'entityreference',
+      'settings' => array(
+        'handler' => 'base',
+        'handler_settings' => array(
+          'behaviors' => array(
+            'views-select-list' => array(
+              'status' => 0,
+            ),
+          ),
+          'sort' => array(
+            'direction' => 'ASC',
+            'field' => 'body:value',
+            'property' => 'nid',
+            'type' => 'none',
+          ),
+          'target_bundles' => array(),
+        ),
+        'handler_submit' => 'Change handler',
+        'target_type' => 'node',
+      ),
+      'translatable' => '0',
+      'type' => 'entityreference',
+    ),
+    'field_instance' => array(
+      'bundle' => 'og_new_content',
+      'default_value' => NULL,
+      'default_value_function' => '',
+      'deleted' => '0',
+      'description' => '',
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'entityreference',
+          'settings' => array(
+            'link' => FALSE,
+          ),
+          'type' => 'entityreference_label',
+          'weight' => 0,
+        ),
+      ),
+      'entity_type' => 'message',
+      'field_name' => 'field_node_reference',
+      'label' => 'Node reference',
+      'required' => 0,
+      'settings' => array(
+        'behaviors' => array(
+          'prepopulate' => array(
+            'action' => 'none',
+            'fallback' => 'none',
+            'skip_perm' => '0',
+            'status' => 0,
+          ),
+        ),
+        'user_register_form' => FALSE,
+      ),
+      'widget' => array(
+        'active' => 1,
+        'module' => 'entityreference',
+        'settings' => array(
+          'match_operator' => 'CONTAINS',
+          'path' => '',
+          'size' => '60',
+        ),
+        'type' => 'entityreference_autocomplete',
+        'weight' => '1',
+      ),
+    ),
+  );
 
   // Exported field: 'node-group-body'
   $fields['node-group-body'] = array(
@@ -116,13 +206,14 @@ function og_example_field_default_fields() {
         ),
       ),
       'deleted' => '0',
-      'description' => t('Determine if this is an OG group.'),
-      'display_label' => 1,
+      'description' => 'Determine if this is an OG group.',
       'display' => array(
         'default' => array(
           'label' => 'above',
           'module' => 'og_ui',
-          'settings' => array(),
+          'settings' => array(
+            'field_name' => FALSE,
+          ),
           'type' => 'og_group_subscribe',
           'weight' => '0',
         ),
@@ -133,9 +224,11 @@ function og_example_field_default_fields() {
           'weight' => 0,
         ),
       ),
+      'display_label' => 1,
       'entity_type' => 'node',
       'field_name' => 'group_group',
       'label' => 'Group',
+      'required' => FALSE,
       'settings' => array(
         'user_register_form' => FALSE,
       ),
@@ -153,7 +246,10 @@ function og_example_field_default_fields() {
       ),
       'widget' => array(
         'module' => 'options',
-        'settings' => array(),
+        'settings' => array(
+          'display_label' => 0,
+          'og_hide' => TRUE,
+        ),
         'type' => 'options_onoff',
         'weight' => 0,
       ),
@@ -199,7 +295,7 @@ function og_example_field_default_fields() {
           'module' => 'text',
           'settings' => array(),
           'type' => 'text_default',
-          'weight' => 1,
+          'weight' => '1',
         ),
         'teaser' => array(
           'label' => 'hidden',
@@ -233,87 +329,11 @@ function og_example_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-post-group_audience'
-  $fields['node-post-group_audience'] = array(
-    'field_config' => array(
-      'active' => '1',
-      'cardinality' => '-1',
-      'deleted' => '0',
-      'entity_types' => array(),
-      'field_name' => 'group_audience',
-      'foreign keys' => array(),
-      'indexes' => array(
-        'gid' => array(
-          0 => 'gid',
-        ),
-      ),
-      'module' => 'og',
-      'no_ui' => TRUE,
-      'settings' => array(),
-      'translatable' => '0',
-      'type' => 'group',
-    ),
-    'field_instance' => array(
-      'bundle' => 'post',
-      'default_value' => NULL,
-      'deleted' => '0',
-      'description' => '',
-      'display' => array(
-        'default' => array(
-          'label' => 'above',
-          'module' => 'og',
-          'settings' => array(),
-          'type' => 'og_list_default',
-          'weight' => 0,
-        ),
-        'teaser' => array(
-          'label' => 'above',
-          'settings' => array(),
-          'type' => 'hidden',
-          'weight' => 0,
-        ),
-      ),
-      'entity_type' => 'node',
-      'field_name' => 'group_audience',
-      'label' => 'Groups audience',
-      'required' => FALSE,
-      'settings' => array(
-        'user_register_form' => FALSE,
-      ),
-      'view modes' => array(
-        'full' => array(
-          'custom settings' => FALSE,
-          'label' => 'Full',
-          'type' => 'og_list_default',
-        ),
-        'teaser' => array(
-          'custom settings' => FALSE,
-          'label' => 'Teaser',
-          'type' => 'og_list_default',
-        ),
-      ),
-      'widget' => array(
-        'module' => 'og',
-        'settings' => array(
-          'autocomplete_match' => 'contains',
-          'autocomplete_path' => 'group/autocomplete',
-          'minimum_for_autocomplete' => 50,
-          'minimum_for_select_list' => 20,
-          'opt_group' => 'auto',
-          'size' => 60,
-        ),
-        'type' => 'group_audience',
-        'weight' => 0,
-      ),
-      'widget_type' => 'group_audience',
-    ),
-  );
-
   // Translatables
   // Included for use with string extractors like potx.
   t('Body');
-  t('Group type');
-  t('Groups audience');
+  t('Determine if this is an OG group.');
+  t('Group');
 
   return $fields;
 }

@@ -12,20 +12,29 @@ function og_default_rules_configuration() {
   $items['rules_og_member_active'] = entity_import('rules_config', '{ "rules_og_member_active" : {
     "LABEL" : "OG member subscribe (Active)",
     "PLUGIN" : "reaction rule",
+    "ACTIVE" : false,
     "REQUIRES" : [ "rules", "og" ],
     "ON" : [ "og_user_insert" ],
-    "IF" : [ { "data_is" : { "data" : [ "og-membership:state" ], "value" : "1" } } ],
+    "IF" : [
+      { "data_is" : { "data" : [ "og-membership:state" ], "value" : "1" } },
+      { "entity_is_of_type" : { "entity" : [ "og-membership:group" ], "type" : "node" } }
+    ],
     "DO" : [
-      { "mail" : {
-          "to" : [ "account:mail" ],
-          "subject" : "Your membership request was approved for \'[og_membership:group:label]\'\r\n",
-          "message" : "[account:name],\r\n\r\nYou are now a member in the group \'[og_membership:group:label]\' located at [og_membership:group:url]"
+      { "variable_add" : {
+          "USING" : { "type" : "node", "value" : [ "og-membership:group" ] },
+          "PROVIDE" : { "variable_added" : { "group" : "Added variable" } }
         }
       },
       { "mail" : {
-          "to" : [ "og-membership:group:manager:mail" ],
-          "subject" : "[account:name] joined [og_membership:group:label]",
-          "message" : "[og-membership:group:manager:name],\r\n\r\n[account:name] joined [og_membership:group:label] in [og_membership:group:url]"
+          "to" : [ "account:mail" ],
+          "subject" : "Your membership request was approved for \'[group:title]\'\r\n",
+          "message" : "[account:name],\r\n\r\nYou are now a member in the group \'[group:title]\' located at [group:url]"
+        }
+      },
+      { "mail" : {
+          "to" : [ "group:author:mail" ],
+          "subject" : "[account:name] joined [group:title]",
+          "message" : "[group:author:name],\r\n\r\n[account:name] joined [group:title] in [group:url]"
         }
       }
     ]
@@ -34,29 +43,39 @@ function og_default_rules_configuration() {
   $items['rules_og_member_pending'] = entity_import('rules_config', '{ "rules_og_member_pending" : {
     "LABEL" : "OG member subscribe (Pending)",
     "PLUGIN" : "reaction rule",
+    "ACTIVE" : false,
     "REQUIRES" : [ "rules", "og" ],
     "ON" : [ "og_user_insert" ],
-    "IF" : [ { "data_is" : { "data" : [ "og-membership:state" ], "value" : "2" } } ],
+    "IF" : [
+      { "data_is" : { "data" : [ "og-membership:state" ], "value" : "2" } },
+      { "entity_is_of_type" : { "entity" : [ "og-membership:group" ], "type" : "node" } }
+    ],
     "DO" : [
-      { "mail" : {
-          "to" : [ "account:mail" ],
-          "subject" : "Your membership request for \'[og_membership:group:label]\'",
-          "message" : "[account:name],\r\n\r\nYour membership to group \'[og_membership:group:label]\' located at [og_membership:group:url] is pending approval."
+      { "variable_add" : {
+          "USING" : { "type" : "node", "value" : [ "og-membership:group" ] },
+          "PROVIDE" : { "variable_added" : { "group" : "Added variable" } }
         }
       },
       { "mail" : {
-          "to" : [ "og-membership:group:manager:mail" ],
-          "subject" : "[account:name] membership request [og_membership:group:label]",
-          "message" : "[og-membership:group:manager:name],\r\n\r\n[account:name] requests membership for group \'[og_membership:group:label]\' in [og_membership:group:url].\r\n\r\n[og_membership:og-membership-request]"
+          "to" : [ "account:mail" ],
+          "subject" : "Your membership request for \'[group:title]\'",
+          "message" : "[account:name],\r\n\r\nYour membership to group \'[group:title]\' located at [group:url] is pending approval."
+        }
+      },
+      { "mail" : {
+          "to" : [ "group:author:mail" ],
+          "subject" : "[account:name] membership request [group:title]",
+          "message" : "[group:author:name],\r\n\r\n[account:name] requests membership for group \'[group:title]\' in [group:url].\r\n\r\n[og_membership:og-membership-request]"
         }
       }
     ]
   }
 }');
 
-  $items['rules_og_group_content_notification'] = entity_import('rules_config', '{ "rules_og_group_content_notification" : {
-    "LABEL" : "OG group content notification",
+  $items['rules_og_new_content'] = entity_import('rules_config', '{ "rules_og_new_content" : {
+    "LABEL" : "OG new content notification",
     "PLUGIN" : "reaction rule",
+    "ACTIVE" : false,
     "REQUIRES" : [ "og", "rules" ],
     "ON" : [ "node_insert" ],
     "IF" : [ { "og_entity_is_group_content" : { "entity" : [ "node" ] } } ],

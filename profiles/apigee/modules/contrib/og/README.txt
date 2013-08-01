@@ -106,15 +106,21 @@ DEVELOPERS & SITE BUILDERS
   behaviour.
 - Devel generate integration: Enable devel-generate module to create dummy
   groups and groups content.
-- You may craft your own URLs which produce useful behavior. For example,
-  node/add/group-content?gids_node[]=4 will add a select the group with node ID
-  4, in the node form. The prefixed entity can change to indicate other entity
-  types allowing crafting the URL and you can have multiple variables, for
-  example, node/add/group-content?gids_node[]=4&gids_user[]=3&gids_group[]=5,6,7
-  The above URL will select the group with node ID 4, and the group with user ID
-  3, and the groups with the unique group ID 5, 6 and 7.
-  Note that the actual entity of group ID 5, 6 and 7 can be any entity (e.g.
-  nodes or users).
+- You may craft your own URLs to prepopulate the group-audience fields
+  (e.g. node/add/post?field_group_audience=1 to prepopulate reference to
+  node ID 1), using the "Entity reference prepopulate" module
+  http://drupal.org/project/entityreference_prepopulate
+  and configuring the correct settings in the field UI. Read more about
+  it in Entity reference prepopulate's README file.
+  Further more, when Entity reference prepopulate module is enabled the node
+  "create" permissions will be enabled even for non-members. In order to allow
+  a non member to create a node to a group they don't belong to, you should
+  craft the URL in the same way. OG will recognize this situation and add the
+  group as a valid option under the "My groups" widget.
+- When deleting groups, it is possible to delete orphan group-content, or move
+  it under another group. In order to do it in a scalable way, enable the
+  "Use queue" option, and process it using for example:
+  drush queue-run og_membership_orphans
 
 FAQ
 ----
