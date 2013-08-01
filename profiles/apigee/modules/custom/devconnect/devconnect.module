@@ -213,22 +213,6 @@ function devconnect_cron() {
   $environments = $dev_app->query_environments();
   variable_set('devconnect_org_environments', $environments);
 
-  // query & store oauth token paths
-  $api_product = new Apigee\ManagementAPI\APIProduct($client, (bool)variable_get('devconnect_appname_bug', FALSE));
-
-  $all_products = $api_product->list_products(TRUE);
-  $oauth_urls = array();
-  foreach ($all_products as $this_product) {
-    $product_name = $this_product->get_name();
-    if (isset($oauth_urls[$product_name])) {
-      continue;
-    }
-    $urls = $this_product->get_oauth_token_urls();
-    if (!empty($urls)) {
-      $oauth_urls[$product_name] = $urls;
-    }
-  }
-  variable_set('devconnect_oauth_token_urls', $oauth_urls);
 }
 
 
