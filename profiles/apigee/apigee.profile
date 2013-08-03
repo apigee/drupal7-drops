@@ -4,6 +4,8 @@ require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Exception
 require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Util/Crypto.php");
 
 
+
+
 function apigee_install_select_profile(&$install_state) {
   $install_state['parameters']['profile'] = 'apigee';
 }
@@ -160,7 +162,12 @@ function apigee_install_api_endpoint($form, &$form_state) {
   } else {
     $endpoint = "https://api.entierprise.apigee.com/v1";
   }
-  
+  $attributes = array(
+    "autocomplete" => "off",
+    "autocorrect" => "off",
+    "autocapitalize" => "off",
+    "spellcheck" => "false"
+  );
   $form = array();
   $form['devconnect_org'] = array(
     '#type' => 'textfield',
@@ -168,6 +175,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#default_value' => $org,
     '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
     '#required' => TRUE,
+    '#attributes' => $attributes
   );
   $form['devconnect_endpoint'] = array(
     '#type' => 'textfield',
@@ -175,6 +183,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#default_value' => $endpoint,
     '#description' => t('URL to which to make Apigee Management UI REST calls. For on-prem installs you will need to change this value.'),
     '#required' => TRUE,
+    '#attributes' => $attributes
   );
   $form['devconnect_curlauth'] = array(
     '#type' => 'textfield',
@@ -182,6 +191,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#default_value' => "<USERNAME>:<PASSWORD>",
     '#description' => t('These values be used to authenticate with the endpoint. Separate the Username and Password with a colon (e.g. "guest:secret").'), 
     '#required' => TRUE,
+    '#attributes' => $attributes
   );
   $form['actions'] = array(
     '#weight' => 100,

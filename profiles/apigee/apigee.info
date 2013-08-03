@@ -21,6 +21,7 @@ dependencies[] = block_class
 dependencies[] = blog
 dependencies[] = book
 dependencies[] = cck_phone
+dependencies[] = ckeditor
 dependencies[] = color
 dependencies[] = comment
 dependencies[] = connector
