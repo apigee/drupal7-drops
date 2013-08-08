@@ -1,134 +1,418 @@
-; apigee make file for local development
-core = "7.x"
-api = "2"
+core                                                           = 7.x
+api                                                            = 2
 
-projects[drupal][version] = "7.x"
-; include the d.o. profile base
-includes[] = "drupal-org.make"
+; CONTRIB MODULES
+; ------------------------------------------------------------------
 
-; +++++ TODO modules without versions +++++
+projects[acl][subdir]                                          = "contrib"
+projects[acl][version]                                         = "1"
 
-projects[devconnect][type] = "module"
-projects[devconnect][download][type] = "git"
-projects[devconnect][download][url] = "git@github.com:apigee/devconnect.git"
-projects[devconnect][download][branch] = "7.x-4.21"
-projects[devconnect][download][revision] = "93f6c0a05bb18c4e17d596e9669ff956092e7164"
-projects[devconnect][subdir] = "custom"
+projects[addressfield][subdir]                                 = "contrib"
+projects[addressfield][version]                                = "1"
 
-projects[apigee_sso][type] = "module"
-projects[apigee_sso][download][type] = "git"
-projects[apigee_sso][download][url] = "git@github.com:apigee/apigee_drupal_sso.git"
-projects[apigee_sso][subdir] = "custom"
+projects[admin_menu][subdir]                                   = "contrib"
+projects[admin_menu][version]                                  = "3"
+
+projects[admin_views][subdir]                                  = "contrib"
+projects[admin_views][version]                                 = "1"
+
+projects[advanced_forum][subdir]                               = "contrib"
+projects[advanced_forum][version]                              = "2"
+
+projects[amazons3][subdir]                                     = "contrib"
+projects[amazons3][version]                                    = "1"
+
+projects[autologout][subdir]                                   = "contrib"
+projects[autologout][version]                                  = "2"
+
+projects[awssdk][subdir]                                       = "contrib"
+projects[awssdk][version]                                      = "5"
+
+projects[apachesolr][subdir]                                   = "contrib"
+projects[apachesolr][version]                                  = "1"
+
+projects[apachesolr_stats][subdir]                             = "contrib"
+projects[apachesolr_stats][version]                            = "1"
+
+projects[backup_migrate][subdir]                               = "contrib"
+projects[backup_migrate][version]                              = "2.5"
+
+projects[captcha][subdir]                                      = "contrib"
+
+projects[cck_phone][subdir]                                    = "contrib"
+projects[cck_phone][version]                                   = "1"
+
+projects[cdn][subdir]                                          = "contrib"
+projects[cdn][version]                                         = "2"
+
+projects[chart][subdir]                                        = "contrib"
+projects[chart][version]                                       = "1"
+
+projects[ckeditor][subdir]                                     = "contrib"
+projects[ckeditor][version]                                    = "1"
+
+projects[ckeditor_link][subdir]                                = "contrib"
+projects[ckeditor_link][version]                               = "2"
+
+projects[commerce][subdir]                                     = "contrib"
+projects[commerce][version]                                    = "1"
+
+projects[commerce_custom_line_items][subdir]                   = "contrib"
+projects[commerce_custom_line_items][version]                  = '1'
+
+projects[commerce_worldpay_business_gateway][type]             = module
+projects[commerce_worldpay_business_gateway][download][type]   = git
+projects[commerce_worldpay_business_gateway][download][branch] = "7.x-1.x"
+projects[commerce_worldpay_business_gateway][download][url]    = http://git.drupal.org/sandbox/magicmyth/1433370.git
+projects[commerce_worldpay_business_gateway][patch][1569386]   = https://drupal.org/files/DRAFT-Issue-1569386.patch
+
+projects[connector][subdir]                                    = "contrib"
+projects[connector][version]                                   = "1"
+
+projects[content_access][subdir]                               = "contrib"
+projects[content_access][version]                              = "1"
+
+projects[contentapi][subdir]                                   = "contrib"
+projects[contentapi][version]                                  = "1"
+
+projects[context][subdir]                                      = "contrib"
+projects[context][version]                                     = "3"
+
+projects[ctools][subdir]                                       = "contrib"
+projects[ctools][version]                                      = "1"
+
+projects[custom_breadcrumbs][subdir]                           = "contrib"
+projects[custom_breadcrumbs][version]                          = "1"
+
+projects[date][subdir]                                         = "contrib"
+projects[date][version]                                        = "2"
+
+projects[devel][subdir]                                        = "contrib"
+projects[devel][version]                                       = "1"
+
+projects[diff][subdir]                                         = "contrib"
+projects[diff][version]                                        = "2"
+
+projects[download_file][subdir]                                = "contrib"
+projects[download_file][version]                               = "1"
+
+projects[ds][subdir]                                           = "contrib"
+projects[ds][version]                                          = "1"
+
+projects[entity][subdir]                                       = "contrib"
+projects[entity][version]                                      = "1"
+
+projects[eck][subdir]                                          = "contrib"
+projects[eck][version]                                         = "2"
+
+projects[entityreference][subdir]                              = "contrib"
+projects[entityreference][version]                             = "1"
+
+projects[entitycache][subdir]                                  = "contrib"
+projects[entitycache][version]                                 = "1"
+
+projects[facetapi][subdir]                                     = "contrib"
+projects[facetapi][version]                                    = "1"
+
+projects[faq][subdir]                                          = "contrib"
+projects[faq][version]                                         = "1"
+
+projects[features][subdir]                                     = "contrib"
+projects[features][version]                                    = "1"
+
+projects[field_group][subdir]                                  = "contrib"
+projects[field_group][version]                                 = "1"
+
+projects[field_permissions][subdir]                            = "contrib"
+projects[field_permissions][version]                           = "1"
+
+projects[flood_control][subdir]                                = "contrib"
+projects[flood_control][version]                               = "1"
+
+projects[fontyourface][subdir]                                 = "contrib"
+projects[fontyourface][version]                                = "2"
+
+projects[footermap][subdir]                                    = "contrib"
+projects[footermap][version]                                   = "1"
+
+projects[genpass][subdir]                                      = "contrib"
+
+projects[gist_filter][subdir]                                  = "contrib"
+projects[gist_filter][version]                                 = "1"
+
+projects[github_connect][subdir]                               = "contrib"
+
+projects[google_analytics][subdir]                             = "contrib"
+projects[google_analytics][version]                            = "1"
+
+projects[google_analytics_reports][subdir]                     = "contrib"
+projects[google_analytics_reports][version]                    = "1"
+
+projects[gravatar][subdir]                                     = "contrib"
+projects[gravatar][version]                                    = "1"
+
+projects[highcharts][subdir]                                   = "contrib"
+projects[highcharts][version]                                  = "1"
+
+projects[imagemagick][subdir]                                  = "contrib"
+projects[imagemagick][version]                                 = "1"
+
+projects[import_html][subdir]                                  = "contrib"
+projects[import_html][version]                                 = "1"
+
+projects[jquerymobile][subdir]                                 = "contrib"
+projects[jquerymobile][version]                                = "2"
+
+projects[jquery_colorpicker][subdir]                           = "contrib"
+projects[jquery_colorpicker][version]                          = "1"
+
+projects[jquery_update][subdir]                                = "contrib"
+projects[jquery_update][version]                               = "2"
+
+projects[job_scheduler][subdir]                                = "contrib"
+projects[job_scheduler][version]                               = '2'
+
+projects[ldap][subdir]                                         = "contrib"
+projects[ldap][version]                                        = "1"
+
+projects[legal][subdir]                                        = "contrib"
+projects[legal][version]                                       = "1"
+
+projects[libraries][subdir]                                    = "contrib"
+projects[libraries][version]                                   = "2"
+
+projects[linkchecker][subdir]                                  = "contrib"
+projects[linkchecker][version]                                 = "1"
+
+projects[link][subdir]                                         = "contrib"
+projects[link][version]                                        = "1"
+
+projects[link_node][subdir]                                    = "contrib"
+projects[link_node][version]                                   = "1"
+
+projects[logintoboggan]['subdir']                              = "contrib"
+
+projects[markdown][subdir]                                     = "contrib"
+projects[markdown][version]                                    = "1"
+
+projects[mass_contact][subdir]                                 = "contrib"
+projects[mass_contact][version]                                = "1"
+
+projects[mediaelement][subdir]                                 = "contrib"
+projects[mediaelement][version]                                = "1"
+
+projects[media][subdir]                                        = "contrib"
+projects[media][version]                                       = "1"
+
+projects[media_youtube][subdir]                                = "contrib"
+projects[media_youtube][version]                               = "1"
+
+projects[menu_trail_by_path][subdir]                           = "contrib"
+projects[menu_trail_by_path][version]                          = "2"
+
+projects[message][subdir]                                      = "contrib"
+projects[message][version]                                     = "1"
+
+projects[metatag][subdir]                                      = "contrib"
+projects[metatag][version]                                     = "1"
+
+projects[metatags_quick][subdir]                               = "contrib"
+projects[metatags_quick][version]                              = "2"
+
+projects[me][subdir]                                           = "contrib"
+projects[me][version]                                          = "1"
+
+projects[migrate][subdir]                                      = "contrib"
+projects[migrate][version]                                     = "2"
+
+projects[module_filter][subdir]                                = "contrib"
+projects[module_filter][version]                               = "1"
+
+projects[nagios][subdir]                                       = "contrib"
+projects[nagios][version]                                      = "1"
+
+projects[node_export][subdir]                                  = "contrib"
+projects[node_export][version]                                 = "3"
+
+projects[oauth][subdir]                                        = "contrib"
+projects[oauth][version]                                       = "3"
+
+projects[oauthconnector][subdir]                               = "contrib"
+projects[oauthconnector][version]                              = "1"
+
+projects[page_title][subdir]                                   = "contrib"
+projects[page_title][version]                                  = "2"
+
+projects[panelizer][subdir]                                    = "contrib"
+projects[panels][subdir]                                       = "contrib"
+projects[panels_everywhere][subdir]                            = "contrib"
+
+projects[password_policy][subdir]                              = "contrib"
+projects[password_policy][version]                             = "1"
+
+projects[pathauto][subdir]                                     = "contrib"
+projects[pathauto][version]                                    = "1"
+
+projects[permission_grid][subdir]                              = "contrib"
+projects[permission_grid][version]                             = "1"
+
+projects[readonlymode][subdir]                                 = "contrib"
+projects[readonlymode][version]                                = "1"
+
+projects[recaptcha][subdir]                                    = "contrib"
+projects[recaptcha][version]                                   = "1"
+
+projects[redirect][subdir]                                     = "contrib"
+projects[redirect][version]                                    = "1"
+
+projects[rules][subdir]                                        = "contrib"
+projects[rules][version]                                       = "2"
+
+projects[services][subdir]                                     = "contrib"
+projects[services][version]                                    = "3"
+
+projects[services_views][subdir]                               = "contrib"
+projects[services_views][version]                              = "1"
+
+projects[smtp][subdir]                                         = "contrib"
+projects[smtp][version]                                        = "1"
+
+projects[statsd][subdir]                                       = "contrib"
+projects[statsd][version]                                      = 1
+
+projects[strongarm][subdir]                                    = "contrib"
+projects[strongarm][version]                                   = "2"
+
+projects[taxonomy_access][subdir]                              = "contrib"
+projects[taxonomy_access][version]                             = "1"
+
+projects[token][subdir]                                        = "contrib"
+projects[token][version]                                       = "1"
+
+projects[twitter][subdir]                                      = "contrib"
+
+projects[util][subdir]                                         = "contrib"
+projects[util][version]                                        = "1"
+
+projects[uuid][subdir]                                         = "contrib"
+projects[uuid][version]                                        = "1.x-dev"
+
+projects[variable][subdir]                                     = "contrib"
+projects[variable][version]                                    = "2"
+
+projects[views][subdir]                                        = "contrib"
+projects[views][version]                                       = "3"
+
+projects[views_accordion][subdir]                              = "contrib"
+projects[views_accordion][version]                             = "1"
+
+projects[views_bulk_operations][subdir]                        = "contrib"
+projects[views_bulk_operations][version]                       = "3"
+
+projects[views_slideshow][subdir]                              = "contrib"
+projects[views_slideshow][version]                             = "3"
+
+projects[webform][subdir]                                      = "contrib"
+projects[webform][version]                                     = "3"
+
+projects[weight][subdir]                                       = "contrib"
+projects[weight][version]                                      = "2"
+
+projects[workbench][subdir]                                    = "contrib"
+projects[workbench][version]                                   = "1"
+
+projects[workflow][subdir]                                     = "contrib"
+projects[workflow][version]                                    = "1"
+
+projects[XHProf][subdir]                                       = "contrib"
+projects[XHProf][version]                                      = "1"
+
+projects[xautoload][subdir]                                    = "contrib"
+
+; THEMES
+; ------------------------------------------------------------------
+; apigee base theme
+projects[apigee_base][type]                                    = "theme"
+projects[apigee_base][download][type]                          = 'git'
+projects[apigee_base][download][url]                           = "git@github.com:apigee/apigee_drupal_base_theme.git"
+projects[apigee_base][download][branch]                        = "devconnect"
+
+; apigee devconnect theme
+projects[apigee_devconnect][type]                              = "theme"
+projects[apigee_devconnect][download][type]                    = 'git'
+projects[apigee_devconnect][download][url]                     = "git@github.com:apigee/apigee_drupal_devconnect_theme.git"
+projects[apigee_devconnect][download][branch]                  = "7.x-4.22"
+
+; development seed's admin theme
+projects[tao][type]                                            = "theme"
+projects[rubik][type]                                          = "theme"
 
 
-; +++++ Themes +++++
-
-projects[apigee_base][type] = "theme"
-projects[apigee_base][download][type] = "git"
-projects[apigee_base][download][url] = "git@github.com:apigee/apigee_drupal_base_theme.git"
-projects[apigee_base][download][branch] = "devconnect"
-projects[apigee_base][download][revision] = "0131ea205ded08bd12ff41f7020c07786899e209"
-
-projects[apigee_base_responsive][type] = "theme"
-projects[apigee_base_responsive][download][type] = "git"
-projects[apigee_base_responsive][download][url] = "git@github.com:apigee/drupal-responsive-base-theme.git"
-projects[apigee_base_responsive][download][revision] = "c258aed49308eb251a315eaffb599e267cdb55fe"
-
-projects[apigee_devconnect][type] = "theme"
-projects[apigee_devconnect][download][type] = "git"
-projects[apigee_devconnect][download][url] = "git@github.com:apigee/apigee_drupal_devconnect_theme.git"
-projects[apigee_devconnect][download][revision] = "ee988072b6051418cf9e9ea3088de4435f7927e3"
-
-projects[apigee_devconnect_responsive][type] = "theme"
-projects[apigee_devconnect_responsive][download][type] = "git"
-projects[apigee_devconnect_responsive][download][url] = "git@github.com:apigee/drupal-responsive-devconnect-theme.git"
-projects[apigee_devconnect_responsive][download][revision] = "797dc676aeb658b84997661ecbaa5b08359ef92f"
+; CUSTOM MODULES
+; ------------------------------------------------------------------
 
 
+;devconnect
+projects[devconnect][type]                                     = module
+projects[devconnect][subdir]                                   = custom
+projects[devconnect][download][type]                           = 'git'
+projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
+projects[devconnect][download][branch]                         = "7.x-4.22"
 
-; +++++ Libraries +++++
+; apigee SSO module
+projects[apigee_sso][type]                                     = module
+projects[apigee_sso][subdir]                                   = custom
+projects[apigee_sso][download][type]                           = 'git'
+projects[apigee_sso][download][url]                            = "git@github.com:apigee/apigee_drupal_sso.git"
 
-libraries[backbone][directory_name] = "backbone"
-libraries[backbone][type] = "library"
-libraries[backbone][download][url] = "git://github.com/documentcloud/backbone.git"
-libraries[backbone][download][tag] = "0.9.2"
-libraries[backbone][download][type] = "git"
-libraries[backbone][destination] = "libraries"
+; Libraries
+; ------------------------------------------------------------------
+; unfortunately, we can't link directly to a /download/latest
+; for some and the URL's will need to be updated
+; by hand when security updates are posted
 
-libraries[json2][directory_name] = "json2"
-libraries[json2][type] = "library"
-libraries[json2][download][url] = "git://github.com/douglascrockford/JSON-js.git"
-libraries[json2][download][type] = "git"
-libraries[json2][destination] = "libraries"
 
-libraries[SolrPhpClient][directory_name] = "SolrPhpClient"
-libraries[SolrPhpClient][type] = "library"
-libraries[SolrPhpClient][download][url] = "http://solr-php-client.googlecode.com/files/SolrPhpClient.r60.2011-05-04.zip"
-libraries[SolrPhpClient][download][type] = "get"
-libraries[SolrPhpClient][destination] = "libraries"
+libraries[ckeditor][destination]                               = "libraries"
+libraries[ckeditor][directory_name]                            = "ckeditor"
+libraries[ckeditor][download][type]                            = "get"
+libraries[ckeditor][download][url]                             = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%203.6.6/ckeditor_3.6.6.zip"
 
-libraries[glip][directory_name] = "glip"
-libraries[glip][type] = "library"
-libraries[glip][download][url] = "git://github.com/halstead/glip.git"
-libraries[glip][download][type] = "git"
-libraries[glip][destination] = "libraries"
+libraries[colorpicker][destination]                            = "libraries"
+libraries[colorpicker][directory_name]                         = "colorpicker"
+libraries[colorpicker][download][type]                         = 'get'
+libraries[colorpicker][download][url]                          = 'http://www.eyecon.ro/colorpicker/colorpicker.zip'
 
-libraries[jquery.cycle][directory_name] = "jquery.cycle"
-libraries[jquery.cycle][type] = "library"
-libraries[jquery.cycle][download][url] = "http://www.malsup.com/jquery/cycle/release/jquery.cycle.zip?v2.86"
-libraries[jquery.cycle][download][type] = "get"
-libraries[jquery.cycle][destination] = "libraries"
+libraries[highcharts][destination]                             = "libraries"
+libraries[highcharts][directory_name]                          = "highcharts"
+libraries[highcharts][download][type]                          = "get"
+libraries[highcharts][download][url]                           = "http://code.highcharts.com/zips/Highcharts-3.0.4.zip"
 
-libraries[jquery.selectlist][directory_name] = "jquery.selectlist"
-libraries[jquery.selectlist][type] = "library"
-libraries[jquery.selectlist][download][url] = "http://odyniec.net/projects/selectlist/jquery.selectlist-0.5.zip"
-libraries[jquery.selectlist][download][type] = "get"
-libraries[jquery.selectlist][destination] = "libraries"
+libraries[jquery_cycle][destination]                           = "libraries"
+libraries[jquery_cycle][directory_name]                        = "jquery.cycle"
+libraries[jquery_cycle][download][type]                        = "get"
+libraries[jquery_cycle][download][url]                         = "http://www.malsup.com/jquery/cycle/release/jquery.cycle.zip?v2.86"
 
-libraries[colorpicker][directory_name] = "colorpicker"
-libraries[colorpicker][type] = "library"
-libraries[colorpicker][download][url] = "http://www.eyecon.ro/colorpicker/colorpicker.zip"
-libraries[colorpicker][download][type] = "get"
-libraries[colorpicker][destination] = "libraries"
+libraries[jquery_selectlist][destination]                      = "libraries"
+libraries[jquery_selectlist][directory_name]                   = "jquery.selectlist"
+libraries[jquery_selectlist][download][type]                   = "get"
+libraries[jquery_selectlist][download][url]                    = "http://odyniec.net/projects/selectlist/jquery.selectlist-0.5.1.zip"
 
-libraries[tinymce][directory_name] = "tinymce"
-libraries[tinymce][type] = "library"
-libraries[tinymce][download][url] = "http://cloud.github.com/downloads/tinymce/tinymce/tinymce_3.4.7.zip"
-libraries[tinymce][download][type] = "get"
-libraries[tinymce][destination] = "libraries"
+libraries[json2][destination]                                  = "libraries"
+libraries[json2][directory_name]                               = "json2"
+libraries[json2][download][type]                               = "git"
+libraries[json2][download][url]                                = "git://github.com/douglascrockford/JSON-js.git"
 
-libraries[mediaelement][directory_name] = "mediaelement"
-libraries[mediaelement][type] = "library"
-libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement/archive/2.12.0.zip"
-libraries[mediaelement][download][type] = "get"
-libraries[mediaelement][destination] = "libraries"
+libraries[mediaelement][destination]                           = 'libraries'
+libraries[mediaelement][directory_name]                        = 'mediaelement'
+libraries[mediaelement][download][type]                        = "git"
+libraries[mediaelement][download][url]                         = 'git://github.com/johndyer/mediaelement.git'
 
-libraries[s3-php5-curl][directory_name] = "s3-php5-curl"
-libraries[s3-php5-curl][type] = "library"
-libraries[s3-php5-curl][download][url] = "http://amazon-s3-php-class.googlecode.com/files/s3-php5-curl_0.4.0.tar.gz"
-libraries[s3-php5-curl][download][type] = "get"
-libraries[s3-php5-curl][destination] = "libraries"
+libraries[SolrPhpClient][destination]                          = "libraries"
+libraries[SolrPhpClient][directory_name]                       = "SolrPhpClient"
+libraries[SolrPhpClient][download][type]                       = "get"
+libraries[SolrPhpClient][download][url]                        = "http://solr-php-client.googlecode.com/files/SolrPhpClient.r60.2011-05-04.zip"
 
-libraries[codemirror][directory_name] = "codemirror"
-libraries[codemirror][type] = "library"
-libraries[codemirror][download][url] = "http://codemirror.net/codemirror.zip"
-libraries[codemirror][download][type] = "get"
-libraries[codemirror][destination] = "libraries"
-
-libraries[ckeditor][directory_name] = "ckeditor"
-libraries[ckeditor][type] = "library"
-libraries[ckeditor][download][url] = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%203.6.4/ckeditor_3.6.4.zip"
-libraries[ckeditor][download][type] = "get"
-libraries[ckeditor][destination] = "libraries"
-
-libraries[spyc][directory_name] = "spyc"
-libraries[spyc][type] = "library"
-libraries[spyc][download][url] = "http://spyc.googlecode.com/files/spyc-0.5.zip"
-libraries[spyc][download][type] = "get"
-libraries[spyc][destination] = "libraries"
-
-libraries[awssdk][directory_name] = "awssdk"
-libraries[awssdk][type] = "library"
-libraries[awssdk][download][url] = "http://pear.amazonwebservices.com/get/sdk-latest.zip"
-libraries[awssdk][download][type] = "get"
-libraries[awssdk][destination] = "libraries"
+libraries[syntaxhighlighter][destination]                      = 'libraries'
+libraries[syntaxhighlighter][directory_name]                   = "syntaxhighlighter"
+libraries[syntaxhighlighter][download][type]                   = 'get'
+libraries[syntaxhighlighter][download][url]                    = 'http://alexgorbatchev.com/SyntaxHighlighter/download/download.php?sh_current'

@@ -103,22 +103,22 @@ function devconnect_variable_info($options = array()) {
     'description' => t('When checked, double-escapes developer app names and API Products in URLs.'),
     'group' => 'devconnect'
   );
-
-  $variables['apigee_log_threshold'] = array(
-    'type' => 'select',
-    'title' => t('KMS logging threshold'),
-    'description' => t('Controls what baseline level of KMS output should be written to the logs.'),
-    'required' => TRUE,
-    'default' => Apigee\Util\Log::LOGLEVEL_WARNING,
-    'options' => array(
-      Apigee\Util\Log::LOGLEVEL_DEBUG => 'Debug',
-      Apigee\Util\Log::LOGLEVEL_NOTICE => 'Notice',
-      Apigee\Util\Log::LOGLEVEL_WARNING => 'Warning',
-      Apigee\Util\Log::LOGLEVEL_ERROR => 'Error',
-      Apigee\Util\Log::LOGLEVEL_CRITICAL => 'Critical'
-    )
-  );
-
+  if (class_exists("Apigee\Util\Log")){
+    $variables['apigee_log_threshold'] = array(
+      'type' => 'select',
+      'title' => t('KMS logging threshold'),
+      'description' => t('Controls what baseline level of KMS output should be written to the logs.'),
+      'required' => TRUE,
+      'default' => Apigee\Util\Log::LOGLEVEL_WARNING,
+      'options' => array(
+        Apigee\Util\Log::LOGLEVEL_DEBUG => 'Debug',
+        Apigee\Util\Log::LOGLEVEL_NOTICE => 'Notice',
+        Apigee\Util\Log::LOGLEVEL_WARNING => 'Warning',
+        Apigee\Util\Log::LOGLEVEL_ERROR => 'Error',
+        Apigee\Util\Log::LOGLEVEL_CRITICAL => 'Critical'
+      )
+    );
+  }
   return $variables;
 }
 

@@ -222,3 +222,15 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
   
 }
 
+function apigee_install_pantheon_push_solr() {
+  if (array_key_exists("PANTHEON_ENVIRONMENT", $_SERVER)){
+    if (!module_exists("pantheon_apachesolr")) {
+      module_enable("pantheon_apachesolr", TRUE);
+    }
+    if (!module_exists("pantheon_api")) {
+      module_enable("pantheon_api", TRUE);
+    }
+    module_load_include("module", "pantheon_apachesolr");
+    pantheon_apachesolr_update_schema("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
+  }
+}
