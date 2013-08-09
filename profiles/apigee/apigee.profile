@@ -174,7 +174,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
   if (isset($_REQUEST['devconnect_endpoint'])) {
     $endpoint = $_REQUEST['devconnect_endpoint'];
   } else {
-    $endpoint = "https://api.entierprise.apigee.com/v1";
+    $endpoint = "https://api.enterprise.apigee.com/v1";
   }
   $attributes = array(
     "autocomplete" => "off",
