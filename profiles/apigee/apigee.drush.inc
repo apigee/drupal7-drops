@@ -72,6 +72,20 @@ function apigee_migrate() {
   db_query("drop table if exists temp_og_users_roles;");
   drush_log(dt('Database updated with distro file locations.'), 'ok');
   variable_set("install_profile", "apigee");
+  if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)) {
+    $pressflow = json_decode($_SERVER['PRESSFLOW_SETTINGS'], true);
+    $c = $pressflow['conf'];
+  } else {
+    $c = array(
+      "file_public_path" => "sites/default/files",
+      "file_private_path" => "sites/default/private",
+      "file_temporary_path" => "sites/default/tmp"
+    );
+  }
+  variable_set("file_public_path", $c['file_public_path']);
+  variable_set("file_temporary_path", $c['file_temporary_path']);
+  variable_set("file_private_path", $c['file_private_path']);
+  
   drush_log(dt('Install Profile Set.'), 'ok');
   drush_invoke("rr");
   module_load_include("php", "devconnect", "lib/Apigee/Util/Log");

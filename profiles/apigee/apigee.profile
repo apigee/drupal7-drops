@@ -95,6 +95,19 @@ function apigee_install_configure(&$install_state) {
   variable_set('cache_lifetime', '0');
   variable_set('page_cache_maximum_age', '900');
   variable_set('page_compression', 0);
+  if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)) {
+    $pressflow = json_decode($_SERVER['PRESSFLOW_SETTINGS'], true);
+    $conf = $pressflow['conf'];
+  } else {
+    $conf = array(
+      "file_public_path" => "sites/default/files",
+      "file_private_path" => "sites/default/private",
+      "file_temporary_path" => "sites/default/tmp"
+    );
+  }
+  variable_set("file_public_path", $conf['file_public_path']);
+  variable_set("file_temporary_path", $conf['file_temporary_path']);
+  variable_set("file_private_path", $conf['file_private_path']);
   variable_set('preprocess_css', 1);
   variable_set('preprocess_js', 1);
   $search_active_modules = array(
@@ -113,7 +126,6 @@ function apigee_install_configure(&$install_state) {
   theme_enable(array("apigee_devconnect", "apigee_base"));
   variable_set('admin_theme', "rubik");
   variable_set('theme_default', "apigee_devconnect");
-  
   variable_set('site_name', "New Apigee Site");
   variable_set('site_mail', "noreply@apigee.com");
   variable_set('date_default_timezone', "America/Los_Angeles"); // Designed by Apigee in California
@@ -139,8 +151,12 @@ function apigee_install_configure(&$install_state) {
   } else {
     drupal_set_message(t('Unable to create admin user.'));
   }
-  $install_state['completed_task'] = install_verify_completed_task();
+  drush_cache_command_clear("theme-list");
+  drush_cache_command_clear("theme-registry");
+  drush_cache_command_clear("menu");
   drupal_flush_all_caches();
+  $install_state['completed_task'] = install_verify_completed_task();
+
 }
 
 
@@ -223,13 +239,8 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
 }
 
 function apigee_install_pantheon_push_solr() {
-  if (array_key_exists("PANTHEON_ENVIRONMENT", $_SERVER)){
-    if (!module_exists("pantheon_apachesolr")) {
-      module_enable("pantheon_apachesolr", TRUE);
-    }
-    if (!module_exists("pantheon_api")) {
-      module_enable("pantheon_api", TRUE);
-    }
+  if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)){
+    module_enable(array("pantheon_api", "pantheon_apachesolr"), TRUE);
     module_load_include("module", "pantheon_apachesolr");
     pantheon_apachesolr_update_schema("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
   }

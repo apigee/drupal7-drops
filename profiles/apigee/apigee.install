@@ -128,6 +128,9 @@ function apigee_install(&$install_state) {
     node_access_needs_rebuild(FALSE);
     // ignore any other install messages
     drupal_get_messages();
+    drush_cache_command_clear("theme-list");
+    drush_cache_command_clear("theme-registry");
+    drush_cache_command_clear("menu");
     drupal_flush_all_caches();
   } catch(Exception $e) {
     throw new \Apigee\Exceptions\InstallException($e->getMessage(), 0, $_SERVER["REQUEST_URI"], $install_state);
