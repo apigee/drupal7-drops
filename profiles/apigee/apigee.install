@@ -10,7 +10,10 @@ function apigee_install_tasks(&$install_state) {
     "apigee_install_api_endpoint" => array(
       'display_name' => t('Configure the Apigee Endpoint'),
       'type' => 'form',
-      )
+    ), 
+    "apigee_install_pantheon_push_solr" => array(
+      "run" => INSTALL_TASK_RUN_IF_REACHED
+    )
   );
 }
 
@@ -94,18 +97,6 @@ function apigee_install(&$install_state) {
       $query->values($block);
     }
     $query->execute();
-  
-    // From shortcut.install, add shortcuts to the default set on install
-    $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
-    $shortcut_set->links = NULL;
-    $shortcut_set->links = array(
-      array(
-        'link_path' => 'admin/appearance/settings',
-        'link_title' => st('Theme'),
-        'weight' => -17,
-      ),
-    );
-    shortcut_set_save($shortcut_set);// Create a default role for site administrators, with all available permissions assigned.
     $admin_role = new stdClass();
     $admin_role->name = 'administrator';
     $admin_role->weight = 10;
