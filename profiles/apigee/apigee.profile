@@ -151,9 +151,6 @@ function apigee_install_configure(&$install_state) {
   } else {
     drupal_set_message(t('Unable to create admin user.'));
   }
-  drush_cache_command_clear("theme-list");
-  drush_cache_command_clear("theme-registry");
-  drush_cache_command_clear("menu");
   drupal_flush_all_caches();
   $install_state['completed_task'] = install_verify_completed_task();
 
