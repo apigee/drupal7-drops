@@ -133,6 +133,9 @@ projects[linkchecker][subdir] = "contrib"
 projects[login_destination][version] = "1.1"
 projects[login_destination][subdir] = "contrib"
 
+projects[logintoboggan][version] = "1.3"
+projects[logintoboggan][subdir] = "contrib"
+
 projects[me][version] = "1.1"
 projects[me][subdir] = "contrib"
 
