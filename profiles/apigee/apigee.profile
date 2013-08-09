@@ -136,6 +136,7 @@ function apigee_install_configure(&$install_state) {
   $user = (object)array(
     "uid" => 1,
     "name" => "admin",
+    "pass" => md5(mktime()),
     "mail" => "noreply@apigee.com",
     'field_first_name' => array(LANGUAGE_NONE => array(array('value' => "drupal"))),
     'field_last_name' => array(LANGUAGE_NONE => array(array('value' => "admin"))),
