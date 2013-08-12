@@ -23,7 +23,7 @@ function devconnect_default_content_block_info() {
       'status' => false,
       'visibility' => BLOCK_VISIBILITY_NOTLISTED,
       'pages' => 'admin/*'
-  );
+    );
   
   return $blocks;
 }
@@ -56,7 +56,7 @@ function devconnect_default_content_block_view($delta = '') {
             </div>
           </div>');
           break;
-      case "develop-with-these":
+      case "apis":
         return array(
           "subject" => t("Develop with these APIs"),
           "content" => '<div class="starter api">

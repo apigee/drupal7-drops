@@ -88,7 +88,7 @@ function apigee_install_settings(&$install_state) {
  * Set up base config
  */
 function apigee_install_configure(&$install_state) {
-
+  drupal_set_time_limit(0);
   // Set default Pantheon variables
   variable_set('cache', 1);
   variable_set('block_cache', 1);
@@ -108,30 +108,48 @@ function apigee_install_configure(&$install_state) {
   variable_set("file_public_path", $conf['file_public_path']);
   variable_set("file_temporary_path", $conf['file_temporary_path']);
   variable_set("file_private_path", $conf['file_private_path']);
+  try{
+    file_prepare_directory($conf['file_public_path'], FILE_CREATE_DIRECTORY);
+    file_prepare_directory($conf['file_temporary_path'], FILE_CREATE_DIRECTORY);
+    file_prepare_directory($conf['file_private_path'], FILE_CREATE_DIRECTORY);
+  } catch(Exception $e) {
+    drupal_set_message(t('unable to create the directories necessary for Drupal to write files: :error', array(":error" => $e->getMessage())));
+  }
+  
   variable_set('preprocess_css', 1);
   variable_set('preprocess_js', 1);
+  variable_set('clean_url', true);
+  variable_set('site_name', "New Apigee Site");
+  variable_set('site_mail', "noreply@apigee.com");
+  variable_set('date_default_timezone', "America/Los_Angeles"); // Designed by Apigee in California
+  variable_set('site_default_country', "US");
+  
   $search_active_modules = array(
     'apachesolr_search' => 'apachesolr_search',
     'user' => 'user',
     'node' => 0
   );
-  variable_set('clean_url', true);
 
   variable_set('search_active_modules', $search_active_modules);
   variable_set('search_default_module', 'apachesolr_search');
   db_update('system')
-    ->fields(array('status' => 0))
+    ->fields(array('status' => 1))
     ->condition('type', 'theme')
     ->execute();
-  theme_enable(array("apigee_devconnect", "apigee_base"));
-  variable_set('admin_theme', "rubik");
-  variable_set('theme_default', "apigee_devconnect");
-  variable_set('site_name', "New Apigee Site");
-  variable_set('site_mail', "noreply@apigee.com");
-  variable_set('date_default_timezone', "America/Los_Angeles"); // Designed by Apigee in California
-  variable_set('site_default_country', "US");
+  $enable = array(
+      'theme_default' => 'apigee_devconnect',
+      'admin_theme' => 'rubik',
+      //'zen'
+    );
+  theme_enable($enable);
+
+  foreach ($enable as $var => $theme) {
+    if (!is_numeric($var)) {
+      variable_set($var, $theme);
+    }
+  }
+
   drupal_set_message(t('Apigee defaults configured.'));
-  
   $roles = array(3 => true, 4 => true);
   $user = (object)array(
     "uid" => 1,
@@ -153,6 +171,8 @@ function apigee_install_configure(&$install_state) {
     drupal_set_message(t('Unable to create admin user.'));
   }
   drupal_flush_all_caches();
+  // Update the menu router information.
+  menu_rebuild();
   $install_state['completed_task'] = install_verify_completed_task();
 
 }

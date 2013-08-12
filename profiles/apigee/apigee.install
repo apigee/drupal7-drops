@@ -41,11 +41,20 @@ function apigee_install_tasks_alter(&$tasks, $install_state) {
  * Perform actions to set up the site for this profile.
  */
 function apigee_install(&$install_state) {
+  drupal_set_time_limit(0);
   try{
     $default_theme = "apigee_devconnect";
     $admin_theme = "rubik";
     // activate admin theme when editing a node
     variable_set('node_admin_theme', '1');
+    variable_set("site_frontpage", "home");
+    $admin_role = new stdClass();
+    $admin_role->name = 'administrator';
+    $admin_role->weight = 10;
+    user_role_save($admin_role);
+    db_insert('users_roles')
+      ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+      ->execute();
     $blocks = array(
       array(
         'module' => 'system',
@@ -97,36 +106,24 @@ function apigee_install(&$install_state) {
       $query->values($block);
     }
     $query->execute();
-    $admin_role = new stdClass();
-    $admin_role->name = 'administrator';
-    $admin_role->weight = 10;
-    user_role_save($admin_role);
-    user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+
     $roles = array_keys(user_roles());
     foreach($roles as $role) {
       user_role_grant_permissions($role, array("node" => "access content"));
     }
-    
-    // Set this as the administrator role.
-    variable_set('user_admin_role', $admin_role->rid);
-
-    // Assign user 1 the "administrator" role.
-    db_insert('users_roles')
-      ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
-      ->execute();
-    // Update the menu router information.
-    menu_rebuild();
-    // revert features to ensure they are all installed
     $features = array(
       'devconnect_user',
+      'devconnect_content_authoring',
       'devconnect_default_content'
     );
     module_enable($features, true);
     features_revert($features);
-    variable_set("site_frontpage", "home");
-    // ignore any rebuild messages
-    node_access_needs_rebuild(FALSE);
-    // ignore any other install messages
+    //features_revert();
+
+    variable_set('user_admin_role', $admin_role->rid);
+    user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+    menu_rebuild();
+    node_access_rebuild();
     drupal_get_messages();
     drupal_flush_all_caches();
   } catch(Exception $e) {

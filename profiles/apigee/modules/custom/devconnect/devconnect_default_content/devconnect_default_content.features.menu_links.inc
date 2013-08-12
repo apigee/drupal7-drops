@@ -26,25 +26,7 @@ function devconnect_default_content_menu_default_menu_links() {
     'external' => '0',
     'has_children' => '0',
     'expanded' => '0',
-    'weight' => '-48',
-  );
-  // Exported menu link: main-menu:faq-page
-  $menu_links['main-menu:faq-page'] = array(
-    'menu_name' => 'main-menu',
-    'link_path' => 'faq-page',
-    'router_path' => 'faq-page',
-    'link_title' => 'FAQ',
-    'options' => array(
-      'attributes' => array(
-        'title' => '',
-      ),
-    ),
-    'module' => 'menu',
-    'hidden' => '0',
-    'external' => '0',
-    'has_children' => '0',
-    'expanded' => '0',
-    'weight' => '-47',
+    'weight' => '0',
   );
   // Exported menu link: main-menu:forum
   $menu_links['main-menu:forum'] = array(
@@ -62,44 +44,11 @@ function devconnect_default_content_menu_default_menu_links() {
     'external' => '0',
     'has_children' => '0',
     'expanded' => '0',
-    'weight' => '-46',
-  );
-  // Exported menu link: main-menu:node/3
-  $menu_links['main-menu:api-console'] = array(
-    'menu_name' => 'main-menu',
-    'link_path' => 'node/3',
-    'router_path' => 'node/%',
-    'link_title' => 'Console',
-    'options' => array(
-      'attributes' => array(),
-    ),
-    'module' => 'menu',
-    'hidden' => '0',
-    'external' => '0',
-    'has_children' => '0',
-    'expanded' => '0',
-    'weight' => '-49',
-  );
-  // Exported menu link: main-menu:node/954
-  $menu_links['main-menu:documentation'] = array(
-    'menu_name' => 'main-menu',
-    'link_path' => 'node/954',
-    'router_path' => 'node/%',
-    'link_title' => 'Documentation',
-    'options' => array(),
-    'module' => 'menu',
-    'hidden' => '0',
-    'external' => '0',
-    'has_children' => '0',
-    'expanded' => '0',
-    'weight' => '-50',
+    'weight' => '0',
   );
   // Translatables
   // Included for use with string extractors like potx.
   t('Blog');
-  t('Console');
-  t('Documentation');
-  t('FAQ');
   t('Forum');
 
 

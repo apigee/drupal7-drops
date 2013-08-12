@@ -54,29 +54,29 @@ function devconnect_default_content_context_default_contexts() {
   $context->reactions = array(
     'block' => array(
       'blocks' => array(
-        'devconnect_default_content-develop-with-these' => array(
-          'module' => 'devconnect_default_content',
-          'delta' => 'develop-with-these',
+        'block-6' => array(
+          'module' => 'block',
+          'delta' => 6,
           'region' => 'content',
-          'weight' => '-10',
+          'weight' => '-38',
         ),
         'views-home_featured_forum_posts-block' => array(
           'module' => 'views',
           'delta' => 'home_featured_forum_posts-block',
           'region' => 'content',
-          'weight' => '-8',
+          'weight' => '-37',
         ),
         'views-recent_blog_posts-block_1' => array(
           'module' => 'views',
           'delta' => 'recent_blog_posts-block_1',
           'region' => 'content',
-          'weight' => '-7',
+          'weight' => '-36',
         ),
         'system-main' => array(
           'module' => 'system',
           'delta' => 'main',
           'region' => 'content',
-          'weight' => '-6',
+          'weight' => '-35',
         ),
       ),
     ),
@@ -120,18 +120,7 @@ function devconnect_default_content_context_default_contexts() {
       ),
     ),
   );
-  $context->reactions = array(
-    'block' => array(
-      'blocks' => array(
-        'devconnect_default_content-footer' => array(
-          'module' => 'devconnect_default_content',
-          'delta' => 'footer',
-          'region' => 'footer',
-          'weight' => '-10',
-        ),
-      ),
-    ),
-  );
+  $context->reactions = array();
   $context->condition_mode = 0;
   $export['sitewide'] = $context;
 
