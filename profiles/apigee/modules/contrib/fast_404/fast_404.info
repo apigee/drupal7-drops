@@ -1,0 +1,10 @@
+name = Fast 404
+description = Speed up the generation of 404 pages with this module. Route 404 display to a static page.
+core = 7.x
+
+; Information added by drupal.org packaging script on 2012-03-10
+version = "7.x-1.3"
+core = "7.x"
+project = "fast_404"
+datestamp = "1331356543"
+
