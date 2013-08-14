@@ -117,6 +117,9 @@ projects[facetapi][version]                                    = "1"
 projects[faq][subdir]                                          = "contrib"
 projects[faq][version]                                         = "1"
 
+projects[fast_404][subdir]                                     = "contrib"
+projects[fast_404][version]                                    = "1"
+
 projects[features][subdir]                                     = "contrib"
 projects[features][version]                                    = "1"
 
