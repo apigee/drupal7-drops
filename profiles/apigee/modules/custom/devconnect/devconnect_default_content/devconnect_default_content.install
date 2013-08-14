@@ -4,15 +4,15 @@
 
 
 function devconnect_default_content_install() {
-  devconnect_default_content_set_css_classes();
 
 }
 
 function devconnect_default_content_update_7001() {
+  devconnect_default_content_set_css_classes();
 }
 
 function devconnect_default_content_set_css_classes() {
-  if (db_table_exists("block_class")) {
+  if (module_exists("block_class")) {
     db_insert("block_class")
       ->fields(
       array(

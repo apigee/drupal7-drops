@@ -9,6 +9,7 @@ dependencies[] = ckeditor
 dependencies[] = ckeditor_link
 dependencies[] = features
 dependencies[] = markdown
+dependencies[] = media
 dependencies[] = strongarm
 dependencies[] = toc_filter
 features[ckeditor_profile][] = Advanced

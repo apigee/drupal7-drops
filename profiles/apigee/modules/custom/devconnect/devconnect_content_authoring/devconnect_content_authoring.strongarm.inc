@@ -33,8 +33,6 @@ function devconnect_content_authoring_strongarm() {
           'thumb' => 1,
           'delete' => 1,
           'resize' => 1,
-          'mkdir' => 1,
-          'rmdir' => 1,
         ),
       ),
       'thumbnails' => array(
@@ -57,7 +55,6 @@ function devconnect_content_authoring_strongarm() {
           'suffix' => '',
         ),
       ),
-      'mkdirnum' => 0,
     ),
     2 => array(
       'name' => 'Sample profile',
@@ -77,8 +74,6 @@ function devconnect_content_authoring_strongarm() {
           'thumb' => 1,
           'delete' => 0,
           'resize' => 0,
-          'mkdir' => 0,
-          'rmdir' => 0,
         ),
       ),
       'thumbnails' => array(
@@ -89,7 +84,6 @@ function devconnect_content_authoring_strongarm() {
           'suffix' => '',
         ),
       ),
-      'mkdirnum' => 2,
     ),
   );
   $export['imce_profiles'] = $strongarm;
