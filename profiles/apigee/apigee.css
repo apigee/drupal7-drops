@@ -1,2 +1,20 @@
+html { 
+  background: url(apigee1.jpg) no-repeat bottom center fixed; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+body.maintenance-page.in-maintenance { background-color:transparent; }
+body.maintenance-page.in-maintenance #page { background-color:transparent; }
+
 body.maintenance-page #branding { background-color: rgb(255, 67, 0); color: white;}
-body.maintenance-page #branding h1.page-title { color: white; font-weight: bolder; }
+body.maintenance-page #branding h1.page-title { color: white; font-weight: bolder; font-family: ars-maquette-web, 'Myriad Pro', 'Gill Sans', 'Lucida Sans', Verdana, Geneva, sans-serif; font-weight:normal;}
+body.maintenance-page #sidebar-first { background-color: rgba(255, 255, 255, .7);}
+body.maintenance-page #sidebar-first ol.task-list { padding: 10px; }
+body.maintenance-page #sidebar-first ol.task-list li { color:#AAA; font-weight: bolder; font-family: ars-maquette-web, 'Myriad Pro', 'Gill Sans', 'Lucida Sans', Verdana, Geneva, sans-serif; font-weight:normal; }
+body.maintenance-page #sidebar-first ol.task-list li.active { color:rgb(255, 67, 0);  }
+body.maintenance-page #sidebar-first ol.task-list li.done { color:#666;  }
+body.maintenance-page #content { background-color: rgba(255, 255, 255, .7);}
+body.maintenance-page #content #progress { margin-top: 20px;  margin-bottom: 20px; }
+body.maintenance-page form { margin-left: 20px;  }
