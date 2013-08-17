@@ -54,29 +54,29 @@ function devconnect_default_content_context_default_contexts() {
   $context->reactions = array(
     'block' => array(
       'blocks' => array(
-        'block-6' => array(
-          'module' => 'block',
-          'delta' => 6,
-          'region' => 'content',
-          'weight' => '-38',
+        'devconnect_homepage-homepage_header' => array(
+          'module' => 'devconnect_homepage',
+          'delta' => 'homepage_header',
+          'region' => 'homepage_header',
+          'weight' => '-10',
         ),
         'views-home_featured_forum_posts-block' => array(
           'module' => 'views',
           'delta' => 'home_featured_forum_posts-block',
           'region' => 'content',
-          'weight' => '-37',
+          'weight' => '-18',
         ),
         'views-recent_blog_posts-block_1' => array(
           'module' => 'views',
           'delta' => 'recent_blog_posts-block_1',
           'region' => 'content',
-          'weight' => '-36',
+          'weight' => '-18',
         ),
-        'system-main' => array(
-          'module' => 'system',
-          'delta' => 'main',
+        'devconnect_default_content-develop-with-these' => array(
+          'module' => 'devconnect_default_content',
+          'delta' => 'develop-with-these',
           'region' => 'content',
-          'weight' => '-35',
+          'weight' => '-10',
         ),
       ),
     ),
@@ -120,7 +120,18 @@ function devconnect_default_content_context_default_contexts() {
       ),
     ),
   );
-  $context->reactions = array();
+  $context->reactions = array(
+    'block' => array(
+      'blocks' => array(
+        'devconnect_default_content-footer' => array(
+          'module' => 'devconnect_default_content',
+          'delta' => 'footer',
+          'region' => 'footer',
+          'weight' => '-10',
+        ),
+      ),
+    ),
+  );
   $context->condition_mode = 0;
   $export['sitewide'] = $context;
 

@@ -5,15 +5,15 @@ require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Util/Cryp
 
 
 function apigee_install_tasks(&$install_state) {
+  if (!array_key_exists("batch_configure_complete", $install_state)) {
+    $install_state["batch_configure_complete"] = false;
+  }
   drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css');
   return array(
     "apigee_install_api_endpoint" => array(
       'display_name' => t('Configure the Apigee Endpoint'),
       'type' => 'form',
-    ), 
-    "apigee_install_pantheon_push_solr" => array(
-      "run" => INSTALL_TASK_RUN_IF_REACHED
-    )
+      )
   );
 }
 
@@ -23,111 +23,17 @@ function apigee_install_tasks(&$install_state) {
  * @param $config
  *   The config array for a Profiler Install Profile.
  */
-function apigee_install_tasks_alter(&$tasks, $install_state) {
+function apigee_install_tasks_alter(&$tasks, &$install_state) {
   $tasks['install_select_profile']['function'] = 'apigee_install_select_profile';
   $tasks['install_select_locale']['function'] = 'apigee_install_select_locale';
   $tasks['install_load_profile']['function'] = 'apigee_install_load_profile';
+  $tasks['install_settings_form']['function'] = 'apigee_install_settings_form';
   $tasks['install_configure_form'] = array(
-    "function" => "apigee_install_configure",
-    "run" => INSTALL_TASK_RUN_IF_REACHED
+    "function" => "apigee_install_configure_batch",
+    'run' => $install_state['batch_configure_complete'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
+    "type" => "batch"
   );
   
 }
 
 
-/**
- * Implements hook_install().
- *
- * Perform actions to set up the site for this profile.
- */
-function apigee_install(&$install_state) {
-  drupal_set_time_limit(0);
-  try{
-    $default_theme = "apigee_devconnect";
-    $admin_theme = "rubik";
-    // activate admin theme when editing a node
-    variable_set('node_admin_theme', '1');
-    variable_set("site_frontpage", "home");
-    $admin_role = new stdClass();
-    $admin_role->name = 'administrator';
-    $admin_role->weight = 10;
-    user_role_save($admin_role);
-    db_insert('users_roles')
-      ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
-      ->execute();
-    $blocks = array(
-      array(
-        'module' => 'system',
-        'delta' => 'main',
-        'theme' => $default_theme,
-        'status' => 1,
-        'weight' => 0,
-        'region' => 'content',
-        'pages' => '',
-        'cache' => -1,
-      ),
-      array(
-        'module' => 'system',
-        'delta' => 'help',
-        'theme' => $default_theme,
-        'status' => 1,
-        'weight' => -10,
-        'region' => 'content',
-        'pages' => '',
-        'cache' => -1,
-      ),
-      array(
-        'module' => 'system',
-        'delta' => 'main',
-        'theme' => $admin_theme,
-        'status' => 1,
-        'weight' => 0,
-        'region' => 'content',
-        'pages' => '',
-        'cache' => -1,
-      ),
-      array(
-        'module' => 'system',
-        'delta' => 'help',
-        'theme' => $admin_theme,
-        'status' => 1,
-        'weight' => 0,
-        'region' => 'help',
-        'pages' => '',
-        'cache' => -1,
-      ),
-    );
-    // drop system / user blocks to ensure correct building
-    db_delete('block')->condition('module', 'system')->execute();
-    db_delete('block')->condition('module', 'user')->execute();
-    // add in our blocks defined above
-    $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
-    foreach ($blocks as $block) {
-      $query->values($block);
-    }
-    $query->execute();
-
-    $roles = array_keys(user_roles());
-    foreach($roles as $role) {
-      user_role_grant_permissions($role, array("node" => "access content"));
-    }
-    $features = array(
-      'devconnect_user',
-      'devconnect_content_authoring',
-      'devconnect_default_content'
-    );
-    module_enable($features, true);
-    features_revert($features);
-    //features_revert();
-
-    variable_set('user_admin_role', $admin_role->rid);
-    user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
-    menu_rebuild();
-    node_access_rebuild();
-    drupal_get_messages();
-    drupal_flush_all_caches();
-  } catch(Exception $e) {
-    throw new \Apigee\Exceptions\InstallException($e->getMessage(), 0, $_SERVER["REQUEST_URI"], $install_state);
-  }
-  
-}

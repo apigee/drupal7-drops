@@ -39,9 +39,17 @@ function apigee_install_load_profile(&$install_state) {
   //drupal_get_messages();
 }
 
+/**
+ * Settings install
+ *
+ * @param string $install_state 
+ * @return void
+ * @author Tom Stovall
+ */
+
 
 function apigee_install_settings(&$install_state) {
-  
+  xdebug_break();
   drupal_static_reset('conf_path');
   $conf_path = './' . conf_path(FALSE);
   $settings_file = $conf_path . '/settings.php';
@@ -84,12 +92,53 @@ function apigee_install_settings(&$install_state) {
   $install_state['completed_task'] = install_verify_completed_task();
 }
 
+
 /**
- * Set up base config
+ * Create batch items for apigee install
+ *
+ * @param string $install_state 
+ * @return void
+ * @author Tom Stovall
  */
-function apigee_install_configure(&$install_state) {
-  drupal_set_time_limit(0);
-  // Set default Pantheon variables
+
+function apigee_install_configure_batch(&$install_state){
+  xdebug_break();
+  return array(
+    "title" => t("Configuring your install..."),
+    "operations" => array(
+      array("apigee_install_configure_variables", array()),
+      array("apigee_install_pantheon_push_solr", array()),
+      array("apigee_install_configure_solr", array()),      
+      array("apigee_install_configure_users", array()),      
+      array("apigee_install_configure_themes", array()),      
+      array("apigee_install_revert_features", array()),
+      array("apigee_feature_install_revert", array("devconnect_user")),
+      array("apigee_feature_install_revert", array("devconnect_default_content")),
+      array("apigee_feature_rebuild_permissions", array()),
+      array("apigee_install_clear_caches", array()),
+    ),
+    'finished' => '_apigee_install_configure_task_finished',    
+  );
+}
+
+function _apigee_install_configure_task_finished($success, $results, $operations) {
+  global $install_state;
+  xdebug_break();
+  $install_state['batch_configure_complete'] = install_verify_completed_task();
+}
+
+/**
+ * Variables batch item
+ *
+ * @param string $install_state 
+ * @param string $context 
+ * @return void
+ * @author Tom Stovall
+ */
+
+function apigee_install_configure_variables( &$context) {
+  xdebug_break();
+  
   variable_set('cache', 1);
   variable_set('block_cache', 1);
   variable_set('cache_lifetime', '0');
@@ -123,6 +172,44 @@ function apigee_install_configure(&$install_state) {
   variable_set('site_mail', "noreply@apigee.com");
   variable_set('date_default_timezone', "America/Los_Angeles"); // Designed by Apigee in California
   variable_set('site_default_country', "US");
+  $context['results'][] = "variables";
+  $context['message'] = st('Defautl variables set.');
+}
+
+/**
+ * Push solr xml to Pantheon server
+ *
+ * @param string $install_state 
+ * @param string $context 
+ * @return void
+ * @author Tom Stovall
+ */
+
+
+function apigee_install_pantheon_push_solr( &$context) {
+  xdebug_break();
+  
+  if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)){
+    module_enable(array("pantheon_api", "pantheon_apachesolr"), TRUE);
+    module_load_include("module", "pantheon_apachesolr");
+    pantheon_apachesolr_update_schema("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
+    $context['results'][] = "solr_push";
+    $context['message'] = st('Solr config pushed to pantheon solr server.');
+  }
+  
+}
+
+/**
+ * Solr config batch item
+ *
+ * @param string $install_state 
+ * @param string $context 
+ * @return void
+ * @author Tom Stovall
+ */
+
+function apigee_install_configure_solr(&$context) {
+  xdebug_break();
   
   $search_active_modules = array(
     'apachesolr_search' => 'apachesolr_search',
@@ -132,24 +219,38 @@ function apigee_install_configure(&$install_state) {
 
   variable_set('search_active_modules', $search_active_modules);
   variable_set('search_default_module', 'apachesolr_search');
-  db_update('system')
-    ->fields(array('status' => 1))
-    ->condition('type', 'theme')
+  $context['results'][] = "solr_push";
+  $context['message'] = st('Solr Configured.');
+  
+}
+
+/**
+ * Users batch item
+ *
+ * @param string $install_state 
+ * @param string $context 
+ * @return void
+ * @author Tom Stovall
+ */
+
+function apigee_install_configure_users( &$context) {
+  xdebug_break();
+  
+  $admin_role = new stdClass();
+  $admin_role->name = 'administrator';
+  $admin_role->weight = 10;
+  user_role_save($admin_role);
+  db_insert('users_roles')
+    ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
     ->execute();
-  $enable = array(
-      'theme_default' => 'apigee_devconnect',
-      'admin_theme' => 'rubik',
-      //'zen'
-    );
-  theme_enable($enable);
-
-  foreach ($enable as $var => $theme) {
-    if (!is_numeric($var)) {
-      variable_set($var, $theme);
-    }
+  
+  $roles = array_keys(user_roles());
+  foreach($roles as $role) {
+    user_role_grant_permissions($role, array("node" => "access content"));
   }
-
-  drupal_set_message(t('Apigee defaults configured.'));
+  variable_set('user_admin_role', $admin_role->rid);
+  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+  
   $roles = array(3 => true, 4 => true);
   $user = (object)array(
     "uid" => 1,
@@ -163,24 +264,110 @@ function apigee_install_configure(&$install_state) {
     'roles' => $roles,
   );
   $results = user_save($user);
-  drupal_get_messages();
-  
   if ($results){
     drupal_set_message(t('Admin user created. Use password recovery or drush to set the password.'));
   } else {
     drupal_set_message(t('Unable to create admin user.'));
   }
-  drupal_flush_all_caches();
-  // Update the menu router information.
-  menu_rebuild();
-  $install_state['completed_task'] = install_verify_completed_task();
+  $context['results'][] = "admin_user";
+  $context['message'] = st('Admin User Created.');
+  
+}
 
+/**
+ * Themes batch Item
+ *
+ * @param string $install_state 
+ * @param string $context 
+ * @return void
+ * @author Tom Stovall
+ */
+
+function apigee_install_configure_themes( &$context) {
+  xdebug_break();
+  
+    $default_theme = "apigee_devconnect";
+    $admin_theme = "rubik";
+    // activate admin theme when editing a node
+    variable_set('node_admin_theme', '1');
+    variable_set("site_frontpage", "home");
+    
+    db_update('system')
+      ->fields(array('status' => 0))
+      ->condition('type', 'theme')
+      ->execute();
+    $enable = array(
+        'theme_default' => 'apigee_devconnect',
+        'admin_theme' => 'rubik',
+        'apigee_base'
+      );
+    theme_enable($enable);
+    
+    foreach ($enable as $var => $theme) {
+      if (!is_numeric($var)) {
+        variable_set($var, $theme);
+      }
+    }
+  drupal_flush_all_caches();
+  $context['results'][] = "themes";
+  $context['message'] = st('Default Apigee theme configured.');
+  
+}
+
+/**
+ * Features batch item
+ *
+ * @param string $install_state 
+ * @param string $context 
+ * @return void
+ * @author Tom Stovall
+ */
+
+function apigee_feature_install_revert($feature, &$context) {
+    features_install_modules(array($feature));
+    if (module_exists($feautre)) {
+      features_revert(array($feature));
+      features_revert();
+      drupal_get_messages("status");
+      $context['results'][] = "features.".$feature;
+      $context['message'] = st('Feature: %feature enabled & reverted.', array("%feature" => $feature));
+    } else {
+      drupal_set_message("Feature not enabled: %feature", array("%feature" => $feature), "error");
+      $context['results'][] = "features.".$feature;
+      $context['message'] = st('Feature: %feature <b style="color:red;">NOT</b> enabled and reverted.', array("%feature" => $feature));
+    }
+
+}
+
+
+function apigee_feature_rebuild_permissions(&$context) {
+  node_access_rebuild();
+  $context['results'][] = "content_permissions";
+  $context['message'] = st('Content Permissions Rebuilt');
+}
+
+
+function apigee_install_clear_caches(&$context){
+  drupal_flush_all_caches();
+  $context['results'][] = "cache";
+  $context['message'] = st('Caches Cleared');
 }
 
 
 
 
+/**
+ *  Set the apigee endpoint configuration vars
+ *
+ * @param string $form 
+ * @param string $form_state 
+ * @return void
+ * @author Tom Stovall
+ */
+
 function apigee_install_api_endpoint($form, &$form_state) {
+  xdebug_break();
+  
   if (isset($_REQUEST['devconnect_org'])) {
     $org = $_REQUEST['devconnect_org'];
   } else {
@@ -238,7 +425,17 @@ function apigee_install_api_endpoint($form, &$form_state) {
   return $form;
 }
 
+/**
+ * hook submit for endpoint vars form
+ *
+ * @param string $form 
+ * @param string $form_state 
+ * @return void
+ * @author Tom Stovall
+ */
+
 function apigee_install_api_endpoint_submit($form, &$form_state) {
+  xdebug_break();
   
   $raw_auth = $form_state['values']['devconnect_curlauth'];
   list($username, $raw_pass) = explode(':', $raw_auth, 2);
@@ -251,15 +448,27 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
       variable_set($key, $value);
     }
   }
-  $install_state['completed_task'] = install_verify_completed_task();
-  drupal_flush_all_caches();
+  xdebug_break();
+  $install_state['completed_task'] = install_verify_completed_task();  
+}
+
+function apigee_install_settings_form($form, &$form_state, &$install_state) {
+  $attributes = array("autocomplete" => "off", "autocapitablize" => "off", "autocorrect" => "off");
+  $form = install_settings_form($form, $form_state, $install_state);
+  $form['settings']['mysql']['database']["#default_value"] = "drops7";
+  $form['settings']['mysql']['username']["#default_value"] = "root";
+  $form['settings']['mysql']['database']["#attributes"] = $attributes;
+  $form['settings']['mysql']['username']["#attributes"] = $attributes;
+  $form['settings']['mysql']['password']["#attributes"] = $attributes;
+  $form['actions']['save']["#validate"][] = "install_settings_form_validate";
+  return $form;
+}
+
+function apigee_install_settings_form_submit($form, &$form_state, &$install_state) {
+  
+  
   
 }
 
-function apigee_install_pantheon_push_solr() {
-  if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)){
-    module_enable(array("pantheon_api", "pantheon_apachesolr"), TRUE);
-    module_load_include("module", "pantheon_apachesolr");
-    pantheon_apachesolr_update_schema("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
-  }
-}
+
+

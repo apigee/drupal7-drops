@@ -11,7 +11,7 @@
         <nav role="navigation">
           <?php
             $menu_depth = 2;
-            print drupal_render(menu_tree_output(menu_tree_all_data('main-menu', null, $menu_depth)));
+            print @drupal_render(menu_tree_output(menu_tree_all_data('main-menu', null, $menu_depth)));
           ?>
           <div id='login-buttons' class="span7 pull-right">
             <ul class="nav pull-right">
