@@ -327,15 +327,14 @@ function apigee_feature_install_revert($feature, &$context) {
     features_install_modules(array($feature));
     if (module_exists($feature)) {
       features_revert(array($feature));
-      features_revert();
-      drupal_get_messages("status");
-      $context['results'][] = "features.".$feature;
+      $context['results'][] = "features_".$feature;
       $context['message'] = st('Feature: %feature enabled & reverted.', array("%feature" => $feature));
     } else {
       drupal_set_message("Feature not enabled: %feature", array("%feature" => $feature), "error");
-      $context['results'][] = "features.".$feature;
+      $context['results'][] = "features_".$feature;
       $context['message'] = st('Feature: %feature <b style="color:red;">NOT</b> enabled and reverted.', array("%feature" => $feature));
     }
+    drupal_get_messages("status");
 
 }
 
@@ -453,7 +452,12 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
 }
 
 function apigee_install_settings_form($form, &$form_state, &$install_state) {
-  $attributes = array("autocomplete" => "off", "autocapitablize" => "off", "autocorrect" => "off");
+  $attributes = array(
+    "autocomplete" => "off",
+    "autocorrect" => "off",
+    "autocapitalize" => "off",
+    "spellcheck" => "false"
+  );
   $form = install_settings_form($form, $form_state, $install_state);
   $form['settings']['mysql']['database']["#default_value"] = "drops7";
   $form['settings']['mysql']['username']["#default_value"] = "root";
