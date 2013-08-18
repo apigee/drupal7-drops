@@ -49,7 +49,7 @@ function apigee_install_load_profile(&$install_state) {
 
 
 function apigee_install_settings(&$install_state) {
-  xdebug_break();
+  
   drupal_static_reset('conf_path');
   $conf_path = './' . conf_path(FALSE);
   $settings_file = $conf_path . '/settings.php';
@@ -102,7 +102,7 @@ function apigee_install_settings(&$install_state) {
  */
 
 function apigee_install_configure_batch(&$install_state){
-  xdebug_break();
+  
   return array(
     "title" => t("Configuring your install..."),
     "operations" => array(
@@ -123,7 +123,7 @@ function apigee_install_configure_batch(&$install_state){
 
 function _apigee_install_configure_task_finished($success, $results, $operations) {
   global $install_state;
-  xdebug_break();
+  
   $install_state['batch_configure_complete'] = install_verify_completed_task();
 }
 
@@ -137,7 +137,7 @@ function _apigee_install_configure_task_finished($success, $results, $operations
  */
 
 function apigee_install_configure_variables( &$context) {
-  xdebug_break();
+  
   
   variable_set('cache', 1);
   variable_set('block_cache', 1);
@@ -187,7 +187,7 @@ function apigee_install_configure_variables( &$context) {
 
 
 function apigee_install_pantheon_push_solr( &$context) {
-  xdebug_break();
+  
   
   if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)){
     module_enable(array("pantheon_api", "pantheon_apachesolr"), TRUE);
@@ -209,7 +209,7 @@ function apigee_install_pantheon_push_solr( &$context) {
  */
 
 function apigee_install_configure_solr(&$context) {
-  xdebug_break();
+  
   
   $search_active_modules = array(
     'apachesolr_search' => 'apachesolr_search',
@@ -234,7 +234,7 @@ function apigee_install_configure_solr(&$context) {
  */
 
 function apigee_install_configure_users( &$context) {
-  xdebug_break();
+  
   
   $admin_role = new stdClass();
   $admin_role->name = 'administrator';
@@ -284,7 +284,7 @@ function apigee_install_configure_users( &$context) {
  */
 
 function apigee_install_configure_themes( &$context) {
-  xdebug_break();
+  
   
     $default_theme = "apigee_devconnect";
     $admin_theme = "rubik";
@@ -366,7 +366,7 @@ function apigee_install_clear_caches(&$context){
  */
 
 function apigee_install_api_endpoint($form, &$form_state) {
-  xdebug_break();
+  
   
   if (isset($_REQUEST['devconnect_org'])) {
     $org = $_REQUEST['devconnect_org'];
@@ -435,7 +435,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
  */
 
 function apigee_install_api_endpoint_submit($form, &$form_state) {
-  xdebug_break();
+  
   
   $raw_auth = $form_state['values']['devconnect_curlauth'];
   list($username, $raw_pass) = explode(':', $raw_auth, 2);
@@ -448,7 +448,7 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
       variable_set($key, $value);
     }
   }
-  xdebug_break();
+  
   $install_state['completed_task'] = install_verify_completed_task();  
 }
 
