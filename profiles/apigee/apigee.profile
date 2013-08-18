@@ -341,7 +341,7 @@ function apigee_feature_install_revert($feature, &$context) {
 
 
 function apigee_feature_rebuild_permissions(&$context) {
-  node_access_rebuild();
+  node_access_rebuild(TRUE);
   $context['results'][] = "content_permissions";
   $context['message'] = st('Content Permissions Rebuilt');
 }
