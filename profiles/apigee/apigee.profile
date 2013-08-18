@@ -325,7 +325,7 @@ function apigee_install_configure_themes( &$context) {
 
 function apigee_feature_install_revert($feature, &$context) {
     features_install_modules(array($feature));
-    if (module_exists($feautre)) {
+    if (module_exists($feature)) {
       features_revert(array($feature));
       features_revert();
       drupal_get_messages("status");
