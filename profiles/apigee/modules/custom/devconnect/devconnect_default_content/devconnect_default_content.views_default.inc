@@ -138,7 +138,7 @@ function devconnect_default_content_views_default_views() {
     'blog' => 0,
     'tags' => 0,
   );
-  /* Sort criterion: Content statistics: Most recent view */
+  /* Sort criterion: Broken/missing handler */
   $handler->display->display_options['sorts']['timestamp']['id'] = 'timestamp';
   $handler->display->display_options['sorts']['timestamp']['table'] = 'node_counter';
   $handler->display->display_options['sorts']['timestamp']['field'] = 'timestamp';

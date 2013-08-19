@@ -18,6 +18,11 @@ function devconnect_default_content_filter_default_formats() {
     'status' => '1',
     'weight' => '-10',
     'filters' => array(
+      'ckeditor_link_filter' => array(
+        'weight' => '0',
+        'status' => '1',
+        'settings' => array(),
+      ),
       'filter_url' => array(
         'weight' => '0',
         'status' => '1',
@@ -25,7 +30,21 @@ function devconnect_default_content_filter_default_formats() {
           'filter_url_length' => '72',
         ),
       ),
+      'filter_html' => array(
+        'weight' => '1',
+        'status' => '1',
+        'settings' => array(
+          'allowed_html' => '<a> <em> <strong> <cite> <blockquote> <code> <ul> <ol> <li> <dl> <dt> <dd><h1><h2><h3><p>',
+          'filter_html_help' => 1,
+          'filter_html_nofollow' => 0,
+        ),
+      ),
       'filter_autop' => array(
+        'weight' => '2',
+        'status' => '1',
+        'settings' => array(),
+      ),
+      'media_filter' => array(
         'weight' => '2',
         'status' => '1',
         'settings' => array(),
@@ -46,11 +65,6 @@ function devconnect_default_content_filter_default_formats() {
     'status' => '1',
     'weight' => '-9',
     'filters' => array(
-      'filter_markdown' => array(
-        'weight' => '-48',
-        'status' => '1',
-        'settings' => array(),
-      ),
       'filter_url' => array(
         'weight' => '-43',
         'status' => '1',
@@ -70,6 +84,11 @@ function devconnect_default_content_filter_default_formats() {
       ),
       'filter_htmlcorrector' => array(
         'weight' => '-38',
+        'status' => '1',
+        'settings' => array(),
+      ),
+      'ckeditor_link_filter' => array(
+        'weight' => '0',
         'status' => '1',
         'settings' => array(),
       ),
@@ -94,6 +113,11 @@ function devconnect_default_content_filter_default_formats() {
         'status' => '1',
         'settings' => array(),
       ),
+      'media_filter' => array(
+        'weight' => '2',
+        'status' => '1',
+        'settings' => array(),
+      ),
     ),
   );
 
@@ -114,10 +138,15 @@ function devconnect_default_content_filter_default_formats() {
         'weight' => '1',
         'status' => '1',
         'settings' => array(
-          'filter_url_length' => 72,
+          'filter_url_length' => '72',
         ),
       ),
       'filter_autop' => array(
+        'weight' => '2',
+        'status' => '1',
+        'settings' => array(),
+      ),
+      'media_filter' => array(
         'weight' => '2',
         'status' => '1',
         'settings' => array(),
