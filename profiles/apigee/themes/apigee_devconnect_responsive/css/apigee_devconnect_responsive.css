@@ -142,7 +142,7 @@ span.welcome{
 	margin-bottom: 10px;
 }
 .home-header-btn .iconbtn {
-	background-image: url(/sites/all/themes/apigee_base/images/enterprise-sprites.png);
+	background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.png);
 	height: 30px;
 	position: absolute;
   right: 15px;
@@ -167,7 +167,7 @@ span.welcome{
 	position: relative;
 }
 /*.front .page-content .container{
-	background: url(/sites/all/themes/apigee_devconnect_responsive/images/homepage-content-bg.png) repeat-y scroll 0 0 transparent;
+	background: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/homepage-content-bg.png) repeat-y scroll 0 0 transparent;
 }
 .front .span24 .block{
 	float: left;
@@ -204,7 +204,7 @@ span.welcome{
 	background: url(../images/gear-green.png) no-repeat scroll 0 0 transparent;
 }
 .provider h3{
-	background: url(/sites/all/themes/apigee_devconnect_responsive/images/gear-purple.png) no-repeat scroll 0 0 transparent;
+	background: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/gear-purple.png) no-repeat scroll 0 0 transparent;
 }
 #block-views-home-featured-forum-posts-block h2,
 #block-views-recent-blog-posts-block-1 h2{
@@ -227,7 +227,7 @@ span.welcome{
 	top: 0;
 }
 .view-home-featured-forum-posts .comment-count{
-	background: url(/sites/all/themes/apigee_devconnect_responsive/images/comment-icon.png) no-repeat scroll 0 0 transparent;
+	background: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/comment-icon.png) no-repeat scroll 0 0 transparent;
 	padding-left: 35px;
 }
 .view-recent-blog-posts .views-row{
@@ -235,7 +235,7 @@ span.welcome{
 	position: relative;
 }
 span.blog-icon{
-	background: url(/sites/all/themes/apigee_devconnect_responsive/images/blog-icon.png) no-repeat scroll 0 0 transparent;
+	background: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/blog-icon.png) no-repeat scroll 0 0 transparent;
   display: inline-block;
   height: 19px;
   position: absolute;
@@ -280,7 +280,7 @@ span.blog-icon{
 
 /* Blog */
 #block-views-hot-topics-block h2{
-	background: url(/sites/all/themes/apigee_devconnect_responsive/images/hot-icon.png) no-repeat scroll 110px center transparent;
+	background: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/hot-icon.png) no-repeat scroll 110px center transparent;
 }
 .view-hot-topics .views-row ul{
 	list-style: none;
@@ -315,7 +315,7 @@ span.blog-icon{
   background-image: linear-gradient(top, #ffffff, #f3f3f4);
   background-repeat: repeat-x;
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f3f3f4', GradientType=0);
-  background: url(/sites/all/themes/apigee_devconnect_responsive/images/add-icon.png) no-repeat 132px 12px;
+  background: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/add-icon.png) no-repeat 132px 12px;
 	border: 1px solid #b7c0c5;
 	border-radius: 5px 5px 5px 5px;
 	-moz-border-radius: 5px 5px 5px 5px;
@@ -380,7 +380,7 @@ div.apiproduct-status {
 }
 .app-delete button,
 .app-delete button:hover{
-	background: url(/sites/all/themes/apigee_devconnect_responsive/images/delete-icon.png) no-repeat;
+	background: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/delete-icon.png) no-repeat;
 	border: none;
 	float: right;
 	height: 15px;
@@ -449,7 +449,7 @@ div.apiproduct-status {
 }
 #performance #edit-date-from,
 #performance #edit-date-to{
-	background-image: url(/sites/all/themes/apigee_devconnect_responsive/images/cal-icon.png);
+	background-image: url(/profiles/apigee/themes/apigee_devconnect_responsive/images/cal-icon.png);
 	background-repeat: no-repeat;
 	background-position: 155px 3px;
 }
