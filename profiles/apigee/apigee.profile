@@ -113,6 +113,7 @@ function apigee_install_configure_batch(&$install_state){
       array("apigee_install_configure_themes", array()),      
       array("apigee_install_revert_features", array()),
       array("apigee_feature_install_revert", array("devconnect_user")),
+      array('apigee_feature_install_revert', array('devconnect_default_structure')),
       array("apigee_feature_install_revert", array("devconnect_default_content")),
       array("apigee_feature_rebuild_permissions", array()),
       array("apigee_install_clear_caches", array()),
