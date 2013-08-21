@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * devconnect_default_content.features.menu_links.inc
+ * devconnect_default_structure.features.menu_links.inc
  */
 
 /**
  * Implements hook_menu_default_menu_links().
  */
-function devconnect_default_content_menu_default_menu_links() {
+function devconnect_default_structure_menu_default_menu_links() {
   $menu_links = array();
 
   // Exported menu link: main-menu:blog

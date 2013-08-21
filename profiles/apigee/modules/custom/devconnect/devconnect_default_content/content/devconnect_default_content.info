@@ -1,84 +1,40 @@
-name = devconnect_default_content
+name = Devconnect Default Content
+description = Configures nodes and users
 core = 7.x
-package = Devconnect
-php = 5.2.4
-dependencies[] = apachesolr_search
-dependencies[] = apigee_sso
-dependencies[] = block
+package = Devconnect Features
+version = 7.x-4.23
+
 dependencies[] = blog
 dependencies[] = ckeditor
 dependencies[] = ckeditor_link
-dependencies[] = context
-dependencies[] = context_ui
-dependencies[] = ctools
-dependencies[] = devconnect_homepage
-dependencies[] = diff
+dependencies[] = comment
+dependencies[] = devconnect_default_structure
 dependencies[] = faq
-dependencies[] = fe_block
-dependencies[] = features
 dependencies[] = forum
-dependencies[] = markdown
 dependencies[] = me
 dependencies[] = media
-dependencies[] = menu
 dependencies[] = node_export_features
 dependencies[] = strongarm
-dependencies[] = toc_filter
+dependencies[] = taxonomy
+dependencies[] = uuid
 dependencies[] = uuid_features
-dependencies[] = views
-features[context][] = blog
-features[context][] = home
-features[context][] = signin
-features[context][] = sitewide
-features[ctools][] = context:context:3
+
 features[ctools][] = strongarm:strongarm:1
-features[ctools][] = views:views_default:3.0
-features[fe_block_settings][] = apachesolr_search-mlt-001
-features[fe_block_settings][] = apachesolr_search-sort
-features[fe_block_settings][] = apigee_sso-0
-features[fe_block_settings][] = blog-recent
-features[fe_block_settings][] = comment-recent
-features[fe_block_settings][] = context_ui-editor
-features[fe_block_settings][] = devconnect_default_content-develop-with-these
-features[fe_block_settings][] = devconnect_default_content-footer
-features[fe_block_settings][] = devconnect_homepage-homepage_header
-features[fe_block_settings][] = diff-inline
-features[fe_block_settings][] = faq-faq_categories
-features[fe_block_settings][] = forum-active
-features[fe_block_settings][] = forum-new
-features[fe_block_settings][] = markdown-markdown_help
-features[fe_block_settings][] = node-recent
-features[fe_block_settings][] = node-syndicate
-features[fe_block_settings][] = search-form
-features[fe_block_settings][] = system-help
-features[fe_block_settings][] = system-main
-features[fe_block_settings][] = system-main-menu
-features[fe_block_settings][] = system-management
-features[fe_block_settings][] = system-navigation
-features[fe_block_settings][] = system-powered-by
-features[fe_block_settings][] = system-user-menu
-features[fe_block_settings][] = user-login
-features[fe_block_settings][] = user-new
-features[fe_block_settings][] = user-online
-features[fe_block_settings][] = views-f6a832903510019548a43bda01c149a1
-features[fe_block_settings][] = views-faq-faq_random
-features[fe_block_settings][] = views-faq-faq_recent
-features[fe_block_settings][] = views-home_featured_forum_posts-block
-features[fe_block_settings][] = views-hot_topics-block
-features[fe_block_settings][] = views-recent_blog_posts-block_1
+
 features[features_api][] = api:1
+
 features[field][] = node-article-body
 features[field][] = node-blog-body
 features[field][] = node-faq-body
 features[field][] = node-page-body
+
 features[filter][] = filtered_html
 features[filter][] = full_html
 features[filter][] = markdown
 features[filter][] = plain_text
-features[menu_custom][] = main-menu
-features[menu_links][] = main-menu:blog
-features[menu_links][] = main-menu:forum
+
 features[node][] = page
+
 features[node_export_features][] = 0360390f-8109-41f6-a5ff-6c3bda5b09fa
 features[node_export_features][] = 0364776a-6dee-4f1e-8ffe-62a284918803
 features[node_export_features][] = 06a98559-a4f9-4231-8b5f-f6b19de42224
@@ -134,9 +90,11 @@ features[node_export_features][] = f6d5abc1-e515-48c3-80e4-b1d11f42c4e0
 features[node_export_features][] = f6d90ad8-7c4e-4869-b5ef-39377b3e5a29
 features[node_export_features][] = fa50f6df-f7f0-4c20-a1fc-0f3abf721c6b
 features[node_export_features][] = fa8b001d-7de9-45b4-ab80-3d4a14080e34
+
 features[taxonomy][] = blog
 features[taxonomy][] = forums
 features[taxonomy][] = tags
+
 features[user_permission][] = access ckeditor link
 features[user_permission][] = access comments
 features[user_permission][] = access content
@@ -146,6 +104,7 @@ features[user_permission][] = customize ckeditor
 features[user_permission][] = use PHP for me alias paths
 features[user_permission][] = view faq page
 features[user_permission][] = view media
+
 features[uuid_term][] = 00ea6f28-1d51-4b20-99c3-7bdc6abf8640
 features[uuid_term][] = 16dfc147-f7bb-4f03-b257-a2b200b14d73
 features[uuid_term][] = 1e1ff589-790d-4d85-951a-e91259ed4299
@@ -157,6 +116,7 @@ features[uuid_term][] = d7234573-2c6a-4580-8749-17cd0826e966
 features[uuid_term][] = d8cce843-0511-43ac-ba83-e0ce8cb020ef
 features[uuid_term][] = d9b7b4d9-78a5-4f2e-86a6-470521f7fe4f
 features[uuid_term][] = f1de4fa2-0abf-4815-a239-9e7a10192d43
+
 features[variable][] = comment_anonymous_page
 features[variable][] = comment_default_mode_page
 features[variable][] = comment_default_per_page_page
@@ -177,6 +137,4 @@ features[variable][] = user_picture_guidelines
 features[variable][] = user_picture_path
 features[variable][] = user_picture_style
 features[variable][] = user_pictures
-features[views_view][] = home_featured_forum_posts
-features[views_view][] = hot_topics
-features[views_view][] = recent_blog_posts
+

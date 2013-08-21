@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * devconnect_default_content.context.inc
+ * devconnect_default_content_structure.context.inc
  */
 
 /**
  * Implements hook_context_default_contexts().
  */
-function devconnect_default_content_context_default_contexts() {
+function devconnect_default_structure_context_default_contexts() {
   $export = array();
 
   $context = new stdClass();
@@ -72,8 +72,8 @@ function devconnect_default_content_context_default_contexts() {
           'region' => 'content',
           'weight' => '-18',
         ),
-        'devconnect_default_content-develop-with-these' => array(
-          'module' => 'devconnect_default_content',
+        'devconnect_default_structure-develop-with-these' => array(
+          'module' => 'devconnect_default_structure',
           'delta' => 'develop-with-these',
           'region' => 'content',
           'weight' => '-10',
@@ -123,8 +123,8 @@ function devconnect_default_content_context_default_contexts() {
   $context->reactions = array(
     'block' => array(
       'blocks' => array(
-        'devconnect_default_content-footer' => array(
-          'module' => 'devconnect_default_content',
+        'devconnect_default_structure-footer' => array(
+          'module' => 'devconnect_default_structure',
           'delta' => 'footer',
           'region' => 'footer',
           'weight' => '-10',

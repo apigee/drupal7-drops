@@ -1,0 +1,78 @@
+name = Devconnect Default Structure
+description = Configures blocks, views and menus
+core = 7.x
+package = Devconnect Features
+version = 7.x-4.23
+
+dependencies[] = apachesolr_search
+dependencies[] = apigee_sso
+dependencies[] = blog
+dependencies[] = comment
+dependencies[] = context_ui
+dependencies[] = ctools
+dependencies[] = devconnect_homepage
+dependencies[] = diff
+dependencies[] = faq
+dependencies[] = fe_block
+dependencies[] = features
+dependencies[] = forum
+dependencies[] = markdown
+dependencies[] = menu
+dependencies[] = node
+dependencies[] = search
+dependencies[] = system
+dependencies[] = user
+dependencies[] = views
+
+features[context][] = blog
+features[context][] = home
+features[context][] = signin
+features[context][] = sitewide
+
+features[ctools][] = context:context:3
+features[ctools][] = views:views_default:3.0
+
+features[fe_block_settings][] = apachesolr_search-mlt-001
+features[fe_block_settings][] = apachesolr_search-sort
+features[fe_block_settings][] = apigee_sso-0
+features[fe_block_settings][] = blog-recent
+features[fe_block_settings][] = comment-recent
+features[fe_block_settings][] = context_ui-editor
+features[fe_block_settings][] = devconnect_homepage-homepage_header
+features[fe_block_settings][] = diff-inline
+features[fe_block_settings][] = faq-faq_categories
+features[fe_block_settings][] = forum-active
+features[fe_block_settings][] = forum-new
+features[fe_block_settings][] = markdown-markdown_help
+features[fe_block_settings][] = node-recent
+features[fe_block_settings][] = node-syndicate
+features[fe_block_settings][] = search-form
+features[fe_block_settings][] = system-help
+features[fe_block_settings][] = system-main
+features[fe_block_settings][] = system-main-menu
+features[fe_block_settings][] = system-management
+features[fe_block_settings][] = system-navigation
+features[fe_block_settings][] = system-powered-by
+features[fe_block_settings][] = system-user-menu
+features[fe_block_settings][] = user-login
+features[fe_block_settings][] = user-new
+features[fe_block_settings][] = user-online
+features[fe_block_settings][] = views-f6a832903510019548a43bda01c149a1
+features[fe_block_settings][] = views-faq-faq_random
+features[fe_block_settings][] = views-faq-faq_recent
+features[fe_block_settings][] = views-home_featured_forum_posts-block
+features[fe_block_settings][] = views-hot_topics-block
+features[fe_block_settings][] = views-recent_blog_posts-block_1
+features[fe_block_settings][] = devconnect_default_content_structure-develop-with-these
+features[fe_block_settings][] = devconnect_default_content_structure-footer
+
+features[features_api][] = api:1
+
+features[menu_custom][] = main-menu
+
+features[menu_links][] = main-menu:blog
+features[menu_links][] = main-menu:forum
+
+features[views_view][] = home_featured_forum_posts
+features[views_view][] = hot_topics
+features[views_view][] = recent_blog_posts

@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * devconnect_default_content.features.menu_custom.inc
+ * devconnect_default_structure.features.menu_custom.inc
  */
 
 /**
  * Implements hook_menu_default_menu_custom().
  */
-function devconnect_default_content_menu_default_menu_custom() {
+function devconnect_default_structure_menu_default_menu_custom() {
   $menus = array();
 
   // Exported menu: main-menu.
