@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * devconnect_default_content.views_default.inc
+ * devconnect_default_structure.views_default.inc
  */
 
 /**
  * Implements hook_views_default_views().
  */
-function devconnect_default_content_views_default_views() {
+function devconnect_default_structure_views_default_views() {
   $export = array();
 
   $view = new view();
@@ -138,10 +138,6 @@ function devconnect_default_content_views_default_views() {
     'blog' => 0,
     'tags' => 0,
   );
-  /* Sort criterion: Broken/missing handler */
-  $handler->display->display_options['sorts']['timestamp']['id'] = 'timestamp';
-  $handler->display->display_options['sorts']['timestamp']['table'] = 'node_counter';
-  $handler->display->display_options['sorts']['timestamp']['field'] = 'timestamp';
   /* Filter criterion: Content: Published */
   $handler->display->display_options['filters']['status']['id'] = 'status';
   $handler->display->display_options['filters']['status']['table'] = 'node';

@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * devconnect_default_content.features.node_export_features.inc
+ * devconnect_default_content_nodes_users.features.node_export_features.inc
  */
 
 /**
@@ -9,7 +9,7 @@
  */
 function devconnect_default_content_node_export_features_default() {
   $node_export = array(
-  'code_string' => 'array(
+    'code_string' => 'array(
   (object) array(
       \'vid\' => \'1\',
       \'uid\' => \'0\',
@@ -6057,6 +6057,6 @@ function devconnect_default_content_node_export_features_default() {
       \'node_export_drupal_version\' => \'7\',
     ),
 )',
-);
+  );
   return $node_export;
 }
