@@ -9,10 +9,8 @@
   <?php print $scripts; ?>
   <!-- HTML5 element support for IE6-8 -->
   <!--[if lt IE 9]>
-    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
-<script type="text/javascript" src="//use.typekit.net/ezw2jtl.js"></script>
-<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
 </head>
 <body class="<?php print $classes; ?>" <?php print $attributes;?>>
   <?php print $page_top; ?>
