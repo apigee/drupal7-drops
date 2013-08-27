@@ -122,6 +122,7 @@ projects[workflow][subdir]                                     = "contrib"
 projects[XHProf][subdir]                                       = "contrib"
 projects[xautoload][subdir]                                    = "contrib"
 
+projects[commerce_worldpay_business_gateway][subdir]           = "contrib"
 projects[commerce_worldpay_business_gateway][type]             = module
 projects[commerce_worldpay_business_gateway][download][type]   = git
 projects[commerce_worldpay_business_gateway][download][branch] = "7.x-1.x"
