@@ -15,18 +15,37 @@ function taxonomy_access_last_removed() {
 
 /**
  * Implements hook_install().
+ *
  * Adds tables to database: 'taxonomy_access_term', 'taxonomy_access_default'
  */
 function taxonomy_access_install() {
 
- // Default global perms for roles 1 (anonymous) and 2 (authenticated).
-  db_query('INSERT INTO {taxonomy_access_default} (vid, rid, grant_view, grant_update, grant_delete, grant_create, grant_list) VALUES(0, 1, 1, 0, 0, 0, 1)');
-  db_query('INSERT INTO {taxonomy_access_default} (vid, rid, grant_view, grant_update, grant_delete, grant_create, grant_list) VALUES(0, 2, 1, 0, 0, 0, 1)');
-
-  // Weight taxonomy_access below most modules, but above the very last ones.
-  db_query("UPDATE {system} SET weight = 9 WHERE name = 'taxonomy_access'");
+  // Default global perms for roles 1 (anonymous) and 2 (authenticated).
+  db_query(
+    'INSERT INTO {taxonomy_access_default}
+    (vid, rid, grant_view, grant_update, grant_delete, grant_create, grant_list)
+    VALUES
+    (:vid, :rid, :node_allow, :ignore, :ignore, :term_allow, :term_allow)',
+    array(
+      ':vid' => TAXONOMY_ACCESS_GLOBAL_DEFAULT,
+      ':rid' => DRUPAL_ANONYMOUS_RID,
+      ':node_allow' => TAXONOMY_ACCESS_NODE_ALLOW,
+      ':ignore' => TAXONOMY_ACCESS_NODE_IGNORE,
+      ':term_allow' => TAXONOMY_ACCESS_TERM_ALLOW)
+  );
+  db_query(
+    'INSERT INTO {taxonomy_access_default}
+    (vid, rid, grant_view, grant_update, grant_delete, grant_create, grant_list)
+    VALUES
+    (:vid, :rid, :node_allow, :ignore, :ignore, :term_allow, :term_allow)',
+    array(
+      ':vid' => TAXONOMY_ACCESS_GLOBAL_DEFAULT,
+      ':rid' => DRUPAL_AUTHENTICATED_RID,
+      ':node_allow' => TAXONOMY_ACCESS_NODE_ALLOW,
+      ':ignore' => TAXONOMY_ACCESS_NODE_IGNORE,
+      ':term_allow' => TAXONOMY_ACCESS_TERM_ALLOW)
+  );
 }
-
 
 /**
  * Implements hook_schema().
@@ -42,7 +61,7 @@ function taxonomy_access_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_VOCABULARY_DEFAULT,
       ),
       'rid' => array(
         'description' => "The role.rid a user must possess to gain this row's privileges on nodes for this term.",
@@ -57,7 +76,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_NODE_IGNORE,
       ),
       'grant_update' => array(
         'description' => 'Whether this role can edit nodes with this term. 0=>Ignore, 1=>Allow, 2=>Deny.',
@@ -65,7 +84,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_NODE_IGNORE,
       ),
       'grant_delete' => array(
         'description' => 'Whether this role can delete nodes with this term. 0=>Ignore, 1=>Allow, 2=>Deny.',
@@ -73,7 +92,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_NODE_IGNORE,
       ),
       'grant_create' => array(
         'description' => 'Whether this role can set this term when adding or editing a node. 0=>No, 1=>Yes.',
@@ -81,7 +100,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_TERM_DENY,
       ),
       'grant_list' => array(
         'description' => 'Whether this role can view the name of this term on a node or in category lists. 0=>No, 1=>Yes.',
@@ -89,21 +108,21 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 1,
+        'default' => TAXONOMY_ACCESS_TERM_ALLOW,
       ),
     ),
     'primary key' => array('tid', 'rid'),
   );
 
   $schema['taxonomy_access_default'] = array(
-    'description' => 'Sets vocabulary defaults which roles may view, update, delete, create, and list nodes with a given term. Overridden by {taxonomy_access_term}/',
+    'description' => 'Sets vocabulary defaults for which roles may view, update, delete, create, and list nodes with a given term. Overridden by {taxonomy_access_term}.',
     'fields' => array(
       'vid' => array(
         'description' => 'The vocabulary.vid for which this row sets defaults.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_VOCABULARY_DEFAULT,
       ),
       'rid' => array(
         'description' => "The role.rid a user must possess to gain this row's privileges on nodes for terms in this vocabulary.",
@@ -118,7 +137,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_NODE_IGNORE,
       ),
       'grant_update' => array(
         'description' => 'Whether this role can edit nodes with terms in this vocabulary. 0=>Ignore, 1=>Allow, 2=>Deny.',
@@ -126,7 +145,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_NODE_IGNORE,
       ),
       'grant_delete' => array(
         'description' => 'Whether this role can delete nodes with terms in this vocabulary. 0=>Ignore, 1=>Allow, 2=>Deny.',
@@ -134,7 +153,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_NODE_IGNORE,
       ),
       'grant_create' => array(
         'description' => 'Whether this role can set terms in this vocabulary when adding or editing a node. 0=>No, 1=>Yes.',
@@ -142,7 +161,7 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_TERM_DENY,
       ),
       'grant_list' => array(
         'description' => 'Whether this role can view the name of terms in this vocabulary on a node or in category lists. 0=>No, 1=>Yes.',
@@ -150,13 +169,49 @@ function taxonomy_access_schema() {
         'unsigned' => TRUE,
         'size' => 'tiny',
         'not null' => TRUE,
-        'default' => 0,
+        'default' => TAXONOMY_ACCESS_TERM_DENY,
       ),
     ),
     'primary key' => array('vid', 'rid'),
   );
 
   return $schema;
+}
+
+/**
+ * Add vocabulary defaults for all configured vocabularies.
+ */
+function taxonomy_access_update_7002() {
+  // Get a list of all vocabularies with any term configurations for each role.
+  $ta_configs = db_query(
+    "SELECT td.vid, ta.rid
+     FROM {taxonomy_access_term} ta
+     INNER JOIN {taxonomy_term_data} td ON ta.tid = td.tid
+     GROUP BY td.vid, ta.rid"
+  )->fetchAll();
+
+  // Get a list of all configured vocabularies.
+  $td_configs = db_query(
+    "SELECT vid, rid
+     FROM {taxonomy_access_default}"
+  )->fetchAll();
+
+  $records = array();
+  $global_defaults = taxonomy_access_global_defaults();
+
+  foreach ($ta_configs as $config) {
+    if (!in_array($config, $td_configs)) {
+      $record = (array) $global_defaults[$config->rid];
+      $records[] = _taxonomy_access_format_grant_record($config->vid, $config->rid, $record, TRUE);
+    }
+  }
+
+  if (taxonomy_access_set_default_grants($records)) {
+    return t('Update completed successfully.');
+  }
+  else {
+    return t('Update failed.');
+  }
 }
 
 /**
@@ -175,4 +230,73 @@ function taxonomy_access_update_7001() {
 function taxonomy_access_update_7000() {
   db_rename_table('term_access', 'taxonomy_access_term');
   db_rename_table('term_access_defaults', 'taxonomy_access_default');
+}
+
+/**
+ * Implements hook_enable().
+ *
+ * Housekeeping: while we were away, did you delete any terms/vocabs/roles?
+ * 1: Weight this module below the Taxonomy module.
+ * 2: Delete ta, tad rows for missing roles.
+ * 3: Delete ta rows for missing terms.
+ * 4: Delete tad rows for missing vocabs.
+ */
+function taxonomy_access_enable() {
+
+  // Weight this module below the Taxonomy module.
+  $tax_weight =
+    db_query(
+      "SELECT weight FROM {system}
+      WHERE name = 'taxonomy'"
+    )
+    ->fetchField()
+    ;
+
+  db_update('system')
+  ->fields(array('weight' => ($tax_weight + 1)))
+  ->condition('name', 'taxonomy_access')
+  ->execute();
+
+  // Delete any records for roles not in {roles}.
+  $roles = _taxonomy_access_user_roles();
+  $config_roles =
+    db_query("SELECT DISTINCT rid FROM {taxonomy_access_default}")
+    ->fetchCol();
+  $missing_roles = array_diff($config_roles, array_keys($roles));
+
+  // Core flags node access for rebuild on enable, so skip node updates.
+  foreach ($missing_roles as $rid) {
+    taxonomy_access_delete_role_grants($rid, FALSE);
+  }
+
+  // Delete any term configurations not in {taxonomy_term_data}.
+  $term_ids =
+    db_query(
+      "SELECT ta.tid
+      FROM {taxonomy_access_term} ta
+      LEFT JOIN {taxonomy_term_data} td ON ta.tid = td.tid
+      WHERE ta.tid <> :tid AND td.tid IS NULL",
+      array(':tid' => TAXONOMY_ACCESS_VOCABULARY_DEFAULT))
+    ->fetchCol()
+    ;
+
+  // Core flags node access for rebuild on enable, so skip node updates.
+  taxonomy_access_delete_term_grants($term_ids, NULL, FALSE);
+  unset($term_ids);
+
+  // Delete any defaults for vocabularies not in {taxonomy_vocabulary}.
+  $vocab_ids =
+    db_query(
+      "SELECT tad.vid
+      FROM {taxonomy_access_default} tad
+      LEFT JOIN {taxonomy_vocabulary} tv ON tad.vid = tv.vid
+      WHERE tad.vid <> :vid AND tv.vid IS NULL",
+      array(':vid' => TAXONOMY_ACCESS_GLOBAL_DEFAULT))
+    ->fetchCol()
+    ;
+
+  // Core flags node access for rebuild on enable, so skip node updates.
+  taxonomy_access_delete_default_grants($vocab_ids, FALSE);
+  unset($vocab_ids);
+
 }

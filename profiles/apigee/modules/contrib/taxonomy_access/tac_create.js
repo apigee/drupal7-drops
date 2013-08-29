@@ -7,7 +7,7 @@
  * @see
  *   http://drupal.org/node/342316
  *
- * @todo 
+ * @todo
  *   Use clearer coding standards.
  * @see
  *   http://jsdemystified.drupalgardens.com/

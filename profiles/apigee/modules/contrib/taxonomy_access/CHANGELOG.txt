@@ -1,7 +1,26 @@
-Taxonomy Access 7.x-1.x-dev, xxxx-xx-xx
----------------------------------------
 For complete changelog, see:
 http://drupalcode.org/project/taxonomy_access.git/log/refs/heads/7.x-1.x
+
+Taxonomy Access 7.x-1.x-dev, xxxx-xx-xx
+---------------------------------------
+o The return value of taxonomy_access_global_defaults() has changed. Callers
+  may use _taxonomy_access_format_grant_record() to format each element of the
+  return array for hook_node_access_records().
+
+o The following constants have been added:
+  - TAXONOMY_ACCESS_GLOBAL_DEFAULT = 0
+  - TAXONOMY_ACCESS_VOCABULARY_DEFAULT = 0
+  - TAXONOMY_ACCESS_NODE_ALLOW = 1
+  - TAXONOMY_ACCESS_NODE_IGNORE = 0
+  - TAXONOMY_ACCESS_NODE_DENY = 2
+  - TAXONOMY_ACCESS_GLOBAL_DEFAULT = 0
+  - TAXONOMY_ACCESS_GLOBAL_DEFAULT = 0
+
+o Drupal core 7.8 is now explicitly required.
+
+o The "Add tag" (create) grant now defaults to "Allow" for anonymous and
+  authenticated users upon installation. (Existing installations will not be
+  affected.)
 
 Taxonomy Access 7.x-1.x-rc1, 2011-09-09
 ---------------------------------------

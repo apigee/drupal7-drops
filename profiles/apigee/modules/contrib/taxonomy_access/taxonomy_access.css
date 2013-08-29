@@ -1,18 +1,11 @@
-form#-taxonomy-access-permissions-form .form-radio {
- margin: 0; padding: 0;
-}
-form#-taxonomy-access-permissions-form .form-select {
- font-size: 10px;
-}
-
 table.grant_help th {
  vertical-align: top;
-} 
+}
 
 table.grant_help td p {
  margin-top: 0px;
  margin-bottom: 8px;
-} 
+}
 
 table.grant_help em.perm {
   font-weight: bold;
@@ -21,4 +14,81 @@ table.grant_help em.perm {
 label.disabled {
   color: #999;
   font-style: italic;
+}
+.view-0,
+.update-0,
+.delete-0 {
+  background-color: #fffce5;
+}
+.view-1,
+.update-1,
+.delete-1,
+.create-1,
+.list-1 {
+  background-color: #e5ffe2;
+}
+.view-2,
+.update-2,
+.delete-2,
+.create-0,
+.list-0 {
+ background-color: #fef5f1;
+}
+.taxonomy-access-grant-table {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  width: inherit;
+}
+.taxonomy-access-grant-table th.select-all {
+  width: 2em;
+}
+.taxonomy-access-grant-table td.taxonomy-access-label {
+  padding-right: 4em;
+  min-width: 12em;
+}
+.taxonomy-access-grant-table td.taxonomy-access-default {
+  font-style: italic;
+  font-weight: bold;
+}
+.taxonomy-access-grant-table td.taxonomy-access-grant {
+  width: 7em;
+}
+fieldset#edit-vocabs .fieldset-description {
+  display: block;
+}
+
+/**
+ * I apologize, because what follows is a hodgepodge to override the default
+ * fieldset styling in both Seven and Bartik, and might not even work in some
+ * themes.
+ */
+#taxonomy-access-admin-role fieldset {
+  margin-bottom: 0.5em;
+  margin-top: 0.5em;
+}
+
+#taxonomy-access-admin-role fieldset.taxonomy-access-add.collapsible,
+#taxonomy-access-admin-role fieldset.taxonomy-access-add.collapsed {
+  margin-top: 0px;
+  margin-bottom: 1em;
+  border: none;
+  background: none;
+}
+fieldset.taxonomy-access-add > legend {
+  background: none;
+  border: none;
+  font-family: inherit;
+  position: static;
+}
+fieldset.taxonomy-access-add > legend a {
+  color: #0076bc;
+}
+fieldset.taxonomy-access-add  .fieldset-wrapper {
+  margin-top: 0px;
+  padding-top: 0.5em;
+}
+html.js fieldset.collapsible.taxonomy-access-add > legend .fieldset-legend,
+html.js fieldset.collapsed.taxonomy-access-add > legend .fieldset-legend {
+  background: transparent url(images/add.png) no-repeat 0 center;
+  text-transform: none;
 }
