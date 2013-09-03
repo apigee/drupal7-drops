@@ -119,9 +119,9 @@ function devconnect_drush_get_authentication() {
   else {
     list($user, $pass_encrypted) = explode(':', $user_pass);
     // Make sure autoloader is loaded
-    drupal_load('module', 'devconnect');
-    devconnect_boot();
-
+    if (!class_exists('Apigee\Util\Crypto')) {
+      module_load_include('php', 'devconnect', 'lib/Apigee/Util/Crypto');
+    }
     $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
 
     drush_print(t('Username is @username, password is @pass.', array('@username' => $user, '@pass' => $pass)));
