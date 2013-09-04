@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * devconnect_default_content_structure.context.inc
+ * devconnect_default_structure.context.inc
  */
 
 /**
@@ -60,23 +60,23 @@ function devconnect_default_structure_context_default_contexts() {
           'region' => 'homepage_header',
           'weight' => '-10',
         ),
-        'views-home_featured_forum_posts-block' => array(
-          'module' => 'views',
-          'delta' => 'home_featured_forum_posts-block',
-          'region' => 'content',
-          'weight' => '-18',
-        ),
         'views-recent_blog_posts-block_1' => array(
           'module' => 'views',
           'delta' => 'recent_blog_posts-block_1',
           'region' => 'content',
-          'weight' => '-18',
+          'weight' => '-20',
         ),
-        'devconnect_default_structure-develop-with-these' => array(
-          'module' => 'devconnect_default_structure',
-          'delta' => 'develop-with-these',
+        'views-home_featured_forum_posts-block' => array(
+          'module' => 'views',
+          'delta' => 'home_featured_forum_posts-block',
           'region' => 'content',
-          'weight' => '-10',
+          'weight' => '-19',
+        ),
+        'views-hot_topics-block' => array(
+          'module' => 'views',
+          'delta' => 'hot_topics-block',
+          'region' => 'content',
+          'weight' => '-18',
         ),
       ),
     ),

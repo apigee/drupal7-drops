@@ -110,17 +110,38 @@ function apigee_install_configure_batch(&$install_state){
       array("apigee_install_pantheon_push_solr", array()),
       array("apigee_install_configure_solr", array()),      
       array("apigee_install_configure_users", array()),      
-      array("apigee_install_configure_themes", array()),      
+      array("apigee_install_configure_themes", array()),
+      array("apigee_install_content_types", array()),
       array("apigee_install_revert_features", array()),
-      array("apigee_feature_install_revert", array("devconnect_user")),
-      array('apigee_feature_install_revert', array('devconnect_default_structure')),
-      array("apigee_feature_install_revert", array("devconnect_default_content")),
-      array("apigee_feature_rebuild_permissions", array()),
-      array("apigee_install_clear_caches", array()),
+      array("apigee_install_rebuild_permissions", array()),
+      array("apigee_install_create_content", array()),
+      array("apigee_install_clear_caches_flush", array()),
+      array("apigee_install_clear_caches_registry", array()),
+      array("apigee_install_clear_caches_css", array()),
+      array("apigee_install_clear_caches_js", array()),
+      array("apigee_install_clear_caches_theme", array()),
+      array("apigee_install_clear_caches_entity", array()),
+      array("apigee_install_clear_caches_nodes", array()),
+      array("apigee_install_clear_caches_menu", array()),
+      array("apigee_install_clear_caches_actions", array()),
+      array("apigee_install_clear_caches_core_path", array()),
+      array("apigee_install_clear_caches_core_filter", array()),
+      array("apigee_install_clear_caches_core_bootstrap", array()),
+      array("apigee_install_clear_caches_core_page", array()),
+      array("apigee_install_clear_caches_core", array()),
+      array("apigee_install_bootstrap_status", array()),
     ),
     'finished' => '_apigee_install_configure_task_finished',    
   );
 }
+
+$core = array(
+    'cache',
+    'cache_path',
+    'cache_filter',
+    'cache_bootstrap',
+    'cache_page',
+  );
 
 function _apigee_install_configure_task_finished($success, $results, $operations) {
   global $install_state;
@@ -285,35 +306,69 @@ function apigee_install_configure_users( &$context) {
  */
 
 function apigee_install_configure_themes( &$context) {
+  $default_theme = "apigee_devconnect";
+  $admin_theme = "rubik";
+  // activate admin theme when editing a node
+  variable_set('node_admin_theme', '1');
+  variable_set("site_frontpage", "home");
   
+  db_update('system')
+    ->fields(array('status' => 0))
+    ->condition('type', 'theme')
+    ->execute();
+  $enable = array(
+      'theme_default' => 'apigee_devconnect',
+      'admin_theme' => 'rubik',
+      'apigee_base'
+    );
+  theme_enable($enable);
   
-    $default_theme = "apigee_devconnect";
-    $admin_theme = "rubik";
-    // activate admin theme when editing a node
-    variable_set('node_admin_theme', '1');
-    variable_set("site_frontpage", "home");
-    
-    db_update('system')
-      ->fields(array('status' => 0))
-      ->condition('type', 'theme')
-      ->execute();
-    $enable = array(
-        'theme_default' => 'apigee_devconnect',
-        'admin_theme' => 'rubik',
-        'apigee_base'
-      );
-    theme_enable($enable);
-    
-    foreach ($enable as $var => $theme) {
-      if (!is_numeric($var)) {
-        variable_set($var, $theme);
-      }
+  foreach ($enable as $var => $theme) {
+    if (!is_numeric($var)) {
+      variable_set($var, $theme);
     }
-  drupal_flush_all_caches();
+  }
+  db_query("update block set status = 0 where delta != 'main'");
+  db_query("update block set region = -1 where delta != 'main'");
   $context['results'][] = "themes";
   $context['message'] = st('Default Apigee theme configured.');
   
 }
+
+function apigee_install_content_types(&$context) {
+  
+  $types = array(
+    array(
+      'type' => 'page',
+      'name' => st('Basic page'),
+      'base' => 'node_content',
+      'description' => st("Use <em>basic pages</em> for your static content, such as an 'About us' page."),
+      'custom' => 1,
+      'modified' => 1,
+      'locked' => 0,
+    ),
+    array(
+      'type' => 'article',
+      'name' => st('Article'),
+      'base' => 'node_content',
+      'description' => st('Use <em>articles</em> for time-sensitive content like news, press releases or blog posts.'),
+      'custom' => 1,
+      'modified' => 1,
+      'locked' => 0,
+    ),
+  );
+
+  foreach ($types as $type) {
+    $type = node_type_set_defaults($type);
+    node_type_save($type);
+    node_add_body_field($type);
+  }
+  
+  $context['results'][] = "content_types";
+  $context['message'] = st('Default content types created.');
+  
+}
+
 
 /**
  * Features batch item
@@ -325,6 +380,7 @@ function apigee_install_configure_themes( &$context) {
  */
 
 function apigee_feature_install_revert($feature, &$context) {
+  watchdog(__FUNCTION__, "reverting :feature", array(":feature" => $feature), WATCHDOG_INFO);
     features_install_modules(array($feature));
     if (module_exists($feature)) {
       features_revert(array($feature));
@@ -339,22 +395,160 @@ function apigee_feature_install_revert($feature, &$context) {
 
 }
 
+function apigee_install_create_content() {
+  $gen = array();
+  $gen['values'] = array(
+    'node_types' => array(
+      'blog' => 'blog',
+      'article' => 'article',
+      'page' => 'page',
+      'webform' => 'webform',
+      'faq' => 'faq',
+      'forum' => 'forum'
+    ),
+    'title_length' => 6,
+    'num_nodes' => 50,
+    'max_comments' => 10,
+    'time_range' => 604800
+  );
+  module_load_include('inc', 'devel_generate');
+  devel_generate_content($gen);
+}
 
-function apigee_feature_rebuild_permissions(&$context) {
+
+function apigee_install_rebuild_permissions(&$context) {
+  watchdog(__FUNCTION__, "rebuilding permissions", array(), WATCHDOG_INFO);
   node_access_rebuild(TRUE);
   $context['results'][] = "content_permissions";
   $context['message'] = st('Content Permissions Rebuilt');
 }
 
+function apigee_install_clear_caches_flush(&$context){
+  watchdog(__FUNCTION__, "Flusing CSS/JS", array(), WATCHDOG_INFO);
+   _drupal_flush_css_js();
+  $context['results'][] = "cache_flush";
+  $context['message'] = st('CSS & JS flushed');
+}
 
-function apigee_install_clear_caches(&$context){
-  drupal_flush_all_caches();
-  $context['results'][] = "cache";
-  $context['message'] = st('Caches Cleared');
+function apigee_install_rebuild_registry(&$context) {
+  watchdog(__FUNCTION__, "Rebuilding Registry", array(), WATCHDOG_INFO);
+  registry_rebuild();
+  $context['results'][] = "cache_registry";
+  $context['message'] = st('Registry Rebuilt');
+}
+
+function apigee_install_clear_caches_css(&$context){
+  watchdog(__FUNCTION__, "Clearing CSS Cache", array(), WATCHDOG_INFO);
+   drupal_clear_css_cache();
+  $context['results'][] = "cache_css";
+  $context['message'] = st('CSS Caches Cleared');
+}
+
+function apigee_install_clear_caches_js(&$context){
+  watchdog(__FUNCTION__, "Clearing JS Cache", array(), WATCHDOG_INFO);
+   drupal_clear_js_cache();
+  $context['results'][] = "cache_js";
+  $context['message'] = st('JS Caches Cleared');
+}
+
+function apigee_install_clear_caches_theme(&$context){
+  watchdog(__FUNCTION__, "Rebuilding themes...", array(), WATCHDOG_INFO);
+   system_rebuild_theme_data();
+   drupal_theme_rebuild();
+  $context['results'][] = "cache_theme";
+  $context['message'] = st('Theme Caches Cleared');
+}
+
+function apigee_install_clear_caches_entity(&$context){
+  watchdog(__FUNCTION__, "Clearing Entity Cache...", array(), WATCHDOG_INFO);
+  entity_info_cache_clear();
+  $context['results'][] = "cache_entity";
+  $context['message'] = st('Entity Caches Cleared');
+}
+
+function apigee_install_clear_caches_nodes(&$context){
+  watchdog(__FUNCTION__, "Rebuilding Node Types...", array(), WATCHDOG_INFO);
+  node_types_rebuild();
+  $context['results'][] = "cache_node";
+  $context['message'] = st('Node Caches Cleared');
+}
+
+function apigee_install_clear_caches_menu(&$context){
+  watchdog(__FUNCTION__, "Rebuilding Menu...", array(), WATCHDOG_INFO);
+  menu_rebuild();
+  $context['results'][] = "cache_menu";
+  $context['message'] = st('Menu Caches Cleared');
+}
+
+function apigee_install_clear_caches_actions(&$context){
+  watchdog(__FUNCTION__, "Synchronizing Actions...", array(), WATCHDOG_INFO);
+  actions_synchronize();
+  $context['results'][] = "cache_action";
+  $context['message'] = st('Action Caches Cleared');
+}
+
+function apigee_install_clear_caches_core(&$context) {
+  watchdog(__FUNCTION__, "Flusing Caches...", array(), WATCHDOG_INFO);
+    $cache_tables = array_merge(module_invoke_all('flush_caches'), "cache");
+    foreach ($cache_tables as $table) {
+      cache_clear_all('*', $table, TRUE);
+    }
+    $context['results'][] = "cache_core";
+    $context['message'] = st('Core Caches Cleared');
+}
+
+function apigee_install_clear_caches_core_path(&$context) {
+    watchdog(__FUNCTION__, "Flushing path caches...", array(), WATCHDOG_INFO);
+
+    $cache_tables = array_merge(module_invoke_all('flush_caches'), "cache_path");
+    foreach ($cache_tables as $table) {
+      cache_clear_all('*', $table, TRUE);
+    }
+    $context['results'][] = "cache_path";
+    $context['message'] = st('Path Caches Cleared');
+}
+
+function apigee_install_clear_caches_core_filter(&$context) {
+  watchdog(__FUNCTION__, "Flushing filter caches...", array(), WATCHDOG_INFO);
+
+    $cache_tables = array_merge(module_invoke_all('flush_caches'), "cache_filter");
+    foreach ($cache_tables as $table) {
+      cache_clear_all('*', $table, TRUE);
+    }
+    $context['results'][] = "cache_filter";
+    $context['message'] = st('Filter Caches Cleared');
+}
+
+function apigee_install_clear_caches_core_bootstrap(&$context) {
+  watchdog(__FUNCTION__, "Flushing bootstrap caches...", array(), WATCHDOG_INFO);
+
+    $cache_tables = array_merge(module_invoke_all('flush_caches'), "cache_bootstrap");
+    foreach ($cache_tables as $table) {
+      cache_clear_all('*', $table, TRUE);
+    }
+    $context['results'][] = "cache_bootstrap";
+    $context['message'] = st('Bootstrap Caches Cleared');
+}
+
+function apigee_install_clear_caches_core_page(&$context) {
+  watchdog(__FUNCTION__, "Flushing page caches...", array(), WATCHDOG_INFO);
+
+    $cache_tables = array_merge(module_invoke_all('flush_caches'), "cache_page");
+    foreach ($cache_tables as $table) {
+      cache_clear_all('*', $table, TRUE);
+    }
+    $context['results'][] = "cache";
+    $context['message'] = st('Action Caches Cleared');
 }
 
 
-
+function apigee_install_bootstrap_status(&$context) {
+  watchdog(__FUNCTION__, "Updating bootstrap status...", array(), WATCHDOG_INFO);
+    _system_update_bootstrap_status();
+    drupal_get_messages();
+    $context['results'][] = "bootstrap_status";
+    $context['message'] = st('Bootstrap Status Reset.');
+}
 
 /**
  *  Set the apigee endpoint configuration vars
