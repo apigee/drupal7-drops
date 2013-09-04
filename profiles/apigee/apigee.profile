@@ -21,6 +21,11 @@ function apigee_install_load_profile(&$install_state) {
 
   // Loading the install profile normally
   install_load_profile($install_state);
+  
+  if (defined('PANTHEON_ENVIRONMENT')) {
+    $install_state['profile_info']['dependencies'][] = "pantheon_api";
+    $install_state['profile_info']['dependencies'][] = "pantheon_apachesolr";
+  }
 
   // Include any dependencies that we might have missed...
   $dependencies = $install_state['profile_info']['dependencies'];
@@ -112,9 +117,9 @@ function apigee_install_configure_batch(&$install_state){
       array("apigee_install_configure_users", array()),      
       array("apigee_install_configure_themes", array()),
       array("apigee_install_content_types", array()),
-      array("apigee_install_revert_features", array()),
       array("apigee_install_rebuild_permissions", array()),
-      array("apigee_install_create_content", array()),
+      array("apigee_install_create_homepage", array()),
+      array("apigee_install_create_default_content", array()),
       array("apigee_install_clear_caches_flush", array()),
       array("apigee_install_clear_caches_registry", array()),
       array("apigee_install_clear_caches_css", array()),
@@ -135,17 +140,10 @@ function apigee_install_configure_batch(&$install_state){
   );
 }
 
-$core = array(
-    'cache',
-    'cache_path',
-    'cache_filter',
-    'cache_bootstrap',
-    'cache_page',
-  );
-
 function _apigee_install_configure_task_finished($success, $results, $operations) {
-  global $install_state;
+  watchdog(__FUNCTION__, "Configure Task Finished", array(), WATCHDOG_INFO);
   
+  global $install_state;
   $install_state['batch_configure_complete'] = install_verify_completed_task();
 }
 
@@ -159,6 +157,7 @@ function _apigee_install_configure_task_finished($success, $results, $operations
  */
 
 function apigee_install_configure_variables( &$context) {
+  watchdog(__FUNCTION__, "Config Vars", array(), WATCHDOG_INFO);
   
   
   variable_set('cache', 1);
@@ -187,8 +186,8 @@ function apigee_install_configure_variables( &$context) {
     drupal_set_message(t('unable to create the directories necessary for Drupal to write files: :error', array(":error" => $e->getMessage())));
   }
   
-  variable_set('preprocess_css', 1);
-  variable_set('preprocess_js', 1);
+  variable_set('preprocess_css', 0);
+  variable_set('preprocess_js', 0);
   variable_set('clean_url', true);
   variable_set('site_name', "New Apigee Site");
   variable_set('site_mail', "noreply@apigee.com");
@@ -210,13 +209,15 @@ function apigee_install_configure_variables( &$context) {
 
 function apigee_install_pantheon_push_solr( &$context) {
   
+  watchdog(__FUNCTION__, "Pushing Solr", array(), WATCHDOG_INFO);
   
-  if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)){
-    module_enable(array("pantheon_api", "pantheon_apachesolr"), TRUE);
+  if (defined('PANTHEON_ENVIRONMENT') && module_exists("pantheon_apachesolr")){
     module_load_include("module", "pantheon_apachesolr");
     pantheon_apachesolr_update_schema("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
     $context['results'][] = "solr_push";
     $context['message'] = st('Solr config pushed to pantheon solr server.');
+  } else {
+    watchdog(__FUNCTION__, "SOLR NOT ENABLED!!!", array(), WATCHDOG_ERROR);
   }
   
 }
@@ -231,8 +232,7 @@ function apigee_install_pantheon_push_solr( &$context) {
  */
 
 function apigee_install_configure_solr(&$context) {
-  
-  
+  watchdog(__FUNCTION__, "Configuring Solr", array(), WATCHDOG_INFO);  
   $search_active_modules = array(
     'apachesolr_search' => 'apachesolr_search',
     'user' => 'user',
@@ -256,7 +256,7 @@ function apigee_install_configure_solr(&$context) {
  */
 
 function apigee_install_configure_users( &$context) {
-  
+  watchdog(__FUNCTION__, "Configuring Default Users", array(), WATCHDOG_INFO);
   
   $admin_role = new stdClass();
   $admin_role->name = 'administrator';
@@ -306,11 +306,12 @@ function apigee_install_configure_users( &$context) {
  */
 
 function apigee_install_configure_themes( &$context) {
+  watchdog(__FUNCTION__, "Configuring themes", array(), WATCHDOG_INFO);
+  
   $default_theme = "apigee_devconnect";
   $admin_theme = "rubik";
   // activate admin theme when editing a node
   variable_set('node_admin_theme', '1');
-  variable_set("site_frontpage", "home");
   
   db_update('system')
     ->fields(array('status' => 0))
@@ -321,22 +322,28 @@ function apigee_install_configure_themes( &$context) {
       'admin_theme' => 'rubik',
       'apigee_base'
     );
-  theme_enable($enable);
-  
-  foreach ($enable as $var => $theme) {
-    if (!is_numeric($var)) {
-      variable_set($var, $theme);
+    try{
+      theme_enable($enable);
+      foreach ($enable as $var => $theme) {
+        if (!is_numeric($var)) {
+          variable_set($var, $theme);
+        }
+      }
+      db_query("update block set status = 0 where delta != 'main'");
+      db_query("update block set region = -1 where delta != 'main'");
+    } catch(Exception $e) {
+      watchdog_exception(__FUNCTION__, $e, "ERROR CONFIGURING THEMES %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
     }
-  }
-  db_query("update block set status = 0 where delta != 'main'");
-  db_query("update block set region = -1 where delta != 'main'");
+  
+  
+  
   $context['results'][] = "themes";
   $context['message'] = st('Default Apigee theme configured.');
   
 }
 
 function apigee_install_content_types(&$context) {
-  
+  watchdog(__FUNCTION__, "Creating default content types", array(), WATCHDOG_INFO);
   $types = array(
     array(
       'type' => 'page',
@@ -363,6 +370,9 @@ function apigee_install_content_types(&$context) {
     node_type_save($type);
     node_add_body_field($type);
   }
+  variable_set("pathauto_node_page_pattern", "[node:title]");
+  variable_set("pathauto_node_blog_pattern", "blog/[node:title]");
+  variable_set("pathauto_node_faq_pattern", "faqs/[node:title]");
   
   $context['results'][] = "content_types";
   $context['message'] = st('Default content types created.');
@@ -370,55 +380,61 @@ function apigee_install_content_types(&$context) {
 }
 
 
-/**
- * Features batch item
- *
- * @param string $install_state 
- * @param string $context 
- * @return void
- * @author Tom Stovall
- */
-
-function apigee_feature_install_revert($feature, &$context) {
-  watchdog(__FUNCTION__, "reverting :feature", array(":feature" => $feature), WATCHDOG_INFO);
-    features_install_modules(array($feature));
-    if (module_exists($feature)) {
-      features_revert(array($feature));
-      $context['results'][] = "features_".$feature;
-      $context['message'] = st('Feature: %feature enabled & reverted.', array("%feature" => $feature));
-    } else {
-      drupal_set_message("Feature not enabled: %feature", array("%feature" => $feature), "error");
-      $context['results'][] = "features_".$feature;
-      $context['message'] = st('Feature: %feature <b style="color:red;">NOT</b> enabled and reverted.', array("%feature" => $feature));
-    }
-    drupal_get_messages("status");
-
+function apigee_install_create_homepage() {
+  watchdog(__FUNCTION__, "Generating Homepage", array(), WATCHDOG_INFO);
+  
+  $homepage = (object)array(
+    'title' => 'home',
+    'body' => array(),
+    'type' => 'page',
+    'status' => true,
+    'comment' => false,
+    'promote' => false,
+    'sticky' => false,
+  );
+  try {
+    node_save($homepage);
+    variable_set("site_frontpage", "node/{$homepage->nid}");
+  } catch(Exception $e) {
+    watchdog_exception(__FUNCTION__, $e, "Error generating home page: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  $context['results'][] = "homepage_created";
+  $context['message'] = st('Default Homepage Generated!');
 }
 
-function apigee_install_create_content() {
+function apigee_install_create_default_content(&$context) {
+  watchdog(__FUNCTION__, "Generating default content nodes", array(), WATCHDOG_INFO);
   $gen = array();
   $gen['values'] = array(
     'node_types' => array(
       'blog' => 'blog',
-      'article' => 'article',
       'page' => 'page',
-      'webform' => 'webform',
-      'faq' => 'faq',
       'forum' => 'forum'
     ),
     'title_length' => 6,
-    'num_nodes' => 50,
-    'max_comments' => 10,
+    'num_nodes' => 20,
+    'max_comments' => 0,
     'time_range' => 604800
   );
-  module_load_include('inc', 'devel_generate');
-  devel_generate_content($gen);
+  try {
+    module_load_include('inc', 'devel_generate');
+    devel_generate_content($gen);
+  } catch(Exception $e) {
+    watchdog_exception(__FUNCTION__,$e,"Error generating default content: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  $context['results'][] = "content_created";
+  $context['message'] = st('Default Content Generated!');
 }
+
 
 
 function apigee_install_rebuild_permissions(&$context) {
   watchdog(__FUNCTION__, "rebuilding permissions", array(), WATCHDOG_INFO);
-  node_access_rebuild(TRUE);
+  try{
+    node_access_rebuild(TRUE);
+  } catch(Exception $e) {
+    watchdog_exception(__FUNCTION__,$e,"Error rebuilding node access: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
+  }
   $context['results'][] = "content_permissions";
   $context['message'] = st('Content Permissions Rebuilt');
 }
