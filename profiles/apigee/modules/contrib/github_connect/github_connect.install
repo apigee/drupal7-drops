@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for GitHub connect module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function github_connect_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function github_connect_uninstall() {
+  // Delete our module's variable from the variables table.
+  variable_del('github_connect_client_id');
+  variable_del('github_connect_client_secret');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function github_connect_schema() {
+  $schema['github_connect_users'] = array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'access_token' => array(
+        'description' => 'Token key',
+        'type'        => 'text',
+        'not null'    => TRUE,
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+
+  return $schema;
+}

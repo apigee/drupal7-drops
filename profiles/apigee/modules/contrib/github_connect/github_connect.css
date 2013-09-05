@@ -1,0 +1,7 @@
+#user-login-form li.github-link a,
+#user-login li.github-link a {
+  background-image: url("login-github-bg.png");
+  background-position: left top; /* LTR */
+  background-repeat: no-repeat;
+  padding: 0 0 0 1.5em; /* LTR */
+}
