@@ -38,6 +38,7 @@ dependencies[] = devconnect_faq_ext
 dependencies[] = devconnect_user
 dependencies[] = devconnect_homepage
 dependencies[] = devconnect_app_attributes
+dependencies[] = devconnect_content_authoring
 dependencies[] = devconnect_default_structure
 dependencies[] = devconnect_default_content
 dependencies[] = devel

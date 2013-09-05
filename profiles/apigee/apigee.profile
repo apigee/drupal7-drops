@@ -193,6 +193,11 @@ function apigee_install_configure_variables( &$context) {
   variable_set('site_mail', "noreply@apigee.com");
   variable_set('date_default_timezone', "America/Los_Angeles"); // Designed by Apigee in California
   variable_set('site_default_country', "US");
+  
+  variable_set('jquery_update_compression_type', 'none');
+  variable_set('jquery_update_jquery_cdn', 'google');
+  variable_set('jquery_update_jquery_version', '1.7');
+  
   $context['results'][] = "variables";
   $context['message'] = st('Defautl variables set.');
 }
