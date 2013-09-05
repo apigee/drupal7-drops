@@ -99,7 +99,7 @@ function devconnect_variable_info($options = array()) {
   $variables['devconnect_appname_bug'] = array(
     'type' => 'boolean',
     'title' => t('Double-URL-encode all KMS URI parameters?'),
-    'default' => TRUE,
+    'default' => FALSE,
     'description' => t('When checked, double-escapes developer app names and API Products in URLs.'),
     'group' => 'devconnect'
   );
