@@ -291,7 +291,7 @@ function devconnect_get_endpoint_auth($curl_auth = NULL) {
     $curl_auth = variable_get('devconnect_curlauth', DEVCONNECT_APIGEE_DEFAULT_USER . ':' . DEVCONNECT_APIGEE_DEFAULT_PASSWORD);
   }
   if (!isset($parsed_auth[$curl_auth])) {
-    list($user, $pass_encrypted) = explode(':', $curl_auth);
+    list($user, $pass_encrypted) = explode(':', $curl_auth, 2);
     $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
     $parsed_auth[$curl_auth] = "$user:$pass";
   }
