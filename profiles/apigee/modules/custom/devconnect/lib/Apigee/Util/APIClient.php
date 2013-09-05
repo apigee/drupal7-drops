@@ -287,13 +287,7 @@ class APIClient {
   }
 
   public static function make_http_request($url, $opts) {
-    if (function_exists('drupal_http_request')) {
-      // If we're running within Drupal, use its version of the function.
-      $response = drupal_http_request($url, $opts);
-    }
-    else {
-      $response = \Apigee\Util\HTTPClient::exec($url, $opts);
-    }
+    $response = \Apigee\Util\HTTPClient::exec($url, $opts);
     // Workaround for drupal_http_request's failure to handle return codes of 201 and 202
     if (property_exists($response, 'error') && floor($response->code / 100) != 2) {
       $exc = new ResponseException($response->error, $response->code, $url, $opts, (property_exists($response, 'data') ? $response->data : NULL));
@@ -311,12 +305,10 @@ class APIClient {
    */
   private function exec($url, $opts) {
 
-    // Save URL without authentication info for logging purposes
-    $orig_url = $url;
-    // Inject user/pass into URI
-    $url_parts = explode('://', $url, 2);
-    $url = $url_parts[0] . '://' . $this->user . ':' . $this->pass . '@' . $url_parts[1];
-
+    if (!empty($this->user) && !empty($this->pass) && !array_key_exists('user', $opts) && !array_key_exists('pass', $opts)) {
+      $opts['user'] = $this->user;
+      $opts['pass'] = $this->pass;
+    }
     if (!empty($this->user) && !empty($this->pass)) {
       $auth_string = base64_encode($this->user . ':' . $this->pass);
     }
@@ -342,7 +334,7 @@ class APIClient {
     self::parse_payload($content_type, $this->response_obj);
     $this->response_string = $raw_response;
 
-    $opts['url'] = $orig_url;
+    $opts['url'] = $url;
     $opts['authentication'] = $this->user . ':[encrypted]';
     $opts['response'] = $response;
     if (isset($auth_string) && is_object($opts['response']) && property_exists($opts['response'], 'request')) {

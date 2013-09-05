@@ -69,12 +69,12 @@ class HTTPClient {
       $path .= '?' . $uri['query'];
     }
     $method = isset($opts['method']) ? $opts['method'] : 'GET';
-    $payload = isset($opts['payload']) ? $opts['payload'] : '';
+    $payload = isset($opts['data']) ? $opts['data'] : '';
     if (strlen($payload) > 0 || $method == 'POST' || $method == 'PUT') {
       $headers['Content-Length'] = strlen($payload);
     }
-    if (isset($uri['user']) && isset($uri['pass'])) {
-      $headers['Authorization'] = 'Basic ' . base64_encode($uri['user'] . ':' . $uri['pass']);
+    if (isset($opts['user']) && isset($opts['pass'])) {
+      $headers['Authorization'] = 'Basic ' . base64_encode($opts['user'] . ':' . $opts['pass']);
     }
 
     $request = $method . ' ' . $path . " HTTP/1.0\r\n";
