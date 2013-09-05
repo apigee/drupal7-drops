@@ -77,11 +77,6 @@ function devconnect_default_content_filter_default_formats() {
         'status' => '1',
         'settings' => array(),
       ),
-      'toc_filter' => array(
-        'weight' => '-41',
-        'status' => '1',
-        'settings' => array(),
-      ),
       'filter_htmlcorrector' => array(
         'weight' => '-38',
         'status' => '1',

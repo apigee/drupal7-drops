@@ -99,6 +99,24 @@ function devconnect_default_structure_views_default_views() {
 
   /* Display: Block */
   $handler = $view->new_display('block', 'Block', 'block');
+  $translatables['home_featured_forum_posts'] = array(
+    t('Master'),
+    t('Forum Discussions'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('[title]<br />
+[last_updated]'),
+    t('<div class="comment-count">
+[comment_count]
+</div>'),
+    t('.'),
+    t(','),
+    t('Block'),
+  );
   $export['home_featured_forum_posts'] = $view;
 
   $view = new view();
@@ -134,7 +152,6 @@ function devconnect_default_structure_views_default_views() {
   $handler->display->display_options['fields']['term_node_tid']['type'] = 'ul';
   $handler->display->display_options['fields']['term_node_tid']['vocabularies'] = array(
     'forums' => 0,
-    'apigee' => 0,
     'blog' => 0,
     'tags' => 0,
   );
@@ -156,6 +173,17 @@ function devconnect_default_structure_views_default_views() {
   /* Display: Block */
   $handler = $view->new_display('block', 'Block', 'block');
   $handler->display->display_options['block_description'] = 'Hot Topics';
+  $translatables['hot_topics'] = array(
+    t('Master'),
+    t('Hot Topics'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('Block'),
+  );
   $export['hot_topics'] = $view;
 
   $view = new view();
@@ -236,6 +264,19 @@ function devconnect_default_structure_views_default_views() {
 
   /* Display: Block */
   $handler = $view->new_display('block', 'Block', 'block_1');
+  $translatables['recent_blog_posts'] = array(
+    t('Master'),
+    t('Recent Blog Posts'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('[title]<span class="blog-icon"></span><br />
+[body]'),
+    t('Block'),
+  );
   $export['recent_blog_posts'] = $view;
 
   return $export;

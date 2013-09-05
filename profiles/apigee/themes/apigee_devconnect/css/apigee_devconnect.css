@@ -147,7 +147,7 @@ span.welcome{
 	margin-bottom: 10px;
 }
 .home-header-btn .iconbtn {
-	background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.png);
+	background-image: url(../images/enterprise-sprites.png);
 	height: 30px;
 	position: absolute;
   right: 15px;
@@ -167,45 +167,48 @@ span.welcome{
 	position: relative;
 	width: 31%;
 }
-.front .page-content .container{
-	background: url(/profiles/apigee/themes/apigee_devconnect/images/homepage-content-bg.png) repeat-y scroll 0 0 transparent;
-}
+
 .front .span24 .block{
 	float: left;
 }
-.develop-with-these{
-	padding-right: 25px;
-	width: 34%;
+
+body.html.front.no-sidebars .page-content .container .row section.span24 section.block {
+  width: 37%;
+  padding-right: 2%;  
 }
-.forum-discussions{
-	padding: 0 15px;
-	width: 31%;
+
+body.html.front.no-sidebars .page-content .container .row section.span24 section.block .view {
+  border-right: 2px dashed rgba(200,200, 200, .4);
+  padding-right: 4%;  
 }
-.recent-blog-posts{
-	padding-left: 20px;
-	width: 27%;
+
+
+
+#block-views-hot-topics-block {
+  width: 20%;
 }
-.develop-with-these h2{
+
+#block-views-hot-topics-block .view {
+  border-right: 0px none;
+  
+}
+
+body.html.front.no-sidebars .page-content .container .row section.span24 section.block h2{
 	font-size: 26px;
 	font-weight: 600;
 	margin-bottom: 15px;
-}
-.develop-with-these h3{
   color: #137AAA;
   font-size: 18px;
   font-weight: 600;
   padding-bottom: 5px;
-  padding-left: 50px;
+  padding-left: 0%; 
 }
-.develop-with-these p{
-	padding-left: 50px;
-	margin-top: -5px;
-}
+
 .starter h3{
 	background: url(../images/gear-green.png) no-repeat scroll 0 0 transparent;
 }
 .provider h3{
-	background: url(/profiles/apigee/themes/apigee_devconnect/images/gear-purple.png) no-repeat scroll 0 0 transparent;
+	background: url(../images/gear-purple.png) no-repeat scroll 0 0 transparent;
 }
 #block-views-home-featured-forum-posts-block h2,
 #block-views-recent-blog-posts-block-1 h2{
@@ -228,7 +231,7 @@ span.welcome{
 	top: 0;
 }
 .view-home-featured-forum-posts .views-field-comment-count a{
-	background: url(/profiles/apigee/themes/apigee_devconnect/images/comment-icon.png) no-repeat scroll 0 0 transparent;
+	background: url(../images/comment-icon.png) no-repeat scroll 0 0 transparent;
 	padding-left: 35px;
 }
 .view-recent-blog-posts .views-row{
@@ -236,7 +239,7 @@ span.welcome{
 	position: relative;
 }
 span.blog-icon{
-	background: url(/profiles/apigee/themes/apigee_devconnect/images/blog-icon.png) no-repeat scroll 0 0 transparent;
+	background: url(../images/blog-icon.png) no-repeat scroll 0 0 transparent;
   display: inline-block;
   height: 19px;
   position: absolute;
@@ -258,7 +261,7 @@ span.blog-icon{
 }
 .view-recent-blog-posts .views-field-body{
 	float: right;
-  width: 210px;
+  width: 80%;
 }
 
 /* Main Body */
@@ -280,7 +283,7 @@ span.blog-icon{
 
 /* Blog */
 #block-views-hot-topics-block h2{
-	background: url(/profiles/apigee/themes/apigee_devconnect/images/hot-icon.png) no-repeat scroll 110px center transparent;
+	background: url(../images/hot-icon.png) no-repeat scroll 110px center transparent;
 }
 .view-hot-topics .views-row ul{
 	list-style: none;
@@ -315,7 +318,7 @@ span.blog-icon{
   background-image: linear-gradient(top, #ffffff, #f3f3f4);
   background-repeat: repeat-x;
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f3f3f4', GradientType=0);
-  background: url(/profiles/apigee/themes/apigee_devconnect/images/add-icon.png) no-repeat 132px 12px;
+  background: url(../images/add-icon.png) no-repeat 132px 12px;
 	border: 1px solid #b7c0c5;
 	border-radius: 5px 5px 5px 5px;
 	-moz-border-radius: 5px 5px 5px 5px;
@@ -380,7 +383,7 @@ div.apiproduct-status {
 }
 .app-delete button,
 .app-delete button:hover{
-	background: url(/profiles/apigee/themes/apigee_devconnect/images/delete-icon.png) no-repeat;
+	background: url(../images/delete-icon.png) no-repeat;
 	border: none;
 	float: right;
 	height: 15px;
@@ -449,7 +452,7 @@ div.apiproduct-status {
 }
 #performance #edit-date-from,
 #performance #edit-date-to{
-	background-image: url(/profiles/apigee/themes/apigee_devconnect/images/cal-icon.png);
+	background-image: url(../images/cal-icon.png);
 	background-repeat: no-repeat;
 	background-position: 155px 3px;
 }

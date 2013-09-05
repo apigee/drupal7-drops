@@ -210,72 +210,6 @@ function devconnect_default_structure_default_fe_block_settings() {
     'visibility' => '0',
   );
 
-  $export['devconnect_default_structure-develop-with-these'] = array(
-    'cache' => '1',
-    'css_class' => '',
-    'custom' => '0',
-    'delta' => 'develop-with-these',
-    'module' => 'devconnect_default_structure',
-    'node_types' => array(),
-    'pages' => 'admin/*',
-    'roles' => array(),
-    'themes' => array(
-      'apigee_base' => array(
-        'region' => '',
-        'status' => 0,
-        'theme' => 'apigee_base',
-        'weight' => '0',
-      ),
-      'apigee_devconnect' => array(
-        'region' => '',
-        'status' => 0,
-        'theme' => 'apigee_devconnect',
-        'weight' => '0',
-      ),
-      'rubik' => array(
-        'region' => '',
-        'status' => 0,
-        'theme' => 'rubik',
-        'weight' => '0',
-      ),
-    ),
-    'title' => '',
-    'visibility' => '0',
-  );
-
-  $export['devconnect_default_structure-footer'] = array(
-    'cache' => '1',
-    'css_class' => '',
-    'custom' => '0',
-    'delta' => 'footer',
-    'module' => 'devconnect_default_structure',
-    'node_types' => array(),
-    'pages' => 'admin/*',
-    'roles' => array(),
-    'themes' => array(
-      'apigee_base' => array(
-        'region' => '',
-        'status' => 0,
-        'theme' => 'apigee_base',
-        'weight' => '0',
-      ),
-      'apigee_devconnect' => array(
-        'region' => '',
-        'status' => 0,
-        'theme' => 'apigee_devconnect',
-        'weight' => '0',
-      ),
-      'rubik' => array(
-        'region' => '',
-        'status' => 0,
-        'theme' => 'rubik',
-        'weight' => '0',
-      ),
-    ),
-    'title' => '',
-    'visibility' => '0',
-  );
-
   $export['devconnect_homepage-homepage_header'] = array(
     'cache' => '1',
     'css_class' => '',
@@ -287,8 +221,8 @@ function devconnect_default_structure_default_fe_block_settings() {
     'roles' => array(),
     'themes' => array(
       'apigee_base' => array(
-        'region' => 'header',
-        'status' => '1',
+        'region' => '',
+        'status' => 0,
         'theme' => 'apigee_base',
         'weight' => '0',
       ),
@@ -590,8 +524,8 @@ function devconnect_default_structure_default_fe_block_settings() {
         'weight' => '5',
       ),
       'apigee_devconnect' => array(
-        'region' => 'help',
-        'status' => '1',
+        'region' => '',
+        'status' => 0,
         'theme' => 'apigee_devconnect',
         'weight' => '5',
       ),

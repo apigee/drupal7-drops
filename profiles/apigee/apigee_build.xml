@@ -1,0 +1,19 @@
+<?xml version='1.0'?>
+<project name='apigee-distro-tasks' default='migrate-to-pantheon' description='Apigee Distro Tasks'>
+  <!--  
+  
+  Jenkins jobs for importing site from old apigee hosting to pantheon.
+  
+  
+  
+  -->
+  <target name='migrate-to-pantheon'>
+    <fail unless='site-archive-file' 
+      message='You must set the variable "site-archive-file". If you are running this in Jenkins, please parameterize this build adding a "site-arive-file" text paramater to set before execution. Currently this only works for amazon s3 buckets and s3cmd must be installed and configured correctly for the jenkins user. example: prod-orgname.tgz' />
+      <exec command="s3cmd get s3://apigee-devconnect/site-archives/${site-archive-file}" 
+        passthru='true'
+        logoutput='true'
+        dir="${project.basedir}" />
+      <exec file='tar -xzvf ${project.basedir}/${site-archive-file}' dir="${project.basedir}" />
+  </target>
+</project>

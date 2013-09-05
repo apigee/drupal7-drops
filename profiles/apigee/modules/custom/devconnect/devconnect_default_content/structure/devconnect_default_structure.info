@@ -1,9 +1,10 @@
 name = Devconnect Default Structure
 description = Configures blocks, views and menus
 core = 7.x
-package = Devconnect Features
+package = Devconnect
+php = 5.2.4
 version = 7.x-4.23
-
+project = devconnect_default_structure
 dependencies[] = apachesolr_search
 dependencies[] = apigee_sso
 dependencies[] = blog
@@ -18,20 +19,14 @@ dependencies[] = features
 dependencies[] = forum
 dependencies[] = markdown
 dependencies[] = menu
-dependencies[] = node
 dependencies[] = search
-dependencies[] = system
-dependencies[] = user
 dependencies[] = views
-
 features[context][] = blog
 features[context][] = home
 features[context][] = signin
 features[context][] = sitewide
-
 features[ctools][] = context:context:3
 features[ctools][] = views:views_default:3.0
-
 features[fe_block_settings][] = apachesolr_search-mlt-001
 features[fe_block_settings][] = apachesolr_search-sort
 features[fe_block_settings][] = apigee_sso-0
@@ -63,16 +58,10 @@ features[fe_block_settings][] = views-faq-faq_recent
 features[fe_block_settings][] = views-home_featured_forum_posts-block
 features[fe_block_settings][] = views-hot_topics-block
 features[fe_block_settings][] = views-recent_blog_posts-block_1
-features[fe_block_settings][] = devconnect_default_content_structure-develop-with-these
-features[fe_block_settings][] = devconnect_default_content_structure-footer
-
 features[features_api][] = api:1
-
 features[menu_custom][] = main-menu
-
 features[menu_links][] = main-menu:blog
 features[menu_links][] = main-menu:forum
-
 features[views_view][] = home_featured_forum_posts
 features[views_view][] = hot_topics
 features[views_view][] = recent_blog_posts

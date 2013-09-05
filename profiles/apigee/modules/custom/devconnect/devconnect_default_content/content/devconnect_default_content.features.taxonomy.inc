@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * devconnect_default_content_nodes_users.features.taxonomy.inc
+ * devconnect_default_content.features.taxonomy.inc
  */
 
 /**
