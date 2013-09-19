@@ -1,5 +1,4 @@
 <?php
-// $Id: faq-category-questions-top-answers.tpl.php,v 1.1.2.4 2008/12/21 18:58:26 snpower Exp $
 
 /**
  * @file
@@ -50,78 +49,52 @@
  *   The sub-categories faqs, recursively themed (by this template).
  */
 
-if ($category_depth > 0) {
-  $hdr = 'h6';
+$hdr = ($category_depth ? 'h6' : 'h5');
+
+$indent_start = $indent_end = '';
+if ($display_answers && $answer_category_name && $category_depth > 0) {
+  $indent_start = str_repeat('<div class="faq-category-indent">', $category_depth);
+  $indent_end = str_repeat('</div>', $category_depth);
 }
-else {
-  $hdr = 'h5';
+
+$header_start = $header_end = '';
+if ($display_header) {
+  $header_start = '<' . $hdr . ' class="faq-header">'
+    . $term_image . $category_name
+    . '</' . $hdr . '>'
+    . '<div class="clear-block"></div>'
+    . '<div class="faq-category_group"><div>';
+  $header_end = '</div></div>';
 }
 
-$depth = 0;
+$category_group_start = $category_group_end = '';
+if ($display_header) {
+  $category_group_start = '<div class="faq-category-group"><div>';
+  $category_group_end = '</div></div>';
+}
 
-?><?php if ($display_answers): ?>
-  <?php if ($answer_category_name): ?>
-    <?php while ($depth < $category_depth): ?>
-      <div class="faq-category-indent">
-    <?php $depth++; endwhile; ?>
-  <?php endif; ?>
-
-  <div class="faq-category-menu">
-
-  <?php if ($display_header): ?>
-    <<?php print $hdr; ?> class="faq-header">
-    <?php print $term_image; ?>
-    <?php print $category_name; ?>
-    </<?php print $hdr; ?>>
-    <div class="clear-block"></div>
-    <div class="faq-category-group">
-    <div>
-  <?php endif; ?>
-
-  <?php if (!$answer_category_name || $display_header): ?>
-
-    <!-- Include subcategories. -->
-    <?php if (count($subcat_body_list)): ?>
-      <?php foreach ($subcat_body_list as $i => $subcat_html): ?>
-        <?php print $subcat_html; ?>
-      <?php endforeach; ?>
-    <?php endif; ?>
-
-    <?php if (!$display_header): ?>
-      <div class="faq-category-group">
-      <div>
-    <?php endif; ?>
-
-    <!-- List questions (in title link) and answers (in body). -->
-    <?php $qi=1;?>
-    <?php if (count($nodes)): ?>
-      <?php foreach ($nodes as $i => $node): ?>
-
-        <div class="kmart-verticals-wrap"><?php // Strong question label here? ?>
-       <!-- <h5><?php echo $qi++.". ";?><?php print preg_replace('/href=\"([^\"]+)\"[^>]*/','href=#',$node['question']); ?></h5>-->
-        <h5><?php// echo $qi++.". ";?><?php print $node['question']; ?></h5>
-         <!-- Close div: faq-question -->
-
-        <div class="faq-answer">
-          <?php print $answer_label; ?>
-        <?php print $node['body']; ?>
-        </div> <!-- Close div: faq-answer -->
-     </div>
-      <?php endforeach; ?>
-    <?php endif; ?>
-
-  <?php endif; ?>
-
-  </div> <!-- Close div -->
-  </div> <!-- Close div: faq-category-group -->
-  </div>
-
-  <?php if ($answer_category_name): ?>
-    <?php while ($depth > 0): ?>
-      </div> <!-- Close div: faq-category-indent -->
-    <?php $depth--; endwhile; ?>
-  <?php endif; ?>
-<?php
-endif; // if display_answers
 ?>
+<?php print $indent_start; ?>
+<div class="faq-category-menu">
+  <?php print $header_start; ?>
+
+  <?php
+  if (!$answer_category_name || $display_header) {
+    if (count($subcat_body_list) > 0) {
+      print join("\n", $subcat_body_list);
+    }
+    print $category_group_start;
+    foreach ($nodes as $node) {
+      print '<div class="verticals-wrap">';
+      print '<h5>' . $node['question'] . '</h5>';
+      print '<div class="faq-answer">' . $answer_label . ' ' . $node['body'] . '</div>';
+      print "</div>\n"; // end verticals-wrap
+    }
+    print $category_group_end;
+  }
+  ?>
+
+  <?php print $header_end; ?>
+</div><!-- end faq-category-menu -->
+<?php print $indent_end; ?>
 <div class="backtotop"></div>

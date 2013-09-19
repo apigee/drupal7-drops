@@ -6,13 +6,17 @@ define('DEVCONNECT_APIGEE_DEFAULT_ENDPOINT', 'https://api.enterprise.apigee.com/
 define('DEVCONNECT_APIGEE_DEFAULT_ORG', 'fixme');
 
 /**
- * Implements hook_xautoload().
+ * Implements hook_boot().
  *
- * @param xautoload_InjectedAPI_hookXautoload $api
+ * Registers our custom autoloader.
  */
-function devconnect_xautoload(xautoload_InjectedAPI_hookXautoload $api) {
-  // Declare a foreign namespace in devconnect/lib/Apigee/
-  $api->namespaceRoot('Apigee');
+function devconnect_boot() {
+  static $already_booted = FALSE;
+  if (!$already_booted) {
+    spl_autoload_register('devconnect_autoload');
+    $already_booted = TRUE;
+    Apigee\Util\Crypto::setKey(hash('SHA256', 'w3-Love_ap|s', TRUE));
+  }
 }
 
 /**
@@ -31,8 +35,8 @@ function devconnect_menu_alter(&$items) {
 function devconnect_menu() {
   $items = array();
   $items['admin/config/devconnect'] = array(
-    'title' => 'Devconnect',
-    'description' => 'KMS authentication settings.',
+    'title' => 'Dev Portal',
+    'description' => 'Apigee KMS authentication settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_admin_form'),
     'access arguments' => array('administer organization settings')
@@ -96,29 +100,22 @@ function devconnect_variable_info($options = array()) {
     'format callback' => 'devconnect_format_endpoint_auth',
     'group' => 'devconnect'
   );
-  $variables['devconnect_appname_bug'] = array(
-    'type' => 'boolean',
-    'title' => t('Double-URL-encode all KMS URI parameters?'),
-    'default' => FALSE,
-    'description' => t('When checked, double-escapes developer app names and API Products in URLs.'),
-    'group' => 'devconnect'
+
+  $variables['apigee_log_threshold'] = array(
+    'type' => 'select',
+    'title' => t('KMS logging threshold'),
+    'description' => t('Controls what baseline level of KMS output should be written to the logs.'),
+    'required' => TRUE,
+    'default' => Apigee\Util\Log::LOGLEVEL_WARNING,
+    'options' => array(
+      Apigee\Util\Log::LOGLEVEL_DEBUG => 'Debug',
+      Apigee\Util\Log::LOGLEVEL_NOTICE => 'Notice',
+      Apigee\Util\Log::LOGLEVEL_WARNING => 'Warning',
+      Apigee\Util\Log::LOGLEVEL_ERROR => 'Error',
+      Apigee\Util\Log::LOGLEVEL_CRITICAL => 'Critical'
+    )
   );
-  if (class_exists("Apigee\Util\Log")){
-    $variables['apigee_log_threshold'] = array(
-      'type' => 'select',
-      'title' => t('KMS logging threshold'),
-      'description' => t('Controls what baseline level of KMS output should be written to the logs.'),
-      'required' => TRUE,
-      'default' => Apigee\Util\Log::LOGLEVEL_WARNING,
-      'options' => array(
-        Apigee\Util\Log::LOGLEVEL_DEBUG => 'Debug',
-        Apigee\Util\Log::LOGLEVEL_NOTICE => 'Notice',
-        Apigee\Util\Log::LOGLEVEL_WARNING => 'Warning',
-        Apigee\Util\Log::LOGLEVEL_ERROR => 'Error',
-        Apigee\Util\Log::LOGLEVEL_CRITICAL => 'Critical'
-      )
-    );
-  }
+
   return $variables;
 }
 
@@ -152,7 +149,7 @@ function devconnect_admin_form($form, &$form_state) {
   foreach ($my_variables as $name => $info) {
     $default_value = variable_get($name, $info['default']);
     $form_element = array();
-    if ($name == 'devconnect_curlauth') {
+    if (substr($name, -9) == '_curlauth') {
       $default_value = devconnect_get_endpoint_auth($default_value);
       $form['#validate'] = array('devconnect_encrypt_endpoint_auth');
     }
@@ -162,9 +159,19 @@ function devconnect_admin_form($form, &$form_state) {
       $form_element['#return_value'] = 1;
     }
     elseif ($info['type'] == 'select') {
-      $form_element['#type'] = 'select';
       $form_element['#default_value'] = $default_value;
-      $form_element['#options'] = $info['options'];
+      if ((!isset($info['options']) || !is_array($info['options'])) && (isset($info['options callback']) && is_callable($info['options callback']))) {
+        $form_element['#options'] = call_user_func($info['options callback']);
+      }
+      else {
+        $form_element['#options'] = $info['options'];
+      }
+      if (count($form_element['#options']) < 7) {
+        $form_element['#type'] = 'radios';
+      }
+      else {
+        $form_element['#type'] = 'select';
+      }
     }
     else {
       $form_element['#type'] = 'textfield';
@@ -181,7 +188,78 @@ function devconnect_admin_form($form, &$form_state) {
 
     $form[$name] = $form_element;
   }
+
+  $org = $form['devconnect_org']['#default_value'];
+  $endpoint = $form['devconnect_endpoint']['#default_value'];
+  $curl_auth = $form['devconnect_curlauth']['#default_value'];
+
+  // If this isn't supplied, than false
+  $status = $form_state['storage']['connection_status'];
+
+  $form['connect_test'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Connection Configuration'),
+  );
+  $form['connect_test']['test_connection'] = array(
+    '#type' => 'submit',
+    '#value' => t('Test Connection'),
+    '#submit' => array('_devconnect_test_management_connection_submit'),
+    '#ajax' => array(
+      'callback' => '_devconnect_test_management_connection_ajax',
+      'wrapper' => 'test-connect-result',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+  );
+  $form['connect_test']['test_connection_status'] = array(
+    '#type' => 'item',
+    '#prefix' => '<div id="test-connect-result">',
+    '#suffix' => '</div>',
+    '#markup' => (isset($status)) ? '<br/>' . $status : '<br/>' . _devconnect_test_kms_connection($org, $endpoint, $curl_auth),
+  );
+
   return system_settings_form($form);
+}
+
+/**
+ * Ajax Callback for Testing the KMS Connection
+ */
+function _devconnect_test_management_connection_ajax($form, &$form_state) {
+  return $form['connect_test']['test_connection_status'];
+}
+
+/**
+ * Submit Callback for testing the KMS Connection
+ */
+function _devconnect_test_management_connection_submit($form, &$form_state) {
+  // provide the currently user supplied credentials
+  $org = $form_state['input']['devconnect_org'];
+  $endpoint = $form_state['input']['devconnect_endpoint'];
+  $curl_auth = $form_state['input']['devconnect_curlauth'];
+
+  // make the form states rebuild and store important variables
+  $form_state['rebuild'] = TRUE;
+  $form_state['storage']['ajaxed'] = TRUE;
+  $form_state['storage']['connection_status'] = _devconnect_test_kms_connection($org, $endpoint, $curl_auth);
+}
+
+/**
+ * Test Function for connectivity to the KMS
+ */
+function _devconnect_test_kms_connection($org, $endpoint, $curl_auth) {
+  list($user, $pass) = explode(':', $curl_auth, 2);
+  if (!valid_url($endpoint)) {
+    return '<span style="color:red">' . t('Invalid endpoint') . '</span>';
+  }
+  $client = new Apigee\Util\APIClient($endpoint, $org, $user, $pass);
+  $api_product = new Apigee\ManagementAPI\APIProduct($client);
+  try {
+    if ($api_product->listProducts()) {
+      return '<span style="color:green">' . t('Connection Successful') . '</span>';
+    }
+  }
+  catch (Exception $e) {}
+  return '<span style="color:red">' . t('Connection Unsuccessful') . '</span>';
 }
 
 /**
@@ -194,6 +272,10 @@ function devconnect_permission() {
     'administer organization settings' => array(
       'title' => 'Administer organization settings',
       'restrict access' => TRUE,
+    ),
+    'view devconnect errors' => array(
+      'title' => 'View DevConnect error detail',
+      'restrict access' => TRUE
     )
   );
 }
@@ -206,7 +288,7 @@ function devconnect_cron() {
   $client = devconnect_default_api_client();
   $dev_app = new Apigee\ManagementAPI\DeveloperAppAnalytics($client);
 
-  $environments = $dev_app->query_environments();
+  $environments = $dev_app->queryEnvironments();
   variable_set('devconnect_org_environments', $environments);
 }
 
@@ -287,6 +369,9 @@ function _devconnect_alter_variable_form(&$form) {
 function devconnect_get_endpoint_auth($curl_auth = NULL) {
   static $parsed_auth = array();
 
+  // Make drush happy
+  devconnect_boot();
+
   if (!isset($curl_auth)) {
     $curl_auth = variable_get('devconnect_curlauth', DEVCONNECT_APIGEE_DEFAULT_USER . ':' . DEVCONNECT_APIGEE_DEFAULT_PASSWORD);
   }
@@ -309,10 +394,15 @@ function devconnect_get_endpoint_auth($curl_auth = NULL) {
  * @param $form_state
  */
 function devconnect_encrypt_endpoint_auth($form, &$form_state) {
-  $raw_auth = $form_state['values']['devconnect_curlauth'];
-  list($username, $raw_pass) = explode(':', $raw_auth, 2);
-  $pass = Apigee\Util\Crypto::encrypt($raw_pass);
-  $form_state['values']['devconnect_curlauth'] = "$username:$pass";
+  foreach ($form_state['values'] as $key => $value) {
+    if (substr($key, -9) == '_curlauth') {
+      $raw_auth = $form_state['values'][$key];
+      list($username, $raw_pass) = explode(':', $raw_auth, 2);
+      $pass = Apigee\Util\Crypto::encrypt($raw_pass);
+      $form_state['values'][$key] = "$username:$pass";
+    }
+  }
+
 }
 
 /**
@@ -322,10 +412,16 @@ function devconnect_encrypt_endpoint_auth($form, &$form_state) {
  */
 function devconnect_theme() {
   $items = array();
-  $items['devconnect_apigee_api_product_description'] = array(
-    'path' => drupal_get_path('module', 'devconnect') . '/templates',
-    'template' => 'devconnect_apigee_api_product_description',
-    'variables' => array('display_name' => NULL, 'description' => NULL),
+  $tpl_path = drupal_get_path('module', 'devconnect') . '/templates';
+  $items['devconnect_error_inline'] = array(
+    'path' => $tpl_path,
+    'template' => 'devconnect_error_inline',
+    'variables' => array('summary' => NULL, 'detail' => NULL),
+  );
+  $items['devconnect_error_message'] = array(
+    'path' => $tpl_path,
+    'template' => 'devconnect_error_message',
+    'variables' => array('summary' => NULL, 'detail' => NULL, 'severity' => 'error'),
   );
   return $items;
 }
@@ -341,9 +437,9 @@ function devconnect_default_api_client() {
   $curl_auth = devconnect_get_endpoint_auth();
   list($username, $password) = explode(':', $curl_auth, 2);
 
-  $client = Apigee\Util\APIClient::get_instance($endpoint, $org, $username, $password);
-  $client->set_attribute('double_url_encode', (bool)variable_get('devconnect_appname_bug', TRUE));
-  return $client;
+  // make drush site-install happy
+  devconnect_boot();
+  return Apigee\Util\APIClient::getInstance($endpoint, $org, $username, $password);
 }
 
 /**
@@ -351,12 +447,7 @@ function devconnect_default_api_client() {
  * so that we can bring CS code up to current standards.
  */
 function _devconnect_warn_deprecated() {
-  if (version_compare(PHP_VERSION, '5.4.0', 'ge')) {
-    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-  }
-  else {
-    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-  }
+  $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
   $frame = $backtrace[1];
 
   if (isset($frame['class'])) {
@@ -374,7 +465,89 @@ function _devconnect_warn_deprecated() {
     '%file' => $frame['file'],
     '%line' => $frame['line']
   );
-  watchdog('devconnect', $message, $args, WATCHDOG_WARNING);
+  Apigee\Util\Log::write('devconnect', Apigee\Util\Log::LOGLEVEL_WARNING, t($message, $args));
+}
+
+/**
+ * Autoloader for Apigee and Symfony\Components\Yaml classes
+ *
+ * @param string $class
+ */
+function devconnect_autoload($class) {
+  $class_path = NULL;
+  if (strpos($class, '\\') !== FALSE) {
+    $path_parts = explode('\\', $class);
+    if ($path_parts[0] == 'Apigee') {
+      $lib_path = realpath(dirname(__FILE__) . '/lib');
+      $class_path = $lib_path . '/' . join('/', $path_parts) . '.php';
+    }
+    elseif (count($path_parts) > 3 && $path_parts[0] == 'Symfony' && $path_parts[1] == 'Components' && $path_parts[2] == 'Yaml') {
+      $path_parts = array_slice($path_parts, 3);
+      $lib_path = libraries_get_path('symfony_yaml');
+      if ($lib_path) {
+        $class_path = $lib_path . '/' . join('/', $path_parts) . '.php';
+      }
+    }
+  }
+  if (isset($class_path) && file_exists($class_path)) {
+    require_once($class_path);
+  }
+}
+
+/**
+ * Common error/notification handler for KMS faults.
+ *
+ * Invokes hook_devconnect_error_alter() to change how messages are displayed.
+ *
+ * @param int $error_code
+ * @param string $summary
+ * @param string $details
+ * @param int $severity
+ * @param int $display
+ * @return bool|string
+ */
+function devconnect_notify($error_code, $summary, $details, $severity = Apigee\Util\ErrorHandling::SEVERITY_ERROR, $display = Apigee\Util\ErrorHandling::DISPLAY_MESSAGE) {
+  drupal_alter('devconnect_error', $error_code, $summary, $details, $severity, $display);
+
+  switch ($severity) {
+    case Apigee\Util\ErrorHandling::SEVERITY_STATUS:
+      $message_type = 'status';
+      break;
+    case Apigee\Util\ErrorHandling::SEVERITY_WARNING:
+      $message_type = 'warning';
+      break;
+    default:
+      $message_type = 'error';
+      break;
+  }
+  if (!user_access('view devconnect errors')) {
+    $details = NULL;
+  }
+  if ($display == Apigee\Util\ErrorHandling::DISPLAY_MESSAGE) {
+    $formatted_message = theme('devconnect_error_message', array('summary' => $summary, 'detail' => $details));
+    drupal_set_message($formatted_message, $message_type);
+    return FALSE;
+  }
+  return theme('devconnect_error_inline', array('summary' => $summary, 'detail' => $details, 'severity' => $message_type));
+}
+
+function devconnect_get_debug_data() {
+  $client = devconnect_default_api_client();
+
+  $response = $client->getResponse();
+  $response_code = $client->getResponseCode();
+  $opts = $client->getResponseOpts();
+  $status = $opts['response']->statusMessage;
+  unset($opts['response']);
+  $debug_data = array(
+    'raw' => $client->getResponseString(),
+    'opts' => $opts,
+    'data' => $response,
+    'code' => $response_code,
+    'code_status' => $status,
+    'code_class' => floor($response_code / 100)
+  );
+  return $debug_data;
 }
 
 /**************************************************
@@ -390,7 +563,7 @@ class DevConnectApigeeApiproduct {
   private $current_product_name;
 
   public function __construct() {
-    // Log creation of deprecated wrapper class
+    // Log instantiation of deprecated wrapper class
     _devconnect_warn_deprecated();
     $client = devconnect_default_api_client();
     $this->api_product = new Apigee\ManagementAPI\APIProduct($client);
@@ -406,31 +579,31 @@ class DevConnectApigeeApiproduct {
 
   public function is_public($api_product) {
     $this->ensure_loaded($api_product);
-    return $this->api_product->is_public();
+    return $this->api_product->isPublic();
   }
 
   public function list_products($fetch_all = FALSE) {
-    return $this->api_product->list_products($fetch_all);
+    return $this->api_product->listProducts($fetch_all);
   }
 
   public function get_detail($api_product) {
     $this->ensure_loaded($api_product);
 
     $return_value = array(
-      'apiResources' => $this->api_product->get_api_resources(),
-      'approvalType' => $this->api_product->get_approval_type(),
-      'parsed_attributes' => $this->api_product->get_attributes(),
-      'createdAt' => $this->api_product->get_created_at(),
-      'createdBy' => $this->api_product->get_modified_by(),
-      'lastModifiedAt' => $this->api_product->get_modified_at(),
-      'lastModifiedBy' => $this->api_product->get_modified_by(),
-      'environments' => $this->api_product->get_environments(),
-      'name' => $this->api_product->get_name(),
-      'proxies' => $this->api_product->get_proxies(),
-      'quota' => $this->api_product->get_quota_limit(),
-      'quotaInterval' => $this->api_product->get_quota_interval(),
-      'quotaTimeUnit' => $this->api_product->get_quota_time_unit(),
-      'hidden' => !$this->api_product->is_public()
+      'apiResources' => $this->api_product->getApiResources(),
+      'approvalType' => $this->api_product->getApprovalType(),
+      'parsed_attributes' => $this->api_product->getAttributes(),
+      'createdAt' => $this->api_product->getCreatedAt(),
+      'createdBy' => $this->api_product->getModifiedBy(),
+      'lastModifiedAt' => $this->api_product->getModifiedAt(),
+      'lastModifiedBy' => $this->api_product->getModifiedBy(),
+      'environments' => $this->api_product->getEnvironments(),
+      'name' => $this->api_product->getName(),
+      'proxies' => $this->api_product->getProxies(),
+      'quota' => $this->api_product->getQuotaLimit(),
+      'quotaInterval' => $this->api_product->getQuotaInterval(),
+      'quotaTimeUnit' => $this->api_product->getQuotaTimeUnit(),
+      'hidden' => !$this->api_product->isPublic()
     );
 
     return $return_value;
@@ -439,7 +612,7 @@ class DevConnectApigeeApiproduct {
   public function get_product_names() {
     $names = array();
     foreach($this->list_products(TRUE) as $product) {
-      $names[] = $product->get_name();
+      $names[] = $product->getName();
     };
     return $names;
   }
@@ -447,12 +620,12 @@ class DevConnectApigeeApiproduct {
   public function has_oauth_policy($api_product = NULL) {
     if (isset($api_product)) {
       $this->ensure_loaded($api_product);
-      $token_uris = $this->api_product->get_oauth_token_urls();
+      $token_uris = $this->api_product->getOauthTokenUrls();
       return (count($token_uris) > 0);
     }
 
     $products_with_policies = array();
-    $list = $this->api_product->list_products(TRUE);
+    $list = $this->api_product->listProducts(TRUE);
     foreach ($list as $api_product) {
       if ($this->has_oauth_policy($api_product)) {
         $products_with_policies[] = $api_product;
@@ -475,7 +648,7 @@ class DevConnectApigeeDeveloper {
   private $data;
 
   public function __construct($existing_user_email = NULL) {
-    // Log creation of deprecated wrapper class
+    // Log instantiation of deprecated wrapper class
     _devconnect_warn_deprecated();
     $client = devconnect_default_api_client();
     $this->developer = new Apigee\ManagementAPI\Developer($client);
@@ -484,12 +657,12 @@ class DevConnectApigeeDeveloper {
       try {
         $this->developer->load($existing_user_email);
         $this->valid = TRUE;
-        $this->data = $this->developer->get_debug_data();
+        $this->data = $this->developer->getDebugData();
       }
       catch (Apigee\Exceptions\ResponseException $e) {
         $this->valid = FALSE;
         //throw new Exception($e->getMessage());
-        $this->data = $this->developer->get_debug_data();
+        $this->data = $this->developer->getDebugData();
       }
     }
     else {
@@ -505,30 +678,31 @@ class DevConnectApigeeDeveloper {
   }
 
   public function Create($account) {
-    $this->developer->blank_values();
+    $this->developer->blankValues();
     return $this->Update($account);
   }
 
   public function Update($account) {
-    $this->developer->populate_from_user_account($account);
+    module_load_include('module', 'devconnect_user');
+    _devconnect_user_populate_from_account($account, $this->developer);
     try {
       $this->developer->save();
       $this->valid = TRUE;
-      $this->data = $this->developer->get_debug_data();
+      $this->data = $this->developer->getDebugData();
     }
-    catch (Apigee\Exceptions\InvalidDataException $e) {
+    catch (Apigee\Exceptions\ParameterException $e) {
       $this->valid = FALSE;
-      $this->data = $this->developer->get_debug_data();
+      $this->data = $this->developer->getDebugData();
     }
     return $this->data;
   }
 
   public function Delete() {
-    if (!$this->developer->get_modified_at()) {
+    if (!$this->developer->getModifiedAt()) {
       return FALSE;
     }
     $this->developer->delete();
-    $this->data = $this->developer->get_debug_data();
+    $this->data = $this->developer->getDebugData();
     return $this->data;
   }
 
@@ -549,7 +723,7 @@ class DevConnectApigeeDeveloperApp {
   private $api_product;
 
   public function __construct(&$user) {
-    // Log creation of deprecated wrapper class
+    // Log instantiation of deprecated wrapper class
     _devconnect_warn_deprecated();
     $client = devconnect_default_api_client();
     $this->app = new Apigee\ManagementAPI\DeveloperApp($client, $user->mail);
@@ -557,23 +731,24 @@ class DevConnectApigeeDeveloperApp {
 
   public function Validate($app) {
     $this->app->validate($app);
-    return $this->app->get_debug_data();
+    return $this->app->getDebugData();
   }
 
   private function save($values, $update = FALSE) {
-    $this->app->populate_from_form_values($values);
+    module_load_include('module', 'devconnect_developer_apps');
+    _devconnect_developer_apps_populate_from_form_values($values, $this->app);
     $this->app->save($update);
-    return $this->app->get_debug_data();
+    return $this->app->getDebugData();
   }
 
   public function Create($values) {
-    $this->app->blank_values();
+    $this->app->blankValues();
     return $this->save($values, FALSE);
   }
 
   public function Delete($app) {
     $this->app->delete($app);
-    return $this->app->get_debug_data();
+    return $this->app->getDebugData();
   }
 
   public function Update($app, $values) {
@@ -581,43 +756,43 @@ class DevConnectApigeeDeveloperApp {
   }
 
   public function GetList() {
-    $this->app->get_list();
-    return $this->app->get_debug_data();
+    $this->app->getList();
+    return $this->app->getDebugData();
   }
 
   public function GetListDetail() {
-    $this->app->get_list_detail();
-    return $this->app->get_debug_data();
+    $this->app->getListDetail();
+    return $this->app->getDebugData();
   }
 
   public function GetInfo($app) {
     $this->app->load($app);
-    $response = $this->app->get_debug_data();
-    $response['data']['parsed_attributes'] = $this->app->get_attributes();
+    $response = $this->app->getDebugData();
+    $response['data']['parsed_attributes'] = $this->app->getAttributes();
     return $response;
   }
 
   public function GetAPIProductDetail($api_product, $hide_private = TRUE) {
-    if (!isset($this->api_product) || $this->api_product->get_name() != $api_product) {
-      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->get_client());
+    if (!isset($this->api_product) || $this->api_product->getName() != $api_product) {
+      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->getClient());
       $this->api_product->load($api_product);
     }
-    if ($hide_private && !$this->api_product->is_public()) {
-      watchdog('DevConnectApigeeDeveloperApp', 'Trying to get detail on private apiproduct ' . $api_product);
+    if ($hide_private && !$this->api_product->isPublic()) {
+      Apigee\Util\Log::write('DevConnectApigeeDeveloperApp', Apigee\Util\Log::LOGLEVEL_WARNING, 'Trying to get detail on private apiproduct ' . $api_product);
       return array();
     }
-    return $this->api_product->get_debug_data();
+    return $this->api_product->getDebugData();
   }
 
   public function GetAPIProductsOptions() {
     if (!isset($this->api_product)) {
-      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->get_client());
+      $this->api_product = new Apigee\ManagementAPI\APIProduct($this->app->getClient());
     }
-    $results = $this->api_product->list_products();
+    $results = $this->api_product->listProducts();
     $options = array();
     foreach ($results as $product) {
-      $key = 'prod-' . $product->get_name();
-      $options[$key] = $product->get_display_name();
+      $key = 'prod-' . $product->getName();
+      $options[$key] = $product->getDisplayName();
     }
     return $options;
   }
@@ -632,30 +807,30 @@ class DevConnectApigeeAnalytics {
   private $analytics;
 
   public function __construct($environment = NULL) {
-    // Log creation of deprecated wrapper class
+    // Log instantiation of deprecated wrapper class
     _devconnect_warn_deprecated();
     $client = devconnect_default_api_client();
     $this->analytics = new Apigee\ManagementAPI\DeveloperAppAnalytics($client, $environment);
   }
 
   public function getEnvironments() {
-    return $this->analytics->get_all_environments();
+    return $this->analytics->getAllEnvironments();
   }
 
   public function getEnvironment() {
-    return $this->analytics->get_environment();
+    return $this->analytics->getEnvironment();
   }
   public function setEnvironment($env) {
-    $this->analytics->set_environment($env);
+    $this->analytics->setEnvironment($env);
   }
   public function getDeveloperAppByName($appname, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order = 'ASC') {
-    return $this->analytics->get_by_app_name(NULL, $appname, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
+    return $this->analytics->getByAppName(NULL, $appname, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
   }
 
   public static function getMetrics($call_type) {
-    return Apigee\ManagementAPI\DeveloperAppAnalytics::get_metrics();
+    return Apigee\ManagementAPI\DeveloperAppAnalytics::getMetrics();
   }
   public static function getTimeUnits() {
-    return Apigee\ManagementAPI\DeveloperAppAnalytics::get_time_units();
+    return Apigee\ManagementAPI\DeveloperAppAnalytics::getTimeUnits();
   }
 }

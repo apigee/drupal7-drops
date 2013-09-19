@@ -1,0 +1,12 @@
+name = Workflow VBO
+description = Provides workflow actions for VBO.
+dependencies[] = workflow
+dependencies[] = views_bulk_operations
+package = Workflow
+core = 7.x
+; Information added by drupal.org packaging script on 2013-07-04
+version = "7.x-1.2"
+core = "7.x"
+project = "workflow"
+datestamp = "1372980654"
+

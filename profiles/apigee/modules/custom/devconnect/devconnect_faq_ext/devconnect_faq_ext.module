@@ -1,49 +1,21 @@
 <?php
-// @todo: Investigate and document the exact changes in the template files,
-//        and see if less drastic measures can be taken instead.
 
 /**
  * Implements hook_theme_registry_alter().
  *
- * @todo: see if we can just alter individual members of the theme registry items,
- *        instead of overwriting the entire item. For example, try setting
- *        $theme_registry['faq_category_questions_top']['file'].
+ * @var array $theme_registry
  */
 function devconnect_faq_ext_theme_registry_alter(&$theme_registry) {
-  $faq_ext_path = drupal_get_path('module', 'devconnect_faq_ext') . '/includes/';
-  $theme_registry['faq_category_questions_top'] = array(
-    'file' => $faq_ext_path . 'faq.questions_top.inc',
-    'template' => $faq_ext_path . 'dc-faq-category-questions-top',
-    'arguments' => array(
-      'data' => NULL,
-      'display_header' => 0,
-      'category_display' => NULL,
-      'term' => NULL,
-      'class' => NULL,
-      'parent_term' => NULL
-    ),
-    'preprocess functions' => array(
-      0 => 'templete_preprocess', // todo: check to see if this is a typo
-      1 => 'phptemplate_preprocess_faq_category_questions_top',
-    ),
+  $faq_ext_path = drupal_get_path('module', 'devconnect_faq_ext') . '/includes';
+  $faq_path = drupal_get_path('module', 'faq') . '/includes';
 
-  );
-  $theme_registry['faq_category_questions_top_answers'] = array(
-    'file' => $faq_ext_path . 'faq.questions_top.inc',
-    'template' => $faq_ext_path . 'dc-faq-category-questions-top-answers',
-    'arguments' => array(
-      'data' => NULL,
-      'display_header' => 0,
-      'category_display' => NULL,
-      'term' => NULL,
-      'class' => NULL,
-      'parent_term' => NULL
-    ),
-    'preprocess functions' => array(
-      0 => 'templete_preprocess',
-      1 => 'phptemplate_preprocess_faq_category_questions_top_answers',
-    ),
-  );
+  $theme_registry['faq_category_questions_top']['file'] = "$faq_path/faq.questions_top.inc";
+  $theme_registry['faq_category_questions_top']['template'] = "$faq_ext_path/dc-faq-category-questions-top";
+  unset ($theme_registry['faq_category_questions_top']['path']);
+
+  $theme_registry['faq_category_questions_top_answers']['file'] = "$faq_path/faq.questions_top.inc";
+  $theme_registry['faq_category_questions_top_answers']['template'] = "$faq_ext_path/dc-faq-category-questions-top-answers";
+  unset ($theme_registry['faq_category_questions_top_answers']['path']);
 }
 
 /**

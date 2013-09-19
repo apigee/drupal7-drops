@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * Creates a key-value map.
+ *
+ * @param string $map_name
+ * @param array $entries
+ */
+function devconnect_key_value_map_create($map_name, $entries = array()) {
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm->create($map_name, $entries);
+}
+
+/**
+ * Sets a key-value pair in a given map.
+ *
+ * @param string $map_name
+ * @param string $key_name
+ * @param string $value
+ */
+function devconnect_key_value_map_set($map_name, $key_name, $value) {
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm->setEntryValue($map_name, $key_name, $value);
+}
+
+/**
+ * Gets a value from a given map with a given key.
+ *
+ * @param string $map_name
+ * @param string $key_name
+ * @return null|string
+ */
+function devconnect_key_value_map_get($map_name, $key_name) {
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  return $kvm->getEntryValue($map_name, $key_name);
+}
+
+/**
+ * Returns all key-value pairs within a named map.
+ *
+ * @param string $map_name
+ * @return array
+ */
+function devconnect_key_value_map_get_all($map_name) {
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  return $kvm->getAllEntries($map_name);
+}
+
+/**
+ * Deletes a key-value pair from a given map.
+ *
+ * @param $map_name
+ * @param $key_name
+ */
+function devconnect_key_value_map_delete_key($map_name, $key_name) {
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm->deleteEntry($map_name, $key_name);
+}
+
+/**
+ * Deletes an entire key-value map with all its keys.
+ *
+ * @param $map_name
+ */
+function devconnect_key_value_map_delete_map($map_name) {
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm->delete($map_name);
+}

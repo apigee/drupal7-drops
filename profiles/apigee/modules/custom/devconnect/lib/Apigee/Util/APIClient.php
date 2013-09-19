@@ -10,6 +10,7 @@ namespace Apigee\Util;
 
 use Apigee\Exceptions\EnvironmentException as EnvironmentException;
 use Apigee\Exceptions\ResponseException as ResponseException;
+use Apigee\Exceptions\IllegalMethodException as IllegalMethodException;
 use Apigee\Util\Log as Log;
 
 class APIClient {
@@ -21,38 +22,42 @@ class APIClient {
   /**
    * @var string
    */
-  private $org;
+  protected $org;
   /**
    * @var string
    */
-  private $user;
+  protected $user;
   /**
    * @var string
    */
-  private $pass;
+  protected $pass;
 
   /**
    * @var int
    */
-  private $response_code;
+  protected $responseCode;
   /**
    * @var string
    */
-  private $response_string;
+  protected $responseString;
   /**
    * @var array
    */
-  private $response_obj;
+  protected $responseObj;
   /**
    * @var array
    */
-  private $response_opts;
+  protected $responseOpts;
+  /**
+   * @var string
+   */
+  protected $responseMimeType;
 
   /**
    * Allows implementation-specific attributes to be set on the client.
    * @var array
    */
-  private $attributes;
+  protected $attributes;
 
   /**
    * Gets a singleton for the given environment/org/user/pass combo.
@@ -64,8 +69,9 @@ class APIClient {
    * @param $pass
    * @return \Apigee\Util\APIClient
    */
-  public static function get_instance($environment, $org, $user, $pass) {
+  public static function getInstance($environment, $org, $user, $pass) {
     static $instances;
+
     if (!isset($instances)) {
       $instances = array();
     }
@@ -81,8 +87,8 @@ class APIClient {
    *
    * @return bool
    */
-  public function was_successful() {
-    return (floor($this->response_code / 100) == 2);
+  public function wasSuccessful() {
+    return (floor($this->responseCode / 100) == 2);
   }
 
   /**
@@ -92,7 +98,7 @@ class APIClient {
    * @param mixed $default_value
    * @return null
    */
-  public function get_attribute($name, $default_value = NULL) {
+  public function getAttribute($name, $default_value = NULL) {
     if (array_key_exists($name, $this->attributes)) {
       return $this->attributes[$name];
     }
@@ -105,7 +111,7 @@ class APIClient {
    * @param $name
    * @param $value
    */
-  public function set_attribute($name, $value) {
+  public function setAttribute($name, $value) {
     $this->attributes[$name] = $value;
   }
 
@@ -113,31 +119,31 @@ class APIClient {
    * Returns the HTTP response code from the last call.
    * @return int
    */
-  public function get_response_code() {
-    return $this->response_code;
+  public function getResponseCode() {
+    return $this->responseCode;
   }
 
   /**
    * Returns the raw response body from the last call.
    * @return string
    */
-  public function get_response_string() {
-    return $this->response_string;
+  public function getResponseString() {
+    return $this->responseString;
   }
 
   /**
    * Returns the parsed response array from the last call.
    * @return array
    */
-  public function get_response() {
-    return $this->response_obj;
+  public function getResponse() {
+    return $this->responseObj;
   }
 
   /**
    * Returns the org name that this class was initialized with.
    * @return string
    */
-  public function get_org() {
+  public function getOrg() {
     return $this->org;
   }
 
@@ -147,8 +153,8 @@ class APIClient {
    *
    * @return array
    */
-  public function get_response_opts() {
-    return $this->response_opts;
+  public function getResponseOpts() {
+    return $this->responseOpts;
   }
 
   /**
@@ -156,17 +162,23 @@ class APIClient {
    *
    * @return string
    */
-  public function get_endpoint() {
+  public function getEndpoint() {
     return $this->endpoint;
   }
 
+  public function getResponseMimeType() {
+    return $this->responseMimeType;
+  }
+
   /**
-   * Initialize this object and determine its endpoint URL.
+   * Initializes this object and determines its endpoint URL.
    *
-   * @param $environment
-   * @param $org
-   * @param $user
-   * @param $pass
+   * @throws \Apigee\Exceptions\EnvironmentException
+   *
+   * @param string $environment
+   * @param string $org
+   * @param string $user
+   * @param string $pass
    */
   public function __construct($environment, $org, $user, $pass) {
 
@@ -193,22 +205,26 @@ class APIClient {
     $this->user = $user;
     $this->pass = $pass;
 
-    $this->response_code = NULL;
-    $this->response_string = NULL;
-    $this->response_obj = NULL;
-    $this->response_opts = array();
+    $this->responseCode = NULL;
+    $this->responseString = NULL;
+    $this->responseObj = NULL;
+    $this->responseOpts = array();
     $this->attributes = array();
+    $this->responseMimeType = NULL;
   }
 
   /**
-   * Perform an HTTP POST on a URI with a given object as payload.
+   * Performs an HTTP POST on a URI with a given object as payload.
    * The result can be read from $this->response_* variables.
    *
    * @param string $url
    * @param mixed $payload
+   * @param string $content_type
+   * @param string $accept_type
+   * @param array $custom_headers
    */
-  public function post($url, $payload, $content_type = 'application/json; charset=utf-8', $accept_type = 'application/json; charset=utf-8') {
-    self::prepare_payload($content_type, $payload);
+  public function post($url, $payload, $content_type = 'application/json; charset=utf-8', $accept_type = 'application/json; charset=utf-8', $custom_headers = array()) {
+    self::preparePayload($content_type, $payload);
 
     $opts = array(
       'method' => 'POST',
@@ -216,8 +232,11 @@ class APIClient {
         'Accept' => $accept_type,
         'Content-Type' => $content_type
       ),
-      'data' => $payload
+      'payload' => $payload
     );
+    if (!empty($custom_headers)) {
+      $opts['headers'] += $custom_headers;
+    }
     if (strlen($payload) == 0) {
       unset($opts['headers']['Content-Type']);
     }
@@ -225,74 +244,98 @@ class APIClient {
   }
 
   /**
-   * Perform an HTTP GET on a URI. The result can be read from
+   * Performs an HTTP GET on a URI. The result can be read from
    * $this->response_* variables.
    *
    * @param string $url
+   * @param string $accept_mime_type
+   * @param array $custom_headers
    */
-  public function get($url, $accept_mime_type = 'application/json; charset=utf-8') {
+  public function get($url, $accept_mime_type = 'application/json; charset=utf-8', $custom_headers = array()) {
     $opts = array(
       'method' => 'GET',
       'headers' => array('Accept' => $accept_mime_type)
     );
-    $this->exec($this->endpoint . $url, $opts);
-  }
-
-  /**
-   * Perform an HTTP DELETE on a URI. The result can be read from
-   * $this->response_* variables.
-   *
-   * @param string $url
-   */
-  public function delete($url, $accept = 'application/json; charset=utf-8') {
-
-    $opts = array('method' => 'DELETE');
-    if (!empty($accept)) {
-      $opts['headers'] = array('Accept' => $accept);
+    if (!empty($custom_headers)) {
+      $opts['headers'] += $custom_headers;
     }
     $this->exec($this->endpoint . $url, $opts);
   }
 
   /**
-   * Perform an HTTP PUT on a URI. The result can be read from
+   * Performs an HTTP DELETE on a URI. The result can be read from
    * $this->response_* variables.
    *
-   * @param $url
-   * @param $string_payload
-   * @param string $content_type
+   * @param string $url
+   * @param string $accept
+   * @param array $custom_headers
    */
-  public function put($url, $payload, $content_type = 'application/json; charset=utf-8') {
-    self::prepare_payload($content_type, $payload);
-    $opts = array(
-      'headers' => array('Content-Type' => $content_type),
-      'method' => 'PUT',
-      'data' => $payload
-    );
+  public function delete($url, $accept = 'application/json; charset=utf-8', $custom_headers = array()) {
+
+    $opts = array('method' => 'DELETE', 'headers' => array());
+    if (!empty($accept)) {
+      $opts['headers']['Accept'] = $accept;
+    }
+    if (!empty($custom_headers)) {
+      $opts['headers'] += $custom_headers;
+    }
     $this->exec($this->endpoint . $url, $opts);
   }
 
   /**
-   * Perform an HTTP HEAD on a URI.
+   * Performs an HTTP PUT on a URI. The result can be read from
+   * $this->response_* variables.
    *
-   * @param $url
-   * @param int $timeout_ms
+   * @param string $url
+   * @param mixed $payload
+   * @param string $content_type
+   * @param array $custom_headers
    */
-  public function head($url, $timeout_ms = 5000) {
+  public function put($url, $payload, $content_type = 'application/json; charset=utf-8', $custom_headers = array()) {
+    self::preparePayload($content_type, $payload);
     $opts = array(
-      'timeout' => $timeout_ms / 1000,
-      'headers' => array('Accept' => 'application/json; charset=utf-8'),
-      'method' => 'HEAD'
+      'headers' => array('Content-Type' => $content_type),
+      'method' => 'PUT',
+      'payload' => $payload
     );
+    if (!empty($custom_headers)) {
+      $opts['headers'] += $custom_headers;
+    }
     $this->exec($this->endpoint . $url, $opts);
   }
 
-  public static function make_http_request($url, $opts) {
-    $response = \Apigee\Util\HTTPClient::exec($url, $opts);
-    // Workaround for drupal_http_request's failure to handle return codes of 201 and 202
+  /**
+   * Performs an HTTP HEAD on a URI.
+   *
+   * @param $url
+   * @param array $custom_headers
+   */
+  public function head($url, $custom_headers = array()) {
+    $opts = array(
+      'headers' => array('Accept' => 'application/json; charset=utf-8'),
+      'method' => 'HEAD'
+    );
+    if (!empty($custom_headers)) {
+      $opts['headers'] += $custom_headers;
+    }
+    $this->exec($this->endpoint . $url, $opts);
+  }
+
+  /**
+   * Executes an HTTP request and returns a response object.
+   *
+   * @static
+   * @param $url
+   * @param $opts
+   * @return \Apigee\Util\HTTPResponse
+   * @throws \Apigee\Exceptions\ResponseException
+   */
+  public static function makeHttpRequest($url, $opts) {
+    $response = HTTPClient::exec($url, $opts);
     if (property_exists($response, 'error') && floor($response->code / 100) != 2) {
       $exc = new ResponseException($response->error, $response->code, $url, $opts, (property_exists($response, 'data') ? $response->data : NULL));
-      $exc->response_obj = $response;
-      throw $exc; 
+      $exc->responseObj = $response;
+      throw $exc;
     }
     return $response;
   }
@@ -300,10 +343,11 @@ class APIClient {
   /**
    * Makes an HTTP call and populates internal properties with the results.
    *
+   * @throws \Apigee\Exceptions\ResponseException
    * @param $url
    * @param $opts
    */
-  private function exec($url, $opts) {
+  protected function exec($url, $opts) {
 
     if (!empty($this->user) && !empty($this->pass) && !array_key_exists('user', $opts) && !array_key_exists('pass', $opts)) {
       $opts['user'] = $this->user;
@@ -314,25 +358,30 @@ class APIClient {
     }
 
     try {
-      $response = self::make_http_request($url, $opts);
+      $response = self::makeHttpRequest($url, $opts);
     }
     catch (ResponseException $e) {
-      Log::write(__CLASS__, Log::LOGLEVEL_DEBUG, str_replace($auth_string, '[encrypted]', print_r($e->response_obj, TRUE)));
+      $obj_dump = (string)$e->responseObj;
+      if (isset($auth_string)) {
+        $obj_dump = str_replace($auth_string, '[encrypted]', $obj_dump);
+      }
+      Log::write(__CLASS__, Log::LOGLEVEL_DEBUG, $obj_dump);
       throw $e;
-    } 
+    }
 
     $raw_response = $response->data;
-    $this->response_code = $response->code;
+    $this->responseCode = $response->code;
     if (isset($response->headers['content-type'])) {
-      $content_type = $response->headers['content-type'];
+      $this->responseMimeType = $response->headers['content-type'];
     }
     else {
-      $content_type = 'text/plain';
+      $this->responseMimeType = 'text/plain';
     }
 
-    $this->response_obj = $raw_response;
-    self::parse_payload($content_type, $this->response_obj);
-    $this->response_string = $raw_response;
+    $this->responseObj = $raw_response;
+    self::parsePayload($this->responseMimeType, $this->responseObj);
+    $this->responseString = $raw_response;
+
 
     $opts['url'] = $url;
     $opts['authentication'] = $this->user . ':[encrypted]';
@@ -342,7 +391,7 @@ class APIClient {
     }
     Log::write(__CLASS__, Log::LOGLEVEL_DEBUG, $opts);
 
-    $this->response_opts = $opts;
+    $this->responseOpts = $opts;
   }
 
   /**
@@ -352,7 +401,7 @@ class APIClient {
    * @param $content_type
    * @param $payload
    */
-  private static function prepare_payload($content_type, &$payload) {
+  protected static function preparePayload($content_type, &$payload) {
     // If content_type includes charset, strip it off.
     if (($i = strpos($content_type, ';')) !== FALSE) {
       $content_type = trim(substr($content_type, 0, $i));
@@ -382,7 +431,7 @@ class APIClient {
    * @param $content_type
    * @param $payload
    */
-  private static function parse_payload($content_type, &$payload) {
+  protected static function parsePayload($content_type, &$payload) {
     // If content_type includes charset, strip it off.
     if (($i = strpos($content_type, ';')) !== FALSE) {
       $content_type = trim(substr($content_type, 0, $i));
@@ -393,8 +442,70 @@ class APIClient {
     }
     // If content_type is XML, return DOMDocument
     elseif ($content_type == 'application/xml') {
-      // loadXML emits E_STRICT when called statically, so @suppress it
-      $payload = @\DOMDocument::loadXML($payload);
+      $d = new \DOMDocument();
+      $d->loadXML($payload);
+      $payload = $d;
     }
   }
+
+
+  /**
+   * Intercepts any snake_case method invocations that aren't already
+   * defined, turns them into camelCase, and tries to invoke them.
+   *
+   * Incoming snake_case method names must contain no uppercase to
+   * qualify for this transmogrification. In the interest of efficiency,
+   * we also don't process any method names not containing an underscore.
+   *
+   * @TODO When we require PHP 5.4, make this a mix-in.
+   *
+   * @param string $method
+   * @param array $args
+   * @return mixed
+   * @throws \Apigee\Exceptions\IllegalMethodException
+   */
+  public function __call($method, $args) {
+    $class = get_class($this);
+
+    if ($method == strtolower($method) && strpos($method, '_') !== FALSE) {
+      $parts = explode('_', $method);
+      $camel_case = array_shift($parts);
+      foreach ($parts as $part) {
+        $camel_case .= ucfirst($part);
+      }
+      if (method_exists($this, $camel_case)) {
+        Log::warnDeprecated($class);
+        return call_user_func_array(array($this, $camel_case), $args);
+      }
+      throw new IllegalMethodException('Class “' . $class . '” contains no such method “' . $method . '” (even after camelCasing)');
+    }
+    throw new IllegalMethodException('Class “' . $class . '” contains no such method “' . $method . '”');
+  }
+
+  /**
+   * Same as above, except for static methods
+   *
+   * @param $method
+   * @param $args
+   * @return mixed
+   * @throws \Apigee\Exceptions\IllegalMethodException
+   */
+  public static function __callstatic($method, $args) {
+    $class = get_class();
+
+    if ($method == strtolower($method) && strpos($method, '_') !== FALSE) {
+      $parts = explode('_', $method);
+      $camel_case = array_shift($parts);
+      foreach ($parts as $part) {
+        $camel_case .= ucfirst($part);
+      }
+      if (method_exists($class, $camel_case)) {
+        Log::warnDeprecated($class);
+        return forward_static_call_array(array($class, $camel_case), $args);
+      }
+      throw new IllegalMethodException('Class “' . $class . '” contains no such static method “' . $method . '” (even after camelCasing)');
+    }
+    throw new IllegalMethodException('Class “' . $class . '” contains no such static method “' . $method . '”');
+  }
+
 }

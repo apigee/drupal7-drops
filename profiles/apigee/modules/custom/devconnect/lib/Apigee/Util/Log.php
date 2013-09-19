@@ -18,6 +18,9 @@ class Log {
   const LOGLEVEL_ERROR = 3;
   const LOGLEVEL_CRITICAL = 2;
 
+  // Callable
+  public static $logCallback = 'watchdog';
+
   /**
    * @static
    * @param string $source
@@ -35,14 +38,32 @@ class Log {
     array_shift($args);
 
     if (count($args) > 1 || !is_string($message)) {
-      ob_start();
-      var_dump($args);
-      $message = ob_get_clean();
+      if (is_object($message) && method_exists($message, '__toString')) {
+        $message = $message->__toString();
+      }
+      else {
+        ob_start();
+        var_dump($args);
+        $message = ob_get_clean();
+      }
     }
-    if (function_exists('watchdog')) {
+    if (self::$logCallback == 'watchdog' && function_exists('watchdog')) {
       watchdog($source, $message, array(), $level);
     }
-    //TODO: What do we do when running outside of Drupal?
+    else {
+      call_user_func(self::$logCallback, $source, $message, $level);
+    }
   }
 
+  public static function warnDeprecated($source) {
+    if (version_compare(PHP_VERSION, '5.4.0', 'ge')) {
+      $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+    }
+    else {
+      $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+    }
+    $frame = $backtrace[2];
+    $message = 'Deprecated method ' . $source . '::' . $frame['function'] . ' was invoked in file ' . $frame['file'] . ', line ' . $frame['line'] . '. Please use camelCase method name instead.';
+    self::write($source, self::LOGLEVEL_NOTICE, $message);
+  }
 }

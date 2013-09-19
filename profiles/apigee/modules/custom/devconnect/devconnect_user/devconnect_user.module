@@ -5,6 +5,11 @@
  *  API-interfacing functionality.
  */
 
+use Apigee\Util\Log;
+use Apigee\Util\ErrorHandling;
+
+require_once dirname(__FILE__) . '/controllers/DeveloperController.php';
+
 /**
  * Implements hook_permission().
  *
@@ -26,7 +31,6 @@ function devconnect_user_permission() {
  */
 function devconnect_user_menu() {
   $items = array();
-
   $items['admin/people/sync'] = array(
     'title' => 'DevConnect Developer Sync',
     'page callback' => 'devconnect_user_sync',
@@ -34,7 +38,13 @@ function devconnect_user_menu() {
     'type' => MENU_LOCAL_TASK,
     'menu_name' => 'api_products',
   );
-
+  $items['admin/config/people/devconnect/settings'] = array(
+    'title' => 'DevConnect User Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_user_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
   $items['admin/config/people/attributes'] = array(
     'title' => 'DevConnect User Attributes',
     'page callback' => 'drupal_get_form',
@@ -42,9 +52,84 @@ function devconnect_user_menu() {
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
-
   return $items;
 }
+
+/**
+ * Page Callback for admin/config/people/devconnect/settings
+ */
+function devconnect_user_settings_form($form, &$form_state) {
+  $form = array();
+  $form['apigee_redirect_paths'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Redirect Settings'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['apigee_redirect_paths']['apigee_enable_redirect_path'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable user login redirect path.'),
+    '#default_value' => variable_get('apigee_enable_redirect_path', ''),
+  );
+  $form['apigee_redirect_paths']['apigee_user_redirect_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Redirect Path'),
+    '#default_value' => variable_get('apigee_user_redirect_path', ''),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#weight' => 1,
+    '#value' => t('Save Configuration')
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_form_validate
+ */
+function devconnect_user_settings_form_validate($form, &$form_state) {
+  $path = $form_state['values']['apigee_user_redirect_path'];
+  if (!drupal_valid_path(drupal_get_normal_path($path), TRUE)) {
+    form_set_error('apigee_user_redirect_path', t("The path '@link_path' is either invalid or you do not have access to it.", array('@link_path' => $path)));
+  }
+}
+
+/**
+ * Implements hook_form_submit
+ */
+function devconnect_user_settings_form_submit($form, &$form_state) {
+  variable_set('apigee_user_redirect_path', $form_state['values']['apigee_user_redirect_path']);
+  variable_set('apigee_enable_redirect_path', $form_state['values']['apigee_enable_redirect_path']);
+}
+
+/**
+ * Implements hook_user_login
+ */
+function devconnect_user_user_login(&$edit, $account) {
+  if (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset') {
+    if ((bool)variable_get('apigee_enable_redirect_path', 0)) {
+      drupal_goto(variable_get('apigee_user_redirect_path', ''));
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_info();
+ *
+ * @return array
+ */
+function devconnect_user_entity_info() {
+  $info = array(
+    'developer' => array(
+      'label' => t('Developer'),
+      'controller class' => 'DeveloperController',
+      'fieldable' => FALSE,
+    ),
+  );
+  return $info;
+}
+
 
 /**
  * Implements hook_form_alter().
@@ -55,22 +140,40 @@ function devconnect_user_menu() {
  */
 function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
-    case "user_profile_form":
+    case 'user_profile_form':
       // Breadcrumb navigation
       $breadcrumb[] = l(t('Home'), NULL);
       $breadcrumb[] = l($form['#user']->name, 'user');
       drupal_set_title('Edit Profile');
       drupal_set_breadcrumb($breadcrumb);
 
-      // Add a link to openid admin page only if the openid and apigee_sso modules are enabled
-      if (module_exists('openid') && module_exists('apigee_sso')) {
+      if (array_key_exists('picture', $form)) {
+        $form['picture']['#weight'] = -99;
+      }
+      $form['field_first_name']['#weight'] = -98;
+      $form['field_last_name']['#weight'] = -97;
+      if (array_key_exists('field_company_name', $form)) {
+        $form['field_company_name']['#weight'] = -96;
+      }
+
+      $tnc_url = _devconnect_user_get_tnc_url($form['#user']);
+      if ($tnc_url == 'legal' && module_exists('legal')) {
+        if (isset($form['field_terms_and_conditions'])) {
+          unset ($form['field_terms_and_conditions']);
+        }
+      }
+
+      // Add a link to openid admin page only if the apigee_sso module is enabled
+      if (module_exists('apigee_sso')) {
+        $middle_arg = (module_exists('me') && $form['#user']->uid == $GLOBALS['user']->uid) ? 'me' : $form['#user']->uid;
+        $href = base_path() . 'user/' . $middle_arg . '/openid';
         $form['openid'] = array(
-        '#markup' => '<div class="control-group form-openid"><div class="control-label" style="margin-bottom: 5px;">OpenID</div><div class="controls"><a href="/user/me/openid">Manage your OpenIDs</a></div></div>',
-        '#weight' => 2,
+          '#markup' => '<div class="control-group form-openid"><div class="control-label" style="margin-bottom: 5px;">OpenID</div><div class="controls"><a href="' . $href . '">Manage your OpenIDs</a></div></div>',
+          '#weight' => 2,
         );
         return $form;
-        break;
       }
+      break;
 
     case "user_register_form":
       drupal_add_css(drupal_get_path('module', 'devconnect_user') . '/devconnect_user.css',
@@ -80,11 +183,68 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       $form['field_first_name']['#weight'] = -98;
       $form['field_last_name']['#weight'] = -97;
       $form['field_company_name']['#weight'] = -96;
-      $form['field_terms_and_conditions']['#prefix'] = '<div id="terms-field">';
-      $form['field_terms_and_conditions']['#suffix'] = '</div>';
-      $form['field_terms_and_conditions'][LANGUAGE_NONE]['#title'] = t('I agree to the <a href="@url" target="_blank">Terms of Use</a>', array('@url' => url('basic-page/terms-use')));
+
+      $tnc_url = _devconnect_user_get_tnc_url($form['#user']);
+      if ($tnc_url == 'legal' && module_exists('legal')) {
+        if (isset($form['field_terms_and_conditions'])) {
+          unset ($form['field_terms_and_conditions']);
+        }
+      }
+      else {
+        $form['field_terms_and_conditions']['#prefix'] = '<div id="terms-field">';
+        $form['field_terms_and_conditions']['#suffix'] = '</div>';
+        $form['field_terms_and_conditions'][LANGUAGE_NONE]['#title'] = t('I agree to the <a href="@url" target="_blank">Terms of Use</a>', array('@url' => $tnc_url));
+      }
       break;
   }
+}
+
+/**
+ * Implements hook_variable_info().
+ *
+ * @param array $options
+ * @return array
+ */
+function devconnect_user_variable_info($options = array()) {
+  $variables['devconnect_user_tnc_url'] = array(
+    'type' => 'string',
+    'title' => t('Terms & Conditions URL'),
+    'default' => _devconnect_user_get_tnc_url(),
+    'description' => t('The URL of the Terms & Conditions page. Omit hostname and leading slash.'),
+    'required' => TRUE,
+    'group' => 'devconnect'
+  );
+  return $variables;
+}
+
+/**
+ * Determines the URL of the Terms & Conditions URL.
+ *
+ * First, checks to see if Legal module is enabled and is configured.
+ * If not, checks to see if any custom modules implement hook_tnc_url().
+ * Finally, if neither of the above is true, pulls value from Drupal variable.
+ *
+ * @param null|stdClass $user
+ * @return string
+ */
+function _devconnect_user_get_tnc_url($user = NULL) {
+  $tnc_url = NULL;
+  if (module_exists('legal')) {
+    $conditions = legal_get_conditions();
+    if (!empty($conditions['version'])) {
+      $tnc_url = 'legal';
+    }
+  }
+  if (!isset($tnc_url)) {
+    foreach (module_implements('tnc_url') as $module) {
+      $tnc_url = call_user_func($module . '_tnc_url', $user);
+      break;
+    }
+  }
+  if (!isset($tnc_url)) {
+    $tnc_url = url(variable_get('devconnect_user_tnc_url', 'basic-page/terms-use'));
+  }
+  return $tnc_url;
 }
 
 /**
@@ -102,17 +262,62 @@ function devconnect_user_attributes_form($form, &$form_state) {
   if (isset($fields['field_last_name'])) {
     unset($fields['field_last_name']);
   }
-  $opts = array();
+
+  $default_values = variable_get('devconnect_user_attributes_to_persist_in_kms', array());
+
+  $form['kms_persisted_user_attribute'] = array(
+    '#tree' => FALSE,
+    '#title' => t('User attributes to be persisted to KMS'),
+    '#type' => 'fieldset',
+    '#collapsible' => FALSE,
+  );
+
   foreach ($fields as $field_name => $field_data) {
     $field_name = preg_replace('!^field_!', '', $field_name);
-    $opts[$field_name] = $field_data['label'];
+
+    $form['kms_persisted_user_attribute'][$field_name] = array(
+      '#tree' => FALSE,
+      '#type' => 'fieldset',
+      '#title' => $field_data['label'],
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+
+    $form['kms_persisted_user_attribute'][$field_name]["kms_internal_attribute_selected_$field_name"] = array(
+      '#title' => t('Persist attribute in KMS?'),
+      '#type' => 'checkbox',
+      '#default_value' => isset($default_values[$field_name]["selected"]) ? $default_values[$field_name]["selected"] : FALSE,
+    );
+
+    $form['kms_persisted_user_attribute'][$field_name]["kms_internal_attribute_name_$field_name"] = array(
+      '#title' => t('KMS Attribute Name'),
+      '#type' => 'textfield',
+      '#default_value' => isset($default_values[$field_name]["kms_internal_attribute_name"]) ? $default_values[$field_name]["kms_internal_attribute_name"] : NULL,
+    );
+
+    $form['kms_persisted_user_attribute'][$field_name]["kms_attribute_empty_action_$field_name"] = array(
+      '#title' => t('If Attribute Is Empty'),
+      '#type' => 'radios',
+      '#options' => array(
+        'default' => t('Send Default Value'),
+        'null' => t('Send NULL'),
+        'empty' => t('Send Empty String'),
+        'avoid' => t('Do Not Send'),
+      ),
+      '#default_value' => isset($default_values[$field_name]["empty_action"]) ? $default_values[$field_name]["empty_action"] : 'null',
+    );
   }
-  $default_opts = variable_get('devconnect_user_persisted_attributes', array());
-  $form['devconnect_user_persisted_attributes'] = array(
-    '#type' => 'checkboxes',
-    '#options' => $opts,
-    '#default_value' => $default_opts,
-    '#title' => t('User attributes to be persisted to KMS')
+
+  $form['kms_persisted_user_attribute'][$field_name]["kms_attribute_set_to_string_boolean_$field_name"] = array (
+    '#title' => t('Convert to true|false string'),
+    '#type' => 'checkbox',
+    '#description' => t('Value to be sent to KMS will be set as (field_value ? \'true\' : \'false\')'),
+    '#default_value' => isset($default_values[$field_name]["convert_to_boolean_string_value"]) ? $default_values[$field_name]["convert_to_boolean_string_value"] : FALSE,
+  );
+
+  $form['devconnect_user_attributes_to_persist_in_kms'] = array(
+    '#type' => 'value',
+    '#value' => $default_values,
   );
 
   return system_settings_form($form);
@@ -128,15 +333,28 @@ function devconnect_user_attributes_form($form, &$form_state) {
  * @param $form_state
  */
 function devconnect_user_attributes_form_validate($form, &$form_state) {
-  if (isset($form_state['values']['devconnect_user_persisted_attributes'])) {
-    $real_values = array();
-    foreach ($form_state['values']['devconnect_user_persisted_attributes'] as $name => $value) {
-      if ((string)$value != '0') {
-        $real_values[] = $name;
+  $default_values = array();
+  foreach ($form_state['values'] as $input => $value) {
+    if (strpos($input, 'kms_internal_attribute_selected_') === 0) {
+      $field_name = substr($input, 32);
+      $default_values[$field_name] = array(
+        'selected' => $form_state['values']["kms_internal_attribute_selected_$field_name"],
+        'kms_internal_attribute_name' => $form_state['values']["kms_internal_attribute_name_$field_name"],
+        'empty_action' => $form_state['values']["kms_attribute_empty_action_$field_name"],
+        'convert_to_boolean_string_value' => $form_state['values']["kms_attribute_set_to_string_boolean_$field_name"],
+      );
+      unset($form_state['values']["kms_internal_attribute_selected_$field_name"]);
+    }
+    else {
+      if (strpos($input, 'kms_internal_attribute_name_') === 0) {
+        $field_name = substr($input, 28);
+        unset($form_state['values']["kms_internal_attribute_name_$field_name"]);
       }
     }
-    $form_state['values']['devconnect_user_persisted_attributes'] = $real_values;
+    unset($form_state['values']["kms_attribute_empty_action_$field_name"]);
+    unset($form_state['values']["kms_attribute_set_to_string_boolean_$field_name"]);
   }
+  $form_state['values']['devconnect_user_attributes_to_persist_in_kms'] = $default_values;
 }
 
 /**
@@ -148,75 +366,107 @@ function devconnect_user_attributes_form_validate($form, &$form_state) {
  */
 function devconnect_user_user_presave(&$edit, $account, $category) {
 
-  if (!module_exists('devconnect')) {
+  if (isset($edit['already_in_kms'])) {
+    unset($edit['already_in_kms']);
     return;
   }
-  if ($account->is_new) {
-    $action = 'create';
-    $force_update = FALSE;
-  }
-  else {
-    $action = 'update';
-    $force_update = TRUE;
+  // Don't try to update users in KMS if devconnect_org hasn't been set yet.
+  if (variable_get('devconnect_org', DEVCONNECT_APIGEE_DEFAULT_ORG) == DEVCONNECT_APIGEE_DEFAULT_ORG) {
+    return;
   }
 
   $first_name = (isset($edit['field_first_name'][LANGUAGE_NONE][0]['value']) ? $edit['field_first_name'][LANGUAGE_NONE][0]['value'] : $account->field_first_name[LANGUAGE_NONE][0]['value']);
   $last_name = (isset($edit['field_last_name'][LANGUAGE_NONE][0]['value']) ? $edit['field_last_name'][LANGUAGE_NONE][0]['value'] : $account->field_last_name[LANGUAGE_NONE][0]['value']);
   $mail = (isset($edit['mail']) ? $edit['mail'] : $account->mail);
   $name = (isset($edit['name']) ? $edit['name'] : $account->name);
+  $orig_mail = (empty($account->mail) ? $edit['mail'] : $account->mail);
 
-
-  module_load_include("module", "devconnect");
-  $client = devconnect_default_api_client();
-  $dev = new Apigee\ManagementAPI\Developer($client);
-  $dev->set_email($mail);
-  $dev->set_user_name($name);
-  if (!empty($first_name)) {
-    $dev->set_first_name($first_name);
+  $action = 'create';
+  try {
+    $entity = entity_load('developer', array($orig_mail));
+    $action = 'update';
   }
-  if (!empty($account->field_last_name[LANGUAGE_NONE][0]['value'])) {
-    $dev->set_last_name($last_name);
+  catch (Exception $e) {
+    $entity = entity_create('developer', array());
   }
+  $entity['email'] = $mail;
+  $entity['userName'] = $name;
+  $entity['firstName'] = $first_name;
+  $entity['lastName'] = $last_name;
 
-  $attribute_fields = variable_get('devconnect_user_persisted_attributes', array());
-  foreach($attribute_fields as $field) {
-    $field_full_name = 'field_' . $field;
-    if(array_key_exists($field_full_name, $edit)) {
-      $field_obj = $edit[$field_full_name];
-      $field_value = (isset($field_obj[LANGUAGE_NONE][0]['value']) ? $field_obj[LANGUAGE_NONE][0]['value'] : '');
-      $field_value = _devconnect_user_scrub_attribute($field_value);
-      $dev->set_attribute($field, $field_value);
+  $fields = variable_get('devconnect_user_attributes_to_persist_in_kms', array());
+  foreach ($fields as $field_name => $field_specs) {
+    $field_full_name = 'field_' . $field_name;
+    if ($field_specs['selected']) {
+      $att_name = $field_specs['kms_internal_attribute_name'];
+      // If value was in edit form, grab it
+      if (array_key_exists($field_full_name, $edit)) {
+        $field_obj = $edit[$field_full_name];
+        $field_value = (isset($field_obj[LANGUAGE_NONE][0]['value']) ? $field_obj[LANGUAGE_NONE][0]['value'] : '');
+      }
+      // If not in edit form, get it from user object if it is set
+      else {
+        if (is_array($account->$field_full_name) && count($account->$field_full_name) > 0) {
+          $field_obj = $account->$field_full_name;
+          $field_value = $field_obj[LANGUAGE_NONE][0]['value'];
+        }
+        // Neither in form nor in user object, set it to null and let logic below deal with it
+        else {
+          $field_value = NULL;
+        }
+      }
+
+      if (strlen($field_value) === 0) {
+        switch ($field_specs['empty_action']) {
+          case 'null':
+            $entity['attributes'][$att_name] = NULL;
+            break;
+          case 'empty':
+            $entity['attributes'][$att_name] = '';
+            break;
+          case 'default':
+            $field = field_info_instance('user', $field_full_name, 'user');
+            $default_value = isset($field['default_value'][0]['value']) ? $field['default_value'][0]['value'] : NULL;
+            if ($field_specs['convert_to_boolean_string_value']) {
+              $default_value = (bool)$default_value;
+            }
+            $entity['attributes'][$att_name] = _devconnect_user_scrub_attribute($default_value);
+            break;
+          case 'avoid': //Attribute is not to be sent
+        }
+      }
+      else {
+        $field_value = _devconnect_user_scrub_attribute($field_value);
+        $entity['attributes'][$att_name] = $field_value;
+      }
     }
   }
+
   // Bring in any attributes that were defined by other hook_user_presave() implementations
   foreach ($edit as $key => $field_value) {
     if (substr($key, 0, 10) == 'attribute_') {
       $field = substr($key, 10);
       $field_value = _devconnect_user_scrub_attribute($field_value);
-      $dev->set_attribute($field, $field_value);
+      $entity['attributes'][$field] = $field_value;
     }
   }
 
-  $dev->set_status($account->status || $edit['status'] ? 'active' : 'inactive');
+  $entity['status'] = ($edit['status'] || (property_exists($account, 'status') && $account->status) ? 'active' : 'inactive');
 
   try {
-    $dev->save($force_update);
-    $results = $dev->get_debug_data();
-  }
-  catch (Exception $e) {
-    $results = $dev->get_debug_data();
-    watchdog('devconnect_user', print_r($results, TRUE), array(), WATCHDOG_ERROR);
+    entity_save('developer', $entity);
+    $results = devconnect_get_debug_data();
+  } catch (Exception $e) {
+    $results = devconnect_get_debug_data();
+    Log::write('devconnect_user', Log::LOGLEVEL_ERROR, print_r($results, TRUE));
 
     if (user_access('administer users')) {
-      $error = '<h4>STATUS: ' . $results['code'] . ' ' . $results['code_status'] . '; '
-        . 'Communication with the Apigee endpoint is compromised. Cannot ' . $action . ' user.</h4>';
-      if (function_exists('kpr')) {
-        $error .= kpr($results, TRUE);
-      }
-      else {
-        $error .= '<pre>' . print_r($results, TRUE) . '</pre>';
-      }
-      drupal_set_message($error, 'error');
+      $summary = t('An error occurred while trying to @action this user. Please try again later.', array('@action' => $action));
+      $detail = t('Status: @code @status', array(
+          '@code' => $results['code'],
+          '@status' => $results['code_status']
+        )) . "\n" . print_r($results, TRUE);
+      devconnect_notify(ErrorHandling::CODE_USER_CANNOT_BE_SAVED, $summary, $detail);
     }
   }
 
@@ -224,8 +474,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     $function = $module . '_devconnect_user_save';
     $function($results, $edit, $account);
   }
-
-  watchdog('devconnect_user', print_r($results, TRUE), array(), WATCHDOG_DEBUG);
+  Log::write('devconnect_user', Log::LOGLEVEL_DEBUG, print_r($results, TRUE));
 }
 
 function _devconnect_user_scrub_attribute($field_value) {
@@ -233,15 +482,15 @@ function _devconnect_user_scrub_attribute($field_value) {
     $field_value = json_encode($field_value);
   }
   // Booleans are saved as their string value
-  elseif($field_value === TRUE) {
+  elseif ($field_value === TRUE) {
     $field_value = 'true';
   }
-  elseif($field_value === FALSE) {
+  elseif ($field_value === FALSE) {
     $field_value = 'false';
   }
   // Force ints/floats to string too
   else {
-    $field_value = (string)$field_value;
+    $field_value = (string) $field_value;
   }
   return $field_value;
 }
@@ -252,71 +501,29 @@ function _devconnect_user_scrub_attribute($field_value) {
  * @param $account
  */
 function devconnect_user_user_delete($account) {
-  if (module_exists("devconnect")) {
-    module_load_include("module", "devconnect");
-    $client = devconnect_default_api_client();
-    $dev = new Apigee\ManagementAPI\Developer($client);
-    try {
-      $dev->delete($account->mail);
-    }
-    catch (Exception $e) {
-    }
-    $results = $dev->get_debug_data();
-    watchdog("devconnect_user", print_r($results, TRUE));
-    module_invoke_all('devconnect_user_delete', $results, $account);
-  }
-}
 
-/**
- * Page callback for DevConnect Developer Sync.
- *
- * Makes sure that all local users have a corresponding account on the API server.
- *
- * @return string
- */
-function devconnect_user_sync() {
-  $list_items = array();
-
-  $users = db_select('users', 'u')
-    ->fields('u', array('uid', 'mail'))
-    ->condition('u.uid', 0, '>')
-    ->execute()
-    ->fetchAll(PDO::FETCH_OBJ);
-
-  $client = devconnect_default_api_client();
-  $dev = new Apigee\ManagementAPI\Developer($client);
-
-  foreach ($users as $user) {
-    if ($dev->validate($user->mail)) {
-      $list_items[] = 'User ' . $user->mail . ' already exists on server.';
-    }
-    else {
-      $account = user_load($user->uid);
-      $dev->blank_values();
-      $dev->populate_from_user_account($account);
-      try {
-        $dev->save();
-        $list_items[] = 'User ' . $account->name . ' created on server';
-      }
-      catch (Exception $e) {
-        $list_items[] = 'User ' . $account->name . ' not created on server. ' . $e->getMessage()
-          . (function_exists('kpr') ? kpr($dev->get_debug_data(), TRUE) : '<pre>' . print_r($dev->get_debug_data(), TRUE) . '</pre>');
-      }
-    }
+  // Don't try to delete users from KMS if devconnect_org hasn't been set yet.
+  if (variable_get('devconnect_org', DEVCONNECT_APIGEE_DEFAULT_ORG) == DEVCONNECT_APIGEE_DEFAULT_ORG) {
+    return;
   }
 
-  $list_params = array(
-    'items' => $list_items,
-    'title' => NULL,
-    'type' => 'ul',
-    'attributes' => array()
-  );
-
-  return theme('item_list', $list_params);
+  $log_level = Log::LOGLEVEL_DEBUG;
+  try {
+    entity_delete('developer', $account->mail);
+  }
+  catch (Exception $e) {
+    $log_level = Log::LOGLEVEL_ERROR;
+  }
+  $results = devconnect_get_debug_data();
+  Log::write('devconnect_user', $log_level, print_r($results, TRUE));
+  module_invoke_all('devconnect_user_delete', $results, $account);
 }
+
 
 /**
  * Treat all user pages as not administrative
+ *
+ * @param array $paths
  */
 function devconnect_user_admin_paths_alter(&$paths) {
   $paths['user/*'] = FALSE;
@@ -324,16 +531,19 @@ function devconnect_user_admin_paths_alter(&$paths) {
 
 /**
  * Implements hook_redirect_alter
+ *
+ * @param stdClass $redirect
  */
-function devconnect_user_redirect_alter(&$redirect){
+function devconnect_user_redirect_alter(&$redirect) {
   global $user;
   // Only act if user token in redirect path
-  if(!empty($redirect->redirect) && strpos($redirect->redirect, '[user') !== FALSE){
-    if(!user_is_logged_in()){
+  if (!empty($redirect->redirect) && strpos($redirect->redirect, '[user') !== FALSE) {
+    if (!user_is_logged_in()) {
       // Bounce via login back to source path
       $redirect->redirect = 'user/login';
       $redirect->redirect_options['query'] = array('destination' => $redirect->source);
-    }else{
+    }
+    else {
       // Apply user tokens to redirect path
       $redirect->redirect = token_replace($redirect->redirect, array('user' => $user));
     }
@@ -349,15 +559,380 @@ function devconnect_user_redirect_alter(&$redirect){
  */
 function devconnect_user_get_developer_id($user) {
   if (!isset($_SESSION['developer_id'])) {
-    $client = devconnect_default_api_client();
-    $dev = new Apigee\ManagementAPI\Developer($client);
     try {
-      $dev->load($user->mail);
-      $_SESSION['developer_id'] = $dev->get_developer_id();
+      $entity = entity_load('developer', array($user->mail));
+      if (empty($entity)) {
+        return FALSE;
+      }
+      $entity = reset($entity);
+      $_SESSION['developer_id'] = $entity['developerId'];
     }
     catch (Exception $e) {
       return FALSE;
     }
   }
   return $_SESSION['developer_id'];
+}
+
+/**
+ * Implement hook_form_FORM_ID_alter() for user_admin_account.
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function devconnect_user_form_user_admin_account_alter(&$form, &$form_state) {
+  // Add selectable developers to synch up to KMS
+  $form['options']['operation']['#options']['synchup_devconnect'] = t('Sync Developer With DevConnect');
+  $form['#submit'][] = 'devconnect_user_form_user_admin_account_alter_submit';
+}
+
+function devconnect_user_form_user_admin_account_alter_submit(&$form, &$form_state) {
+
+  switch ($form_state['values']['operation']) {
+    case 'synchup_devconnect':
+      $account_ids = array_values($form_state['values']['accounts']);
+
+      $list_items = array();
+
+      $users = db_select('users', 'u')
+        ->fields('u', array('uid', 'mail'))
+        ->condition('u.uid', 0, '>')
+        ->condition('u.uid', $account_ids, 'IN')
+        ->execute()
+        ->fetchAll(PDO::FETCH_OBJ);
+      if (empty($users)) {
+        drupal_set_message(t('No users were synced.'), 'status');
+        return;
+      }
+
+      $emails = array();
+      foreach ($users as $user) {
+        $emails[] = $user->mail;
+      }
+      $developers = entity_load('developer', $emails);
+
+      foreach ($users as $user) {
+        if (array_key_exists($user->mail, $developers)) {
+          $list_items[] = 'User ' . $user->mail . ' already exists on server.';
+        }
+        else {
+          $user_obj = user_load($user);
+          $list_items[] = _devconnect_user_save_entity($user_obj);
+        }
+      }
+
+      $list_params = array(
+        'items' => $list_items,
+        'title' => NULL,
+        'type' => 'ul',
+        'attributes' => array()
+      );
+
+      drupal_set_message(theme('item_list', $list_params), 'status');
+      break;
+  }
+}
+
+/**
+ * Implements hook_token_info().
+ *
+ * @return array
+ */
+function devconnect_user_token_info() {
+  $type = array(
+    'name' => t('Developer'),
+    'description' => t('Tokens related to developers'),
+    'needs-data' => 'developer'
+  );
+  $dev['apps'] = array(
+    'name' => t('Apps'),
+    'description' => t('List of all Apps owned by this developer.')
+  );
+  $dev['uid'] = array(
+    'name' => t('Developer User ID'),
+    'description' => t('Drupal User ID (uid) of this developer.')
+  );
+  $dev['email'] = array(
+    'name' => t('Developer Email'),
+    'description' => t('Email address associated with this developer.')
+  );
+  $dev['developerId'] = array(
+    'name' => t('Developer ID'),
+    'description' => t('Developer ID (internal to KMS) for this developer.')
+  );
+  $dev['firstName'] = array(
+    'name' => t('First Name'),
+    'description' => t('Developer’s first name.')
+  );
+  $dev['lastName'] = array(
+    'name' => t('Last Name'),
+    'description' => t('Developer’s last name.')
+  );
+  $dev['userName'] = array(
+    'name' => t('User Name'),
+    'description' => t('Developer’s Drupal username.')
+  );
+  $dev['status'] = array(
+    'name' => t('Status'),
+    'description' => t('Status of this developer.')
+  );
+  /*
+  $dev['attributes'] = array(
+    'name' => t('Attributes'),
+    'description' => t('Custom attributes for this developer.')
+  );
+  */
+  $dev['createdAt'] = array(
+    'name' => t('Created At'),
+    'description' => t('Timestamp at which the developer profile was created in KMS.')
+  );
+  $dev['modifiedAt'] = array(
+    'name' => t('Modified At'),
+    'description' => t('Timestamp at which the developer profile was modified in KMS.')
+  );
+  $dev['devUrl'] = array(
+    'name' => t('Developer Profile URL'),
+    'description' => t('URL on this site where the developer’s profile may be viewed.')
+  );
+
+  return array(
+    'types' => array('developer' => $type),
+    'tokens' => array('developer' => $dev),
+  );
+}
+
+/**
+ * Implements hook_tokens().
+ *
+ * @param string $type
+ * @param array $tokens
+ * @param array $data
+ * @param array $options
+ *
+ * @return array
+ */
+function devconnect_user_tokens($type, array $tokens, array $data = array(), array $options = array()) {
+  if ($type != 'developer' || empty($data['developer'])) {
+    return array();
+  }
+  $url_options = array('absolute' => TRUE);
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  }
+  else {
+    $language_code = NULL;
+  }
+  $sanitize = !empty($options['sanitize']);
+  $dev = $data['developer'];
+  $replacements = array();
+  foreach ($tokens as $name => $original) {
+    switch ($name) {
+      case 'devUrl':
+        $replacements[$original] = url('user/' . $dev['uid'], $url_options);
+        break;
+      // Timestamps
+      case 'createdAt':
+      case 'modifiedAt':
+        $replacements[$original] = format_date(floor($dev[$name] / 1000), 'medium', '', NULL, $language_code);;
+        break;
+      // Arrays of strings
+      case 'apps':
+        $replacements[$original] = $sanitize ? check_plain(join(', ', $dev[$name])) : join(', ', $dev[$name]);
+        break;
+      default:
+        $replacements[$original] = $sanitize ? check_plain($dev[$name]) : $dev[$name];
+        break;
+    }
+  }
+
+  return $replacements;
+}
+
+/**
+ * Given a Drupal user object, saves the corresponding developer entity.
+ *
+ * @param stdClass $user
+ * @return string
+ */
+function _devconnect_user_save_entity($user) {
+  $account = user_load($user->uid);
+  $values = array(
+    'email' => $account->mail,
+    'firstName' => $account->field_first_name[LANGUAGE_NONE][0]['value'],
+    'lastName' => $account->field_last_name[LANGUAGE_NONE][0]['value'],
+    'userName' => $account->name,
+    'status' => ($account->status ? 'active' : 'inactive'),
+    'attributes' => array()
+  );
+  $vars = get_object_vars($account);
+  foreach ($vars as $key => $value) {
+    if (substr($key, 0, 10) == 'attribute_') {
+      $values['attributes'][substr($key, 10)] = $value;
+    }
+  }
+  $entity = entity_create('developer', $values);
+  try {
+    entity_save('developer', $entity);
+    $message = 'User ' . $account->name . ' created on server';
+  }
+  catch (Exception $e) {
+    $message = 'User ' . $account->name . ' not created on server. ' . $e->getMessage()
+      . (function_exists('kpr') ? kpr(devconnect_get_debug_data(), TRUE) : '<pre>' . print_r(devconnect_get_debug_data(), TRUE) . '</pre>');
+  }
+  return $message;
+}
+
+/**
+ * Page callback for DevConnect Developer Sync.
+ *
+ * Makes sure that all local users have a corresponding account in KMS;
+ * likewise makes sure that all KMS users (other than those created by
+ * simpletest) have Drupal accounts.
+ *
+ * If called as a page callback, returns a string. If called from drush,
+ * returns an array of status messages.
+ *
+ * @return array|string
+ */
+function devconnect_user_sync() {
+  $list_items = array();
+
+  // Fetch list of developers on KMS
+  $kms_developers_orig = entity_load('developer');
+  $kms_developers = array();
+  foreach ($kms_developers_orig as $email => $data) {
+    $kms_developers[strtolower($email)] = $data;
+  }
+
+  // Fetch list of users in Drupal
+  $stmt = db_select('users', 'u')
+    ->fields('u', array('mail', 'uid'))
+    ->condition('u.uid', 0, '>')
+    ->execute();
+  $drupal_users = array();
+  while ($user_data = $stmt->fetchAssoc()) {
+    $drupal_users[strtolower($user_data['mail'])] = (object)$user_data;
+  }
+
+  // Get a case-insensitive diff of developer emails
+  $not_in_kms = array_diff_key($drupal_users, $kms_developers);
+  $not_in_drupal = array_diff_key($kms_developers, $drupal_users);
+
+  // For each user in Drupal that is not in KMS, create developer in KMS.
+  foreach ($not_in_kms as $drupal_user) {
+    $list_items[] = _devconnect_user_save_entity($drupal_user);
+  }
+
+  // For each developer in KMS that is not in Drupal, create user in Drupal.
+  foreach ($not_in_drupal as $developer) {
+    // Skip any cruft users left over from failed simpletests
+    if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $developer['email'])) {
+      continue;
+    }
+    $kms_user_name = $developer['userName'];
+    // Now find an untaken Drupal username. If there is already a user with
+    // the name in question, start appending numbers until we find an untaken
+    // name.
+    $extra = 0;
+    $drupal_name = $kms_user_name;
+    do {
+      $uid = db_select('users', 'u')
+        ->fields('u', array('uid'))
+        ->condition('name', $drupal_name)
+        ->condition('uid', 0, '>')
+        ->execute()
+        ->fetchField();
+      if (!$uid) {
+        break;
+      }
+      $drupal_name = $kms_user_name . $extra++;
+    } while (TRUE);
+
+    $account = (object)array('is_new' => TRUE);
+
+    $edit = array(
+      'name' => $drupal_name,
+      'mail' => $developer['email'],
+      'field_first_name' => array(
+        LANGUAGE_NONE => array(
+          0 => array('value' => $developer['firstName'])
+        )
+      ),
+      'field_last_name' => array(
+        LANGUAGE_NONE => array(
+          0 => array('value' => $developer['lastName'])
+        )
+      ),
+      'status' => ($developer['status'] == 'active' ? 1 : 0),
+      'pass' => user_password(),
+      'already_in_kms' => TRUE
+    );
+    $drupal_user = user_save($account, $edit);
+    if ($drupal_user) {
+      $is_admin = devconnect_user_is_org_admin($drupal_user->mail);
+      $list_items[] = t('@type Drupal user @name (@mail) created with uid @uid', array('@type' => ($is_admin ? t('Administrative') : t('Ordinary')), '@name' => $drupal_user->name, '@mail' => $drupal_user->mail, '@uid' => $drupal_user->uid));
+      if ($is_admin) {
+        // Assign all administrator roles to this user
+        $admin_rids = devconnect_user_get_admin_rids();
+        if (!empty($admin_rids)) {
+          $query = db_insert('users_roles')->fields(array('uid', 'rid'));
+          foreach ($admin_rids as $rid) {
+            $query->values(array('uid' => $drupal_user->uid, 'rid' => $rid));
+          }
+          $query->execute();
+        }
+      }
+    }
+    else {
+      $list_items[] = t('Drupal user @name not created.', array('@name' => $drupal_name));
+    }
+  }
+
+  if (function_exists('drush_print')) {
+    return $list_items;
+  }
+
+  if (count($list_items) == 0) {
+    return '<p>' . t('All developers are in sync.') . '</p>';
+  }
+  $list_params = array(
+    'items' => $list_items,
+    'title' => NULL,
+    'type' => 'ul',
+    'attributes' => array()
+  );
+
+  return theme('item_list', $list_params);
+}
+
+function devconnect_user_is_org_admin($email) {
+  static $admins = array();
+  if (empty($admins)) {
+    $ur = new Apigee\ManagementAPI\UserRole(devconnect_default_api_client());
+    try {
+      $admins = array_merge(
+        $ur->getUsersByRole('opsadmin'),
+        $ur->getUsersByRole('orgadmin')
+      );
+      $admins = array_unique(array_map('strtolower', $admins));
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {}
+  }
+  return in_array(strtolower($email), $admins);
+}
+
+function devconnect_user_get_admin_rids() {
+  static $rids = NULL;
+
+  if (!isset($rids)) {
+    $rids = array();
+    $roles = user_roles(TRUE);
+    foreach ($roles as $rid => $role) {
+      if (stripos($role, 'administrator') !== FALSE) {
+        $rids[] = $rid;
+      }
+    }
+  }
+  return $rids;
 }

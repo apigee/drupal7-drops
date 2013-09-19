@@ -1,6 +1,6 @@
 <?php
 
- /**
+/**
  * @file
  * Enhanced control over the CSS Classes of any Block.
  *
@@ -24,6 +24,7 @@ function block_class_permission() {
 
 /**
  * Implements theme_preprocess_block().
+ *
  * Extend block's classes with any user defined classes.
  */
 function block_class_preprocess_block(&$vars) {
@@ -35,6 +36,7 @@ function block_class_preprocess_block(&$vars) {
 
 /**
  * Implements hook_preprocess_HOOK().
+ *
  * Extend panel block's classes with any user defined classes.
  */
 function block_class_preprocess_panels_pane(&$vars) {
@@ -55,11 +57,12 @@ function block_class_preprocess_panels_pane(&$vars) {
 
 /**
  * Implements hook_form_alter().
+ *
  * Alter block edit form to add configuration field.
  */
 function block_class_form_alter(&$form, &$form_state, $form_id) {
   if (user_access('administer block classes') && ($form_id == 'block_admin_configure' || $form_id == 'block_add_block_form')) {
-    // Load statically cached block object used to display block_admin_configure form.
+    // Load statically cached block object used to display the form.
     $block = block_load($form['module']['#value'], $form['delta']['#value']);
 
     $form['settings']['css_class'] = array(
@@ -76,17 +79,22 @@ function block_class_form_alter(&$form, &$form_state, $form_id) {
 
 /**
  * Helper function: additional submit callback for block configuration pages.
+ *
  * Save supplied CSS classes.
  */
 function block_class_form_submit($form, &$form_state) {
   if ($form_state['values']['form_id'] == 'block_admin_configure' || $form_state['values']['form_id'] == 'block_add_block_form') {
     // Only save if value has changed.
     if (isset($form_state['values']['css_class']) && $form['settings']['css_class']['#default_value'] != $form_state['values']['css_class'] && user_access('administer blocks')) {
-        db_update('block')
-          ->fields(array('css_class' => $form_state['values']['css_class']))
-          ->condition('module', $form_state['values']['module'])
-          ->condition('delta', $form_state['values']['delta'])
-          ->execute();
+      db_update('block')
+        ->fields(array('css_class' => $form_state['values']['css_class']))
+        ->condition('module', $form_state['values']['module'])
+        ->condition('delta', $form_state['values']['delta'])
+        ->execute();
+      // Flush all context module cache to use the updated css_class.
+      if (module_exists('context')) {
+        cache_clear_all('context', 'cache', TRUE);
+      }
     }
   }
 }

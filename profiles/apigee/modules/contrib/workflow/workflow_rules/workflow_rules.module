@@ -1,0 +1,35 @@
+<?php
+/**
+ * @file
+ * Provide rules for workflows.
+ * Why it's own module? Some sites prefer rules, some prefer actions,
+ * all prefer a lower code footprint and better performance.
+ * Additional creadit to gcassie ( http://drupal.org/user/80260 ) for
+ * the initial push to split rules out of core workflow.
+ */
+
+
+/**
+ * Implements hook_workflow().
+ *
+ * @param $op
+ *   The current workflow operation: 'transition pre' or 'transition post'.
+ * @param $old_state
+ *   The state ID of the current state.
+ * @param  $new_state
+ *   The state ID of the new state.
+ * @param $node
+ *   The node whose workflow state is changing.
+ */
+function workflow_rules_workflow($op, $old_state, $new_state, $node) {
+  switch ($op) {
+    case 'transition post':
+      // Rules are updated on after the transition.
+      if ($old_state == $new_state) {
+        rules_invoke_event('workflow_comment_added', $node, $old_state, $new_state);
+        return;
+      }
+      rules_invoke_event('workflow_state_changed', $node);
+    break;
+  }
+}

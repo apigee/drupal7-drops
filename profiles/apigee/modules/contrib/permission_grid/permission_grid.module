@@ -1,0 +1,58 @@
+<?php
+/**
+ * @file permission_grid.module
+ * Contains module code for the Permissions Grid module.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function permission_grid_menu() {
+  $items['admin/people/permissions/grid'] = array(
+    'title' => 'Permissions grid',
+    'description' => 'Manage permissions for nodes.',
+    'page callback' => 'permissions_grid_admin_roles',
+    'access arguments' => array('administer permissions'),
+    'file' => 'permissions_grid.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -7,
+  );
+  $items['admin/people/permissions/grid/%user_role'] = array(
+    'title' => 'Permissions grid',
+    'description' => 'Manage permissions for nodes.',
+    'page callback' => 'drupal_get_form',
+    // todo calback should have 'form' suffix.
+    'page arguments' => array('permissions_grid_admin_node_permissions_form', 4),
+    'access arguments' => array('administer permissions'),
+    'file' => 'permissions_grid.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -7,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function permission_grid_hook_info() {
+  $hooks['permission_grid_info'] = array(
+    'group' => 'permissions',
+  );
+  $hooks['permission_grid_info_alter'] = array(
+    'group' => 'permissions',
+  );
+  return $hooks;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function permission_grid_theme($path, $arg) {
+  return array(
+    'permissions_grid_admin_node_permissions_form' => array(
+      'render element' => 'form',
+      'file' => 'permissions_grid.admin.inc',
+    ),
+  );
+}

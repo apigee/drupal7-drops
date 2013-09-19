@@ -1,5 +1,10 @@
 <?php
 
+if (array_key_exists('HTTP_X_PANTHEON_SCREENSHOT', $_SERVER)) {
+  echo "<!DOCTYPE html><html style='background: url(apigee1.jpg) no-repeat bottom center fixed;-webkit-background-size: cover;-moz-background-size: cover;-o-background-size: cover; background-size: cover;'><html><head></head><body></body></html>";
+  exit();
+}
+
 require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Exceptions/InstallException.php");
 require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Util/Crypto.php");
 
@@ -8,7 +13,7 @@ function apigee_install_tasks(&$install_state) {
   if (!array_key_exists("batch_configure_complete", $install_state)) {
     $install_state["batch_configure_complete"] = false;
   }
-  drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css');
+  drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css', array('weight' => 9999));
   return array(
     "apigee_install_api_endpoint" => array(
       'display_name' => t('Configure the Apigee Endpoint'),
@@ -33,7 +38,7 @@ function apigee_install_tasks_alter(&$tasks, &$install_state) {
     'run' => $install_state['batch_configure_complete'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
     "type" => "batch"
   );
-  
+
 }
 
 

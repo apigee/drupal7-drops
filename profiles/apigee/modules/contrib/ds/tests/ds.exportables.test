@@ -14,7 +14,7 @@ class dsExportablesTests extends dsBaseTest {
     return array(
       'name' => t('Exportables'),
       'description' => t('Tests for exportables in Display Suite.'),
-      'group' => t('Display suite'),
+      'group' => t('Display Suite'),
     );
   }
 
@@ -79,7 +79,7 @@ class dsExportablesTests extends dsBaseTest {
     $this->assertNoRaw('group-header', 'No header region found');
     $this->assertNoRaw('group-footer', 'No footer region found');
     $this->assertRaw('<h3><a href="'. url('node/1') . '" class="active">Exportable</a></h3>', t('Default title with h3 found'));
-    $this->assertRaw('<a href="'. url('node/1') . '" class="active">Read more</a>', t('Default read more found'));
+    $this->assertRaw('<a href="' . url('node/1') . '" class="active">Read more</a>', t('Default read more found'));
 
     // Override default layout.
     $layout = array(
@@ -122,7 +122,7 @@ class dsExportablesTests extends dsBaseTest {
     $this->assertNoRaw('group-header', 'Left region found');
     $this->assertNoRaw('group-footer', 'Left region found');
     $this->assertRaw('<h3><a href="'. url('node/1') . '" class="active">Exportable</a></h3>', t('Default title with h3 found'));
-    $this->assertRaw('<a href="'. url('node/1') . '" class="active">Read more</a>', t('Default read more found'));
+    $this->assertRaw('<a href="' . url('node/1') . '" class="active">Read more</a>', t('Default read more found'));
   }
 
   // Test custom field exportables.

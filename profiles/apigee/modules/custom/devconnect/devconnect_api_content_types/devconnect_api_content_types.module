@@ -1,7 +1,0 @@
-<?php
-/**
- * @file
- * Code for the devconnect_api_content_types feature.
- */
-
-include_once('devconnect_api_content_types.features.inc');

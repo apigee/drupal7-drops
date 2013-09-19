@@ -9,46 +9,48 @@
 
 namespace Apigee\ManagementAPI;
 
-use \Apigee\Exceptions\ResponseException as ResponseException;
+use \Apigee\Exceptions\ResponseException;
+use \Apigee\Exceptions\ParameterException;
+use \Apigee\Util\APIClient;
 
-class Developer extends Base {
+class Developer extends Base implements DeveloperInterface {
 
   /**
    * @var array
    */
-  private $apps;
+  protected $apps;
   /**
    * @var string
    * This is actually the unique-key (within the org) for the Developer
    */
-  private $email;
+  protected $email;
   /**
    * @var string
    * Read-only alternate unique ID. Useful when querying developer analytics.
    */
-  private $developer_id;
+  protected $developerId;
   /**
    * @var string
    */
-  private $first_name;
+  protected $firstName;
   /**
    * @var string
    */
-  private $last_name;
+  protected $lastName;
   /**
    * @var string
    */
-  private $user_name;
+  protected $userName;
   /**
    * @var string
    * Read-only
    */
-  private $org_name;
+  protected $organizationName;
   /**
    * @var string
    * Should be either 'active' or 'inactive'.
    */
-  private $status;
+  protected $status;
   /**
    * @var array
    * This must be protected because Base wants to twiddle with it.
@@ -58,58 +60,60 @@ class Developer extends Base {
    * @var int
    * Read-only
    */
-  private $created_at;
+  protected $createdAt;
   /**
    * @var string
    * Read-only
    */
-  private $created_by;
+  protected $createdBy;
   /**
    * @var int
    * Read-only
    */
-  private $modified_at;
+  protected $modifiedAt;
   /**
    * @var string
    * Read-only
    */
-  private $modified_by;
+  protected $modifiedBy;
+
+  protected $baseUrl;
 
   /* Accessors (getters/setters) */
-  public function get_apps() {
+  public function getApps() {
     return $this->apps;
   }
-  public function get_email() {
+  public function getEmail() {
     return $this->email;
   }
-  public function set_email($email) {
+  public function setEmail($email) {
     $this->email = $email;
   }
-  public function get_developer_id() {
-    return $this->developer_id;
+  public function getDeveloperId() {
+    return $this->developerId;
   }
-  public function get_first_name() {
-    return $this->first_name;
+  public function getFirstName() {
+    return $this->firstName;
   }
-  public function set_first_name($fname) {
-    $this->first_name = $fname;
+  public function setFirstName($fname) {
+    $this->firstName = $fname;
   }
-  public function get_last_name() {
-    return $this->last_name;
+  public function getLastName() {
+    return $this->lastName;
   }
-  public function set_last_name($lname) {
-    $this->last_name = $lname;
+  public function setLastName($lname) {
+    $this->lastName = $lname;
   }
-  public function get_user_name() {
-    return $this->user_name;
+  public function getUserName() {
+    return $this->userName;
   }
-  public function set_user_name($uname) {
-    $this->user_name = $uname;
+  public function setUserName($uname) {
+    $this->userName = $uname;
   }
-  public function get_status() {
+  public function getStatus() {
     return $this->status;
   }
-  public function set_status($status) {
+  public function setStatus($status) {
     if ($status === 0 || $status === FALSE) {
       $status = 'inactive';
     }
@@ -117,24 +121,24 @@ class Developer extends Base {
       $status = 'active';
     }
     if ($status != 'active' && $status != 'inactive') {
-      throw new \Apigee\Exceptions\InvalidDataException('Status may be either active or inactive; value "' . $status . '" is invalid.');
+      throw new ParameterException('Status may be either active or inactive; value "' . $status . '" is invalid.');
     }
     $this->status = $status;
   }
-  public function get_attribute($attr) {
+  public function getAttribute($attr) {
     if (array_key_exists($attr, $this->attributes)) {
       return $this->attributes[$attr];
     }
     return NULL;
   }
-  public function set_attribute($attr, $value) {
+  public function setAttribute($attr, $value) {
     $this->attributes[$attr] = $value;
   }
-  public function get_attributes() {
+  public function getAttributes() {
     return $this->attributes;
   }
-  public function get_modified_at() {
-    return $this->modified_at;
+  public function getModifiedAt() {
+    return $this->modifiedAt;
   }
 
   /**
@@ -142,34 +146,43 @@ class Developer extends Base {
    *
    * @param \Apigee\Util\APIClient $client
    */
-  public function __construct(\Apigee\Util\APIClient $client) {
+  public function __construct(APIClient $client) {
     $this->init($client);
-    $this->base_url = '/organizations/' . $this->url_encode($client->get_org()) . '/developers';
-    $this->blank_values();
+    $this->baseUrl = '/organizations/' . $this->urlEncode($client->getOrg()) . '/developers';
+    $this->blankValues();
   }
 
   /**
    * Loads a developer from the Management API using $email as the unique key.
    *
-   * @param $email
+   * @param string $email
+   *    This can be either the developer's email address or the unique
+   *    developerId.
    */
   public function load($email) {
-    $url = $this->base_url . '/' . $this->url_encode($email);
+    $url = $this->baseUrl . '/' . $this->urlEncode($email);
     $this->client->get($url);
-    $developer = $this->get_response();
-    $this->apps = $developer['apps'];
-    $this->email = $developer['email'];
-    $this->developer_id = $developer['developerId'];
-    $this->first_name = $developer['firstName'];
-    $this->last_name = $developer['lastName'];
-    $this->user_name = $developer['userName'];
-    $this->org_name = $developer['orgName'];
-    $this->status = $developer['status'];
-    $this->attributes = $developer['attributes'];
-    $this->created_at = $developer['createdAt'];
-    $this->created_by = $developer['createdBy'];
-    $this->modified_at = $developer['lastModifiedAt'];
-    $this->modified_by = $developer['lastModifiedBy'];
+    $developer = $this->getResponse();
+    self::loadFromResponse($this, $developer);
+  }
+
+  protected static function loadFromResponse(&$developer, $response) {
+    $developer->apps = $response['apps'];
+    $developer->email = $response['email'];
+    $developer->developerId = $response['developerId'];
+    $developer->firstName = $response['firstName'];
+    $developer->lastName = $response['lastName'];
+    $developer->userName = $response['userName'];
+    $developer->organizationName = $response['organizationName'];
+    $developer->status = $response['status'];
+    $developer->attributes = array();
+    foreach ($response['attributes'] as $attribute) {
+      $developer->attributes[$attribute['name']] = $attribute['value'];
+    }
+    $developer->createdAt = $response['createdAt'];
+    $developer->createdBy = $response['createdBy'];
+    $developer->modifiedAt = $response['lastModifiedAt'];
+    $developer->modifiedBy = $response['lastModifiedBy'];
   }
 
   /**
@@ -186,10 +199,10 @@ class Developer extends Base {
    */
   public function validate($email = NULL) {
     if (isset($email)) {
-      $url = $this->base_url . '/' . $this->url_encode($email);
+      $url = $this->baseUrl . '/' . $this->urlEncode($email);
       try {
         $this->client->get($url);
-        return $this->client->was_successful();
+        return $this->client->wasSuccessful();
       }
       catch (ResponseException $e) { }
     }
@@ -200,22 +213,46 @@ class Developer extends Base {
    * Saves user data to the Management API. This operates as both insert and
    * update.
    *
-   * If user's email doesn't look valid (must contain @), an
-   * InvalidDataException is thrown.
+   * If user's email doesn't look valid (must contain @), a
+   * ParameterException is thrown.
    *
-   * @throws \Apigee\Exceptions\InvalidDataException
+   * @var bool|null $force_update
+   *   If FALSE, assume that this is a new instance.
+   *   If TRUE, assume that this is an update to an existing instance.
+   *   If NULL, try an update, and if that fails, try an insert.
+   *
+   * @throws \Apigee\Exceptions\ParameterException
    */
   public function save($force_update = FALSE) {
-    if (!$this->validate_user()) {
-      throw new \Apigee\Exceptions\InvalidDataException('Invalid email address; cannot save user.');
+
+    // See if we need to brute-force this.
+    if ($force_update === NULL) {
+      try {
+        $this->save(TRUE);
+      }
+      catch (ResponseException $e) {
+        if ($e->getCode() == 404) {
+          // Update failed because dev doesn't exist.
+          // Try insert instead.
+          $this->save(FALSE);
+        }
+        else {
+          // Some other response error.
+          throw $e;
+        }
+      }
+      return;
+    }
+
+    if (!$this->validateUser()) {
+      throw new ParameterException('Invalid email address; cannot save user.');
     }
 
     $payload = array(
       'email' => $this->email,
-      'userName' => $this->user_name,
-      'firstName' => $this->first_name,
-      'lastName' => $this->last_name,
-      'userName' => $this->user_name,
+      'userName' => $this->userName,
+      'firstName' => $this->firstName,
+      'lastName' => $this->lastName,
       'status' => $this->status,
     );
     if (count($this->attributes) > 0) {
@@ -224,15 +261,20 @@ class Developer extends Base {
         $payload['attributes'][] = array('name' => $name, 'value' => $value);
       }
     }
-    $url = $this->base_url;
-    if ($force_update || $this->created_at) {
-      if ($this->developer_id) {
-        $payload['developerId'] = $this->developer_id;
+    $url = $this->baseUrl;
+    if ($force_update || $this->createdAt) {
+      if ($this->developerId) {
+        $payload['developerId'] = $this->developerId;
       }
-      $url .= '/' . $this->url_encode($this->email);
+      $url .= '/' . $this->urlEncode($this->email);
     }
-    $this->client->post($url, $payload);
-    $this->get_response();
+    if ($force_update) {
+      $this->client->put($url, $payload);
+    }
+    else {
+      $this->client->post($url, $payload);
+    }
+    $this->getResponse();
   }
 
   /**
@@ -246,10 +288,10 @@ class Developer extends Base {
     if (!isset($email)) {
       $email = $this->email;
     }
-    $this->client->delete($this->base_url . '/' . $this->url_encode($email));
-    $this->get_response();
+    $this->client->delete($this->baseUrl . '/' . $this->urlEncode($email));
+    $this->getResponse();
     if ($email == $this->email) {
-      $this->blank_values();
+      $this->blankValues();
     }
   }
 
@@ -258,10 +300,28 @@ class Developer extends Base {
    *
    * @return array
    */
-  public function list_developers() {
-    $this->client->get($this->base_url);
-    $developers = $this->get_response();
+  public function listDevelopers() {
+    $this->client->get($this->baseUrl);
+    $developers = $this->getResponse();
     return $developers;
+  }
+
+  /**
+   * Returns an array of all developers in the org.
+   *
+   * @return array
+   */
+  public function loadAllDevelopers() {
+    $url = $this->baseUrl . '?expand=true';
+    $this->client->get($url);
+    $developers = $this->getResponse();
+    $out = array();
+    foreach ($developers['developer'] as $dev) {
+      $developer = new Developer($this->client);
+      self::loadFromResponse($developer, $dev);
+      $out[] = $developer;
+    }
+    return $out;
   }
 
   /**
@@ -273,14 +333,14 @@ class Developer extends Base {
    *
    * @return bool
    */
-  public function validate_user() {
+  public function validateUser() {
     if (!empty($this->email) && (strpos($this->email, '@') > 0)) {
       $name = explode('@', $this->email, 2);
-      if (empty($this->first_name)) {
-        $this->first_name = $name[0];
+      if (empty($this->firstName)) {
+        $this->firstName = $name[0];
       }
-      if (empty($this->last_name)) {
-        $this->last_name = $name[1];
+      if (empty($this->lastName)) {
+        $this->lastName = $name[1];
       }
       return TRUE;
     }
@@ -290,44 +350,57 @@ class Developer extends Base {
   }
 
   /**
-   * Populates this object's properties based on a Drupal user object.
-   *
-   * Be aware that previous properties are not blanked first. If you are
-   * creating a new user, you may want to call $this->blank_values() first.
-   *
-   * @param $account
+   * Restores this object's properties to their pristine state.
    */
-  public function populate_from_user_account($account) {
-    $this->email = $account->mail;
-    $this->first_name = $account->field_first_name[LANGUAGE_NONE][0]['value'];
-    $this->last_name = $account->field_last_name[LANGUAGE_NONE][0]['value'];
-    $this->user_name = $account->name;
-    $this->status = ($account->status ? 'active' : 'inactive');
+  public function blankValues() {
+    $this->apps = array();
+    $this->email = NULL;
+    $this->developerId = NULL;
+    $this->firstName = NULL;
+    $this->lastName = NULL;
+    $this->userName = NULL;
+    $this->organizationName = NULL;
+    $this->status = NULL;
+    $this->attributes = array();
+    $this->createdAt = NULL;
+    $this->createdBy = NULL;
+    $this->modifiedAt = NULL;
+    $this->modifiedBy = NULL;
+  }
 
-    $vars = get_object_vars($account);
-    foreach ($vars as $key => $value) {
-      if (substr($key, 0, 10) == 'attribute_') {
-        $this->attributes[substr($key, 10)] = $value;
+
+  /**
+   * Turns this object's properties into an array for external use.
+   *
+   * @return array
+   */
+  public function toArray() {
+    $properties = array_keys(get_object_vars($this));
+    $excluded_properties = array_keys(get_class_vars(get_parent_class($this)));
+    $excluded_properties[] = 'baseUrl';
+    $output = array();
+    foreach ($properties as $property) {
+      if (!in_array($property, $excluded_properties)) {
+        $output[$property] = $this->$property;
       }
     }
+    $output['debugData'] = $this->getDebugData();
+    return $output;
   }
 
   /**
-   * Restores this object's properties to their pristine state.
+   * Populates this object based on an incoming array generated by the
+   * toArray() method above.
+   *
+   * @param $array
    */
-  public function blank_values() {
-    $this->apps = array();
-    $this->email = NULL;
-    $this->developer_id = NULL;
-    $this->first_name = NULL;
-    $this->last_name = NULL;
-    $this->user_name = NULL;
-    $this->org_name = NULL;
-    $this->status = NULL;
-    $this->attributes = array();
-    $this->created_at = NULL;
-    $this->created_by = NULL;
-    $this->modified_at = NULL;
-    $this->modified_by = NULL;
+  public function fromArray($array) {
+    foreach($array as $key => $value) {
+      if (property_exists($this, $key) && $key != 'debugData' && $key != 'baseUrl') {
+        $this->{$key} = $value;
+      }
+    }
+    $this->loaded = TRUE;
   }
+
 }

@@ -50,7 +50,6 @@ function oauthconnector_list_fields() {
         'title' => check_plain($field['title']),
         'operations' => theme('links', array('links' => $operations, 'attributes' => array('class' => array('links', 'inline')))),
       ),
-      'class' => (!empty($provider->disabled) ? ' oauthconnector-provider-disabled' : ''),
     );
   }
   $build['table'] = array(
@@ -145,7 +144,7 @@ function oauthconnector_list_provider($js = NULL) {
         'storage' => $provider->type,
         'operations' => theme('links', array('links' => $operations, 'attributes' => array('class' => array('links', 'inline')))),
       ),
-      'class' => (!empty($provider->disabled) ? ' oauthconnector-provider-disabled' : ''),
+      'class' => (!empty($provider->disabled) ? array('oauthconnector-provider-disabled') : ''),
     );
 
     if (empty($rows[$provider->name]['data']['callback_url'])) {
@@ -634,19 +633,19 @@ function oauthconnector_presets() {
   $twitter->mapping = array(
     'fields' => array(
       'uid' => array(
-        'resource' => 'https://api.twitter.com/1/account/verify_credentials.json',
+        'resource' => 'https://api.twitter.com/1.1/account/verify_credentials.json',
         'method post' => 0,
         'field' => 'id',
         'querypath' => 0,
       ),
       'name' => array(
-        'resource' => 'https://api.twitter.com/1/account/verify_credentials.json',
+        'resource' => 'https://api.twitter.com/1.1/account/verify_credentials.json',
         'method post' => 0,
         'field' => 'name',
         'querypath' => 0,
       ),
       'avatar' => array(
-        'resource' => 'https://api.twitter.com/1/account/verify_credentials.json',
+        'resource' => 'https://api.twitter.com/1.1/account/verify_credentials.json',
         'method post' => 0,
         'field' => 'profile_image_url',
         'querypath' => 0,
@@ -739,7 +738,7 @@ function oauthconnector_presets() {
     'signature method' => 'HMAC-SHA1',
     'authentication realm' => 'authorization_code',
     'request token endpoint' => 'none',
-    'authorization scope' => 'https://www.googleapis.com/auth/userinfo.profile',
+    'authorization scope' => 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     'authorization endpoint' => '/o/oauth2/auth',
     'access token endpoint' => '/o/oauth2/token',
   );
@@ -767,6 +766,43 @@ function oauthconnector_presets() {
     'format' => 'json',
   );
 
+  $flickr = new stdClass();
+  $flickr->name = '';
+  $flickr->title = 'Flickr';
+  $flickr->url = 'http://www.flickr.com';
+  $flickr->consumer_advanced = array(
+    'oauth2' => 0,
+    'signature method' => 'HMAC-SHA1',
+    'authentication realm' => '',
+    'request token endpoint' => '/services/oauth/request_token',
+    'authorization scope' => '',
+    'authorization endpoint' => '/services/oauth/authorize',
+    'access token endpoint' => '/services/oauth/access_token',
+  );
+  $flickr->mapping = array(
+    'fields' => array(
+      'uid' => array(
+        'resource' => 'http://api.flickr.com/services/rest/?method=flickr.test.login&format=json&nojsoncallback=1',
+        'method post' => 0,
+        'field' => 'user.id',
+        'querypath' => FALSE,
+      ),
+      'name' => array(
+        'resource' => 'http://api.flickr.com/services/rest/?method=flickr.test.login&format=json&nojsoncallback=1',
+        'method post' => 0,
+        'field' => 'user.username._content',
+        'querypath' => FALSE,
+      ),
+      'avatar' => array(
+        'resource' => '',
+        'method post' => 0,
+        'field' => '',
+        'querypath' => FALSE,
+      ),
+    ),
+    'format' => 'json',
+  );
+
   $presets = array(
     'twitter' => array (
       'data' => $twitter,
@@ -783,6 +819,10 @@ function oauthconnector_presets() {
     'google' => array (
       'data' => $google,
       'name' => 'Google',
+    ),
+    'flickr' => array (
+      'data' => $flickr,
+      'name' => 'Flickr',
     ),
   );
   drupal_alter('oauthconnector_presets', $presets);

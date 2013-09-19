@@ -1,23 +1,27 @@
+/**
+ * @file
+ * Styling for the ds-3col-stacked-equal template.
+ */
 
-.group-header {
+.ds-3col-stacked-equal > .group-header {
   clear: both;
 }
 
-.group-left {
+.ds-3col-stacked-equal > .group-left {
   width: 33%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-middle {
+.ds-3col-stacked-equal > .group-middle {
   width: 34%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-right {
+.ds-3col-stacked-equal > .group-right {
   width: 33%;
-  float: right;
+  float: right; /* LTR */
 }
 
-.group-footer {
+.ds-3col-stacked-equal > .group-footer {
   clear: both;
 }

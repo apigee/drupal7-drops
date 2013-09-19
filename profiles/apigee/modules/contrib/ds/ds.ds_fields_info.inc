@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Display suite fields.
+ * Display Suite fields.
  */
 
 /**
@@ -23,6 +23,14 @@ function ds_ds_fields_info($entity_type) {
         'field_type' => $field->field_type,
         'properties' => $field->properties,
       );
+      if (!empty($field->ui_limit)) {
+        $fields[$entity_type][$key]['ui_limit'] = explode("\n", $field->ui_limit);
+        // Ensure that all strings are trimmed, eg. don't have
+        // extra spaces, \r chars etc.
+        foreach ($fields[$entity_type][$key]['ui_limit'] as $k => $v) {
+          $fields[$entity_type][$key]['ui_limit'][$k] = trim($v);
+        }
+      }
     }
   }
 
@@ -103,8 +111,33 @@ function ds_ds_fields_info($entity_type) {
     'function' => 'ds_render_date_field',
     'properties' => array(
       'formatters' => $date_formatters,
+      'entity_render_key' => 'created',
     ),
   );
+
+  // Updated time.
+  $fields['node']['changed_date'] = array(
+    'title' => t('Last modified'),
+    'field_type' => DS_FIELD_TYPE_FUNCTION,
+    'function' => 'ds_render_date_field',
+    'properties' => array(
+      'formatters' => $date_formatters,
+      'entity_render_key' => 'changed',
+    ),
+  );
+
+  // "Submitted by"-line. Skip this if the "Submitted By" module is used.
+  if (!module_exists('submitted_by')) {
+    $date_formatters = array('ds_time_ago' => t('Time ago')) + $date_formatters;
+    $fields['node']['submitted_by'] = array(
+      'title' => t('Submitted by'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'ds_render_submitted_by',
+      'properties' => array(
+        'formatters' => $date_formatters,
+      ),
+    );
+  }
 
   // User picture
   if (variable_get('user_pictures', 0)) {
@@ -179,6 +212,7 @@ function ds_ds_fields_info($entity_type) {
       'function' => 'ds_render_date_field',
       'properties' => array(
         'formatters' => $date_formatters,
+        'entity_render_key' => 'created',
       ),
     );
 
@@ -337,6 +371,45 @@ function ds_ds_fields_info($entity_type) {
           'class' => array('type' => 'textfield', 'description' => t('Put a class on the wrapper. Eg: block-title')),
         ),
         'default' => array('link text' => 'Read more', 'wrapper' => '', 'class' => '', 'link' => 1),
+      )
+    );
+  }
+
+  // Support for ECK Entity title
+  if (module_exists('eck')) {
+    $entity_info = entity_get_info($entity_type);
+    if (isset($entity_info['module']) && $entity_info['module'] == 'eck') {
+      $fields[$entity_type]['title'] = array(
+        'title' => t('Title'),
+        'field_type' => DS_FIELD_TYPE_FUNCTION,
+        'function' => 'ds_render_field',
+        'properties' => array(
+          'entity_render_key' => 'title',
+          'settings' => array(
+            'link' => array('type' => 'select', 'options' => array('no', 'yes')),
+            'wrapper' => array('type' => 'textfield', 'description' => t('Eg: h1, h2, p')),
+            'class' => array('type' => 'textfield', 'description' => t('Put a class on the wrapper. Eg: block-title')),
+          ),
+          'default' => array('wrapper' => 'h2', 'link' => 0, 'class' => ''),
+        )
+      );
+    }
+  }
+
+  // Support for fieldable panels panes.
+  if (module_exists('fieldable_panels_panes')) {
+    $fields['fieldable_panels_pane']['title_ds'] = array(
+      'title' => t('Display Suite Title'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'ds_render_field',
+      'properties' => array(
+        'entity_render_key' => 'title',
+        'settings' => array(
+          'link' => array('type' => 'select', 'options' => array('no', 'yes')),
+          'wrapper' => array('type' => 'textfield', 'description' => t('Eg: h1, h2, p')),
+          'class' => array('type' => 'textfield', 'description' => t('Put a class on the wrapper. Eg: block-title')),
+        ),
+        'default' => array('wrapper' => 'h2', 'link' => 0, 'class' => ''),
       )
     );
   }

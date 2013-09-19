@@ -1,0 +1,12 @@
+<?php
+
+/*
+ * Implements hook_uninstall().
+ */
+function genpass_uninstall() {
+  variable_del('genpass_algorithm');
+  variable_del('genpass_display');
+  variable_del('genpass_entropy');
+  variable_del('genpass_length');
+  variable_del('genpass_mode');
+}

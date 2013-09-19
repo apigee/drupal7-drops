@@ -1,0 +1,15 @@
+name = "Highcharts"
+package = "Views"
+description = "Views formatter to produce highchart"
+core = 7.x
+dependencies[] = views
+dependencies[] = uuid
+dependencies[] = "libraries"
+files[] = views_highcharts_plugin_style_highcharts.inc
+
+; Information added by drupal.org packaging script on 2012-03-26
+version = "7.x-1.0-alpha6"
+core = "7.x"
+project = "highcharts"
+datestamp = "1332724847"
+

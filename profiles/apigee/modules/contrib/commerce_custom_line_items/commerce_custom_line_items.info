@@ -1,0 +1,12 @@
+name = Commerce Custom Line Items
+description = Provides extra custom line items for Drupal Commerce
+package = Commerce (contrib)
+dependencies[] = commerce_line_item
+core = 7.x
+
+; Information added by drupal.org packaging script on 2011-11-12
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "commerce_custom_line_items"
+datestamp = "1321056682"
+

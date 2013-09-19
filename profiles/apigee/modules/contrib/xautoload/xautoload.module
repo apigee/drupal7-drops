@@ -1,6 +1,5 @@
 <?php
 
-
 /*
  * When the module has just been installed,
  * Drupal does not know yet this is a boot-level module.
@@ -8,18 +7,37 @@
  * We can not rely on hook_boot() to fire, and instead register the autoloader
  * on inclusion of this *.module file.
  */
-_xautoload_register();
+_xautoload_register_drupal();
 
+
+// Hook implementations
+// -----------------------------------------------------------------------------
 
 /**
  * Implements hook_boot()
  *
  * This is only to let Drupal know we want this module to load in bootstrap.
  */
-function xautoload_boot() {
-  // Nothing happening here.
-}
+function xautoload_boot() {}
 
+/**
+ * Implements hook_custom_theme()
+ * We only do this because that's the first hook to fire after bootstrap.
+ */
+function xautoload_custom_theme() {
+
+  // Make sure this only runs once.
+  // (we run this from hook_init also, to avoid upgrade issues)
+  static $first_run = TRUE;
+  if (!$first_run) {
+    return;
+  }
+  $first_run = FALSE;
+
+  // Tell the "boot schedule" that the "main phase" has started.
+  // This will trigger invocation of hook_xautoload().
+  xautoload('schedule')->initMainPhase();
+}
 
 /**
  * Implements hook_init()
@@ -33,124 +51,26 @@ function xautoload_boot() {
  *   which would no longer have a direct reference to the finder object.
  */
 function xautoload_init() {
-  $api = new xautoload_InjectedAPI_hookXautoload(xautoload_get_finder());
-  foreach (module_implements('xautoload') as $module) {
-    $api->setModule($module);
-    $f = $module . '_xautoload';
-    $f($api);
-  }
-}
 
+  // If hook_custom_theme() hasn't been triggered, we call it now.
+  xautoload_custom_theme();
+}
 
 /**
- * Implements hook_xautoload() on behalf of simpletest
+ * Implements hook_modules_enabled()
  */
-function simpletest_xautoload($api) {
-
-  if (version_compare(PHP_VERSION, '5.3') < 0) {
-    // Namespaces only exist since PHP 5.3.
-    return;
-  }
-
-  // Register a handler that can find classes within disabled modules.
-  // The handler will only load classes of the format "Drupal\(module)\Tests\.."
-  $api->namespaceHandler('Drupal', new xautoload_NamespaceHandler_Simpletest);
+function xautoload_modules_enabled($modules) {
+  xautoload('schedule')->modulesInstalledOrEnabled($modules);
+  xautoload('apcKeyManager')->renewApcPrefix();
 }
-
 
 /**
- * Implements hook_module_implements_alter()
+ * Implements hook_modules_installed()
  */
-function xautoload_module_implements_alter(&$implementations, $hook) {
-  if ($hook === 'init') {
-    // Move xautoload_init() to the start.
-    $implementations = array('xautoload' => FALSE) + $implementations;
-  }
+function xautoload_modules_installed($modules) {
+  xautoload('schedule')->modulesInstalledOrEnabled($modules);
+  xautoload('apcKeyManager')->renewApcPrefix();
 }
-
-
-/**
- * Implements hook_xautoload on behalf of libraries module
- */
-function libraries_xautoload($api) {
-  if (!function_exists('libraries_info')) {
-    // Libraries is at a lower version, which does not have this function.
-    return;
-  }
-  foreach (libraries_info() as $name => $info) {
-    if (isset($info['xautoload'])) {
-      $xinfo = $info['xautoload'];
-      $api->setLibrary($name);
-      if (is_callable($xinfo)) {
-        call_user_func($xinfo, $api);
-      }
-    }
-  }
-}
-
-
-function _xautoload_register() {
-  static $_first_run = TRUE;
-  if (!$_first_run) return;
-  $_first_run = FALSE;
-  spl_autoload_register('_xautoload_autoload_temp');
-  _xautoload_autoload_temp('xautoload_InjectedAPI_findFile');
-  $finder = _xautoload_finder();
-
-  // We do not make the apc-cached finder available via a function,
-  // because people can do nothing with it.
-  if (
-    extension_loaded('apc') &&
-    function_exists('apc_store')
-  ) {
-    $apc_prefix = _xautoload_apc_prefix();
-    if (!empty($apc_prefix)) {
-      $finder = new xautoload_ClassFinder_ApcCache($finder, $apc_prefix);
-    }
-  }
-
-  $loader = new xautoload_ClassLoader($finder);
-  $loader->register(TRUE);
-  spl_autoload_unregister('_xautoload_autoload_temp');
-}
-
-
-/**
- * Temporary loader, to avoid any module_load_include()
- * while building the real autoloader.
- */
-function _xautoload_autoload_temp($name) {
-  if (preg_match('#^xautoload_(.*)$#', $name, $m)) {
-    // This is boot time, drupal_get_path() is not available yet.
-    $file = dirname(__FILE__) . '/lib/' . strtr($m[1], '_', '/') . '.php';
-    require_once $file;
-    if (!class_exists($name, FALSE) && !interface_exists($name, FALSE)) {
-      throw new Exception("Class $name not found in $file.");
-    }
-  }
-}
-
-
-/**
- * Get the class finder object.
- * This is the public version of _xautoload_finder().
- */
-function xautoload_get_finder() {
-  return _xautoload_finder();
-}
-
-
-/**
- * Static cache for the finder object.
- */
-function _xautoload_finder() {
-  static $_finder;
-  if (!isset($_finder)) {
-    $_finder = _xautoload_finder_create();
-  }
-  return $_finder;
-}
-
 
 /**
  * Implements hook_simpletest_alter().
@@ -214,42 +134,6 @@ function xautoload_simpletest_alter(&$groups) {
   }
 }
 
-
-/**
- * Two autoload styles are registered by default:
- * 
- */
-function _xautoload_finder_create() {
-
-  $system = new xautoload_DrupalExtensionSystem();
-  $handler = new xautoload_NamespaceHandler_DrupalExtensionLib($system);
-  $handler_psr0 = new xautoload_NamespaceHandler_DrupalExtensionLibPSR0($system);
-
-  if (version_compare(PHP_VERSION, '5.3') >= 0) {
-    $finder = new xautoload_ClassFinder_NamespaceOrPrefix();
-    // D8-style autoloading.
-    $finder->registerNamespaceHandler('Drupal', $handler_psr0);
-  }
-  else {
-    // If we are not at PHP 5.3 +, we don't need namespaces support.
-    $finder = new xautoload_ClassFinder_Prefix();
-  }
-
-  // xautoload-style autoloading:
-  $finder->registerPrefixHandler('', $handler);
-
-  return $finder;
-}
-
-
-function _xautoload_apc_prefix() {
-  global $databases;
-  if (!empty($databases)) {
-    return 'drupal_xautoload_' . hash('sha256', serialize($databases));
-  }
-}
-
-
 /**
  * Implements hook_registry_files_alter()
  *
@@ -264,4 +148,99 @@ function xautoload_registry_files_alter(&$files, $modules) {
   foreach ($files as $path => $file) {
     $rec_scan->check($path, $file);
   }
+}
+
+/**
+ * Implements hook_module_implements_alter()
+ */
+function xautoload_module_implements_alter(&$implementations, $hook) {
+
+  if ($hook === 'init' || $hook === 'custom_theme') {
+    // Move xautoload_$hook() to the start.
+    $implementations = array('xautoload' => FALSE) + $implementations;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter()
+ * with FORM_ID = "system_performance_settings"
+ */
+function xautoload_form_system_performance_settings_alter(&$form, $form_state) {
+
+  $form['xautoload'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('X Autoload'),
+  );
+
+  if (1
+    && extension_loaded('apc')
+    && function_exists('apc_store')
+  ) {
+    $apc_status = t('APC installed and working.');
+  }
+  else {
+    $apc_status = t('No APC detected. The setting will have no effect.');
+  }
+
+  $form['xautoload']['xautoload_cache_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Cache mode'),
+    '#default_value' => variable_get('xautoload_cache_mode', 'default'),
+    '#options' => array(
+      'default' => t('No cache'),
+      'apc' => t('APC: Use APC cache, if possible. (Extension status: !status)', array(
+        '!status' => $apc_status,
+      )),
+      'apc_lazy' => t('APC, lazy: Use APC cache, and skip registration of module namespaces, if possible.'),
+    ),
+  );
+}
+
+
+// Hooks on behalf of other modules
+// -----------------------------------------------------------------------------
+
+/**
+ * Implements hook_xautoload on behalf of libraries module
+ */
+function libraries_xautoload($api) {
+  if (!function_exists('libraries_info')) {
+    // Libraries is at a lower version, which does not have this function.
+    return;
+  }
+  foreach (libraries_info() as $name => $info) {
+    if (isset($info['xautoload'])) {
+      $xinfo = $info['xautoload'];
+      $api->setLibrary($name);
+      if (is_callable($xinfo)) {
+        call_user_func($xinfo, $api);
+      }
+    }
+  }
+}
+
+
+// "Private" functions.
+// -----------------------------------------------------------------------------
+
+/**
+ * Register Drupal-related namespaces and prefixes in the xautoload loader.
+ */
+function _xautoload_register_drupal() {
+
+  // Check that this runs only once.
+  static $_first_run = TRUE;
+  if (!$_first_run) {
+    return;
+  }
+  $_first_run = FALSE;
+
+  // Register the class loader itself.
+  require_once dirname(__FILE__) . '/xautoload.early.inc';
+
+  // Now that variable_get() is available, we can switch on some caching.
+  xautoload('loaderManager')->register(NULL);
+
+  // Let the "boot schedule" register our modules.
+  xautoload('schedule')->initBootstrapPhase();
 }

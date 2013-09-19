@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Provides the Display suite views fields style plugin.
+ * Provides the Display Suite views fields style plugin.
  */
 
 /**
@@ -23,6 +23,12 @@ class views_plugin_ds_fields_view extends views_plugin_row {
   // Return base_field based on base_table. It might not be
   // the cleanest solution, it's the fastest though.
   function ds_views_3_support() {
+    if (strpos($this->base_table, 'eck_') === 0) {
+      // Base tables of entities created by entity construction kit (eck)
+      // are prefixed with 'eck_' and the base field is always 'id'.
+      return 'id';
+    }
+
     $base_table_fields = array(
       'node' => 'nid',
       'comment' => 'cid',
@@ -34,6 +40,7 @@ class views_plugin_ds_fields_view extends views_plugin_row {
       'drealty_listing' => 'id',
       'commerce_product' => 'product_id',
       'commerce_line_item' => 'line_item_id',
+      'civicrm_event' => 'id',
     );
     return isset($base_table_fields[$this->base_table]) ? $base_table_fields[$this->base_table] : 'nid';
   }
@@ -83,9 +90,6 @@ function template_preprocess_ds_row_fields(&$vars) {
       return;
     }
 
-    // Hide empty regions variable.
-    $hide_empty_regions = $layout['settings']['hide_empty_regions'];
-
     // Classes array.
     $vars['classes_array'] = array();
     $vars['classes_array'][] = strtr($bundle, '_', '-');
@@ -96,6 +100,17 @@ function template_preprocess_ds_row_fields(&$vars) {
 
     // Row index.
     $row_index = $view->row_index;
+
+    // Layout wrapper.
+    $vars['layout_wrapper'] = isset($layout['settings']['layout_wrapper']) ? $layout['settings']['layout_wrapper'] : 'div';
+
+    // Layout attributes
+    if (!empty($layout['settings']['layout_attributes'])) {
+      $vars['layout_attributes'] = ' ' . $layout['settings']['layout_attributes'];
+    }
+    else {
+      $vars['layout_attributes'] = '';
+    }
 
     // Create region variables based on the layout settings.
     foreach ($layout['regions'] as $region_name => $region) {
@@ -123,13 +138,8 @@ function template_preprocess_ds_row_fields(&$vars) {
       }
       $vars[$region_name] = $region_content;
 
-      // Hide empty regions.
-      if ($hide_empty_regions && empty($vars[$region_name]) && empty($layout['flexible'])) {
-        $vars[$region_name] = FALSE;
-      }
-      elseif (empty($vars[$region_name])) {
-        $vars[$region_name] = '&nbsp;';
-      }
+      // Region wrapper.
+      $vars[$region_name . '_wrapper'] = isset($layout['settings']['wrappers'][$region_name]) ? $layout['settings']['wrappers'][$region_name] : 'div';
 
       // Add extras classes to the region.
       $vars[$region_name . '_classes'] = !empty($layout['settings']['classes'][$region_name]) ? ' ' . implode(' ', $layout['settings']['classes'][$region_name]) : '';

@@ -104,10 +104,12 @@ projects[rules][subdir]                                        = "contrib"
 projects[services][subdir]                                     = "contrib"
 projects[services_views][subdir]                               = "contrib"
 projects[smtp][subdir]                                         = "contrib"
+projects[special_menu_items][subdir]                           = "contrib"
 projects[statsd][subdir]                                       = "contrib"
 projects[strongarm][subdir]                                    = "contrib"
 projects[taxonomy_access][subdir]                              = "contrib"
 projects[token][subdir]                                        = "contrib"
+projects[translation_overview][subdir]                         = "contrib"
 projects[twitter][subdir]                                      = "contrib"
 projects[util][subdir]                                         = "contrib"
 projects[uuid][subdir]                                         = "contrib"
@@ -131,7 +133,7 @@ projects[commerce_worldpay_business_gateway][download][url]    = http://git.drup
 projects[commerce_worldpay_business_gateway][patch][1569386]   = https://drupal.org/files/DRAFT-Issue-1569386.patch
 
 projects[uuid_features][subdir]                                = "contrib"
-projects[uuid_features][version]                               = "7.x-1.x-dev"
+projects[uuid_features][version]                               = "1.x-dev"
 
 
 ; THEMES
@@ -146,7 +148,7 @@ projects[apigee_base][download][branch]                        = "devconnect"
 projects[apigee_devconnect][type]                              = "theme"
 projects[apigee_devconnect][download][type]                    = 'git'
 projects[apigee_devconnect][download][url]                     = "git@github.com:apigee/apigee_drupal_devconnect_theme.git"
-projects[apigee_devconnect][download][branch]                  = "7.x-4.22"
+projects[apigee_devconnect][download][branch]                  = "7.x-4.23"
 
 ; development seed's admin theme
 projects[tao][type]                                            = "theme"
@@ -162,7 +164,7 @@ projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
-projects[devconnect][download][branch]                         = "7.x-4.22"
+projects[devconnect][download][branch]                         = "7.x-4.23"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module

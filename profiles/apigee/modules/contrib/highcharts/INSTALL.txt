@@ -1,0 +1,16 @@
+Install instructions:
+
+This install file makes the assumptions you are running stable Drupal 7 version and you are familiar with Views module. 
+
+1. Create directory "sites/all/libraries/highcharts"  
+2. Download Highcharts library from http://highcharts.com/download. Views Highcharts module is tested with version 2.1.6 of highcharts library.
+3. Copy all the contents of downloaded folder Highchart-2 to "sites/all/libraries/highcharts"
+4. Now "sites/all/libraries/highcharts" directory should contain index.htm and 4 other folder.
+5. Download views_highcharts module from drupal.org/project/highcharts to sites/all/modules/contrib folder.
+6. Enable Views Highcharts modules by going to admin/modules. Views Highcharts module requires Views and uuid modules to work correctly.
+7. If you have drush installed, you can use "drush dl highcharts" and "drush en views_highcharts" to download and install views highcharts module.
+8. To start creating charts using view highcharts module, create new a View using Views UI. 
+9. Select "Highchart" as style format. 
+10. Create a view that returns one or more integer fields as well as a label values for those fields.
+11. Under Highcharts formatting settings, chose the Data label column and the numeric fields you want to appear as different series.
+12. When you save the settings, you should be able to see the live preview of your new views_highcharts    

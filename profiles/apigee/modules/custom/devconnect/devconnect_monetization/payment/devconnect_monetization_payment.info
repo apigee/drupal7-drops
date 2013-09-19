@@ -1,0 +1,29 @@
+name = DevConnect Monetization Payment
+description = Provides connection between Apigee's monetization services and Worldpay System to allow admin developers to Top Up their balance
+core = 7.x
+package = DevConnect
+php = 5.3
+version = 7.x-4.22
+project = devconnect
+
+dependencies[] = devconnect_monetization
+dependencies[] = commerce_order
+dependencies[] = commerce_product
+dependencies[] = commerce_payment
+dependencies[] = commerce_checkout
+dependencies[] = commerce_price
+
+; Information added by drush on 2013-09-16
+version = "7.x-4.23-dev"
+core = "7.x"
+project = "devconnect"
+datestamp = "1379375171"
+
+
+
+; Information added by drush on 2013-09-19
+version = "7.x-4.23-dev"
+core = "7.x"
+project = "devconnect"
+datestamp = "1379617155"
+

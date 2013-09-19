@@ -1,0 +1,185 @@
+<?php
+
+/**
+ * @file
+ * Provides S3 stream wrapper
+ */
+
+/**
+ * Implements hook_stream_wrappers().
+ *
+ * Create a stream wrapper for S3
+ */
+function amazons3_stream_wrappers() {
+  return array(
+    's3' => array(
+      'name' => 'Amazon S3',
+      'class' => 'AmazonS3StreamWrapper',
+      'description' => t('Amazon Simple Storage Service'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function amazons3_menu() {
+  $items = array();
+
+  $items['admin/config/media/amazons3'] = array(
+    'title' => 'Amazon S3',
+    'description' => 'Configure your S3 credentials',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('amazons3_admin'),
+    'access arguments' => array('access administration pages'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_help().
+ */
+function amazons3_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/media/amazons3':
+    if (module_exists('awssdk_ui')) {
+      return '<p>' . t('Amazon Web Services authentication can be configured at the <a href="@awssdk_config">AWS SDK configuration page</a>.', array('@awssdk_config' => url('admin/config/media/awssdk'))) . '</p>';
+    }
+    else {
+      return '<p>' . t('Enable \'AWS SDK for PHP UI\' module to configure your Amazon Web Services authentication. Configuration can also be defined in the $conf array in settings.php.', array('@awssdk_config' => url('admin/config/media/awssdk'))) . '</p>';
+    }
+  }
+}
+
+/**
+ * Implements hook_admin().
+ */
+function amazons3_admin() {
+  $form = array();
+
+  $form['amazons3_bucket'] = array(
+      '#type'           => 'textfield',
+      '#title'          => t('Default Bucket Name'),
+      '#default_value'  => variable_get('amazons3_bucket', ''),
+      '#required'       => TRUE,
+  );
+
+  $form['amazons3_cache'] = array(
+    '#type'           => 'checkbox',
+    '#title'          => t('Enable database caching'),
+    '#description'    => t('Enable a local file metadata cache, this significantly reduces calls to S3'),
+    '#default_value'  => variable_get('amazons3_cache', 1),
+  );
+
+  $form['amazons3_cname'] = array(
+    '#type'           => 'checkbox',
+    '#title'          => t('Enable CNAME'),
+    '#description'    => t('Serve files from a custom domain by using an appropriately named bucket e.g. "mybucket.mydomain.com"'),
+    '#default_value'  => variable_get('amazons3_cname', 0),
+  );
+
+  $form['amazons3_domain'] = array(
+      '#type'           => 'textfield',
+      '#title'          => t('CDN Domain Name'),
+      '#description'    => t('If serving files from CloudFront then the bucket name can differ from the domain name.'),
+      '#default_value'  => variable_get('amazons3_domain', ''),
+      '#states'         => array(
+        'visible' => array(
+          ':input[id=edit-amazons3-cname]' => array('checked' => TRUE),
+        )
+      ),
+  );
+
+  $form['amazons3_torrents'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Torrents'),
+    '#description' => t('A list of paths that should be delivered through a torrent url. Enter one value per line e.g. "mydir/*". Paths are relative to the Drupal file directory and use patterns as per <a href="@preg_match">preg_match</a>. If no timeout is provided, it defaults to 60 seconds.', array('@preg_match' => 'http://php.net/preg_match')),
+    '#default_value' => variable_get('amazons3_torrents', ''),
+    '#rows' => 10,
+  );
+
+  $form['amazons3_presigned_urls'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Presigned URLs'),
+    '#description' => t('A list of timeouts and paths that should be delivered through a presigned url. Enter one value per line, in the format timeout|path. e.g. "60|mydir/*". Paths are relative to the Drupal file directory and use patterns as per <a href="@preg_match">preg_match</a>. If no timeout is provided, it defaults to 60 seconds.', array('@preg_match' => 'http://php.net/preg_match')),
+    '#default_value' => variable_get('amazons3_presigned_urls', ''),
+    '#rows' => 10,
+  );
+
+  $form['amazons3_saveas'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Force Save As'),
+    '#description' => t('A list of paths that foce the user to save the file by using Content-disposition header. Prevents autoplay of media. Enter one value per line. e.g. "mydir/*". Paths are relative to the Drupal file directory and use patterns as per <a href="@preg_match">preg_match</a>. Files must use a presigned url to use this.', array('@preg_match' => 'http://php.net/preg_match')),
+    '#default_value' => variable_get('amazons3_saveas', ''),
+    '#rows' => 10,
+  );
+
+  $form['amazons3_clear_cache'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Clear cache'),
+  );
+
+  $form['amazons3_clear_cache']['clear'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear file metadata cache'),
+    '#submit' => array('amazons3_clear_cache_submit'),
+  );
+
+  return system_settings_form($form);
+}
+
+function amazons3_admin_validate($form, &$form_state) {
+  $bucket = $form_state['values']['amazons3_bucket'];
+
+  if(!libraries_load('awssdk')) {
+    form_set_error('amazons3_bucket', t('Unable to load the AWS SDK. Please check you have installed the library correctly and configured your S3 credentials.'));
+  }
+  else if(!class_exists('AmazonS3')) {
+    form_set_error('amazons3_bucket', t('Cannot load AmazonS3 class. Please check the awssdk is installed correctly'));
+  }
+  else {
+    try {
+      $s3 = new AmazonS3();
+      // test connection
+      $user_id = $s3->get_canonical_user_id();
+      if(!$user_id['id']) {
+        form_set_error('amazons3_bucket', t('The S3 access credentials are invalid'));
+      }
+      else if(!$s3->if_bucket_exists($bucket)) {
+        form_set_error('amazons3_bucket', t('The bucket does not exist'));
+      }
+    }
+    catch(RequestCore_Exception $e){
+      if(strstr($e->getMessage(), 'SSL certificate problem')) {
+        form_set_error('amazons3_bucket', t('There was a problem with the SSL certificate. Try setting AWS_CERTIFICATE_AUTHORITY to true in "libraries/awssdk/config.inc.php". You may also have a curl library (e.g. the default shipped with MAMP) that does not contain trust certificates for the major authorities.'));
+      }
+      else {
+        form_set_error('amazons3_bucket', t('There was a problem connecting to S3'));
+      }
+
+    }
+    catch(Exception $e) {
+      form_set_error('amazons3_bucket', t('There was a problem using S3'));
+    }
+  }
+}
+
+function amazons3_image_style_flush($style) {
+  // Empty cached data that contains information about the style.
+  if(isset($style->old_name) && strlen($style->old_name) > 0) {
+    drupal_rmdir('s3://styles/' . $style->old_name);
+  }
+  if(isset($style->name) && strlen($style->name) > 0) {
+    drupal_rmdir('s3://styles/' . $style->name);
+  }
+}
+/**
+ * Submit callback; clear file metadata cache.
+ *
+ */
+function amazons3_clear_cache_submit($form, &$form_state) {
+  db_query('TRUNCATE TABLE {amazons3_file}');
+  drupal_set_message(t('Cache cleared.'));
+}
+

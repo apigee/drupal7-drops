@@ -1,20 +1,24 @@
+/**
+ * @file
+ * Styling for the ds-4col template.
+ */
 
-.group-first {
+.ds-4col > .group-first {
   width: 25%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-second {
+.ds-4col > .group-second {
   width: 25%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-third {
+.ds-4col > .group-third {
   width: 25%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-fourth {
+.ds-4col > .group-fourth {
   width: 25%;
-  float: left;
+  float: left; /* LTR */
 }

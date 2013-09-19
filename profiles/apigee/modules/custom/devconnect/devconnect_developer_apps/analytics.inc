@@ -55,7 +55,7 @@ function devconnect_developer_apps_analytics_form() {
   }
   $from_text = gmdate('m/d/Y H:i', $from) . ' UTC';
 
-  drupal_add_library('system', 'ui.datepicker');
+  drupal_add_js(drupal_get_path('module', 'devconnect_developer_apps') . '/js/jquery-ui-timepicker-addon.js');
   drupal_add_js('jQuery(document).ready(function(){
     jQuery("#edit-date-from" ).datetimepicker();
     jQuery("#edit-date-to" ).datetimepicker();
@@ -229,6 +229,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_name) {
     $x_caption = date($date_format, $time_point);
     // If granularity < day and date has changed, show date under time.
     if (substr($date_format, 0, 1) == 'H' && ($i % $step == 0) && ($last_time == 0 || date('d', $time_point) != date('d', $last_time))) {
+      // PLEASE NOTE: Not sure, but I think inline styles are necessary here because they are being embedded in a Highchart
       $x_caption .= ' <div style="font-size:0.75em;font-style:italic;margin-top:-3px">' . date('F j', $time_point) . '</div>';
       $chart_data['xAxis']['labels']['useHTML'] = TRUE;
       $last_time = $time_point;
@@ -270,6 +271,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_name) {
   );
   drupal_static(__FUNCTION__, $query);
 
+  // TODO: FIXME eliminate inline style
   return '<div id="analytics-highchart" style="min-width:400px; height: 300px; margin: 0 auto"></div>';
 
 }
@@ -382,17 +384,17 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
 
   try {
     if (isset($_GET['env'])) {
-      $dca->set_environment($_GET['env']);
+      $dca->setEnvironment($_GET['env']);
     }
     $developer_id = devconnect_user_get_developer_id($user);
-    $datapoints = $dca->get_by_app_name($developer_id, $app_name, $metric, $start, $end, $unit, $metric, $order);
+    $datapoints = $dca->getByAppName($developer_id, $app_name, $metric, $start, $end, $unit, $metric, $order);
   }
   catch (Apigee\Exceptions\EnvironmentException $e) {
     drupal_set_message($e->getMessage(), 'error');
     drupal_not_found();
     exit;
   }
-  catch (Apigee\Exceptions\InvalidDataException $e) {
+  catch (Apigee\Exceptions\ParameterException $e) {
     drupal_set_message($e->getMessage(), 'error');
     drupal_not_found();
     exit;

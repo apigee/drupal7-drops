@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implementation of hook_xhprof_classes_alter().
+ */
+function xhprof_mongodb_xhprof_classes_alter(&$classes) {
+  $classes[] = 'MongodbXHProfRuns';
+}

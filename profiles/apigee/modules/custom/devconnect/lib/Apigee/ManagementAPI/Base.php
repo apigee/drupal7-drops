@@ -13,24 +13,7 @@ use Apigee\Exceptions\ResponseException as ResponseException;
 use Apigee\Util\APIClient as APIClient;
 use Apigee\Util\Log as Log;
 
-class Base {
-
-  /**
-   * @var \Apigee\Util\APIClient
-   */
-  protected $client;
-  /**
-   * @var array
-   * Contains raw data from Management API in a format compatible with older
-   * PHP implementations of this library.
-   */
-  protected $debug_data;
-
-  /**
-   * @var bool
-   * Should we double-url-encode values that are part of a URI?
-   */
-  protected $double_url_encode;
+class Base extends \Apigee\Util\APIObject {
 
   /**
    * Initializes the APIClient for this class.
@@ -38,36 +21,20 @@ class Base {
    * @param \Apigee\Util\APIClient $client
    */
   protected function init(APIClient $client) {
-    $this->client =& $client;
-    $this->double_url_encode = $client->get_attribute('double_url_encode', TRUE);
+    parent::init($client);
   }
 
   /**
    * URL-encodes parts of a KMS path.
    *
-   * If $this->double_url_encode is TRUE, this is done twice. That is to say,
-   * when FALSE, a space is %20, but when TRUE, it is %2520.
+   * Historically (and hysterically) we had to perform the URL encoding
+   * twice.
    *
    * @param $string
    * @return string
    */
-  public function url_encode($string) {
-    $string = rawurlencode($string);
-    if ($this->double_url_encode) {
-      // KMS R20 and earlier are buggy and require double-encoding
-      $string = rawurlencode($string);
-    }
-    return $string;
-  }
-
-  /**
-   * Returns the APIClient in use by this class, so it can be reused by other
-   * instances of Base.
-   *
-   * @return \Apigee\Util\APIClient
-   */
-  public function get_client() {
-    return $this->client;
+  public function urlEncode($string) {
+    return rawurlencode($string);
   }
 
   /**
@@ -76,48 +43,8 @@ class Base {
    *
    * @return array
    */
-  public function get_debug_data() {
-    return $this->debug_data;
-  }
-
-  /**
-   * Returns the parsed response array from the last API call. If the HTTP
-   * response code is not in the 2xx class, throws a ResponseException.
-   *
-   * This function also populates the debug_data member.
-   *
-   * @return array
-   * @throws \Apigee\Exceptions\ResponseException
-   */
-  protected function get_response() {
-    $response = $this->client->get_response();
-    $response_code = $this->client->get_response_code();
-    $opts = $this->client->get_response_opts();
-    $status = $opts['response']->status_message;
-    unset($opts['response']);
-    $this->debug_data = array(
-      'raw' => $this->client->get_response_string(),
-      'opts' => $opts,
-      'data' => $response,
-      'code' => $response_code,
-      'code_status' => $status,
-      'code_class' => floor($response_code / 100)
-    );
-    if (!$this->client->was_successful()) {
-      if (is_array($response) && isset($response_code) && isset($response['message'])) {
-        $message = 'Code: ' . $response_code . '; Message: ' . $response['message'];
-      }
-      else {
-        $message = 'API returned HTTP code of ' . $response_code . ' when fetching from ' . $opts['url'];
-      }
-      $this->debug_data['exception'] = $message;
-      Log::write(__CLASS__, Log::LOGLEVEL_ERROR, $this->client->get_response_string());
-      $uri = preg_replace('!^(https?://)[^:]*:(.*)$!', '$1$2', $opts['url']);
-
-      throw new ResponseException($message, $response_code, $uri, $opts);
-    }
-
-    return $response;
+  public function getDebugData() {
+    return $this->debugData;
   }
 
   /**
@@ -127,7 +54,7 @@ class Base {
    *
    * @param $payload
    */
-  protected function write_attributes(&$payload) {
+  protected function writeAttributes(&$payload) {
     if (property_exists($this, 'attributes') && !empty($this->attributes)) {
       $payload['attributes'] = array();
       foreach ($this->attributes as $name => $value) {
@@ -148,7 +75,7 @@ class Base {
    * @param bool $return
    * @return array|void
    */
-  protected function read_attributes($response, $return = FALSE) {
+  protected function readAttributes($response, $return = FALSE) {
     $attributes = array();
 
     // We cannot use property_exists() because it ignores scope.

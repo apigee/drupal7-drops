@@ -14,8 +14,8 @@ function ds_views_plugins() {
     'module' => 'ds',
     'row' => array(
       'ds' => array(
-        'title' => t('Display suite'),
-        'help' => t('Display the entity with the Display suite module.'),
+        'title' => t('Display Suite'),
+        'help' => t('Display the entity with the Display Suite module.'),
         'handler' => 'views_plugin_ds_entity_view',
         'path' => $path . '/views',
         'base' => array('node', 'comment', 'users', 'apachesolr', 'taxonomy_term_data', 'file_managed', 'micro'),
@@ -29,8 +29,8 @@ function ds_views_plugins() {
   if (module_exists('ds_extras') && variable_get('ds_extras_vd')) {
     $views_plugins['row']['ds_fields'] = array(
       'uses fields' => TRUE,
-      'title' => t('Display suite fields'),
-      'help' => t('Display fields through the Display suite module.'),
+      'title' => t('Display Suite fields'),
+      'help' => t('Display fields through the Display Suite module.'),
       'handler' => 'views_plugin_ds_fields_view',
       'path' => $path . '/views',
       'theme' => 'ds_row_fields',

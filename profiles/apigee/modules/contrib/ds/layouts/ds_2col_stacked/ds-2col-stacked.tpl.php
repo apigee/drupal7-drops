@@ -5,33 +5,30 @@
  * Display Suite 2 column stacked template.
  */
 ?>
-<div class="ds-2col-stacked <?php print $classes;?> clearfix">
+<<?php print $layout_wrapper; print $layout_attributes; ?> class="ds-2col-stacked <?php print $classes;?> clearfix">
 
   <?php if (isset($title_suffix['contextual_links'])): ?>
   <?php print render($title_suffix['contextual_links']); ?>
   <?php endif; ?>
 
-  <?php if ($header): ?>
-    <div class="group-header<?php print $header_classes; ?>">
-      <?php print $header; ?>
-    </div>
-  <?php endif; ?>
+  <<?php print $header_wrapper ?> class="group-header<?php print $header_classes; ?>">
+    <?php print $header; ?>
+  </<?php print $header_wrapper ?>>
 
-  <?php if ($left): ?>
-    <div class="group-left<?php print $left_classes; ?>">
-      <?php print $left; ?>
-    </div>
-  <?php endif; ?>
+  <<?php print $left_wrapper ?> class="group-left<?php print $left_classes; ?>">
+    <?php print $left; ?>
+  </<?php print $left_wrapper ?>>
 
-  <?php if ($right): ?>
-    <div class="group-right<?php print $right_classes; ?>">
-      <?php print $right; ?>
-    </div>
-  <?php endif; ?>
+  <<?php print $right_wrapper ?> class="group-right<?php print $right_classes; ?>">
+    <?php print $right; ?>
+  </<?php print $right_wrapper ?>>
 
-  <?php if ($footer): ?>
-    <div class="group-footer<?php print $footer_classes; ?>">
-      <?php print $footer; ?>
-    </div>
-  <?php endif; ?>
-</div>
+  <<?php print $footer_wrapper ?> class="group-footer<?php print $footer_classes; ?>">
+    <?php print $footer; ?>
+  </<?php print $footer_wrapper ?>>
+
+</<?php print $layout_wrapper ?>>
+
+<?php if (!empty($drupal_render_children)): ?>
+  <?php print $drupal_render_children ?>
+<?php endif; ?>

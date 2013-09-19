@@ -3,3 +3,11 @@ description = Parses WADL JSON files and generates documentation.
 core = 7.x
 package = DevConnect
 version = "7.x-4.19"
+
+
+; Information added by drush on 2013-09-19
+version = "7.x-4.23-dev"
+core = "7.x"
+project = "devconnect"
+datestamp = "1379617155"
+

@@ -1,0 +1,170 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Install, update and uninstall functions for the translation_overview module.
+ *
+ */
+
+/**
+ * Implements hook_install().
+ */
+function translation_overview_install() {
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.;
+  // drupal_install_schema('translation_overview');
+
+  // Insert records for all the source nodes, and untranslated nodes.
+  db_query('INSERT INTO {translation_overview_priority} (tnid) SELECT DISTINCT(nid) FROM {node} WHERE nid = tnid OR tnid = 0 OR tnid IS NULL');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function translation_overview_uninstall() {
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.;
+  // drupal_uninstall_schema('translation_overview');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function translation_overview_schema() {
+  $schema['translation_overview_priority'] = array(
+    'description' => 'Track the priority in which nodes should be translated into various languages.',
+    'fields' => array(
+      'tnid' => array(
+        'description' => 'The identifier for a node or set of node translations.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('tnid'),
+  );
+
+  // Load the module file so that we have access to TRANSLATION_OVERVIEW_NORMAL
+  // and translation_overview_field_name().
+  module_load_include('module', 'translation_overview');
+
+  foreach (language_list() as $lang_code => $language) {
+    $field = translation_overview_field_name($lang_code);
+    $schema['translation_overview_priority']['fields'][$field] = array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => TRANSLATION_OVERVIEW_NORMAL,
+    );
+    $schema['translation_overview_priority']['indexes'][$field] = array($field);
+  }
+
+  return $schema;
+}
+
+/**
+ * Create the {translation_overview_priority} table.
+ */
+function translation_overview_update_6000() {
+  $ret = array();
+
+  // Make sure the module is loaded so we have access to translation_overview_field_name().
+  module_load_include('module', 'translation_overview');
+
+  $schema['translation_overview_priority'] = array(
+    'description' => 'Track the priority in which nodes should be translated into various languages.',
+    'fields' => array(
+      'tnid' => array(
+        'description' => 'The identifier for a node or set of node translations.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('tnid'),
+  );
+
+  // And dynamically assemble the table with a column per languages
+  foreach (language_list() as $lang_code => $language) {
+    $field = db_escape_table($lang_code);
+    $schema['translation_overview_priority']['fields'][$field] = array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      // The default should be equivalent to TRANSLATION_OVERVIEW_NORMAL
+      // which isn't defined since the module hasn't been loaded yet.
+      'default' => 1,
+    );
+    $schema['translation_overview_priority']['indexes'][$field] = array($field);
+  }
+
+  db_create_table('translation_overview_priority', $schema['translation_overview_priority']);
+
+  // Insert records for all the source nodes, and untranslated nodes.
+  $ret[] = update_sql('INSERT INTO {translation_overview_priority} (tnid) SELECT DISTINCT(nid) FROM {node} WHERE nid = tnid OR tnid = 0 OR tnid IS NULL ORDER BY tnid');
+
+  return $ret;
+}
+
+/**
+ * Change the field names on the {translation_overview_priority} table.
+ */
+function translation_overview_update_6001() {
+  $ret = array();
+
+  // Make sure the module is loaded so we have access to translation_overview_field_name().
+  module_load_include('module', 'translation_overview');
+
+  $spec = array(
+    'type' => 'int',
+    'size' => 'tiny',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => TRANSLATION_OVERVIEW_NORMAL,
+  );
+  foreach (language_list() as $lang_code => $language) {
+    db_change_field('translation_overview_priority', db_escape_table($lang_code), translation_overview_field_name($lang_code), $spec);
+  }
+
+  return $ret;
+}
+
+/**
+ * Store the manager information in permissions rather than our own variable.
+ */
+function translation_overview_update_6002() {
+  $ret = array();
+
+  $changes = array();
+  foreach (variable_get('translation_overview_management', array()) as $lang_code => $rids) {
+    foreach (array_filter($rids) as $rid => $true) {
+      $changes[$rid][] = 'manage ' . check_plain($lang_code) . ' translation overview priorities';
+    }
+  }
+
+  foreach ($changes as $rid => $perms) {
+    // Retrieve the currently set permissions.
+    $existing_perms = array();
+    $result = db_query("SELECT p.permission FROM {role_permission} p WHERE p.rid = :rid", array(':rid' => $rid));
+    if ($row = db_fetch_object($result)) {
+      $perms = array_unique(array_merge($perms, explode(', ', $row->perm)));
+      $ret[] = db_delete('role_permission')
+        ->condition('rid', (int) $rid)
+        ->execute();
+    }
+
+    // Update the permissions.
+    foreach ($perms as $perm) {
+      $ret[] = db_insert('role_permission')
+        ->fields(array(
+          'rid' => (int) $rid,
+          'permission' => $perm,
+          'module' => 'translation overview'))
+        ->execute();
+    } // foreach
+  }
+
+  variable_del('translation_overview_management');
+
+  return $ret;
+}

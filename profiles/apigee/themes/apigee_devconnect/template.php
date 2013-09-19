@@ -18,7 +18,7 @@ function apigee_devconnect_preprocess_html(&$variables) {
 
   drupal_add_css(".navbar-inner {background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar .nav > li > a {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css(".navbar .nav > li > a:hover, .navbar .nav > li > a.active {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar .nav > li > a:hover, ul.menu li.active-trail a {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar .nav .active > a, .navbar .nav .active > a:hover, .navbar.navbar-fixed-top #main-menu li a:hover {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar .nav > li > a:hover {color: $header_hover_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("a {color: $link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -36,6 +36,8 @@ function apigee_devconnect_preprocess_html(&$variables) {
  * Preprocessor for theme('page').
  */
 function apigee_devconnect_preprocess_page(&$variables) {
+  $variables['user_reg_setting'] = variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL);
+
   if (module_exists('apachesolr')) {
     // todo: $searchTerm is undefined, so this parameter will always be empty
     $search = drupal_get_form('search_form', NULL, (isset($searchTerm) ? $searchTerm : ''));
@@ -49,101 +51,24 @@ function apigee_devconnect_preprocess_page(&$variables) {
     $vars['search_form'] = str_replace($find, $replace, $search_form);
   }
 
-  // Add information about the number of sidebars.
-  if (!empty($variables['page']['sidebar_first']) && !empty($variables['page']['sidebar_second'])) {
-    $variables['columns'] = 3;
-  }
-  elseif (!empty($variables['page']['sidebar_first'])) {
-    $variables['columns'] = 2;
-  }
-  elseif (!empty($variables['page']['sidebar_second'])) {
-    $variables['columns'] = 2;
-  }
-  else {
-    $variables['columns'] = 1;
-  }
-
   // Custom Search
   $variables['search'] = FALSE;
-  if(theme_get_setting('toggle_search') && module_exists('search')) {
+  if (theme_get_setting('toggle_search') && module_exists('search')) {
     $variables['search'] = drupal_get_form('search_form');
   }
 
-  // Primary nav
-  $variables['primary_nav'] = FALSE;
-  if($variables['main_menu']) {
-    // Build links
-    $tree = menu_tree_page_data(variable_get('menu_main_links_source', 'main-menu'));
-    $variables['main_menu'] = apigee_base_menu_navigation_links($tree);
-
-    // Build list
-    $variables['primary_nav'] = theme('apigee_base_links', array(
-      'links' => $variables['main_menu'],
-      'attributes' => array(
-        'id' => 'main-menu',
-        'class' => array('nav'),
-      ),
-    ));
-  }
-
-  // Make sure the menu module is in use before setting menu vars.
-  if (module_exists('menu')) {
-    // Primary nav
-    $variables['primary_nav'] = FALSE;
-    if ($variables['main_menu']) {
-      // Build links
-      $tree = menu_tree_page_data(variable_get('menu_main_links_source', 'main-menu'));
-      $variables['main_menu'] = apigee_base_menu_navigation_links($tree);
-
-      // Build list
-      $variables['primary_nav'] = theme('apigee_base_links', array(
-        'links' => $variables['main_menu'],
-        'attributes' => array(
-          'id' => 'main-menu',
-          'class' => array('nav'),
-        ),
-      ));
-    }
-
-    // Secondary nav
-    $variables['secondary_nav'] = FALSE;
-    if ($variables['secondary_menu']) {
-      $secondary_menu = menu_load(variable_get('menu_secondary_links_source', 'user-menu'));
-
-      // Build links
-      $tree = menu_tree_page_data($secondary_menu['menu_name']);
-      $variables['secondary_menu'] = apigee_base_menu_navigation_links($tree);
-
-      // Build list
-      $variables['secondary_nav'] = theme('apigee_base_btn_dropdown', array(
-        'links' => $variables['secondary_menu'],
-        'label' => $secondary_menu['title'],
-        'type' => 'success',
-        'attributes' => array(
-          'id' => 'user-menu',
-          'class' => array('pull-right'),
-        ),
-      ));
-    }
-    # Fix for long user names
-    if (user_is_logged_in()) {
-      $user_email = $GLOBALS['user']->mail;
-      if (strlen($user_email) > 22) {
-        $user_email = substr($user_email, 0, 16) . '&hellip;';
-      }
-    }
-    else {
-      $user_email = NULL;
+  # Fix for long user names
+  global $user;
+  if ($user->uid >= 1 && property_exists($user, "mail")) {
+    $user_email = $user->mail;
+    if (strlen($user_email) > 22) {
+      $tmp = str_split($user_email, 16);
+      $user_email = $tmp[0] . '&hellip;';
     }
     $variables['truncated_user_email'] = $user_email;
+  } else {
+    $variables['truncated_user_email'] = "";
   }
-}
-
-/**
- * Preprocessor for theme('node').
- */
-function apigee_devconnect_preprocess_node(&$variables) {
-
 }
 
 /**
@@ -207,9 +132,20 @@ function apigee_devconnect_menu_link(array $variables) {
   if ($element['#below']) {
     // Add our own wrapper
     unset($element['#below']['#theme_wrappers']);
-    $sub_menu = '<ul>' . drupal_render($element['#below']) . '</ul>';
-
-    $element['#localized_options']['html'] = TRUE;
+    $sub_menu = '<ul class="dropdown-menu">' . drupal_render($element['#below']) . '</ul>';
+    $element['#localized_options']['attributes']['class'][] = 'dropdown-toggle';
+    $element['#localized_options']['attributes']['data-toggle'] = 'dropdown';
+    // Check if this element is nested within another
+    if ((!empty($element['#original_link']['depth'])) && ($element['#original_link']['depth'] > 1)) {
+      // Generate as dropdown submenu
+      $element['#attributes']['class'][] = 'dropdown-submenu';
+    }
+    else {
+      // Generate as standard dropdown
+      $element['#attributes']['class'][] = 'dropdown';
+      $element['#localized_options']['html'] = TRUE;
+      $element['#title'] .= '<span class="caret"></span>';
+    }
   }
 
   $output = l($element['#title'], $element['#href'], $element['#localized_options']);

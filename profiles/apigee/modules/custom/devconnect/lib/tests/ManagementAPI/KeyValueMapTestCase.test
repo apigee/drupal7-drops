@@ -1,0 +1,98 @@
+<?php
+require_once (dirname(__FILE__) . '/ManagementAPITestCase.php');
+
+use Apigee\Exceptions\ResponseException as ResponseException;
+
+class KeyValueMapTestCase extends ManagementAPITestCase {
+
+  /**
+   * @var Apigee\ManagementAPI\KeyValueMap
+   */
+  private $map;
+
+  /**
+   * @var string
+   */
+  private $map_name;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Devconnect Key-Value Maps'),
+      'description' => t('Tests the ability of the devconnect module to manipulate key-value maps.'),
+      'group' => t('Devconnect'),
+    );
+  }
+
+
+  protected function setUp() {
+    parent::setUp();
+    $this->map = new Apigee\ManagementAPI\KeyValueMap($this->client);
+  }
+
+  protected function tearDown() {
+    if ($this->map_name) {
+      try {
+        $this->map->delete($this->map_name);
+      }
+      catch (ResponseException $e) {}
+    }
+  }
+
+  public function testMapCrud() {
+    $this->map_name = $this->randomName(10);
+
+    // Create a map
+    try {
+      $this->map->create($this->map_name);
+      $this->pass('Created map named ' . $this->map_name);
+    }
+    catch (ResponseException $e) {
+      $this->fail('Could not create map named ' . $this->map_name);
+      $this->map_name = NULL;
+      return;
+    }
+
+    // Create an entry
+    $entry_name = $this->randomName(10);
+    $entry_value = $this->randomName(10);
+    try {
+      $this->map->setEntryValue($this->map_name, $entry_name, $entry_value);
+      $this->pass('Value set for entry ' . $entry_name . ' on map ' . $this->map_name);
+    }
+    catch (ResponseException $e) {
+      $this->fail('Could not set value for entry ' . $entry_name . ' on map ' . $this->map_name);
+      $this->map_name = NULL;
+      return;
+    }
+
+    // Read the entry back
+    try {
+      $return_value = $this->map->getEntryValue($this->map_name, $entry_name);
+      $this->assertEqual($return_value, $entry_value);
+    }
+    catch (ResponseException $e) {
+      $this->fail('Could not read value for entry ' . $entry_name . ' on map ' . $this->map_name);
+    }
+
+    // Delete the entry
+    try {
+      $this->map->deleteEntry($this->map_name, $entry_name);
+
+      $return_value = $this->map->getEntryValue($this->map_name, $entry_name);
+      $this->assertNull($return_value);
+    }
+    catch (ResponseException $e) {
+      $this->fail('Could not delete entry ' . $entry_name . ' from map ' . $this->map_name);
+    }
+
+    // Delete the map
+    try {
+      $this->map->delete($this->map_name);
+      $this->pass('Deleted map named ' . $this->map_name);
+      $this->map_name = NULL;
+    }
+    catch (ResponseException $e) {
+      $this->fail('Could not delete map ' . $this->map_name);
+    }
+  }
+}

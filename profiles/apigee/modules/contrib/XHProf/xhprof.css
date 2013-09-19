@@ -1,0 +1,27 @@
+/* diff reports: display regressions in red */
+.vrbar {
+  text-align: right;
+  color:red;
+}
+
+/* diff reports: display improvements in green */
+.vgbar {
+  text-align: right;
+  color:green;
+}
+
+td.vwbar, th.vwbar {
+  text-align: right;
+}
+
+td.vwlbar, th.vwlbar {
+  text-align: left;
+}
+
+p.blue  {
+  color:blue
+}
+
+.xhprof_micro, .xhprof_percent {
+  text-align: right;
+}

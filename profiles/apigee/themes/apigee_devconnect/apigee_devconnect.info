@@ -7,6 +7,7 @@ regions[header]         = 'Top Bar'
 regions[homepage_header]= 'Homepage Header'
 regions[highlighted]    = 'Highlighted'
 regions[help]           = 'Help'
+regions[menu]           = 'Menu'
 regions[content]        = 'Content'
 regions[sidebar_first]  = 'Primary'
 regions[sidebar_second] = 'Secondary'
@@ -17,7 +18,6 @@ stylesheets[screen and (min-width : 1600px)][] = css/apigee_devconnect_wide_layo
 stylesheets[all][] = css/daterangepicker.css
 
 scripts[] = js/global.js
-scripts[] = js/jquery-ui-timepicker-addon.js
 
 settings[toggle_name] = 0
 settings[toggle_search] = 1
@@ -34,4 +34,11 @@ settings[footer_link_hover_color] = #0B4965
 settings[button_background_color] = #009FD0
 settings[button_text_color] = #FFFFFF
 settings[wide_layout] = 1
-settings[main_menu] = 1
+
+
+; Information added by drush on 2013-09-19
+version = "7.x-4.23-dev"
+core = "7.x"
+project = "apigee_devconnect"
+datestamp = "1379617154"
+

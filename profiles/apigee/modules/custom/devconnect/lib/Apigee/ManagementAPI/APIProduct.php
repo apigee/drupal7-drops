@@ -12,82 +12,81 @@
  */
 namespace Apigee\ManagementAPI;
 
-use Apigee\Exceptions\ResponseException as ResponseException;
 use Apigee\Util\Cache as Cache;
 use Apigee\Util\APIClient as APIClient;
 
-class APIProduct extends Base {
+class APIProduct extends Base implements APIProductInterface {
 
   /**
    * @var array
    */
-  private $api_resources;
+  protected $apiResources;
   /**
    * @var string
    * 'manual' or 'auto'
    */
-  private $approval_type;
+  protected $approvalType;
   /**
    * @var int
    */
-  private $created_at;
+  protected $createdAt;
   /**
    * @var string
    * read-only
    */
-  private $created_by;
+  protected $createdBy;
   /**
    * @var int
    * read-only
    */
-  private $modified_at;
+  protected $modifiedAt;
   /**
    * @var string
    * read-only
    */
-  private $modified_by;
+  protected $modifiedBy;
   /**
    * @var string
    * read-only
    */
-  private $description;
+  protected $description;
   /**
    * @var string
    */
-  private $display_name;
+  protected $displayName;
   /**
    * @var array
    */
-  private $environments;
+  protected $environments;
   /**
    * @var string
    */
-  private $name;
+  protected $name;
   /**
    * @var array
    * FIXME: the purpose of this member is unknown
    */
-  private $proxies;
+  protected $proxies;
   /**
    * @var int
    * Quota limit. It's safer to use attributes['developer.quota.limit'] instead.
    */
-  private $quota;
+  protected $quota;
   /**
    * @var int
    * It's safer to use attributes['developer.quota.interval'] instead.
    */
-  private $quota_interval;
+  protected $quotaInterval;
   /**
    * @var string
    * It's safer to use attributes['developer.quota.timeunit'] instead.
    */
-  private $quota_time_unit;
+  protected $quotaTimeUnit;
   /**
    * @var array
    * FIXME: the purpose of this member is unknown
    */
-  private $scopes;
+  protected $scopes;
 
   /**
    * @var array
@@ -98,26 +97,26 @@ class APIProduct extends Base {
   /**
    * @var string
    */
-  private $base_url;
+  protected $baseUrl;
   /**
    * @var bool
    */
-  private $loaded;
+  protected $loaded;
   /**
    * @var string
    */
-  private $org;
+  protected $org;
 
   /**
    * Initializes all member variables
    *
    * @param \Apigee\Util\APIClient $client
    */
-  public function __construct(\Apigee\Util\APIClient $client) {
+  public function __construct(APIClient $client) {
     $this->init($client);
-    $this->org = $client->get_org();
-    $this->base_url = '/organizations/' . $this->url_encode($this->org) . '/apiproducts';
-    $this->blank_values();
+    $this->org = $client->getOrg();
+    $this->baseUrl = '/organizations/' . $this->urlEncode($this->org) . '/apiproducts';
+    $this->blankValues();
   }
 
   /**
@@ -137,24 +136,24 @@ class APIProduct extends Base {
       $name = $this->name;
     }
     if (!isset($response)) {
-      $this->client->get($this->base_url . '/' . $this->url_encode($name));
-      $response = $this->get_response();
+      $this->client->get($this->baseUrl . '/' . $this->urlEncode($name));
+      $response = $this->getResponse();
     }
-    $this->api_resources = $response['apiResources'];
-    $this->approval_type = $response['approvalType'];
-    $this->read_attributes($response);
-    $this->created_at = $response['createdAt'];
-    $this->created_by = $response['createdBy'];
-    $this->modified_at = $response['lastModifiedAt'];
-    $this->modified_by = $response['lastModifiedBy'];
+    $this->apiResources = $response['apiResources'];
+    $this->approvalType = $response['approvalType'];
+    $this->readAttributes($response);
+    $this->createdAt = $response['createdAt'];
+    $this->createdBy = $response['createdBy'];
+    $this->modifiedAt = $response['lastModifiedAt'];
+    $this->modifiedBy = $response['lastModifiedBy'];
     $this->description = $response['description'];
-    $this->display_name = $response['displayName'];
+    $this->displayName = $response['displayName'];
     $this->environments = $response['environments'];
     $this->name = $response['name'];
     $this->proxies = $response['proxies'];
     $this->quota = isset($response['quota']) ? $response['quota'] : NULL;
-    $this->quota_interval = isset($response['quotaInterval']) ? $response['quotaInterval'] : NULL;
-    $this->quota_time_unit = isset($response['quotaTimeUnit']) ? $response['quotaTimeUnit'] : NULL;
+    $this->quotaInterval = isset($response['quotaInterval']) ? $response['quotaInterval'] : NULL;
+    $this->quotaTimeUnit = isset($response['quotaTimeUnit']) ? $response['quotaTimeUnit'] : NULL;
     $this->scopes = $response['scopes'];
 
     $this->loaded = TRUE;
@@ -166,25 +165,25 @@ class APIProduct extends Base {
    */
   public function save() {
     $payload = array(
-      'apiResources' => $this->api_resources,
-      'approvalType' => $this->approval_type,
+      'apiResources' => $this->apiResources,
+      'approvalType' => $this->approvalType,
       'description' => $this->description,
-      'displayName' => $this->display_name,
+      'displayName' => $this->displayName,
       'environments' => $this->environments,
       'name' => $this->name,
       'proxies' => $this->proxies,
       'quota' => $this->quota,
-      'quotaInterval' => $this->quota_interval,
-      'quotaTimeUnit' => $this->quota_time_unit,
+      'quotaInterval' => $this->quotaInterval,
+      'quotaTimeUnit' => $this->quotaTimeUnit,
       'scopes' => $this->scopes
     );
-    $this->write_attributes($payload);
-    $url = $this->base_url;
-    if ($this->modified_by) {
+    $this->writeAttributes($payload);
+    $url = $this->baseUrl;
+    if ($this->modifiedBy) {
       $url .= '/' . $this->name;
     }
     $this->client->post($url, $payload);
-    $this->get_response();
+    $this->getResponse();
   }
 
   /**
@@ -198,10 +197,10 @@ class APIProduct extends Base {
     if (!isset($name)) {
       $name = $this->name;
     }
-    $this->client->delete($this->base_url . '/' . $this->url_encode($name));
-    $this->get_response();
+    $this->client->delete($this->baseUrl . '/' . $this->urlEncode($name));
+    $this->getResponse();
     if ($name == $this->name) {
-      $this->blank_values();
+      $this->blankValues();
     }
   }
 
@@ -217,7 +216,7 @@ class APIProduct extends Base {
    * @param null|array $product
    * @return bool
    */
-  public function is_public($product = NULL) {
+  public function isPublic($product = NULL) {
     if (!isset($product)) {
       if (isset($this->attributes['access']) && ($this->attributes['access'] == 'internal' || $this->attributes['access'] == 'private')) {
         return FALSE;
@@ -238,13 +237,14 @@ class APIProduct extends Base {
    *
    * @return array
    */
-  private function get_products_cache() {
+  protected function getProductsCache() {
     static $api_products;
     if (!isset($api_products)) {
-      $this->client->get($this->base_url . '?expand=true');
-      $response = $this->get_response();
+      $class = __CLASS__;
+      $this->client->get($this->baseUrl . '?expand=true');
+      $response = $this->getResponse();
       foreach ($response['apiProduct'] as $prod) {
-        $product = new APIProduct($this->get_client());
+        $product = new $class($this->getClient());
         $product->load(NULL, $prod);
         $api_products[] = $product;
       }
@@ -262,11 +262,11 @@ class APIProduct extends Base {
    * @param bool $show_nonpublic
    * @return array
    */
-  public function list_products($show_nonpublic = FALSE) {
-    $products = $this->get_products_cache();
+  public function listProducts($show_nonpublic = FALSE) {
+    $products = $this->getProductsCache();
     if (!$show_nonpublic) {
       foreach ($products as $i => $product) {
-        if (!$product->is_public()) {
+        if (!$product->isPublic()) {
           unset ($products[$i]);
         }
       }
@@ -275,31 +275,48 @@ class APIProduct extends Base {
   }
 
   /* Accessors (getters/setters) */
-  public function get_attributes() {
+  public function getAttributes() {
     return $this->attributes;
   }
-  public function get_created_at() {
-    return $this->created_at;
+  public function clearAttributes() {
+    $this->attributes = array();
   }
-  public function get_created_by() {
-    return $this->created_by;
+  public function getAttribute($name) {
+    if (isset($this->attributes[$name])) {
+      return $this->attributes[$name];
+    }
+    return NULL;
   }
-  public function get_modified_at() {
-    return $this->modified_at;
+  public function setAttribute($name, $value) {
+    if (isset($value) || !isset($this->attributes[$name])) {
+      $this->attributes[$name] = $value;
+    }
+    else {
+      unset($this->attributes[$name]);
+    }
   }
-  public function get_modified_by() {
-    return $this->modified_by;
+  public function getCreatedAt() {
+    return $this->createdAt;
   }
-  public function get_environments() {
+  public function getCreatedBy() {
+    return $this->createdBy;
+  }
+  public function getModifiedAt() {
+    return $this->modifiedAt;
+  }
+  public function getModifiedBy() {
+    return $this->modifiedBy;
+  }
+  public function getEnvironments() {
     return $this->environments;
   }
-  public function get_name() {
+  public function getName() {
     return $this->name;
   }
-  public function get_proxies() {
+  public function getProxies() {
     return $this->proxies;
   }
-  public function get_quota_limit() {
+  public function getQuotaLimit() {
     if (isset($this->attributes['developer.quota.limit'])) {
       return $this->attributes['developer.quota.limit'];
     }
@@ -308,29 +325,29 @@ class APIProduct extends Base {
     }
     return NULL;
   }
-  public function get_quota_interval() {
+  public function getQuotaInterval() {
     if (isset($this->attributes['developer.quota.interval'])) {
       return $this->attributes['developer.quota.interval'];
     }
-    elseif (!empty($this->quota_interval)) {
-      return $this->quota_interval;
+    elseif (!empty($this->quotaInterval)) {
+      return $this->quotaInterval;
     }
     return NULL;
   }
-  public function get_quota_time_unit() {
+  public function getQuotaTimeUnit() {
     if (isset($this->attributes['developer.quota.timeunit'])) {
       return $this->attributes['developer.quota.timeunit'];
     }
-    elseif (!empty($this->quota_time_unit)) {
-      return $this->quota_time_unit;
+    elseif (!empty($this->quotaTimeUnit)) {
+      return $this->quotaTimeUnit;
     }
     return NULL;
   }
-  public function get_display_name() {
-    return $this->display_name;
+  public function getDisplayName() {
+    return $this->displayName;
   }
 
-  public function get_description() {
+  public function getDescription() {
     if (!empty($this->description)) {
       return $this->description;
     }
@@ -340,281 +357,91 @@ class APIProduct extends Base {
     return NULL;
   }
 
+  public function addApiResource($resource) {
+    $this->apiResources[] = $resource;
+  }
+  public function removeApiResource($resource) { // was delApiResource
+    $index = array_search($resource, $this->apiResources);
+    if ($index !== FALSE) {
+      unset($this->apiResources[$index]);
+      // reindex this array to be sequential zero-based.
+      $this->apiResources = array_values($this->apiResources);
+    }
+  }
+  public function getApiResources() {
+    return $this->apiResources;
+  }
+  public function getApprovalType() {
+    return $this->approvalType;
+  }
+  public function setApprovalType($type) {
+    if ($type != 'auto' && $type != 'manual') {
+      throw new \Exception('Invalid approval type ' . $type . '; allowed values are "auto" and "manual".'); // TODO: use custom exception class
+    }
+    $this->approvalType = $type;
+  }
   //TODO: populate getters/setters for other properties
 
 
   /**
-   * Finds all API Proxies that this API Product uses.
-   *
-   * This is contingent upon a particular attribute of the API Product, which
-   * at the moment remains undocumented. The apiResourcesInfo attribute (as it
-   * is returned from the Management API) is a JSON-encoded string
-   * representation of an array of objects, each of which describes an API
-   * Proxy. How this attribute gets populated remains unknown for certain, but
-   * I believe it is created when API Products are created using the Enterprise
-   * UI.
-   *
-   * If $name is not passed, $this->name is used. Also, we try to avoid
-   * reloading an already-loaded APIProduct object.
-   *
-   * @param null $name
-   * @return array
-   */
-  public function get_related_proxies($name = NULL) {
-    if (isset($name)) {
-      if ($name != $this->name) {
-        $this->loaded = FALSE;
-      }
-    }
-    else {
-      $name = $this->name;
-      $this->loaded = FALSE;
-    }
-    if (!$this->loaded) {
-      $this->load($name);
-    }
-    $related_proxies = array();
-
-    if (isset($this->attributes['apiResourcesInfo']) && is_array($this->attributes['apiResourcesInfo'])) {
-      foreach ($this->attributes['apiResourcesInfo'] as $resource_info) {
-        if (isset($resource_info['isApi']) && $resource_info['isApi']) {
-          $related_proxies[] = array(
-            'name' => $resource_info['slug'],
-            'base_path' => $resource_info['deploymentFullPath']
-          );
-        }
-      }
-    }
-    return $related_proxies;
-  }
-
-  /**
-   * Returns an associative array of OAuth token request URLs. The key of the
-   * array is a path (or rather, a path base), to which the value of the array
-   * is the corresponding OAuth token URL.
-   *
-   * Right now, only OAuth 2.0 Client Credentials are supported.
-   *
-   * @return array
-   */
-  public function get_oauth_token_urls() {
-    static $urls = array();
-
-    if (!empty($urls)) {
-      return $urls;
-    }
-
-    $proxies = $this->get_related_proxies();
-    $proxy_list = '';
-    foreach ($proxies as $proxy) {
-      $proxy_list .= ', ' . $proxy['name'];
-    }
-
-    $proxies_url_base = '/organizations/' . $this->url_encode($this->org) . '/apis';
-    foreach ($proxies as $proxy) {
-      $endpoint_url = $proxy['base_path'];
-      $proxy_name = $proxy['name'];
-      $proxy_url_base = $proxies_url_base . '/' . $this->url_encode($proxy_name);
-
-      try {
-        $this->client->get($proxy_url_base);
-        $revision_list = $this->get_response();
-      }
-      catch (ResponseException $e) {
-        continue;
-      }
-      $revision_num = end($revision_list['revision']);
-
-      $revision_url_base = $proxy_url_base . '/revisions/' . $revision_num;
-
-      try {
-        $this->client->get($revision_url_base);
-        $revision_info = $this->get_response();
-      }
-      catch (ResponseException $e) {
-        continue;
-      }
-
-      $path_conditions = array();
-      foreach ($revision_info['proxyEndpoints'] as $endpoint) {
-        try {
-          $this->client->get($revision_url_base . '/proxies/' . $this->url_encode($endpoint));
-          $endpoint_obj = $this->get_response();
-        }
-        catch (ResponseException $e) {
-          continue;
-        }
-        $base_path = $endpoint_obj['connection']['basePath'];
-        if (!empty($endpoint_obj['preFlow']) && array_key_exists('condition', $endpoint_obj['preFlow'])) {
-          $condition = $endpoint_obj['preFlow']['condition'];
-          if (preg_match('!^proxy\.pathsuffix\s*(==|MatchesPath)\s*(.+)', $condition, $matches)) {
-            foreach ($endpoint_obj['preFlow']['request']['steps'] as $step) {
-              $step_name = $step['Step']['name'];
-              $path_conditions[$step_name][] = trim($matches[2], '\'"');
-            }
-          }
-        }
-        foreach ($endpoint_obj['flows'] as $flow) {
-          if (isset($flow['condition'])) {
-            $condition = $flow['condition'];
-            if (preg_match('!^proxy\.pathsuffix\s*(==|MatchesPath)\s*(.+)$!', $condition, $matches)) {
-              foreach ($flow['request']['steps'] as $step) {
-                $step_name = $step['Step']['name'];
-                $path_conditions[$step_name][] = trim($matches[2], '\'"');
-              }
-            }
-          }
-        }
-      }
-
-      foreach ($revision_info['policies'] as $policy) {
-        try {
-          $this->client->get($revision_url_base . '/policies/' . $this->url_encode($policy));
-          $policy_obj = $this->get_response();
-        }
-        catch (ResponseException $e) {
-          continue;
-        }
-        if ($policy_obj['policyType'] == 'OAuthV2' && isset($policy_obj['operation']) && $policy_obj['operation'] == 'GenerateAccessToken') {
-          $grant_type_items = explode('.', $policy_obj['grantType']);
-          $grant_type_param = end($grant_type_items); //TODO: handle more than just request.querystring
-          $allowed_grant_types = $policy_obj['supportedGrantTypes'];
-          foreach ($path_conditions[$policy_obj['name']] as $path_condition) {
-            foreach ($allowed_grant_types as $grant_type) {
-              // TODO: $base_path corresponds to endpoint. If there is more than one endpoint, this could be a problem.
-              $urls[$base_path][] = $endpoint_url . $path_condition . '?' . $grant_type_param . '=' . $grant_type;
-            }
-          }
-        }
-      }
-    }
-    return $urls;
-  }
-
-  /**
-   * Attempts to fetch an OAuth 2.0 access token for a particular path. If
-   * that path is not configured for OAuth tokens (as best we can determine),
-   * FALSE is returned instead.
-   *
-   * @param string $path
-   * @param string $consumer_key
-   * @param string $consumer_secret
-   * @return string|FALSE
-   */
-  public function get_access_token($path, $consumer_key, $consumer_secret) {
-
-    if (isset($_SESSION['oauth_tokens'][$path])) {
-      if ($_SESSION['oauth_tokens']['expires'] > time()) {
-        return $_SESSION['oauth_tokens'][$path]['token'];
-      }
-      else {
-        unset ($_SESSION['oauth_tokens'][$path]);
-      }
-    }
-
-    // Use cached value wherever possible.
-    $all_urls = Cache::get('devconnect_oauth_token_urls', NULL);
-    if (!isset($all_urls)) {
-      $urls = $this->get_oauth_token_urls();
-    }
-    elseif(isset($all_urls[$this->name])) {
-      $urls = $all_urls[$this->name];
-    }
-    else {
-      return FALSE;
-    }
-
-    $active_token_uri = NULL;
-    foreach ($urls as $base_path => $token_uris) {
-      if (substr($path, 0, strlen($base_path)) == $base_path) {
-        foreach ($token_uris as $token_uri) {
-          // For the moment, we only support client_credentials grant type.
-          // TODO: expand this.
-          if (strpos($token_uri, '=client_credentials') !== FALSE) {
-            $active_token_uri = $token_uri;
-            break 2;
-          }
-        }
-      }
-    } // break 2 here
-    if (!isset($active_token_uri)) {
-      return FALSE;
-    }
-
-    $opts = array(
-      'headers' => array(
-        'Accept' => 'application/json; charset=utf-8',
-        'Authorization' => 'Basic ' . $consumer_key . ':' . $consumer_secret
-      ),
-      'method' => 'GET'
-    );
-    try {
-      $response_obj = APIClient::make_http_request($active_token_uri, $opts);
-    }
-    catch (ResponseException $e) {
-      //TODO: Log error here
-      return FALSE;
-    }
-    $response = @json_decode($response_obj->data, TRUE);
-    if (!isset($response) || !isset($response['access_token'])) {
-      //TODO: Log error here
-      return FALSE;
-    }
-
-    $_SESSION['oauth_tokens'][$path] = array(
-      'token' => $response['access_token'],
-      'expires' => $response['expires_in'] + time()
-    );
-
-    return $response['access_token'];
-  }
-
-  /* Accessors (getters/setters) */
-  public function add_api_resource($resource) {
-    $this->api_resources[] = $resource;
-  }
-  public function del_api_resource($resource) {
-    $index = array_search($resource, $this->api_resources);
-    if ($index !== FALSE) {
-      unset($this->api_resources[$index]);
-      // reindex this array to be sequential zero-based.
-      $this->api_resources = array_values($this->api_resources);
-    }
-  }
-  public function get_api_resources() {
-    return $this->api_resources;
-  }
-  public function get_approval_type() {
-    return $this->approval_type;
-  }
-  public function set_approval_type($type) {
-    if ($type != 'auto' && $type != 'manual') {
-      throw new \Exception('Invalid approval type ' . $type . '; allowed values are "auto" and "manual".'); // TODO: use custom exception class
-    }
-    $this->approval_type = $type;
-  }
-
-  /**
    * Initializes this object to its pristine blank state.
    */
-  private function blank_values() {
-    $this->api_resources = array();
-    $this->approval_type = 'auto';
+  protected function blankValues() {
+    $this->apiResources = array();
+    $this->approvalType = 'auto';
     $this->attributes = array();
-    $this->created_at = NULL;
-    $this->created_by = NULL;
-    $this->modified_at = NULL;
-    $this->modified_by = NULL;
+    $this->createdAt = NULL;
+    $this->createdBy = NULL;
+    $this->modifiedAt = NULL;
+    $this->modifiedBy = NULL;
     $this->description = '';
-    $this->display_name = '';
+    $this->displayName = '';
     $this->environments = array();
     $this->name = '';
     $this->proxies = array();
     $this->quota = '';
-    $this->quota_interval = '';
-    $this->quota_time_unit = '';
+    $this->quotaInterval = '';
+    $this->quotaTimeUnit = '';
     $this->scopes = array();
 
     $this->loaded = FALSE;
   }
+
+
+  /**
+   * Turns this object's properties into an array for external use.
+   *
+   * @return array
+   */
+  public function toArray() {
+    $properties = array_keys(get_object_vars($this));
+    $excluded_properties = array_keys(get_class_vars(get_parent_class($this)));
+    $excluded_properties[] = 'loaded';
+    $excluded_properties[] = 'baseUrl';
+    $excluded_properties[] = 'org';
+    $output = array();
+    foreach ($properties as $property) {
+      if (!in_array($property, $excluded_properties)) {
+        $output[$property] = $this->$property;
+      }
+    }
+    $output['debugData'] = $this->getDebugData();
+    return $output;
+  }
+
+  /**
+   * Populates this object based on an incoming array generated by the
+   * toArray() method above.
+   *
+   * @param $array
+   */
+  public function fromArray($array) {
+    foreach($array as $key => $value) {
+      if (property_exists($this, $key) && $key != 'debugData' && $key != 'loaded' && $key != 'org') {
+        $this->{$key} = $value;
+      }
+    }
+    $this->loaded = TRUE;
+  }
+
 }

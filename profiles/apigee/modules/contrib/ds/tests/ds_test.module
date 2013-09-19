@@ -13,10 +13,15 @@ function ds_test_install() {
   variable_set('ds_extras_switch_view_mode', TRUE);
   variable_set('ds_extras_hide_page_title', TRUE);
   variable_set('ds_extras_field_template', TRUE);
-  variable_set('ds_extras_revision_view_mode', TRUE);
   variable_set('ds_extras_fields_extra', TRUE);
+  variable_set('ds_extras_hide_page_sidebars', TRUE);
   variable_set('ds_extras_fields_extra_list', "node|article|ds_extras_extra_test_field\nnode|article|ds_extras_second_field");
   variable_set('ds_extras_vd', TRUE);
+
+  db_update('system')
+    ->fields(array('weight' => 2))
+    ->condition('name', 'ds_test')
+    ->execute();
 }
 
 /**
@@ -81,19 +86,6 @@ function ds_test_node_view($node, $view_mode, $langcode) {
 }
 
 /**
- * Implements hook_ctools_plugin_directory().
- */
-function ds_test_ctools_plugin_directory($module, $plugin) {
-  // Safety: go away if CTools is not at an appropriate version.
-  if (!module_invoke('ctools', 'api_version', PANELS_REQUIRED_CTOOLS_API)) {
-    return;
-  }
-  if ($module == 'panels') {
-    return 'plugins/' . $plugin;
-  }
-}
-
-/**
  * Implements hook_ds_layout_info_alter().
  */
 function ds_test_ds_layout_info_alter(&$layouts) {
@@ -114,6 +106,41 @@ function ds_test_ds_fields_info($entity_type) {
       'title' => t('Test code field from hook 2'),
       'field_type' => DS_FIELD_TYPE_FUNCTION,
       'function' => 'dstest_render_test_field',
+    );
+    $fields['node']['ds_test_field_empty_string'] = array(
+      'title' => t('Test code field that returns an empty string'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'dstest_render_empty_string',
+    );
+    $fields['node']['ds_test_field_false'] = array(
+      'title' => t('Test code field that returns FALSE'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'dstest_render_false',
+    );
+    $fields['node']['ds_test_field_null'] = array(
+      'title' => t('Test code field that returns NULL'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'dstest_render_null',
+    );
+    $fields['node']['ds_test_field_nothing'] = array(
+      'title' => t('Test code field that returns nothing'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'dstest_render_nothing',
+    );
+    $fields['node']['ds_test_field_zero_int'] = array(
+      'title' => t('Test code field that returns zero as an integer'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'dstest_render_zero_int',
+    );
+    $fields['node']['ds_test_field_zero_string'] = array(
+      'title' => t('Test code field that returns zero as a string'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'dstest_render_zero_string',
+    );
+    $fields['node']['ds_test_field_zero_float'] = array(
+      'title' => t('Test code field that returns zero as a floating point number'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'function' => 'dstest_render_zero_float',
     );
 
     return $fields;
@@ -139,6 +166,55 @@ function ds_test_theming_function($variables) {
  */
 function dstest_render_test_field($field) {
   return 'Test code field on node ' . $field['entity']->nid;
+}
+
+/**
+ * Test code field that returns an empty string.
+ */
+function dstest_render_empty_string() {
+  return '';
+}
+
+/**
+ * Test code field that returns FALSE.
+ */
+function dstest_render_false() {
+  return FALSE;
+}
+
+/**
+ * Test code field that returns NULL.
+ */
+function dstest_render_null() {
+  return NULL;
+}
+
+/**
+ * Test code field that returns nothing.
+ */
+function dstest_render_nothing() {
+  return;
+}
+
+/**
+ * Test code field that returns zero as an integer.
+ */
+function dstest_render_zero_int() {
+  return 0;
+}
+
+/**
+ * Test code field that returns zero as a string.
+ */
+function dstest_render_zero_string() {
+  return '0';
+}
+
+/**
+ * Test code field that returns zero as a floating point number.
+ */
+function dstest_render_zero_float() {
+  return 0.0;
 }
 
 /**
@@ -178,53 +254,26 @@ function ds_test_ds_layout_info() {
 }
 
 /**
- * Implements hook_ctools_plugin_api().
+ * Implements hook_form_FORM_ID_alter().
  */
-function ds_test_ctools_plugin_api($module, $api) {
-  if ($module == 'rel' && $api == 'rel') {
-    return array('version' => 1);
+function ds_test_form_field_ui_display_overview_form_alter(&$form, &$form_state) {
+  foreach (element_children($form['fields']) as $key) {
+    if (isset($form['fields'][$key]['settings_edit'])) {
+      $settings = $form['fields'][$key]['settings_edit'];
+      if (!empty($settings)) {
+        $form['fields'][$key]['settings_edit']['#type'] = 'submit';
+        $form['fields'][$key]['settings_edit']['#value'] = 'edit ' . $key;
+      }
+    }
   }
 }
 
 /**
- * Implements hook_rel_build_info().
+ * Implements hook_ds_pre_render_alter().
  */
-function ds_test_rel_build_info() {
-  $builds = array();
-  $build_id = 'ds_edit_view_mode_form';
-  $rel_build = new stdClass;
-  $rel_build->build_id = $build_id;
-  $rel_build->api_version = 1;
-  $rel_build->label = 'View mode';
-  $rel_build->entity_type = 'rel_build';
-  $rel_build->bundle = $build_id;
-  $rel_build->view_mode = 'form';
-  $rel_build->context = 'form';
-  $rel_build->path = 'admin/structure/rel/manage/' . $build_id;
-  $rel_build->elements = array(
-    'name' => array(
-      'owner' => 'rel',
-      'label' => t('Label'),
-      'weight' => 1,
-    ),
-    'view_mode' => array(
-      'owner' => 'rel',
-      'label' => t('Machine name'),
-      'weight' => 2,
-    ),
-    'entities' => array(
-      'owner' => 'rel',
-      'label' => t('Entities'),
-      'weight' => 3,
-    ),
-    'submit' => array(
-      'owner' => 'rel',
-      'label' => t('Submit'),
-      'weight' => 4,
-    ),
-  );
-  $rel_build->duplicate = array();
-  $builds[$build_id] = $rel_build;
-  return $builds;
+function ds_test_ds_pre_render_alter(&$layout_render_array, $context) {
+  $entity = $context['entity'];
+  if (isset($entity->title) && $entity->title === 'Alter me!') {
+    $layout_render_array['left'][] = array('#markup' => 'cool!', '#weight' => 20);
+  }
 }
-

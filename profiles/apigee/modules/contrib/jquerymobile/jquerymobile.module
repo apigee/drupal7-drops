@@ -1,0 +1,269 @@
+<?php
+// $Id$
+
+/** @file
+ * Provides the jQuery Mobile library to modules and themes that request it.
+ */
+require_once(drupal_get_path('module', 'jquerymobile') . '/jquerymobile.inc');
+
+function jquerymobile_init() {
+  
+  foreach (module_list() as $module) {
+    if (is_file(drupal_get_path('module', 'jquerymobile') . '/modules/' . str_replace('_', '-', $module) . '.inc')) {
+      require_once(drupal_get_path('module', 'jquerymobile') . '/modules/' . str_replace('_', '-', $module) . '.inc');
+    } 
+  }
+}
+
+/*
+ * Implements hook_menu().
+ *
+ */ 
+function jquerymobile_menu() { 
+  $items = array(); 
+    $items['admin/config/jquerymobile'] = array(
+    'title' => 'jQuery Mobile',
+    'description' => 'jQuery Mobile tools.',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+  $items['admin/config/jquerymobile/settings'] = array(
+    'title' => 'jQuery Mobile', 
+    'description' => 'Administer jQuery Mobile Settings.', 
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('jquerymobile_admin_settings'), 
+    'access arguments' => array('manage jquerymobile settings'),
+    'file' => 'jquerymobile.admin.inc',
+    'weight' => 0,
+  ); 
+    // Theme configuration subtabs.
+  $items['admin/config/jquerymobile/settings/global'] = array(
+    'title' => 'Global settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 20,
+  );
+
+  foreach (list_themes() as $theme) {
+    if ($theme->status && _jquerymobile_is_mobile_theme($theme->name)) {
+      $items['admin/config/jquerymobile/settings/' . $theme->name] = array(
+        'type' => MENU_LOCAL_TASK,
+        'title' => $theme->info['name'], 
+        'description' => 'Administer jQuery Mobile Settings.', 
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('jquerymobile_admin_local_settings', $theme->name), 
+        'access callback' => '_jquerymobile_access_theme',
+        'access arguments' => array($theme),
+        'file' => 'jquerymobile.admin.inc',
+      );
+    }
+  }
+
+  return $items;
+}
+
+
+function jquerymobile_menu_alter(&$items) {
+  $items['node']['page callback'] = 'jquerymobile_page_default';
+}
+
+
+/**
+ * Implementation of hook_help().
+ */
+function jquerymobile_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#jquerymobile':
+    case 'admin/config/jquerymobile/settings':
+      return t('The jquerymobile module allows you to set HTML attributes on the element of individual menu items, exposing certain values needed to enhance the <a href="http://drupal.org/project/mobile_jquery">mobile jquery</a> theme.');
+  }
+}
+
+/*
+ * Implements hook_permission().
+ *
+ */
+function jquerymobile_permission() {
+  return array(
+    'manage jquerymobile settings' => array(
+      'title' => 'Manage jQuery Mobile Settings',
+    ),
+    'manage jquerymobile files settings' => array(
+      'title' => 'Manage jQuery Mobile Files Settings',
+    ),
+    'manage jquerymobile theme settings' => array(
+      'title' => 'Manage jQuery Mobile Theme Settings',
+    ),
+    'manage jquerymobile advanced settings' => array(
+      'title' => 'Manage jQuery Mobile Advanced Settings',
+    ),
+  );
+}
+
+function jquerymobile_library() {
+  $libraries = array();
+  
+  $min = variable_get('jquerymobile_minify', FALSE) ? '.min' : '';
+  $path = variable_get('jquerymobile_library_path', 'sites/all/libraries');
+  
+  switch (variable_get('jquerymobile_server_type', 'local')) {
+    case 'hosted':
+      $jquery_path = 'http://code.jquery.com';
+      $jqm_path = 'http://code.jquery.com/mobile/' . variable_get('jquerymobile_jquerymobile_version', '1.0.1');
+      $option = 'external';
+      break;
+    case 'other':
+      $jqm_path = variable_get('jquerymobile_jqm_files_path', NULL);
+      $jquery_path = variable_get('jquerymobile_jquery_files_path', NULL);
+      $option = 'external';
+      break;
+    default:
+      $jqm_path = $path  . '/jquery.mobile-' . variable_get('jquerymobile_jquerymobile_version', '1.0.1');
+      $jquery_path = $path . '/jquery-' . variable_get('jquerymobile_jquery_version', '1.6.4');
+      $option = 'file';
+      break;
+  }
+  
+  $libraries['jquerymobile'] = array(
+    'title' => 'jQuery Mobile', 
+    'website' => 'http://jquerymobile.com/', 
+    'version' => variable_get('jquerymobile_jquerymobile_version', '1.0.1'), 
+    'js' => array(
+      $jqm_path . '/jquery.mobile-' . variable_get('jquerymobile_jquerymobile_version', '1.0.1') . $min . '.js' => array(
+        'group' => JS_THEME,
+        'weight' => 102,
+        'type' => $option,
+      ),
+    ), 
+    'css' => array(
+      $jqm_path . '/jquery.mobile.structure-' . variable_get('jquerymobile_jquerymobile_version', '1.0.1') . $min . '.css' => array(
+        'group' => CSS_THEME, 
+        'weight' => 101,
+        'type' => $option,
+      ),
+      $jqm_path . '/jquery.mobile-' . variable_get('jquerymobile_jquerymobile_version', '1.0.1') . $min . '.css' => array(
+        'group' => CSS_THEME, 
+        'weight' => 102,
+        'type' => $option,
+      ),
+    ),
+  );
+  $libraries['jquerymobile.jquery'] = array(
+    'title' => 'jQuery', 
+    'website' => 'http://code.jquery.com/', 
+    'version' => variable_get('jquerymobile_jquery_version', '1.6.4'),
+    'js' => array(
+      $jquery_path . '/jquery-' . variable_get('jquerymobile_jquery_version', '1.6.4') . $min . '.js' => array(
+        'group' => JS_THEME,
+        'weight' => 101,
+        'type' => $option,
+      ),
+    ),
+  ); 
+
+  return $libraries;
+}
+
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function jquerymobile_element_info_alter(&$type) {
+  global $theme_key;
+
+  if (_jquerymobile_is_mobile_theme($theme_key)) {
+    // add a custom pre_render function to checkboxes elements
+    if (isset($type['checkboxes']['#pre_render'])) {
+      $type['checkboxes']['#pre_render'][] = 'jquerymobile_pre_render_checkboxes';
+    }
+    else {
+      $type['checkboxes']['#pre_render'] = array('jquerymobile_pre_render_checkboxes');
+    }
+  
+    // add default #multiple value to checkboxes as false
+    if (!isset($type['checkbox']['#multiple'])) {
+      $type['checkbox']['#multiple'] = FALSE;
+    }
+  
+    // add a new process function to actions type
+    // add a custom pre_render function to checkboxes elements
+    if (isset($type['actions']['#process'])) {
+      $type['actions']['#process'][] = 'jquerymobile_process_actions';
+    }
+    else {
+      $type['actions']['#process'] = array('jquerymobile_process_actions');
+    }
+  
+    if (isset($type['text_format'])) {
+      $type['text_format']['#process'][] = 'jquerymobile_process_text_format';
+    }
+  }
+}
+
+/**
+* Implements hook_entity_info_alter().
+*/
+function jquerymobile_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['jquerymobile_teaser'] = array(
+    'label' => t('jQM teaser'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * @todo: make flip switches work
+ */
+function jquerymobile_pre_render_checkboxes($element) {
+  global $theme_key;
+
+  if (_jquerymobile_is_mobile_theme($theme_key)) {
+    $count = count($element['#options']);
+    if (count($element['#options']) != 1) {
+      foreach ($element['#options'] as $key => $choice) {
+        $element[$key]['#multiple'] = TRUE;
+      }
+    }
+  }
+  return $element;
+}
+
+function jquerymobile_process_actions($element) {
+  global $theme_key;
+
+  if (_jquerymobile_is_mobile_theme($theme_key)) {
+    $number_letters = array(
+      1 => 'a',
+      2 => 'b',
+      3 => 'c',
+      4 => 'd',
+      5 => 'e'
+    );
+    $children = element_children($element);
+    $count = count($children) - 1;
+    if ($count) {
+      $element['#attributes']['class'][] = 'ui-grid-' . $number_letters[$count];
+      $grid_block_count = 1;
+      foreach ($children as $key) {
+        $element[$key]['#prefix'] = '<div class="ui-block-' . $number_letters[$grid_block_count] . '">';
+        $element[$key]['#suffix'] = '</div>';
+        $grid_block_count++;
+      }
+    }
+  }
+  return $element;
+}
+
+
+function jquerymobile_process_text_format($element) {
+  global $theme_key;
+
+  if (_jquerymobile_is_mobile_theme($theme_key)) {
+    $element['format']['#prefix'] = '<div data-role="collapsible" data-collapsed="true"><h3>' . t('Text Format') . '</h3>';
+    $element['format']['#suffix'] = '</div>';
+    $element['format']['help']['#weight'] = 100;
+    // remove element title since it is added above
+    $element['format']['format']['#title'] = NULL;
+  }
+  return $element;
+}

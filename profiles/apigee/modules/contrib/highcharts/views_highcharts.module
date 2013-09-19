@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ * main module file
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function views_highcharts_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+
+
+

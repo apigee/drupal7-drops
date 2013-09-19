@@ -9,32 +9,31 @@
 
 namespace Apigee\ManagementAPI;
 
-use Apigee\Exceptions\InvalidDataException as InvalidDataException;
-use Apigee\Exceptions\ResponseException as ResponseException;
+use Apigee\Exceptions\ParameterException as ParameterException;
 use Apigee\Util\APIClient as APIClient;
 
-class DeveloperApp extends Base {
+class DeveloperApp extends Base implements DeveloperAppInterface {
 
   /**
    * @var string
    * 'read', 'write', or 'both' (empty is also valid). This property doesn't
    * appear to ever be used.
    */
-  private $access_type;
+  protected $accessType;
   /**
    * @var array
    */
-  private $api_products;
+  protected $apiProducts;
   /**
    * @var string.
    * Read-only. Purpose of this field is unknown at this time.
    */
-  private $app_family;
+  protected $appFamily;
   /**
    * @var string
    * Read-only. GUID of this app.
    */
-  private $app_id;
+  protected $appId;
   /**
    * @var array
    * This is protected because Base wants to twiddle with it.
@@ -43,173 +42,301 @@ class DeveloperApp extends Base {
   /**
    * @var string
    */
-  private $callback_url;
+  protected $callbackUrl;
   /**
    * @var int
    * Read-only.
    */
-  private $created_at;
+  protected $createdAt;
   /**
    * @var string
    * Read-only.
    */
-  private $created_by;
+  protected $createdBy;
   /**
    * @var int
    * Read-only.
    */
-  private $modified_at;
+  protected $modifiedAt;
   /**
    * @var string
    * Read-only.
    */
-  private $modified_by;
+  protected $modifiedBy;
   /**
    * @var string
    * Read-only. Corresponds to the developer_id attribute of the developer who
    * owns this app.
    */
-  private $developer_id;
+  protected $developerId;
   /**
    * @var string
    * Primary key (within this org/developer's app list)
    */
-  private $name;
+  protected $name;
   /**
    * @var array
    * The purpose of this field remains unknown.
    */
-  private $scopes;
+  protected $scopes;
   /**
    * @var string
    * There is probably a finite number of possible values, but I haven't found
    * a definitive list yet.
    */
-  private $status;
+  protected $status;
   /**
    * @var string
    */
-  private $description;
+  protected $description;
 
   /**
    * @var array
    * Each member of this array is itself an associative array, with keys of
    * 'apiproduct' and 'status'.
    */
-  private $credential_apiproducts;
+  protected $credentialApiProducts;
   /**
    * @var string
    */
-  private $consumer_key;
+  protected $consumerKey;
   /**
    * @var string
    */
-  private $consumer_secret;
+  protected $consumerSecret;
   /**
    * @var array
    * The purpose of this field is unknown at this time.
    */
-  private $credential_scopes;
+  protected $credentialScopes;
   /**
    * @var string
    */
-  private $credential_status;
+  protected $credentialStatus;
   /**
    * @var array
    */
-  private $credential_attributes;
+  protected $credentialAttributes;
 
   /**
    * @var string
    */
-  private $developer;
+  protected $developer;
   /**
    * @var array
    */
-  private $cached_api_products;
+  protected $cachedApiProducts;
+  /**
+   * @var string
+   */
+  protected $baseUrl;
 
   /* Accessors (getters/setters) */
-  public function get_api_products() {
-    return $this->api_products;
+  public function getApiProducts() {
+    return $this->apiProducts;
   }
-  public function set_api_products($products) {
+
+  public function setApiProducts($products) {
     if (!is_array($products)) {
       $products = array($products);
     }
-    $this->cached_api_products = $this->api_products;
-    $this->api_products = $products;
+    $this->cachedApiProducts = $this->apiProducts;
+    $this->apiProducts = $products;
   }
-  public function get_attributes() {
+
+  public function getAttributes() {
     return $this->attributes;
   }
-  public function has_attribute($attr) {
+
+  public function hasAttribute($attr) {
     return array_key_exists($attr, $this->attributes);
   }
-  public function get_attribute($attr) {
+
+  public function getAttribute($attr) {
     return (array_key_exists($attr, $this->attributes) ? $this->attributes[$attr] : NULL);
   }
-  public function set_attribute($attr, $value) {
+
+  public function setAttribute($attr, $value) {
     $this->attributes[$attr] = $value;
   }
-  public function set_name($name) {
+
+  public function setName($name) {
     $this->name = $name;
   }
-  public function get_name() {
+
+  public function getName() {
     return $this->name;
   }
-  public function set_callback_url($url) {
-    $this->callback_url = $url;
+
+  public function setCallbackUrl($url) {
+    $this->callbackUrl = $url;
   }
-  public function get_callback_url() {
-    return $this->callback_url;
+
+  public function getCallbackUrl() {
+    return $this->callbackUrl;
   }
-  public function set_description($descr) {
+
+  public function setDescription($descr) {
     $this->description = $descr;
     $this->attributes['description'] = $descr;
   }
-  public function get_description() {
+
+  public function getDescription() {
     return $this->description;
   }
-  public function set_access_type($type) {
+
+  public function setAccessType($type) {
     if ($type != 'read' && $type != 'write' && $type != 'both') {
-      throw new InvalidDataException('Invalid access type ' . $type . '.');
+      throw new ParameterException('Invalid access type ' . $type . '.');
     }
-    $this->access_type = $type;
+    $this->accessType = $type;
   }
-  public function get_access_type() {
-    return $this->access_type;
+
+  public function getAccessType() {
+    return $this->accessType;
   }
-  public function get_status() {
+
+  public function getStatus() {
     return $this->status;
   }
-  public function get_developer_id() {
-    return $this->developer_id;
+
+  protected function setStatus($status) {
+    $this->status = $status;
   }
 
-  public function get_credential_api_products() {
-    return $this->credential_apiproducts;
-  }
-  public function get_consumer_key() {
-    return $this->consumer_key;
-  }
-  public function get_consumer_secret() {
-    return $this->consumer_secret;
-  }
-  public function get_credential_scopes() {
-    return $this->credential_scopes;
-  }
-  public function get_credential_status() {
-    return $this->credential_status;
-  }
-  public function get_created_at() {
-    return $this->created_at;
-  }
-  public function get_created_by() {
-    return $this->created_by;
+  public function getDeveloperId() {
+    return $this->developerId;
   }
 
-  public function has_credential_info() {
-    $credential_fields = array('credential_apiproducts', 'consumer_key', 'consumer_secret', 'credential_scopes', 'credential_status');
+  public function getDeveloperMail() {
+    return $this->developer;
+  }
+
+  public function getCredentialApiProducts() {
+    return $this->credentialApiProducts;
+  }
+
+  protected function setCredentialApiProducts(array $list) {
+    $this->credentialApiProducts = $list;
+  }
+
+  public function getConsumerKey() {
+    return $this->consumerKey;
+  }
+
+  public function setConsumerKey($key) {
+    $this->consumerKey = $key;
+  }
+
+  public function getConsumerSecret() {
+    return $this->consumerSecret;
+  }
+
+  public function setConsumerSecret($secret) {
+    $this->consumerSecret = $secret;
+  }
+
+  public function getCredentialScopes() {
+    return $this->credentialScopes;
+  }
+
+  protected function setCredentialScopes(array $scopes) {
+    $this->credentialScopes = $scopes;
+  }
+
+  public function getCredentialStatus() {
+    return $this->credentialStatus;
+  }
+
+  protected function setCredentialStatus($status) {
+    $this->credentialStatus = $status;
+  }
+
+  public function getCreatedAt() {
+    return $this->createdAt;
+  }
+
+  protected function setCreatedAt($time_in_milliseconds) {
+    $this->createdAt = floatval($time_in_milliseconds);
+  }
+
+  public function getCreatedBy() {
+    return $this->createdBy;
+  }
+
+  public function setCreatedBy($who) {
+    $this->createdBy = $who;
+  }
+
+  public function getModifiedAt() {
+    return $this->modifiedAt;
+  }
+
+  protected function setModifiedAt($time_in_milliseconds) {
+    $this->modifiedAt = $time_in_milliseconds;
+  }
+
+  public function getModifiedBy() {
+    return $this->modifiedBy;
+  }
+
+  public function setModifiedBy($who) {
+    $this->modifiedBy = $who;
+  }
+
+  public function getCredentialAttribute($attr_name) {
+    if (isset($this->credentialAttributes[$attr_name])) {
+      return $this->credentialAttributes[$attr_name];
+    }
+    return NULL;
+  }
+
+  public function setCredentialAttribute($name, $value) {
+    $this->credentialAttributes[$name] = $value;
+  }
+
+  public function getCredentialAttributes() {
+    return $this->credentialAttributes;
+  }
+
+  public function clearCredentialAttributes() {
+    $this->credentialAttributes = array();
+  }
+
+  public function getAppId() {
+    return $this->appId;
+  }
+
+  protected function setAppId($id) {
+    $this->appId = $id;
+  }
+
+
+  public function getAppFamily() {
+    return $this->appFamily;
+  }
+
+  public function setAppFamily($family) {
+    $this->appFamily = $family;
+  }
+
+  public function getScopes() {
+    return $this->scopes;
+  }
+
+  protected function setScopes(array $scopes) {
+    $this->scopes = $scopes;
+  }
+
+
+  public function hasCredentialInfo() {
+    $credential_fields = array(
+      'credentialApiproducts',
+      'consumerKey',
+      'consumerSecret',
+      'credentialScopes',
+      'credentialStatus'
+    );
     foreach ($credential_fields as $field) {
       if (!empty($this->$field)) {
         return TRUE;
@@ -217,6 +344,11 @@ class DeveloperApp extends Base {
     }
     return FALSE;
   }
+
+  public function setApiProductCache(array $cache) {
+    $this->cachedApiProducts = $cache;
+  }
+
   // TODO: write other getters/setters
 
 
@@ -224,19 +356,19 @@ class DeveloperApp extends Base {
    * Initializes this object
    *
    * @param \Apigee\Util\APIClient $client
-   * @param string $developer
+   * @param mixed $developer
    */
-  public function __construct(\Apigee\Util\APIClient $client, $developer) {
+  public function __construct(APIClient $client, $developer) {
     $this->init($client);
-    if ($developer instanceof \Apigee\ManagementAPI\Developer) {
-      $this->developer = $developer->get_email();
+    if ($developer instanceof DeveloperInterface) {
+      $this->developer = $developer->getEmail();
     }
     else {
       // $developer may be either an email or a developerId.
       $this->developer = $developer;
     }
-    $this->base_url = '/organizations/' . $this->url_encode($client->get_org()) . '/developers/' . $this->url_encode($this->developer) . '/apps';
-    $this->blank_values();
+    $this->baseUrl = '/organizations/' . $this->urlEncode($client->getOrg()) . '/developers/' . $this->urlEncode($this->developer) . '/apps';
+    $this->blankValues();
   }
 
   /**
@@ -247,33 +379,36 @@ class DeveloperApp extends Base {
    * @param DeveloperApp $obj
    * @param array $response
    */
-  private static function load_from_response(DeveloperApp &$obj, $response) {
-    $obj->access_type = $response['accessType'];
-    $obj->app_family = (isset($response['appFamily']) ? $response['appFamily'] : NULL);
-    $obj->app_id = $response['appId'];
-    $obj->callback_url = $response['callbackUrl'];
-    $obj->created_at = $response['createdAt'];
-    $obj->created_by = $response['createdBy'];
-    $obj->modified_at = $response['lastModifiedAt'];
-    $obj->modified_by = $response['lastModifiedBy'];
-    $obj->developer_id = $response['developerId'];
+  protected static function loadFromResponse(DeveloperApp &$obj, array $response) {
+    $obj->accessType = $response['accessType'];
+    $obj->appFamily = (isset($response['appFamily']) ? $response['appFamily'] : NULL);
+    $obj->appId = $response['appId'];
+    $obj->callbackUrl = $response['callbackUrl'];
+    $obj->createdAt = $response['createdAt'];
+    $obj->createdBy = $response['createdBy'];
+    $obj->modifiedAt = $response['lastModifiedAt'];
+    $obj->modifiedBy = $response['developerId'];
     $obj->name = $response['name'];
     $obj->scopes = $response['scopes'];
     $obj->status = $response['status'];
+    $obj->developerId = $response['developerId'];
 
-    $obj->read_attributes($response);
+    $obj->readAttributes($response);
 
     if (!empty($response['description'])) {
       $obj->description = $response['description'];
     }
     elseif (isset($obj->attributes['description'])) {
-      $obj->description = $obj->get_attribute('description');
+      $obj->description = $obj->getAttribute('description');
     }
     else {
       $obj->description = NULL;
     }
 
-    self::load_credentials($obj, $response['credentials']);
+    self::loadCredentials($obj, $response['credentials']);
+
+    // Let subclasses twiddle here
+    self::afterLoad($obj, $response);
   }
 
   /**
@@ -284,37 +419,39 @@ class DeveloperApp extends Base {
    * @param DeveloperApp $obj
    * @param $credentials
    */
-  private static function load_credentials(DeveloperApp &$obj, $credentials) {
+  protected static function loadCredentials(DeveloperApp &$obj, $credentials) {
     // Find the credential with the max create_date attribute.
     if (count($credentials) > 0) {
       $credential = NULL;
       // Sort credentials by create_date descending.
-      usort($credentials, array('Apigee\\ManagementAPI\\DeveloperApp', 'sort_credentials'));
+      usort($credentials, array(__CLASS__, 'sortCredentials'));
       // Look for the first member of the array that is approved.
       foreach ($credentials as $c) {
         if ($c['status'] == 'approved') {
           $credential = $c;
+          break;
         }
       }
       // If none were approved, use the first member of the array.
       if (!isset($credential)) {
         $credential = $credentials[0];
       }
-      $obj->credential_apiproducts = $credential['apiProducts'];
-      $obj->consumer_key = $credential['consumerKey'];
-      $obj->consumer_secret = $credential['consumerSecret'];
-      $obj->credential_scopes = $credential['scopes'];
-      $obj->credential_status = $credential['status'];
+      $obj->credentialApiProducts = $credential['apiProducts'];
+      $obj->consumerKey = $credential['consumerKey'];
+      $obj->consumerSecret = $credential['consumerSecret'];
+      $obj->credentialScopes = $credential['scopes'];
+      $obj->credentialStatus = $credential['status'];
 
-      $obj->credential_attributes = array();
+      $obj->credentialAttributes = array();
       foreach ($credential['attributes'] as $attribute) {
-        $obj->credential_attributes[$attribute['name']] = $attribute['value'];
+        $obj->credentialAttributes[$attribute['name']] = $attribute['value'];
       }
 
       // Some apps may be misconfigured and need to be populated with their apiproducts based on credential.
-      if (count($obj->api_products) == 0) {
-        foreach ($obj->credential_apiproducts as $product) {
-          $obj->api_products[] = $product['apiproduct'];
+      if (count($obj->apiProducts) == 0) {
+        $obj->apiProducts = array();
+        foreach ($obj->credentialApiProducts as $product) {
+          $obj->apiProducts[] = $product['apiproduct'];
         }
       }
     }
@@ -329,12 +466,12 @@ class DeveloperApp extends Base {
    */
   public function load($name = NULL) {
     if (!isset($name)) {
-      $name = $this->name;
+      $name = $this->getName();
     }
-    $url = $this->base_url . '/' . $this->url_encode($name);
+    $url = $this->baseUrl . '/' . $this->urlEncode($name);
     $this->client->get($url);
-    $response = $this->get_response();
-    self::load_from_response($this, $response);
+    $response = $this->getResponse();
+    self::loadFromResponse($this, $response);
   }
 
   /**
@@ -347,11 +484,11 @@ class DeveloperApp extends Base {
    */
   public function validate($name = NULL) {
     if (!isset($name)) {
-      $name = $this->name;
+      $name = $this->getName();
     }
-    $url = $this->base_url . '/' . $this->url_encode($name);
+    $url = $this->baseUrl . '/' . $this->urlEncode($name);
     $this->client->get($url);
-    return $this->client->was_successful();
+    return $this->client->wasSuccessful();
   }
 
   /**
@@ -361,24 +498,24 @@ class DeveloperApp extends Base {
    *
    * @return \stdClass
    */
-  private function api_products_diff() {
+  protected function apiProductsDiff() {
     // Find apiproducts that we will have to delete.  These are found in the
     // cached list but not in the live list.
     $to_delete = array();
-    foreach ($this->cached_api_products as $api_product) {
-      if (!in_array($api_product['apiproduct'], $this->api_products)) {
+    foreach ($this->cachedApiProducts as $api_product) {
+      if (!in_array($api_product['apiproduct'], $this->apiProducts)) {
         $to_delete[] = $api_product['apiproduct'];
       }
     }
     // Find apiproducts that we will have to add. These are found in the
     // live list but not in the cached list.
     $to_add = array();
-    foreach ($this->api_products as $api_product) {
-      if (!in_array($api_product, $this->cached_api_products)) {
+    foreach ($this->apiProducts as $api_product) {
+      if (!in_array($api_product, $this->cachedApiProducts)) {
         $to_add[] = $api_product;
       }
     }
-    return (object)array('to_delete' => $to_delete, 'to_add' => $to_add);
+    return (object) array('to_delete' => $to_delete, 'to_add' => $to_add);
   }
 
   /**
@@ -391,18 +528,18 @@ class DeveloperApp extends Base {
    * @param bool $force_update
    */
   public function save($force_update = FALSE) {
-    $is_update = ($force_update || $this->modified_at);
+    $is_update = ($force_update || $this->modifiedAt);
 
     $payload = array(
-      'accessType' => $this->access_type,
-      'name' => $this->name,
-      'callbackUrl' => $this->callback_url
+      'accessType' => $this->getAccessType(),
+      'name' => $this->getName(),
+      'callbackUrl' => $this->getCallbackUrl()
     );
-    $this->write_attributes($payload);
+    $this->writeAttributes($payload);
 
-    $url = $this->base_url;
+    $url = $this->baseUrl;
     if ($is_update) {
-      $url .= '/' . $this->url_encode($this->name);
+      $url .= '/' . $this->urlEncode($this->getName());
     }
     $created_new_key = FALSE;
     // NOTE: On update, we send APIProduct information separately from other
@@ -410,28 +547,31 @@ class DeveloperApp extends Base {
     // APIProducts must be made separately against the app's client-key,
     // rather than just against the app. Additionally, deletions from the
     // APIProducts list must be handled separately from additions.
-    if ($is_update && !empty($this->consumer_key)) {
-      $key_uri = "$url/keys/" . $this->url_encode($this->consumer_key);
-      $diff = $this->api_products_diff();
+    $consumer_key = $this->getConsumerKey();
+    if ($is_update && !empty($consumer_key)) {
+      $key_uri = "$url/keys/" . $this->urlEncode($consumer_key);
+      $diff = $this->apiProductsDiff();
       // api-product deletions must happen one-by-one.
       foreach ($diff->to_delete as $api_product) {
-        $delete_uri = "$key_uri/apiproducts/" . $this->url_encode($api_product);
+        $delete_uri = "$key_uri/apiproducts/" . $this->urlEncode($api_product);
         $this->client->delete($delete_uri);
-        $this->get_response();
+        $this->getResponse();
       }
       // api-product additions can happen in a batch.
       if (count($diff->to_add) > 0) {
         $this->client->post($key_uri, array('apiProducts' => $diff->to_add));
-        $this->get_response();
+        $this->getResponse();
       }
     }
     else {
-      $payload['apiProducts'] = $this->api_products;
+      $payload['apiProducts'] = $this->getApiProducts();
       $created_new_key = TRUE;
     }
 
+    self::preSave($payload, $this);
+
     $this->client->post($url, $payload);
-    $response = $this->get_response();
+    $response = $this->getResponse();
 
     // If we created a new key, add a create_date attribute to it.
     if ($created_new_key && count($response['credentials']) > 0) {
@@ -467,14 +607,16 @@ class DeveloperApp extends Base {
         $payload = $new_credential;
         // Payload only has to send bare minimum for update.
         unset($payload['apiProducts'], $payload['scopes'], $payload['status']);
-        $url = $this->base_url . '/' . $this->url_encode($this->name) . '/keys/' . $key;
+        $url = $this->baseUrl . '/' . $this->urlEncode($this->name) . '/keys/' . $key;
+
+        self::preSaveCredential($payload, $new_credential, $response);
         // POST that sucker!
         $this->client->post($url, $payload);
       }
     }
 
     // Refresh our fields so we get latest autogenerated data such as consumer key etc.
-    self::load_from_response($this, $response);
+    self::loadFromResponse($this, $response);
   }
 
   /**
@@ -485,7 +627,7 @@ class DeveloperApp extends Base {
    * @param $b
    * @return int
    */
-  private static function sort_credentials($a, $b) {
+  protected static function sortCredentials($a, $b) {
     $a_create_date = 0;
     foreach ($a['attributes'] as $attr) {
       if ($attr['name'] == 'create_date') {
@@ -513,9 +655,9 @@ class DeveloperApp extends Base {
    * @param mixed $status
    *        May be TRUE, FALSE, 0, 1, 'approve' or 'revoke'
    * @param bool $also_set_apiproduct
-   * @throws \Apigee\Exceptions\InvalidDataException
+   * @throws \Apigee\Exceptions\ParameterException
    */
-  public function set_key_status($status, $also_set_apiproduct = TRUE) {
+  public function setKeyStatus($status, $also_set_apiproduct = TRUE) {
     if ($status === 0 || $status === FALSE) {
       $status = 'revoke';
     }
@@ -523,28 +665,31 @@ class DeveloperApp extends Base {
       $status = 'approve';
     }
     elseif ($status != 'revoke' && $status != 'approve') {
-      throw new InvalidDataException('Invalid key status ' . $status);
+      throw new ParameterException('Invalid key status ' . $status);
     }
 
-    if (empty($this->name)) {
-      throw new InvalidDataException('No app specified; cannot set key status.');
+    if (strlen($this->getName()) == 0) {
+      throw new ParameterException('No app specified; cannot set key status.');
     }
-    if (empty($this->consumer_key)) {
-      throw new InvalidDataException('App has no consumer key; cannot set key status.');
+    if (strlen($this->getConsumerKey()) == 0) {
+      throw new ParameterException('App has no consumer key; cannot set key status.');
     }
-    $base_url = $this->base_url . '/' . $this->url_encode($this->name) . '/keys/' . $this->url_encode($this->consumer_key);
+    $base_url = $this->baseUrl . '/' . $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($this->getConsumerKey());
     // First, approve or revoke the overall key for the app.
     $app_url = $base_url . '?action=' . $status;
     $this->client->post($app_url, '');
-    $this->get_response();
+    $this->getResponse();
 
     // Now, unless specified otherwise, approve or revoke the same key for all
     // associated API Products.
-    if ($also_set_apiproduct && !empty($this->api_products)) {
-      foreach ($this->api_products as $api_product) {
-        $product_url = $base_url . '/apiproducts/' . $this->url_encode($api_product) . '?action=' . $status;
-        $this->client->post($product_url, '');
-        $this->get_response();
+    if ($also_set_apiproduct) {
+      $api_products = $this->getApiProducts();
+      if (!empty($api_products)) {
+        foreach ($api_products as $api_product) {
+          $product_url = $base_url . '/apiproducts/' . $this->urlEncode($api_product) . '?action=' . $status;
+          $this->client->post($product_url, '');
+          $this->getResponse();
+        }
       }
     }
   }
@@ -558,12 +703,12 @@ class DeveloperApp extends Base {
    */
   public function delete($name = NULL) {
     if (!isset($name)) {
-      $name = $this->name;
+      $name = $this->getName();
     }
-    $this->client->delete($this->base_url . '/' . $this->url_encode($name));
-    $this->get_response();
-    if ($name == $this->name) {
-      $this->blank_values();
+    $this->client->delete($this->baseUrl . '/' . $this->urlEncode($name));
+    $this->getResponse();
+    if ($name == $this->getName()) {
+      $this->blankValues();
     }
   }
 
@@ -572,83 +717,35 @@ class DeveloperApp extends Base {
    *
    * @return array
    */
-  public function get_list() {
-    $this->client->get($this->base_url);
-    return $this->get_response();
+  public function getList() {
+    $this->client->get($this->baseUrl);
+    return $this->getResponse();
   }
 
   /**
    * Returns array of all DeveloperApp objects belonging to this developer.
    *
+   * @param string|NULL $developer_mail
    * @return array
    */
-  public function get_list_detail($developer = NULL) {
-    if (!isset($developer)) {
-      $developer = $this->developer;
+  public function getListDetail($developer_mail = NULL) {
+    if (!isset($developer_mail)) {
+      $developer_mail = $this->getDeveloperMail();
     }
-    $url = '/organizations/' . $this->url_encode($this->client->get_org()) . '/developers/' . $this->url_encode($developer) . '/apps?expand=true';
+    $url = '/organizations/' . $this->urlEncode($this->getClient()
+        ->getOrg()) . '/developers/' . $this->urlEncode($developer_mail) . '/apps?expand=true';
     $this->client->get($url);
-    $list = $this->get_response();
+    $list = $this->getResponse();
     $app_list = array();
     if (!array_key_exists('app', $list) || empty($list['app'])) {
       return $app_list;
     }
     foreach ($list['app'] as $response) {
-      $app = new DeveloperApp($this->client, $developer);
-      self::load_from_response($app, $response);
+      $app = new DeveloperApp($this->getClient(), $developer_mail);
+      self::loadFromResponse($app, $response);
       $app_list[] = $app;
     }
     return $app_list;
-  }
-
-  // public function make_authenticated_call() was removed by Daniel on
-  // 2-Apr-2013.  If you really want to see it, look for earlier git commits.
-
-  /**
-   * Accepts a Drupal $form_state['values'] array and populates the current
-   * DeveloperApp object with the relevant information.
-   *
-   * @param array $form_values
-   */
-  public function populate_from_form_values($form_values) {
-
-    if (isset($form_values['api_product'])) {
-      $api_products = array();
-      if (is_array($form_values['api_product'])) {
-        foreach ($form_values['api_product'] as $key => $value) {
-          if ($value) {
-            $api_products[] = str_replace('prod-', '', $key);
-          }
-        }
-      }
-      else {
-        // Allow customized sites to declare api_product as non-multiple.
-        // This results in a scalar value rather than an array.
-        $api_products[] = str_replace('prod-', '', $form_values['api_product']);
-      }
-    }
-    else {
-      $api_products = NULL;
-    }
-    // cgalindo - cache preexisting_api_products
-    $this->cached_api_products = $form_values['preexisting_api_products'];
-    $this->access_type = isset($form_values['access_type']) ? $form_values['access_type'] : '';
-    $this->callback_url = isset($form_values['callback_url']) ? $form_values['callback_url'] : '';
-    $this->name = $form_values['machine_name'];
-    $this->consumer_key = $form_values['client_key'];
-    if (isset($api_products)) {
-      $this->api_products = $api_products;
-    }
-    $attributes = array();
-    foreach($form_values as $key => $value) {
-      if (substr($key, 0, 10) == 'attribute_') {
-        $attributes[substr($key, 10)] = $value;
-      }
-    }
-    if (count($attributes) > 0) {
-      $this->attributes = $attributes;
-    }
-
   }
 
   /**
@@ -658,11 +755,11 @@ class DeveloperApp extends Base {
    *
    * @param string $consumer_key
    * @param string $consumer_secret
-   * @throws \Apigee\Exceptions\InvalidDataException
+   * @throws \Apigee\Exceptions\ParameterException
    */
-  public function create_key($consumer_key, $consumer_secret) {
+  public function createKey($consumer_key, $consumer_secret) {
     if (strlen($consumer_key) < 5 || strlen($consumer_secret) < 5) {
-      throw new InvalidDataException('Consumer Key and Consumer Secret must both be at least 5 characters long.');
+      throw new ParameterException('Consumer Key and Consumer Secret must both be at least 5 characters long.');
     }
     // This is by nature a two-step process. API Products cannot be added
     // to a new key at the time of key creation, for some reason.
@@ -671,34 +768,33 @@ class DeveloperApp extends Base {
       'attributes' => array(array('name' => 'create_date', 'value' => $create_date)),
       'consumerKey' => $consumer_key,
       'consumerSecret' => $consumer_secret,
-      'scopes' => $this->credential_scopes,
+      'scopes' => $this->getCredentialScopes(),
     );
 
-    $url = $this->base_url . '/' . $this->url_encode($this->name) . '/keys/create';
+    $url = $this->baseUrl . '/' . $this->urlEncode($this->name) . '/keys/create';
     $this->client->post($url, $payload);
 
-    $new_credential = $this->get_response();
+    $new_credential = $this->getResponse();
     // We now have the new key, sans apiproducts. Let us add them now.
-    $new_credential['apiProducts'] = $this->credential_apiproducts;
+    $new_credential['apiProducts'] = $this->getCredentialApiProducts();
     $key = $new_credential['consumerKey'];
-    $url = $this->base_url . '/' . $this->url_encode($this->name) . '/keys/' . $this->url_encode($key);
+    $url = $this->baseUrl . '/' . $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($key);
     $this->client->post($url, $new_credential);
     // The following line may throw an exception if the POST was unsuccessful
     // (e.g. consumer_key already exists, etc.)
-    $credential = $this->get_response();
+    $credential = $this->getResponse();
 
-    if ($credential['status'] == 'approved' || empty($this->consumer_key)) {
+    if ($credential['status'] == 'approved' || empty($this->consumerKey)) {
       // Update $this with new credential info ONLY if the key is auto-approved
       // or if there are no keys yet.
-      $this->credential_apiproducts = $credential['apiProducts'];
-      $this->consumer_key = $credential['consumerKey'];
-      $this->consumer_secret = $credential['consumerSecret'];
-      $this->credential_scopes = $credential['scopes'];
-      $this->credential_status = $credential['status'];
-
-      $this->credential_attributes = array();
+      $this->setCredentialApiProducts($credential['apiProducts']);
+      $this->setConsumerKey($credential['consumerKey']);
+      $this->setConsumerSecret($credential['consumerSecret']);
+      $this->setCredentialScopes($credential['scopes']);
+      $this->setCredentialStatus($credential['status']);
+      $this->clearCredentialAttributes();
       foreach ($credential['attributes'] as $attribute) {
-        $this->credential_attributes[$attribute['name']] = $attribute['value'];
+        $this->setCredentialAttribute($attribute['name'], $attribute['value']);
       }
     }
   }
@@ -708,8 +804,8 @@ class DeveloperApp extends Base {
    *
    * @param string $consumer_key
    */
-  public function delete_key($consumer_key) {
-    $url = $this->base_url . '/' . $this->url_encode($this->name) . '/keys/' . $this->url_encode($consumer_key);
+  public function deleteKey($consumer_key) {
+    $url = $this->baseUrl . '/' . $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($consumer_key);
     $this->client->delete($url);
     // We ignore whether or not the delete was successful. Either way, we can
     // be sure it doesn't exist now, if it did before.
@@ -724,46 +820,132 @@ class DeveloperApp extends Base {
    *
    * @return array
    */
-  public function list_all_org_apps() {
-    $url = '/organizations/' . $this->url_encode($this->get_client()->get_org()) . '/apps?expand=true';
+  public function listAllOrgApps() {
+    $url = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/apps?expand=true';
     $this->client->get($url);
-    $response = $this->get_response();
+    $response = $this->getResponse();
     $app_list = array();
     foreach ($response['app'] as $app_detail) {
       $developer = $app_detail['developerId'];
-      $app = new DeveloperApp($this->client, $developer);
-      self::load_from_response($app, $app_detail);
+      $app = new self($this->client, $developer);
+      self::loadFromResponse($app, $app_detail);
       $app_list[] = $app;
     }
     return $app_list;
   }
 
+  public function loadByAppId($appId, $reset_developer = FALSE) {
+    if (!preg_match('!^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$!', $appId)) {
+      throw new ParameterException('Invalid UUID passed as appId.');
+    }
+
+    $url = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/apps/' . $appId;
+    $this->client->get($url);
+    $response = $this->getResponse();
+    self::loadFromResponse($this, $response);
+    // Must load developer to get email
+    if ($reset_developer || empty($this->developer)) {
+      $developer = new Developer($this->client);
+      $developer->load($response['developerId']);
+      $this->developer = $developer->getEmail();
+      $this->baseUrl = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/developers/' . $this->urlEncode($this->developer) . '/apps';
+    }
+  }
+
   /**
    * Restores this object to its pristine state.
    */
-  public function blank_values() {
-    $this->access_type = 'read';
-    $this->api_products = array();
-    $this->app_family = NULL;
-    $this->app_id = NULL;
+  public function blankValues() {
+    $this->accessType = 'read';
+    $this->apiProducts = array();
+    $this->appFamily = NULL;
+    $this->appId = NULL;
     $this->attributes = array();
-    $this->callback_url = NULL;
-    $this->created_at = NULL;
-    $this->created_by = NULL;
-    $this->modified_at = NULL;
-    $this->modified_by = NULL;
-    $this->developer_id = NULL;
+    $this->callbackUrl = NULL;
+    $this->createdAt = NULL;
+    $this->createdBy = NULL;
+    $this->modifiedAt = NULL;
+    $this->modifiedBy = NULL;
+    $this->developerId = NULL;
     $this->name = NULL;
     $this->scopes = array();
     $this->status = 'pending';
     $this->description = NULL;
 
-    $this->credential_apiproducts = array();
-    $this->consumer_key = NULL;
-    $this->consumer_secret = NULL;
-    $this->credential_scopes = array();
-    $this->credential_status = NULL;
+    $this->credentialApiProducts = array();
+    $this->consumerKey = NULL;
+    $this->consumerSecret = NULL;
+    $this->credentialScopes = array();
+    $this->credentialStatus = NULL;
 
-    $this->cached_api_products = array();
+    $this->cachedApiProducts = array();
+  }
+
+  /**
+   * Turns this object's properties into an array for external use.
+   *
+   * @return array
+   */
+  public function toArray() {
+    $properties = array_keys(get_object_vars($this));
+    $excluded_properties = array_keys(get_class_vars(get_parent_class($this)));
+    $excluded_properties[] = 'cachedApiProducts';
+    $excluded_properties[] = 'baseUrl';
+    $output = array();
+    foreach ($properties as $property) {
+      if (!in_array($property, $excluded_properties)) {
+        $output[$property] = $this->$property;
+      }
+    }
+    $output['debugData'] = $this->getDebugData();
+    return $output;
+  }
+
+  /**
+   * Populates this object based on an incoming array generated by the
+   * toArray() method above.
+   *
+   * @param $array
+   */
+  public function fromArray($array) {
+    foreach($array as $key => $value) {
+      if (property_exists($this, $key) && $key != 'debugData') {
+        $this->{$key} = $value;
+      }
+    }
+  }
+
+  /**
+   * Dummy placeholder to allow subclasses to modify the DeveloperApp
+   * object as it is finishing the load process.
+   *
+   * @param DeveloperAppInterface $obj
+   * @param array $response
+   */
+  protected static function afterLoad(DeveloperAppInterface &$obj, array $response) {
+    // Do Nothing
+  }
+
+  /**
+   * Dummy placeholder to allow subclasses to modify the payload of the
+   * app-save call right before it is invoked.
+   *
+   * @param array $payload
+   * @param DeveloperAppInterface $obj
+   */
+  protected static function preSave(array &$payload, DeveloperAppInterface $obj) {
+    // Do Nothing
+  }
+
+  /**
+   * Dummy placeholder to allow subclasses to modify the payload of the
+   * credential-save call right before it is invoked.
+   *
+   * @param array $payload
+   * @param array $credential
+   * @param array $kms_response
+   */
+  protected static function preSaveCredential(array &$payload, array $credential, array $kms_response) {
+    // Do Nothing
   }
 }

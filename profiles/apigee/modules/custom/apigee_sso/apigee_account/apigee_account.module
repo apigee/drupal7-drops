@@ -1,0 +1,274 @@
+<?php
+/**
+ * @file
+ * Handles user authentication via accounts.apigee.com.
+ *
+ * @author Daniel Johnson <djohnson@apigee.com>
+ * @since 10-Sep-2013
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * @return array
+ */
+function apigee_account_menu() {
+  $items = array();
+
+  $items['aac-login'] = array(
+    'title' => 'Sign On',
+    'page callback' => 'apigee_account_login',
+    'access callback' => 'user_is_anonymous'
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_variable_info().
+ *
+ * @param $options
+ * @return array
+ */
+function apigee_account_variable_info($options) {
+
+  $variables = array();
+
+  $variables['apigee_account_host'] = array(
+    "title" => t('Accounts Host'),
+    "type" => 'string',
+    "description" => 'Apigee accounts manager instance which will be used to authenticate users',
+    "default" => 'https://accounts.apigee.com'
+  );
+
+  return $variables;
+}
+
+/**
+ * Page callback for aac-login URL
+ */
+function apigee_account_login() {
+  $destination = (empty($_GET['g']) ? variable_get('site_frontpage', 'node') : $_GET['g']);
+  if (!empty($_GET['access_token']) && !empty($_GET['uuid'])) {
+    $token = $_GET['access_token'];
+    $uuid = $_GET['uuid'];
+    $session_info = _apigee_account_session_info($token, $uuid);
+    if (empty($session_info)) {
+      if (isset($_SESSION['aac_session'])) {
+        unset($_SESSION['aac_session']);
+      }
+      drupal_access_denied();
+    }
+    $_SESSION['aac_session'] = $session_info;
+    // If there is stale info lingering from a failed Google SSO login,
+    // remove it now.
+    if (isset($_SESSION['openid'])) {
+      unset ($_SESSION['openid']);
+    }
+    _apigee_account_cancel_callback_override($token, $uuid);
+    $account = user_load_by_mail($session_info['email']);
+
+    if (isset($account->uid)) {
+      if (!variable_get('user_email_verification', TRUE) || $account->login) {
+        // Check if user is blocked.
+        $state['values']['name'] = $account->name;
+        user_login_name_validate(array(), $state);
+        if (!form_get_errors()) {
+          // Load global $user and perform final login tasks.
+          $form_state['uid'] = $account->uid;
+          user_login_submit(array(), $form_state);
+          // Let other modules act on Apigee login
+          $destination = 'user/' . $account->uid . '/apps';
+          module_invoke_all('apigee_account_response', $session_info, $account, $destination);
+          drupal_goto($destination);
+        }
+      }
+      else {
+        drupal_set_message(t('You must validate your email address for this account before logging in via Apigee.'));
+      }
+    }
+    elseif (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL)) {
+      // Register new user.
+      $form_state = array(
+        'values' => array(
+          'op' => t('Create new account')
+        )
+      );
+      drupal_form_submit('user_register_form', $form_state);
+
+      if (!empty($form_state['user'])) {
+        $destination = 'user/' . $form_state['user']->uid . '/apps';
+        module_invoke_all('apigee_account_response', $session_info, $form_state['user'], $destination);
+        drupal_goto($destination);
+      }
+
+      $messages = drupal_get_messages('error');
+      if (empty($form_state['values']['name']) || empty($form_state['values']['mail'])) {
+        drupal_set_message(t('Complete the registration by filling out the form below. If you already have an account, you can <a href="@login">log in</a> now.', array('@login' => url('user/login'))), 'warning');
+      }
+      else {
+        drupal_set_message(t('Account registration using the information provided by Apigee failed due to the reasons listed below. Complete the registration by filling out the form below. If you already have an account, you can <a href="@login">log in</a> now.', array('@login' => url('user/login'))), 'warning');
+        // Append form validation errors below the above warning.
+        foreach ($messages['error'] as $message) {
+          drupal_set_message($message, 'error');
+        }
+      }
+
+      // We were unable to register a valid new user. Redirect to the normal
+      // registration page and prefill with the values we received.
+      drupal_goto('user/register');
+    }
+    else {
+      drupal_set_message(t('Only site administrators can create new user accounts.'), 'error');
+    }
+    drupal_goto($destination);
+  }
+
+  $qs = array(
+    'callback' => url('aac-login', array('absolute' => TRUE, 'query' => array('g' => $destination)))
+  );
+  $host = variable_get('apigee_account_host', 'https://accounts.apigee.com');
+
+  $url = $host . '/accounts/sign_in';
+  drupal_goto($url, array('query' => $qs));
+}
+
+/**
+ * Fetches user info from AAC.
+ *
+ * @param string $token
+ * @param string $uuid
+ * @return array
+ */
+function _apigee_account_session_info($token, $uuid) {
+  $host = variable_get('apigee_account_host', 'https://accounts.apigee.com');
+
+  $url = $host . '/api/v1/users/' . $uuid . '?access_token=' . $token;
+  $opts = array();
+  $session_info = array();
+  $response_obj = drupal_http_request($url, $opts);
+  if ($response_obj->code == 200 && !empty($response_obj->data)) {
+    $json = @json_decode($response_obj->data, TRUE);
+    if (is_array($json) && $json['status'] == 'ok' && is_array($json['data']) && !$json['data']['disabled']) {
+      $session_info['username'] = $json['data']['username'];
+      $session_info['name'] = $json['data']['name'];
+      $session_info['email'] = $json['data']['email'];
+      $session_info['token'] = $json['data']['token'];
+    }
+  }
+  return $session_info;
+}
+
+/**
+ * Helper function to cancel the callback_override once login is successful.
+ *
+ * @param string $token
+ * @param string $uuid
+ */
+function _apigee_account_cancel_callback_override($token, $uuid) {
+  $host = variable_get('apigee_account_host', 'https://accounts.apigee.com');
+  $url = "$host/api/v1/users/$uuid?access_token=$token";
+  $opts = array(
+    'method' => 'PUT',
+    'headers' => array(
+      'Content-Type' => 'application/json'
+    ),
+    'data' => '{"callbackOverride":""}'
+  );
+  drupal_http_request($url, $opts);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @param $form
+ * @param $form_state
+ */
+function apigee_account_form_user_register_form_alter(&$form, &$form_state) {
+  if (empty($_SESSION['aac_session'])) {
+    return;
+  }
+  $session_info = $_SESSION['aac_session'];
+  $email = $session_info['email'];
+
+  $account = user_load_by_mail($email);
+  // On no mail match, $account will be FALSE. If mail was empty, $account->uid is 0.
+  if ($account && $account->uid) {
+    if (function_exists('devconnect_user_is_org_admin') && devconnect_user_is_org_admin($email) && $account->status == 0) {
+      $account->status = 1;
+      user_save($account);
+    }
+  }
+  else {
+    $form['#after_build'][] = 'apigee_account_set_field_defaults';
+    if (function_exists('devconnect_user_is_org_admin') && devconnect_user_is_org_admin($email)) {
+      if (!is_array($form['account']['roles']['#default_value'])) {
+        $form['account']['roles']['#default_value'] = array();
+      }
+      $form['account']['status']['#access'] = TRUE;
+      $form['account']['status']['#default_value'] = TRUE;
+      $form['account']['roles']['#access'] = TRUE;
+      $form['account']['roles']['#default_value'] = array_unique(array_merge($form['account']['roles']['#default_value'], devconnect_user_get_admin_rids()));
+    }
+    $form['account']['name']['#default_value'] = $session_info['name'];
+  }
+}
+
+/**
+ * Sets user-field values in the registration form based on best-guesses.
+ *
+ * @param array $form
+ * @return array
+ */
+function apigee_account_set_field_defaults($form) {
+  if (empty($_SESSION['aac_session'])) {
+    return $form;
+  }
+  $session_info = $_SESSION['aac_session'];
+  $name = $session_info['name'];
+  $email = $session_info['email'];
+  if (strpos($name, ' ') > 0) {
+    list($first_name, $last_name) = explode(' ', $name, 2);
+  }
+  elseif (preg_match('!^([^@]+)[._+-]([^@]+)@.+$!', $email, $matches)) {
+    // Try to get first & last names from email if they're separated by dot,
+    // hyphen, plus or underscore
+    list(, $first_name, $last_name) = $matches;
+  }
+  else {
+    $first_name = $name;
+    $last_name = '';
+  }
+
+  if (
+      !empty($first_name)
+      && array_key_exists('field_first_name', $form)
+      && array_key_exists(LANGUAGE_NONE, $form['field_first_name'])
+      && array_key_exists(0, $form['field_first_name'][LANGUAGE_NONE])
+      && array_key_exists('value', $form['field_first_name'][LANGUAGE_NONE][0])
+  ) {
+    $form['field_first_name'][LANGUAGE_NONE][0]['value']['#value'] = $first_name;
+  }
+  if (
+    !empty($last_name)
+    && array_key_exists('field_last_name', $form)
+    && array_key_exists(LANGUAGE_NONE, $form['field_last_name'])
+    && array_key_exists(0, $form['field_last_name'][LANGUAGE_NONE])
+    && array_key_exists('value', $form['field_last_name'][LANGUAGE_NONE][0])
+  ) {
+    $form['field_last_name'][LANGUAGE_NONE][0]['value']['#value'] = $last_name;
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_user_logout().
+ *
+ * @param $account
+ */
+function apigee_account_user_logout($account) {
+  if (isset($_SESSION['aac_session'])) {
+    unset ($_SESSION['aac_session']);
+  }
+}

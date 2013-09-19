@@ -13,8 +13,8 @@ class Cache {
    * @return mixed|null
    */
   public static function get($name, $default) {
-    if (self::is_running_simpletest()) {
-      return self::simpletest_variable_get($name, $default);
+    if (self::isRunningSimpletest()) {
+      return self::simpletestVariableGet($name, $default);
     }
     if (function_exists('variable_get')) {
       return variable_get($name, $default);
@@ -52,7 +52,7 @@ class Cache {
    * @static
    * @return bool
    */
-  private static function is_running_simpletest() {
+  private static function isRunningSimpletest() {
     static $is_running_simpletest = NULL;
 
     if ($is_running_simpletest === NULL) {
@@ -86,7 +86,7 @@ class Cache {
    * @param mixed $default
    * @return mixed
    */
-  private static function simpletest_variable_get($name, $default) {
+  private static function simpletestVariableGet($name, $default) {
     // Is the variable stored in memory?
     if (isset($GLOBALS['_variable_cache']) && is_array($GLOBALS['_variable_cache']) && array_key_exists($name, $GLOBALS['_variable_cache'])) {
       return $GLOBALS['_variable_cache'][$name];
@@ -101,7 +101,7 @@ class Cache {
     return $value;
   }
 
-  // Note that there's no simpletest_variable_set. While we are in the simpletest
+  // Note that there's no simpletestVariableSet. While we are in the simpletest
   // sandbox, we should not need to write anything to the db. This means that Cache::set
   // simply writes the value to $GLOBALS['_variable_cache'], where subsequent Cache::get
   // invocations will read it.

@@ -1,0 +1,12 @@
+name = Workflow Clean Up
+description = "Cleans up Workflow cruft"
+dependencies[] = workflow
+core = 7.x
+package = Workflow
+
+; Information added by drupal.org packaging script on 2013-07-04
+version = "7.x-1.2"
+core = "7.x"
+project = "workflow"
+datestamp = "1372980654"
+

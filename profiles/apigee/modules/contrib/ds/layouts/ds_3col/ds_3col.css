@@ -1,15 +1,19 @@
+/**
+ * @file
+ * Styling for the ds-3col template.
+ */
 
-.group-left {
+.ds-3col > .group-left {
   width: 25%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-middle {
+.ds-3col > .group-middle {
   width: 50%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-right {
+.ds-3col > .group-right {
   width: 25%;
-  float: right;
+  float: right; /* LTR */
 }

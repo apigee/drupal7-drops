@@ -21,3 +21,9 @@ span.delete{
   height: 16px;
   top: 0px;
 }
+
+div#analytics-highchart {
+  min-width:400px;
+  height: 300px;
+  margin: 0 auto;
+}

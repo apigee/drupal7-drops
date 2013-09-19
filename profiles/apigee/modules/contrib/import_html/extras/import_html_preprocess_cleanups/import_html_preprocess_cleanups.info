@@ -1,0 +1,14 @@
+core = 7.x
+description = "Dealing with really bad input, there are a few syntax things that even htmltidy can't fix for us."
+name = "Import HTML - Preprocess cleanups"
+package = "Import/Export"
+dependencies[] = import_html
+
+
+
+; Information added by drupal.org packaging script on 2013-06-03
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "import_html"
+datestamp = "1370264133"
+

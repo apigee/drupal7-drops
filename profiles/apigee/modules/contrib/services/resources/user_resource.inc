@@ -5,7 +5,7 @@ function _user_resource_definition() {
     'user' => array(
       'operations' => array(
         'retrieve' => array(
-          'help' => 'Retrieves a user',
+          'help' => 'Retrieve a user',
           'callback' => '_user_resource_retrieve',
           'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
           'access callback' => '_user_resource_access',
@@ -23,7 +23,7 @@ function _user_resource_definition() {
         ),
 
         'create' => array(
-          'help' => 'Creates a user',
+          'help' => 'Create a user',
           'callback' => '_user_resource_create',
           'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
           'access callback' => '_user_resource_access',
@@ -41,7 +41,7 @@ function _user_resource_definition() {
         ),
 
         'update' => array(
-          'help' => 'Updates a user',
+          'help' => 'Update a user',
           'callback' => '_user_resource_update',
           'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
           'access callback' => '_user_resource_access',
@@ -66,7 +66,7 @@ function _user_resource_definition() {
         ),
 
         'delete' => array(
-          'help' => 'Deletes a user',
+          'help' => 'Delete a user',
           'callback' => '_user_resource_delete',
           'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
           'access callback' => '_user_resource_access',
@@ -83,6 +83,7 @@ function _user_resource_definition() {
           ),
         ),
         'index' => array(
+          'help' => 'List all users',
           'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
           'callback' => '_user_resource_index',
           'args' => array(
@@ -152,6 +153,16 @@ function _user_resource_definition() {
           'help' => 'Logout a user session',
           'callback' => '_user_resource_logout',
           'access callback' => 'services_access_menu',
+        ),
+        'token' => array(
+          'file' => array(
+            'type' => 'inc',
+            'module' => 'services',
+            'name' => 'user_resource',
+          ),
+          'callback' => '_user_resource_get_token',
+          'access callback' => 'services_access_menu',
+          'help' => t('Returns the CSRF token.'),
         ),
       ),
     ),
@@ -308,7 +319,7 @@ function _user_resource_update($uid, $account) {
   }
 
   // If user is changing name, make sure they have permission.
-  if (isset($account['name']) && $account['name'] != $account_loaded->name && !user_access('change own username')) {
+  if (isset($account['name']) && $account['name'] != $account_loaded->name && !(user_access('change own username') || !user_access('administer users'))) {
     return services_error(t('You are not allowed to change your username.'), 406);
   }
 
@@ -337,6 +348,10 @@ function _user_resource_update($uid, $account) {
  * @see user_delete()
  */
 function _user_resource_delete($uid) {
+  if ($uid == 1) {
+    return services_error(t('The admin user cannot be deleted.'), 403);
+  }
+
   $account = user_load($uid);
   if (empty($account)) {
     return services_error(t('There is no user with ID @uid.', array('@uid' => $uid)), 404);
@@ -520,4 +535,34 @@ function _user_resource_access($op = 'view', $args = array()) {
     case 'delete':
       return user_access('administer users');
   }
+}
+
+/**
+ * Changes the user/login endpoint to accept the same parameters as the user/register endpoint, namely
+ * "name" instead of "username" and "pass" instead of "password"
+ */
+function _user_resource_login_update_1_1() {
+  $new_set = array(
+    'args' => array(
+      array(
+        'name' => 'name',
+        'type' => 'string',
+        'description' => 'A valid username',
+        'source' => array('data' => 'name'),
+        'optional' => FALSE,
+      ),
+      array(
+        'name' => 'pass',
+        'type' => 'string',
+        'description' => 'A valid password',
+        'source' => array('data' => 'pass'),
+        'optional' => FALSE,
+      ),
+    ),
+  );
+  return $new_set;
+}
+
+function _user_resource_get_token() {
+  return array('token' => drupal_get_token('services'));
 }

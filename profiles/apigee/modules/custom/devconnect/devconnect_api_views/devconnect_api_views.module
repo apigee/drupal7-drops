@@ -1,7 +1,0 @@
-<?php
-/**
- * @file
- * Code for the devconnect_api_views feature.
- */
-
-include_once('devconnect_api_views.features.inc');

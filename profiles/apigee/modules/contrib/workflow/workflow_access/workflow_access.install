@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file
+ * Workflow access installation.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function workflow_access_install() { }
+
+/**
+ * Implements hook_uninstall().
+ */
+function workflow_access_uninstall() { }
+
+/**
+ * Implements hook_schema().
+ */
+function workflow_access_schema() {
+  $schema['workflow_access'] = array(
+    'description' => 'Workflow access tables',
+    'fields' => array(
+      'sid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'rid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'grant_view' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'grant_update' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'grant_delete' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'rid' => array('rid'),
+      'sid' => array('sid'),
+    ),
+  );
+  return $schema;
+}

@@ -1,5 +1,4 @@
 <?php
-// $Id: faq-category-questions-top.tpl.php,v 1.1.2.6 2009/02/08 17:24:49 snpower Exp $
 
 /**
  * @file
@@ -61,7 +60,6 @@
  *   The sub-categories faqs, recursively themed (by this template).
  */
 
-
 ?>
 
  <div class="tabheading">
@@ -69,20 +67,13 @@
 		<div class="addforumpost-title"><?php print $category_name; ?></div> 
 	</div>	
 </div>
-<?php // list question links ?>
-  <?php if (!empty($question_list)): ?>
-  <div class="faq-general-information" >
-     <div class="item-list">
-     <<?php print $question_list_style; ?> class="faq-ul-questions-top" >
-    <?php foreach ($question_list as $i => $question_link): ?>
-      <li>
-      <?php print $question_link; ?>
-      </li>
-    <?php endforeach; ?>
-    </<?php print $question_list_style; ?>>
-    </div>
-   </div> 
-   <!-- Close div: item-list -->
-  <?php endif; ?>
+<?php
+if (!empty($question_list)) {
+  print '<div class="faq-general-information"><div class="item-list">'
+    . '<' . $question_list_style . ' class="faq-ul-questions-top">'
+    . '<li>' . join('</li><li>', $question_list) . '</li>'
+    . '</' . $question_list_style . '>'
+    . '</div></div>';
+}
    
   

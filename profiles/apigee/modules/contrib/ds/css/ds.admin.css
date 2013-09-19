@@ -3,27 +3,62 @@
  * @file
  * Administration CSS for Display Suite.
  */
-
-/**
- * Field template.
- */
-.field-template {
-  display: none;
-  min-width: 450px;
-  z-index: 1000;
-}
-
 .ds-extras-field-template {
   margin-bottom: 1em;
 }
 
-.field-formatter-settings-editing .ft-link {
-  display: none;
+#field-display-overview .field-formatter-settings-edit-form .ft-group .form-item {
+  margin: 0;
+}
+
+.ds-layout-preview-title {
+  font-weight: bold;
+}
+
+.ds-layout-preview-image {
+  float: left;
+  width: 150px;
+  padding-top: 10px;
+}
+
+.ds-layout-preview-image img {
+  width: 150px;
+}
+
+.ds-layout-preview-arrow {
+  float: left;
+  margin: 80px 10px 0 5px;
+}
+
+.ds-layout-preview-suggestion {
+  min-width: 150px;
+  overflow: hidden;
+  padding-left: 30px;
+}
+
+.ds-layout-regions {
+  float: left;
+  width: 210px;
 }
 
 .ft-group div.form-item {
   float: left;
   width: 130px;
+}
+
+.ds-select-layout {
+  clear: both;
+}
+
+.ds-layout-change-save {
+  clear: both;
+}
+
+/**
+ * Displays list
+ */
+table th.ds-display-list-options {
+  width: 300px;
 }
 
 /**
@@ -41,7 +76,7 @@
   position: fixed!important;
   background-color: #000!important;
 }
- 
+
 div.ctools-modal-content .modal-header {
   padding: 5px;
   background-color: #E1E2DC;
@@ -111,7 +146,7 @@ a.section-link {
 
 #ctools-content-selection #ds-right {
   float: left;
-  width: 70%; 
+  width: 70%;
 }
 
 #ctools-content-selection .selection-hide {
@@ -120,7 +155,7 @@ a.section-link {
 
 #ctools-content-selection .content-item {
   width: 50%;
-  float: left;	
+  float: left;
 }
 
 /**
@@ -135,3 +170,13 @@ a.section-link {
 #edit-additional-settings-ds-page-title-options-page-option-contexts legend {
   display: block;
 }
+
+/**
+ * Change layout screen.
+ */
+ .change_ds_layout_info {
+   margin-bottom: 10px;
+ }
+ .change_ds_layout_old_region {
+   font-weight: bold;
+ }

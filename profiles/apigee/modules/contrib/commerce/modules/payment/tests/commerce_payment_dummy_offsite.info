@@ -1,0 +1,13 @@
+name = "Commerce payment offsite test"
+description = "Support module for customer payment related testing."
+package = Testing
+version = VERSION
+core = 7.x
+hidden = TRUE
+
+; Information added by drupal.org packaging script on 2013-07-23
+version = "7.x-1.8"
+core = "7.x"
+project = "commerce"
+datestamp = "1374609067"
+

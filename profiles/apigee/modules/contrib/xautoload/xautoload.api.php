@@ -58,16 +58,16 @@ function hook_xautoload($api) {
 function mymodule_libraries_info() {
 
   return array(
-    'mymodule-test-lib' => array(
-      'name' => 'My test library',
+    'example-lib' => array(
+      'name' => 'Example library',
       'vendor url' => 'http://www.example.com',
       'download url' => 'http://github.com/example/my-php-api',
       'version' => '1.0',
       'xautoload' => function($api) {
-        // Register a namespace with PSR-0 root in <library dir>/lib/
-        // Note: $api already knows the library directory.
-        // Note: We could omit the 'lib', as this is the default value.
-        $api->namespaceRoot('XALib\TestNamespace', 'lib');
+        // Register a namespace with PSR-0 root in <library dir>/lib/.
+        // The second argument is relative to the directory of the library, so
+        // PSR-0 root will be e.g. "sites/all/libraries/example-lib/lib".
+        $api->namespaceRoot('ExampleVendor\ExampleLib', 'lib');
       },
     ),
   );

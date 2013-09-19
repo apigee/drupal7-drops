@@ -14,7 +14,7 @@ class dsNodeTests extends dsBaseTest {
     return array(
       'name' => t('Node display'),
       'description' => t('Tests for display of nodes and fields.'),
-      'group' => t('Display suite'),
+      'group' => t('Display Suite'),
     );
   }
 
@@ -30,9 +30,9 @@ class dsNodeTests extends dsBaseTest {
     $settings = array('type' => 'article', 'promote' => 1);
     $node = $this->drupalCreateNode($settings);
 
-    // Create field styles.
-    $edit = array('ds_styles_fields' => "test_field_class\ntest_field_class_2|Field class 2");
-    $this->drupalPost('admin/structure/ds/styles', $edit, t('Save configuration'));
+    // Create field CSS classes.
+    $edit = array('ds_classes_fields' => "test_field_class\ntest_field_class_2|Field class 2");
+    $this->drupalPost('admin/structure/ds/classes', $edit, t('Save configuration'));
 
     // Create a token and php field.
     $token_field = array(
@@ -60,8 +60,9 @@ class dsNodeTests extends dsBaseTest {
       'fields[token_field][region]' => 'header',
       'fields[php_field][region]' => 'left',
       'fields[body][region]' => 'right',
-      'fields[links][region]' => 'footer',
+      'fields[node_link][region]' => 'footer',
       'fields[body][label]' => $label,
+      'fields[submitted_by][region]' => 'header',
     );
     $this->dsConfigureUI($fields);
 
@@ -85,15 +86,15 @@ class dsNodeTests extends dsBaseTest {
       'fields[body][label]' => $label,
     );
     if (!empty($text)) {
-      $edit['fields[body][format][ft][lb]'] = $text;
+      $edit['fields[body][settings_edit_form][settings][ft][lb]'] = $text;
     }
     if (!empty($class)) {
-      $edit['fields[body][format][ft][styles][]'] = $class;
+      $edit['fields[body][settings_edit_form][settings][ft][classes][]'] = $class;
     }
     if ($hide_colon) {
-      $edit['fields[body][format][ft][lb-col]'] = '1';
+      $edit['fields[body][settings_edit_form][settings][ft][lb-col]'] = '1';
     }
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
   }
 
   /**
@@ -102,6 +103,7 @@ class dsNodeTests extends dsBaseTest {
   function testDSNodeEntity() {
 
     $node = $this->entitiesTestSetup();
+    $node_author = user_load($node->uid);
 
     // Look at node and verify token and block field.
     $this->drupalGet('node/' . $node->nid);
@@ -112,6 +114,7 @@ class dsNodeTests extends dsBaseTest {
     $this->assertRaw('group-footer', 'Template found (region footer)');
     $this->assertRaw('group-left', 'Template found (region left)');
     $this->assertRaw('group-right', 'Template found (region right)');
+    $this->assertPattern('/<div[^>]*>Submitted[^<]*<a[^>]+href="\/user\/' . $node_author->uid . '"[^>]*>' . check_plain($node_author->name) . '<\/a>.<\/div>/', t('Submitted by line found'));
 
     // Configure teaser layout.
     $teaser = array(
@@ -183,7 +186,7 @@ class dsNodeTests extends dsBaseTest {
     $this->assertNoRaw('Recent content');
 
     // Remove the page title (we'll use the switch view mode functionality too for this).
-    $edit = array('additional_settings[ds_page_title_options][page_option_type]' => '1');
+    $edit = array('additional_settings[ds_page_title][ds_page_title_options][page_option_type]' => '1');
     $this->dsConfigureUI($edit, 'admin/structure/types/manage/article/display/teaser');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw('<h1 class="title" id="page-title">
@@ -195,23 +198,23 @@ class dsNodeTests extends dsBaseTest {
           '. $node->title . '        </h1>');
 
     // Use page title substitutions.
-    $edit = array('additional_settings[ds_page_title_options][page_option_type]' => '2', 'additional_settings[ds_page_title_options][page_option_title]' => 'Change title: %node:type');
+    $edit = array('additional_settings[ds_page_title][ds_page_title_options][page_option_type]' => '2', 'additional_settings[ds_page_title][ds_page_title_options][page_option_title]' => 'Change title: %node:type');
     $this->dsConfigureUI($edit, 'admin/structure/types/manage/article/display/teaser');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw('<h1 class="title" id="page-title">
           Change title: '. $node->type . '        </h1>');
-    $edit = array('additional_settings[ds_page_title_options][page_option_type]' => '0');
+    $edit = array('additional_settings[ds_page_title][ds_page_title_options][page_option_type]' => '0');
     $this->dsConfigureUI($edit, 'admin/structure/types/manage/article/display/teaser');
 
     // Go to home page, page title shouldn't bleed here
     // see http://drupal.org/node/1446554.
     $edit = array('ds_switch' => '');
     $this->drupalPost('node/' . $node->nid . '/edit', $edit, t('Save'));
-    $edit = array('additional_settings[ds_page_title_options][page_option_type]' => '2', 'additional_settings[ds_page_title_options][page_option_title]' => 'Bleed title: %node:type');
+    $edit = array('additional_settings[ds_page_title][ds_page_title_options][page_option_type]' => '2', 'additional_settings[ds_page_title][ds_page_title_options][page_option_title]' => 'Bleed title: %node:type');
     $this->dsConfigureUI($edit, 'admin/structure/types/manage/article/display');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw('<h1 class="title" id="page-title">
-          Bleed title: '. $node->type . '        </h1>');
+          Bleed title: article        </h1>');
     $this->drupalGet('node');
     $this->assertNoText('Bleed title');
 
@@ -250,7 +253,8 @@ class dsNodeTests extends dsBaseTest {
     $this->assertText('Body:', 'Body label');
 
     // Change title of revision.
-    $edit = array('additional_settings[ds_page_title_options][page_option_type]' => '2', 'additional_settings[ds_page_title_options][page_option_title]' => 'Custom revision title');
+    $edit = array('additional_settings[ds_page_title][ds_page_title_options][page_option_type]' => '2', 'additional_settings[ds_page_title][ds_page_title_options][page_option_title]' => 'Custom revision title');
+
     $this->dsConfigureUI($edit, 'admin/structure/types/manage/article/display/revision');
     $this->drupalGet('node/' . $node->nid . '/revisions/1/view');
     $this->assertText('Custom revision title', 'Custom title on revision view mode');
@@ -332,41 +336,41 @@ class dsNodeTests extends dsBaseTest {
     $edit = array(
       'additional_settings[fs1][ft-default]' => 'theme_ds_field_reset',
     );
-    $this->drupalPost('admin/structure/ds/extras', $edit, t('Save configuration'));
+    $this->drupalPost('admin/structure/ds/list/extras', $edit, t('Save configuration'));
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <p>" . $body_field . "</p>");
+    <p>" . $body_field . "</p>");
 
     $this->entitiesSetLabelClass('above');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"label-above\">Body:&nbsp;</div><p>" . $body_field . "</p>");
+    <div class=\"label-above\">Body:&nbsp;</div><p>" . $body_field . "</p>");
 
     $this->entitiesSetLabelClass('inline');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"label-inline\">Body:&nbsp;</div><p>" . $body_field . "</p>");
+    <div class=\"label-inline\">Body:&nbsp;</div><p>" . $body_field . "</p>");
 
     $this->entitiesSetLabelClass('above', 'My body');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"label-above\">My body:&nbsp;</div><p>" . $body_field . "</p>");
+    <div class=\"label-above\">My body:&nbsp;</div><p>" . $body_field . "</p>");
 
     $this->entitiesSetLabelClass('inline', 'My body');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"label-inline\">My body:&nbsp;</div><p>" . $body_field . "</p>");
+    <div class=\"label-inline\">My body:&nbsp;</div><p>" . $body_field . "</p>");
 
     variable_set('ft-kill-colon', TRUE);
     $this->refreshVariables();
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"label-inline\">My body</div><p>" . $body_field . "</p>");
+    <div class=\"label-inline\">My body</div><p>" . $body_field . "</p>");
 
     $this->entitiesSetLabelClass('hidden');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <p>" . $body_field . "</p>");
+    <p>" . $body_field . "</p>");
     $this->entitiesClearFieldSettings();
 
     // ----------------------
@@ -375,231 +379,300 @@ class dsNodeTests extends dsBaseTest {
 
     // With outer wrapper.
     $edit = array(
-      'fields[body][format][ft][function]' => 'theme_ds_field_expert',
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'div'
+      'fields[body][settings_edit_form][settings][ft][func]' => 'theme_ds_field_expert',
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
+
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div><p>" . $body_field . "</p>
-</div>    </div>");
+    <div><p>" . $body_field . "</p>
+</div>  </div>");
 
     // With outer div wrapper and class.
     $edit = array(
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'div',
-      'fields[body][format][ft][ow-cl]' => 'ow-class'
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class'
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><p>" . $body_field . "</p>
-</div>    </div>");
+    <div class=\"ow-class\"><p>" . $body_field . "</p>
+</div>  </div>");
 
     // With outer span wrapper and class.
     $edit = array(
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'span',
-      'fields[body][format][ft][ow-cl]' => 'ow-class-2'
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class-2'
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <span class=\"ow-class-2\"><p>" . $body_field . "</p>
-</span>    </div>");
+    <span class=\"ow-class-2\"><p>" . $body_field . "</p>
+</span>  </div>");
 
     // Clear field settings.
     $this->entitiesClearFieldSettings();
 
     // With outer wrapper and field items wrapper.
     $edit = array(
-      'fields[body][format][ft][function]' => 'theme_ds_field_expert',
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'div',
-      'fields[body][format][ft][fis]' => '1',
-      'fields[body][format][ft][fis-el]' => 'div'
+      'fields[body][settings_edit_form][settings][ft][func]' => 'theme_ds_field_expert',
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'div'
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div><div><p>" . $body_field . "</p>
-</div></div>    </div>");
+    <div><div><p>" . $body_field . "</p>
+</div></div>  </div>");
 
     // With outer wrapper and field items div wrapper with class.
     $edit = array(
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'div',
-      'fields[body][format][ft][ow-el]' => 'div',
-      'fields[body][format][ft][fis]' => '1',
-      'fields[body][format][ft][fis-el]' => 'div',
-      'fields[body][format][ft][fis-cl]' => 'fi-class'
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class'
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div><div class=\"fi-class\"><p>" . $body_field . "</p>
-</div></div>    </div>");
+    <div><div class=\"fi-class\"><p>" . $body_field . "</p>
+</div></div>  </div>");
 
     // With outer wrapper and field items span wrapper and class.
     $edit = array(
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'div',
-      'fields[body][format][ft][fis]' => '1',
-      'fields[body][format][ft][fis-el]' => 'span',
-      'fields[body][format][ft][fis-cl]' => 'fi-class'
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class'
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div><span class=\"fi-class\"><p>" . $body_field . "</p>
-</span></div>    </div>");
+    <div><span class=\"fi-class\"><p>" . $body_field . "</p>
+</span></div>  </div>");
 
     // With outer wrapper class and field items span wrapper and class.
     $edit = array(
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'div',
-      'fields[body][format][ft][ow-cl]' => 'ow-class',
-      'fields[body][format][ft][fis]' => '1',
-      'fields[body][format][ft][fis-el]' => 'span',
-      'fields[body][format][ft][fis-cl]' => 'fi-class'
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class'
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><span class=\"fi-class\"><p>" . $body_field . "</p>
-</span></div>    </div>");
+    <div class=\"ow-class\"><span class=\"fi-class\"><p>" . $body_field . "</p>
+</span></div>  </div>");
 
     // With outer wrapper span class and field items span wrapper and class.
     $edit = array(
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'span',
-      'fields[body][format][ft][ow-cl]' => 'ow-class',
-      'fields[body][format][ft][fis]' => '1',
-      'fields[body][format][ft][fis-el]' => 'span',
-      'fields[body][format][ft][fis-cl]' => 'fi-class-2'
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class-2'
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <span class=\"ow-class\"><span class=\"fi-class-2\"><p>" . $body_field . "</p>
-</span></span>    </div>");
+    <span class=\"ow-class\"><span class=\"fi-class-2\"><p>" . $body_field . "</p>
+</span></span>  </div>");
 
     // Clear field settings.
     $this->entitiesClearFieldSettings();
 
     // With field item div wrapper.
     $edit = array(
-      'fields[body][format][ft][function]' => 'theme_ds_field_expert',
-      'fields[body][format][ft][fi]' => '1',
+      'fields[body][settings_edit_form][settings][ft][func]' => 'theme_ds_field_expert',
+      'fields[body][settings_edit_form][settings][ft][fi]' => '1',
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"even\"><p>" . $body_field . "</p>
-</div>    </div>");
+    <div><p>" . $body_field . "</p>
+</div>  </div>");
 
     // With field item span wrapper.
     $edit = array(
-      'fields[body][format][ft][fi]' => '1',
-      'fields[body][format][ft][fi-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fi]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fi-el]' => 'span',
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <span class=\"even\"><p>" . $body_field . "</p>
-</span>    </div>");
+    <span><p>" . $body_field . "</p>
+</span>  </div>");
 
-    // With field item span wrapper and class.
+    // With field item span wrapper and class and odd even.
     $edit = array(
-      'fields[body][format][ft][fi]' => '1',
-      'fields[body][format][ft][fi-el]' => 'span',
-      'fields[body][format][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][fi]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fi-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][fi-odd-even]' => '1',
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span>    </div>");
+    <span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span>  </div>");
 
     // With fis and fi.
     $edit = array(
-      'fields[body][format][ft][fis]' => '1',
-      'fields[body][format][ft][fis-el]' => 'div',
-      'fields[body][format][ft][fis-cl]' => 'fi-class-2',
-      'fields[body][format][ft][fi]' => '1',
-      'fields[body][format][ft][fi-el]' => 'div',
-      'fields[body][format][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class-2',
+      'fields[body][settings_edit_form][settings][ft][fi]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fi-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][fi-odd-even]' => '1',
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"fi-class-2\"><div class=\"even fi-class\"><p>" . $body_field . "</p>
-</div></div>    </div>");
-    // With all
+    <div class=\"fi-class-2\"><div class=\"even fi-class\"><p>" . $body_field . "</p>
+</div></div>  </div>");
+    // With all wrappers.
     $edit = array(
-      'fields[body][format][ft][ow]' => '1',
-      'fields[body][format][ft][ow-el]' => 'div',
-      'fields[body][format][ft][ow-cl]' => 'ow-class',
-      'fields[body][format][ft][fis]' => '1',
-      'fields[body][format][ft][fis-el]' => 'div',
-      'fields[body][format][ft][fis-cl]' => 'fi-class-2',
-      'fields[body][format][ft][fi]' => '1',
-      'fields[body][format][ft][fi-el]' => 'span',
-      'fields[body][format][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class-2',
+      'fields[body][settings_edit_form][settings][ft][fi]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fi-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][fi-odd-even]' => '1',
     );
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span></div></div>    </div>");
+    <div class=\"ow-class\"><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
+
+    // With all wrappers and attributes.
+    $edit = array(
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class',
+      'fields[body][settings_edit_form][settings][ft][ow-at]' => 'name="ow-att"',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class-2',
+      'fields[body][settings_edit_form][settings][ft][fis-at]' => 'name="fis-att"',
+      'fields[body][settings_edit_form][settings][ft][fi]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fi-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][fi-at]' => 'name="fi-at"',
+    );
+    $this->dsEditFormatterSettings($edit);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertRaw("<div class=\"group-right\">
+    <div class=\"ow-class\" name=\"ow-att\"><div class=\"fi-class-2\" name=\"fis-att\"><span class=\"even fi-class\" name=\"fi-at\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
+
+    // Remove attributes.
+    $edit = array(
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class',
+      'fields[body][settings_edit_form][settings][ft][ow-at]' => '',
+      'fields[body][settings_edit_form][settings][ft][fis]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fis-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][fis-cl]' => 'fi-class-2',
+      'fields[body][settings_edit_form][settings][ft][fis-at]' => '',
+      'fields[body][settings_edit_form][settings][ft][fi]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fi-el]' => 'span',
+      'fields[body][settings_edit_form][settings][ft][fi-cl]' => 'fi-class',
+      'fields[body][settings_edit_form][settings][ft][fi-at]' => '',
+    );
+    $this->dsEditFormatterSettings($edit);
 
     // Label tests with custom function.
     $this->entitiesSetLabelClass('above');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><div class=\"label-above\">Body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span></div></div>    </div>");
+    <div class=\"ow-class\"><div class=\"label-above\">Body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
 
     $this->entitiesSetLabelClass('inline');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><div class=\"label-inline\">Body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span></div></div>    </div>");
+    <div class=\"ow-class\"><div class=\"label-inline\">Body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
 
     $this->entitiesSetLabelClass('above', 'My body');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><div class=\"label-above\">My body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span></div></div>    </div>");
+    <div class=\"ow-class\"><div class=\"label-above\">My body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
 
     $this->entitiesSetLabelClass('inline', 'My body');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><div class=\"label-inline\">My body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span></div></div>    </div>");
+    <div class=\"ow-class\"><div class=\"label-inline\">My body:&nbsp;</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
 
     $this->entitiesSetLabelClass('inline', 'My body', '', TRUE);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><div class=\"label-inline\">My body</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span></div></div>    </div>");
+    <div class=\"ow-class\"><div class=\"label-inline\">My body</div><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
 
     $this->entitiesSetLabelClass('hidden');
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      <div class=\"ow-class\"><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
-</span></div></div>    </div>");
+    <div class=\"ow-class\"><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
+
+    // Test default classes on outer wrapper.
+    $edit = array(
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class',
+      'fields[body][settings_edit_form][settings][ft][ow-def-cl]' => '1',
+    );
+    $this->dsEditFormatterSettings($edit);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertRaw("<div class=\"group-right\">
+    <div class=\"ow-class field field-name-body field-type-text-with-summary field-label-hidden\"><div class=\"fi-class-2\"><span class=\"even fi-class\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
+
+    // Test default attributes on field item.
+    $edit = array(
+      'fields[body][settings_edit_form][settings][ft][ow]' => '1',
+      'fields[body][settings_edit_form][settings][ft][ow-el]' => 'div',
+      'fields[body][settings_edit_form][settings][ft][ow-cl]' => 'ow-class',
+      'fields[body][settings_edit_form][settings][ft][ow-def-cl]' => '1',
+      'fields[body][settings_edit_form][settings][ft][fi-def-at]' => '1',
+    );
+    $this->dsEditFormatterSettings($edit);
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertRaw("<div class=\"group-right\">
+    <div class=\"ow-class field field-name-body field-type-text-with-summary field-label-hidden\"><div class=\"fi-class-2\"><span class=\"even fi-class\"  property=\"content:encoded\"><p>" . $body_field . "</p>
+</span></div></div>  </div>");
 
     // Use the test field theming function to test that this function is
     // registered in the theme registry through ds_extras_theme().
     $edit = array(
-      'fields[body][format][ft][function]' => 'ds_test_theming_function',
+      'fields[body][settings_edit_form][settings][ft][func]' => 'ds_test_theming_function',
     );
 
-    $this->dsConfigureUI($edit);
+    $this->dsEditFormatterSettings($edit);
     $this->drupalGet('node/' . $node->nid);
     $this->assertRaw("<div class=\"group-right\">
-      Testing field output through custom function    </div>");
+    Testing field output through custom function  </div>");
   }
 }

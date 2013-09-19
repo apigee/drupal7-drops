@@ -42,6 +42,32 @@ if (!function_exists("apigee_drush_command")) {
       'aliases' => array('apl'),
     );
 
+    $items['apigee-environment'] = array(
+      'description' => 'show the live environment $_ENV variables in .json format',
+      'callback' => 'apigee_environment',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL, 
+      'examples' => array(
+        'drush @site apigee-environment' => 'run queries against @site to update database from Apigee Hosting',
+      ),
+      'aliases' => array('ape'),
+      'arguments' => array(
+        "variable" => "The name of the variable to retrieve from the server environment"
+      )
+    );
+
+    $items['apigee-portal'] = array(
+      'description' => 'Create apigee portal from Apigee orgname including Development, Test and Live environment',
+      'callback' => 'apigee_portal',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, 
+      'examples' => array(
+        'drush apigee-portal sears' => 'Create a portal for the apigee production org SEARS including Development, Test and Live environment',
+      ),
+      'aliases' => array('aport'),
+      'arguments' => array(
+        "orgname" => "Apigee orgname of the site being created"
+      )
+    );
+
     return $items;
   }
 
@@ -106,9 +132,6 @@ if (!function_exists("apigee_drush_command")) {
     drush_invoke("rr");
     module_load_include("php", "devconnect", "lib/Apigee/Util/Log");
     module_load_include("module", "devconnect");
-    drush_cache_command_clear("theme-list");
-    drush_cache_command_clear("theme-registry");
-    drush_cache_command_clear("menu");
     
     try{
       drush_include_engine('drupal', 'update', drush_drupal_major_version());
@@ -169,5 +192,42 @@ if (!function_exists("apigee_drush_command")) {
     
   }
   
+  
+  function apigee_environment($variable = "PRESSFLOW_SETTINGS") {
+    
+    $pf = json_decode($_SERVER['PRESSFLOW_SETTINGS'], true);
+    
+    if (array_key_exists($variable, $_SERVER)) {
+      drush_print($_SERVER[$variable], 0, null, false);
+    } else {
+      foreach($pf as $key => $value) {
+        if (@array_key_exists($variable, $value)) {
+          drush_print($value[$variable], 0, null, false);
+        }
+      }
+    }
+    // drush_print(print_r(get_defined_vars()));
+
+  }
+  
+  function apigee_portal($orgname = null) {
+    if ($orgname == null) {
+      return drush_set_error('DRUPAL_NO_ORGNAME', dt('You must specify an orgname to create a site.'));
+    }
+    drush_set_option("organization", "cb6b74dc-c0a7-4b9a-a1eb-309155c7476a");
+    drush_set_option("product", "7ce141f4-c1b2-439b-a0ad-fc90363ece1e");
+    drush_set_option("label", $orgname);
+    drush_invoke("pauth");
+    $session_data = terminus_bootstrap();
+    if ($session_data === FALSE) {
+      return drush_set_error('DRUPAL_NO_AUTH', dt('You were not authenticated via pantheon.'));
+    }
+    drush_invoke("psite-create", array($orgname));
+    drush_invoke("pantheon-aliases");
+    // eval the new aliases file
+    //drush_invoke_process("site-install", array("apigee"), "");
+    
+    
+  }
 
 }

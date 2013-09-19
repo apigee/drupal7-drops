@@ -14,7 +14,7 @@ class dsViewsTests extends dsBaseTest {
     return array(
       'name' => t('Views'),
       'description' => t('Tests for Display Suite Views integration.'),
-      'group' => t('Display suite'),
+      'group' => t('Display Suite'),
     );
   }
 
@@ -155,12 +155,13 @@ class dsViewsTests extends dsBaseTest {
     // Test on the views page itself.
     $this->drupalGet('ds-testing-6');
     $this->assertRaw('<div class="group-header">
-      <p>Footer text</p>');
+    <p>Footer text</p>
+  </div>');
     $this->assertRaw('<div class="group-left">
-        <div class="views-row views-row-1 views-row-odd views-row-first">');
+      <div class="views-row views-row-1 views-row-odd views-row-first">');
     $this->assertRaw('<div class="group-right">
-      <form class="rel-register-build" action="' . url('ds-testing-6') . '"');
+    <form action="' . url('ds-testing-6') . '"');
     $this->assertRaw('<div class="group-footer">
-      <p>Header text</p>');
+    <p>Header text</p>');
   }
 }

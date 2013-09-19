@@ -1,0 +1,151 @@
+Since 7.x-1.0
+Performance improvements.
+Major restructure of admin UI.
+Workflow form detached from comment form.
+Workflow status and form are fields that can be controlled under "Manage display."
+
+Issue #1783854 by antojose: Allow setting comment in Rules.
+Issue #1891446 by interX: Allow grouped filters.
+Issue #1922262 by NancyDru, hwold: Fix join. misc. improvements.
+Issue #1540824 by NancyDru: Improve Admin UI.
+Issue #1908520 by NancyDru: Set state of pre-existing nodes.
+Issue #1922422 by NancyDru: Correct state name creation in Tokens.
+Issue #155547 by NancyDru: Tab form should call hook_workflow().
+Issue #1818424 by NancyDru: Add doc for hook_workflow_operations.
+Issue #1918424 by NancyDru: More complete api doc.
+Get rid of temp.patch.
+Issue #385038 by flyingkiki, NancyDru: Fix double history. Minor corrections.
+Issue #1802216 by NancyDru: Improve scheduling time form section.
+Issue #1418622 by NancyDru: Fix tokens during transition.
+Issue #1784092 by wamilton: stop double saving nodes.
+remove accidental file
+Issue #1900488 by NancyDru: load comment in node_load. #1904740 by NancyDru: suppress form at terminal state. Performance improvements.
+Issue #1532646 by wonder95: Add search api module.
+Issue #1493012 by kid_icarus: Better views.
+Issue #1900480 by NancyDru for Dave Reid: Move tokens stuff to separate file.
+Issue #1418622 by Dave Reid: Fix tokens.
+Issue #1427006 by NancyDru: Fix transition rule.
+Issue #1893542 by NancyDru: Transition form by perms.
+Issue #1893724 by NancyDru: transition form by perms.
+Issue #1895712 by NancyDru: Fix form when only one state.
+Issue #1896422 by NancyDru: Fix token message.
+Correct theming in form.
+Minor corrections to README
+Issue #1856180 by NancyDru: Correct update to not fail.
+Issue #1475930 by Bastlynn.
+Issue #1874400 by Nancydru.
+Issue #1884630 by NancyDru.
+Issue #1891374 by NancyDru.
+Coder finds.
+Issue #1550274 by dynamicdan, gofs: egregious typo
+Adding features include on revert so it's avail during install / enable.
+UI improvement in Rules interface when there are more than one Workflows available.
+Issue #1471014 by Bastlynn: removing node_save from workflow tab.
+Issue #558378 by hefox: Features round 2 cleanup.
+Issue #1426844 by onegenius: Correcting for missing history information errs.
+Issue #1424008 by Bastlynn: handling no workflows setup w/ Workflow Views turned on.
+Issue #1421518 by DuaelFr: Workflow access warnings on new nodes
+Issue #1468810 by firewolf, Morten Najbjerg, sbrege Strict warnings re: render and form
+Issue #1469798 by Bastlynn: errs thrown on rules change when old state = new state.
+Issue #1468810 Timezones in scheduler
+Issue #1426844 by Bastlynn: Adding catch re: propery of last_history object being empty when node is not a workflow content type.
+Issue #1424008 by Bastlynn: Accounting for trying to go to views pg with workflow_views active, but no workflows in system.
+Issue #1400352 by Bastlynn: Fixing an error appearing udner E_STRICT in admin UI re: creating a default object.
+Something got wierd betwen the push/pull for this commit so trying that again.
+Issue #1386430 by dylanhuang (patch by dozymoe): Views filter shows unknown when state selected in multi-workflow environment.
+Issue #1386430 by dylanhuang (patch by dozymoe): Views filter shows unknown when state selected in multi-workflow environment.
+Correcting for doubled ,, in install schema.
+Issue #1405688 by wonder95: Path length correction for trigger path.
+Issue #1405688 by hefox: Coder standards.
+Issue #1924004 by evaldas.uzkuras: Fix bad variable.
+Fix typo in api. Add hook_requirements to show that worflows are active.
+Issue #1924174 by NancyDru: Fix menu error on state delete.
+Issue 1925162 by fgm: Call time reference error.
+Issue #1924182 by NancyDru: Correct initial state name in edit form.
+Issue #1926746 by shenzhuxi: Fix some php warnings.
+Issue #1781308 by NancyDru: Change node form to vertical tab.
+Issue #1926556 by NancyDru: Back to transition on node creation.
+Issue #1550992 by chadhester: Add Previous Comment Author for Views.
+Issue #1926800 by NancyDru: Fix operations links.
+Issue #1865754 by NancyDru for leelooch: Add reminder to state add form.
+Issue #1540412 by NancyDru: Allow timezones for transition scheduling.
+Issue #1930638 by NancyDru, shenzhuxi: Undefined variable.
+Issue #1540824 by NancyDru: Improve Admin UI.
+Issue #1931032 by NancyDru: Add missing js file.
+Issue #1931778 by NancyDru: Add breadcrumbs to access page.
+Add admin ui css.
+Issue #1350900 by loze: list states grouped by workflow.
+Issue #1540824 by NancyDru: More Admin UI improvements.
+Issue #1931948 by NancyDru: Use menu loaders to simplify menu.
+Issue #1347116 by NancyDru: New Workflow_Cleanup module.
+Issue #1509568 by fgm: Access control export.
+Issue #1933466 by fgm: Remove Admin UI warning, repair redirection on workflow_access admin submit.
+Issue #1768350 by NancyDru: Correct test and message for type page.
+Issue #1380954 by Bastlyn, DRippstein: Add node_actions triggers.
+Issue #1909922 by NancyDru: Add warning on Access UI page about content permissions.
+Issue #1691870 by berenddeboer: Allow Rules to bypass permissions on transition.
+Issue #1540914 by NancyDru: Pass parms in node form; allow comment alter at transition.
+Issue #1744612 by NancyDru: Move VBO stuff into its own module.
+Issue #1944574 by NancyDru: Undefined index.
+
+Since 7.x-1.1-rc1
+Issue #785194 by arcovia: Access to tab form.
+Issue #785194 by NancyDru: Better access to tab form.
+Issue #1691870 by NancyDru: Rules record workflow comment.
+Issue #1691870 by NancyDru: Transition check wrong choices on Force.
+Issue #1951164 by Kristen Pol: Fix left join order.
+Issue #1951718 by NancyDru: Clean up history records.
+Issue #1953642 by NancyDru: Add history row alter feature.
+Issue #1953642 by NancyDru: Add state revert feature.
+Issue #1953642 by NancyDru: Document hook_workflow_history_alter().
+Issue #1484126 by NancyDru, nathangervais: Check if node type has a workflow before adding WF info.
+Issue #1957074 by andypost: Allow Views to show Sid value.
+Address some @TODO items.
+
+Since 7.x-1.1
+Issue #1961156 by mErilainen: Missing translate in Views.
+Issue #1962344 by NancyDru, manu77: Missing $node->workflow.
+Issue #1962512 by NancyDru: Don't let (creation) be changed.
+Issue #1961426 by andypost: Fix reference error.
+Issue #1893420 by JackVVo: Fix node name.
+Issue #1966292 by aBrookland: Undefined index.
+Issue #1970538 by Tim Asplin: Improve Features support.
+Issue #1589254 by DuaelFr: Improve Features support.
+Issue #1972728 by NancyDru: Deal with HTML entities and translations.
+Issue #1967794 by NancyDru, dforegger: Remove static cache.
+Issue #1966804 by andypost: Improve workflow_get_workflow_node_history_by_nid.
+Issue #1970846 by NancyDru: Allow multiple workflow_tab_forms on the same page.
+Issue #1974828 by martysteer: Fix missing brackets in query.
+Replace all SELECT * with column names. (Remove @TODO)
+Issue #1976992 by bdone, NancyDru: Make watchdog logging optional.
+Issue #1976942 by dforegger: Fix transition import.
+Issue #1984338 by NancyDru: Fix node_load looping.
+Issue #1995004 by NancyDru: Fix form issue in admin.
+Issue #1975058 by NancyDru: Revert change to node_form on comments.
+Issue #1986220 by NancyDru: Add scheduling user's id to history.
+Automatically give "Participate in Workflow" permission to new roles.
+Issue #1984338 by NancyDru: Pass $force to hook_workflow().
+Issue #1996892 by Kristen Pol: Add previous state to Rules.
+Issue #1979562 by NancyDru: workflow_tab_form not found.
+Issue #1974624 by NancyDru: Make sure all hook calls have two params.
+Issue #1971504 by NancyDru: Skip node form vertical tab if only one transition possible.
+Issue #1997242 by NancyDru: Hook to check if transition is allowed.
+Issue #1443166 by NancyDru: Clean up monster query (Oracle issue).
+Issue #2001980 by NancyDru: Revert checks if permitted.
+Issue #1856180 by JayMN: Correct typo in update.
+Issue #2009312 by NancyDru: Remove Workflow module form field.
+Issue #457348 by NancyDru: Remove view mode check.
+Fix terminal state check.
+Issue #1997242 by NancyDru: Recheck permitted transitions before execution.
+Issue #1781308 by NancyDru: Revert change to vertical tab.
+Issue #1997242 by Tim-Erwin: Honor force on transition permitted.
+Issue #2019125 by Nancydru: Add access priority setting.
+Issue #2018959 by dev team data: Fix feature revert error.
+Issue #2012516 by maximpodorov: Add state system name and sid to theme functions
+Issue #2022381 by justanothermark: Fix array key collision
+Issue #2022333 by NancyDru: Add another common permission warning.
+Issue #2023233 by NancyDru: Fix double encoding.
+Issue #1993408 by NancyDru: Default new states to active.
+Issue #1542188 by justanothermark: Fix workflow display.
+Issue #2027507 by NancyDru: Fix sorting issue on history page.
+Issue #1993408 by NancyDru: Sysid not always set correctly.

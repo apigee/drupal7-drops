@@ -17,16 +17,17 @@ function devconnect_homepage_block_info() {
 /**
  * Implements hook_block_configure().
  */
-function devconnect_homepage_block_configure($delta='') {
+function devconnect_homepage_block_configure($delta = '') {
   $form = array();
-  $theme_path = base_path().drupal_get_path("theme", "apigee_devconnect");
-  switch($delta) {
+  $theme_path = base_path() . drupal_get_path("theme", "apigee_devconnect");
+
+  switch ($delta) {
     case 'homepage_header' :
       // Text field form element
       $form['text_body'] = array(
         '#type' => 'text_format',
         '#title' => t('Body'),
-        '#default_value' => variable_get('text_variable', '<div class="get">GET</div><div class="buttons"><div class="home-header-btn document"><a href="/documentation"><strong><span style="font-size: x-large;">Started</span><br></strong><br> with documentation<span class="iconbtn document"></span></a></div><div class="home-header-btn"><a href="/user/me/apps"><strong><span style="font-size: x-large;">Building</span><br></strong><br> with access to a key<span class="iconbtn key"></span></a></div></div><div class="home-img"><img src="'.$theme_path.'/images/homepage-image.png" alt=""></div>'),
+        '#default_value' => variable_get('text_variable', '<div class="get">GET</div><div class="buttons"><div class="home-header-btn document"><a href="/documentation"><strong><span style="font-size: x-large;">Started</span><br></strong><br> with documentation<span class="iconbtn document"></span></a></div><div class="home-header-btn"><a href="/user/me/apps"><strong><span style="font-size: x-large;">Building</span><br></strong><br> with access to a key<span class="iconbtn key"></span></a></div></div><div class="home-img"><img src="' . $theme_path . '/images/homepage-image.png" alt=""></div>'),
       );
       break;
   }
@@ -39,16 +40,16 @@ function devconnect_homepage_block_configure($delta='') {
 function devconnect_homepage_block_info_alter(&$blocks, $theme, $code_blocks) {
   // Add the homepage_header block to the homepage_header region of the apigee_devconnect theme
   db_update('block')
-  ->fields(array('region' => 'homepage_header'))
-  ->condition('module', 'devconnect_homepage')
-  ->condition('theme', 'apigee_devconnect')
-  ->execute();
+    ->fields(array('region' => 'homepage_header'))
+    ->condition('module', 'devconnect_homepage')
+    ->condition('theme', 'apigee_devconnect')
+    ->execute();
 
   // Remove the existing homepage block
   db_update('block')
-  ->fields(array('status' => 0))
-  ->condition('delta', 7)
-  ->execute();
+    ->fields(array('status' => 0))
+    ->condition('delta', 7)
+    ->execute();
 }
 
 
@@ -56,7 +57,7 @@ function devconnect_homepage_block_info_alter(&$blocks, $theme, $code_blocks) {
  * Implements hook_block_save().
  */
 function devconnect_homepage_block_save($delta = '', $edit = array()) {
-  switch($delta) {
+  switch ($delta) {
     case 'homepage_header' :
       // Saving the WYSIWYG text
       variable_set('text_variable', $edit['text_body']['value']);
@@ -67,10 +68,10 @@ function devconnect_homepage_block_save($delta = '', $edit = array()) {
 /**
  * Implements hook_block_view().
  */
-function devconnect_homepage_block_view($delta='') {
+function devconnect_homepage_block_view($delta = '') {
   $block = array();
 
-  switch($delta) {
+  switch ($delta) {
     case 'homepage_header' :
       $block['content'] = homepage_header_view();
       break;
@@ -87,10 +88,10 @@ function devconnect_homepage_block_view($delta='') {
  */
 function homepage_header_view() {
   $block = array();
-  $theme_path = base_path().drupal_get_path("theme", "apigee_devconnect");
+  $theme_path = base_path() . drupal_get_path("theme", "apigee_devconnect");
 
   // Capture WYSIWYG text from the variable
-  $text = variable_get('text_variable', '<div class="get">GET</div><div class="buttons"><div class="home-header-btn document"><a href="/documentation"><strong><span style="font-size: x-large;">Started</span><br></strong><br> with documentation<span class="iconbtn document"></span></a></div><div class="home-header-btn"><a href="/user/me/apps"><strong><span style="font-size: x-large;">Building</span><br></strong><br> with access to a key<span class="iconbtn key"></span></a></div></div><div class="home-img"><img src="'.$theme_path.'/images/homepage-image.png" alt=""></div>');
+  $text = variable_get('text_variable', '<div class="get">GET</div><div class="buttons"><div class="home-header-btn document"><a href="/documentation"><strong><span style="font-size: x-large;">Started</span><br></strong><br> with documentation<span class="iconbtn document"></span></a></div><div class="home-header-btn"><a href="/user/me/apps"><strong><span style="font-size: x-large;">Building</span><br></strong><br> with access to a key<span class="iconbtn key"></span></a></div></div><div class="home-img"><img src="' . $theme_path . '/images/homepage-image.png" alt=""></div>');
 
   // Block output in HTML
   $block = array(

@@ -1,0 +1,40 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the workflow_admin_ui module.
+ *
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function workflow_admin_ui_enable() {
+  drupal_set_message(_workflow_admin_ui_participate());
+}
+
+/**
+ * Helper function. Used both by update and enable.
+ */
+function _workflow_admin_ui_participate() {
+  $perms = array('participate in workflow' => 1);
+  foreach (user_roles() as $rid => $name) {
+    user_role_change_permissions($rid, $perms);
+  }
+  return t('Please review which roles may participate in workflows. <a href="!url">Permissions</a>',
+    array('!url' => url('admin/people/permissions', array('fragment' => 'module-workflow_admin_ui'))));
+}
+
+/**
+ * Patch for #1540824 requires that the menu be rebuilt.
+ */
+function workflow_admin_ui_update_7000(&$sandbox) {
+  menu_rebuild();
+  return t('Workflow_admin_ui requested a menu rebuild.');
+}
+
+/**
+ * Give all user roles the ability to participate in workflows.
+ */
+function workflow_admin_ui_update_7001(&$sandbox) {
+  return _workflow_admin_ui_participate();
+}

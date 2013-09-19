@@ -21,6 +21,25 @@ function devconnect_requirements($phase) {
         'value' => $t('Please install the PHP mcrypt extension.'),
         'title' => $t('Missing library'),
       );
+
+      if (!defined('CURLE_OK')) {
+        $requirements['cURL'] = array(
+          'description' => 'PHP must have the cURL library for DevConnect to work.',
+          'severity' => REQUIREMENT_ERROR,
+          'value' => $t('Please install the PHP cURL extension.'),
+          'title' => $t('Missing library'),
+        );
+      }
+
+      $result = drupal_http_request('http://www.google.com/', array('method' => 'HEAD'));
+      if (floor($result->code / 100) != 2) {
+        $requirements['setsebool'] = array(
+          'description' => 'Apache\'s process must be able to create outbound network connections.',
+          'severity' => REQUIREMENT_ERROR,
+          'value' => $t('Please run the following command:') . "\nsetsebool -P httpd_can_network_connect 1",
+          'title' => $t('SELinux configuration problem')
+        );
+      }
     }
   }
 
@@ -40,4 +59,60 @@ function devconnect_install() {
   if ($role) {
     user_role_grant_permissions($role->rid, array('administer organization settings'));
   }
+}
+
+/**
+ * Disable deprecated modules in preparation for their removal in R24.
+ */
+function devconnect_update_7423(&$sandbox) {
+  // Make sure Apigee autoloader has been run
+  drupal_load('module', 'devconnect');
+  devconnect_boot();
+
+  $list = db_select('system', 's')
+    ->condition('type', 'module')
+    ->condition('status', 0)
+    ->condition('name', 'devconnect%', 'LIKE')
+    ->fields('s', array('name', 'filename'))
+    ->execute()
+    ->fetchAll(PDO::FETCH_NUM);
+  $missing_modules = array();
+
+
+  foreach ($list as $module) {
+    list($name, $filename) = $module;
+    if (!file_exists(DRUPAL_ROOT . '/' . $filename)) {
+      $missing_modules[] = $name;
+    }
+  }
+
+  if (count($missing_modules) > 0) {
+    if (function_exists('drush_print')) {
+      drush_print('Removing these missing modules: ' . join(', ', $missing_modules));
+    }
+    db_delete('system')
+      ->condition('type', 'module')
+      ->condition('name', $missing_modules)
+      ->execute();
+  }
+
+  $disable_modules = array(
+    'devconnect_apigee',
+    'devconnect_validate',
+    'devconnect_faq_ext'
+  );
+
+  if (function_exists('drush_print')) {
+    drush_print('Disabling these modules: ' . join(', ', $disable_modules));
+  }
+
+  module_disable($disable_modules, FALSE);
+
+  // Possible stale table left from removed devconnect_node_settings module.
+  if (db_table_exists('node_settings')) {
+    db_drop_table('node_settings');
+  }
+
+  variable_del('devconnect_appname_bug');
+  variable_del('devconnect_oauth_token_urls');
 }

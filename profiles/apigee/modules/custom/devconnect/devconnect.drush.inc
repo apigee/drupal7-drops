@@ -74,41 +74,12 @@ function devconnect_drush_set_authentication() {
   }
 
   // Make sure autoloader is loaded
-  //drupal_load('module', 'devconnect');
-  //devconnect_boot();
-  if (!class_exists('Apigee\Util\Crypto')) {
-    module_load_include('php', 'devconnect', 'lib/Apigee/Util/Crypto');
-  }
+  drupal_load('module', 'devconnect');
+  devconnect_boot();
 
   $password_encrypted = Apigee\Util\Crypto::encrypt($password);
   variable_set('devconnect_curlauth', "$username:$password_encrypted");
   drush_print(t('Username and password have been set.'));
-}
-
-/**
- * Autoloader for Apigee and Symfony\Components\Yaml classes
- *
- * @param string $class
- */
-function _devconnect_autoload($class) {
-  $class_path = NULL;
-  if (strpos($class, '\\') !== FALSE) {
-    $path_parts = explode('\\', $class);
-    if ($path_parts[0] == 'Apigee') {
-      $lib_path = realpath(dirname(__FILE__) . '/lib');
-      $class_path = $lib_path . '/' . join('/', $path_parts) . '.php';
-    }
-    elseif (count($path_parts) > 3 && $path_parts[0] == 'Symfony' && $path_parts[1] == 'Components' && $path_parts[2] == 'Yaml') {
-      $path_parts = array_slice($path_parts, 3);
-      $lib_path = libraries_get_path('symfony_yaml');
-      if ($lib_path) {
-        $class_path = $lib_path . '/' . join('/', $path_parts) . '.php';
-      }
-    }
-  }
-  if (isset($class_path) && file_exists($class_path)) {
-    require_once($class_path);
-  }
 }
 
 function devconnect_drush_get_authentication() {
@@ -119,9 +90,9 @@ function devconnect_drush_get_authentication() {
   else {
     list($user, $pass_encrypted) = explode(':', $user_pass);
     // Make sure autoloader is loaded
-    if (!class_exists('Apigee\Util\Crypto')) {
-      module_load_include('php', 'devconnect', 'lib/Apigee/Util/Crypto');
-    }
+    drupal_load('module', 'devconnect');
+    devconnect_boot();
+
     $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
 
     drush_print(t('Username is @username, password is @pass.', array('@username' => $user, '@pass' => $pass)));

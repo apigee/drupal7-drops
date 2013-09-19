@@ -14,7 +14,7 @@ class dsSearchTests extends dsBaseTest {
     return array(
       'name' => t('Search'),
       'description' => t('Tests for display of search results for nodes and users.'),
-      'group' => t('Display suite'),
+      'group' => t('Display Suite'),
     );
   }
 
@@ -69,7 +69,7 @@ class dsSearchTests extends dsBaseTest {
 
     // Configure ds search.
     $edit = array('ds_user_override_search_page' => '1');
-    $this->drupalPost('admin/structure/ds/search', $edit, t('Save configuration'));
+    $this->drupalPost('admin/structure/ds/list/search', $edit, t('Save configuration'));
 
     // Let's search.
     $this->drupalGet('search/content/title1');
@@ -81,7 +81,7 @@ class dsSearchTests extends dsBaseTest {
 
 
     $edit = array('ds_search_node_form_alter' => '1');
-    $this->drupalPost('admin/structure/ds/search', $edit, t('Save configuration'));
+    $this->drupalPost('admin/structure/ds/list/search', $edit, t('Save configuration'));
     $this->drupalGet('search/content/title1');
     $this->assertText(t('Advanced search'), 'Advanced search found');
 
@@ -129,7 +129,7 @@ class dsSearchTests extends dsBaseTest {
     $edit = array(
       'ds_search_group_by_type' => '1'
     );
-    $this->drupalPost('admin/structure/ds/search', $edit, t('Save configuration'));
+    $this->drupalPost('admin/structure/ds/list/search', $edit, t('Save configuration'));
 
     // Let's search.
     $this->drupalGet('search/content/group');
@@ -139,7 +139,7 @@ class dsSearchTests extends dsBaseTest {
     $edit = array(
       'ds_search_group_by_type_settings[article][label]' => 'Article results',
     );
-    $this->drupalPost('admin/structure/ds/search', $edit, t('Save configuration'));
+    $this->drupalPost('admin/structure/ds/list/search', $edit, t('Save configuration'));
     $this->drupalGet('search/content/group');
     $this->assertNoRaw('Results for article');
     $this->assertRaw('Article results');
@@ -149,7 +149,7 @@ class dsSearchTests extends dsBaseTest {
       'ds_search_group_by_type_settings[page][status]' => FALSE,
       'ds_search_group_by_type_settings[article][label]' => '',
     );
-    $this->drupalPost('admin/structure/ds/search', $edit, t('Save configuration'));
+    $this->drupalPost('admin/structure/ds/list/search', $edit, t('Save configuration'));
     $this->drupalGet('search/content/group');
     $this->assertNoRaw('Article results');
     $this->assertNoRaw('Results for basic page');

@@ -1,0 +1,1914 @@
+<?php
+
+use Apigee\ManagementAPI\Organization;
+
+/**
+ * Implements hook_install()
+ */
+function devconnect_monetization_install() {
+
+  // Setup monetization administrator role
+  $role = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
+  if ($role == NULL) {
+    $role = new stdClass();
+    $role->name = MONETIZATION_ADMIN_ROLE_NAME;
+    user_role_save($role);
+    $role = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
+  }
+  $permissions = devconnect_monetization_admin_permissions() + devconnect_monetization_finance_permissions() + devconnect_monetization_developer_permissions();
+  user_role_grant_permissions($role->rid, array_keys($permissions));
+
+  // Setup monetization finance administrator role
+  $role = user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME);
+  if ($role == NULL) {
+    $role = new stdClass();
+    $role->name = MONETIZATION_FINANCE_ADMIN_ROLE_NAME;
+    user_role_save($role);
+    $role = user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME);
+  }
+  $permissions = devconnect_monetization_finance_permissions();
+  user_role_grant_permissions($role->rid, array_keys($permissions));
+
+  // Setup monetization developer role
+  $role = user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME);
+  if ($role == NULL) {
+    $role = new stdClass();
+    $role->name = MONETIZATION_DEVELOPER_ROLE_NAME;
+    user_role_save($role);
+    $role = user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME);
+  }
+  $permissions = devconnect_monetization_developer_permissions();
+  user_role_grant_permissions($role->rid, array_keys($permissions));
+
+  $fields = _devconnect_monetization_default_fields_info();
+  $group = _devconnect_monetization_default_field_group_info();
+
+  foreach ($fields as $field) {
+    if (!field_read_field($field['field_config']['field_name'], array('include_inactive' => TRUE))) {
+      field_create_field($field['field_config']);
+    }
+    if (field_info_instance('user', $field['field_config']['field_name'], 'user') == NULL) {
+      field_create_instance($field['field_instance']);
+    }
+  }
+  if (field_group_exists($group->group_name, 'user', 'user', 'form')) {
+    $group_info = field_group_load_field_group($group->group_name, 'user', 'user', 'form');
+  }
+  else {
+    $result = field_group_group_save($group);
+    $group_info = field_group_load_field_group($group->group_name, 'user', 'user', 'form');
+  }
+
+  _devconnect_monetization_set_up_fields_mappings();
+
+  if (!db_table_exists('cache_mint')) {
+    // Create cache table
+    db_create_table('cache_mint', drupal_get_schema_unprocessed('system', 'cache'));
+  }
+
+  variable_del('devconnect_monetization-menu-links');
+}
+
+function devconnect_monetization_uninstall() {
+  devconnect_monetization_remove_navigation_menu();
+
+  // Remove cache table
+  db_drop_table('cache_mint');
+}
+
+/**
+ * Implement hook_enable()
+ */
+function devconnect_monetization_enable() {
+
+  // Get stored Monetization menu-link ids
+  $mlids = variable_get('devconnect_monetization-menu-links', NULL);
+  // Check if no Monetization menu-links have been set
+  if (empty($mlids)) {
+    // Setup navigation menu
+    devconnect_monetization_setup_navigation_menu();
+  }
+  else {
+    foreach ($mlids as $pmlid => $cmlids) {
+      $item = menu_link_load($pmlid);
+      $item['hidden'] = 0;
+      $item['has_children'] = 0;
+      menu_link_save($item);
+      foreach ($cmlids as $cmlid) {
+        $item = menu_link_load($cmlid);
+        $item['hidden'] = 0;
+        menu_link_save($item);
+      }
+
+    }
+  }
+  // Rebuild menu so monetization menu shows up, menu_clear_cache would be invoked
+  //instead but it seems to have issues and does not execute properly
+  menu_rebuild();
+}
+
+/**
+ * Implement hook_disable()
+ */
+function devconnect_monetization_disable() {
+  // Disable Monetization menu-links
+  $mlids = variable_get('devconnect_monetization-menu-links', array());
+  foreach ($mlids as $pmlid => $cmlids) {
+    foreach ($cmlids as $cmlid) {
+      $item = menu_link_load($cmlid);
+      $item['hidden'] = 1;
+      menu_link_save($item);
+    }
+    $item = menu_link_load($pmlid);
+    $item['hidden'] = 1;
+    $item['has_children'] = 1;
+    menu_link_save($item);
+  }
+  // Rebuild menu so monetization menu shows up, menu_clear_cache would be invoked
+  //instead but it seems to have issues and does not execute properly
+  menu_rebuild();
+}
+
+/**
+ * Setup how fields defined in here are to be sent as attributes to KMS
+ */
+function _devconnect_monetization_set_up_fields_mappings() {
+  $field_settings = array(
+    'terms_and_conditions'       => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => '',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_company_id'            => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_COMPANY_ID',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_is_broker'             => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => 'MINT_IS_BROKER',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => TRUE,
+    ),
+    'mint_registration_id'       => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_REGISTRATION_ID',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_vat_tax_number'        => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_TAX_EXEMPT_AUTH_NO',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_approx_tax_rate'       => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => 'MINT_APPROX_TAX_RATE',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_developer_legal_name'  => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_DEVELOPER_LEGAL_NAME',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_developer_type'        => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_DEVELOPER_TYPE',
+      'empty_action'                    => 'avoid',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_billing_type'          => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_BILLING_TYPE',
+      'empty_action'                    => 'avoid',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_billing_profile'       => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => 'MINT_BILLING_PROFILE',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_has_self_billing'      => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => 'MINT_HAS_SELF_BILLING',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_supported_currency'    => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => 'MINT_SUPPORTED_CURRENCY',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_developer_phone'       => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_DEVELOPER_PHONE',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_developer_address'     => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_DEVELOPER_ADDRESS',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_developer_category'    => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => 'MINT_DEVELOPER_CATEGORY',
+      'empty_action'                    => 'null',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_developer_roles'       => array(
+      'selected'                        => 1,
+      'kms_internal_attribute_name'     => 'MINT_ROLES',
+      'empty_action'                    => 'avoid',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+    'mint_rev_reprt_preferences' => array(
+      'selected'                        => 0,
+      'kms_internal_attribute_name'     => 'MINT_REV_REPORT_PREFERENCES',
+      'empty_action'                    => 'avoid',
+      'convert_to_boolean_string_value' => FALSE,
+    ),
+  );
+
+  variable_set('devconnect_user_attributes_to_persist_in_kms', $field_settings);
+}
+
+/**
+ * Define the fields to be used in monetization
+ */
+function _devconnect_monetization_default_fields_info() {
+
+  $fields = array();
+
+  // Exported field: 'field_mint_company_id'.
+  // Maps to MINT_COMPANY_ID
+  $fields['user-user-mint-field_mint_company_id'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '255',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_company_id',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '255',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Company Id',
+      'widget'        => array(
+        'weight'   => '11',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 6,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_company_id',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_is_broker'.
+  // Maps to MINT_IS_BROKER
+  $fields['user-user-mint-field_mint_is_broker'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'allowed_values'          => array(
+          'false',
+          'true',
+        ),
+        'allowed_values_function' => '',
+      ),
+      'foreign keys' => array(),
+      'indexes'      => array(
+        'value' => array(
+          'value',
+        ),
+      ),
+      'field_name'   => 'field_mint_is_broker',
+      'type'         => 'list_boolean',
+      'module'       => 'list',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value' => array(
+          'type'     => 'int',
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Is Broker',
+      'widget'        => array(
+        'weight'   => '12',
+        'type'     => 'options_onoff',
+        'module'   => 'options',
+        'active'   => 1,
+        'settings' => array(
+          'display_label' => 0,
+        ),
+      ),
+      'settings'      => array(
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'list_default',
+          'settings' => array(),
+          'module'   => 'list',
+          'weight'   => 7,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => array(
+        array(
+          'value' => 0,
+        ),
+      ),
+      'field_name'    => 'field_mint_is_broker',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_registration_id'.
+  // Maps to MINT_REGISTRATION_ID
+  $fields['user-user-mint-field_mint_registration_id'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '50',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_registration_id',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '50',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Registration Id',
+      'widget'        => array(
+        'weight'   => '13',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 19,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_registration_id',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_vat_tax_number'.
+  // Maps to MINT_TAX_EXEMPT_AUTH_NO
+  $fields['user-user-mint-field_mint_vat_tax_number'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '30',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_vat_tax_number',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '30',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'VAT/Tax Number',
+      'widget'        => array(
+        'weight'   => '14',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 8,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_vat_tax_number',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_approx_tax_rate'.
+  // MINT_APPROX_TAX_RATE
+  $fields['user-user-mint-field_mint_approx_tax_rate'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'precision'         => '10',
+        'scale'             => '4',
+        'decimal_separator' => '.',
+      ),
+      'foreign keys' => array(),
+      'indexes'      => array(),
+      'field_name'   => 'field_mint_approx_tax_rate',
+      'type'         => 'number_decimal',
+      'module'       => 'number',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value' => array(
+          'type'      => 'numeric',
+          'precision' => '10',
+          'scale'     => '4',
+          'not null'  => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Approximated Tax Rate',
+      'widget'        => array(
+        'weight'   => '15',
+        'type'     => 'number',
+        'module'   => 'number',
+        'active'   => 0,
+        'settings' => array(),
+      ),
+      'settings'      => array(
+        'min'                => '',
+        'max'                => '',
+        'prefix'             => '',
+        'suffix'             => '',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'number_decimal',
+          'settings' => array(
+            'thousand_separator' => ' ',
+            'decimal_separator'  => '.',
+            'scale'              => 2,
+            'prefix_suffix'      => TRUE,
+          ),
+          'module'   => 'number',
+          'weight'   => 9,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_approx_tax_rate',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_developer_legal_name'.
+  // Maps to MINT_DEVELOPER_LEGAL_NAME
+  $fields['user-user-mint-field_mint_developer_legal_name'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '255',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_developer_legal_name',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '255',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Developer Legal Name',
+      'widget'        => array(
+        'weight'   => '16',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 10,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_developer_legal_name',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_developer_type'.
+  // Maps to MINT_DEVELOPER_TYPE -> Accepted values TRUSTED, UNTRUSTED
+  $fields['user-user-mint-field_mint_developer_type'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'allowed_values'          => array(
+          'TRUSTED'   => 'TRUSTED',
+          'UNTRUSTED' => 'UNTRUSTED',
+        ),
+        'allowed_values_function' => '',
+      ),
+      'foreign keys' => array(),
+      'indexes'      => array(
+        'value' => array(
+          'value',
+        ),
+      ),
+      'field_name'   => 'field_mint_developer_type',
+      'type'         => 'list_text',
+      'module'       => 'list',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Developer Type',
+      'widget'        => array(
+        'weight'   => '17',
+        'type'     => 'options_select',
+        'module'   => 'options',
+        'active'   => 1,
+        'settings' => array(),
+      ),
+      'settings'      => array(
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'list_default',
+          'settings' => array(),
+          'module'   => 'list',
+          'weight'   => 11,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => array(
+        array(
+          'value' => 'UNTRUSTED',
+        ),
+      ),
+      'field_name'    => 'field_mint_developer_type',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_billing_type'.
+  // Maps to MINT_BILLING_TYPE => Accepted Values PREPAID, POSTPAID
+  $fields['user-user-mint-field_mint_billing_type'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'allowed_values'          => array(
+          'PREPAID'  => 'PREPAID',
+          'POSTPAID' => 'POSTPAID',
+        ),
+        'allowed_values_function' => '',
+      ),
+      'foreign keys' => array(),
+      'indexes'      => array(
+        'value' => array(
+          'value',
+        ),
+      ),
+      'field_name'   => 'field_mint_billing_type',
+      'type'         => 'list_text',
+      'module'       => 'list',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Billing Type',
+      'widget'        => array(
+        'weight'   => '18',
+        'type'     => 'options_select',
+        'module'   => 'options',
+        'active'   => 1,
+        'settings' => array(),
+      ),
+      'settings'      => array(
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'list_default',
+          'settings' => array(),
+          'module'   => 'list',
+          'weight'   => 12,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => array(
+        array(
+          'value' => 'PREPAID',
+        ),
+      ),
+      'field_name'    => 'field_mint_billing_type',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_billing_profile'.
+  // Maps to MINT_BILLING_PROFILE
+  $fields['user-user-mint-field_mint_billing_profile'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '255',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_billing_profile',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '255',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Billing Profile',
+      'widget'        => array(
+        'weight'   => '19',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 13,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_billing_profile',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_has_self_billing'.
+  // Maps to MINT_HAS_SELF_BILLING
+  $fields['user-user-mint-field_mint_has_self_billing'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'allowed_values'          => array(
+          '',
+          '',
+        ),
+        'allowed_values_function' => '',
+      ),
+      'foreign keys' => array(),
+      'indexes'      => array(
+        'value' => array(
+          'value',
+        ),
+      ),
+      'field_name'   => 'field_mint_has_self_billing',
+      'type'         => 'list_boolean',
+      'module'       => 'list',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value' => array(
+          'type'     => 'int',
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Has Self Billing',
+      'widget'        => array(
+        'weight'   => '20',
+        'type'     => 'options_onoff',
+        'module'   => 'options',
+        'active'   => 1,
+        'settings' => array(
+          'display_label' => 0,
+        ),
+      ),
+      'settings'      => array(
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'list_default',
+          'settings' => array(),
+          'module'   => 'list',
+          'weight'   => 14,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => array(
+        array(
+          'value' => 1,
+        ),
+      ),
+      'field_name'    => 'field_mint_has_self_billing',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_supported_currency'.
+  // Maps to MINT_SUPPORTED_CURRENCY
+  $fields['user-user-mint-field_mint_supported_currency'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '50',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_supported_currency',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '50',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Supported Currency',
+      'widget'        => array(
+        'weight'   => '21',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 15,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_supported_currency',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_developer_phone'.
+  // Maps to MINT_DEVELOPER_PHONE
+  $fields['user-user-mint-field_mint_developer_phone'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '30',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_developer_phone',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '30',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Developer Phone',
+      'widget'        => array(
+        'weight'   => '22',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 16,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_developer_phone',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_developer_address'.
+  // Maps to MINT_DEVELOPER_ADDRESS => JSON OBJECT
+  $fields['user-user-mint-field_mint_developer_address'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_developer_address',
+      'type'         => 'text_long',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'text',
+          'size'     => 'big',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Developer Address',
+      'widget'        => array(
+        'weight'   => '23',
+        'type'     => 'text_textarea',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'rows' => '5',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 17,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_developer_address',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_developer_category'.
+  // Maps to MINT_DEVELOPER_CATEGORY => JSON OBJECT
+  $fields['user-user-mint-field_mint_developer_category'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '400',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_developer_category',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '400',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Developer Category',
+      'widget'        => array(
+        'weight'   => '24',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 18,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_developer_category',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_developer_roles'.
+  // Maps to MINT_ROLES
+  $fields['user-user-field_mint_developer_roles'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '255',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_developer_roles',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '255',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Developer Roles',
+      'widget'        => array(
+        'weight'   => '25',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 20,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_developer_roles',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Exported field: 'field_mint_rev_reprt_preferences''.
+  // Store developer revenue report preferences of last time the user ran the report
+  $fields['user-user-mint-field_mint_rev_reprt_preferences'] = array(
+    'field_config'   => array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings'     => array(
+        'max_length' => '255',
+      ),
+      'foreign keys' => array(
+        'format' => array(
+          'table'   => 'filter_format',
+          'columns' => array(
+            'format' => 'format',
+          ),
+        ),
+      ),
+      'indexes'      => array(
+        'format' => array(
+          'format',
+        ),
+      ),
+      'field_name'   => 'field_mint_rev_reprt_preferences',
+      'type'         => 'text',
+      'module'       => 'text',
+      'active'       => '1',
+      'locked'       => '0',
+      'cardinality'  => '1',
+      'deleted'      => '0',
+      'columns'      => array(
+        'value'  => array(
+          'type'     => 'varchar',
+          'length'   => '255',
+          'not null' => FALSE,
+        ),
+        'format' => array(
+          'type'     => 'varchar',
+          'length'   => 255,
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles'      => array(
+        'user' => array(
+          'user',
+        ),
+      ),
+    ),
+    'field_instance' => array(
+      'label'         => 'Revenue Report Preferences',
+      'widget'        => array(
+        'weight'   => '11',
+        'type'     => 'text_textfield',
+        'module'   => 'text',
+        'active'   => 1,
+        'settings' => array(
+          'size' => '60',
+        ),
+      ),
+      'settings'      => array(
+        'text_processing'    => '0',
+        'user_register_form' => 0,
+      ),
+      'display'       => array(
+        'default' => array(
+          'label'    => 'above',
+          'type'     => 'text_default',
+          'settings' => array(),
+          'module'   => 'text',
+          'weight'   => 6,
+        ),
+        'full'    => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+        'comment' => array(
+          'type'     => 'hidden',
+          'label'    => 'above',
+          'settings' => array(),
+          'weight'   => 0,
+        ),
+      ),
+      'required'      => 0,
+      'description'   => '',
+      'default_value' => NULL,
+      'field_name'    => 'field_mint_rev_reprt_preferences',
+      'entity_type'   => 'user',
+      'bundle'        => 'user',
+      'deleted'       => '0',
+    ),
+  );
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Company Id');
+  t('Is Broker');
+  t('Registration Id');
+  t('VAT/Tax Number');
+  t('Approximated Tax Rate');
+  t('Developer Legal Name');
+  t('Developer Type');
+  t('Billing Type');
+  t('Billing Profile');
+  t('Has Self Billing');
+  t('Supported Currency');
+  t('Developer Phone');
+  t('Developer Address');
+  t('Developer Category');
+  t('Developer Roles');
+  t('Developer Report Preferences');
+
+  return $fields;
+}
+
+/**
+ * Define the monetization group field
+ * @return stdClass
+ */
+function _devconnect_monetization_default_field_group_info() {
+
+  $group = new stdClass();
+  $group->identifier = 'group_devconnect_monetization|user|user|form';
+  $group->group_name = 'group_devconnect_monetization';
+  $group->id = 'group_devconnect_monetization';
+  $group->weight = 0;
+  $group->entity_type = 'user';
+  $group->bundle = 'user';
+  $group->mode = 'form';
+  $group->parent_name = '';
+  $group->table = 'field_group';
+  $group->type = 'Normal';
+  $group->export_type = 1;
+  $group->disabled = FALSE;
+  $group->label = 'DevConnect Monetization';
+  $group->data = array(
+    'children' => array(
+      'field_mint_company_id',
+      'field_mint_is_broker',
+      'field_mint_vat_tax_number',
+      'field_mint_approx_tax_rate',
+      'field_mint_developer_legal_name',
+      'field_mint_developer_type',
+      'field_mint_billing_type',
+      'field_mint_billing_profile',
+      'field_mint_has_self_billing',
+      'field_mint_supported_currency',
+      'field_mint_developer_phone',
+      'field_mint_developer_address',
+      'field_mint_developer_category',
+      'field_mint_registration_id',
+      'field_mint_developer_roles',
+    ),
+    'weight'   => 11,
+    'label'    => 'DevConnect Monetization',
+  );
+  $group->children = $group->data['children'];
+  $group->format_type = 'fieldset';
+  $group->format_settings = array(
+    'formatter'         => 'collapsible',
+    'instance_settings' => array(
+      'description'     => '',
+      'classes'         => '',
+      'required_fields' => 1,
+    ),
+  );
+  return $group;
+}
+
+/**
+ * Adds Monetization menu-links
+ */
+function devconnect_monetization_setup_navigation_menu() {
+
+  $monetization_link = array(
+    'link_title' => t('Monetization'),
+    'link_path' => '<nolink>',
+    'menu_name' => 'main-menu',
+    'weight' => 0,
+    'expanded' => 1,
+    'customized' => 1,
+    'options' => array(
+      'alter' => TRUE,
+    ),
+  );
+
+  $params = array(
+    ':link_title' =>  $monetization_link['link_title'],
+    ':link_path' => $monetization_link['link_path'],
+    ':menu_name' => $monetization_link['menu_name'],
+  );
+
+  $menu_link_id = db_query("SELECT mlid from {menu_links} WHERE menu_name=:menu_name AND link_title=:link_title AND link_path=:link_path", $params)->fetchField();
+
+  if ($menu_link_id) {
+    $plid = $menu_link_id;
+  }
+  else {
+    $plid = menu_link_save($monetization_link);
+  }
+
+  $menu_links = array(
+    array(
+      'link_title' => t('Catalog & Plans'),
+      'link_path' => 'users/me/monetization/packages',
+      'menu_name' => 'main-menu',
+      'plid' => $plid,
+      'weight' => 0,
+      'expanded' => 0,
+      'customized' => 1,
+      'options' => array(),
+    ),
+    array(
+      'link_title' => t('Billing & Reports'),
+      'link_path' => 'users/me/monetization/billing/prepaid-balance',
+      'plid' => $plid,
+      'menu_name' => 'main-menu',
+      'weight' => 0,
+      'expanded' => 0,
+      'customized' => 1,
+      'options' => array(),
+    ),
+    array(
+      'link_title' => t('Settings'),
+      'link_path' => 'users/me/monetization/company/edit',
+      'plid' => $plid,
+      'menu_name' => 'main-menu',
+      'weight' => 0,
+      'expanded' => 0,
+      'customized' => 1,
+      'options' => array(),
+    ),
+  );
+
+  $stored_links = array($plid => array());
+  foreach ($menu_links as $menu_link) {
+
+    $params = array(
+      ':link_title' =>  $menu_link['link_title'],
+      ':link_path' => $menu_link['link_path'],
+      ':menu_name' => $menu_link['menu_name'],
+    );
+
+    $menu_link_id = db_query("SELECT mlid from {menu_links} WHERE menu_name=:menu_name AND link_title=:link_title AND link_path=:link_path", $params)->fetchField();
+
+    if (!$menu_link_id) {
+      $menu_link_id = menu_link_save($menu_link);
+    }
+    $stored_links[$plid][] = $menu_link_id;
+  }
+  variable_set('devconnect_monetization-menu-links', $stored_links);
+}
+
+/**
+ * Removes Monetization menu-links
+ */
+function devconnect_monetization_remove_navigation_menu() {
+  $mlids = variable_get('devconnect_monetization-menu-links', array());
+  foreach ($mlids as $pmlid => $cmlids) {
+    foreach ($cmlids as $cmlid) {
+      menu_link_delete($cmlid);
+    }
+    menu_link_delete($pmlid);
+  }
+  variable_del('devconnect_monetization-menu-links');
+}
+
+/**
+ * Verify that mint is enabled for the customer organization
+ */
+function devconnect_monetization_requirements($phase) {
+  switch ($phase) {
+    case 'install':
+    case 'runtime':
+      try {
+        $client = devconnect_default_api_client();
+        $organization = new Organization($client);
+        $organization->load(NULL);
+        $is_mint_enabled = $organization->getProperty('features.isMonetizationEnabled');
+        if ($is_mint_enabled === TRUE || $is_mint_enabled === 'true') {
+          $result = array(
+            'title' => t('Monetization features.'),
+            'severity' => REQUIREMENT_OK,
+          );
+        }
+        else {
+          $result = array(
+            'title' => 'Monetization features.',
+            'description' => t('Monetization features are not available, please contact Apigee support.'),
+            'severity' => REQUIREMENT_ERROR,
+          );
+        }
+      }
+      catch (Exception $e) {
+        $result = array(
+          'title' => t('Monetization features.'),
+          'description' => t('Monetization features are not available, please contact Apigee support.'),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+      break;
+  }
+  return array('mint_requirements' => $result);
+}

@@ -1,0 +1,215 @@
+<?php
+
+use Apigee\ManagementAPI\Developer;
+
+class MintTest extends DrupalWebTestCase{
+
+  protected $privileged_user;
+
+  protected $client;
+
+  public function setUp($args) {
+
+    $org = variable_get('devconnect_org', DEVCONNECT_APIGEE_DEFAULT_ORG);
+    $endpoint = variable_get('devconnect_endpoint', DEVCONNECT_APIGEE_DEFAULT_ENDPOINT);
+    $curl_auth = variable_get('devconnect_curlauth', DEVCONNECT_APIGEE_DEFAULT_USER . ':' . DEVCONNECT_APIGEE_DEFAULT_PASSWORD);
+    $morg = variable_get('devconnect_monetization_org', $org);
+    $mendpoint = variable_get('devconnect_monetization_endpoint', $endpoint);
+    $mcurl_auth = variable_get('devconnect_monetization_curlauth', $curl_auth);
+    $curl_auth2 = devconnect_get_endpoint_auth($curl_auth);
+    list($username, $password) = explode(':', $curl_auth2, 2);
+    $this->client = Apigee\Util\APIClient::getInstance($endpoint, $org, $username, $password);
+    // Now make the switch to the sandbox.
+    parent::setUp($args);
+    if (empty($org) || empty($endpoint) || empty($curl_auth)) {
+      throw new Exception('Cannot read org/endpoint/endpoint-auth variables.');
+    }
+    $this->refreshVariables();
+    variable_set('devconnect_monetization_org', $morg);
+    variable_set('devconnect_monetization_endpoint', $mendpoint);
+    variable_set('devconnect_monetization_curlauth', $mcurl_auth);
+    variable_set('devconnect_org', $org);
+    variable_set('devconnect_endpoint', $endpoint);
+    variable_set('devconnect_curlauth', $curl_auth);
+
+    $perms = func_get_arg(1);
+
+    $this->privileged_user = $this->drupalCreateUser($perms);
+    $this->drupalLogin($this->privileged_user);
+  }
+}
+
+class CompanyInfoSaveTest extends MintTest {
+  public static function getInfo() {
+    return array(
+      'name' => 'Save Company Info Test',
+      'description' => 'Ensure that a company detail can be saved properly.',
+      'group' => 'DeConnect Mint',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('devconnect_monetization'), array('edit company profile'));
+  }
+
+  public function testSaveCompanyInfo() {
+    $edit = array();
+    $edit['legal_company_name'] = 'TestCompanySave ' . $this->randomName(16);
+    $edit['street_address_1'] = 'Test ' . $this->randomName(16);
+    $edit['city'] = 'TestCity' . $this->randomName(10);
+    $edit['zip_code'] = 12345;
+    $this->drupalPost('users/me/monetization/company/edit', $edit, t('Save Changes'));
+    $this->assertText(t('Your Company Profile Info has been saved.'));
+    $developer = new Developer($this->client);
+    $developer->delete($this->privileged_user->mail);
+  }
+}
+
+class CompanyInfoEditTest extends MintTest {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Edit Company Info Test',
+      'description' => 'Ensure that a company detail can be edited properly.',
+      'group' => 'DeConnect Mint',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('devconnect_monetization'), array('edit company profile'));
+  }
+
+  public function testEditCompanyInfo() {
+    $edit = array();
+    $edit['legal_company_name'] = 'TestCompanySave ' . $this->randomName(16);
+    $edit['street_address_1'] = 'Test ' . $this->randomName(16);
+    $edit['city'] = 'TestCity' . $this->randomName(10);
+    $edit['zip_code'] = 12345;
+    $this->drupalPost('users/me/monetization/company/edit', $edit, t('Save Changes'));
+    $this->assertText(t('Your Company Profile Info has been saved.'));
+    $this->drupalPost('users/me/monetization/company/edit', $edit, t('Save Changes'));
+    $this->assertText(t('Your Company Profile Info has been saved.'));
+    $developer = new Developer($this->client);
+    $developer->delete($this->privileged_user->mail);
+  }
+}
+
+class BandkDetailSaveTest extends MintTest {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Save Bank Detail Test',
+      'description' => 'Ensure that a company bank´s detail are saved properly.',
+      'group' => 'DeConnect Mint',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('devconnect_monetization'), array('edit bank details'));
+  }
+
+  public function testSaveBankDetails() {
+    $edit = array();
+    $edit['name'] = 'Bank Test ' . $this->randomName(16);
+    $edit['account_name'] = 'Account ' . $this->randomName(10);
+    $edit['account_number'] = 12345678;
+    $edit['account_currency'] = 'eur';
+    $edit['country'] = 'US';
+    $this->drupalPost('users/me/monetization/company/bank-details', $edit, t('Save Changes'));
+    $this->assertText(t('Your Bank Details have been save.'));
+
+    $developer = new \Apigee\Mint\Developer($this->client);
+    $developer->setEmail($this->privileged_user->mail);
+    $bank_detail = $developer->getBankDetails();
+    $bank_detail->delete();
+
+    $developer = new Developer($this->client);
+    $developer->delete($this->privileged_user->mail);
+  }
+}
+
+class BankDetailEditTest extends MintTest {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Edit Bank Detail Test',
+      'description' => 'Ensure that a company bank´s detail are edited properly.',
+      'group' => 'DeConnect Mint',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('devconnect_monetization'), array('edit bank details'));
+  }
+
+  public function testEditBankDetails() {
+    $edit = array();
+    $edit['country'] = 'US';
+    $edit['name'] = 'Bank Test ' . $this->randomName(16);
+    $edit['account_name'] = 'Account ' . $this->randomName(10);
+    $edit['account_number'] = 12345678;
+    $edit['account_currency'] = 'eur';
+    $this->drupalPost('users/me/monetization/company/bank-details', $edit, t('Save Changes'));
+    $this->assertText(t('Your Bank Details have been save.'));
+    $developer = new \Apigee\Mint\Developer($this->client);
+    $developer->setEmail($this->privileged_user->mail);
+    $bank_detail = $developer->getBankDetails();
+    $edit['name'] = 'Bank Test2 ' . $this->randomName(16);
+    $this->drupalPost('users/me/monetization/company/bank-details', $edit, t('Save Changes'));
+    $this->assertText(t('Your Bank Details have been save.'));
+
+
+    $bank_detail->delete();
+
+    $developer = new Developer($this->client);
+    $developer->delete($this->privileged_user->mail);
+  }
+}
+
+class AddUserToCompanyTest extends MintTest {
+  public static function getInfo() {
+    return array(
+        'name' => 'Add user to company',
+        'description' => 'Test add user to company.',
+        'group' => 'DeConnect Mint',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array('devconnect_monetization'), array('edit developers roles'));
+  }
+
+  public function testAddUserToCompany() {
+    $temp_user_1 = $this->drupalCreateUser(array('edit company profile'));
+    $temp_user_2 = $this->drupalCreateUser(array('edit company profile'));
+
+    $edit = array();
+    $edit['user_email_address'] = $this->privileged_user->mail;
+    $this->drupalPost('users/me/monetization/company/user-roles', $edit, t('Add User'));
+    $this->assertText(t('You cannot add your own user to your company.'));
+
+    $edit['user_email_address']  = 'non.exitent.email@test.com';
+    $this->drupalPost('users/me/monetization/company/user-roles', $edit, t('Add User'));
+    $this->assertText(t('User with email @mail does not exist.', array('@mail' => $edit['user_email_address'])));
+
+    $edit['user_email_address'] = $temp_user_1->mail;
+    $this->drupalPost('users/me/monetization/company/user-roles', $edit, t('Add User'));
+    $this->assertText(t('Developer @developer added to your company.', array('@developer' => $edit['user_email_address'])));
+    $this->drupalLogout();
+
+    $this->drupalLogin($temp_user_2);
+    $this->drupalPost('users/me/monetization/company/user-roles', $edit, t('Add User'));
+    $this->assertText(t('You can not add this developer since it is already assigned.'));
+    $this->drupalLogout();
+
+    $this->drupalLogin($this->privileged_user);
+    $this->drupalGet("users/{$this->privileged_user->uid}/monetization/company/remove-developer/{$temp_user_1->uid}");
+    $this->assertText(t('Developer @developer removed from your company.', array('@developer' => $temp_user_1->mail)));
+    $this->verbose($this->drupalGetContent());
+
+    $developer = new Developer($this->client);
+    $developer->delete($temp_user_1->mail);
+    $developer->delete($temp_user_2->mail);
+    $developer->delete($this->privileged_user->mail);
+  }
+}

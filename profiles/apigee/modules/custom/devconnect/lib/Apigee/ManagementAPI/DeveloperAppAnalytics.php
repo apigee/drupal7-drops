@@ -8,25 +8,27 @@
 
 namespace Apigee\ManagementAPI;
 
-use Apigee\Exceptions\InvalidDataException as InvalidDataException;
-use Apigee\Util\Cache as Cache;
+use Apigee\Exceptions\ParameterException;
+use Apigee\Exceptions\EnvironmentException;
+use Apigee\Util\Cache;
+use Apigee\Util\APIClient;
 
-class DeveloperAppAnalytics extends Base {
+class DeveloperAppAnalytics extends Base implements DeveloperAppAnalyticsInterface {
   /**
    * @var string
    */
-  private $environment;
+  protected $environment;
 
-  private $base_url;
+  protected $baseUrl;
 
   /**
    * Initializes the environment and sets up the APIClient.
    * @param \Apigee\Util\APIClient $client
    * @param string $env
    */
-  public function __construct(\Apigee\Util\APIClient $client, $env = '*') {
+  public function __construct(APIClient $client, $env = '*') {
     $this->init($client);
-    $this->set_environment($env);
+    $this->setEnvironment($env);
   }
 
   /**
@@ -35,15 +37,15 @@ class DeveloperAppAnalytics extends Base {
    * @param string $env
    * @throws \Apigee\Exceptions\EnvironmentException
    */
-  public function set_environment($env) {
+  public function setEnvironment($env) {
     if ($env != '*') {
-      $environments = $this->get_all_environments();
+      $environments = $this->getAllEnvironments();
       if (!in_array($env, $environments)) {
-        throw new \Apigee\Exceptions\EnvironmentException('Invalid environment ' . $env . '.');
+        throw new EnvironmentException('Invalid environment ' . $env . '.');
       }
     }
     $this->environment = $env;
-    $this->base_url = '/organizations/' . $this->url_encode($this->get_client()->get_org()) . '/environments/' . $this->url_encode($env) . '/stats/';
+    $this->baseUrl = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/environments/' . $this->urlEncode($env) . '/stats/';
   }
 
   /**
@@ -51,7 +53,7 @@ class DeveloperAppAnalytics extends Base {
    *
    * @return string
    */
-  public function get_environment() {
+  public function getEnvironment() {
     return $this->environment;
   }
 
@@ -60,10 +62,10 @@ class DeveloperAppAnalytics extends Base {
    *
    * @return array
    */
-  public function get_all_environments() {
+  public function getAllEnvironments() {
     $env = Cache::get('devconnect_org_environments', array());
     if (empty($env)) {
-      $env = $this->query_environments();
+      $env = $this->queryEnvironments();
       Cache::set('devconnect_org_environments', $env);
     }
     return $env;
@@ -72,6 +74,7 @@ class DeveloperAppAnalytics extends Base {
   /**
    * After ensuring params are valid, fetches analytics data.
    *
+   * @param string $developer_id
    * @param string $app_name
    * @param string $metric
    * @param string $time_start
@@ -81,19 +84,19 @@ class DeveloperAppAnalytics extends Base {
    * @param string $sort_order
    * @return array
    */
-  public function get_by_app_name($developer_id, $app_name, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order = 'ASC') {
-    $params = self::validate_parameters($metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
+  public function getByAppName($developer_id, $app_name, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order = 'ASC') {
+    $params = self::validateParameters($metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
 
     $filter = "(developer_app eq '$app_name'";
     if (!empty($developer_id)) {
-      $org = $this->client->get_org();
+      $org = $this->client->getOrg();
       $filter .= " and developer eq '$org@@@$developer_id'";
     }
     $filter .= ')';
 
     $params['filter'] = $filter;
 
-    $url = $this->base_url . 'apps?';
+    $url = $this->baseUrl . 'apps?';
     $first = TRUE;
     foreach ($params as $name => $val) {
       if ($first) {
@@ -105,7 +108,7 @@ class DeveloperAppAnalytics extends Base {
       $url .= $name . '=' . urlencode($val);
     }
     $this->client->get($url);
-    $response = $this->get_response();
+    $response = $this->getResponse();
     $response = $response['Response'];
 
     $datapoints = array();
@@ -139,11 +142,11 @@ class DeveloperAppAnalytics extends Base {
    *
    * @return array
    */
-  public function query_environments() {
-    $org = $this->get_client()->get_org();
-    $env_url = '/organizations/' . $this->url_encode($org) . '/environments';
+  public function queryEnvironments() {
+    $org = $this->getClient()->getOrg();
+    $env_url = '/organizations/' . $this->urlEncode($org) . '/environments';
     $this->client->get($env_url);
-    return $this->get_response();
+    return $this->getResponse();
   }
 
   /**
@@ -152,7 +155,7 @@ class DeveloperAppAnalytics extends Base {
    * @static
    * @return array
    */
-  public static function get_metrics() {
+  public static function getMetrics() {
     return array(
       'message_count' => t('Message Count'),
       'message_count-first24hrs' => t('Message Count - First 24 Hours'),
@@ -174,7 +177,7 @@ class DeveloperAppAnalytics extends Base {
    *
    * @return array
    */
-  public static function get_time_units() {
+  public static function getTimeUnits() {
     return array(
       'second' => t('Second'),
       'minute' => t('Minute'),
@@ -205,36 +208,36 @@ class DeveloperAppAnalytics extends Base {
    * @param string $sort_by
    * @param string $sort_order
    * @return array
-   * @throws InvalidDataException
+   * @throws ParameterException
    */
-  private static function validate_parameters($metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order) {
+  protected static function validateParameters($metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order) {
     $metric_items = preg_split('!\s*,\s*!', $metric);
     if (count($metric_items) == 0) {
-      throw new InvalidDataException('Missing metric.');
+      throw new ParameterException('Missing metric.');
     }
-    $valid_metrics = array_keys(self::get_metrics());
+    $valid_metrics = array_keys(self::getMetrics());
     foreach ($metric_items as $metric_item) {
       if (!in_array($metric_item, $valid_metrics)) {
-        throw new InvalidDataException('Invalid metric.');
+        throw new ParameterException('Invalid metric.');
       }
     }
     $sort_by_items = preg_split('!\s*,\s*!', $sort_by);
     if (count($sort_by_items) == 0) {
-      throw new InvalidDataException('Missing sort-by metric');
+      throw new ParameterException('Missing sort-by metric');
     }
     foreach ($sort_by_items as $sort_by_item) {
       if (!in_array($sort_by_item, $valid_metrics)) {
-        throw new InvalidDataException('Invalid sort-by metric.');
+        throw new ParameterException('Invalid sort-by metric.');
       }
     }
-    if (!in_array($time_unit, array_keys(self::get_time_units()))) {
-      throw new InvalidDataException('Invalid time unit.');
+    if (!in_array($time_unit, array_keys(self::getTimeUnits()))) {
+      throw new ParameterException('Invalid time unit.');
     }
     $sort_order = strtoupper($sort_order);
     if ($sort_order != 'ASC' && $sort_order != 'DESC') {
-      throw new InvalidDataException('Invalid sort order.');
+      throw new ParameterException('Invalid sort order.');
     }
-    $time_range = self::parse_time($time_start) . '~' . self::parse_time($time_end);
+    $time_range = self::parseTime($time_start) . '~' . self::parseTime($time_end);
     $payload = array(
       'timeRange' => $time_range,
       'timeUnit' => $time_unit,
@@ -255,9 +258,9 @@ class DeveloperAppAnalytics extends Base {
    * @static
    * @param string|int $time
    * @return string
-   * @throws InvalidDataException
+   * @throws ParameterException
    */
-  private static function parse_time($time) {
+  protected static function parseTime($time) {
     $int_time = FALSE;
     if (is_int($time)) {
       $int_time = $time;
@@ -272,7 +275,7 @@ class DeveloperAppAnalytics extends Base {
       $int_time = @strtotime($time);
     }
     if ($int_time === FALSE) {
-      throw new InvalidDataException('Invalid time format.');
+      throw new ParameterException('Invalid time format.');
     }
     return date('m/d/Y H:i', $int_time);
   }

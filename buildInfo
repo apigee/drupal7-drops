@@ -1,2 +1,4 @@
-Version: pantheon-4.22.111-beta1
-
+Version: pantheon-4.23.88
+Build Timestamp: 20130919.1900
+SCM Revision: ${env.GIT_COMMIT}
+    

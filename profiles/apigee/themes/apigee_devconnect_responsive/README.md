@@ -1,2 +1,0 @@
-drupal-responsive-devconnect-theme
-==================================

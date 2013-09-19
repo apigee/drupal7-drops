@@ -27,13 +27,13 @@ function devconnect_default_structure_block_info() {
   return $blocks;
 }
 
-function devconnect_default_structure_block_view($delta = '') {
+/**
+ * Provides content back for the footer block
+ */
+function _devconnect_default_structure_footer_content() {
+  $content = '';
   $theme_path = base_path() . drupal_get_path('theme', 'apigee_base');
-  switch ($delta) {
-    case 'footer':
-      return array(
-        'subject' => '',
-        'content' => '<div class="navbar">
+  $html = '<div class="navbar">
             <div class="navbar-inner">
               <div class="container">
                 <ul class="social-media-links nav span3">
@@ -53,7 +53,80 @@ function devconnect_default_structure_block_view($delta = '') {
                </div>-->
               </div>
             </div>
-          </div>'
+          </div>';
+
+  $content_raw = variable_get('apigee_config_footer_content', '');
+
+  $content = !empty($content_raw['value']) ?
+    array('#markup' => $content_raw['value']) : $html;
+
+  return $content;
+}
+
+
+
+/**
+ * Implements hook_block_configure().
+ *
+ */
+function devconnect_default_structure_block_configure($delta = '') {
+  $form = array();
+  if ($delta == 'footer') {
+    $theme_path = base_path() . drupal_get_path('theme', 'apigee_base');
+    $html = '<div class="navbar">
+            <div class="navbar-inner">
+              <div class="container">
+                <ul class="social-media-links nav span3">
+                  <li class="first"><a href="https://twitter.com/apigee" target="_blank"><img src="' . $theme_path . '/images/twiiter-icon.png" alt="Twitter" /></a></li>
+                  <li><a href="http://www.facebook.com/apigee" target="_blank"><img src="' . $theme_path . '/images/facebook-icon.png" alt="Facebook" /></a></li>
+                  <li class="last"><a href="http://www.linkedin.com/company/apigee" target="_blank"><img src="' . $theme_path . '/images/linkedin-icon.png" alt="LinkedIn" /></a></li>
+                </ul>
+                <ul class="footer-links nav span10">
+                  <li class="first"><a href="privacy-policy">Privacy Policy</a></li>
+                  <li class="divider-vertical"></li>
+                  <li><a href="terms-use">Terms &amp; Use</a></li>
+                  <li class="divider-vertical"></li>
+                  <li class="last"><a href="contact-us">Contact</a></li>
+                </ul>
+                <!--<div class="footer-logo span2 pull-right">
+                  <a href="http://apigee.com/"><img src="' . $theme_path . '/images/footer-logo.png" /></a>
+               </div>-->
+              </div>
+            </div>
+          </div>';
+    $supplied_value = variable_get('apigee_config_footer_content', '');
+    if (is_array($supplied_value) && array_key_exists('value', $supplied_value)) {
+      $default_value = $supplied_value['value'];
+    } else {
+      $default_value = $html;
+    }
+    $form['apigee_config_footer_content_markup'] = array(
+      '#type' => 'text_format',
+      '#title' => t('Custom content'),
+      '#description' => t('This content will appear in the block. Leave it blank to hide the block.'),
+      '#default_value' => $default_value,
+    );
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ *
+ */
+function devconnect_default_structure_block_save($delta = '', $edit = array()) {
+  if ($delta == 'footer') {
+    variable_set('apigee_config_footer_content', $edit['apigee_config_footer_content_markup']);
+  }
+  return;
+}
+
+function devconnect_default_structure_block_view($delta = '') {
+  switch ($delta) {
+    case 'footer':
+      return array(
+        'subject' => '',
+        'content' => _devconnect_default_structure_footer_content()
       );
       break;
     case 'apis':

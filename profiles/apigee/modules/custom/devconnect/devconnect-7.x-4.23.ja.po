@@ -1,0 +1,1065 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  devconnect.module: n/a
+#  devconnect_downloads/devconnect_download.info: n/a
+#  devconnect.install: n/a
+#  devconnect.info: n/a
+#  devconnect_admin_notify/devconnect_admin_notify.info: n/a
+#  devconnect_api_content_types/devconnect_api_content_types.info: n/a
+#  devconnect_api_views/devconnect_api_views.info: n/a
+#  devconnect_apigee/devconnect_apigee.info: n/a
+#  devconnect_app_attributes/devconnect_app_attributes.info: n/a
+#  devconnect_cdn/devconnect_cdn.info: n/a
+#  devconnect_content_authoring/devconnect_content_authoring.info: n/a
+#  devconnect_developer_apps/devconnect_developer_apps.info: n/a
+#  faq.info,v 1.1.2.3.2.1 2007/09/05 14:05:48 snpower
+#  devconnect_homepage/devconnect_homepage.info: n/a
+#  devconnect_node_settings/devconnect_node_settings.info: n/a
+#  devconnect_readonlymode_ext/devconnect_readonlymode_ext.info: n/a
+#  devconnect_user/devconnect_user.info: n/a
+#  devconnect_validate/devconnect_validate.info: n/a
+#  devconnect_wadl/devconnect_wadl.info: n/a
+#  devconnect_admin_notify/devconnect_admin_notify.admin.inc: n/a
+#  devconnect_admin_notify/devconnect_admin_notify.module: n/a
+#  devconnect_api_content_types/devconnect_api_content_types.features.field.inc: n/a
+#  devconnect_default_content/content/devconnect_default_content.features.field.inc: n/a
+#  devconnect_homepage/devconnect_homepage.module: n/a
+#  devconnect_app_attributes/devconnect_app_attributes.module: n/a
+#  devconnect_api_content_types/devconnect_api_content_types.features.inc: n/a
+#  devconnect_developer_apps/analytics.inc: n/a
+#  devconnect_default_content/content/devconnect_default_content.features.inc: n/a
+#  devconnect_downloads/devconnect_download.features.field.inc: n/a
+#  devconnect_default_content/content/devconnect_default_content.info: n/a
+#  devconnect_default_content/structure/devconnect_default_structure.info: n/a
+#  devconnect_default_content/structure/devconnect_default_structure.features.menu_custom.inc: n/a
+#  devconnect_default_content/structure/devconnect_default_structure.features.menu_links.inc: n/a
+#  devconnect_default_content/structure/devconnect_default_structure.module: n/a
+#  lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php: n/a
+#  devconnect_developer_apps/devconnect_developer_apps.module: n/a
+#  devconnect_node_settings/devconnect_node_settings.module: n/a
+#  devconnect_node_settings/devconnect_node_settings.install: n/a
+#  devconnect_user/devconnect_user.features.field.inc: n/a
+#  devconnect_user/devconnect_user.module: n/a
+#  devconnect_validate/devconnect_validate.module: n/a
+#  devconnect_wadl/devconnect_wadl.module: n/a
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2013-08-27 09:42-0700\n"
+"PO-Revision-Date: 2013-09-10 12:56-0800\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"X-Generator: Poedit 1.5.7\n"
+
+#: devconnect.module:76
+msgid "Devconnect Organization"
+msgstr "Devconnect組織"
+
+#: devconnect.module:78
+msgid ""
+"The v4 product organization name. Changing this value could make your site "
+"not work."
+msgstr ""
+"バージョン4製品の組織名。この値を変更すると、あなたのサイトが機能しないになる"
+"だろう。"
+
+#: devconnect.module:84
+msgid "Devconnect Endpoint"
+msgstr "エンドポイントDevconnect"
+
+#: devconnect.module:86
+msgid "URL to which to make Apigee REST calls."
+msgstr "URLへApigee REST呼び出しをする。"
+
+#: devconnect.module:92
+msgid "Authentication for the Endpoint"
+msgstr "エンドポイントの認証"
+
+#: devconnect.module:94
+msgid ""
+"Will be used to authenticate with the endpoint. Separate the Username and "
+"Password with a colon (e.g. \"guest:secret\")."
+msgstr ""
+"エンドポイントでの認証に使用されます。コロン（例\"シークレットゲスト\"）で"
+"ユーザー名とパスワードを区切ります。"
+
+#: devconnect.module:101
+msgid "Double-URL-encode all KMS URI parameters?"
+msgstr "Double-URL-encode all Key Manager System URI parameters?"
+
+#: devconnect.module:103
+msgid ""
+"When checked, double-escapes developer app names and API Products in URLs."
+msgstr "チェックすると、URLで開発者のアプリ名とAPIの製品をダブルエスケープ。"
+
+#: devconnect.module:109
+msgid "KMS logging threshold"
+msgstr "キーマネージャ·システムは、しきい値ロギング"
+
+#: devconnect.module:110
+msgid ""
+"Controls what baseline level of KMS output should be written to the logs."
+msgstr ""
+"キーマネージャシステム出力のベースラインレベルは、ログに書き込まれるべきかを"
+"制御します。"
+
+#: devconnect.module:132
+msgid "Devconnect settings"
+msgstr "セッティングDevconnect"
+
+#: devconnect.module:133
+msgid ""
+"Settings for this Devconnect instance. Change these values with great care!"
+msgstr ""
+"このDevconnectインスタンスの設定。細心の注意を払ってこれらの値を変更します！"
+
+#: devconnect.module:34 devconnect_downloads/devconnect_download.info:0
+msgid "Devconnect"
+msgstr "Devconnect"
+
+#: devconnect.module:35
+msgid "KMS authentication settings."
+msgstr "キーマネージャシステム認証設定。"
+
+#: (duplicate) devconnect.install:21
+msgid "Please install the PHP mcrypt extension."
+msgstr "PHPのmcrypt拡張をインストールしてください。"
+
+#: (duplicate) devconnect.install:22
+msgid "Missing library"
+msgstr "ライブラリが見つからない"
+
+#: devconnect.info:0
+msgid "Devconnect API"
+msgstr "Devconnect API"
+
+#: devconnect.info:0
+msgid ""
+"PSR-0 compliant class libraries to contact and communicate with Apigee v4 "
+"product (Fountainhead)"
+msgstr ""
+"PSR-0準拠のクラスライブラリには連絡し、Apigeeバージョン4製品（摩天楼）と通信"
+"するため"
+
+#: devconnect.info:0 devconnect_admin_notify/devconnect_admin_notify.info:0
+#: devconnect_api_content_types/devconnect_api_content_types.info:0
+#: devconnect_api_views/devconnect_api_views.info:0
+#: devconnect_apigee/devconnect_apigee.info:0
+#: devconnect_app_attributes/devconnect_app_attributes.info:0
+#: devconnect_cdn/devconnect_cdn.info:0
+#: devconnect_content_authoring/devconnect_content_authoring.info:0
+#: devconnect_developer_apps/devconnect_developer_apps.info:0
+#: devconnect_faq_ext/devconnect_faq_ext.info:0
+#: devconnect_homepage/devconnect_homepage.info:0
+#: devconnect_node_settings/devconnect_node_settings.info:0
+#: devconnect_readonlymode_ext/devconnect_readonlymode_ext.info:0
+#: devconnect_user/devconnect_user.info:0
+#: devconnect_validate/devconnect_validate.info:0
+#: devconnect_wadl/devconnect_wadl.info:0
+msgid "DevConnect"
+msgstr "DevConnect"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:9
+#: devconnect_admin_notify/devconnect_admin_notify.module:8
+msgid "Account details for !user_name at !site"
+msgstr ""
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:13
+#: devconnect_admin_notify/devconnect_admin_notify.module:12
+msgid ""
+"!user_name (!user_view) has !action account.\n"
+"\n"
+"Edit user: !user_edit\n"
+"\n"
+"Delete User: !user_delete\n"
+"\n"
+"User Status: !approved\n"
+"\n"
+msgstr ""
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:22
+msgid "User Alerts"
+msgstr "ユーザアラート"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:27
+msgid "Send to a custom email address"
+msgstr "カスタムのメールアドレスへ送る"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:28;48
+msgid "Send to a specific role(s)"
+msgstr "特定のロールに送る"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:29
+msgid "Send to Both a custom email address and a specific role(s)"
+msgstr "カスタム電子メールアドレスと特定の役割の両方に送信する。"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:34
+msgid "Send by Role or Custom Email address?"
+msgstr "ロールまたはカスタム電子メールアドレスで送信しますか？"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:41
+msgid "Send notifications to this custom email address"
+msgstr "このカスタムの電子メールアドレスに通知を送信し"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:42
+msgid ""
+"Please specify multiple email ids with comma(,) separated values eg(%mailto,"
+"%mailto). If you leave this blank, the site email address, %mailto, will be "
+"used."
+msgstr ""
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:50
+msgid ""
+"All users with these checked roles will receive a notification email when "
+"selected."
+msgstr ""
+"選択されたときに、これらの確認の役割を持つすべてのユーザーは、通知メールが届"
+"きます。"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:55
+msgid "Email Subject"
+msgstr "電子メールの件名"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:58
+msgid "Subject of user registration messages"
+msgstr "ユーザー登録メッセージの件名"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:62
+msgid "Email Body"
+msgstr "メールボディ"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:66
+msgid "Customize the body of the user registration notification email."
+msgstr "ユーザ登録通知メールの本文をカスタマイズします。"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:66
+msgid "Available variables are:"
+msgstr "使用可能な変数は以下のとおりです。"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:75
+msgid "Page Sort order"
+msgstr "ページの並べ替え順序"
+
+#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:77
+msgid "When to send an Email"
+msgstr "メールを送信するとき"
+
+#: devconnect_admin_notify/devconnect_admin_notify.module:33
+msgid "Admin Notification"
+msgstr "管理通知"
+
+#: devconnect_admin_notify/devconnect_admin_notify.module:36
+msgid "Configure the DevConnect admin notification module."
+msgstr "DevConnect管理者通知モジュールを構成します。"
+
+#: devconnect_admin_notify/devconnect_admin_notify.info:0
+msgid "Devconnect Admin notification"
+msgstr "管理者通知をDevconnect"
+
+#: devconnect_admin_notify/devconnect_admin_notify.info:0
+msgid "Notifies administrator of new user registrations."
+msgstr "新規ユーザ登録の管理者に通知します。"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:803
+msgid "API Description"
+msgstr "アプリケーション·プログラミング·インターフェースの説明"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:804
+#: devconnect_default_content/content/devconnect_default_content.features.field.inc:328
+#: devconnect_homepage/devconnect_homepage.module:28
+msgid "Body"
+msgstr "物体"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:805
+msgid "Desciption (use HTML data)"
+msgstr "説明（HTMLデータを使用）"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:806
+#: devconnect_app_attributes/devconnect_app_attributes.module:118
+msgid "Description"
+msgstr "説明"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:807
+msgid "Endpoint URI"
+msgstr "エンドポイントURI"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:808
+msgid "Method Type"
+msgstr "方法の種類"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:809
+msgid "Request"
+msgstr "要求"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:810
+msgid "Select API"
+msgstr "アプリケーション·プログラミング·インターフェースを選択します"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:811
+msgid "Select Class"
+msgstr "クラスを選択してください"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:812
+msgid "Short Description"
+msgstr "短い説明"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:13
+msgid "API"
+msgstr "アプリケーションプログラミングインターフェース"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:15
+msgid ""
+"General description of broad functionality. It usually doesn’t contain "
+"technical details."
+msgstr "幅広い機能の一般的な説明。それは通常、技術的な詳細が含まれていません。"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:17
+msgid "API Name"
+msgstr "アプリケーションプログラミングインタフェース名"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:21
+msgid "API Method"
+msgstr "アプリケーションプログラミングインタフェースメソッド"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:23
+msgid ""
+"The API method, with long description (with full technical details) and test "
+"console. Eg. Vertical method (under “Top Sellers” class, under Search API) "
+"contains short description, long description (that includes URL, parameters "
+"for API method call, sample request and response) etc. It also includes a "
+"test console which can be used to make requests to the API method."
+msgstr ""
+"長い説明（完全技術的な詳細を含む）とテストコンソールを使用してアプリケーショ"
+"ン·プログラミング·インターフェースの方法。例。縦の方法（検索アプリケーション·"
+"プログラミング·インターフェースの下の \"ベストセラー\"クラス、下）また、使用"
+"することができますテストコンソールを含む短い説明、長い説明（APIメソッド呼び出"
+"しのためのURL、パラメータ、サンプル要求と応答を含む）などが含まれていますアプ"
+"リケーション·プログラミング·インターフェース方式に要求を作る。"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:25
+msgid "Method"
+msgstr "方法"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:29;33
+msgid "API Class Name"
+msgstr "アプリケーション·プログラミング·インタフェース名"
+
+#: devconnect_api_content_types/devconnect_api_content_types.features.inc:31
+msgid ""
+"A way to group API methods (defined next). There is no content associated "
+"with a class name apart from the name of class itself. This is used as a "
+"‘separator’ when listing API methods."
+msgstr ""
+"グループ·アプリケーション·プログラミング·インターフェース·メソッド（次の定"
+"義）への道。別にクラス自体の名前からクラス名に関連付けられたコンテンツがあり"
+"ません。アプリケーション·プログラミング·インターフェースのメソッドをリストす"
+"るときに\"区切り文字\"として使用される。"
+
+#: devconnect_api_content_types/devconnect_api_content_types.info:0
+msgid "devconnect_api_content_types"
+msgstr "devconnect_api_content_types"
+
+#: devconnect_api_content_types/devconnect_api_content_types.info:0
+msgid "Content types supporting Devconnect API explorer"
+msgstr ""
+"コンテンツタイプ支えるDevconnectアプリケーションプログラミングインタフェース"
+"エクスプローラ"
+
+#: devconnect_api_views/devconnect_api_views.info:0
+msgid "devconnect_api_views"
+msgstr "devconnect_api_views"
+
+#: devconnect_api_views/devconnect_api_views.info:0
+msgid "Views that are integrated with Devconnect API explorer"
+msgstr ""
+"Devconnectアプリケーションプログラミングインタフェースエクスプローラと統合さ"
+"れた回数"
+
+#: devconnect_apigee/devconnect_apigee.info:0
+msgid "Devconnect Apigee Legacy Function Stubs"
+msgstr "Apigeeレガシー機能スタブDevconnect"
+
+#: devconnect_apigee/devconnect_apigee.info:0
+msgid ""
+"<strong>DEPRECATED</strong> function stubs which may be called by some "
+"legacy DevConnect implementations"
+msgstr ""
+"<strong>廃止予定の</strong>関数スタブはその一部のレガシーDevConnect実装によっ"
+"て呼び出される"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:15
+msgid "DevConnect App Attributes"
+msgstr "アプリケーション属性をDevConnect"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:21
+msgid "Add DevConnect App Attribute"
+msgstr "アプリケーション属性をDevConnect追加"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:28
+msgid "Edit DevConnect App Attribute"
+msgstr "DevConnectアプリケーション属性を編集"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:35
+msgid "Delete DevConnect App Attribute"
+msgstr "アプリケーション属性をDevConnect削除"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:58
+msgid "No app attributes have been defined yet."
+msgstr "いいえアプリケーション属性は、まだ定義されていません。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:61
+msgid "Add Attribute"
+msgstr "属性の追加"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:91
+msgid "Machine Name"
+msgstr "マシン名"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:97
+msgid "Please use only numbers, letters, underscores, hyphens and periods."
+msgstr "数字のみ、文字、アンダースコア、ハイフン、ピリオドを使用してください。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:102
+msgid ""
+"This is the attribute name as it is stored in KMS. It must be unique to this "
+"Devconnect instance, and should consist exclusively of numbers, letters, "
+"underscores, hyphens and periods."
+msgstr ""
+"それはキーマネージャ·サービスに格納されているので、これは属性名です。これは"
+"Devconnectインスタンスに対して一意である必要があり、数字、文字、アンダースコ"
+"ア、ハイフン、ピリオドだけから構成される必要があります。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:106
+msgid "Public Name"
+msgstr "公称"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:114
+msgid ""
+"This is the name of the attribute as it is shown to the Devconnect end user."
+msgstr "それはDevconnectエンドユーザに表示されるので、これは属性の名前である。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:123
+msgid ""
+"This is shown as help text underneath the attribute's form element on the "
+"app creation/edit page. This is a plaintext field; please do not enter "
+"markup."
+msgstr ""
+"これは、アプリの作成/編集ページで属性のform要素の下にヘルプテキストとして表示"
+"されます。これはプレーンテキストフィールドです。マークアップを入力しないでく"
+"ださい。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:127;525
+msgid "Widget"
+msgstr "ウィジェット"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:131
+msgid "Text Box"
+msgstr "テキストボックス"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:132
+msgid "Text Area"
+msgstr "テキスト領域"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:139
+msgid "This sets the type of input field shown on the app creation/edit page."
+msgstr ""
+"これは、アプリの作成/編集ページに表示される入力フィールドのタイプを設定しま"
+"す。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:143
+msgid "Maximum Length"
+msgstr "最大長"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:148
+msgid ""
+"If set, this limits the possible length of the attribute content. Leave "
+"blank to allow unlimited content length."
+msgstr ""
+"設定されている場合、これは、属性のコンテンツの可能長さを制限します。無制限の"
+"コンテンツの長さを可能にするために空白のままにします。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:152
+msgid "Require this attribute"
+msgstr "この属性を必要とする"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:156
+msgid ""
+"If this box is checked, end users will be unable to save their apps without "
+"filling in the attribute."
+msgstr ""
+"このボックスがチェックされている場合、エンドユーザーは、属性に入力せずに自分"
+"のアプリを保存することができません。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:160
+msgid "Display this attribute"
+msgstr "この属性を表示します"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:164
+msgid ""
+"If this box is checked, the attribute will be displayed on the user's app "
+"listing page."
+msgstr ""
+"このボックスがチェックされている場合、この属性は、ユーザーのアプリのリスト"
+"ページに表示されます。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:168
+msgid "Pattern Regex"
+msgstr "パターンは正規表現"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:174
+msgid ""
+"If set, this must be a valid regular expression. <strong>Please omit regex "
+"delimiters.</strong> Any input for this attribute will be validated against "
+"the regular expression; content failing to match will be rejected."
+msgstr ""
+"設定した場合、これは有効な正規表現でなければなりません。<strong>の正規表現の"
+"区切り文字を省略してください</ strong>のこの属性の任意の入力は、正規表現と照"
+"合して検証されます。。一致しなかっコンテンツが拒否されます。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:178
+msgid "Tooltip"
+msgstr "ツールチップ"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:179
+msgid ""
+"If Pattern Regex is not empty, this should contain a human-readable high-"
+"level description of the valid pattern, to be shown in the browser when the "
+"user enters an invalid pattern."
+msgstr ""
+"正規表現パターンが空でない場合、これは、ユーザが無効なパターンに入射するブラ"
+"ウザに表示される有効なパターンの人間可読高レベル記述を含むべきである。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:187
+msgid "Default Value"
+msgstr "デフォルト値"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:188
+msgid ""
+"When the user does not enter a value for the attribute, this value should be "
+"assumed."
+msgstr "ユーザーは属性の値を入力しない場合、この値は想定されるべきである。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:232
+msgid ""
+"Invalid machine name. Please only use letters, numbers, dashes, underscores "
+"and periods."
+msgstr ""
+"無効なマシン名。唯一の文字、数字、ダッシュ、アンダースコア、ピリオドを使用し"
+"てください。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:237
+msgid "This machine name is already in use."
+msgstr "このマシン名が既に使用されています。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:258
+msgid "Invalid regular expression. Please check your syntax."
+msgstr "無効な正規表現。あなたの構文を確認してください。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:274
+msgid "updated"
+msgstr "更新した"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:274
+msgid "created"
+msgstr "作成"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:277
+msgid "The @attr attribute has been @action."
+msgstr ""
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:293
+msgid "The @attr attribute has been deleted."
+msgstr ""
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:296
+msgid "The selected attribute could not be found."
+msgstr "選択した属性が見つかりませんでした。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:402
+msgid "Edit"
+msgstr "編集する"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:403
+msgid "Delete"
+msgstr "デリート"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:416;420
+msgid "Yes"
+msgstr "はい"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:416;420
+msgid "No"
+msgstr "ノー"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:439
+msgid "Save Changes"
+msgstr "変更を保存"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:478
+msgid "Your changes have been saved."
+msgstr "あなたの変更を保存しました。"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:524
+msgid "Name"
+msgstr "名前"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:526
+msgid "Required"
+msgstr "必須"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:527
+#: devconnect_developer_apps/analytics.inc:42
+msgid "Display"
+msgstr "表示"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:528
+msgid "Action"
+msgstr "アクション"
+
+#: devconnect_app_attributes/devconnect_app_attributes.module:529
+msgid "Weight"
+msgstr "重量"
+
+#: devconnect_app_attributes/devconnect_app_attributes.info:0
+msgid "DevConnect App Attribute Management"
+msgstr "アプリケーション属性管理DevConnect"
+
+#: devconnect_app_attributes/devconnect_app_attributes.info:0
+msgid "Allows custom attributes to be set for Developer Apps"
+msgstr "カスタム属性が開発アプリを設定することが可能"
+
+#: devconnect_cdn/devconnect_cdn.info:0
+msgid "Devconnect CDN Uploader"
+msgstr "コンテンツ配信ネットワークアップローダをDevconnect"
+
+#: devconnect_cdn/devconnect_cdn.info:0
+msgid "Uploads files to Amazon CDN mirror automatically"
+msgstr ""
+"アマゾンのコンテンツ配信ネットワークへのアップロードファイルが自動的にミラー"
+"リング"
+
+#: devconnect_content_authoring/devconnect_content_authoring.info:0
+msgid "DevConnect Content Authoring"
+msgstr "コンテンツのオーサリングをDevConnect"
+
+#: devconnect_content_authoring/devconnect_content_authoring.info:0
+msgid "Configuration for text formats and editor configuration"
+msgstr "テキスト形式、エディタ構成の構成"
+
+#: devconnect_default_content/content/devconnect_default_content.features.inc:19
+msgid "Basic page"
+msgstr "基本的なページ"
+
+#: devconnect_default_content/content/devconnect_default_content.features.inc:21
+msgid ""
+"Use <em>basic pages</em> for your static content, such as an 'About us' page."
+msgstr ""
+"<em>基本ページ</ em>はあなたの静的なコンテンツのために、そのようなページ'私達"
+"について'のように使用します。"
+
+#: devconnect_default_content/content/devconnect_default_content.features.inc:23
+#: devconnect_downloads/devconnect_download.features.field.inc:153
+msgid "Title"
+msgstr "タイトル"
+
+#: devconnect_default_content/content/devconnect_default_content.info:0
+msgid "Devconnect Default Content"
+msgstr "既定のコンテンツをDevconnect"
+
+#: devconnect_default_content/content/devconnect_default_content.info:0
+msgid "Configures nodes and users"
+msgstr "構成ノードとユーザ"
+
+#: devconnect_default_content/content/devconnect_default_content.info:0
+#: devconnect_default_content/structure/devconnect_default_structure.info:0
+msgid "Devconnect Features"
+msgstr "特徴Devconnect"
+
+#: devconnect_default_content/structure/devconnect_default_structure.features.menu_custom.inc:21
+msgid "Main menu"
+msgstr "メインメニュー"
+
+#: devconnect_default_content/structure/devconnect_default_structure.features.menu_custom.inc:22
+msgid ""
+"The <em>Main</em> menu is used on many sites to show the major sections of "
+"the site, often in a top navigation bar."
+msgstr ""
+"<em>メイン</ em>のメニューは頻繁に上部のナビゲーションバーに、サイトの主要な"
+"セクションを表示するには、多くのサイトで使用されます。"
+
+#: devconnect_default_content/structure/devconnect_default_structure.features.menu_links.inc:51
+msgid "Blog"
+msgstr "ブログ"
+
+#: devconnect_default_content/structure/devconnect_default_structure.features.menu_links.inc:52
+msgid "Forum"
+msgstr "フォーラム"
+
+#: devconnect_default_content/structure/devconnect_default_structure.module:13
+msgid "Site-wide Default Footer"
+msgstr "サイト全体のデフォルトのフッター"
+
+#: devconnect_default_content/structure/devconnect_default_structure.module:21
+msgid "Develop With These"
+msgstr "これらを使って開発"
+
+#: devconnect_default_content/structure/devconnect_default_structure.module:61
+msgid "Develop with these APIs"
+msgstr "これらの応用も·プログラミング·インターフェースを使用して開発"
+
+#: devconnect_default_content/structure/devconnect_default_structure.info:0
+msgid "Devconnect Default Structure"
+msgstr "デフォルトの構造をDevconnect"
+
+#: devconnect_default_content/structure/devconnect_default_structure.info:0
+msgid "Configures blocks, views and menus"
+msgstr "を設定ブロック、ビューとメニュー"
+
+#: devconnect_developer_apps/analytics.inc:24
+msgid "Throughput"
+msgstr "スループット"
+
+#: devconnect_developer_apps/analytics.inc:25
+msgid "Max Response Time"
+msgstr "最大応答時間"
+
+#: devconnect_developer_apps/analytics.inc:26
+msgid "Min Response Time"
+msgstr "最小応答時間"
+
+#: devconnect_developer_apps/analytics.inc:27
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:167
+msgid "Endpoint Response Time"
+msgstr "エンドポイントの応答時間"
+
+#: devconnect_developer_apps/analytics.inc:28
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:157
+msgid "Message Count"
+msgstr "メッセージ数"
+
+#: devconnect_developer_apps/analytics.inc:29
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:160
+msgid "Error Count"
+msgstr "誤り件数"
+
+#: devconnect_developer_apps/analytics.inc:30
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:162
+msgid "User Count"
+msgstr "ユーザーカウント"
+
+#: devconnect_developer_apps/analytics.inc:67
+msgid "From"
+msgstr "から"
+
+#: devconnect_developer_apps/analytics.inc:85
+msgid "To"
+msgstr "へ"
+
+#: devconnect_developer_apps/analytics.inc:117
+msgid "Invalid \"From\" date."
+msgstr ""
+
+#: devconnect_developer_apps/analytics.inc:121
+msgid "Invalid \"To\" date."
+msgstr ""
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:11
+msgid "My Apps"
+msgstr "私のアプリ"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:21
+msgid "App Detail"
+msgstr "アプリ詳細"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:31
+msgid "Add New App"
+msgstr "新しいアプリケーションを追加"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:41
+msgid "Edit App"
+msgstr "編集アプリケーション"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:51;608
+msgid "Delete App"
+msgstr "削除のApp"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:81
+msgid "Show Developer App performance tab?"
+msgstr "開発アプリケーションのパフォーマンスのタブを表示しますか？"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:83
+msgid ""
+"When this value is enabled, the 'Performance' tab will be displayed on the "
+"developer app detail page."
+msgstr ""
+"この値が有効になっている場合、'パフォーマンス'タブは、開発者のアプリ詳細ペー"
+"ジに表示されます。"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:88
+msgid "Show API Product status on the developer app list?"
+msgstr ""
+"開発者はアプリのリストにアプリケーションプログラミングインターフェース製品の"
+"ステータスを表示しますか？"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:90
+msgid ""
+"When this value is enabled, the app's status with each associated API "
+"Product is listed on the app listing page."
+msgstr ""
+"この値が有効になっている場合、関連する各アプリケーションプログラミングイン"
+"ターフェース製品とアプリケーションの状態はアプリ一覧ページに記載されていま"
+"す。"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:255
+msgid "Editing App “@app”"
+msgstr ""
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:257
+msgid "Save App"
+msgstr "アプリケーションを保存"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:262
+msgid "Create App"
+msgstr "アプリケーションの作成"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:285;297
+msgid "App Name"
+msgstr "アプリケーション名"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:314
+msgid "Callback URL"
+msgstr "コールバックURL"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:404
+msgid "Product"
+msgstr "製品"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:460
+msgid "The @title element does not conform to the indicated pattern."
+msgstr ""
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:590
+msgid "Are you sure?"
+msgstr "本当に？"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:619
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:653
+msgid "App Deleted!"
+msgstr "アプリは、削除された！"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:656
+msgid "App could not be deleted."
+msgstr "アプリは削除できませんでした。"
+
+#: devconnect_developer_apps/devconnect_developer_apps.module:61
+msgid "Performance Data"
+msgstr "パフォーマンスデータ"
+
+#: devconnect_developer_apps/devconnect_developer_apps.info:0
+msgid "DevConnect Developer Apps"
+msgstr "開発アプリをDevConnect"
+
+#: devconnect_developer_apps/devconnect_developer_apps.info:0
+msgid "CRUD Apps with REST interface to Apigee 4"
+msgstr "作成RESTインタフェースを持つアプリ4 Apigeeする更新削除"
+
+#: devconnect_downloads/devconnect_download.features.field.inc:154
+msgid "URI"
+msgstr "URI"
+
+#: devconnect_downloads/devconnect_download.info:0
+msgid "Devconnect Download"
+msgstr "ダウンロードDevconnect"
+
+#: devconnect_faq_ext/devconnect_faq_ext.info:0
+msgid "DevConnect Frequently Asked Questions Extension"
+msgstr "よくある質問拡張をDevConnect"
+
+#: devconnect_faq_ext/devconnect_faq_ext.info:0
+msgid "Developer Connect Manages configuration of questions for a FAQ page."
+msgstr "Devconnectは、よくある質問ページの質問の構成を管理します。"
+
+#: devconnect_homepage/devconnect_homepage.module:9
+msgid "Homepage Header"
+msgstr "ホームページヘッダー"
+
+#: devconnect_homepage/devconnect_homepage.info:0
+msgid "Devconnect Homepage"
+msgstr "ホームページDevconnect"
+
+#: devconnect_homepage/devconnect_homepage.info:0
+msgid "Homepage Header Block"
+msgstr "ホームページヘッダーブロック"
+
+#: devconnect_node_settings/devconnect_node_settings.module:70
+msgid "Check the fields which you want to show in the node form."
+msgstr "ノードの形式で表示したい項目をチェックしてください。"
+
+#: devconnect_node_settings/devconnect_node_settings.module:8
+msgid "Node Form settings"
+msgstr "ノードフォームの設定"
+
+#: devconnect_node_settings/devconnect_node_settings.module:9
+msgid "Adjust the node forms."
+msgstr "ノードの形を調整します。"
+
+#: devconnect_node_settings/devconnect_node_settings.install:13
+msgid "node's type."
+msgstr "ノードのタイプ。"
+
+#: devconnect_node_settings/devconnect_node_settings.info:0
+msgid "Devconnect Node Settings"
+msgstr "ノード設定Devconnect"
+
+#: devconnect_node_settings/devconnect_node_settings.info:0
+msgid "Provides option to select the node fields by the user."
+msgstr "ユーザによるノードのフィールドを選択するオプションが用意されています。"
+
+#: devconnect_readonlymode_ext/devconnect_readonlymode_ext.info:0
+msgid "DevConnect Read Only Mode Extension"
+msgstr "専用モード拡張を読むDevConnect"
+
+#: devconnect_readonlymode_ext/devconnect_readonlymode_ext.info:0
+msgid "This module locks the site from postings and redirect user to a URL."
+msgstr ""
+"このモジュールは、投稿からサイトをロックして、URLにユーザーをリダイレクトしま"
+"す。"
+
+#: devconnect_user/devconnect_user.features.field.inc:167
+msgid "First Name"
+msgstr "姓"
+
+#: devconnect_user/devconnect_user.features.field.inc:168
+msgid "Last Name"
+msgstr "姓"
+
+#: devconnect_user/devconnect_user.module:16
+msgid "Administer DevConnect Developers."
+msgstr "DevConnect開発を管理します。"
+
+#: devconnect_user/devconnect_user.module:17
+msgid "Perform administration tasks for Apigee DevConnect Developers."
+msgstr "Apigee DevConnect開発者のための管理タスクを実行します。"
+
+#: devconnect_user/devconnect_user.module:60
+msgid "Home"
+msgstr "自宅"
+
+#: devconnect_user/devconnect_user.module:85
+msgid "I agree to the <a href=\"@url\" target=\"_blank\">Terms of Use</a>"
+msgstr "同意します <a href=\"@url\" target=\"_blank\">利用規約</a>"
+
+#: devconnect_user/devconnect_user.module:115
+msgid "User attributes to be persisted to KMS"
+msgstr "ユーザー属性は、キー·マネージャー·サーバーに永続化することができます。"
+
+#: devconnect_user/devconnect_user.module:31
+msgid "DevConnect Developer Sync"
+msgstr "DevConnect開発同期"
+
+#: devconnect_user/devconnect_user.module:39
+msgid "DevConnect User Attributes"
+msgstr "ユーザー属性をDevConnect"
+
+#: devconnect_user/devconnect_user.info:0
+msgid "DevConnect User"
+msgstr "ユーザーDevConnect"
+
+#: devconnect_user/devconnect_user.info:0
+msgid "Extra Field for User Entity"
+msgstr "Userエンティティのための余分なフィールド"
+
+#: devconnect_validate/devconnect_validate.module:8
+msgid "DevConnect validate"
+msgstr "検証をDevConnect"
+
+#: devconnect_validate/devconnect_validate.info:0
+msgid "Devconnect Validation Module"
+msgstr "検証モジュールDevconnect"
+
+#: devconnect_validate/devconnect_validate.info:0
+msgid "Responses for build servers to verify builds"
+msgstr "ビルドを確認するためにサーバを構築するための応答"
+
+#: devconnect_wadl/devconnect_wadl.module:37
+msgid "API Resources"
+msgstr "アプリケーション·プログラミング·インターフェースリソース"
+
+#: devconnect_wadl/devconnect_wadl.info:0
+msgid "Devconnect WADL documentation parser"
+msgstr "WADLドキュメントパーサーをDevconnect"
+
+#: devconnect_wadl/devconnect_wadl.info:0
+msgid "Parses WADL JSON files and generates documentation."
+msgstr "WADL JSONファイルを解析し、ドキュメントを生成します。"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:158
+msgid "Message Count - First 24 Hours"
+msgstr "メッセージ数 - 最初の24時間"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:159
+msgid "Message Count - Second 24 Hours"
+msgstr "メッセージ数 - 第24時間"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:161
+msgid "Error Count - First 24 Hours"
+msgstr "エラーカウント - 最初の24時間"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:163
+msgid "User Count - First 24 Hours"
+msgstr "ユーザーカウント - 最初の24時間"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:164
+msgid "Total Response Time"
+msgstr "合計応答時間"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:165
+msgid "Maximum Response Time"
+msgstr "最大応答時間"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:166
+msgid "Minimum Response Time"
+msgstr "最小応答時間"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:179
+msgid "Second"
+msgstr "セカンド"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:180
+msgid "Minute"
+msgstr "分"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:181
+msgid "Hour"
+msgstr "アワー"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:182
+msgid "Day"
+msgstr "デイ"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:183
+msgid "Week"
+msgstr "週"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:184
+msgid "Month"
+msgstr "月"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:185
+msgid "Quarter"
+msgstr "四半期"
+
+#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:186
+msgid "Year"
+msgstr "年"

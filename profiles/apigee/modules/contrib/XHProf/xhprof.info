@@ -1,0 +1,15 @@
+; $Id:
+name = xhprof
+description = XHProf integration.
+package = Development
+core = 7.x
+
+files[] = XHProfRunsInterface.inc
+files[] = XHProfRunsFile.inc
+
+; Information added by drupal.org packaging script on 2011-11-23
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "XHProf"
+datestamp = "1322014244"
+

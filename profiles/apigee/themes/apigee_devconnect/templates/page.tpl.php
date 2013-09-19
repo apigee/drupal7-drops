@@ -10,10 +10,10 @@
       <div class="nav-collapse">
         <nav role="navigation">
           <?php
-            $menu_depth = 2;
-            print @drupal_render(menu_tree_output(menu_tree_all_data('main-menu', null, $menu_depth)));
+            $menu_tree = menu_tree_output(menu_tree_all_data('main-menu', NULL, 2));
+            print drupal_render($menu_tree);
           ?>
-          <div id='login-buttons' class="span7 pull-right">
+          <div id="login-buttons" class="span7 pull-right">
             <ul class="nav pull-right">
             <?php if ($user->uid == 0) { ?>
             <!-- show/hide login and register links depending on site registration settings -->
@@ -22,9 +22,9 @@
               <li class="<?php echo (($current_path == "user/login")?"active":""); ?>"><?php echo l(t("login"), "user/login"); ?></li>
             <?php endif; ?>
             <?php } else {
-              $user_url =  "user/".$user->uid; ?>
+              $user_url =  'user/' . $user->uid; ?>
               <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="<?php print $user -> mail; ?>"><?php print $truncated_user_email; ?><b class="caret"></b></a>
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="<?php print $user->mail; ?>"><?php print $truncated_user_email; ?><b class="caret"></b></a>
                 <ul class="dropdown-menu">
                   <?php if (module_exists('devconnect_developer_apps')): ?>
                   <li><i class="icon-pencil"></i><?php echo l('My Apps', $user_url . '/apps'); ?></li>

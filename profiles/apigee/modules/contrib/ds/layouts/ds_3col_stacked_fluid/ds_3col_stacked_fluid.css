@@ -1,31 +1,35 @@
+/**
+ * @file
+ * Styling for the ds-3col-stacked-fluid template.
+ */
 
-.group-header {
+.ds-3col-stacked-fluid > .group-header {
   clear: both;
 }
 
-.group-left {
+.ds-3col-stacked-fluid > .group-left {
   width: 25%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-middle {
+.ds-3col-stacked-fluid > .group-middle {
   width: 100%;
-  float: left;
+  float: left; /* LTR */
 }
 
-.group-one-sidebar .group-middle {
+.ds-3col-stacked-fluid.group-one-sidebar > .group-middle {
   width: 75%;
 }
 
-.group-two-sidebars .group-middle {
+.ds-3col-stacked-fluid.group-two-sidebars > .group-middle {
   width: 50%;
 }
 
-.group-right {
+.ds-3col-stacked-fluid > .group-right {
   width: 25%;
-  float: right;
+  float: right; /* LTR */
 }
 
-.group-footer {
+.ds-3col-stacked-fluid > .group-footer {
   clear: both;
 }

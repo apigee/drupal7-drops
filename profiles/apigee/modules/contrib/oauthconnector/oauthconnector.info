@@ -5,12 +5,13 @@ package = "Connector"
 dependencies[] = connector
 dependencies[] = oauth_common
 dependencies[] = oauth2_common
+dependencies[] = http_client
 dependencies[] = http_client_oauth
 dependencies[] = ctools
 
-; Information added by drupal.org packaging script on 2012-03-18
-version = "7.x-1.0-beta1"
+; Information added by drupal.org packaging script on 2013-05-30
+version = "7.x-1.0-beta2"
 core = "7.x"
 project = "oauthconnector"
-datestamp = "1332058843"
+datestamp = "1369926362"
 

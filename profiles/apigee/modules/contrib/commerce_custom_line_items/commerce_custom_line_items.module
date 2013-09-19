@@ -1,0 +1,440 @@
+<?php
+/**
+ * @file commerce_custom_line_items.module
+ * Provides custom line items.
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ */
+function commerce_custom_line_items_menu() {
+  $items['admin/commerce/config/line-items/add'] = array(
+    'title' => 'Add line item type',
+    'description' => 'Add additional line item types.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_custom_line_items_line_item_type_form', array()),
+    'access arguments' => array('administer line item types'),
+  );
+
+  foreach (commerce_line_item_types() as $type => $line_item_type) {
+    if (isset($line_item_type['module']) && $line_item_type['module'] == 'commerce_custom_line_items') {
+      // Convert underscores to hyphens for the menu item argument.
+      $type_arg = strtr($type, '_', '-');
+      $items['admin/commerce/config/line-items/' . $type_arg . '/edit'] = array(
+        'title' => 'Edit',
+        'access arguments' => array('administer line item types'),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+      );
+      $items['admin/commerce/config/line-items/' . $type_arg . '/delete'] = array(
+        'title' => 'Delete',
+        'page callback' => 'commerce_custom_line_items_line_item_type_delete_form_wrapper',
+        'page arguments' => array($type),
+        'access arguments' => array('administer line item types'),
+        'type' => MENU_LOCAL_TASK,
+        'context' => MENU_CONTEXT_INLINE,
+        'weight' => 10,
+      );
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function commerce_custom_line_items_menu_alter(&$items) {
+  foreach (commerce_line_item_types() as $type => $line_item_type) {
+    if (isset($line_item_type['module']) && $line_item_type['module'] == 'commerce_custom_line_items') {
+      // Convert underscores to hyphens for the menu item argument.
+      $type_arg = strtr($type, '_', '-');
+
+      $items['admin/commerce/config/line-items/' . $type_arg] = array(
+        'title' => $line_item_type['name'],
+        'page callback' => 'commerce_custom_line_items_line_item_type_form_wrapper',
+        'page arguments' => array($type),
+        'access arguments' => array('administer line item types'),
+      );
+    }
+  }
+}
+
+/**
+ * Place necessary fields on a line item.
+ * @param $type_name
+ *   Line item type's machine name
+ */
+function commerce_custom_line_items_configure_line_item($type_name) {
+
+  $types = commerce_line_item_types();
+  $line_item_type = $types[$type_name];
+  commerce_line_item_configure_line_item_type($line_item_type);
+  if ($line_item_type['product']) {
+    commerce_product_line_item_configuration($line_item_type);
+  }
+}
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function commerce_custom_line_items_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/commerce/config/line-items/add' on 'admin/commerce/config/line-items'.
+  if ($root_path == 'admin/commerce/config/line-items') {
+    $item = menu_get_item('admin/commerce/config/line-items/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_line_item_type_info().
+ */
+function commerce_custom_line_items_commerce_line_item_type_info() {
+  $line_item_types = db_query('SELECT * FROM {commerce_custom_line_items_commerce_line_item_type}')->fetchAllAssoc('type', PDO::FETCH_ASSOC);
+  foreach ($line_item_types as &$line_item_type) {
+    $line_item_type['module'] = 'commerce_custom_line_items';
+  }
+  return $line_item_types;
+}
+
+/**
+ * Returns an initialized line item type array.
+ */
+function commerce_custom_line_items_line_item_type_new() {
+  return array(
+    'type' => '',
+    'name' => '',
+    'description' => '',
+    'add_form_submit_value' => t('Add product'),
+    'base' => 'commerce_product_line_item',
+    'product' => TRUE,
+  );
+}
+
+/**
+ * Saves a line item type.
+ *
+ * This function will either insert a new line item type if $line item_type['is_new']
+ * is set or attempt to update an existing line item type if it is not. It does
+ * not currently support changing the machine-readable name of the line item type,
+ * nor is this possible through the form supplied by the line item UI module.
+ *
+ * @param $line item_type
+ *   The line item type array containing the basic properties as initialized in
+ *     commerce_custom_line_items_commerce_line item_type_new().
+ * @param $skip_reset
+ *   Boolean indicating whether or not this save should result in line item types
+ *     being reset and the menu being rebuilt; defaults to FALSE. This is useful
+ *     when you intend to perform many saves at once, as menu rebuilding is very
+ *     costly in terms of performance.
+ *
+ * @return
+ *   The return value of the call to drupal_write_record() to save the line item
+ *     type, either FALSE on failure or SAVED_NEW or SAVED_UPDATED indicating
+ *     the type of query performed to save the line item type.
+ */
+function commerce_custom_line_items_commerce_line_item_type_save($line_item_type, $skip_reset = FALSE) {
+  $op = drupal_write_record('commerce_custom_line_items_commerce_line_item_type', $line_item_type, empty($line_item_type['is_new']) ? 'type' : array());
+
+  // If this is a new type and the insert did not fail...
+  if (!empty($line_item_type['is_new']) && $op !== FALSE) {
+    // Notify the field API that a new bundle has been created.
+    field_attach_create_bundle('commerce_line_item', $line_item_type['type']);
+  }
+  // Rebuild the menu to get add this type's line item add menu item.
+  if (!$skip_reset) {
+    commerce_line_item_types_reset();
+    menu_rebuild();
+  }
+  commerce_custom_line_items_configure_line_item($line_item_type['type']);
+
+  return $op;
+}
+
+/**
+ * Deletes a line item type.
+ *
+ * @param $type
+ *   The machine-readable name of the line item type.
+ * @param $skip_reset
+ *   Boolean indicating whether or not this delete should result in line item
+ *     types being reset and the menu being rebuilt; defaults to FALSE. This is
+ *     useful when you intend to perform many saves at once, as menu rebuilding
+ *     is very costly in terms of performance.
+ */
+function commerce_custom_line_items_line_item_type_delete($type, $skip_reset = FALSE) {
+  $line_item_type = commerce_custom_line_items_commerce_line_item_type_load($type);
+
+  db_delete('commerce_custom_line_items_commerce_line_item_type')
+    ->condition('type', $type)
+    ->execute();
+
+  // Rebuild the menu to get rid of this type's product add menu item.
+  if (!$skip_reset) {
+    commerce_line_item_types_reset();
+    menu_rebuild();
+  }
+
+  // Notify the field API that this bundle has been destroyed.
+  field_attach_delete_bundle('commerce_line_item', $type);
+
+  // Notify other modules that this line item type has been deleted.
+  module_invoke_all('commerce_cusom_line_item_type_delete', $line_item_type, $skip_reset);
+}
+
+
+/**
+ * Line item create/edit form
+ *
+ * @param $line_item_type
+ *   The line item type array to edit or for a create for an empty type
+ *     array with properties instantiated but not populated.
+ */
+function commerce_custom_line_items_line_item_type_form($form, &$form_state, $line_item_type = array()) {
+
+  if (empty($line_item_type)) {
+    $line_item_type = commerce_custom_line_items_line_item_type_new();
+  }
+  // Store the initial line item type in the form state.
+  $form_state['line_item_type'] = $line_item_type;
+
+  $form['line_item_type'] = array(
+    '#tree' => TRUE,
+  );
+
+  $form['line_item_type']['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Line item type name'),
+    '#default_value' => $line_item_type['name'],
+    '#description' => t('The human-readable name of this line item type. It is recommended that this name begin with a capital letter and contain only letters, numbers, and spaces. This name must be unique.'),
+    '#required' => TRUE,
+    '#size' => 32,
+  );
+
+  if (empty($line_item_type['type'])) {
+    $form['line_item_type']['type'] = array(
+      '#type' => 'machine_name',
+      '#title' => t('Machine name'),
+      '#default_value' => $line_item_type['type'],
+      '#maxlength' => 32,
+      '#required' => TRUE,
+      '#machine_name' => array(
+        'exists' => 'commerce_custom_line_items_commerce_line_item_type_load',
+        'source' => array('line_item_type', 'name'),
+      ),
+      '#description' => t('The machine-readable name of this line item type. This name must contain only lowercase letters, numbers, and underscores, it must be unique.'),
+    );
+  }
+
+  $form['line_item_type']['description'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Description'),
+    '#description' => t('Describe this line item type. The text will be displayed on the <em>Add new content</em> page.'),
+    '#default_value' => $line_item_type['description'],
+    '#rows' => 3,
+  );
+  $form['line_item_type']['product'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('This is a product-type line item'),
+    '#description' => t('A product-type line item will have a product reference field.'),
+    '#default_value' => $line_item_type['product'],
+  );
+  $form['line_item_type']['add_form_submit_value'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Add form submit value'),
+    '#description' => t('Text of the button on the orders page that allows adding line items.'),
+    '#default_value' => $line_item_type['add_form_submit_value'],
+  );
+  $form['line_item_type']['base'] = array(
+    '#type' => 'value',
+    '#value' => $line_item_type['base'],
+  );
+
+  $form['actions'] = array(
+    '#type' => 'container',
+    '#attributes' => array('class' => array('form-actions')),
+    '#weight' => 40,
+  );
+
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save line item type'),
+    '#submit' => array('commerce_custom_line_items_line_item_type_form_submit'),
+  );
+
+
+  $form['#validate'][] = 'commerce_custom_line_items_line_item_type_form_validate';
+
+  return $form;
+}
+
+/**
+ * Validation callback for commerce_custom_line_items_line_item_type_form().
+ */
+function commerce_custom_line_items_line_item_type_form_validate($form, &$form_state) {
+  $line_item_type = $form_state['line_item_type'];
+
+  // If saving a new line item type, ensure it has a unique machine name.
+  if (empty($line_item_type['type'])) {
+    if (!commerce_custom_line_items_validate_line_item_type_unique($form_state['values']['line_item_type']['type'])) {
+      form_set_error('line_item_type][type', t('The machine name specified is already in use.'));
+    }
+  }
+}
+
+/**
+ * Form submit handler: save a line item type.
+ */
+function commerce_custom_line_items_line_item_type_form_submit($form, &$form_state) {
+  $line_item_type = $form_state['line_item_type'];
+  $updated = !empty($line_item_type['type']);
+
+  // If a type is set, we should still check to see if a row for the type exists
+  // in the database; this is done to accomodate types defined by Features.
+  if ($updated) {
+    $updated = db_query('SELECT 1 FROM {commerce_custom_line_items_commerce_line_item_type} WHERE type = :type', array(':type' => $line_item_type['type']))->fetchField();
+  }
+
+  foreach ($form_state['values']['line_item_type'] as $key => $value) {
+    $line_item_type[$key] = $value;
+  }
+
+  // Write the line item type to the database.
+  $line_item_type['is_new'] = !$updated;
+  commerce_custom_line_items_commerce_line_item_type_save($line_item_type);
+
+  // Redirect based on the button clicked.
+  drupal_set_message(t('Line item type saved.'));
+
+  $form_state['redirect'] = 'admin/commerce/config/line-items';
+}
+
+
+/**
+ * Checks to see if a given line item type already exists.
+ *
+ * @param $type
+ *   The string to match against existing types.
+ *
+ * @return
+ *   TRUE or FALSE indicating whether or not the line item type exists.
+ */
+function commerce_custom_line_items_validate_line_item_type_unique($type) {
+  // Look for a match of the type.
+  if ($match_id = db_query('SELECT type FROM {commerce_custom_line_items_commerce_line_item_type} WHERE type = :type', array(':type' => $type))->fetchField()) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Loads a line item type.
+ *
+ * @param $type
+ *   The machine-readable name of the line item type; accepts normal machine names
+ *     and URL prepared machine names with underscores replaced by hyphens.
+ */
+function commerce_custom_line_items_commerce_line_item_type_load($type) {
+  $type = strtr($type, array('-' => '_'));
+  $line_item_types = commerce_line_item_types();
+  return !empty($line_item_types[$type]) ? $line_item_types[$type] : FALSE;
+}
+
+/**
+ * Form callback wrapper: create or edit a line item type.
+ *
+ * @param $type
+ *   The machine-name of the line item type being created or edited by this form
+ *     or a full line item type array.
+ *
+ */
+function commerce_custom_line_items_line_item_type_form_wrapper($type) {
+  if (is_array($type)) {
+    $line_item_type = $type;
+  }
+  else {
+    $line_item_type = commerce_custom_line_items_commerce_line_item_type_load($type);
+  }
+
+  // Not allow to alter any code provided line item type.
+  if (!isset($line_item_type['module']) || $line_item_type['module'] <> 'commerce_custom_line_items') {
+    return t('This line item type cannot be edited because it is not defined by the Custom Line item UI module.');
+  }
+
+  return drupal_get_form('commerce_custom_line_items_line_item_type_form', $line_item_type);
+}
+
+/**
+ * Form callback wrapper: confirmation form for deleting a line item type.
+ *
+ * @param $type
+ *   The machine-readable name of the line item type.
+ */
+function commerce_custom_line_items_line_item_type_delete_form_wrapper($type) {
+  if (is_array($type)) {
+    $line_item_type = $type;
+  }
+  else {
+    $line_item_type = commerce_custom_line_items_commerce_line_item_type_load($type);
+  }
+
+   // Not allow to delete any code provided line item type.
+  if (!isset($line_item_type['module']) || $line_item_type['module'] <> 'commerce_custom_line_items') {
+    return t('This line item type cannot be deleted because it is not defined by the Custom Line item UI module.');
+  }
+
+  // Don't allow deletion of line item types that have line items already.
+  if (($count = db_query("SELECT line_item_id FROM {commerce_line_item} WHERE type = :line_item_type", array(':line_item_type' => $line_item_type['type']))->rowCount()) > 0) {
+    drupal_set_title(t('Cannot delete the %name line item type', array('%name' => $line_item_type['name'])), PASS_THROUGH);
+    return format_plural($count,
+      'There is 1 line item of this type. It cannot be deleted.',
+      'There are @count line items of this type. It cannot be deleted.'
+    );
+  }
+
+  return drupal_get_form('commerce_custom_line_items_line_item_type_delete_form', $line_item_type);
+}
+
+/**
+ * Form callback: confirmation form for deleting a line item type.
+ *
+ * @param $line_item_type
+ *   The line item type array to be deleted.
+ *
+ * @see confirm_form()
+ */
+function commerce_custom_line_items_line_item_type_delete_form($form, &$form_state, $line_item_type) {
+  $form_state['line_item_type'] = $line_item_type;
+
+  $form['#submit'][] = 'commerce_custom_line_items_line_item_type_delete_form_submit';
+
+  $form = confirm_form($form,
+    t('Are you sure you want to delete the %name line item type?', array('%name' => $line_item_type['name'])),
+    'admin/commerce/config/line-items',
+    '<p>' . t('This action cannot be undone.') . '</p>',
+    t('Delete'),
+    t('Cancel'),
+    'confirm'
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback for commerce_custom_line_items_line_item_type_delete_form().
+ */
+function commerce_custom_line_items_line_item_type_delete_form_submit($form, &$form_state) {
+  $line_item_type = $form_state['line_item_type'];
+
+  commerce_custom_line_items_line_item_type_delete($line_item_type['type']);
+
+  drupal_set_message(t('The line item type %name has been deleted.', array('%name' => $line_item_type['name'])));
+  watchdog('commerce_line_item', 'Deleted line item type %name.', array('%name' => $line_item_type['name']), WATCHDOG_NOTICE);
+
+  $form_state['redirect'] = 'admin/commerce/config/line-items';
+}

@@ -17,7 +17,7 @@
  *     edit_url (string)
  *     raw_data (associative array returned from KMS)
  */
-function hook_devconnect_developer_app_list_alter(&$parameters) {
+function hook_devconnect_developer_app_list_alter(array &$parameters) {
   foreach (array_keys($parameters['applications']) as $i) {
     $app =& $parameters['applications'][$i];
     if (count($app['raw_data']['parameters']) > 0 && !empty($app['raw_data']['parsed_attributes']['DisplayName'])) {
@@ -56,7 +56,7 @@ function hook_devconnect_developer_app_list_alter(&$parameters) {
  *       status
  *       name (*this* is the apiproduct status)
  */
-function hook_devconnect_developer_app_alter(&$info) {
+function hook_devconnect_developer_app_alter(array &$info) {
   if (count($info['raw_data']['parameters']) > 0 && !empty($info['raw_data']['parsed_attributes']['DisplayName'])) {
     $info['parsed_app_name'] = $info['raw_data']['parsed_attributes']['DisplayName'];
   }
@@ -67,12 +67,38 @@ function hook_devconnect_developer_app_alter(&$info) {
 }
 
 /**
+ * Alter tabs or panes on the developer app details page.
+ *
+ * @param array $tabs
+ *   Numerically-indexed array of tab links, containing 'text' and 'path'
+ *   members (as well as optional 'options' member -- see l() for more info).
+ *   Tab links' href may start with a hashmark, corresponding to the #id
+ *   of a corresponding pane.
+ * @param array $panes
+ *   Numerically-indexed array of panes. Each pane is a Drupal render-array
+ *   representing the contents of a tab-correspondent pane.
+ */
+function hook_devconnect_developer_app_details_alter(array &$tabs, array &$panes) {
+  // swap the first two tabs
+  $tabs2 = $tabs;
+  $tabs2[0] = $tabs[1];
+  $tabs2[1] = $tabs[0];
+  $tabs = $tabs2;
+
+  // swap the first two panes
+  $panes2 = $panes;
+  $panes2[0] = $panes[1];
+  $panes2[1] = $panes[0];
+  $panes = $panes2;
+}
+
+/**
  * Alter, augment or take other action right before a dev app is saved.
  *
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form
  */
-function hook_devconnect_developer_app_presave(&$form_state) {
+function hook_devconnect_developer_app_presave(array &$form_state) {
   $form_state['values']['attribute_drupal_uid'] = $form_state['values']['uid'];
 }
 
@@ -82,10 +108,10 @@ function hook_devconnect_developer_app_presave(&$form_state) {
  * @param $results (associative array returned from KMS)
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form.
- *   $form_state['storage']['app'] holds the Apigee\ManagementAPI\DeveloperApp
- *   object.
+ *   $form_state['storage']['entity'] holds the developer_app entity
+ *   array.
  */
-function hook_devconnect_developer_app_save($results, &$form_state) {
+function hook_devconnect_developer_app_save(array $results, array &$form_state) {
   $form_state['redirect'] = '<front>';
 }
 
@@ -94,7 +120,7 @@ function hook_devconnect_developer_app_save($results, &$form_state) {
  *
  * @param $form_state
  */
-function hook_devconnect_developer_app_predelete(&$form_state) {
+function hook_devconnect_developer_app_predelete(array &$form_state) {
 
 }
 
@@ -105,6 +131,6 @@ function hook_devconnect_developer_app_predelete(&$form_state) {
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form
  */
-function hook_devconnect_developer_app_delete($results, &$form_state) {
+function hook_devconnect_developer_app_delete(array $results, array &$form_state) {
 
 }

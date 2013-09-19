@@ -1,0 +1,11 @@
+CVS
+*.kdev4
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+.*.sw*
+*~
+*~.nib
+._*
+*.kate-swp

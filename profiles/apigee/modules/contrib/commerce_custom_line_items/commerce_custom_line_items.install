@@ -1,0 +1,70 @@
+<?php
+/**
+ * @file commerce_custom_line_items.install
+ */
+
+/**
+ * Implements hook_enable() to set up the already-supported line item types.
+ */
+function commerce_custom_line_items_enable() {
+  $line_item_types = db_query('SELECT type FROM {commerce_custom_line_items_commerce_line_item_type}')->fetchCol(0);
+  foreach($line_item_types as $type) {
+    commerce_custom_line_items_configure_line_item($type);
+  }
+}
+
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_custom_line_items_schema() {
+  $schema = array();
+
+  $schema['commerce_custom_line_items_commerce_line_item_type'] = array(
+    'description' => 'Stores information about Commerce Line item types created via UI.',
+    'fields' => array(
+      'type' => array(
+        'description' => 'The machine-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'The human-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of this type.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+      ),
+      'product' => array(
+        'description' => 'Indicates whether this is a product line item type',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'add_form_submit_value' => array(
+        'description' => 'The value of the button used to add items on the orders page.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+      ),
+      'base' => array(
+        'description' => 'The name of the base line item.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+      ),
+    ),
+    'primary key' => array('type'),
+  );
+
+  return $schema;
+}

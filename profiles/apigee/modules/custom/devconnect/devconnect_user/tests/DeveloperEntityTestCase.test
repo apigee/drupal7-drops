@@ -1,0 +1,149 @@
+<?php
+
+class DeveloperEntityTestCase extends DrupalWebTestCase {
+
+  private $developer;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Devconnect Developer Entity'),
+      'description' => t('Tests the developer entity’s methods.'),
+      'group' => t('Devconnect'),
+    );
+  }
+
+  public function setUp() {
+    // Read Drupal vars *before* simpletest switches us to a sandbox db
+    $org = variable_get('devconnect_org', NULL);
+    $endpoint = variable_get('devconnect_endpoint', NULL);
+    $endpoint_auth = variable_get('devconnect_curlauth', NULL);
+
+    parent::setUp('devconnect_user');
+
+    variable_set('devconnect_org', $org);
+    variable_set('devconnect_endpoint', $endpoint);
+    variable_set('devconnect_curlauth', $endpoint_auth);
+  }
+
+  protected function tearDown() {
+    if (is_array($this->developer)) {
+      try {
+        entity_delete('developer', $this->developer['email']);
+      }
+      catch (Exception $e) {
+        $this->verbose('Exception while deleting developer: ' . $e->getMessage());
+      }
+    }
+    $this->developer = NULL;
+    parent::tearDown();
+  }
+
+  public function testDeveloperLifecycle() {
+    try {
+      $rid = $this->drupalCreateRole(array('access content'));
+      $edit = array(
+        'name' => $this->randomName(),
+        'mail' => $this->randomName() . '@example.com',
+        'pass' => user_password(),
+        'status' => 1,
+        'roles' => array($rid => $rid),
+      );
+      $edit['field_first_name'][LANGUAGE_NONE][0]['value'] = $this->randomName();
+      $edit['field_last_name'][LANGUAGE_NONE][0]['value'] = $this->randomName();
+
+      $user = user_save(drupal_anonymous_user(), $edit);
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      $this->fail('ResponseException while creating user: ' . $e->getResponse() . "\n" . $e->getUri());
+      return;
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while creating user: ' . $e->getMessage());
+      return;
+    }
+    if (is_object($user) && property_exists($user, 'uid')) {
+      $this->pass('User created.');
+    }
+    else {
+      $this->fail('User not created.');
+      return;
+    }
+
+    try {
+      $developer = entity_load('developer', array($user->mail), array(), TRUE);
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      $this->fail('ResponseException while fetching developer: ' . $e->getResponse() . "\n" . $e->getUri());
+      return;
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while fetching developer: ' . $e->getMessage());
+      return;
+    }
+    if (empty($developer)) {
+      $this->fail('No developer fetched with mail ' . $user->mail);
+      return;
+    }
+    $this->pass('Developer loaded.');
+    $this->developer = reset($developer);
+
+    $property_value = $this->randomName();
+    $this->developer['attributes']['foo'] = $property_value;
+    $save_type = entity_save('developer', $this->developer);
+    if ($save_type != SAVED_UPDATED) {
+      $this->fail('Expected SAVED_UPDATED; received SAVED_NEW.');
+    }
+
+    try {
+      $developer = entity_load('developer', array($user->mail), array(), TRUE);
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while re-fetching developer: ' . $e->getMessage());
+      return;
+    }
+    if (empty($developer)) {
+      $this->fail('No developer re-fetched with mail ' . $user->mail);
+      return;
+    }
+    $this->pass('Developer reloaded.');
+    $this->developer = reset($developer);
+    $this->assert($this->developer['attributes']['foo'] == $property_value, 'Verify changed attribute was saved.');
+
+    $list = entity_load('developer');
+    if (count($list) > 0) {
+      $this->pass('Listed ' . count($list) . ' developers.');
+    }
+    else {
+      $this->fail('Developer list empty.');
+    }
+
+    try {
+      if (!array_key_exists('email', $this->developer)) {
+        $this->verbose(print_r($this->developer, TRUE));
+      }
+      entity_delete('developer', $this->developer['email']);
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      $this->fail('ResponseException while deleting developer: ' . $e->getResponse() . "\n" . $e->getUri());
+      return;
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while deleting developer: ' . $e->getMessage());
+      return;
+    }
+
+    try {
+      $developer = entity_load('developer', array($user->mail), array(), TRUE);
+    }
+    catch (Exception $e) {
+      $developer = NULL;
+    }
+    $this->developer = NULL;
+    if (empty($developer)) {
+      $this->pass('Developer deleted.');
+    }
+    else {
+      $this->fail('Developer not deleted.');
+    }
+  }
+}

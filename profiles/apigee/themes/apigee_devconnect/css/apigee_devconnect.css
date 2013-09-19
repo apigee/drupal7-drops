@@ -7,36 +7,53 @@ body {
 .caret{
 	opacity: 0.5;
 }
+.page-header h1{
+	margin-bottom: 0;
+}
 
 /* Search */
 .navbar-search .search-query:-moz-placeholder{
 	color: #e5e5e5;
 }
 
+/* Tables */
+.table{
+  border: 1px solid #cacaca;
+}
+.table th{
+  background: #e4e4e4;
+  border: 1px solid #cacaca;
+  color: #000;
+}
+.table-condensed th, .table-condensed td{
+  border: 1px solid #cacaca;
+}
+
 /* Navigation */
+.navbar .nav > li{
+	padding: 0;
+	margin: 0;
+}
 .navbar .nav > li > a,
-.navbar .nav > li > span {
+.navbar .nav > li span.nolink {
 	float: none;
 	padding: 18px 10px 19px;
 	line-height: 19px;
 	height: 19px;
-	color: white;
 	text-decoration: none;
 }
-.navbar .nav > li > a:hover, .navbar .nav > li > a.active {
-  background-color: #E02E01;
-	color: white;
-	text-decoration: none;
+.navbar .nav > li span.nolink{
+	display: block;
 }
-.navbar.navbar-fixed-top #main-menu li a:hover {
-  background: #e02e01;
+.navbar .nav > li > span{
+	padding: 21px 10px;
+}
+.navbar .nav > li > a:hover, .navbar .nav > li > a.active, .navbar .nav > li > a.active-trail, .navbar .nav > li.active-trail > a, .active-trail span.dropdown-toggle.nolink {
+	text-decoration: none;
 }
 .nav-tabs > li > a{
 	font-weight: 600;
 	font-size: 15px;
-}
-.navbar.navbar-fixed-top, .main-nav.navbar-inner{
-  background-color: #d64526;
 }
 .main-nav.navbar-inner{
   height: 42px;
@@ -54,12 +71,30 @@ body {
 	line-height: 1;
 	color: white;
 }
-.navbar .nav > li > a, .navbar .nav > li > span {
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 21px;
-  text-shadow: none;
+ul.menu ul.dropdown-menu{
+	padding-left: 0;
+}
+ul.dropdown-menu li{
+	list-style: none;
+}
+li.dropdown span.nolink:hover{
+	cursor: pointer;
+}
+ul.menu ul.dropdown-menu{
+	top: 68px;
+	border: none;
+	border-radius: 0;
+}
+ul.menu ul.dropdown-menu li{
+	margin: 0;
+	padding: 0;
+}
+ul.menu .dropdown-menu li > a:hover,
+ul.menu .dropdown-menu .active > a,
+ul.menu .dropdown-menu .active > a:hover{
+	background: none;
+	color: #484848;
+	text-decoration: underline;
 }
 
 /* Homepage */
@@ -339,8 +374,6 @@ span.blog-icon{
 	float: left;
 	margin-bottom: 0;
 	width: 90%;
-	padding: 15px 0px;
-	border-bottom: 1px solid #EEE;
 }
 hr{
 	clear: both;
@@ -353,6 +386,9 @@ h4.app-title{
 }
 h4.app-title a:hover{
 	text-decoration: none;
+}
+.api-product{
+	margin-bottom: 10px;
 }
 div.app-info-wrapper {
     display: inline-block;
@@ -378,8 +414,6 @@ div.apiproduct-status {
 	font-weight: 600;
 }
 .app-delete{
-	float: right;
-	width: 10%;
 }
 .app-delete button,
 .app-delete button:hover{
@@ -388,6 +422,11 @@ div.apiproduct-status {
 	float: right;
 	height: 15px;
 	width: 15px;
+	position: relative;
+	top: 2px;
+}
+.app-status{
+	clear: both;
 }
 .cancel-link{
 	margin-left: 10px;
@@ -573,3 +612,131 @@ input{
 .ui-timepicker-rtl{ direction: rtl; }
 .ui-timepicker-rtl dl { text-align: right; }
 .ui-timepicker-rtl dl dd { margin: 0 65px 10px 10px; }
+
+input.date{
+	background: url(../images/date-icon.png) no-repeat 95% #FFF;
+	color: 797979;
+}
+
+/* ---- Fix for using apigee theme for editing --- */
+input.form-submit, a.button {
+  margin-right: .5em;
+}
+
+/* ---- Fix for file field widget in editing --- */
+.file-widget input {
+  margin-bottom: 0px;
+  margin-right: 0.5em;
+}
+#edit-field-file .clearfix {
+  clear: none;
+}
+#edit-field-file .control-group {
+  margin-left: 25px;
+}
+#edit-field-file .control-group label{
+  padding: 5px 0 0 0;
+  font-weight: bold;
+}
+#edit-field-file .control-group select {
+  width: auto;
+}
+#edit-field-file .control-group select {
+  width: auto;
+}
+#edit-field-file input {
+  margin-left: 0;
+}
+
+/* Monetization */
+.page-users h3{
+	font-weight: bold;
+	font-size: 16px;
+	margin-bottom: 5px;
+}
+.page-users button{
+	box-shadow: none;
+	border: none;
+}
+.page-users .btn.active, .page-users .btn:active{
+	color: #FFF;
+}
+.plan-details-comparison .nav-tabs{
+	border-bottom: none;
+}
+.plan-details-comparison .nav-tabs a{
+	border: none;
+	font-weight: 400;
+	padding: 5px 10px;
+}
+.plan-details-comparison .nav-tabs a:hover{
+	background: none;
+}
+.plan-details-comparison .nav-tabs li.active a,
+.plan-details-comparison .nav-tabs li.active a:hover{
+	background-color: #0098d6;
+	border-radius: 5px;
+	border: none;
+	color: #FFF;
+}
+.plan-details-comparison .nav-pills li{
+	border: 1px solid #dddddd;
+	border-radius: 0px 5px 5px 0px;
+	border-left: none;
+}
+.plan-details-comparison .nav-pills li:first-child{
+	border: 1px solid #dddddd;
+	border-radius: 5px 0px 0px 5px;
+}
+.plan-details-comparison .nav-pills li a,
+.plan-details-comparison .nav-pills li a:hover{
+	background-color: #f5f5f5;
+	color: #333333;
+	font-weight: bold;
+	margin: 0;
+}
+.plan-details-comparison .nav-pills li.active a,
+.plan-details-comparison .nav-pills li.active a:hover{
+	background-color: #FFF;
+	color: #137AAA;
+}
+.plan-details-comparison li .future-plan{
+	background-color: #0098d6;
+	color: #FFF;
+	padding: 1px 3px;
+	margin-left: 1px;
+	border-radius: 5px;
+	font-size: 11px;
+	top: -2px;
+	position: relative;
+}
+.plan-details-comparison li.active .future-plan{
+	background-color: #FFF;
+	color: #0098d6;
+}
+a.back-to-catalog{
+	float: right;
+	margin-top: 6px;
+}
+.active-plan.well{
+	float: right;
+	clear: both;
+	padding: 10px;
+	margin-top: 10px;
+}
+.purchase-plan input[type="submit"].btn{
+	display: inline-block;
+	margin-left: 10px;
+	padding: 5px 5px 4px;
+	vertical-align: top;
+}
+.topup-modal-label{
+	font-weight: bold;
+	min-width: 135px;
+	display: inline-block;
+}
+#create-report .report-section{
+	border-bottom: 1px solid #cacaca;
+	padding-bottom: 10px;
+	margin-bottom: 10px;
+}

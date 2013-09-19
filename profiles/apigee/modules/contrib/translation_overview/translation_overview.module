@@ -1,0 +1,442 @@
+<?php
+
+define('TRANSLATION_OVERVIEW_HIGH', 2);
+define('TRANSLATION_OVERVIEW_NORMAL', 1);
+define('TRANSLATION_OVERVIEW_IGNORE', 0);
+
+/**
+ * Implements hook_help().
+ */
+function translation_overview_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/content/translation-overview-manage':
+      $args = array();
+      $states = array('original', 'current', 'outofdate', 'missing');
+      foreach ($states as $state) {
+        $args['!' . $state] = theme('translation_overview_translation_link', array('state' => $state));
+      }
+      return '<p>' . t('The table uses the following symbols to indicate the translation status: !original, !current, !outofdate, !missing.', $args) . '</p>';
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function translation_overview_theme() {
+  return array(
+    'translation_overview_translation_link' => array(
+      'variables' => array(
+        'state' => NULL,
+        'link' => array(),
+        'properties' => array()
+      ),
+    ),
+    'translation_overview_node_form' => array(
+      'render element' => 'form',
+      'file' => 'translation_overview.pages.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function translation_overview_permission() {
+  $perms = array(
+    'view translation overview assigments' => array(
+      'title' => t('View translation overview assigments'),
+      'description' => t('Allow users to view the translations assignments.'),
+    )
+  );
+  foreach (locale_language_list() as $lang_code => $language) {
+    $perms['manage ' . check_plain($lang_code) . ' translation overview priorities'] = array(
+      'title' => t('Manage %language translation overview priorities', array('%language' => $language)),
+    );
+  }
+
+  return $perms;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function translation_overview_menu() {
+  $default_language = language_default('language');
+
+  $items = array();
+
+  $items['admin/config/content/translation-overview-manage'] = array(
+    'title' => 'Translation overview',
+    'type' => MENU_NORMAL_ITEM,
+    'description' => "View the translation status of the site's content.",
+    'page callback' => 'translation_overview_manager_page',
+    'file' => 'translation_overview.pages.inc',
+    'access callback' => 'translation_overview_is_manager',
+  );
+  $items['admin/config/content/translation-overview-assignments'] = array(
+    'title' => 'Translator assigments',
+    'description' => "View the translations assignments.",
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'translation_overview_assignment_lang_page',
+    'file' => 'translation_overview.pages.inc',
+    'access arguments' => array('view translation overview assigments'),
+  );
+  $weight = 0;
+  $languages = language_list('enabled');
+  foreach ($languages[1] as $language) {
+    $items['admin/config/content/translation-overview-assignments/' . $language->language] = array(
+      'title' => $language->name,
+      'description' => $language->name,
+      'type' => MENU_NORMAL_ITEM,
+      'weight' => $weight++,
+      'page callback' => 'translation_overview_assignment_page',
+      'page arguments' => array($language->language),
+      'file' => 'translation_overview.pages.inc',
+      'access arguments' => array('view translation overview assigments'),
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function translation_overview_menu_alter(&$items) {
+  // Replace the translation module's node tab with our own.
+  // @todo this conflicts i18n_node and entity_translation
+  $items['node/%node/translate']['module'] = 'translation_overview';
+  $items['node/%node/translate']['page callback'] = 'translation_overview_node_page';
+  $items['node/%node/translate']['file'] = 'translation_overview.pages.inc';
+  // undo changes from entity_translation if needed
+  $items['node/%node/translate']['page arguments'] = array(1);
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * We inject our own submit handler into the locale module's forms that add
+ * or remove languages so that when they're submitted we rebuild the active
+ * translation table.
+ */
+function translation_overview_form_alter(&$form, &$form_state, $form_id) {
+
+  switch ($form_id) {
+    case 'locale_languages_delete_form':
+      $form['#submit'][] = 'translation_overview_schema_remove_submit';
+      break;
+
+    case 'locale_languages_predefined_form':
+    case 'locale_languages_custom_form':
+      $form['#submit'][] = 'translation_overview_schema_add_submit';
+      break;
+  }
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function translation_overview_node_delete($node) {
+  db_query('DELETE FROM {translation_overview_priority} WHERE tnid = :nid', array(':nid' => $node->nid));
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function translation_overview_node_insert($node) {
+  // Only want to create a priority for translatable nodes that are untranslated.
+  $types = translation_overview_node_types();
+  if (empty($node->tnid) && !empty($types[$node->type])) {
+    translation_overview_get_node_priority($node);
+  }
+}
+
+/**
+ * Determine the name of the field in the {translation_overview_priority} table
+ * for a language.
+ *
+ * @param $lang_code
+ *   String with a language code.
+ * @return
+ *   String with a properly escaped field name.
+ */
+function translation_overview_field_name($lang_code) {
+  return 'lang_' . db_escape_table($lang_code);
+}
+
+/**
+ * Determine the priority of a node.
+ *
+ * If no priority has been set this module will create a record in the
+ * {translation_overview_priority} table for it.
+ *
+ * @param $node
+ * @param $reset
+ *   Boolean indcating that the function's cache should be reset.
+ * @return
+ *   The priority:
+ *   - TRANSLATION_OVERVIEW_HIGH
+ *   - TRANSLATION_OVERVIEW_NORMAL
+ *   - TRANSLATION_OVERVIEW_IGNORE
+ */
+function translation_overview_get_node_priority($node, $reset = FALSE) {
+  static $cache;
+
+  if (!isset($cache) || $reset) {
+    $cache = array();
+  }
+
+  $tnid = empty($node->tnid) ? $node->nid : $node->tnid;
+  if (isset($cache[$tnid])) {
+    return $cache[$tnid];
+  }
+
+  $languages = array_keys(language_list());
+  $pri = array();
+  $result = db_query('SELECT * FROM {translation_overview_priority} WHERE tnid = :tnid', array(':tnid' => $tnid));
+
+  $row = $result->fetchAssoc();
+
+  // Insert a record if one isn't found.
+  if (empty($row)) {
+    $row = array('tnid' => empty($node->tnid) ? $node->nid : $node->tnid);
+    foreach ($languages as $lang_code) {
+      $row[translation_overview_field_name($lang_code)] = TRANSLATION_OVERVIEW_NORMAL;
+    }
+    drupal_write_record('translation_overview_priority', $row);
+  }
+
+  // We need to adjust the array's keys. The fieldnames are encoded language codes.
+  foreach (array_keys(language_list()) as $language) {
+    $pri[$language] = isset($row[translation_overview_field_name($language)]) ? $row[translation_overview_field_name($language)] : TRANSLATION_OVERVIEW_NORMAL;
+  }
+  return $cache[$tnid] = $pri;
+}
+
+/**
+ * Determine if a user is a manager for a language (or any langauge if none is
+ * specified).
+ *
+ * @param $language
+ *   String with the language code. If no value is provided the
+ *   a check will be made to see if they manage any language.
+ * @param $account
+ *   Drupal user object.
+ * @return
+ *   Boolean
+ */
+function translation_overview_is_manager($lang_code = NULL, $account = NULL) {
+  if (empty($lang_code)) {
+    foreach (locale_language_list() as $lang_code => $language) {
+      if (user_access('manage ' . check_plain($lang_code) . ' translation overview priorities', $account)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  return user_access('manage ' . check_plain($lang_code) . ' translation overview priorities', $account);
+}
+
+/**
+ * Get a list of the node types that have translation support enabled.
+ *
+ * @return
+ *   array of with node types as keys and their names as values.
+ */
+function translation_overview_node_types() {
+  $types = array();
+  foreach (node_type_get_names() as $type => $name) {
+    if (translation_supported_type($type)) {
+      $types[$type] = $name;
+    }
+  }
+  return $types;
+}
+
+/**
+ * Trim title.
+ */
+function translation_overview_trimmed_title($node, $len = 25) {
+  // Shorten down the title
+  $title = $node->title;
+  if (drupal_strlen($title) > $len + 3) {
+    $title = drupal_substr($title, 0, $len) . '...';
+  }
+  return $title;
+}
+
+/**
+ * Build a link to the translated node.
+ *
+ * @param $node
+ *   Source node object
+ * @param $translation_node
+ *   Optional, translated node.
+ * @param $language
+ *   Language code.
+ * @param $show_long
+ *   Boolean, indicating if a longer version of the text should
+ *   be displayed.
+ * @return
+ *   Link to the node if the user has permission or else just text.
+ */
+function translation_overview_translation_link($node, $translation_node = NULL, $language, $show_long = FALSE) {
+  $link = array(
+    'path' => 'node/' . $node->nid,
+    'options' => array(),
+  );
+  $priorities = translation_overview_get_node_priority($node);
+  $properties = array(
+    'priority' => isset($priorities[$language]) ? $priorities[$language] : TRANSLATION_OVERVIEW_NORMAL,
+    'published' => $node->status,
+    'show_long' => $show_long,
+    'has_note' => FALSE,
+  );
+
+  if ($language == $node->language) {
+    $properties['has_note'] = !empty($node->field_translator_note[0]['value']);
+    return theme('translation_overview_translation_link', array('state' => 'original', 'link' => $link, 'properties' => $properties));
+  }
+  // Determine the status of the translation.
+  if (!empty($translation_node->nid)) {
+    $properties['has_note'] = !empty($translation_node->field_translator_note[0]['value']);
+    if (node_access('update', $translation_node)) {
+      $link['path'] = "node/$translation_node->nid/edit";
+      $link['options']['query'] = drupal_get_destination();
+    }
+    else {
+      $link['path'] = 'node/' . $translation_node->nid;
+    }
+
+    if ($translation_node->translate) {
+      return theme('translation_overview_translation_link', array('state' => 'outofdate', 'link' => $link, 'properties' => $properties));
+    }
+    return theme('translation_overview_translation_link', array('state' => 'current', 'link' => $link, 'properties' => $properties));
+  }
+
+  // Assume it's missing, see if we can create a translation.
+  if (node_access('create', $node)) {
+    $link['path'] = 'node/add/' . str_replace('_', '-', $node->type);
+    $link['options']['query'] = array('destination' => $_GET['q'], 'translation' => $node->nid, 'target' => $language);
+  }
+  else {
+    $link = array();
+  }
+  return theme('translation_overview_translation_link', array('state' => 'missing', 'link' => $link, 'properties' => $properties));
+}
+
+/**
+ * Theme a translation link.
+ */
+function theme_translation_overview_translation_link($variables) {
+  $state = $variables['state'];
+  $link = $variables['link'];
+  $properties = $variables['properties'];
+
+  // Merge in defaults.
+  $properties += array(
+    'priority' => TRANSLATION_OVERVIEW_NORMAL,
+    'has_note' => FALSE,
+    'published' => TRUE,
+    'show_long' => TRUE,
+  );
+
+  $long = '&nbsp;';
+  $link['options']['html'] = TRUE;
+
+  $priorities = array(
+    TRANSLATION_OVERVIEW_HIGH => array('display' => t('High priority'), 'css' => 'trov-priority-high'),
+    TRANSLATION_OVERVIEW_NORMAL => array('display' => t('Normal'), 'css' => 'trov-priority-normal'),
+    TRANSLATION_OVERVIEW_IGNORE => array('display' => t('Ignored'), 'css' => 'trov-priority-ignore'),
+  );
+
+  $link_title = array();
+  if (!empty($priorities[$properties['priority']]['display'])) {
+    $link_title[] = $priorities[$properties['priority']]['display'];
+  }
+  if (empty($properties['published'])) {
+    $link_title[] = t('unpublished');
+  }
+  switch ($state) {
+    case 'original':
+      $long = t('Original');
+      $link_title[] = t('original');
+      break;
+    case 'current':
+      $long = t('Complete');
+      $link_title[] = t('completed translation');
+      break;
+    case 'outofdate':
+      $long = t('Out-of-date');
+      $link_title[] = t('out-of-date translation');
+      break;
+    case 'missing':
+      $long = t('Untranslated');
+      $link_title[] = t('untranslated content');
+      break;
+  }
+  if (!empty($properties['has_note'])) {
+    $link_title[] = t('with a note');
+  }
+
+  if (isset($link['path'])) {
+    if (preg_match('/node\/\d*\/edit/', $link['path'])) {
+      $action = t('Click to edit it.');
+    }
+    elseif (preg_match('/node\/add/', $link['path'])) {
+      $action = t('Click to add it.');
+    }
+    elseif (preg_match('/node\/\d*/', $link['path'])) {
+      $action = t('Click to view it.');
+    }
+    $link['options']['attributes'] = array('title' => drupal_ucfirst(trim(implode(', ', $link_title))) . '. ' . $action);
+  }
+
+  $class_note = $properties['has_note'] ? 'trov-has-note' : '';
+  $class_state = $properties['published'] ? "trov-$state" : "trov-$state-unpublished";
+  $class_priority = $priorities[$properties['priority']]['css'];
+
+  $output = "<span class='trov-node $class_note'><span class='$class_state $class_priority'></span>";
+  $output .= "</span>";
+  if ($properties['show_long']) {
+    $output .= "<span class='trov-description'>$long</span>";
+  }
+  if (!empty($link['path'])) {
+    $output = l($output, $link['path'], $link['options']);
+  }
+  return $output;
+}
+
+/**
+ * Alter the schema when new languages are added.
+ */
+function translation_overview_schema_add_submit($form, &$form_state) {
+  $fieldname = translation_overview_field_name($form_state['values']['langcode']);
+  if (!db_field_exists('translation_overview_priority', $fieldname)) {
+    $ret = array();
+    $field = array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => TRANSLATION_OVERVIEW_NORMAL,
+    );
+    $keys = array(
+      'indexes' => array($fieldname => array($fieldname))
+    );
+    db_add_field('translation_overview_priority', $fieldname, $field, $keys);
+    watchdog('translation_overview', 'Added a column for %langcode to the translation_overview_priority table.', array('%langcode' => $form_state['values']['langcode']));
+  }
+}
+
+/**
+ * Alter the schema when languages are removed.
+ */
+function translation_overview_schema_remove_submit($form, &$form_state) {
+  $fieldname =  translation_overview_field_name($form_state['values']['langcode']);
+  if (db_field_exists('translation_overview_priority', $fieldname)) {
+    db_drop_index('translation_overview_priority', $fieldname);
+    db_drop_field('translation_overview_priority', $fieldname);
+    watchdog('translation_overview', 'Dropped the %langcode column from the translation_overview_priority table.', array('%langcode' => $form_state['values']['langcode']));
+  }
+}

@@ -1,0 +1,106 @@
+<?php
+/**
+ * @file
+ * Adds an 'Revert' link to the first workflow history row.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function workflow_revert_permission() {
+  return array(
+    'revert workflow' => array(
+      'title' => t('Revert workflow'),
+      'description' => t('Allow user to revert workflow state.'),
+      ),
+    );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function workflow_revert_menu() {
+  $items = array();
+
+  $items['workflow_revert'] = array(
+    'title' => 'Workflow Undo',
+    'access arguments' => array('revert workflow'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workflow_revert_form'),
+    'type' => MENU_CALLBACK,
+    );
+
+  return $items;
+}
+
+/**
+ * Menu callback to do the revert function.
+ */
+function workflow_revert_form($form, $form_state, $nid = NULL, $sid = NULL) {
+  $args = array('#nid' => $nid, '#sid' => $sid);
+
+  if (drupal_valid_token($_GET['token'], 'workflow_revert ' . $sid)) {
+    $states = workflow_get_workflow_states_all();
+    $node = node_load($nid);
+    $args['#node'] = $node;
+    $question = t('Are you sure you want to revert %title to the "@state" state?', array(
+      '@state' => $states[$sid],
+      '%title' => $node->title,
+      ));
+    return confirm_form($args,
+      $question,
+      "node/$nid",
+      t('The worflow state will be changed.')
+      );
+  }
+  else {
+    watchdog('workflow_revert', 'Invalid token', array(), WATCHDOG_ERROR);
+    drupal_set_message(t('Invalid token. Your information has been recorded.'), 'error');
+    drupal_goto("node/$nid");
+  }
+}
+
+function workflow_revert_form_submit($form, $form_state) {
+  $node = $form['#node'];
+  $comment = t('State reverted');
+  $sid = $form['#sid'];
+
+  // Force the transition because it's probably not valid.
+  workflow_execute_transition($node, $sid, $comment, TRUE);
+  drupal_set_message(t('Workflow reverted.', array()));
+
+  drupal_goto('node/' . $form['#nid'] . '/workflow');
+}
+
+/**
+ * Implements hook_workflow_history_alter().
+ * Add an 'undo' operation for the most recent history change.
+ *
+ * @param $variables
+ *   The current workflow history information as an array.
+ *   'old_sid' - The state ID of the previous state.
+ *   'old_state_name' - The state name of the previous state.
+ *   'sid' - The state ID of the current state.
+ *   'state_name' - The state name of the current state.
+ *   'history' - The row from the workflow_node_history table.
+ *
+ * If you want to add additional data, place it in the 'extra' value.
+ */
+function workflow_revert_workflow_history_alter(&$variables) {
+  static $first = TRUE;
+  // Only mark the first row.
+  if ($first) {
+    // Let's ask other modules if the reversion is allowed.
+    $node = node_load($variables['history']->nid);
+    $result = module_invoke_all('workflow', 'transition permitted', $variables['sid'], $variables['old_sid'], $node);
+    // Did anybody veto this choice?
+    if (!in_array(FALSE, $result)) {
+      // If not vetoed, mark it.
+      $options = array('query' => array('token' => drupal_get_token('workflow_revert ' . $variables['old_sid'])));
+      $path = 'workflow_revert/' . $variables['history']->nid . '/' . $variables['old_sid'];
+      $variables['extra'] = l('Revert state change', $path, $options);
+    }
+    // That was your one chance...
+    $first = FALSE;
+  }
+}

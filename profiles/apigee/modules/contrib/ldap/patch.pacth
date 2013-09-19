@@ -1,0 +1,118 @@
+diff --git a/ldap_authorization/ldap_authorization.install b/ldap_authorization/ldap_authorization.install
+index 9af28ec..b91c719 100644
+--- a/ldap_authorization/ldap_authorization.install
++++ b/ldap_authorization/ldap_authorization.install
+@@ -59,8 +59,17 @@ function ldap_authorization_uninstall() {
+       field_delete_field($field_conf['field']['field_name']);
+     }
+   }
++  module_load_include('inc', 'ldap_servers', 'ldap_servers.user_data_remove');
++  batch_set(ldap_severs_user_data_setup_batch());
++  $batch =& batch_get();
++  
+ }
+ 
++
++
++
++
++
+ function ldap_authorization_user_entity_fields() {
+ 
+   $fields = array();
+diff --git a/ldap_authorization/ldap_authorization.module b/ldap_authorization/ldap_authorization.module
+index 0faa848..39309ea 100644
+--- a/ldap_authorization/ldap_authorization.module
++++ b/ldap_authorization/ldap_authorization.module
+@@ -355,3 +355,6 @@ function ldap_authorization_ldap_user_attrs_list_alter(&$available_user_attrs, &
+   );
+ 
+ }
++
++
++
+diff --git a/ldap_authorization/ldap_authorization_drupal_role/ldap_authorization_drupal_role.install b/ldap_authorization/ldap_authorization_drupal_role/ldap_authorization_drupal_role.install
+index 81fbfae..fbb8cd9 100644
+--- a/ldap_authorization/ldap_authorization_drupal_role/ldap_authorization_drupal_role.install
++++ b/ldap_authorization/ldap_authorization_drupal_role/ldap_authorization_drupal_role.install
+@@ -6,3 +6,11 @@
+  */
+ 
+ 
++/**
++ * Implements hook_uninstall().
++ */
++function ldap_authorization_drupal_role_uninstall() {
++  module_load_include('inc', 'ldap_servers', 'ldap_servers.user_data_remove');
++  batch_set(ldap_severs_user_data_setup_batch('drupal_role'));
++  $batch =& batch_get();
++}
+\ No newline at end of file
+diff --git a/ldap_authorization/ldap_authorization_og/ldap_authorization_og.install b/ldap_authorization/ldap_authorization_og/ldap_authorization_og.install
+index 6ddf89b..85f03ca 100644
+--- a/ldap_authorization/ldap_authorization_og/ldap_authorization_og.install
++++ b/ldap_authorization/ldap_authorization_og/ldap_authorization_og.install
+@@ -4,3 +4,13 @@
+  * @file
+  * Install, update and uninstall functions for the LDAP Authorization OG module.
+  */
++
++/**
++ * Implements hook_uninstall().
++ */
++function ldap_authorization_og_uninstall() {
++  module_load_include('inc', 'ldap_servers', 'ldap_servers.user_data_remove');
++  batch_set(ldap_severs_user_data_setup_batch('og_group'));
++  $batch =& batch_get();
++}
++  
+\ No newline at end of file
+diff --git a/ldap_servers/ldap_servers.module b/ldap_servers/ldap_servers.module
+index 8ce0798..c99211d 100644
+--- a/ldap_servers/ldap_servers.module
++++ b/ldap_servers/ldap_servers.module
+@@ -139,6 +139,11 @@ define('LDAP_REFERRAL_LIMIT_EXCEEDED', 0x61);
+ require_once('ldap_servers.functions.inc');
+ require_once('ldap_servers.tokens.inc');
+ 
++
++
++
++
++
+ /**
+  * Implements hook_init().
+  */
+@@ -234,7 +239,7 @@ function ldap_servers_menu() {
+     'access arguments' => array('administer site configuration'),
+     'file' => 'ldap_servers.admin.inc',
+   );
+-
++  
+   return $items;
+ }
+ 
+diff --git a/ldap_servers/ldap_servers.test_form.inc b/ldap_servers/ldap_servers.test_form.inc
+index d78c631..cc475f2 100644
+--- a/ldap_servers/ldap_servers.test_form.inc
++++ b/ldap_servers/ldap_servers.test_form.inc
+@@ -395,3 +395,7 @@ function ldap_servers_test_user_mapping($drupal_username, &$ldap_server, $direct
+   }
+   return array($errors, $results, $ldap_user);
+ }
++
++
++
++
+diff --git a/ldap_user/ldap_user.install b/ldap_user/ldap_user.install
+index 24e90f5..b8b2476 100644
+--- a/ldap_user/ldap_user.install
++++ b/ldap_user/ldap_user.install
+@@ -100,6 +100,7 @@ function ldap_user_uninstall() {
+ 
+ }
+ 
++
+ /**
+  * Implements hook_schema().
+  */

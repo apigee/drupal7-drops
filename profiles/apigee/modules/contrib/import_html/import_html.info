@@ -1,0 +1,14 @@
+name = Import HTML
+description = Import/Export an entire site to/from static HTML
+package = "Import/Export"
+core = 7.x
+php = 5.0
+files[] = tests/import_html.test
+files[] = tests/import_html_ui.test
+
+; Information added by drupal.org packaging script on 2013-06-03
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "import_html"
+datestamp = "1370264133"
+

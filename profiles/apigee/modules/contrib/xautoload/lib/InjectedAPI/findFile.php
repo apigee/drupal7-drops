@@ -56,6 +56,20 @@ class xautoload_InjectedAPI_findFile {
   }
 
   /**
+   * Same as suggestFile(), but skip the file_exists(),
+   * assuming that we already know the file exists.
+   *
+   * This could make sense if a plugin already did the file_exists() check.
+   *
+   * @param string $file
+   *   The file that is supposed to declare the class.
+   */
+  function suggestFile_skipFileExists($file) {
+    $this->file = $file;
+    return TRUE;
+  }
+
+  /**
    * Same as suggestFile(), but assume that file_exists() returns TRUE.
    *
    * @param string $file

@@ -1,0 +1,190 @@
+# $Id: fr.po,v 1.2.6.4 2010/12/03 12:01:07 xmattx Exp $
+#
+# French translation of Drupal (general)
+# Copyright 2010 Matthieu Moratille <mmoratille@yahoo.fr>
+# Generated from files:
+#  download_file.admin.inc: n/a
+#  download_file.formatter.inc: n/a
+#  download_file.module: n/a
+#  download_file.install: n/a
+#  download_file.info: n/a
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: French Translation for drupal download file module\n"
+"POT-Creation-Date: 2010-06-03 09:01+0200\n"
+"PO-Revision-Date: 2010-12-09 10:21+0100\n"
+"Last-Translator: Matthieu Moratille <mmoratille@yahoo.fr>\n"
+"Language-Team: Matthieu Moratille <mmoratille@yahoo.fr>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n>1);\n"
+"X-Poedit-KeywordsList: _;gettext;gettext_noop\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-Language: French\n"
+"X-Poedit-Country: FRANCE\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: download_file.admin.inc:17
+msgid "Format (without HTML)"
+msgstr "Format (sans HTML)"
+
+#: download_file.admin.inc:19
+msgid "Customize the format of the link accessible. Required variables are: <em>!extension</em> and <em>!file_size</em>."
+msgstr "Personnaliser le format du lien accessible. Les variables obligatoires sont: <em>!extension</em> et <em>!file_size</em>."
+
+#: download_file.admin.inc:33
+msgid "The format must contain the two variables <em>!extension</em> and <em>!file_size</em>."
+msgstr "Le format doit contenir les deux variables <em>!extension</em> et <em>!file_size</em>."
+
+#: download_file.admin.inc:36
+msgid "The format must not contain any HTML tags."
+msgstr "Le format ne doit pas contenir de balises HTML."
+
+#: download_file.admin.inc:47
+msgid "The configuration option has been reset to its default values."
+msgstr "La configuration a été réinitialisée à ses valeurs par défaut."
+
+#: download_file.admin.inc:59
+msgid "The configuration option has been saved."
+msgstr "La configuration a été enregistrée."
+
+#: download_file.formatter.inc:271
+msgid "(format !extension / !file_size)"
+msgstr "(format !extension / !file_size)"
+
+#: download_file.formatter.inc:293
+#: download_file.module:266
+msgid "B"
+msgstr "o"
+
+#: download_file.formatter.inc:293
+msgid "Bytes"
+msgstr "Octets"
+
+#: download_file.formatter.inc:294
+#: download_file.module:266
+msgid "KB"
+msgstr "Ko"
+
+#: download_file.formatter.inc:294
+msgid "Kilo Bytes"
+msgstr "Kilo octets"
+
+#: download_file.formatter.inc:295
+#: download_file.module:266
+msgid "MB"
+msgstr "Mo"
+
+#: download_file.formatter.inc:295
+msgid "Mega Bytes"
+msgstr "Méga octets"
+
+#: download_file.formatter.inc:296
+#: download_file.module:266
+msgid "GB"
+msgstr "Go"
+
+#: download_file.formatter.inc:296
+msgid "Giga Bytes"
+msgstr "Giga octets"
+
+#: download_file.formatter.inc:297
+#: download_file.module:266
+msgid "TB"
+msgstr "To"
+
+#: download_file.formatter.inc:297
+msgid "Tera Bytes"
+msgstr "Téra octets"
+
+#: download_file.formatter.inc:298
+#: download_file.module:266
+msgid "PB"
+msgstr "Po"
+
+#: download_file.formatter.inc:298
+msgid "Peta Bytes"
+msgstr "Péta octets"
+
+#: download_file.module:21
+msgid "The download file module to direct download files or images."
+msgstr "Le module de téléchargement de fichier pour télécharger directement des fichiers ou des images."
+
+#: download_file.module:22
+msgid "The download file module <a href=\"@setting\">setting page</a> allows you to modify the format of the link accessible."
+msgstr "La <a href=\"@setting\">page de configuration</a> du module de téléchargement de fichier vous permet de modifier le format du lien accessible."
+
+#: download_file.module:26
+msgid "The fownload file module to direct download files or images. Use the setting below to customize the format of the link accessible."
+msgstr "Le module de téléchargement de fichier pour télécharger directement des fichiers ou des images. Utilisez le paramètre ci-dessous pour personnaliser le format du lien accessible."
+
+#: download_file.module:36
+msgid "Access direct download file"
+msgstr "Accéder au téléchargement direct de fichier"
+
+#: download_file.module:39
+msgid "Administer download file"
+msgstr "Administrer le téléchargement de fichier"
+
+#: download_file.module:186
+msgid "Direct download file"
+msgstr "Téléchargement direct du fichier"
+
+#: download_file.module:188
+msgid "Displays a link to direct download the file."
+msgstr "Afficher un lien pour le téléchargement direct du fichier."
+
+#: download_file.module:191
+msgid "Direct download file with the type icon"
+msgstr "Téléchargement direct du fichier avec l'icône du type"
+
+#: download_file.module:193
+msgid "Displays a link to direct download the file with the type icon."
+msgstr "Afficher un lien pour le téléchargement direct du fichier avec l'icône du type."
+
+#: download_file.module:196
+msgid "Direct download file accessible"
+msgstr "Téléchargement direct accessible du fichier"
+
+#: download_file.module:198
+msgid "Displays a link accessible to direct download the file."
+msgstr "Afficher un lien accessible pour le téléchargement direct du fichier."
+
+#: download_file.module:201
+msgid "Direct download file accessible with the type icon"
+msgstr "Téléchargement direct accessible du fichier avec l'icône du type"
+
+#: download_file.module:203
+msgid "Displays a link accessible to direct download the file with the type icon."
+msgstr "Afficher un lien accessible pour le téléchargement direct du fichier avec l'icône du type."
+
+#: download_file.module:206
+msgid "Direct download with thumbnail image"
+msgstr "Téléchargement direct avec une image miniature"
+
+#: download_file.module:208
+msgid "Displays a link with a thumbnail to direct download the image."
+msgstr "Afficher un lien avec une image miniature pour le téléchargement direct du fichier."
+
+#: download_file.module:30
+msgid "Download file"
+msgstr "Télécharger le fichier"
+
+#: download_file.module:56
+msgid "Configure the format of the link accessible."
+msgstr "Configurer le format du lien accessible."
+
+#: download_file.install:12;34
+msgid "Configure the format of the link accessible on the <a href=\"@setting\">setting page</a>."
+msgstr "Configurer le format du lien accessible sur la <a href=\"@setting\">page de configuration</a>."
+
+#: download_file.info:0
+msgid "DownloadFile"
+msgstr "DownloadFile"
+
+#: download_file.info:0
+msgid "Module direct download files or images."
+msgstr "Module de téléchargement direct de fichiers et d'images."
+

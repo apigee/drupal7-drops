@@ -116,10 +116,10 @@ function oauthconnector_endpoint_call($endpoint, $params=array(), $provider, $ac
   $client = new HttpClient($auth, $formatter);
   $return = NULL;
   try {
-    if ($method == 'GET') {
-      $return = $client->get($endpoint, $params);
+    if (strtolower($method) == 'get' || strtolower($method) == 'delete') {
+      $return = $client->{strtolower($method)}($endpoint, $params);
     }
-    else {
+    elseif (strtolower($method) == 'post' || strtolower($method) == 'put') {
       $return = $client->{strtolower($method)}($endpoint, $data, $params);
     }
   }
@@ -128,7 +128,7 @@ function oauthconnector_endpoint_call($endpoint, $params=array(), $provider, $ac
       if ($e->getCode() == 401) {
         //TODO: Save the failure in some way so that we can stop trying to use a revoked token?
         watchdog('oauthconnector_endpoint_call', "User !uid not authenticated for %resource: @message", array(
-          '!uid' => $access_token->uid,
+          '!uid' => isset($access_token->uid) ? $access_token->uid : '\'undefined\'',
           '%resource' => $endpoint,
           '@message' => $e->getMessage(),
         ), WATCHDOG_WARNING);
@@ -168,7 +168,7 @@ function oauthconnector_connector() {
 
   $providers = oauthconnector_provider_load_all();
   foreach ($providers as $provider) {
-    if ($provider->csid) {
+    if (!empty($provider->csid)) {
       $items['oauthconnector_' . $provider->name] = array(
         'title' => $provider->title,
         'oauthconnector provider' => $provider,
@@ -313,7 +313,7 @@ function oauthconnector_oauth_common_authorized($consumer, $access_token, $reque
           $connect = FALSE;
           if (empty($_SESSION['oauthconnector_login'])) {
             if ($user->uid && !empty($action['add connection callback']) && is_callable($action['add connection callback'])) {
-              $connect = $action['add connection callback']('oauthconnector_' . $provider->name, $external_uid, $user->uid);
+              $connect = $action['add connection callback']('oauthconnector_' . $provider->name, $external_uid, $user->uid, $consumer, $access_token, $request_token);
             }
           }
           elseif (!$user->uid) {
@@ -458,8 +458,8 @@ function oauthconnector_provider_load_all() {
 function oauthconnector_provider_save($provider) {
   $update = (isset($provider->pid)) ? array('pid') : array();
 
-  if ($provider->csid || (!empty($provider->consumer_key) && !empty($provider->consumer_secret))) {
-    $consumer = $provider->csid ? DrupalOAuthConsumer::loadById($provider->csid, FALSE) : FALSE;
+  if (isset($provider->csid) || (!empty($provider->consumer_key) && !empty($provider->consumer_secret))) {
+    $consumer = isset($provider->csid) ? DrupalOAuthConsumer::loadById($provider->csid, FALSE) : FALSE;
 
     $configuration = array(
       'provider_url' => $provider->url,
@@ -612,13 +612,14 @@ function _oauthconnector_button($form, &$form_state, $login = TRUE) {
     $auth_url = $client->getAuthorizationUrl($provider->consumer_advanced['authorization endpoint'], array(
       'callback' => $callback_url,
     ));
-  } else {
+  }
+  else {
     $callback_url = url('oauth/authorized2/' . $consumer->csid, array('absolute' => TRUE));
     $request_token = new DrupalOAuthToken(md5(mt_rand()), md5(mt_rand()), $consumer, array(
       'type'    => OAUTH_COMMON_TOKEN_TYPE_REQUEST,
       //'version' => $client->version,
     ));
-    $client = new DrupalOAuthClient($consumer, $request_token, $sig_method);
+    $client = new DrupalOAuth2Client($consumer, $request_token, $sig_method);
     $auth_url = $client->getAuthorizationUrl($provider->consumer_advanced['authorization endpoint'], array(
       'params'=>array(
         'redirect_uri' => $callback_url,
@@ -722,6 +723,19 @@ function _oauthconnector_fetch_field($field, $provider, $access_token) {
     }
     elseif (!empty($info[$field['field']])) {
       $response = $info[$field['field']];
+    } elseif  (strstr($field['field'], '.') !== FALSE) {
+      $parts = explode('.', $field['field']);
+      $temp_info = $info;
+      foreach($parts as $part) {
+        if (isset($temp_info[$part])) {
+          $temp_info = $temp_info[$part];
+        } else {
+          break;
+        }
+      }
+      if (!empty($temp_info) && is_string($temp_info)) {
+        $response = $temp_info;
+      }
     }
   }
 

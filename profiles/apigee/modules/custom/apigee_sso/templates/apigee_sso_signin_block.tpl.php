@@ -1,11 +1,27 @@
+<?php
+$can_use_apigee = FALSE;
+if (module_exists('apigee_account')) {
+  $server_name = strtolower($_SERVER['SERVER_NAME']);
+  if (empty($server_name) && array_key_exists('HTTP_HOST', $_SERVER)) {
+    $server_name = strtolower($_SERVER['HTTP_HOST']);
+  }
+  // Server host whitelist includes 'localhost' and *.apigee.com.
+  if ($server_name == 'localhost' || preg_match('!apigee.com$!', $server_name)) {
+    $can_use_apigee = TRUE;
+  }
+}
+?>
 <div id="apigee-sso-signin-block" class="clearfix">
-	<ul class="federated-buttons">
-		<li><?php echo l("Authenticate with Google", "apigee_sso", array("attributes" => array("class" => array("btn", "google"))));?></li>
-		<?php if (module_exists("fbconnect")):?>
-		<li><?php echo l("Authenticate with Facebook", "facebook", array("attributes" => array("class" => array("btn", "facebook"))));?></li>
-		<?php endif; ?>
-		<?php if (module_exists("twitter_signin")):?>
-		<li><?php echo l("Authenticate with Twitter", "twitter/redirect", array("attributes" => array("class" => array("btn", "twitter"))));?></li>
-		<?php endif; ?>
-	</ul>
+  <ul class="federated-buttons">
+    <li><?php echo l('Authenticate with Google', 'apigee_sso', array('attributes' => array('class' => array('btn', 'google'))));?></li>
+    <?php if ($can_use_apigee):?>
+    <li><?php echo l("Authenticate with Apigee", 'aac-login', array('attributes' => array('class' => array('btn', 'aac'))));?></li>
+    <?php endif; ?>
+    <?php if (module_exists("fbconnect")):?>
+    <li><?php echo l('Authenticate with Facebook', 'facebook', array('attributes' => array('class' => array('btn', 'facebook'))));?></li>
+    <?php endif; ?>
+    <?php if (module_exists('twitter_signin')):?>
+    <li><?php echo l('Authenticate with Twitter', 'twitter/redirect', array('attributes' => array('class' => array('btn', 'twitter'))));?></li>
+    <?php endif; ?>
+  </ul>
 </div>

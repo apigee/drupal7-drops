@@ -90,7 +90,6 @@ function ds_exportables_test_ds_layout_settings_info() {
   $ds_layout->view_mode = 'default';
   $ds_layout->layout = 'ds_2col';
   $ds_layout->settings = array(
-    'hide_empty_regions' => 0,
     'regions' => array(
       'left' => array(
         0 => 'title',

@@ -1,0 +1,19 @@
+name = Workflow views
+description = Provides views integration for workflows.
+package = Workflow
+core = 7.x
+dependencies[] = workflow
+dependencies[] = views
+files[] = includes/workflow_views.views.inc
+files[] = includes/workflow_views.views_default.inc
+files[] = includes/workflow_views_handler_filter_sid.inc
+files[] = includes/workflow_views_handler_field_sid.inc
+files[] = includes/workflow_views_handler_field_username.inc
+files[] = includes/workflow_views_handler_argument_state.inc
+
+; Information added by drupal.org packaging script on 2013-07-04
+version = "7.x-1.2"
+core = "7.x"
+project = "workflow"
+datestamp = "1372980654"
+

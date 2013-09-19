@@ -5,6 +5,10 @@
 class DevconnectDeveloperAppsTestCase extends DrupalWebTestCase {
 
   private $user;
+
+  /**
+   * @var Apigee\ManagementAPI\DeveloperApp
+   */
   private $dc_app;
   private $app;
 
@@ -16,13 +20,13 @@ class DevconnectDeveloperAppsTestCase extends DrupalWebTestCase {
 	  );
   }
 
-	public function setUp() {
-		parent::setUp('devconnect_developer_apps_tests');
-		//need connection to remote api
-		$this->user = $this->drupalCreateUser(array('access content'));
-		$this->drupalLogin($this->user);
-    $this->dc_app = new DevConnectApigeeDeveloperApp($this->user);
-	}
+  public function setUp() {
+    parent::setUp('devconnect_developer_apps_tests', 'devconnect_developer_apps', 'devconnect');
+    //need connection to remote api
+    $this->user = $this->drupalCreateUser(array('access content'));
+    $this->drupalLogin($this->user);
+    $this->dc_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), $this->user->mail);
+  }
 
   protected function tearDown() {
     // Make sure remote API deletes this user.
@@ -37,9 +41,7 @@ class DevconnectDeveloperAppsTestCase extends DrupalWebTestCase {
       'callback_url' => 'http://' . $this->randomName(16)
     );
 
-    // NOTE: when set at all, api_product must be an array because this is a select-multiple field.
-    // TODO: handle situation where client-specific DC instance has set this to non-multiple.
-    $api_product_keys = array_keys($this->dc_app->GetAPIProductsOptions());
+    $api_product_keys = array_keys(entity_load('api_product'));
     switch (count($api_product_keys)) {
       case 0:
         $this->fail('No API Products are available.');
@@ -67,6 +69,17 @@ class DevconnectDeveloperAppsTestCase extends DrupalWebTestCase {
     // make sure consumerKey and consumerSecret are populated.
     // These only get generated when an API Product is present (I think).
     if (isset($edit['api_product'])) {
+
+      $this->dc_app->load($this->app);
+
+      if (!$this->dc_app->hasCredentialInfo()) {
+        $this->fail('App has no credentials.');
+      }
+      else {
+        $key = $this->dc_app->getConsumerKey();
+        $secret = $this->dc_app->getConsumerSecret();
+      }
+
       $info = $this->dc_app->GetInfo($this->app);
       $data = $info['data'];
       if (!isset($data['credentials']) || !is_array($data['credentials']) || empty($data['credentials'])) {

@@ -76,7 +76,6 @@ function devconnect_admin_notify_setup_email(&$edit, &$account, $action = 'inser
       return;
     }
     $to = implode(', ', $emails);
-    // watchdog('devconnect_admin_notify', check_plain($to));
     drupal_mail(
       'devconnect_admin_notify',
       'user-register-notify-admin',

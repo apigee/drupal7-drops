@@ -1,0 +1,369 @@
+<?php
+
+/*
+ * @file
+ * This module queries the menu for pages and makes a dynamic
+ * sitemap at the bottom of the page.
+ *
+ * copyright Matthew Radcliffe, Kosada Inc.
+ *
+ */
+
+
+/*
+ * Implementation of hook_help
+ */
+function footermap_help($path, $arg)
+{
+  switch($path)
+  {
+    case 'admin/structure/footermap':
+      return '<p>' . t('You must enable the footermap block within Drupal\'s block management system: !link', array('!link' => l('admin/build/block', 'admin/build/block'))) . '</p>';
+      break;
+    case 'admin/help#footermap':
+      return '<p>' . t('Displays a dynamic, flexible sitemap at the bottom of a page via the Drupal block system. This is routinely used as a way of providing quick links at the bottom of the page. It is not advised to generate a full site map at the footer without caching.') . '</p>';
+      break;
+  }
+}
+
+/*
+ * Implementation of hook_menu
+ */
+function footermap_menu()
+{
+  $items = array();
+
+  $items['admin/structure/footermap'] = array(
+    'title' => 'Footermap',
+    'description' => 'Configure settings that footermap will use to dynamically generate the sitemap.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('footermap_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme
+ */
+function footermap_theme($existing, $type, $theme, $path) {
+  return array(
+    'footermap' => array(
+      'variables' => array('footermap' => NULL, 'title' => NULL, 'cached' => NULL),
+      'file' => 'footermap.theme.inc',
+      'template' => 'footermap',
+    ),
+    'footermap_item' => array(
+      'variables' => array('href' => NULL, 'title' => NULL, 'level' => NULL, 'children' => NULL, 'attributes' => NULL),
+      'file' => 'footermap.theme.inc',
+    ),
+    'footermap_header' => array(
+      'variables' => array('title' => NULL, 'items' => NULL, 'attributes' => NULL),
+      'file' => 'footermap.theme.inc',
+    ),
+  );
+}
+
+/*
+ * Footermap settings
+ * @return system_settings_callback form
+ */
+function footermap_settings()
+{
+  $form = array();
+
+  $form['recurse_limit'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Recurse Limit'),
+    '#description' => t('Limit the footermap recursion function to <em>N</em> recursions. The default is 0, unlimited. This is useful if you have a deep hierarchy of child menu items that you do not want to display in the footermap.'),
+    '#size' => 3,
+    '#max_length' => 3,
+    '#default_value' => variable_get('recurse_limit', 0),
+  );
+
+  $form['footermap_heading'] = array(
+    '#type' => 'radios',
+    '#title' => t('Enable Menu Heading'),
+    '#description' => t('This will enable the menu-name property (e.g. navigation, user-menu) to be displayed as the heading above each menu column. This is nice if you have your menus setup in distinct blocks or controlled via the recurse-limit property above.'),
+    '#options' => array(t('No'), t('Yes')),
+    '#default_value' => variable_get('footermap_heading', 0),
+  );
+
+  $form['top_menu'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Drupal Root Menu'),
+    '#description' => t('Set the menu id to use as the top level.  Default is to start at 0 i    .e. primary menus - primary, secondary, and navigation menus'),
+    '#default_value' => variable_get('top_menu', 0),
+    '#max_length' => 3,
+    '#size' => 3,
+  );
+
+  $avail_menus = footermap_get_primary_menus(variable_get('top_menu', 0));
+
+  $form['avail_menus'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Available menus'),
+    '#description' => t('Limit the available menus under the "top menu" setting above to the following menu items and their children.'),
+    '#options' => $avail_menus,
+    '#default_value' => variable_get('avail_menus', array()),
+  );
+
+  $form['sys_menus'] = array(
+    '#type' => 'radios',
+    '#title' => t('Enable System Menu Items'),
+    '#description' => t('Enable system menus to be displayed. This is disabled by default, bu    t is known to not work with Views menus because of a bug in <a href="http://api.drupal.org/api/function/hook_menu_link_alter/7">hook_menu_link_alter</a>'),
+    '#options' => array(t('No'), t('Yes')),
+    '#default_value' => variable_get('sys_menus', 0),
+  );
+
+  return system_settings_form($form, FALSE);
+}
+
+/*
+ * Implementation of hook_block_info
+ */
+function footermap_block_info()
+{
+  $blocks = array();
+
+  $blocks['footermap'] = array(
+    'info' => t('Footermap block'),
+    'weight' => 5,
+    'status' => 1,
+    'region' => 'footer',
+    'cache' => DRUPAL_CACHE_CUSTOM,
+  );
+
+  return $blocks;
+}
+
+/*
+ * Implementation of hook_block_view
+ */
+function footermap_block_view($delta = '')
+{  
+  if ($delta == 'footermap')
+  {
+    drupal_add_css(drupal_get_path('module', 'footermap') . '/footermap.css');
+    
+    
+    $block = array(
+      'subject' => t(''),
+      'content' => footermap_render(),
+    );
+  }
+
+  return $block;
+}
+
+/*
+ * footermap_render
+ * @return Render array
+ */
+function footermap_render()
+{
+  global $user;
+  global $language;
+
+  $recurse = variable_get('recurse_limit', 0);
+  $base = variable_get('top_menu', 0);
+  $menus = menu_get_menus(TRUE);
+  $mapref = array();
+  $avail_menus = variable_get('avail_menus', array());
+  $o = '';
+
+  $i = 1;
+  foreach ($menus as $key => $menu) {
+    if (isset($avail_menus[$key]) && $avail_menus[$key] === $key) {
+      $mapref[$key] = array(
+        '#theme' => 'footermap_header',
+        '#title' => $menu, // Need to check_plain() or t() during render.
+        '#attributes' => array(
+          'class' => array('footermap-col', 'footermap-header'),
+          'id' => 'footermap-col-' . $i,
+        ),
+      );
+
+      $i++;
+    }
+  }
+  
+
+  // Setup the render array first without any map reference set.
+  $content = array(
+    '#theme' => 'footermap',
+    '#footermap' => '',
+    '#title' => '',
+    '#cached' => FALSE,
+  );
+
+  // Custom block cache per language
+  $lang = !empty($user->language) ? $user->language : (!empty($language->language) ? $language->language : LANGUAGE_NONE);
+  $cached = cache_get('footermap-' . $lang, 'cache');  
+
+  // Set cached to true if we're cached and overwrite our map reference.
+  if (isset($cached->data)) {
+    $mapref = $cached->data;
+    $content['#cached'] = TRUE;
+  }
+  else {
+    footermap_get_menu($base, $mapref, $recurse, 0);
+  }
+
+  // Finally set the map reference in the render array.
+  $content['#footermap'] = $mapref;
+
+  return $content;
+}
+
+/*
+ * footermap_get_menu
+ * @param $mlid the menu link id to use as the plid
+ * @param &$mapref reference to the footermap array of links
+ * @param $recurse our recurse limit
+ * @param $level the current level
+ * @param $arrcnt 
+ */
+function footermap_get_menu($mlid, &$mapref, $recurse, $level)
+{
+  global $user;
+
+  if ($recurse <> 0 && $level >= $recurse)
+    return;
+
+  $avail_menus = variable_get('avail_menus', array());
+
+  $query = db_select('menu_links', 'ml');
+  $query
+    ->fields('ml')
+    ->condition('ml.plid', $mlid, '=')
+    ->condition('ml.hidden', 0, '=')
+    ->orderBy('ml.plid')
+    ->orderBy('ml.weight')
+    ->orderBy('ml.link_title');
+  $query->leftJoin('menu_router', 'mr', 'ml.router_path = mr.path');
+  $query
+    ->fields('mr')
+    ->orderBy('mr.title');
+
+  if (variable_get('sys_menus', 0) == 0)
+    $query->condition('ml.module', 'system', '<>');
+
+  $res = $query->execute();
+
+  foreach ($res as $item)
+  {
+    // available menus check 
+    if (!_footermap_check_menu_item($avail_menus, $item))
+      continue;
+
+    // access check for menu router items
+    if (isset($item->path))
+    {
+      if (empty($item->access_callback)) // automatic fail
+        continue;
+
+      $map = array();
+      $args = array();
+      $map = explode('/', $item->link_path);
+      if (!empty($item->to_arg_functions))
+        _menu_link_map_translate($map, $item->to_arg_functions);
+
+      $args = menu_unserialize($item->access_arguments, $map);
+
+      // There's no way that I can do access callback stuff for every 
+      // custom access callback with custom arguments under the sun. 
+      // It's out of scope of this module, and a non-issue.
+      if ($item->access_callback == 'user_access')
+      {
+        if (!empty($args[0])) {
+          if (! user_access($args[0], $user)) {
+            continue;
+          }
+        }
+      }
+      else if ($item->access_callback == 'node_access')
+      {
+        if (is_numeric($args[1]))
+        {
+          $node = node_load($args[1]);
+
+          if (! node_access('view', $node))
+            continue; 
+        }
+        else {
+          // Let's continue here;
+          continue;
+        }
+      }
+    }
+
+    // Mapref reference becomes child.
+    if (isset($mapref[$item->menu_name]))
+      $child = &$mapref[$item->menu_name]['#items'];
+    else
+      $child = &$mapref;
+
+    $item->link_path = preg_replace("/\/%$/", '', $item->link_path);
+    $child['menu-' . $item->mlid] = array(
+      '#theme' => 'footermap_item',
+      '#href' => $item->link_path,
+      '#title' => $item->link_title,
+      '#attributes' => array(
+        'class' => array('footermap-item', 'footermap-item-' . $level),
+        'id' => 'footermap-item-' . $item->mlid,
+      ),
+      '#level' => $level,
+      '#language' => isset($item->language) ? $item->language: LANGUAGE_NONE,
+    );
+
+    if ($item->has_children == 1)
+    {
+      footermap_get_menu($item->mlid, $child['menu-' . $item->mlid]['#children'], $recurse, $level+1);
+    }
+  }
+}
+
+/*
+ * footermap_get_primary_menus
+ * @param $top_menu
+ * @return array
+ */
+function footermap_get_primary_menus($top_menu)
+{
+  $ret = array();
+
+  if (!is_numeric($top_menu))
+    return $ret;
+
+  $query = db_select('menu_links', 'ml');
+  $query
+    ->fields('ml')
+    ->condition('ml.plid', $top_menu, '=')
+    ->condition('ml.hidden', 0, '=');
+  $query->join('menu_custom', 'mc', 'ml.menu_name = mc.menu_name');
+  $query->fields('mc');
+
+  $res = $query->execute();
+
+  foreach ($res as $menu)
+    $ret[$menu->menu_name] = t($menu->title);
+
+  return $ret;
+}
+
+/*
+ * _footermap_check_menu_item
+ * @param $avail_menus array
+ * @param $item 
+ * @return bool
+ */
+function _footermap_check_menu_item($avail_menus, $item) 
+{
+  foreach ($avail_menus as $key=>$mn)
+    if ($mn === $item->menu_name)
+      return TRUE;
+  return FALSE;
+}

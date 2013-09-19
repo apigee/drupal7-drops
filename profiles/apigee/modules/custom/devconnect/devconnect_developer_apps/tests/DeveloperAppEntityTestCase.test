@@ -1,0 +1,180 @@
+<?php
+
+class DeveloperAppEntityTestCase extends DrupalWebTestCase {
+
+  private $user;
+  private $app_entity;
+  private $app_id;
+
+  public static function getInfo() {
+    return array(
+      'name' => t('Devconnect Developer App Entity'),
+      'description' => t('Tests the developer_app entity’s methods.'),
+      'group' => t('Devconnect'),
+    );
+  }
+
+  public function setUp() {
+    // Read Drupal vars *before* simpletest switches us to a sandbox db
+    $org = variable_get('devconnect_org', NULL);
+    $endpoint = variable_get('devconnect_endpoint', NULL);
+    $endpoint_auth = variable_get('devconnect_curlauth', NULL);
+
+    parent::setUp('devconnect_user', 'devconnect_developer_apps');
+
+    variable_set('devconnect_org', $org);
+    variable_set('devconnect_endpoint', $endpoint);
+    variable_set('devconnect_curlauth', $endpoint_auth);
+
+    $rid = $this->drupalCreateRole(array('access content'));
+    $edit = array(
+      'name' => $this->randomName(),
+      'mail' => $this->randomName() . '@example.com',
+      'pass' => user_password(),
+      'status' => 1,
+      'roles' => array($rid => $rid),
+    );
+    $edit['field_first_name'][LANGUAGE_NONE][0]['value'] = $this->randomName();
+    $edit['field_last_name'][LANGUAGE_NONE][0]['value'] = $this->randomName();
+
+    $this->user = user_save(drupal_anonymous_user(), $edit);
+  }
+
+  protected function tearDown() {
+    if (isset($this->app_id)) {
+      try {
+        entity_delete('developer_app', $this->app_id);
+      }
+      catch (Exception $e) {
+        $this->verbose('Exception while deleting developer app: ' . $e->getMessage());
+      }
+    }
+
+    if (is_object($this->user)) {
+      try {
+        entity_delete('developer', $this->user->mail);
+      }
+      catch (Exception $e) {
+        $this->verbose('Exception while deleting developer: ' . $e->getMessage());
+      }
+    }
+    $this->user = NULL;
+    parent::tearDown();
+  }
+
+
+  public function testAppLifeCycle() {
+
+    $this->app_id = NULL;
+
+    $api_product_list = array_keys(entity_load('api_product'));
+    shuffle($api_product_list);
+    switch (count($api_product_list)) {
+      case 0:
+        $this->fail('No API products available.');
+        return;
+      default:
+        $api_product = $api_product_list[0];
+        break;
+    }
+
+    $edit = array(
+      'accessType' => 'read',
+      'callbackUrl' => 'http://' . $this->randomName(),
+      'name' => $this->randomName(),
+      'developer' => $this->user->mail,
+      'apiProducts' => array($api_product),
+      'attributes' => array('foo' => $this->randomName())
+    );
+    $this->app_entity = entity_create('developer_app', $edit);
+
+    try {
+      $save_type = entity_save('developer_app', $this->app_entity);
+      $this->assertEqual($save_type, SAVED_NEW, 'App should be saved as new rather than update');
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      $this->fail('ResponseException while creating app: ' . $e->getResponse() . "\n" . $e->getUri());
+      return;
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while creating app: ' . $e->getMessage());
+      return;
+    }
+    $this->app_id = DeveloperAppController::getLastAppId();
+    $this->assert(!empty($this->app_id), 'appId should be non-empty.');
+
+    try {
+      $entities = entity_load('developer_app', FALSE, array(), TRUE);
+      if (empty($entities)) {
+        $this->fail('Failed to list apps.');
+        return;
+      }
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      $this->fail('ResponseException while listing apps: ' . $e->getResponse() . "\n" . $e->getUri());
+      return;
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while listing app: ' . $e->getMessage());
+      return;
+    }
+    $this->pass('Listed ' . count($entities) . ' apps.');
+
+    try {
+      $entities = entity_load('developer_app', array($this->app_id), array(), TRUE);
+      if (empty($entities)) {
+        $this->fail('Failed to reload app.');
+        return;
+      }
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      $this->fail('ResponseException while fetching app: ' . $e->getResponse() . "\n" . $e->getUri());
+      return;
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while fetching app: ' . $e->getMessage());
+      return;
+    }
+    $this->app_entity = reset($entities);
+    $this->app_id = $this->app_entity['appId'];
+
+    $key = $this->app_entity['consumerKey'];
+    $secret = $this->app_entity['consumerSecret'];
+
+    if (count($api_product_list) > 1) {
+      $this->app_entity['apiProducts'] = array($api_product_list[1]);
+      entity_save('developer_app', $this->app_entity);
+
+      $entities = entity_load('developer_app', array($this->app_id), array(), TRUE);
+      $this->app_entity = reset($entities);
+      $this->assertEqual($key, $this->app_entity['consumerKey'], 'Consumer Key should be unchanged.');
+      $this->assertEqual($secret, $this->app_entity['consumerSecret'], 'Consumer Secret should be unchanged.');
+    }
+
+    $deleted = FALSE;
+    try {
+      entity_delete('developer_app', $this->app_id);
+      $deleted = TRUE;
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      $this->fail('Could not delete app: ' . $e->getResponse() . "\n" . $e->getUri());
+    }
+    catch (Exception $e) {
+      $this->fail('Could not delete app: ' . $e->getMessage());
+    }
+    if ($deleted) {
+      try {
+        $entities = entity_load('developer_app', array($this->app_id), array(), TRUE);
+        if (!empty($entities)) {
+          $this->fail('Failed to delete app.');
+        }
+        $this->app_id = NULL;
+      }
+      catch (Exception $e) {
+        $this->app_id = NULL;
+      }
+      $this->pass('App deleted.');
+    }
+  }
+
+}

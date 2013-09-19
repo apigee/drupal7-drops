@@ -26,6 +26,13 @@ function _oauthconnector_provider_schema_1() {
       'identifier' => 'provider',
       'export callback' => 'oauthconnector_provider_export',
       'list callback' => 'oauthconnector_provider_list',
+      'default hook' => 'default_oauthconnector_provider',
+      'api' => array(
+        'owner' => 'oauthconnector',
+        'api' => 'oauthconnector',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
     ),
     'fields' => array(
       'pid' => array(

@@ -1,0 +1,282 @@
+<?php
+
+define('GENPASS_REQUIRED', 0);
+define('GENPASS_OPTIONAL', 1);
+define('GENPASS_RESTRICTED', 2);
+
+define('GENPASS_DISPLAY_NONE', 0);
+define('GENPASS_DISPLAY_ADMIN', 1);
+define('GENPASS_DISPLAY_USER', 2);
+define('GENPASS_DISPLAY_BOTH', 3);
+
+/**
+ * Implements of hook_init().
+ */
+function genpass_init() {
+  drupal_add_css(drupal_get_path('module', 'genpass') . '/genpass.css');
+}
+
+/**
+ * Defines default characters allowed for passwords.
+ */
+function _GENPASS_REQUIRED_entropy() {
+  return 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!#$%&()*+,-./:;<=>?@[]^_{|}~';
+}
+
+/**
+ * Generate a new password using the preferred password generation algorithm.
+ *
+ * @return a fresh password.
+ */
+function genpass_generate() {
+  return module_invoke(genpass_algorithm_module(), 'password');
+}
+
+/**
+ * Generate a new password using genpass's internal password generation
+ * algorithm.
+ * Based on the original D6 user_password function (with more characters)
+ *
+ * @return a fresh password according to the settings made in /admin/user/settings
+ *
+ * @see genpass_form_alter()
+ */
+function genpass_password() {
+  $pass = '';
+  $length = variable_get('genpass_length', 8);
+  $allowable_characters = variable_get('genpass_entropy', _GENPASS_REQUIRED_entropy());
+
+  // Zero-based count of characters in the allowable list:
+  $len = strlen($allowable_characters) - 1;
+  
+  // Loop the number of times specified by $length.
+  for ($i = 0; $i < $length; $i++) {
+    // Each iteration, pick a random character from the
+    // allowable string and append it to the password:
+    $pass .= $allowable_characters[mt_rand(0, $len)];
+  }
+
+  return $pass;
+}
+
+
+/**
+ * Helper function to find a item in the user form, since its position
+ * within the form-array depends on the profile module (account-category).
+ */ 
+function &_genpass_get_form_item(&$form, $field) {
+  if (isset($form['account'][$field])) {
+    return $form['account'][$field];
+  }
+  else {
+    return $form[$field];
+  }
+}
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function genpass_form_alter(&$form, $form_state, $form_id) {
+
+  switch ($form_id) {
+
+    // User admin settings form at admin/config/people/accounts
+    case 'user_admin_settings':
+
+      $form['registration_cancellation']['genpass_mode'] = array(
+        '#type' => 'radios',
+        '#title' => t('Password handling'),
+        '#default_value' => variable_get('genpass_mode', GENPASS_REQUIRED),
+        '#options' => array(
+          GENPASS_REQUIRED => t('Users <strong>must</strong> enter a password on registration. This is disabled if e-mail verification is enabled above.'),
+          GENPASS_OPTIONAL => t('Users <strong>may</strong> enter a password on registration. If left empty, a random password will be generated. This always applies when an administer is creating the account.'),
+          GENPASS_RESTRICTED => t('Users <strong>cannot</strong> enter a password on registration; a random password will be generated. This always applies for the regular user registration form if e-mail verification is enabled above.'),
+        ),
+        '#description' => t('Choose a password handling mode for new users.'),
+      );
+      $form['registration_cancellation']['genpass_length'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Generated password length'),
+        '#default_value' => variable_get('genpass_length', 8),
+        '#size' => 2,
+        '#maxlength' => 2,
+        '#description' => t('Set the length of generated passwords here. Allowed range: 5 to 32.'),
+      );
+      $form['registration_cancellation']['genpass_entropy'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Generated password entropy'),
+        '#size' => 100,
+        '#default_value' => variable_get('genpass_entropy', _GENPASS_REQUIRED_entropy()),
+        '#description' => t('Give a list of possible characters for a generated password. Note that the list must contain at least X different characters where X is defined by the length you have given above.'),
+      );
+      // Provide a selection mechanism to choose the preferred algorithm for
+      // generating passwords. Any module which implements hook_password() is
+      // displayed here.
+      $form['registration_cancellation']['genpass_algorithm'] = array(
+        '#type' => 'radios',
+        '#title' => t('Password generation algorithm'),
+        '#default_value' => genpass_algorithm_module(),
+        '#options' => genpass_add_samples(genpass_algorithm_modules()),
+        '#description' => t('If third party modules define a password generation algorithm, you can select which one to use. Note that algorithms other than genpass will ignore the preferred entropy and password length. The currently selected algorithm produced the password @pw.', array('@pw' => genpass_generate())),
+      ); 
+      $form['registration_cancellation']['genpass_display'] = array(
+        '#type' => 'radios',
+        '#title' => t('Generated password display'),
+        '#default_value' => variable_get('genpass_display', GENPASS_DISPLAY_BOTH),
+        '#options' => array(
+          GENPASS_DISPLAY_NONE => t('Do not display.'),
+          GENPASS_DISPLAY_ADMIN => t('Display when site administrators create new user accounts.'),
+          GENPASS_DISPLAY_USER => t('Display when users create their own accounts.'),
+          GENPASS_DISPLAY_BOTH => t('Display to both site administrators and users.'),
+        ),
+        '#description' => t('Whether or not the generated password should display after a user account is created.'),
+      );
+      $form['#validate'][] = 'genpass_user_admin_settings_validate';
+      // Move the "When cancelling a user account" field down.
+      $form['registration_cancellation']['user_cancel_method']['#weight'] = 1;
+      break;
+
+    // User registration form at admin/people/create
+    case 'user_register_form':
+      $mode = variable_get('genpass_mode', GENPASS_REQUIRED);
+      
+      // Add validation function, where password may get set
+      $form['#validate'][] = 'genpass_register_validate';
+      
+      // Administrator is creating the user
+      if ($_GET['q'] == 'admin/user/user/create') {
+        // Switch to optional mode
+        $mode = GENPASS_OPTIONAL;
+        // Help avoid obvious consequence of password being optional
+        $notify_item =& _genpass_get_form_item($form, 'notify');
+        $notify_item['#description'] = t('This is recommended when auto-generating the password; otherwise, neither you nor the new user will know the password.');
+      }
+      
+      // Pass mode to validation function
+      $form['genpass_mode'] = array(
+        '#type' => 'value',
+        '#value' => $mode,
+      );
+      
+      $pass_item =& _genpass_get_form_item($form, 'pass');
+      switch ($mode) {
+        // If password is optional, don't require it, and give the user an
+        // indication of what will happen if left blank
+        case GENPASS_OPTIONAL:
+          $pass_item['#required'] = FALSE;
+          $pass_item['#description'] = (empty($pass_item['#description']) ? '' : $pass_item['#description'] . ' ') . t('If left blank, a password will be generated for you.');
+          break;
+        // If password is restricted, remove access
+        case GENPASS_RESTRICTED:
+          $pass_item['#access'] = FALSE;
+          $pass_item['#required'] = FALSE;
+          break;
+      }
+      break;
+  }
+  
+}
+
+/**
+ * User settings validation.
+ */
+function genpass_user_admin_settings_validate($form, &$form_state) {
+  // Validate length of password
+  $length = $form_state['values']['genpass_length'];
+  if (!is_numeric($length) || $length < 5 || $length > 32) {
+    form_set_error('genpass_length', t('The length of a generated password must be between 5 and 32.'));
+    return;
+  }
+  // Validate allowed characters
+  $chars = array_unique(preg_split('//', $form_state['values']['genpass_entropy'], -1, PREG_SPLIT_NO_EMPTY));
+  if (count($chars) < $length) {
+    form_set_error('genpass_entropy', t('The list of possible characters is not long or unique enough.'));
+    return;
+  }
+  return $form;
+}
+
+/**
+ * User registration validation.
+ */
+function genpass_register_validate($form, &$form_state) {
+  if (empty($form_state['values']['pass']) && !form_get_errors()) {
+    
+    // Generate and set password
+    $pass = genpass_generate();
+    $pass_item =& _genpass_get_form_item($form, 'pass');
+    form_set_value($pass_item, $pass, $form_state);
+
+    $display = variable_get('genpass_display', GENPASS_DISPLAY_BOTH);
+
+    // Administrator created the user.
+    if ($_GET['q'] == 'admin/people/create') {
+      $message = t('Since you did not provide a password, it was generated automatically for this account.');
+      if (in_array($display, array(GENPASS_DISPLAY_ADMIN, GENPASS_DISPLAY_BOTH))) {
+        $message .= ' ' . t('The password is: <strong class="genpass-password">!password</strong>', array('!password' => $pass));
+      }
+    }
+    // Optional - User did not provide password, so it was generated
+    elseif ($form_state['values']['genpass_mode'] == GENPASS_OPTIONAL) {
+      $message = t('Since you did not provide a password, it was generated for you.');
+      if (in_array($display, array(GENPASS_DISPLAY_USER, GENPASS_DISPLAY_BOTH))) {
+        $message .= ' ' . t('Your password is: <strong class="genpass-password">!password</strong>', array('!password' => $pass));
+      }
+    }
+    // Restricted - User was forced to receive a generated password
+    elseif ($form_state['values']['genpass_mode'] == GENPASS_RESTRICTED && in_array($display, array(GENPASS_DISPLAY_USER, GENPASS_DISPLAY_BOTH))) {
+      $message = t('The following password was generated for you: <strong class="genpass-password">!password</strong>', array('!password' => $pass));
+    }
+
+    if (!empty($message)) {
+      drupal_set_message($message);
+    }
+  }
+  return $form;
+}
+
+/**
+ * Return an array of all modules which implement hook_password.
+ *
+ * @return array of module names.
+ */
+function genpass_algorithm_modules() {
+  // Fetch a list of all modules which implement the password generation hook.
+  // To be in this list, a module must implement a hook, and return random
+  // passwords as strings.
+  $return = array();
+  foreach (module_implements('password') as $module) {
+    $return[$module] = $module;
+  }
+  return $return;
+}
+
+/**
+ * Return the currently activated module for generating passwords. Does some
+ * validation to make sure the variable contains a valid module name.
+ *
+ * @return the name of the module whose implementation of hook_password is
+ *    currently the preferred implementation.
+ */
+function genpass_algorithm_module() {
+  $modules = genpass_algorithm_modules();
+  $module = variable_get('genpass_algorithm', 'genpass');
+  
+  if (in_array($module, array_keys($modules))) {
+    return $module;
+  }
+  else {
+    return 'genpass';
+  }
+}
+
+/**
+ * Adds some sample passwords to each module in an array.
+ */
+function genpass_add_samples($array) {
+  $return = array();
+  foreach ($array as $module => $name) {
+    $return[$module] = $module . ' (' . t('examples') . ': <strong>' . htmlentities(module_invoke($module, 'password')) . '</strong>, <strong>' . htmlentities(module_invoke($module, 'password')) . '</strong>)';
+  }
+  return $return;
+}

@@ -1,0 +1,91 @@
+
+table.trov-all th {
+  vertical-align: bottom;
+  line-height: 1.5em;
+}
+
+table.trov-all th.trov-lang {
+  vertical-align: top;
+}
+
+table.trov-all td.status,
+table.trov-all td.status a {
+  margin: 0;
+  padding: 0;
+}
+
+.trov-node span {
+  vertical-align: bottom;
+  display: inline-block;
+  background-repeat: no-repeat;
+  width: 24px;
+  height: 18px;
+  padding: 2px;
+  margin: 0;
+  border: 0;
+}
+
+td .trov-node span {
+  width: 32px;
+  float: left;
+}
+
+.trov-has-note {
+  background-image: url(images/note.png);
+}
+
+
+.trov-original {
+  background-image: url(images/original.png);
+}
+.trov-original-unpublished {
+  background-image: url(images/original-unpublished.png);
+}
+
+
+.trov-current {
+  background-image: url(images/current.png);
+}
+.trov-current-unpublished {
+  background-image: url(images/current-unpublished.png);
+}
+
+
+.trov-outofdate {
+  background-image: url(images/outofdate.png);
+}
+.trov-outofdate.trov-priority-high {
+  background-image: url(images/outofdate-high.png);
+}
+.trov-outofdate.trov-priority-ignore {
+  background-image: url(images/outofdate-ignore.png);
+}
+.trov-outofdate-unpublished {
+  background-image: url(images/outofdate-unpublished.png);
+}
+.trov-outofdate-unpublished.trov-priority-high {
+  background-image: url(images/outofdate-unpublished-high.png);
+}
+.trov-outofdate-unpublished.trov-priority-ignore {
+  background-image: url(images/outofdate-unpublished-ignore.png);
+}
+
+
+.trov-missing {
+  background-image: url(images/missing.png);
+}
+.trov-missing.trov-priority-high {
+  background-image: url(images/missing-high.png);
+}
+.trov-missing.trov-priority-ignore {
+  background-image: url(images/missing-ignore.png);
+}
+.trov-missing-unpublished {
+  background-image: url(images/missing-unpublished.png);
+}
+.trov-missing-unpublished.trov-priority-high {
+  background-image: url(images/missing-unpublished-high.png);
+}
+.trov-missing-unpublished.trov-priority-ignore {
+  background-image: url(images/missing-unpublished-ignore.png);
+}

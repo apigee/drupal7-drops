@@ -1,23 +1,23 @@
 <?php
 
 /**
- * Overrides theme_menu_local_tasks().
- * Change classes used by <ul> elements.
+ * Returns HTML for primary and secondary local tasks.
  */
-function apigee_base_menu_local_tasks(&$vars) {
+function apigee_base_menu_local_tasks(&$variables) {
   $output = '';
 
-  if (!empty($vars['primary']) ) {
-    // Include invisible label for non-visual users.
-    $vars['primary']['#prefix'] .= '<ul class="nav nav-tabs">';
-    $vars['primary']['#suffix'] = '</ul>';
-    $output .= drupal_render($vars['primary']);
+  if (!empty($variables['primary'])) {
+    $variables['primary']['#prefix'] = '<h2 class="element-invisible">' . t('Primary tabs') . '</h2>';
+    $variables['primary']['#prefix'] = '<ul class="nav nav-tabs">';
+    $variables['primary']['#suffix'] = '</ul>';
+    $output .= drupal_render($variables['primary']);
   }
 
-  if (!empty($vars['secondary']) ) {
-    $vars['secondary']['#prefix'] = '<ul class="nav nav-pills">';
-    $vars['secondary']['#suffix'] = '</ul>';
-    $output .= drupal_render($vars['secondary']);
+  if (!empty($variables['secondary'])) {
+    $variables['primary']['#prefix'] = '<h2 class="element-invisible">' . t('Primary tabs') . '</h2>';
+    $variables['secondary']['#prefix'] = '<ul class="nav nav-pills">';
+    $variables['secondary']['#suffix'] = '</ul>';
+    $output .= drupal_render($variables['secondary']);
   }
 
   return $output;
@@ -25,10 +25,7 @@ function apigee_base_menu_local_tasks(&$vars) {
 
 
 /**
- * Overrides theme_menu_local_task().
- *
- * Returns HTML for primary and secondary local tasks. In addition to what the
- * core does, this function includes the child tasks.
+ * Returns HTML for primary and secondary local tasks.
  *
  * @ingroup themeable
  */
@@ -52,111 +49,40 @@ function apigee_base_menu_local_task($variables) {
     $classes[] = 'active';
   }
 
-  // Render child tasks if available.
-  $children = '';
-  if (element_children($variables['element'])) {
-    $link['localized_options']['attributes']['class'][] = 'dropdown-toggle';
-    $link['localized_options']['attributes']['data-toggle'][] = 'dropdown';
-    $classes[] = 'dropdown';
-
-    $children = drupal_render_children($variables['element']);
-    $children = '</b><ul class="secondary-tabs dropdown-menu">' . $children . "</ul>";
-
-    return '<li class="' . implode(' ', $classes) . '"><a href="#"' . drupal_attributes($link['localized_options']['attributes']) .'>' . $link_text . '<b class="caret"></a>' . $children . "</li>\n";
-  }
-  else{
-    return '<li class="' . implode(' ', $classes) . '">' . l($link_text, $link['href'], $link['localized_options']) . $children . "</li>\n";
-  }
+  return '<li class="' . implode(' ', $classes) . '">' . l($link_text, $link['href'], $link['localized_options']) . "</li>\n";
 }
 
-/**
- * Overrides theme_menu_tree().
- * Includes the nav class on the menu <ul>
- */
 function apigee_base_menu_tree(&$variables) {
   return '<ul class="menu nav">' . $variables['tree'] . '</ul>';
 }
 
-/**
- * Overrides theme_menu_link().
- *
- * Prints sub-items with the menu link.
- */
 function apigee_base_menu_link(array $variables) {
   $element = $variables['element'];
   $sub_menu = '';
 
   if ($element['#below']) {
-    // Add our own wrapper
+    // Ad our own wrapper
     unset($element['#below']['#theme_wrappers']);
-    $sub_menu = '<ul>' . drupal_render($element['#below']) . '</ul>';
+    $sub_menu = '<ul class="dropdown-menu">' . drupal_render($element['#below']) . '</ul>';
+    $element['#localized_options']['attributes']['class'][] = 'dropdown-toggle';
+    $element['#localized_options']['attributes']['data-toggle'] = 'dropdown';
 
-    $element['#localized_options']['html'] = TRUE;
+    // Check if this element is nested within another
+    if ((!empty($element['#original_link']['depth'])) && ($element['#original_link']['depth'] > 1)) {
+      // Generate as dropdown submenu
+      $element['#attributes']['class'][] = 'dropdown-submenu';
+    }
+    else {
+      // Generate as standard dropdown
+      $element['#attributes']['class'][] = 'dropdown';
+      $element['#localized_options']['html'] = TRUE;
+      $element['#title'] .= '<span class="caret"></span>';
+    }
 
-    $element['#href'] = "";
+    // Set dropdown trigger element to # to prevent inadvertant page loading with submenu click
+    $element['#localized_options']['attributes']['data-target'] = '#';
   }
 
   $output = l($element['#title'], $element['#href'], $element['#localized_options']);
   return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
-}
-
-/**
- * Get all primary tasks including subsets
- * @todo: phase this out. It doesn't check if the item is active and shouldn't
- * be doing its own query in the theme layer.
- */
-function _apigee_base_local_tasks($tabs = FALSE) {
-  if ($tabs == '') {
-    return $tabs;
-  }
-
-  if (!$tabs) {
-    $tabs = menu_primary_local_tasks();
-  }
-
-  foreach ($tabs as $key => $element) {
-    $result = db_select('menu_router', NULL, array('fetch' => PDO::FETCH_ASSOC))
-      ->fields('menu_router')
-      ->condition('tab_parent', $element['#link']['path'])
-      ->condition('context', MENU_CONTEXT_INLINE, '<>')
-      ->condition('type', array(MENU_DEFAULT_LOCAL_TASK, MENU_LOCAL_TASK), 'IN')
-      ->orderBy('weight')
-      ->orderBy('title')
-      ->execute();
-
-    $router_item = menu_get_item($element['#link']['path']);
-    $map = $router_item['original_map'];
-
-    $i = 0;
-    foreach ($result as $item) {
-      _menu_translate($item, $map, TRUE);
-
-      //only add items that we have access to
-      if ($item['tab_parent'] && $item['access']) {
-      //set path to that of parent for the first item
-      if ($i === 0) {
-        $item['href'] = $item['tab_parent'];
-      }
-
-      if (current_path() == $item['href']) {
-        $tabs[$key][] = array(
-        '#theme' => 'menu_local_task',
-        '#link' => $item,
-        '#active' => TRUE,
-        );
-      }
-      else {
-        $tabs[$key][] = array(
-        '#theme' => 'menu_local_task',
-        '#link' => $item,
-        );
-      }
-
-      //only count items we have access to.
-      $i++;
-      }
-    }
-  }
-
-  return $tabs;
 }
