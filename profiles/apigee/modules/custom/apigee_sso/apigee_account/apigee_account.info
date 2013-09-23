@@ -9,8 +9,8 @@ hidden = TRUE
 
 dependencies[] = apigee_sso
 
-; Information added by drush on 2013-09-19
+; Information added by drush on 2013-09-23
 version = "unknown"
 project = "apigee_sso"
-datestamp = "1379617152"
+datestamp = "1379977976"
 

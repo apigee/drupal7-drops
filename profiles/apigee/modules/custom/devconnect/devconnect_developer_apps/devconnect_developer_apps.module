@@ -61,7 +61,7 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['user/%user/app-performance/%/%'] = array(
-    'title' => 'Performance Data',
+    'title' => t('Performance Data'),
     'page callback' => 'devconnect_developer_analytics_performance_download',
     'page arguments' => array(1, 3, 4),
     'file' => 'analytics.inc',
@@ -388,16 +388,16 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     $button_caption = t('Save App');
   }
   else {
-    drupal_set_title('Add App');
-    $header_caption = 'App Add Form';
+    drupal_set_title(t('Add App'));
+    $header_caption = t('App Add Form');
     $button_caption = t('Create App');
   }
   $owner_name = ($account->uid == $GLOBALS['user']->uid ? 'My' : $account->name . "'s");
 
   // Build Breadcrumbs
   $breadcrumb = array();
-  $breadcrumb[] = l('Home', '<front>');
-  $breadcrumb[] = l("$owner_name Apps", 'user/' . $account->uid . '/apps');
+  $breadcrumb[] = l(t('Home'), '<front>');
+  $breadcrumb[] = l(t("$owner_name Apps"), 'user/' . $account->uid . '/apps');
 
 
   // Set Breadcrumbs
@@ -991,8 +991,8 @@ function _devconnect_developer_apps_detail(array $entity, $user, $page = TRUE) {
         $middle_arg = 'me';
       }
     }
-    $breadcrumb[] = l('Home', '<front>');
-    $breadcrumb[] = l("$owner_name Apps", 'user/' . $middle_arg . '/apps');
+    $breadcrumb[] = l(t('Home'), '<front>');
+    $breadcrumb[] = l(t("$owner_name Apps"), 'user/' . $middle_arg . '/apps');
   }
 
   $description = $entity['description'];
@@ -1055,7 +1055,7 @@ function _devconnect_developer_apps_detail(array $entity, $user, $page = TRUE) {
 
   if ($page) {
     // Set Title
-    drupal_set_title($info['page_title']);
+    drupal_set_title(t($info['page_title']));
     // Set Breadcrumbs
     drupal_set_breadcrumb($info['breadcrumb']);
   }

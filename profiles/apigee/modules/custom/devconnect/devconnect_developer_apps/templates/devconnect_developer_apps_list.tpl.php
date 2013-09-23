@@ -16,11 +16,11 @@
 ?>
 <?php
 // Set Title
-drupal_set_title('My Apps');
+drupal_set_title(t('My Apps'));
 
 // Build Breadcrumbs
 $breadcrumb = array();
-$breadcrumb[] = l('Home', '<front>');
+$breadcrumb[] = l(t('Home'), '<front>');
 
 // Set Breadcrumbs
 drupal_set_breadcrumb($breadcrumb);
@@ -28,7 +28,7 @@ drupal_set_breadcrumb($breadcrumb);
 $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
 
 ?>
-<?php print l('Add a new app', 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
+<?php print l(t('Add a new app'), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
 
 <form class="form-stacked">
 

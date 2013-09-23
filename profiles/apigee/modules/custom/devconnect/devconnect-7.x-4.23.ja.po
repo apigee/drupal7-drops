@@ -1,179 +1,124 @@
-# $Id$
-#
-# LANGUAGE translation of Drupal (general)
-# Copyright YEAR NAME <EMAIL@ADDRESS>
-# Generated from files:
-#  devconnect.module: n/a
-#  devconnect_downloads/devconnect_download.info: n/a
-#  devconnect.install: n/a
-#  devconnect.info: n/a
-#  devconnect_admin_notify/devconnect_admin_notify.info: n/a
-#  devconnect_api_content_types/devconnect_api_content_types.info: n/a
-#  devconnect_api_views/devconnect_api_views.info: n/a
-#  devconnect_apigee/devconnect_apigee.info: n/a
-#  devconnect_app_attributes/devconnect_app_attributes.info: n/a
-#  devconnect_cdn/devconnect_cdn.info: n/a
-#  devconnect_content_authoring/devconnect_content_authoring.info: n/a
-#  devconnect_developer_apps/devconnect_developer_apps.info: n/a
-#  faq.info,v 1.1.2.3.2.1 2007/09/05 14:05:48 snpower
-#  devconnect_homepage/devconnect_homepage.info: n/a
-#  devconnect_node_settings/devconnect_node_settings.info: n/a
-#  devconnect_readonlymode_ext/devconnect_readonlymode_ext.info: n/a
-#  devconnect_user/devconnect_user.info: n/a
-#  devconnect_validate/devconnect_validate.info: n/a
-#  devconnect_wadl/devconnect_wadl.info: n/a
-#  devconnect_admin_notify/devconnect_admin_notify.admin.inc: n/a
-#  devconnect_admin_notify/devconnect_admin_notify.module: n/a
-#  devconnect_api_content_types/devconnect_api_content_types.features.field.inc: n/a
-#  devconnect_default_content/content/devconnect_default_content.features.field.inc: n/a
-#  devconnect_homepage/devconnect_homepage.module: n/a
-#  devconnect_app_attributes/devconnect_app_attributes.module: n/a
-#  devconnect_api_content_types/devconnect_api_content_types.features.inc: n/a
-#  devconnect_developer_apps/analytics.inc: n/a
-#  devconnect_default_content/content/devconnect_default_content.features.inc: n/a
-#  devconnect_downloads/devconnect_download.features.field.inc: n/a
-#  devconnect_default_content/content/devconnect_default_content.info: n/a
-#  devconnect_default_content/structure/devconnect_default_structure.info: n/a
-#  devconnect_default_content/structure/devconnect_default_structure.features.menu_custom.inc: n/a
-#  devconnect_default_content/structure/devconnect_default_structure.features.menu_links.inc: n/a
-#  devconnect_default_content/structure/devconnect_default_structure.module: n/a
-#  lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php: n/a
-#  devconnect_developer_apps/devconnect_developer_apps.module: n/a
-#  devconnect_node_settings/devconnect_node_settings.module: n/a
-#  devconnect_node_settings/devconnect_node_settings.install: n/a
-#  devconnect_user/devconnect_user.features.field.inc: n/a
-#  devconnect_user/devconnect_user.module: n/a
-#  devconnect_validate/devconnect_validate.module: n/a
-#  devconnect_wadl/devconnect_wadl.module: n/a
+# Japanese translation of Drupal core (7.22)
+# Copyright (c) 2013 by the Japanese translation team
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2013-08-27 09:42-0700\n"
-"PO-Revision-Date: 2013-09-10 12:56-0800\n"
-"Last-Translator: NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"Project-Id-Version: Drupal core (7.22)\n"
+"POT-Creation-Date: 2013-04-23 12:26+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Language-Team: Japanese\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
-"X-Generator: Poedit 1.5.7\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: devconnect.module:76
+msgid "Username and password have been set."
+msgstr "ユーザー名とパスワードが設定されています。"
+
+msgid "Username/password have not yet been set."
+msgstr "ユーザー名/パスワードがまだ設定されていない。"
+
+msgid "Username is @username, password is @pass."
+msgstr ""
+
+msgid "Orgname has been set to @org"
+msgstr ""
+
+msgid "Org name has not yet been set."
+msgstr "組織名がまだ設定されていない。"
+
+msgid "Org name is @orgname"
+msgstr ""
+
 msgid "Devconnect Organization"
 msgstr "Devconnect組織"
 
-#: devconnect.module:78
 msgid ""
 "The v4 product organization name. Changing this value could make your site "
 "not work."
 msgstr ""
-"バージョン4製品の組織名。この値を変更すると、あなたのサイトが機能しないになる"
-"だろう。"
+"v4の製品組織名。この値を変更すると、あなたのサイトが機能しないことができまし"
+"た。"
 
-#: devconnect.module:84
 msgid "Devconnect Endpoint"
 msgstr "エンドポイントDevconnect"
 
-#: devconnect.module:86
 msgid "URL to which to make Apigee REST calls."
 msgstr "URLへApigee REST呼び出しをする。"
 
-#: devconnect.module:92
 msgid "Authentication for the Endpoint"
 msgstr "エンドポイントの認証"
 
-#: devconnect.module:94
 msgid ""
 "Will be used to authenticate with the endpoint. Separate the Username and "
 "Password with a colon (e.g. \"guest:secret\")."
 msgstr ""
-"エンドポイントでの認証に使用されます。コロン（例\"シークレットゲスト\"）で"
-"ユーザー名とパスワードを区切ります。"
 
-#: devconnect.module:101
-msgid "Double-URL-encode all KMS URI parameters?"
-msgstr "Double-URL-encode all Key Manager System URI parameters?"
-
-#: devconnect.module:103
-msgid ""
-"When checked, double-escapes developer app names and API Products in URLs."
-msgstr "チェックすると、URLで開発者のアプリ名とAPIの製品をダブルエスケープ。"
-
-#: devconnect.module:109
 msgid "KMS logging threshold"
-msgstr "キーマネージャ·システムは、しきい値ロギング"
+msgstr "KMSロギングしきい値"
 
-#: devconnect.module:110
 msgid ""
 "Controls what baseline level of KMS output should be written to the logs."
 msgstr ""
-"キーマネージャシステム出力のベースラインレベルは、ログに書き込まれるべきかを"
-"制御します。"
+"KMS出力のコントロールはどのようなベースラインのレベルがログに書き込まなければ"
+"ならない。"
 
-#: devconnect.module:132
 msgid "Devconnect settings"
-msgstr "セッティングDevconnect"
+msgstr "設定をDevconnect"
 
-#: devconnect.module:133
 msgid ""
 "Settings for this Devconnect instance. Change these values with great care!"
 msgstr ""
 "このDevconnectインスタンスの設定。細心の注意を払ってこれらの値を変更します！"
 
-#: devconnect.module:34 devconnect_downloads/devconnect_download.info:0
-msgid "Devconnect"
-msgstr "Devconnect"
+msgid "Connection Configuration"
+msgstr "接続形態"
 
-#: devconnect.module:35
-msgid "KMS authentication settings."
-msgstr "キーマネージャシステム認証設定。"
+msgid "Test Connection"
+msgstr "試験用接続"
 
-#: (duplicate) devconnect.install:21
+msgid "Invalid endpoint"
+msgstr "無効なエンドポイント"
+
+msgid "Connection Successful"
+msgstr "成功した接続"
+
+msgid "Connection Unsuccessful"
+msgstr "失敗した接続"
+
+msgid "Dev Portal"
+msgstr "devのポータル"
+
+msgid "Apigee KMS authentication settings."
+msgstr "Apigee KMS認証設定。"
+
 msgid "Please install the PHP mcrypt extension."
 msgstr "PHPのmcrypt拡張をインストールしてください。"
 
-#: (duplicate) devconnect.install:22
 msgid "Missing library"
 msgstr "ライブラリが見つからない"
 
-#: devconnect.info:0
+msgid "Please install the PHP cURL extension."
+msgstr "PHPのcURL拡張モジュールをインストールしてください。"
+
+msgid "Please run the following command:"
+msgstr "次のコマンドを実行してください："
+
+msgid "SELinux configuration problem"
+msgstr "SELinuxの設定の問題"
+
 msgid "Devconnect API"
 msgstr "Devconnect API"
 
-#: devconnect.info:0
-msgid ""
-"PSR-0 compliant class libraries to contact and communicate with Apigee v4 "
-"product (Fountainhead)"
-msgstr ""
-"PSR-0準拠のクラスライブラリには連絡し、Apigeeバージョン4製品（摩天楼）と通信"
-"するため"
+msgid "SDK to contact and communicate with Apigee v4 product (KMS)"
+msgstr "SDKには、連絡しApigee v4の製品（KMS）と通信するため"
 
-#: devconnect.info:0 devconnect_admin_notify/devconnect_admin_notify.info:0
-#: devconnect_api_content_types/devconnect_api_content_types.info:0
-#: devconnect_api_views/devconnect_api_views.info:0
-#: devconnect_apigee/devconnect_apigee.info:0
-#: devconnect_app_attributes/devconnect_app_attributes.info:0
-#: devconnect_cdn/devconnect_cdn.info:0
-#: devconnect_content_authoring/devconnect_content_authoring.info:0
-#: devconnect_developer_apps/devconnect_developer_apps.info:0
-#: devconnect_faq_ext/devconnect_faq_ext.info:0
-#: devconnect_homepage/devconnect_homepage.info:0
-#: devconnect_node_settings/devconnect_node_settings.info:0
-#: devconnect_readonlymode_ext/devconnect_readonlymode_ext.info:0
-#: devconnect_user/devconnect_user.info:0
-#: devconnect_validate/devconnect_validate.info:0
-#: devconnect_wadl/devconnect_wadl.info:0
 msgid "DevConnect"
 msgstr "DevConnect"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:9
-#: devconnect_admin_notify/devconnect_admin_notify.module:8
 msgid "Account details for !user_name at !site"
 msgstr ""
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:13
-#: devconnect_admin_notify/devconnect_admin_notify.module:12
 msgid ""
 "!user_name (!user_view) has !action account.\n"
 "\n"
@@ -185,38 +130,30 @@ msgid ""
 "\n"
 msgstr ""
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:22
 msgid "User Alerts"
 msgstr "ユーザアラート"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:27
 msgid "Send to a custom email address"
 msgstr "カスタムのメールアドレスへ送る"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:28;48
 msgid "Send to a specific role(s)"
-msgstr "特定のロールに送る"
+msgstr "特定の役割（複数可）に送信する"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:29
 msgid "Send to Both a custom email address and a specific role(s)"
-msgstr "カスタム電子メールアドレスと特定の役割の両方に送信する。"
+msgstr "カスタム電子メールアドレスと特定の役割（複数可）の両方に送信する"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:34
 msgid "Send by Role or Custom Email address?"
 msgstr "ロールまたはカスタム電子メールアドレスで送信しますか？"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:41
 msgid "Send notifications to this custom email address"
 msgstr "このカスタムの電子メールアドレスに通知を送信し"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:42
 msgid ""
 "Please specify multiple email ids with comma(,) separated values eg(%mailto,"
 "%mailto). If you leave this blank, the site email address, %mailto, will be "
 "used."
 msgstr ""
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:50
 msgid ""
 "All users with these checked roles will receive a notification email when "
 "selected."
@@ -224,229 +161,90 @@ msgstr ""
 "選択されたときに、これらの確認の役割を持つすべてのユーザーは、通知メールが届"
 "きます。"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:55
 msgid "Email Subject"
 msgstr "電子メールの件名"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:58
 msgid "Subject of user registration messages"
 msgstr "ユーザー登録メッセージの件名"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:62
 msgid "Email Body"
 msgstr "メールボディ"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:66
 msgid "Customize the body of the user registration notification email."
 msgstr "ユーザ登録通知メールの本文をカスタマイズします。"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:66
 msgid "Available variables are:"
 msgstr "使用可能な変数は以下のとおりです。"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:75
 msgid "Page Sort order"
-msgstr "ページの並べ替え順序"
+msgstr "Page Sort order"
 
-#: devconnect_admin_notify/devconnect_admin_notify.admin.inc:77
 msgid "When to send an Email"
 msgstr "メールを送信するとき"
 
-#: devconnect_admin_notify/devconnect_admin_notify.module:33
 msgid "Admin Notification"
 msgstr "管理通知"
 
-#: devconnect_admin_notify/devconnect_admin_notify.module:36
 msgid "Configure the DevConnect admin notification module."
 msgstr "DevConnect管理者通知モジュールを構成します。"
 
-#: devconnect_admin_notify/devconnect_admin_notify.info:0
 msgid "Devconnect Admin notification"
 msgstr "管理者通知をDevconnect"
 
-#: devconnect_admin_notify/devconnect_admin_notify.info:0
 msgid "Notifies administrator of new user registrations."
 msgstr "新規ユーザ登録の管理者に通知します。"
 
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:803
-msgid "API Description"
-msgstr "アプリケーション·プログラミング·インターフェースの説明"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:804
-#: devconnect_default_content/content/devconnect_default_content.features.field.inc:328
-#: devconnect_homepage/devconnect_homepage.module:28
-msgid "Body"
-msgstr "物体"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:805
-msgid "Desciption (use HTML data)"
-msgstr "説明（HTMLデータを使用）"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:806
-#: devconnect_app_attributes/devconnect_app_attributes.module:118
-msgid "Description"
-msgstr "説明"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:807
-msgid "Endpoint URI"
-msgstr "エンドポイントURI"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:808
-msgid "Method Type"
-msgstr "方法の種類"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:809
-msgid "Request"
-msgstr "要求"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:810
-msgid "Select API"
-msgstr "アプリケーション·プログラミング·インターフェースを選択します"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:811
-msgid "Select Class"
-msgstr "クラスを選択してください"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.field.inc:812
-msgid "Short Description"
-msgstr "短い説明"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:13
-msgid "API"
-msgstr "アプリケーションプログラミングインターフェース"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:15
-msgid ""
-"General description of broad functionality. It usually doesn’t contain "
-"technical details."
-msgstr "幅広い機能の一般的な説明。それは通常、技術的な詳細が含まれていません。"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:17
-msgid "API Name"
-msgstr "アプリケーションプログラミングインタフェース名"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:21
-msgid "API Method"
-msgstr "アプリケーションプログラミングインタフェースメソッド"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:23
-msgid ""
-"The API method, with long description (with full technical details) and test "
-"console. Eg. Vertical method (under “Top Sellers” class, under Search API) "
-"contains short description, long description (that includes URL, parameters "
-"for API method call, sample request and response) etc. It also includes a "
-"test console which can be used to make requests to the API method."
-msgstr ""
-"長い説明（完全技術的な詳細を含む）とテストコンソールを使用してアプリケーショ"
-"ン·プログラミング·インターフェースの方法。例。縦の方法（検索アプリケーション·"
-"プログラミング·インターフェースの下の \"ベストセラー\"クラス、下）また、使用"
-"することができますテストコンソールを含む短い説明、長い説明（APIメソッド呼び出"
-"しのためのURL、パラメータ、サンプル要求と応答を含む）などが含まれていますアプ"
-"リケーション·プログラミング·インターフェース方式に要求を作る。"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:25
-msgid "Method"
-msgstr "方法"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:29;33
-msgid "API Class Name"
-msgstr "アプリケーション·プログラミング·インタフェース名"
-
-#: devconnect_api_content_types/devconnect_api_content_types.features.inc:31
-msgid ""
-"A way to group API methods (defined next). There is no content associated "
-"with a class name apart from the name of class itself. This is used as a "
-"‘separator’ when listing API methods."
-msgstr ""
-"グループ·アプリケーション·プログラミング·インターフェース·メソッド（次の定"
-"義）への道。別にクラス自体の名前からクラス名に関連付けられたコンテンツがあり"
-"ません。アプリケーション·プログラミング·インターフェースのメソッドをリストす"
-"るときに\"区切り文字\"として使用される。"
-
-#: devconnect_api_content_types/devconnect_api_content_types.info:0
-msgid "devconnect_api_content_types"
-msgstr "devconnect_api_content_types"
-
-#: devconnect_api_content_types/devconnect_api_content_types.info:0
-msgid "Content types supporting Devconnect API explorer"
-msgstr ""
-"コンテンツタイプ支えるDevconnectアプリケーションプログラミングインタフェース"
-"エクスプローラ"
-
-#: devconnect_api_views/devconnect_api_views.info:0
-msgid "devconnect_api_views"
-msgstr "devconnect_api_views"
-
-#: devconnect_api_views/devconnect_api_views.info:0
-msgid "Views that are integrated with Devconnect API explorer"
-msgstr ""
-"Devconnectアプリケーションプログラミングインタフェースエクスプローラと統合さ"
-"れた回数"
-
-#: devconnect_apigee/devconnect_apigee.info:0
 msgid "Devconnect Apigee Legacy Function Stubs"
 msgstr "Apigeeレガシー機能スタブDevconnect"
 
-#: devconnect_apigee/devconnect_apigee.info:0
 msgid ""
 "<strong>DEPRECATED</strong> function stubs which may be called by some "
 "legacy DevConnect implementations"
 msgstr ""
-"<strong>廃止予定の</strong>関数スタブはその一部のレガシーDevConnect実装によっ"
-"て呼び出される"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:15
 msgid "DevConnect App Attributes"
-msgstr "アプリケーション属性をDevConnect"
+msgstr "アプリケーション属性DevConnect"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:21
 msgid "Add DevConnect App Attribute"
-msgstr "アプリケーション属性をDevConnect追加"
+msgstr "アプリケーション属性DevConnect追加"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:28
 msgid "Edit DevConnect App Attribute"
-msgstr "DevConnectアプリケーション属性を編集"
+msgstr "DevConnectアプリ属性を編集"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:35
 msgid "Delete DevConnect App Attribute"
-msgstr "アプリケーション属性をDevConnect削除"
+msgstr "DevConnectアプリ属性を削除します"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:58
 msgid "No app attributes have been defined yet."
-msgstr "いいえアプリケーション属性は、まだ定義されていません。"
+msgstr "いいえ、アプリの属性がまだ定義されていません。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:61
 msgid "Add Attribute"
 msgstr "属性の追加"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:91
 msgid "Machine Name"
 msgstr "マシン名"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:97
 msgid "Please use only numbers, letters, underscores, hyphens and periods."
 msgstr "数字のみ、文字、アンダースコア、ハイフン、ピリオドを使用してください。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:102
 msgid ""
 "This is the attribute name as it is stored in KMS. It must be unique to this "
 "Devconnect instance, and should consist exclusively of numbers, letters, "
 "underscores, hyphens and periods."
 msgstr ""
-"それはキーマネージャ·サービスに格納されているので、これは属性名です。これは"
-"Devconnectインスタンスに対して一意である必要があり、数字、文字、アンダースコ"
-"ア、ハイフン、ピリオドだけから構成される必要があります。"
+"それはKMSに格納されているので、これは属性名である。これはDevconnectインスタン"
+"スに対して一意である必要があり、数字、文字、アンダースコア、ハイフン、ピリオ"
+"ドだけから構成される必要があります。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:106
 msgid "Public Name"
 msgstr "公称"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:114
 msgid ""
 "This is the name of the attribute as it is shown to the Devconnect end user."
 msgstr "それはDevconnectエンドユーザに表示されるので、これは属性の名前である。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:123
+msgid "Description"
+msgstr "説明"
+
 msgid ""
 "This is shown as help text underneath the attribute's form element on the "
 "app creation/edit page. This is a plaintext field; please do not enter "
@@ -456,29 +254,23 @@ msgstr ""
 "されます。これはプレーンテキストフィールドです。マークアップを入力しないでく"
 "ださい。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:127;525
 msgid "Widget"
 msgstr "ウィジェット"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:131
 msgid "Text Box"
 msgstr "テキストボックス"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:132
 msgid "Text Area"
 msgstr "テキスト領域"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:139
 msgid "This sets the type of input field shown on the app creation/edit page."
 msgstr ""
 "これは、アプリの作成/編集ページに表示される入力フィールドのタイプを設定しま"
 "す。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:143
 msgid "Maximum Length"
 msgstr "最大長"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:148
 msgid ""
 "If set, this limits the possible length of the attribute content. Leave "
 "blank to allow unlimited content length."
@@ -486,11 +278,9 @@ msgstr ""
 "設定されている場合、これは、属性のコンテンツの可能長さを制限します。無制限の"
 "コンテンツの長さを可能にするために空白のままにします。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:152
 msgid "Require this attribute"
 msgstr "この属性を必要とする"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:156
 msgid ""
 "If this box is checked, end users will be unable to save their apps without "
 "filling in the attribute."
@@ -498,11 +288,9 @@ msgstr ""
 "このボックスがチェックされている場合、エンドユーザーは、属性に入力せずに自分"
 "のアプリを保存することができません。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:160
 msgid "Display this attribute"
 msgstr "この属性を表示します"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:164
 msgid ""
 "If this box is checked, the attribute will be displayed on the user's app "
 "listing page."
@@ -510,25 +298,21 @@ msgstr ""
 "このボックスがチェックされている場合、この属性は、ユーザーのアプリのリスト"
 "ページに表示されます。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:168
 msgid "Pattern Regex"
 msgstr "パターンは正規表現"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:174
 msgid ""
 "If set, this must be a valid regular expression. <strong>Please omit regex "
 "delimiters.</strong> Any input for this attribute will be validated against "
 "the regular expression; content failing to match will be rejected."
 msgstr ""
-"設定した場合、これは有効な正規表現でなければなりません。<strong>の正規表現の"
-"区切り文字を省略してください</ strong>のこの属性の任意の入力は、正規表現と照"
-"合して検証されます。。一致しなかっコンテンツが拒否されます。"
+"設定した場合、これは有効な正規表現でなければなりません。ある[は正規表現の区切"
+"り文字を省略してください</ strong>のこの属性の任意の入力は、正規表現と照合し"
+"て検証されます。。一致しなかっコンテンツが拒否されます。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:178
 msgid "Tooltip"
 msgstr "ツールチップ"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:179
 msgid ""
 "If Pattern Regex is not empty, this should contain a human-readable high-"
 "level description of the valid pattern, to be shown in the browser when the "
@@ -537,17 +321,14 @@ msgstr ""
 "正規表現パターンが空でない場合、これは、ユーザが無効なパターンに入射するブラ"
 "ウザに表示される有効なパターンの人間可読高レベル記述を含むべきである。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:187
 msgid "Default Value"
 msgstr "デフォルト値"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:188
 msgid ""
 "When the user does not enter a value for the attribute, this value should be "
 "assumed."
 msgstr "ユーザーは属性の値を入力しない場合、この値は想定されるべきである。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:232
 msgid ""
 "Invalid machine name. Please only use letters, numbers, dashes, underscores "
 "and periods."
@@ -555,247 +336,328 @@ msgstr ""
 "無効なマシン名。唯一の文字、数字、ダッシュ、アンダースコア、ピリオドを使用し"
 "てください。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:237
 msgid "This machine name is already in use."
 msgstr "このマシン名が既に使用されています。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:258
 msgid "Invalid regular expression. Please check your syntax."
 msgstr "無効な正規表現。あなたの構文を確認してください。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:274
 msgid "updated"
 msgstr "更新した"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:274
 msgid "created"
 msgstr "作成"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:277
 msgid "The @attr attribute has been @action."
 msgstr ""
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:293
 msgid "The @attr attribute has been deleted."
 msgstr ""
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:296
 msgid "The selected attribute could not be found."
 msgstr "選択した属性が見つかりませんでした。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:402
 msgid "Edit"
-msgstr "編集する"
+msgstr "編集"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:403
 msgid "Delete"
-msgstr "デリート"
+msgstr "削除"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:416;420
 msgid "Yes"
 msgstr "はい"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:416;420
 msgid "No"
 msgstr "ノー"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:439
 msgid "Save Changes"
 msgstr "変更を保存"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:478
 msgid "Your changes have been saved."
 msgstr "あなたの変更を保存しました。"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:524
 msgid "Name"
 msgstr "名前"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:526
 msgid "Required"
 msgstr "必須"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:527
-#: devconnect_developer_apps/analytics.inc:42
 msgid "Display"
 msgstr "表示"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:528
 msgid "Action"
 msgstr "アクション"
 
-#: devconnect_app_attributes/devconnect_app_attributes.module:529
 msgid "Weight"
 msgstr "重量"
 
-#: devconnect_app_attributes/devconnect_app_attributes.info:0
 msgid "DevConnect App Attribute Management"
-msgstr "アプリケーション属性管理DevConnect"
+msgstr "アプリケーションの属性管理をDevConnect"
 
-#: devconnect_app_attributes/devconnect_app_attributes.info:0
 msgid "Allows custom attributes to be set for Developer Apps"
 msgstr "カスタム属性が開発アプリを設定することが可能"
 
-#: devconnect_cdn/devconnect_cdn.info:0
-msgid "Devconnect CDN Uploader"
-msgstr "コンテンツ配信ネットワークアップローダをDevconnect"
-
-#: devconnect_cdn/devconnect_cdn.info:0
-msgid "Uploads files to Amazon CDN mirror automatically"
+msgid "devconnect_content_admin"
 msgstr ""
-"アマゾンのコンテンツ配信ネットワークへのアップロードファイルが自動的にミラー"
-"リング"
 
-#: devconnect_content_authoring/devconnect_content_authoring.info:0
+msgid "Content Admin"
+msgstr "コンテンツ管理者"
+
 msgid "DevConnect Content Authoring"
 msgstr "コンテンツのオーサリングをDevConnect"
 
-#: devconnect_content_authoring/devconnect_content_authoring.info:0
 msgid "Configuration for text formats and editor configuration"
 msgstr "テキスト形式、エディタ構成の構成"
 
-#: devconnect_default_content/content/devconnect_default_content.features.inc:19
-msgid "Basic page"
-msgstr "基本的なページ"
+msgid "Body"
+msgstr "ボディ"
 
-#: devconnect_default_content/content/devconnect_default_content.features.inc:21
+msgid "keywords"
+msgstr "キーワード"
+
+msgid "Article"
+msgstr "記事"
+
 msgid ""
-"Use <em>basic pages</em> for your static content, such as an 'About us' page."
+"Use <em>articles</em> for time-sensitive content like news, press releases "
+"or blog posts."
 msgstr ""
-"<em>基本ページ</ em>はあなたの静的なコンテンツのために、そのようなページ'私達"
-"について'のように使用します。"
 
-#: devconnect_default_content/content/devconnect_default_content.features.inc:23
-#: devconnect_downloads/devconnect_download.features.field.inc:153
 msgid "Title"
 msgstr "タイトル"
 
-#: devconnect_default_content/content/devconnect_default_content.info:0
+msgid "Basic page"
+msgstr "基本的なページ"
+
+msgid ""
+"Use <em>basic pages</em> for your static content, such as an 'About us' page."
+msgstr ""
+
+msgid "Webform"
+msgstr "Webフォーム"
+
+msgid ""
+"Create a new form or questionnaire accessible to users. Submission results "
+"and statistics are recorded and accessible to privileged users."
+msgstr ""
+"新しいフォームやユーザーがアクセス可能なアンケートを作成します。提出結果と統"
+"計が記録され、特権ユーザーにアクセスされています。"
+
 msgid "Devconnect Default Content"
 msgstr "既定のコンテンツをDevconnect"
 
-#: devconnect_default_content/content/devconnect_default_content.info:0
 msgid "Configures nodes and users"
 msgstr "構成ノードとユーザ"
 
-#: devconnect_default_content/content/devconnect_default_content.info:0
-#: devconnect_default_content/structure/devconnect_default_structure.info:0
-msgid "Devconnect Features"
-msgstr "特徴Devconnect"
+msgid "Devconnect"
+msgstr "Devconnect"
 
-#: devconnect_default_content/structure/devconnect_default_structure.features.menu_custom.inc:21
 msgid "Main menu"
 msgstr "メインメニュー"
 
-#: devconnect_default_content/structure/devconnect_default_structure.features.menu_custom.inc:22
 msgid ""
 "The <em>Main</em> menu is used on many sites to show the major sections of "
 "the site, often in a top navigation bar."
 msgstr ""
-"<em>メイン</ em>のメニューは頻繁に上部のナビゲーションバーに、サイトの主要な"
-"セクションを表示するには、多くのサイトで使用されます。"
 
-#: devconnect_default_content/structure/devconnect_default_structure.features.menu_links.inc:51
 msgid "Blog"
 msgstr "ブログ"
 
-#: devconnect_default_content/structure/devconnect_default_structure.features.menu_links.inc:52
 msgid "Forum"
 msgstr "フォーラム"
 
-#: devconnect_default_content/structure/devconnect_default_structure.module:13
+msgid "Master"
+msgstr "マスター"
+
+msgid "Forum Discussions"
+msgstr "フォーラムディスカッション"
+
+msgid "more"
+msgstr "もっと"
+
+msgid "Apply"
+msgstr "適用する"
+
+msgid "Reset"
+msgstr "リセット"
+
+msgid "Sort by"
+msgstr "並べ替え"
+
+msgid "Asc"
+msgstr "ASC"
+
+msgid "Desc"
+msgstr "得！"
+
+msgid ""
+"[title]<br />\n"
+"[last_updated]"
+msgstr ""
+
+msgid ""
+"<div class=\"comment-count\">\n"
+"[comment_count]\n"
+"</div>"
+msgstr ""
+
+msgid "."
+msgstr ""
+
+msgid ","
+msgstr ""
+
+msgid "Block"
+msgstr "ブロック"
+
+msgid "Hot Topics"
+msgstr "ホットトピックス"
+
+msgid "Recent Blog Posts"
+msgstr "最近のブログ投稿"
+
+msgid ""
+"[title]<span class=\"blog-icon\"></span><br />\n"
+"[body]"
+msgstr ""
+
 msgid "Site-wide Default Footer"
 msgstr "サイト全体のデフォルトのフッター"
 
-#: devconnect_default_content/structure/devconnect_default_structure.module:21
 msgid "Develop With These"
 msgstr "これらを使って開発"
 
-#: devconnect_default_content/structure/devconnect_default_structure.module:61
-msgid "Develop with these APIs"
-msgstr "これらの応用も·プログラミング·インターフェースを使用して開発"
+msgid "Custom content"
+msgstr "カスタムコンテンツ"
 
-#: devconnect_default_content/structure/devconnect_default_structure.info:0
+msgid ""
+"This content will appear in the block. Leave it blank to hide the block."
+msgstr ""
+"このコンテンツは、ブロックに表示されます。ブロックを非表示することは空白のま"
+"まにします。"
+
+msgid "Develop with these APIs"
+msgstr "これらのAPIを使って開発"
+
 msgid "Devconnect Default Structure"
 msgstr "デフォルトの構造をDevconnect"
 
-#: devconnect_default_content/structure/devconnect_default_structure.info:0
 msgid "Configures blocks, views and menus"
 msgstr "を設定ブロック、ビューとメニュー"
 
-#: devconnect_developer_apps/analytics.inc:24
 msgid "Throughput"
 msgstr "スループット"
 
-#: devconnect_developer_apps/analytics.inc:25
 msgid "Max Response Time"
 msgstr "最大応答時間"
 
-#: devconnect_developer_apps/analytics.inc:26
 msgid "Min Response Time"
 msgstr "最小応答時間"
 
-#: devconnect_developer_apps/analytics.inc:27
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:167
 msgid "Endpoint Response Time"
 msgstr "エンドポイントの応答時間"
 
-#: devconnect_developer_apps/analytics.inc:28
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:157
 msgid "Message Count"
 msgstr "メッセージ数"
 
-#: devconnect_developer_apps/analytics.inc:29
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:160
 msgid "Error Count"
 msgstr "誤り件数"
 
-#: devconnect_developer_apps/analytics.inc:30
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:162
 msgid "User Count"
 msgstr "ユーザーカウント"
 
-#: devconnect_developer_apps/analytics.inc:67
 msgid "From"
 msgstr "から"
 
-#: devconnect_developer_apps/analytics.inc:85
 msgid "To"
 msgstr "へ"
 
-#: devconnect_developer_apps/analytics.inc:117
 msgid "Invalid \"From\" date."
 msgstr ""
 
-#: devconnect_developer_apps/analytics.inc:121
 msgid "Invalid \"To\" date."
 msgstr ""
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:11
+msgid "Upon creation of a developer app"
+msgstr "開発者はアプリの作成時に"
+
+msgid "created app"
+msgstr "作成したアプリ"
+
+msgid "Upon update of a developer app"
+msgstr "開発者はアプリのアップデート時に"
+
+msgid "updated app"
+msgstr "更新されたアプリ"
+
+msgid "Upon deletion of a developer app"
+msgstr "開発者はアプリの削除時"
+
+msgid "deleted app"
+msgstr "削除されたアプリ"
+
+msgid "Keys"
+msgstr "キーズ"
+
+msgid "These are the keys to your app kingdom."
+msgstr "これらは、あなたのアプリの王国への鍵である。"
+
+msgid "Consumer Key:"
+msgstr "コンシューマキー："
+
+msgid "Consumer Secret:"
+msgstr "コンシューマシークレット："
+
+msgid "Callback URL:"
+msgstr "コールバックURL："
+
+msgid "Products"
+msgstr "製品"
+
+msgid "Approval Status"
+msgstr "承認状況"
+
+msgid "This app is not associated with any API Products."
+msgstr "このアプリは、任意のAPI製品に関連付けられていません。"
+
+msgid "App Details"
+msgstr "アプリケーションの詳細"
+
+msgid "App Name"
+msgstr "アプリケーション名"
+
+msgid "Callback URL"
+msgstr "コールバックURL"
+
+msgid "Status"
+msgstr "ステータス"
+
+msgid "No performance data is available for the criteria you supplied."
+msgstr "いいえパフォーマンスデータを使用すると、付属の基準の利用できません。"
+
 msgid "My Apps"
 msgstr "私のアプリ"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:21
 msgid "App Detail"
 msgstr "アプリ詳細"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:31
 msgid "Add New App"
 msgstr "新しいアプリケーションを追加"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:41
 msgid "Edit App"
 msgstr "編集アプリケーション"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:51;608
 msgid "Delete App"
 msgstr "削除のApp"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:81
+msgid "Developer App"
+msgstr "デベロッパのApp"
+
+msgid "API Product"
+msgstr "API製品"
+
 msgid "Show Developer App performance tab?"
 msgstr "開発アプリケーションのパフォーマンスのタブを表示しますか？"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:83
 msgid ""
 "When this value is enabled, the 'Performance' tab will be displayed on the "
 "developer app detail page."
@@ -803,263 +665,1431 @@ msgstr ""
 "この値が有効になっている場合、'パフォーマンス'タブは、開発者のアプリ詳細ペー"
 "ジに表示されます。"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:88
 msgid "Show API Product status on the developer app list?"
-msgstr ""
-"開発者はアプリのリストにアプリケーションプログラミングインターフェース製品の"
-"ステータスを表示しますか？"
+msgstr "開発者はアプリのリストにAPI製品のステータスを表示しますか？"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:90
 msgid ""
 "When this value is enabled, the app's status with each associated API "
 "Product is listed on the app listing page."
 msgstr ""
-"この値が有効になっている場合、関連する各アプリケーションプログラミングイン"
-"ターフェース製品とアプリケーションの状態はアプリ一覧ページに記載されていま"
-"す。"
+"この値が有効になっている場合、関連する各API製品とアプリケーションの状態はアプ"
+"リ一覧ページに記載されています。"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:255
-msgid "Editing App “@app”"
+msgid "Regex to Validate App Callback URL"
+msgstr "正規表現は、AppコールバックURLを検証する"
+
+msgid "When not empty, Callback URL is validated against this Regex."
+msgstr "空でない場合、コールバックURLは、この正規表現に対して検証されます。"
+
+msgid "Callback URL handling"
+msgstr "コールバックURL処理"
+
+msgid "Callback URL is required for all developer apps."
+msgstr "コールバックURLは、すべての開発者のアプリが必要です。"
+
+msgid "Callback URL is optional for all developer apps."
 msgstr ""
+"コールバックURLは、すべての開発者のアプリケーションのためのオプションです。"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:257
+msgid "Callback URL is neither required nor displayed."
+msgstr "コールバックURLはどちらも必要ありませんも表示されます。"
+
+msgid "API Product handling"
+msgstr "API製品の取り扱い"
+
+msgid "Do not associate apps with any API Product."
+msgstr "任意のAPI製品とアプリケーションを関連付けないでください。"
+
+msgid "Associate all apps with the Default API Product (configured below)."
+msgstr ""
+"デフォルトAPI製品（下記設定された）とすべてのアプリケーションを関連付けます。"
+
+msgid "Allow selection of a single API Product, but do not require it."
+msgstr "単一のAPI製品の選択を可能にするが、それを必要としません。"
+
+msgid "Require selection of a single API Product."
+msgstr "単一のAPI製品の選択を必要とする。"
+
+msgid "Allow selection of multiple API Products, but do not require any."
+msgstr "複数のAPI製品の選択を可能にするが、いずれも必要ありません。"
+
+msgid "Allow selection of multiple API Products, and require at least one."
+msgstr "複数のAPI製品の選択を可能にし、少なくとも一つを必要とする。"
+
+msgid "Default API Product"
+msgstr "デフォルトAPI製品"
+
+msgid ""
+"When associating all apps with a Default API Product, a Default API Product "
+"must be specified."
+msgstr ""
+"デフォルトのAPI製品ですべてのアプリケーションを関連付ける場合は、デフォルトの"
+"API製品を指定する必要があります。"
+
+msgid "An error occurred while listing your apps. Please try again later."
+msgstr ""
+"あなたのアプリを一覧表示しているときにエラーが発生しました。後ほどおかけ直し"
+"ください。"
+
+msgid "Editing App “@app”"
+msgstr "編集アプリケーション\"@アプリ\""
+
 msgid "Save App"
 msgstr "アプリケーションを保存"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:262
 msgid "Create App"
 msgstr "アプリケーションの作成"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:285;297
-msgid "App Name"
-msgstr "アプリケーション名"
+msgid "The App Name may not contain ampersands"
+msgstr "アプリケーション名は、アンパサンドを含めることはできません"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:314
-msgid "Callback URL"
-msgstr "コールバックURL"
+msgid ""
+"An error occurred while listing available API Products. Please try again "
+"later."
+msgstr ""
+"利用可能なAPIの製品をリストしているときにエラーが発生しました。後ほどおかけ直"
+"しください。"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:404
 msgid "Product"
 msgstr "製品"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:460
 msgid "The @title element does not conform to the indicated pattern."
 msgstr ""
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:590
+msgid "The App Name may not contain ampersands."
+msgstr "アプリケーション名は、アンパサンドを含めることはできません。"
+
+msgid ""
+"The App Name “:machine_name” is already in use. Please select a different "
+"name."
+msgstr ""
+
+msgid "The App Name “@app_name” is already being used."
+msgstr ""
+
+msgid ""
+"There was an error trying to @action the application. Please try again later."
+msgstr ""
+
+msgid "An error occurred while saving your app. Please try again later."
+msgstr "アプリを保存中にエラーが発生しました。後ほどおかけ直しください。"
+
+msgid "App @status!"
+msgstr ""
+
 msgid "Are you sure?"
 msgstr "本当に？"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:619
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:653
 msgid "App Deleted!"
 msgstr "アプリは、削除された！"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:656
 msgid "App could not be deleted."
 msgstr "アプリは削除できませんでした。"
 
-#: devconnect_developer_apps/devconnect_developer_apps.module:61
+msgid "An error occurred while retrieving your app. Please try again later."
+msgstr ""
+"あなたのアプリを取得中にエラーが発生しました。後ほどおかけ直しください。"
+
+msgid "Could not load APIProduct @product"
+msgstr "APIProduct製品をロードできませんでした"
+
+msgid "App Performance"
+msgstr "アプリケーションパフォーマンス"
+
+msgid "Developer Apps"
+msgstr "開発アプリ"
+
+msgid "Tokens related to developer apps"
+msgstr "トークンは、開発者のアプリに関連する"
+
+msgid "API Products"
+msgstr "API製品"
+
+msgid "List of all API Products used by the app."
+msgstr "アプリが使用するすべてのAPI製品のリスト。"
+
+msgid "Attributes"
+msgstr "属性"
+
+msgid "List of custom attributes for this app."
+msgstr "このアプリのためのカスタム属性のリスト。"
+
+msgid "Callback URL configured for this app."
+msgstr "コールバックURLは、このアプリのために設定。"
+
+msgid "Created At"
+msgstr "で作成された"
+
+msgid "Timestamp at which the app was created."
+msgstr "スタンプれるアプリが作成されました。"
+
+msgid "Modified At"
+msgstr "に変更"
+
+msgid "The machine-readable name of the app."
+msgstr "アプリの機械可読な名前。"
+
+msgid "App Status"
+msgstr "アプリケーションの状況"
+
+msgid "The active status of this app."
+msgstr "このアプリのアクティブステータス。"
+
+msgid "Description of the app, if present."
+msgstr "アプリの説明（存在する場合）。"
+
+msgid "Consumer Key"
+msgstr "コンシューマキー"
+
+msgid "The Consumer Key (public key or API Key) for this app."
+msgstr "このアプリのコンシューマキー（公開鍵またはAPIキー）。"
+
+msgid "Consumer Secret"
+msgstr "コンシューマシークレット"
+
+msgid "The Consumer Secret (private key) for this app."
+msgstr "このアプリのコンシューマシークレット（秘密鍵）。"
+
+msgid "Credential Status"
+msgstr "クレデンシャルのステータス"
+
+msgid "Status of the Consumer Key/Secret credential."
+msgstr "コンシューマキー/秘密クレデンシャルのステータス。"
+
+msgid "Credential Attributes"
+msgstr "資格の属性"
+
+msgid "Custom attributes of the Consumer Key/Secret credential."
+msgstr "コンシューマキー/秘密資格のカスタム属性。"
+
+msgid "Developer Email"
+msgstr "開発者向けメール"
+
+msgid "Email address of the app’s developer."
+msgstr "アプリの開発者のメールアドレス。"
+
+msgid "App URL"
+msgstr "アプリURL"
+
+msgid "URL on this site where the app’s details may be viewed."
+msgstr "アプリの詳細が見ることができるこのサイト上のURL。"
+
 msgid "Performance Data"
 msgstr "パフォーマンスデータ"
 
-#: devconnect_developer_apps/devconnect_developer_apps.info:0
 msgid "DevConnect Developer Apps"
 msgstr "開発アプリをDevConnect"
 
-#: devconnect_developer_apps/devconnect_developer_apps.info:0
 msgid "CRUD Apps with REST interface to Apigee 4"
-msgstr "作成RESTインタフェースを持つアプリ4 Apigeeする更新削除"
+msgstr "RESTインターフェースを使用するCRUDアプリ4 Apigeeする"
 
-#: devconnect_downloads/devconnect_download.features.field.inc:154
-msgid "URI"
-msgstr "URI"
-
-#: devconnect_downloads/devconnect_download.info:0
-msgid "Devconnect Download"
-msgstr "ダウンロードDevconnect"
-
-#: devconnect_faq_ext/devconnect_faq_ext.info:0
-msgid "DevConnect Frequently Asked Questions Extension"
-msgstr "よくある質問拡張をDevConnect"
-
-#: devconnect_faq_ext/devconnect_faq_ext.info:0
-msgid "Developer Connect Manages configuration of questions for a FAQ page."
-msgstr "Devconnectは、よくある質問ページの質問の構成を管理します。"
-
-#: devconnect_homepage/devconnect_homepage.module:9
-msgid "Homepage Header"
-msgstr "ホームページヘッダー"
-
-#: devconnect_homepage/devconnect_homepage.info:0
-msgid "Devconnect Homepage"
-msgstr "ホームページDevconnect"
-
-#: devconnect_homepage/devconnect_homepage.info:0
-msgid "Homepage Header Block"
-msgstr "ホームページヘッダーブロック"
-
-#: devconnect_node_settings/devconnect_node_settings.module:70
-msgid "Check the fields which you want to show in the node form."
-msgstr "ノードの形式で表示したい項目をチェックしてください。"
-
-#: devconnect_node_settings/devconnect_node_settings.module:8
-msgid "Node Form settings"
-msgstr "ノードフォームの設定"
-
-#: devconnect_node_settings/devconnect_node_settings.module:9
-msgid "Adjust the node forms."
-msgstr "ノードの形を調整します。"
-
-#: devconnect_node_settings/devconnect_node_settings.install:13
-msgid "node's type."
-msgstr "ノードのタイプ。"
-
-#: devconnect_node_settings/devconnect_node_settings.info:0
-msgid "Devconnect Node Settings"
-msgstr "ノード設定Devconnect"
-
-#: devconnect_node_settings/devconnect_node_settings.info:0
-msgid "Provides option to select the node fields by the user."
-msgstr "ユーザによるノードのフィールドを選択するオプションが用意されています。"
-
-#: devconnect_readonlymode_ext/devconnect_readonlymode_ext.info:0
-msgid "DevConnect Read Only Mode Extension"
-msgstr "専用モード拡張を読むDevConnect"
-
-#: devconnect_readonlymode_ext/devconnect_readonlymode_ext.info:0
-msgid "This module locks the site from postings and redirect user to a URL."
+msgid ""
+"An API resource is the %c that your API documentation will live in.  You can "
+"have multiple models to your API."
 msgstr ""
-"このモジュールは、投稿からサイトをロックして、URLにユーザーをリダイレクトしま"
-"す。"
+"APIリソースはあなたのAPIドキュメントは、あなたのAPIに複数のモデルを持つことが"
+"できる住みれること％cがある。"
 
-#: devconnect_user/devconnect_user.features.field.inc:167
+msgid "Adds an API resource, with a name and a description."
+msgstr "名前と説明、APIリソースを追加します。"
+
+msgid "Imports the given API description to the API Modeling repository."
+msgstr "APIモデリングリポジトリに与えられたAPIの説明をインポートします。"
+
+msgid "Administer DNA Content"
+msgstr "DNA量を管理"
+
+msgid "Administer DevConnect DNA Content."
+msgstr "DNAコンテンツDevConnect管理します。"
+
+msgid "Administer DNA Settings"
+msgstr "DNAの設定を管理"
+
+msgid "Allows administrative access to DevConnect DNA."
+msgstr "管理アクセスは、DNAをDevConnectすることができます。"
+
 msgid "First Name"
 msgstr "姓"
 
-#: devconnect_user/devconnect_user.features.field.inc:168
 msgid "Last Name"
 msgstr "姓"
 
-#: devconnect_user/devconnect_user.module:16
+msgid "Tags"
+msgstr "タグ"
+
+msgid "Actions"
+msgstr "アクション"
+
+msgid "Update options"
+msgstr "オプションを更新"
+
+msgid "Operation"
+msgstr "操作"
+
+msgid "Delete selected models"
+msgstr "選択したモデルを削除"
+
+msgid "Update"
+msgstr "アップデート"
+
+msgid "No models found"
+msgstr "いいえモデルが見つかりませんでした"
+
+msgid "Create Model"
+msgstr "モデルの作成"
+
+msgid "WADL XML"
+msgstr "WADL XML"
+
+msgid "Copy and Paste your WADL file contents here."
+msgstr "コピーして、ここにあなたのWADLファイルの内容を貼り付けます。"
+
+msgid "Enable Development Mode"
+msgstr "開発モードを有効にする"
+
+msgid "Development Settings"
+msgstr "開発設定"
+
+msgid "DNA Organization"
+msgstr "DNA組織"
+
+msgid "DNA Development Endpoint"
+msgstr "DNA開発エンド"
+
+msgid "DNA Authentication Credentials"
+msgstr "DNA認証資格"
+
+msgid "Cache Settings"
+msgstr "キャッシュ設定"
+
+msgid "Enable Caching"
+msgstr "キャッシングを有効"
+
+msgid "Cache Lifetime"
+msgstr "キャッシュの有効期間"
+
+msgid "5 minutes"
+msgstr "5分"
+
+msgid "15 minutes"
+msgstr "15分"
+
+msgid "35 minutes"
+msgstr "35分"
+
+msgid "1 hour"
+msgstr "1時間"
+
+msgid "12 hours"
+msgstr "12時間"
+
+msgid "24 hours"
+msgstr "24時間"
+
+msgid "API Model"
+msgstr "APIモデル"
+
+msgid "API Models"
+msgstr "APIモデル"
+
+msgid "Apigee DNA"
+msgstr "Apigee DNA"
+
+msgid "List"
+msgstr "リスト"
+
+msgid "Add"
+msgstr "加える"
+
+msgid "Import"
+msgstr "インポート"
+
+msgid "Sync"
+msgstr "同期"
+
+msgid "Templates"
+msgstr "テンプレート"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "DevConnect DNA"
+msgstr "DevConnect DNA"
+
+msgid "Enables intelligent documentation capabilities with DevConnect."
+msgstr "DevConnectでインテリジェントなドキュメント機能を有効にします。"
+
+msgid "URI"
+msgstr "URI"
+
+msgid "Devconnect Download"
+msgstr "ダウンロードDevconnect"
+
+msgid "DevConnect Frequently Asked Questions Extension"
+msgstr "よくある質問拡張をDevConnect"
+
+msgid "Developer Connect Manages configuration of questions for a FAQ page."
+msgstr "開発ConnectはFAQページのための質問の構成を管理します。"
+
+msgid "Homepage Header"
+msgstr "ホームページヘッダー"
+
+msgid "Devconnect Homepage"
+msgstr "ホームページDevconnect"
+
+msgid "Homepage Header Block"
+msgstr "ホームページヘッダーブロック"
+
+msgid "DevConnect Key-Value Maps"
+msgstr "キー値マッピングのDevConnect"
+
+msgid "Thin wrapper around Key-Value Map class in Devconnect SDK"
+msgstr "Devconnect SDK内のキーと値の周りの薄いラッパーはMapクラス"
+
+msgid "Billing & Reports"
+msgstr "課金＆レポート"
+
+msgid "Prepaid Balance"
+msgstr "プリペイド残高"
+
+msgid "Reports"
+msgstr "レポート"
+
+msgid "Received Bills"
+msgstr "受け取った手形"
+
+msgid "Deposit @amount"
+msgstr "預金@量"
+
+msgid "The website encountered an unexpected error. Please try again later."
+msgstr ""
+"ウェブサイトでは、予期しないエラーが発生しました。後ほどおかけ直しください。"
+
+msgid "There is no report for account @account in @month-@year"
+msgstr "@月 - @年のアカウント@アカウントの報告はありません"
+
+msgid ""
+"<div id=\"donwload_previous_prepaid_statements_error_div\" class=\"alert "
+"alert-block alert-error fade in hide\"><h4 class=\"alert-heading\">Make sure "
+"you have:</h4><p></p></div>"
+msgstr ""
+
+msgid "Select an account"
+msgstr "アカウントを選択"
+
+msgid "Select a year"
+msgstr "年を選択してください"
+
+msgid "Select a month"
+msgstr "月を選択してください"
+
+msgid "Download CSV"
+msgstr "ダウンロードCSV"
+
+msgid "<option value=\"-1\">Select a month</option>"
+msgstr ""
+
+msgid "Local Currency"
+msgstr "現地通貨"
+
+msgid "Summary Report"
+msgstr "概略報告"
+
+msgid "Detailed Report"
+msgstr "詳細報告"
+
+msgid "Enter a description..."
+msgstr "説明を入力します..."
+
+msgid "Download Report (CSV)"
+msgstr "ダウンロードレポート（CSV）"
+
+msgid "You must specify a currency"
+msgstr "あなたは、通貨を指定する必要があります"
+
+msgid "Incorect date format in From field"
+msgstr "Fromフィールドに日付書式をIncorect"
+
+msgid "Incorrect date format in To field"
+msgstr "Toフィールドに誤った日付形式"
+
+msgid "Your user does not exist in this DevConnect instance."
+msgstr "あなたのユーザーはこのDevConnectインスタンスに存在しません。"
+
+msgid "There is no data within this date range. Please try another date range"
+msgstr "この日付範囲内のデータはありません。別の日付の範囲を試してみてください"
+
+msgid ""
+"There was an error trying to download your report. Please try again, if the "
+"problem persists please contact your administrator."
+msgstr ""
+"あなたのレポートをダウンロードしようとするとエラーが発生しました。問題が解決"
+"しない場合は、もう一度試してください、あなたの管理者にお問い合わせください。"
+
+msgid "Billing Month"
+msgstr "請求月"
+
+msgid "Search Billing Documents"
+msgstr "検索請求伝票"
+
+msgid "Go"
+msgstr "行く"
+
+msgid "Could not retrieve billing documents. Please try again later"
+msgstr "請求伝票を取得できませんでした。後でもう一度試してください"
+
+msgid ""
+"Error while trying to serve your Billing Document. Please try again later."
+msgstr ""
+"エラーあなたの請求伝票を提供しようとしているとき。後ほどおかけ直しください。"
+
+msgid "Company Profile"
+msgstr "会社概要"
+
+msgid "Contact Info"
+msgstr "情報に連絡"
+
+msgid "Bank &amp; Finance"
+msgstr "銀行＆ファイナンス"
+
+msgid "Terms &amp; Conditions"
+msgstr "利用規約"
+
+msgid "Manage User Roles"
+msgstr "ユーザロールの管理"
+
+msgid "Company Details"
+msgstr "会社情報"
+
+msgid "Legal Company Name"
+msgstr "法的会社名"
+
+msgid "Company Reg. Number"
+msgstr "会社レッグ。数"
+
+msgid "Billing Address"
+msgstr "請求先住所"
+
+msgid "Street Address 1"
+msgstr "住所1"
+
+msgid "Street Address 2"
+msgstr "住所2"
+
+msgid "Country"
+msgstr "カントリー"
+
+msgid "Select Country"
+msgstr "国を選択"
+
+msgid "State\\Province"
+msgstr ""
+
+msgid "City"
+msgstr "都市"
+
+msgid "Zip/Postal Code"
+msgstr "郵便番号"
+
+msgid "Billing Type"
+msgstr "請求タイプ"
+
+msgid "Contact Name"
+msgstr "名前にお問い合わせください"
+
+msgid "@first_name @last_name"
+msgstr ""
+
+msgid "Telephone Number"
+msgstr "電話番号"
+
+msgid "Email Address"
+msgstr "メールアドレス"
+
+msgid "VAT &amp; Tax Details"
+msgstr "VATと税詳細"
+
+msgid "Are you registered for Tax/VAT?"
+msgstr "あなたは税/付加価値税（VAT）に登録されていますか？"
+
+msgid "VAT/Tax Number"
+msgstr "VAT /消費税数"
+
+msgid ""
+"If you are registered for Tax/VAT, then you must enter your VAT/Tax number"
+msgstr ""
+"あなたは税/ VATのために登録している場合は、あなたの付加価値税/税番号を入力す"
+"る必要があります"
+
+msgid "Your Company Profile Info has been saved."
+msgstr "企業プロファイル情報が保存されました。"
+
+msgid "Bank Details"
+msgstr "銀行の詳細"
+
+msgid "Account Info"
+msgstr "アカウント情報"
+
+msgid "Bank Name"
+msgstr "銀行名"
+
+msgid "Account Name"
+msgstr "アカウント名"
+
+msgid "Account Number"
+msgstr "口座番号"
+
+msgid "Currency"
+msgstr "通貨"
+
+msgid "- Select currency -"
+msgstr "- 通貨を選択してください -"
+
+msgid "Sort Code"
+msgstr "分類コード"
+
+msgid "ABA/Routing Number"
+msgstr "ABA/ルーティング番号"
+
+msgid "BIC/Swiff Code"
+msgstr "BIC/読みますコード"
+
+msgid "IBAN"
+msgstr "IBAN"
+
+msgid ""
+"Acount Number must be a numeric value with no decimals and no trailing "
+"spaces either."
+msgstr ""
+"乗法番号のどちらかがない小数およびno末尾のスペースを数値でなければなりませ"
+"ん。"
+
+msgid "Your Bank Details have been save."
+msgstr "あなたの銀行の詳細は、保存されている。"
+
+msgid "Your operation could not be completed. Please try again later."
+msgstr "あなたの操作を完了できませんでした。後ほどおかけ直しください。"
+
+msgid "<div style=\"font-style:italic\" title=\"This is you\"><h4>"
+msgstr ""
+
+msgid "Operation completed successfully."
+msgstr "操作が正常に完了しました。"
+
+msgid ""
+"Your operation could not complete. Please contact your administrator if "
+"problem persists."
+msgstr ""
+"あなたの操作は完了できませんでした。問題が解決しない場合は、管理者に問い合わ"
+"せてください。"
+
+msgid "Username"
+msgstr "ユーザー名"
+
+msgid "Admin"
+msgstr "管理"
+
+msgid "Finance"
+msgstr "ファイナンス"
+
+msgid "Developer"
+msgstr "開発者"
+
+msgid "Your company has no developers assigned."
+msgstr "あなたの会社は割り当てられ、開発者を持っていません。"
+
+msgid "Enter User Email Address"
+msgstr "ユーザーの電子メールアドレスを入力してください"
+
+msgid "Add User"
+msgstr "ユーザーの追加"
+
+msgid ""
+"You cannot add developers to your company since you are added to another "
+"company."
+msgstr ""
+"あなたが別の会社に追加されるので、あなたはあなたの会社に、開発者を追加するこ"
+"とはできません。"
+
+msgid "You cannot add your own user to your company."
+msgstr "あなたの会社に独自のユーザーを追加することはできません。"
+
+msgid "User with email @mail does not exist."
+msgstr "メール@メールを持つユーザーが存在しません。"
+
+msgid "You can not add this developer since it is already assigned."
+msgstr ""
+"それが既に割り当てられているので、この開発者を追加することはできません。"
+
+msgid "Developer @developer added to your company."
+msgstr ""
+
+msgid "There was an error trying to add @developer to your company"
+msgstr ""
+
+msgid "Developer @developer removed from your company."
+msgstr ""
+
+msgid "There was an error trying to remove @developer from your company"
+msgstr ""
+
+msgid "Accept Terms & Conditions"
+msgstr "利用規約を受け入れ"
+
+msgid "You have accepted terms and conditions successfully."
+msgstr "を正常の条件を受け入れた。"
+
+msgid "Error while trying to accept TnCs. Please try again later."
+msgstr ""
+"エラーTNCSを受け入れるようにしようとしているとき。後ほどおかけ直しください。"
+
+msgid "Devconnect Monetization Organization"
+msgstr "収益化組織Devconnect"
+
+msgid ""
+"The Monetization organization name. Changing this value could make parts of "
+"your site not work."
+msgstr ""
+"収益化の組織名。この値を変更すると、あなたのサイトの一部が機能しないことがで"
+"きました。"
+
+msgid "Default Monetization Role"
+msgstr "デフォルトの収益化の役割"
+
+msgid "Monetization Endpoint"
+msgstr "収益化のエンドポイント"
+
+msgid "URL to which to make Apigee Monetization REST calls."
+msgstr "URL Apigee収益化のREST呼び出しを行うために。"
+
+msgid "Authentication for the Monetization Endpoint"
+msgstr "収益化エンドポイントの認証"
+
+msgid ""
+"Will be used to authenticate with the Monetization endpoint. Separate the "
+"Username and Password with a colon (e.g. \"guest:secret\")."
+msgstr ""
+
+msgid "Enable test user"
+msgstr "テストユーザーを有効にする"
+
+msgid "Epoint will be hit with test user instead of user currently logged in."
+msgstr ""
+"Epointはテストユーザーでヒットの代わりに、ユーザーが現在ログインされます"
+
+msgid "Test user email for testing purposes"
+msgstr "テストのためにテストユーザーのメール"
+
+msgid "Will be used as test user in endpoint."
+msgstr "エンドポイントでのテストユーザーとして使用されます。"
+
+msgid "Display error messages returned by Monetization Endpoint"
+msgstr "収益化エンドポイントによって返されたエラーメッセージを表示します"
+
+msgid "Will display Monetization Endpoint error messages as warnings."
+msgstr "警告として収益化エンドポイントのエラー·メッセージが表示されます。"
+
+msgid "Catalog & Plans"
+msgstr "カタログ·計画"
+
+msgid "You need to complete !link in order to purchase a plan."
+msgstr "あなたは完了する必要があります！リンクを計画を購入するためである。"
+
+msgid "No plans were found for package <strong>@display_name</strong>"
+msgstr ""
+"いいえプランはパッケージのある[@ DISPLAY_NAME</ strong>のが見つけられませんで"
+"した"
+
+msgid "Terms and Conditions"
+msgstr "諸条件"
+
+msgid "You must accept !link before purchasing a plan."
+msgstr "あなたが受け入れなければならない！リンクを計画を購入する前に。"
+
+msgid "Package Details: !package"
+msgstr "パッケージの詳細：パッケージ"
+
+msgid " for "
+msgstr "のために"
+
+msgid " per developer category"
+msgstr "開発者カテゴリごと"
+
+msgid " per "
+msgstr "当たり"
+
+msgid " per monetization package"
+msgstr "収益化パッケージごと"
+
+msgid " per product"
+msgstr "製品ごと"
+
+msgid " per sub organization"
+msgstr "サブ組織ごと"
+
+msgid " per user"
+msgstr "ユーザーごと"
+
+msgid " (rolling month)"
+msgstr "（ローリング月）"
+
+msgid " per transaction"
+msgstr "トランザクションあたりの"
+
+msgid " Volume of transactions"
+msgstr "取引量"
+
+msgid " in "
+msgstr "で"
+
+msgid " every "
+msgstr "すべての"
+
+msgid "s"
+msgstr "s"
+
+msgid "pro-rated"
+msgstr "日割り"
+
+msgid "in advance"
+msgstr "あらかじめ"
+
+msgid "in arrears"
+msgstr "滞納して"
+
+msgid "up to "
+msgstr "まで"
+
+msgid " transactions "
+msgstr "取引"
+
+msgid "Unlimited "
+msgstr "無制限の"
+
+msgid " for the first "
+msgstr "最初にのために"
+
+msgid " first "
+msgstr "最初"
+
+msgid " per location organization/operator"
+msgstr "場所組織/オペレータごと"
+
+msgid "<h3>Purchase @name</h3>"
+msgstr "<H3>購入@名</ H3>"
+
+msgid ""
+"<p>Any API products contained within this package will be available after "
+"the start date of your plan.</p><br>"
+msgstr ""
+"このパッケージ内に含まれて<P>すべてのAPI製品は、あなたの計画の開始日後に利用"
+"できるようになります。</ P>検索"
+
+msgid "<strong>Select a start date for this plan</strong><br>"
+msgstr ""
+
+msgid "Select a start date..."
+msgstr "開始日を選択してください..."
+
+msgid "Purchase This Plan"
+msgstr "このプランを購入"
+
+msgid "Invalid or blank start date. Please select a start date for this plan."
+msgstr "無効または空白の開始日。この計画の開始日を選択してください。"
+
+msgid "@package, @plan has been purchased."
+msgstr ""
+
+msgid "<h4>Additional products:</h4><ul>"
+msgstr ""
+
+msgid "<h4>Excluded products:</h4><ul>"
+msgstr ""
+
+msgid "<h4>Conflicting products:</h4><ul>"
+msgstr ""
+
+msgid ""
+"The plans below share some common products with the plan you are trying to "
+"purchase. However if you continue to purchase then these plans will be "
+"replaced by the plan you are about to purchase.<br />"
+msgstr ""
+"以下の計画は、あなたが購入しようとしている計画といくつかの一般的な製品を共有"
+"しています。あなたが購入し続けるしかし場合、これらの計画は、あなたが購入しよ"
+"うとしている計画に置き換えられます。"
+
+msgid "Plan \"@plan_name\" conflicts with others"
+msgstr ""
+
+msgid "Purchase"
+msgstr "購入"
+
+msgid "<h3>End @plan</h3>"
+msgstr ""
+
+msgid ""
+"<p>Ending a plan will result in loss of access to the API Products contained "
+"within this plan. All keys will be revoked to these API Products upon the "
+"end selected below.</p><br>"
+msgstr ""
+
+msgid "<strong>Select an end date</strong><br>"
+msgstr ""
+
+msgid "Select an end date..."
+msgstr "終了日を選択してください..."
+
+msgid "End This Plan"
+msgstr "この計画を終わらせる"
+
+msgid ""
+"Plan is scheduled to end at end of @date, and any refunds will be triggered "
+"at that point"
+msgstr ""
+"本プランは、日付の末尾に終了する予定されており、任意の払い戻しは、その時点で"
+"トリガーされます"
+
+msgid ""
+"<div id=\"dialog-modal\" title=\"Purchase plan first\" style=\"display:none;"
+"\"><p></p></div>"
+msgstr ""
+
+msgid ""
+"Product@plural @products is part of a monetized package. You need to "
+"purchase a plan from the Catalog before you can access this product. If you "
+"do not have the rights to purchase please contact someone with an admin or "
+"finance role."
+msgstr ""
+
+msgid ""
+"This product is part of a monetized package. You need to purchase a plan "
+"from the Catalog before you can access this product. If you do not have the "
+"rights to purchase please contact someone with an admin or finance role."
+msgstr ""
+"この製品は、貨幣化パッケージの一部です。あなたはこの製品にアクセスする前にカ"
+"タログからプランを購入する必要があります。あなたが購入する権利を持っていない"
+"場合はadminまたは金融の役割を持つ誰かに連絡してください。"
+
+msgid "Access Monetization"
+msgstr "アクセス収益化"
+
+msgid "Access to Catalogs & Plans."
+msgstr "カタログ·計画へのアクセス。"
+
+msgid "Purchase plan"
+msgstr "プランを購入"
+
+msgid "Allows a user to purchase a plan."
+msgstr "ユーザーがプランを購入することができます。"
+
+msgid "Delete plan"
+msgstr "プランを削除"
+
+msgid "Allows a user to delete a plan."
+msgstr "ユーザーがプランを削除することができます。"
+
+msgid "End a plan"
+msgstr "計画を終了"
+
+msgid "Allows a user to end a plan."
+msgstr "ユーザーが計画を終了することができます。"
+
+msgid "Edit Company Profile"
+msgstr "企業プロフィールを編集"
+
+msgid ""
+"Edit Company profile, Bank details, Terms & Conditions and Manage User Roles."
+msgstr "会社概要、銀行の詳細、利用規約を編集して、ユーザロールを管理します。"
+
+msgid "Edit Bank Details"
+msgstr "銀行の詳細を編集"
+
+msgid "Allow a developer to edit company bank details."
+msgstr "開発者は、会社の銀行の詳細を編集することができます。"
+
+msgid "View Terms & Conditions"
+msgstr "利用規約を見る"
+
+msgid "View organization's Terms & Conditions."
+msgstr "組織の規約を表示します。"
+
+msgid "Grant a user to accept an organization's T&Cs on behalf of the company."
+msgstr "会社を代表して、組織のT＆Csのを受け入れるようユーザーに付与します。"
+
+msgid "Edit monetization developers' roles"
+msgstr "収益化の開発者の役割を編集"
+
+msgid ""
+"Allow a user to edit monetization developers' roles and add developers to a "
+"company."
+msgstr ""
+"ユーザーが収益化の開発者の役割を編集して、企業に開発者を追加することができま"
+"す。"
+
+msgid "Top up balance"
+msgstr "トップアップ·バランス"
+
+msgid "Allow developer to top up balance."
+msgstr "開発者はバランスを上積みすることができます。"
+
+msgid "Access prepaid reports"
+msgstr "プリペイドレポートにアクセス"
+
+msgid "Allow a user to access prepaid reports."
+msgstr "ユーザがプリペイドのレポートへのアクセスを許可します。"
+
+msgid "Download prepaid report"
+msgstr "プリペイドのレポートをダウンロードする"
+
+msgid "Allow a developer to download a prepaid report."
+msgstr "プリペイドのレポートをダウンロードするために、開発者を許可する。"
+
+msgid "Download revenue report"
+msgstr "収入報告書をダウンロード"
+
+msgid "Allow a user to download a revenue report."
+msgstr "ユーザーが収入レポートをダウンロードすることができます。"
+
+msgid "Download billing documents"
+msgstr "請求伝票をダウンロード"
+
+msgid "Allow a user to download a billing document."
+msgstr "ユーザーが請求伝票をダウンロードすることができます。"
+
+msgid "Access Billing & Reports section"
+msgstr "アクセス課金＆レポート]セクション"
+
+msgid "Can download reports and top up balance."
+msgstr "レポートやトップアップ·バランスをダウンロードすることができます。"
+
+msgid "List company applications"
+msgstr "リストの会社のアプリケーション"
+
+msgid "Allow a developer to list applications on behalf of the company."
+msgstr "会社に代わってアプリケーションを一覧表示するために、開発者を許可する。"
+
+msgid "View company application details"
+msgstr "企業アプリケーションの詳細を表示"
+
+msgid ""
+"Allow a developer to view an application details on behalf of the company."
+msgstr "開発者が会社に代わってアプリケーションの詳細を表示することができます。"
+
+msgid "Create company applications"
+msgstr "会社のアプリケーションを作成する"
+
+msgid "Allow a developer to create an application on behalf of the company."
+msgstr "会社に代わってアプリケーションを作成する開発者を許可する。"
+
+msgid "Edit company applications"
+msgstr "会社のアプリケーションを編集"
+
+msgid "Allow a developer to edit an application on behalf of the company."
+msgstr "開発者が会社に代わってアプリケーションを編集することができます。"
+
+msgid "Remove company applications"
+msgstr "会社のアプリケーションを削除"
+
+msgid "Allow a developer to remove an application on behalf of the company."
+msgstr "会社に代わってアプリケーションを削除するために、開発者を許可する。"
+
+msgid "Add application product"
+msgstr "応用製品を追加する"
+
+msgid ""
+"Callback access control for validation when a users creates or edits an app, "
+"this should always be enabled for monetization users."
+msgstr ""
+"検証のコールバックのアクセス制御は、ユーザーが作成またはアプリケーションを編"
+"集するとき、これは常に収益化ユーザーのために有効にする必要があります。"
+
+msgid "Your plan has been removed."
+msgstr "あなたの計画が削除されました。"
+
+msgid ""
+"Could not delete developer rate plan. Either does not exists or start and "
+"end dates not in the future"
+msgstr ""
+"開発者の料金プランを削除できませんでした。存在するか、開始と終了は、将来には"
+"ない日付はありませんどちらか"
+
+msgid "Could not complete the operation. Please try again later."
+msgstr "操作を完了できませんでした。後ほどおかけ直しください。"
+
+msgid "You have topped up @amount @currency to your balance."
+msgstr "あなたの残高に@量の@通貨を補充している。"
+
+msgid "@package, @plan_name has been purchased."
+msgstr ""
+
+msgid ""
+"Your current balance is not enough to purchase plan @plan_name from package "
+"@package."
+msgstr ""
+
+msgid "Monetization"
+msgstr "収益化"
+
+msgid "Packages"
+msgstr "パッケージ"
+
+msgid "Confirm Override Plan"
+msgstr "計画を上書き確認"
+
+msgid "Billing"
+msgstr "請求"
+
+msgid "Download Report"
+msgstr "レポートのダウンロード"
+
+msgid "Get Developers For Autocomplete"
+msgstr "オートコンプリートのために開発者を取得する"
+
+msgid "Create Revenue Report"
+msgstr "収益レポートの作成"
+
+msgid "Get Products Accepted By Developer"
+msgstr "製品開発者によって受け入れられ得る"
+
+msgid "Get Billing Document"
+msgstr "請求伝票を取得"
+
+msgid "Company Id"
+msgstr "企業ID"
+
+msgid "Is Broker"
+msgstr "ブローカーです"
+
+msgid "Registration Id"
+msgstr "登録イド"
+
+msgid "Approximated Tax Rate"
+msgstr "近似 税率"
+
+msgid "Developer Legal Name"
+msgstr "開発正式名称"
+
+msgid "Developer Type"
+msgstr "開発者タイプ"
+
+msgid "Billing Profile"
+msgstr "請求プロファイル"
+
+msgid "Has Self Billing"
+msgstr "自己請求があり"
+
+msgid "Supported Currency"
+msgstr "サポートされている通貨"
+
+msgid "Developer Phone"
+msgstr "開発者電話"
+
+msgid "Developer Address"
+msgstr "開発者住所"
+
+msgid "Developer Category"
+msgstr "開発者カテゴリ"
+
+msgid "Developer Roles"
+msgstr "開発者の役割"
+
+msgid "Developer Report Preferences"
+msgstr "開発者レポート設定"
+
+msgid "Monetization features."
+msgstr "収益化機能。"
+
+msgid "Monetization features are not available, please contact Apigee support."
+msgstr "収益化の機能は利用できません、Apigeeサポートにお問い合わせください。"
+
+msgid "DevConnect Monetization"
+msgstr "収益化をDevConnect"
+
+msgid "Provides connection to Apigee's monetization services API"
+msgstr "Apigeeの収益化サービスAPIへの接続を提供"
+
+msgid ""
+"Developer %developer with %email has topped up %amount %currency to his "
+"balance and updated Mint back end."
+msgstr ""
+
+msgid ""
+"There was an error trying to complete your transaction. Please contact your "
+"adminstrator."
+msgstr ""
+"あなたのトランザクションを完了しようとするエラーが発生しました。あなたの"
+"Adminstratorはお問い合わせください。"
+
+msgid ""
+"Developer %developer with %email has topped up %amount %currency to his "
+"balance but is pending for authorization no update to Mint back end has been "
+"performed."
+msgstr ""
+
+msgid "Your top up for @amount @currency is pending for authorization."
+msgstr ""
+
+msgid ""
+"Developer %developer with %email has failed or was rejected top up %amount "
+"%currency to his balance."
+msgstr ""
+
+msgid "Your top up for @amount @currency has failed or was rejected."
+msgstr ""
+
+msgid "Plan @plan from package @package has been purchased by @developer."
+msgstr ""
+
+msgid ""
+"Developer %developer with %email has topped up %amount %currency on behalf "
+"of @company_id's balance and updated Mint back end."
+msgstr ""
+
+msgid ""
+"checkout_complete fired with order deteails: \r\n"
+" %order"
+msgstr ""
+
+msgid "DevConnect Monetization Payment"
+msgstr "収益化の支払いDevConnect"
+
+msgid ""
+"Provides connection between Apigee's monetization services and Worldpay "
+"System to allow admin developers to Top Up their balance"
+msgstr ""
+"Apigeeの収益化サービスとWorldPayのシステムとの間の接続は、管理者、開発者が彼"
+"らのバランスを上積みできるように提供しています"
+
+msgid "Download"
+msgstr "ダウンロード"
+
+msgid "Devconnect User Interface"
+msgstr "ユーザーインターフェイスDevconnect"
+
+msgid "Provides universal devconnect styles and theming"
+msgstr "ユニバーサルdevconnectスタイルとテーマ設定を提供しています"
+
 msgid "Administer DevConnect Developers."
 msgstr "DevConnect開発を管理します。"
 
-#: devconnect_user/devconnect_user.module:17
 msgid "Perform administration tasks for Apigee DevConnect Developers."
 msgstr "Apigee DevConnect開発者のための管理タスクを実行します。"
 
-#: devconnect_user/devconnect_user.module:60
+msgid "Redirect Settings"
+msgstr "設定をリダイレクト"
+
+msgid "Enable user login redirect path."
+msgstr "ユーザのログインパスをリダイレクト有効にします。"
+
+msgid "Redirect Path"
+msgstr "パスのリダイレクト"
+
+msgid "Save Configuration"
+msgstr "設定の保存"
+
+msgid ""
+"The path '@link_path' is either invalid or you do not have access to it."
+msgstr ""
+
 msgid "Home"
-msgstr "自宅"
+msgstr "ホーム"
 
-#: devconnect_user/devconnect_user.module:85
 msgid "I agree to the <a href=\"@url\" target=\"_blank\">Terms of Use</a>"
-msgstr "同意します <a href=\"@url\" target=\"_blank\">利用規約</a>"
+msgstr ""
 
-#: devconnect_user/devconnect_user.module:115
+msgid "Terms & Conditions URL"
+msgstr "利用規約URL"
+
+msgid ""
+"The URL of the Terms & Conditions page. Omit hostname and leading slash."
+msgstr "利用規約ページのURL。ホスト名と先頭のスラッシュを省略します。"
+
 msgid "User attributes to be persisted to KMS"
-msgstr "ユーザー属性は、キー·マネージャー·サーバーに永続化することができます。"
+msgstr "ユーザー属性はKMSに永続化される"
 
-#: devconnect_user/devconnect_user.module:31
+msgid "Persist attribute in KMS?"
+msgstr "KMSの属性を永続？"
+
+msgid "KMS Attribute Name"
+msgstr "KMS属性名"
+
+msgid "If Attribute Is Empty"
+msgstr "属性が空の場合"
+
+msgid "Send Default Value"
+msgstr "デフォルト値を送信"
+
+msgid "Send NULL"
+msgstr "NULLを送信"
+
+msgid "Send Empty String"
+msgstr "空の文字列を送信する"
+
+msgid "Do Not Send"
+msgstr "送信しない"
+
+msgid "Convert to true|false string"
+msgstr "trueに変換|偽の文字列を"
+
+msgid "Value to be sent to KMS will be set as (field_value ? 'true' : 'false')"
+msgstr ""
+
+msgid ""
+"An error occurred while trying to @action this user. Please try again later."
+msgstr ""
+
+msgid "Status: @code @status"
+msgstr ""
+
+msgid "Sync Developer With DevConnect"
+msgstr "DevConnectと同期開発"
+
+msgid "No users were synced."
+msgstr "いいえユーザーが同期されませんでした。"
+
+msgid "Tokens related to developers"
+msgstr "開発に関連するトークン"
+
+msgid "Apps"
+msgstr "アプリ"
+
+msgid "List of all Apps owned by this developer."
+msgstr "この開発者が所有するすべてのアプリのリスト。"
+
+msgid "Developer User ID"
+msgstr "開発者ユーザーID"
+
+msgid "Drupal User ID (uid) of this developer."
+msgstr "この開発者のDrupalのユーザーID（UID）。"
+
+msgid "Email address associated with this developer."
+msgstr "この開発者に関連付けられた電子メールアドレス。"
+
+msgid "Developer ID"
+msgstr "開発者ID"
+
+msgid "Developer ID (internal to KMS) for this developer."
+msgstr "この開発者のための開発者ID（KMSへの内部）。"
+
+msgid "Developer’s first name."
+msgstr "開発者のファーストネーム。"
+
+msgid "Developer’s last name."
+msgstr "開発者の姓。"
+
+msgid "User Name"
+msgstr "ユーザー名"
+
+msgid "Developer’s Drupal username."
+msgstr "開発者Drupalのユーザ名。"
+
+msgid "Status of this developer."
+msgstr "この開発者のステータス。"
+
+msgid "Timestamp at which the developer profile was created in KMS."
+msgstr "スタンプれる開発者プロファイルがKMSで作成されました。"
+
+msgid "Timestamp at which the developer profile was modified in KMS."
+msgstr "スタンプれる開発者プロファイルはKMSに変更されました。"
+
+msgid "Developer Profile URL"
+msgstr "開発者プロフィールURL"
+
+msgid "URL on this site where the developer’s profile may be viewed."
+msgstr "開発者のプロフィールが表示され、このサイト上のURL。"
+
+msgid "@type Drupal user @name (@mail) created with uid @uid"
+msgstr ""
+
+msgid "Administrative"
+msgstr "行政の"
+
+msgid "Ordinary"
+msgstr "一般"
+
+msgid "Drupal user @name not created."
+msgstr ""
+
+msgid "All developers are in sync."
+msgstr "すべての開発者が同期している。"
+
 msgid "DevConnect Developer Sync"
 msgstr "DevConnect開発同期"
 
-#: devconnect_user/devconnect_user.module:39
+msgid "DevConnect User Settings"
+msgstr "ユーザー設定をDevConnect"
+
 msgid "DevConnect User Attributes"
 msgstr "ユーザー属性をDevConnect"
 
-#: devconnect_user/devconnect_user.info:0
 msgid "DevConnect User"
 msgstr "ユーザーDevConnect"
 
-#: devconnect_user/devconnect_user.info:0
 msgid "Extra Field for User Entity"
 msgstr "Userエンティティのための余分なフィールド"
 
-#: devconnect_validate/devconnect_validate.module:8
 msgid "DevConnect validate"
 msgstr "検証をDevConnect"
 
-#: devconnect_validate/devconnect_validate.info:0
 msgid "Devconnect Validation Module"
 msgstr "検証モジュールDevconnect"
 
-#: devconnect_validate/devconnect_validate.info:0
 msgid "Responses for build servers to verify builds"
 msgstr "ビルドを確認するためにサーバを構築するための応答"
 
-#: devconnect_wadl/devconnect_wadl.module:37
 msgid "API Resources"
-msgstr "アプリケーション·プログラミング·インターフェースリソース"
+msgstr "APIリソース"
 
-#: devconnect_wadl/devconnect_wadl.info:0
 msgid "Devconnect WADL documentation parser"
 msgstr "WADLドキュメントパーサーをDevconnect"
 
-#: devconnect_wadl/devconnect_wadl.info:0
 msgid "Parses WADL JSON files and generates documentation."
 msgstr "WADL JSONファイルを解析し、ドキュメントを生成します。"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:158
 msgid "Message Count - First 24 Hours"
 msgstr "メッセージ数 - 最初の24時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:159
 msgid "Message Count - Second 24 Hours"
 msgstr "メッセージ数 - 第24時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:161
 msgid "Error Count - First 24 Hours"
 msgstr "エラーカウント - 最初の24時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:163
 msgid "User Count - First 24 Hours"
 msgstr "ユーザーカウント - 最初の24時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:164
 msgid "Total Response Time"
 msgstr "合計応答時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:165
 msgid "Maximum Response Time"
 msgstr "最大応答時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:166
 msgid "Minimum Response Time"
 msgstr "最小応答時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:179
 msgid "Second"
-msgstr "セカンド"
+msgstr "2番目の"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:180
 msgid "Minute"
 msgstr "分"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:181
 msgid "Hour"
-msgstr "アワー"
+msgstr "時間"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:182
 msgid "Day"
 msgstr "デイ"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:183
 msgid "Week"
 msgstr "週"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:184
 msgid "Month"
 msgstr "月"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:185
 msgid "Quarter"
 msgstr "四半期"
 
-#: lib/Apigee/ManagementAPI/DeveloperAppAnalytics.php:186
 msgid "Year"
 msgstr "年"

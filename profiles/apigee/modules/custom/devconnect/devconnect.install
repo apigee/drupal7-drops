@@ -59,6 +59,10 @@ function devconnect_install() {
   if ($role) {
     user_role_grant_permissions($role->rid, array('administer organization settings'));
   }
+  $role = user_role_load_by_name('Administrator');
+  if ($role) {
+    user_role_grant_permissions($role->rid, array('administer organization settings'));
+  }
 }
 
 /**

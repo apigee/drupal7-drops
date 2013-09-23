@@ -17,28 +17,28 @@
 <div class="api-credentials-list">
 
   <div class="api-credentials-list-item-container api-credentials-list-apiproduct">
-    <div class="api-credentials-list-item-caption">API Product:&nbsp;</div>
+    <div class="api-credentials-list-item-caption"><?php print t('API Product'); ?>:&nbsp;</div>
     <?php foreach ($credentials->apiproducts as $apiproduct): ?>
       <div class="api-credentials-list-item"><?php print check_plain($apiproduct); ?></div>
     <?php endforeach; ?>
   </div>
 
   <div class="api-credentials-list-item-container api-credentials-list-status">
-    <div class="api-credentials-list-item-caption">Status:&nbsp;</div>
+    <div class="api-credentials-list-item-caption"><?php print t('Status'); ?>:&nbsp;</div>
     <?php foreach ($credentials->statuses as $status): ?>
     <div class="api-credentials-list-item"><?php print check_plain($status); ?></div>
     <?php endforeach; ?>
   </div>
 
   <div class="api-credentials-list-item-container api-credentials-list-consumer-key">
-    <div class="api-credentials-list-item-caption">Consumer Key:&nbsp;</div>
+    <div class="api-credentials-list-item-caption"><?php print t('Consumer Key'); ?>:&nbsp;</div>
     <?php foreach ($credentials->consumer_keys as $key): ?>
     <div class="api-credentials-list-item"><?php print check_plain($key); ?></div>
     <?php endforeach; ?>
   </div>
 
   <div class="api-credentials-list-item-container api-credentials-list-secret-key">
-    <div class="api-credentials-list-item-caption">Secret Key:&nbsp;</div>
+    <div class="api-credentials-list-item-caption"><?php print t('Secret Key'); ?>:&nbsp;</div>
     <?php foreach ($credentials->secret_keys as $key): ?>
     <div class="api-credentials-list-item"><?php print check_plain($key); ?></div>
     <?php endforeach; ?>

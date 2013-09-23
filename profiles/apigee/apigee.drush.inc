@@ -211,6 +211,9 @@ if (!function_exists("apigee_drush_command")) {
   }
   
   function apigee_portal($orgname = null) {
+    
+    // TODO:check for terminus
+    
     if ($orgname == null) {
       return drush_set_error('DRUPAL_NO_ORGNAME', dt('You must specify an orgname to create a site.'));
     }
@@ -224,8 +227,25 @@ if (!function_exists("apigee_drush_command")) {
     }
     drush_invoke("psite-create", array($orgname));
     drush_invoke("pantheon-aliases");
-    // eval the new aliases file
+    drush_invoke("cc", array("drush"));
+    // get UUID of new site
+    
+    
+    // get accounts.apigee.com UN/PW
+    
+    // create devconnect 4g user
+    //curl https://api.enterprise.apigee.com/v1/o/{org}/users -X POST -d '{"emailId":"tomstovall@gail.com","firstName":"Tom","lastName":"Stovall","password":"4G26AsTwBK9T1tTO1Si1kpbA=="}' -H "content-type: application/json"
+    
+    
+    //authorize devconnect 4g user
+    //curl 'https://api.enterprise.apigee.com/v1/o/{org}/users/tomstovall@gail.com/userroles' -X POST -d '{"role":[{"name":"orgadmin","organization":"zygot"}],"user":{"emailId":"tomstovall@gail.com","firstName":"Tom","lastName":"Stovall","password":"4G26AsTwBK9T1tTO1Si1kpbA=="}}' -H "content-type: application/json"
+    
     //drush_invoke_process("site-install", array("apigee"), "");
+    //apigee_install_api_endpoint.devconnect_org=blah
+    // apigee_install_api_endpoint.devconnect_endpoint='https://api.enterprise.apigee.com/v1'
+    // apigee_install_api_endpoint.devconnect_curlauth='username:password'
+    
+
     
     
   }

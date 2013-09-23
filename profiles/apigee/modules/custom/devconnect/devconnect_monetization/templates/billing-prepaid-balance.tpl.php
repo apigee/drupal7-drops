@@ -37,7 +37,7 @@
           <td>
             <?php print sprintf('%.2f', $balance->currentBalance); ?>
             <?php if ($download_prepaid_report_perm) : ?>&nbsp;&nbsp;
-              <?php print l('Balance Detail (CSV)', 'users/me/monetization/billing/billing/' . rawurlencode($balance->supportedCurrency->name) . '/' . rawurlencode(date('F-Y', time())), array('attributes' => array('style' => 'float:right'))); ?>
+              <?php print l(t('Balance Detail (CSV)'), 'users/me/monetization/billing/billing/' . rawurlencode($balance->supportedCurrency->name) . '/' . rawurlencode(date('F-Y', time())), array('attributes' => array('style' => 'float:right'))); ?>
             <?php endif; ?>
           </td>
         <?php if ($top_up_balance_perm) : ?>
