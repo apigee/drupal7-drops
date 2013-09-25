@@ -129,8 +129,9 @@ function mass_contact_mail_page($form, $form_state) {
     // Add the field for specifying the category(ies).
     if ((count($categories) > 1) || !isset($default_category)) {
       // Display a choice when one is needed.
+      $field_type = variable_get('mass_contact_category_display', 'select');
       $form['cid'] = array(
-        '#type' => 'select',
+        '#type' => $field_type,
         '#title' => t('Category'),
         '#default_value' => $default_category,
         '#options' => $categories,
@@ -544,12 +545,14 @@ function mass_contact_mail_page_submit($form, &$form_state) {
       $recipient_lists = $new_recipient_list;
     }
 
+    // Capture the rate limiting information.
+    $recipient_limit = variable_get('mass_contact_recipient_limit', 0);
+    $send_with_cron = variable_get('mass_contact_send_with_cron', 0);
+
     // Iterate through each recipient list.
     foreach ($recipient_lists as $category => $recipient_list) {
       // Only process this recipient list if it is not empty.
       if (count($recipient_list['recipients']) > 0) {
-        // If there's a recipient limit, break up recipient list.
-        $recipient_limit = variable_get('mass_contact_recipient_limit', 0);
         if (count($recipient_list['recipients']) > $recipient_limit && $recipient_limit != 0) {
           // Initialize still more variables.
           // The count of current recipients.
@@ -580,8 +583,26 @@ function mass_contact_mail_page_submit($form, &$form_state) {
               // possibly, Bcc fields.
               $to = _mass_contact_finalize_headers($bcc, implode(', ', $partial_list), $params, $from_address, $recipient_list['subject']);
 
-              // Send the message. Save the inverse of the result for tallying.
-              $send_error += !(_mass_contact_send_message('mail_page_' . $batch, $to, $params, $from_address, '[Success] Sent batch #' . $batch . '.'));
+              if (empty($send_with_cron)) {
+                // Send the message. Save the inverse of the result for tallying.
+                $send_error += !(_mass_contact_send_message('mail_page_' . $batch, $to, $params, $from_address, '[Success] Sent batch #' . $batch . '.'));
+              }
+              else {
+                // Create the queue.
+                $queue = new SystemQueue('mass_contact');
+
+                // Create the queue item.
+                $message = array(
+                  'message_key' => 'mail_page_' . $batch,
+                  'to' => $to,
+                  'params' => $params,
+                  'from_email' => $from_address,
+                  'success_message' => '[Success] Sent batch #' . $batch . '.',
+                );
+
+                // Add the item to the queue.
+                $queue->createItem($message);
+              }
 
               // Reset the variables.
               $partial_list = array();
@@ -595,8 +616,26 @@ function mass_contact_mail_page_submit($form, &$form_state) {
             // Bcc fields.
             $to = _mass_contact_finalize_headers($bcc, implode(', ', $partial_list), $params, $from_address, $recipient_list['subject']);
 
-            // Send the message. Save the inverse of the result for tallying.
-            $send_error += !(_mass_contact_send_message('mail_page_last', $to, $params, $from_address, '[Success] Sent the remainder.'));
+            if (empty($send_with_cron)) {
+              // Send the message. Save the inverse of the result for tallying.
+              $send_error += !(_mass_contact_send_message('mail_page_last', $to, $params, $from_address, '[Success] Sent the remainder.'));
+            }
+            else {
+              // Create the queue.
+              $queue = new SystemQueue('mass_contact');
+
+              // Create the queue item.
+              $message = array(
+                'message_key' => 'mail_page_last',
+                'to' => $to,
+                'params' => $params,
+                'from_email' => $from_address,
+                'success_message' => '[Success] Sent the remainder.',
+              );
+
+              // Add the item to the queue.
+              $queue->createItem($message);
+            }
           }
 
           $total_recipients = count($current_recipients);
@@ -642,14 +681,32 @@ function mass_contact_mail_page_submit($form, &$form_state) {
     if (!$send_error) {
       // If the sender requested a copy, send it.
       if (!empty($form_state['values']['copy']) && !$bcc) {
-        if (!_mass_contact_send_message('user-copy', $from_address, $params, $from_address, 'A copy was sent to you.')) {
-          // There was an error, so inform the user.
-          if (!module_exists('help')) {
-            drupal_set_message(t("A copy could not be sent to you. Check the logs for error messages. For more information, see the Troubleshooting secion of Mass Contact's !help page or README.txt.", array('!help' => l(t('help'), 'admin/help/mass_contact'))));
+        if (empty($recipient_limit) && empty($send_with_cron)) {
+          if (!_mass_contact_send_message('user-copy', $from_address, $params, $from_address, 'A copy was sent to you.')) {
+            // There was an error, so inform the user.
+            if (!module_exists('help')) {
+              drupal_set_message(t("A copy could not be sent to you. Check the logs for error messages. For more information, see the Troubleshooting secion of Mass Contact's !help page or README.txt.", array('!help' => l(t('help'), 'admin/help/mass_contact'))));
+            }
+            else {
+              drupal_set_message(t("A copy could not be sent to you. Check the logs for error messages. For more information, see the Troubleshooting secion of Mass Contact's README.txt."));
+            }
           }
-          else {
-            drupal_set_message(t("A copy could not be sent to you. Check the logs for error messages. For more information, see the Troubleshooting secion of Mass Contact's README.txt."));
-          }
+        }
+        else {
+          // Create the queue.
+          $queue = new SystemQueue('mass_contact');
+
+          // Create the queue item.
+          $message = array(
+            'message_key' => 'user-copy',
+            'to' => $from_address,
+            'params' => $params,
+            'from_email' => $from_address,
+            'success_message' => 'A copy was sent to you.',
+          );
+
+          // Add the item to the queue.
+          $queue->createItem($message);
         }
       }
 
@@ -1139,39 +1196,6 @@ function _mass_contact_finalize_headers($bcc, $recipients, &$params, $from_email
   $params['subject'] = $subject;
 
   return $to;
-}
-
-
-/**
- * Sends the message.
- *
- * @param string $message_key
- *   A key to identify the email sent.
- * @param string $to
- *   To whom the message will be delivered.
- * @param array $params
- *   The message array.
- * @param string $from_email
- *   The message sender's email address.
- * @param string $success_message
- *   The message that will be displayed to the user, if sending is successful.
- *
- * @return boolean
- *   The result of the call to drupal_mail():
- *     The $message array structure containing all details of the message. If
- *     already sent ($send = TRUE), then the 'result' element will contain the
- *     success indicator of the email, failure being already written to the
- *     watchdog. (Success means nothing more than the message being accepted at
- *     php-level, which still doesn't guarantee it to be delivered.)
- */
-function _mass_contact_send_message($message_key, $to, &$params, $from_email, $success_message) {
-  $success = drupal_mail('mass_contact', $message_key, $to, language_default(), $params, $from_email);
-
-  if ($success['result']) {
-    drupal_set_message(t($success_message));
-  }
-
-  return $success['result'];
 }
 
 

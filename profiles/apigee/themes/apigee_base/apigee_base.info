@@ -69,8 +69,8 @@ exclude[css][] = 'modules/update/update.css'
 exclude[css][] = 'modules/user/user.css'
 
 
-; Information added by drush on 2013-09-23
+; Information added by drush on 2013-09-25
 version = "devconnect-dev"
 project = "apigee_base"
-datestamp = "1379977978"
+datestamp = "1380144267"
 
