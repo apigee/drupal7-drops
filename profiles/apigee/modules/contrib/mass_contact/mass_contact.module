@@ -380,6 +380,84 @@ function mass_contact_mail($key, &$message, $params) {
 
 
 /**
+ * Implements hook_cron_queue_info().
+ */
+function mass_contact_cron() {
+  // Get the Mass Contact queue, if there is one.
+  $queue = DrupalQueue::get('mass_contact');
+  // Get the next item in the queue.
+  $message = $queue->claimItem();
+  // If there are no items, nothing will happen.
+  if (!empty($message)) {
+    // Send the current message item.
+    _mass_contact_prepare_message_for_sending($message);
+    // Now that it is sent, delete it.
+    $queue->deleteItem($message);
+  }
+}
+
+
+/**
+ * This is for preparing a message that has been queued for sending.
+ *
+ * @param array $message
+ */
+function _mass_contact_prepare_message_for_sending($message) {
+  if (!empty($message)) {
+    _mass_contact_send_message(
+      $message->data['message_key'],
+      $message->data['to'],
+      $message->data['params'],
+      $message->data['from_email'],
+      $message->data['success_message']
+    );
+  }
+}
+
+
+/**
+ * Sends the message.
+ *
+ * @param string $message_key
+ *   A key to identify the email sent.
+ * @param string $to
+ *   To whom the message will be delivered.
+ * @param array $params
+ *   The message array.
+ * @param string $from_email
+ *   The message sender's email address.
+ * @param string $success_message
+ *   The message that will be displayed to the user, if sending is successful.
+ *
+ * @return boolean
+ *   The result of the call to drupal_mail():
+ *     The $message array structure containing all details of the message. If
+ *     already sent ($send = TRUE), then the 'result' element will contain the
+ *     success indicator of the email, failure being already written to the
+ *     watchdog. (Success means nothing more than the message being accepted at
+ *     php-level, which still doesn't guarantee it to be delivered.)
+ */
+function _mass_contact_send_message($message_key, $to, &$params, $from_email, $success_message) {
+  $success = drupal_mail('mass_contact', $message_key, $to, language_default(), $params, $from_email);
+
+  // Capture the rate limiting information.
+  $recipient_limit = variable_get('mass_contact_recipient_limit', 0);
+  $wait_time = variable_get('mass_contact_wait_time', 0);
+
+  if ($success['result']) {
+    if (empty($recipient_limit) && empty($wait_time)) {
+      drupal_set_message(t($success_message));
+    }
+    else {
+      watchdog('mass_contact', $success_message);
+    }
+  }
+
+  return $success['result'];
+}
+
+
+/**
  * Implements hook_ctools_plugin_type().
  */
 function mass_contact_ctools_plugin_type() {
