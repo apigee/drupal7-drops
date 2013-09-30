@@ -182,7 +182,7 @@ projects[apigee_sso][download][url]                            = "git@github.com
 libraries[ckeditor][destination]                               = "libraries"
 libraries[ckeditor][directory_name]                            = "ckeditor"
 libraries[ckeditor][download][type]                            = "get"
-libraries[ckeditor][download][url]                             = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%203.6.6/ckeditor_3.6.6.zip"
+libraries[ckeditor][download][url]                             = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.2.1/ckeditor_4.2.1_standard.zip"
 
 libraries[colorpicker][destination]                            = "libraries"
 libraries[colorpicker][directory_name]                         = "colorpicker"
