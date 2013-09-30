@@ -34,7 +34,7 @@ function devconnect_wadl_menu() {
   $items = array();
 
   $items['resources'] = array(
-    'title' => 'API Resources',
+    'title' => t('API Resources'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_wadl_provider_list'),
     'access callback' => TRUE,
@@ -95,9 +95,9 @@ function devconnect_wadl_resources($provider) {
   drupal_add_css(drupal_get_path('module', 'devconnect_wadl') . '/devconnect_wadl.css');
 
   $breadcrumb = array();
-  $breadcrumb[] = l('Home', '<front>');
-  $breadcrumb[] = l('Provider List', 'resources');
-  $breadcrumb[] = l(drupal_get_title(), base_path() . request_uri());
+  $breadcrumb[] = l(t('Home'), '<front>');
+  $breadcrumb[] = l(t('Provider List'), 'resources');
+  $breadcrumb[] = l(t(drupal_get_title()), base_path() . request_uri());
   drupal_set_breadcrumb($breadcrumb);
   $wadl_list = _devconnect_wadl_fetch_provider_list(TRUE);
   if (!isset($wadl_list[$provider])) {
@@ -199,8 +199,8 @@ function devconnect_wadl_provider_list() {
   }
 
   $breadcrumb = array();
-  $breadcrumb[] = l('Home', '<front>');
-  $breadcrumb[] = l(drupal_get_title(), base_path() . request_uri());
+  $breadcrumb[] = l(t('Home'), '<front>');
+  $breadcrumb[] = l(t(drupal_get_title()), base_path() . request_uri());
   drupal_set_breadcrumb($breadcrumb);
 
   $form['provider'] = array(

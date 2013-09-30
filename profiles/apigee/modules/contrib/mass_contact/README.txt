@@ -20,6 +20,7 @@ Here are a list of some of the features this module has:
  * You can send a message to one or more groups (referred to as categories) of
    users, which are specified by role.
  * Large recipient lists may be broken up into smaller chunks.
+ * The smaller chunks may be sent at later intervals, using cron.
  * The site administrator can control how many messages are allowed to be sent
    by a single person in an hour.
  * The message may be sent such that the recipients' email addresses are

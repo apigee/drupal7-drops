@@ -32,21 +32,21 @@ function devconnect_user_permission() {
 function devconnect_user_menu() {
   $items = array();
   $items['admin/people/sync'] = array(
-    'title' => 'DevConnect Developer Sync',
+    'title' => t('DevConnect Developer Sync'),
     'page callback' => 'devconnect_user_sync',
     'access arguments' => array('administer users'),
     'type' => MENU_LOCAL_TASK,
     'menu_name' => 'api_products',
   );
   $items['admin/config/people/devconnect/settings'] = array(
-    'title' => 'DevConnect User Settings',
+    'title' => t('DevConnect User Settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_settings_form'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items['admin/config/people/attributes'] = array(
-    'title' => 'DevConnect User Attributes',
+    'title' => t('DevConnect User Attributes'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_attributes_form'),
     'access arguments' => array('administer site configuration'),
@@ -144,7 +144,7 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       // Breadcrumb navigation
       $breadcrumb[] = l(t('Home'), NULL);
       $breadcrumb[] = l($form['#user']->name, 'user');
-      drupal_set_title('Edit Profile');
+      drupal_set_title(t('Edit Profile'));
       drupal_set_breadcrumb($breadcrumb);
 
       if (array_key_exists('picture', $form)) {

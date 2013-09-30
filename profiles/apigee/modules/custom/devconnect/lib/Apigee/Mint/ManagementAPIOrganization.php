@@ -11,7 +11,7 @@ use Apigee\Util\Cache as Cache;
  * Organization so we can cache it's response since it is somehow
  * more heavily used in this module
  */
-class ManagementAPIOrganization extends Apigee\ManagementAPI\Organization {
+class ManagementAPIOrganization extends \Apigee\ManagementAPI\Organization {
   public function load($org = NULL) {
 
     $org = isset($org) ? $org : $this->name;

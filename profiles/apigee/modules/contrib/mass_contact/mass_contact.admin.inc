@@ -299,14 +299,27 @@ function mass_contact_admin_settings_misc($form, $form_state) {
     '#description' => t('Information to show on the <a href="@form">Mass Contact page</a>.', array('@form' => url('mass_contact'))),
   );
 
+  // Rate limiting options.
+  $form['mass_contact_rate_limiting_options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Rate limiting options'),
+    '#description' => t('By combining the two options below, messages sent through this module will be queued to be sent drung cron runs. Keep in mind that if you set your number of recipients to be the same as your limit, messages from this or other modules may be blocked by your hosting provider.'),
+  );
   // The maximum number of users to send to at one time.
-  $form['mass_contact_recipient_limit'] = array(
+  $form['mass_contact_rate_limiting_options']['mass_contact_recipient_limit'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum number of recipients before splitting up the email'),
     '#size' => 10,
     '#default_value' => variable_get('mass_contact_recipient_limit', 0),
-    '#description' => t('This is a workaround for server-side limits on the number of recipients in a single mail message. Once this limit is reached, the recipient list will be broken up and multiple copies of the message will be sent out until all recipients receive the mail. Setting this to "0" will turn off this feature.'),
+    '#description' => t('This is a workaround for server-side limits on the number of recipients in a single mail message. Once this limit is reached, the recipient list will be broken up and multiple copies of the message will be sent out until all recipients receive the mail. Setting this to 0 (zero) will turn this feature off.'),
     '#required' => TRUE,
+  );
+  // The maximum number of users to send to at one time.
+  $form['mass_contact_rate_limiting_options']['mass_contact_send_with_cron'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Send messages with Cron'),
+    '#default_value' => variable_get('mass_contact_send_with_cron', 0),
+    '#description' => t('This is another workaround for server-side limits. Check this box to delay sending until the next Cron run(s).'),
   );
 
   // Opt out options.
@@ -394,6 +407,18 @@ function mass_contact_admin_settings_header($form, $form_state) {
     '#description' => t('The optional user email address to send email as. Replaces the "Your email address" value when sending mass emails.'),
   );
 
+  // Category options.
+  $form['mass_contact_category_display'] = array(
+    '#type' => 'radios',
+    '#title' => t('Field to use to display the categories'),
+    '#default_value' => variable_get('mass_contact_category_display', 'select'),
+    '#options' => array(
+      'select' => 'Select list',
+      'checkboxes' => 'Check boxes',
+    ),
+    '#description' => t("Select the form field to use to display the available categories to the message sender."),
+  );
+
   // Sender name options.
   $form['mass_contact_include_name'] = array(
     '#type' => 'fieldset',
@@ -419,14 +444,14 @@ function mass_contact_admin_settings_header($form, $form_state) {
     '#default_value' => variable_get('mass_contact_bcc_d', 1),
   );
 
-  // Category options.
+  // More category options.
   $form['mass_contact_category_override'] = array(
     '#type' => 'checkbox',
     '#title' => t('Include category in subject line'),
     '#default_value' => variable_get('mass_contact_category_override', 1),
     '#description' => t("If you choose this option, the category name will be printed in square brackets preceeding the message sender's subject.
                         If the message sender has multiple categories selected with this option choosen, each category will be processed separately.
-                        If you do not choose this option and the message sender has multiple categories selected, all users will be grouped to gether and the message will be sent to everyone as one group, thus reducing the likelihood of sending duplicates."),
+                        If you do not choose this option and the message sender has multiple categories selected, all users will be grouped together and the message will be sent to everyone as one group, thus reducing the likelihood of sending duplicates."),
   );
 
   return system_settings_form($form);

@@ -7,9 +7,9 @@ package = "Mail"
 configure = admin/config/system/mass_contact
 dependencies[] = ctools
 
-; Information added by drupal.org packaging script on 2013-08-14
-version = "7.x-1.0-beta3"
+; Information added by drupal.org packaging script on 2013-09-24
+version = "7.x-1.0"
 core = "7.x"
 project = "mass_contact"
-datestamp = "1376448162"
+datestamp = "1380057722"
 

@@ -61,10 +61,8 @@ function devconnect_monetization_install() {
 
   _devconnect_monetization_set_up_fields_mappings();
 
-  if (!db_table_exists('cache_mint')) {
-    // Create cache table
-    db_create_table('cache_mint', drupal_get_schema_unprocessed('system', 'cache'));
-  }
+  // Create cache table
+  db_create_table('cache_mint', drupal_get_schema_unprocessed('system', 'cache'));
 
   variable_del('devconnect_monetization-menu-links');
 }
@@ -1783,7 +1781,7 @@ function _devconnect_monetization_default_field_group_info() {
 function devconnect_monetization_setup_navigation_menu() {
 
   $monetization_link = array(
-    'link_title' => t('Monetization'),
+    'link_title' => 'Monetization',
     'link_path' => '<nolink>',
     'menu_name' => 'main-menu',
     'weight' => 0,
@@ -1795,7 +1793,7 @@ function devconnect_monetization_setup_navigation_menu() {
   );
 
   $params = array(
-    ':link_title' =>  $monetization_link['link_title'],
+    ':link_title' => $monetization_link['link_title'],
     ':link_path' => $monetization_link['link_path'],
     ':menu_name' => $monetization_link['menu_name'],
   );
@@ -1811,7 +1809,7 @@ function devconnect_monetization_setup_navigation_menu() {
 
   $menu_links = array(
     array(
-      'link_title' => t('Catalog & Plans'),
+      'link_title' => 'Catalog & Plans',
       'link_path' => 'users/me/monetization/packages',
       'menu_name' => 'main-menu',
       'plid' => $plid,
@@ -1821,7 +1819,7 @@ function devconnect_monetization_setup_navigation_menu() {
       'options' => array(),
     ),
     array(
-      'link_title' => t('Billing & Reports'),
+      'link_title' => 'Billing & Reports',
       'link_path' => 'users/me/monetization/billing/prepaid-balance',
       'plid' => $plid,
       'menu_name' => 'main-menu',
@@ -1831,7 +1829,7 @@ function devconnect_monetization_setup_navigation_menu() {
       'options' => array(),
     ),
     array(
-      'link_title' => t('Settings'),
+      'link_title' => 'Settings',
       'link_path' => 'users/me/monetization/company/edit',
       'plid' => $plid,
       'menu_name' => 'main-menu',
