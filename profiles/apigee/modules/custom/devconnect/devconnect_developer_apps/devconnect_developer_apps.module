@@ -307,7 +307,7 @@ function devconnect_developer_apps_getlist($user) {
       $rows = array();
       foreach ($app_entities as $entity) {
         $app_name = rawurlencode($entity['name']);
-        $uid_arg = ($user->uid == $GLOBALS['user']->uid) ? 'me' : $user->uid;
+        $uid_arg = $user->uid;
         $row = array(
           'app_name' => $entity['name'],
           'callback_url' => $entity['callbackUrl'],
