@@ -913,7 +913,7 @@ function devconnect_developer_app_delete_form_submit(&$form, &$form_state) {
   try {
     // Invoke hook_devconnect_developer_app_predelete on all implementing modules.
     devconnect_developer_apps_hook('predelete', $form_state);
-    entity_delete('developer_app', $form['#entity']);
+    entity_delete('developer_app', $form['#entity']['appId']);
     $result = $form['#entity']['debugData'];
     drupal_set_message(t('App Deleted!'), 'status');
 
