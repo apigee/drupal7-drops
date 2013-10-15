@@ -366,3 +366,16 @@ function ldap_authorization_update_7203() {
   }
 
 }
+
+/**
+ * make all schema field names lowercase in ldap server to deal with cronic case sensitivity issues
+ */
+function ldap_authorization_update_7204() {
+
+  $schema = ldap_authorization_schema();
+  $field_schema = $schema['ldap_authorization']['fields']['mappings'];
+  if (db_field_exists('ldap_authorization', 'mappings')) {
+     db_change_field('ldap_authorization', 'mappings', 'mappings', $field_schema);
+  }
+
+}

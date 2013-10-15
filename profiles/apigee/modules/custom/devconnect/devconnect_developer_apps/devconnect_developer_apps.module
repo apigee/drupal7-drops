@@ -291,6 +291,10 @@ function devconnect_developer_apps_getlist($user) {
   drupal_add_js($library_path . '/scripts/jquery.selectlist.pack.js');
   drupal_add_css($library_path . '/css/selectlist.css');
   drupal_add_css("$module_path/devconnect_developer_apps.css");
+  
+  $theme_path = base_path() . drupal_get_path('theme', 'apigee_devconnect');
+  drupal_add_css("span.delete{background-image:url($theme_path/images/cross-circle.png);}", array('type' => 'inline'));
+
   drupal_add_js("$module_path/devconnect_developer_apps.js");
 
   try {
@@ -392,13 +396,21 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     $header_caption = t('App Add Form');
     $button_caption = t('Create App');
   }
-  $owner_name = ($account->uid == $GLOBALS['user']->uid ? 'My' : $account->name . "'s");
+  $middle_arg = $account->uid;
+  if ($account->uid == $GLOBALS['user']->uid) {
+    if (module_exists('me')) {
+      $middle_arg = 'me';
+    }
+    $breadcrumb_caption = t('My Apps');
+  }
+  else {
+    $breadcrumb_caption = t('@name’s Apps', array('@name' => $account->name));
+  }
 
   // Build Breadcrumbs
   $breadcrumb = array();
   $breadcrumb[] = l(t('Home'), '<front>');
-  $breadcrumb[] = l(t("$owner_name Apps"), 'user/' . $account->uid . '/apps');
-
+  $breadcrumb[] = l($breadcrumb_caption, 'user/' . $middle_arg . '/apps');
 
   // Set Breadcrumbs
   drupal_set_breadcrumb($breadcrumb);
@@ -603,6 +615,10 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
       drupal_add_js(drupal_get_path('module', 'devconnect_developer_apps') . '/devconnect_developer_apps.js');
       drupal_add_css($path . '/css/selectlist.css');
       drupal_add_css(drupal_get_path('module', 'devconnect_developer_apps') . '/devconnect_developer_apps.css');
+
+      $theme_path = base_path() . drupal_get_path('theme', 'apigee_devconnect');
+      $options = array('type' => 'inline');
+      drupal_add_css("span.delete{background-image:url($theme_path/images/cross-circle.png);}", $options);
     }
   }
 
@@ -804,7 +820,7 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
   $form_state['redirect'] = 'user/' . $middle_arg . '/apps';
   $form_state['storage']['entity'] =& $entity;
 
-  $results = $entity['debugData'];
+  $results = devconnect_get_debug_data();
 
   // Invoke hook_devconnect_developer_app_save on all implementing modules
   devconnect_developer_apps_hook('save', $form_state, $results);
@@ -984,15 +1000,17 @@ function _devconnect_developer_apps_detail(array $entity, $user, $page = TRUE) {
   if ($page) {
     // Build Breadcrumbs
     $middle_arg = $user->uid;
-    $owner_name = $user->name . '’s';
     if ($user->uid == $GLOBALS['user']->uid) {
-      $owner_name = 'My';
       if (module_exists('me')) {
         $middle_arg = 'me';
       }
+      $breadcrumb_caption = t('My Apps');
+    }
+    else {
+      $breadcrumb_caption = t('@name’s Apps', array('@name' => $user->name));
     }
     $breadcrumb[] = l(t('Home'), '<front>');
-    $breadcrumb[] = l(t("$owner_name Apps"), 'user/' . $middle_arg . '/apps');
+    $breadcrumb[] = l($breadcrumb_caption, 'user/' . $middle_arg . '/apps');
   }
 
   $description = $entity['description'];

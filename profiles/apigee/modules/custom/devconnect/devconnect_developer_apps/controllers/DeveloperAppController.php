@@ -40,7 +40,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   public function delete($ids) {
     foreach ($ids as $id) {
       // If entity is in our cache, we can make one fewer server roundtrips.
-      if (isset($this->appCache[$id])) {
+      if (array_key_exists($id, $this->appCache)) {
         $dev_app = $this->appCache[$id];
         unset ($this->appCache[$id]);
       }

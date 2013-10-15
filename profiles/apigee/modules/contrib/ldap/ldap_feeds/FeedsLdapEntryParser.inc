@@ -35,6 +35,9 @@ class FeedsLdapEntryParser extends FeedsParser {
             $parsed_item[$source] = (string)$ldap_attributes[$source_lcase][0];
           }
         }
+        else {
+          $parsed_item[$source] = '';
+        }
       }
       $parsed_items[] = $parsed_item;
     }

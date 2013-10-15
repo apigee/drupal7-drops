@@ -16,6 +16,34 @@ function xautoload_uninstall() {
 }
 
 /**
+ * Implements hook_enable()
+ */
+function xautoload_enable() {
+  // This could be a process of enabling multiple modules.
+  // The database does not have these other modules as enabled yet.
+  // So we get them from the stack trace.
+  $trace = debug_backtrace(0);
+  if (1
+    && isset($trace[3]['function'])
+    && 'module_enable' === $trace[3]['function']
+    && is_array($trace[3]['args'][0])
+  ) {
+    foreach (array_unique($trace[3]['args'][0]) as $module) {
+      $modules = array();
+      if (!empty($module)) {
+        $modules[] = $module;
+      }
+      // Register modules in autoloader.
+      $q = db_select('system', 's');
+      $q->fields('s', array('name', 'filename', 'type'));
+      $q->condition('s.name', $modules);
+      $extensions = $q->execute()->fetchAll();
+      xautoload('registrationHelper')->registerExtensions($extensions);
+    }
+  }
+}
+
+/**
  * Implements hook_update_N()
  */
 function xautoload_update_7000() {

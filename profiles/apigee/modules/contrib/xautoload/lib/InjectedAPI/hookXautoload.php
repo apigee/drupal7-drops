@@ -1,6 +1,10 @@
 <?php
 
 
+/**
+ * An instance of this class is passed around to implementations of
+ * hook_xautoload().
+ */
 class xautoload_InjectedAPI_hookXautoload {
 
   protected $finder;
@@ -8,7 +12,7 @@ class xautoload_InjectedAPI_hookXautoload {
 
   /**
    * @param xautoload_ClassFinder $finder
-   *   The class finder.
+   *   The class finder object.
    */
   function __construct($finder) {
     $this->finder = $finder;
@@ -117,6 +121,15 @@ class xautoload_InjectedAPI_hookXautoload {
   /**
    * Process a given directory to make it relative to Drupal root,
    * instead of relative to the current extension dir.
+   *
+   * @param string $dir
+   *   The directory path that we want to make absolute.
+   * @param boolean $relative
+   *   If TRUE, the $dir will be transformed from relative to absolute.
+   *   If FALSE, the $dir is assumed to already be absolute, and remain unchanged.
+   *
+   * @return string
+   *   The modified (absolute) directory path.
    */
   protected function processDir($dir, $relative) {
     if (!isset($dir)) {
@@ -139,6 +152,13 @@ class xautoload_InjectedAPI_hookXautoload {
 
   /**
    * Set a module to use as base for relative paths.
+   * This is typically called before each invocation of hook_xautoload() on a
+   * module.
+   * It can also be called by a module or theme that implements hook_xautoload(),
+   * to register class loading information on behalf of another module.
+   *
+   * @param string $module
+   *   Machine name of the module.
    */
   function setModule($module) {
     $this->extensionDir = drupal_get_path('module', $module);
@@ -146,6 +166,13 @@ class xautoload_InjectedAPI_hookXautoload {
 
   /**
    * Set a theme to use as base for relative paths.
+   * This is typically called before each invocation of hook_xautoload() on a
+   * theme.
+   * It can also be called by a module or theme that implements hook_xautoload(),
+   * to register class loading information on behalf of another theme.
+   *
+   * @param string $theme
+   *   Machine name of the theme.
    */
   function setTheme($theme) {
     $this->extensionDir = drupal_get_path('theme', $theme);
@@ -153,6 +180,11 @@ class xautoload_InjectedAPI_hookXautoload {
 
   /**
    * Set a library to use as base for relative paths.
+   * This is called e.g. in libraries_xautoload(), before passing the $api
+   * object to library xautoload callbacks.
+   *
+   * @param string $library
+   *   Machine name of the library.
    */
   function setLibrary($library) {
     if (!module_exists('libraries')) {
@@ -163,6 +195,9 @@ class xautoload_InjectedAPI_hookXautoload {
 
   /**
    * Explicitly set the base for relative paths.
+   *
+   * @param string $dir
+   *   New relative base path.
    */
   function setExtensionDir($dir) {
     $this->extensionDir = $dir;

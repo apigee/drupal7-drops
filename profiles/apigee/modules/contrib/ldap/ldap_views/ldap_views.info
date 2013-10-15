@@ -21,9 +21,9 @@ files[] = handlers/ldap_views_handler_filter.inc
 files[] = handlers/ldap_views_handler_filter_attribute.inc
 files[] = handlers/ldap_views_handler_sort.inc
 files[] = handlers/ldap_views_handler_sort_attribute.inc
-; Information added by drupal.org packaging script on 2013-04-15
-version = "7.x-2.0-beta5"
+; Information added by drupal.org packaging script on 2013-10-08
+version = "7.x-2.0-beta6"
 core = "7.x"
 project = "ldap"
-datestamp = "1366003511"
+datestamp = "1381233714"
 

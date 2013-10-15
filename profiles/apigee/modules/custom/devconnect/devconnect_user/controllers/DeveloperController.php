@@ -88,8 +88,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     $return = array();
     foreach ($list as $dev) {
       if (!($dev instanceof Apigee\ManagementAPI\DeveloperInterface)) {
-         watchdog('DeveloperController', 'Non-developer object returned: @object', array('@object' => print_r($dev, TRUE)), WATCHDOG_ERROR);
-         continue;
+        watchdog('DeveloperController', 'Non-developer object returned: @object', array('@object' => print_r($dev, TRUE)), WATCHDOG_ERROR);
+        continue;
       }
       $array = $dev->toArray();
       $array['uid'] = (isset($this->emailCache[$array['email']]) ? $this->emailCache[$array['email']] : NULL);

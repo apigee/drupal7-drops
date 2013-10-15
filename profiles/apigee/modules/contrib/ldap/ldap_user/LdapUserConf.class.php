@@ -99,6 +99,8 @@ class LdapUserConf {
   public $setsLdapPassword = TRUE; // @todo default to FALSE and check for mapping to set to true
 
   public $loginConflictResolve = FALSE;
+
+  public $disableAdminPasswordField = FALSE;
   /**
    * array of field synch mappings provided by all modules (via hook_ldap_user_attrs_list_alter())
    * array of the form: array(
@@ -182,6 +184,7 @@ class LdapUserConf {
     'manualAccountConflict',
     'acctCreation',
     'ldapUserSynchMappings',
+    'disableAdminPasswordField',
   );
 // 'wsKey','wsEnabled','wsUserIps',
   function __construct() {
@@ -733,7 +736,7 @@ class LdapUserConf {
     }
 
     $tokens = array(
-      '%dn' => isset($result['proposed']['dn']) ? $result['proposed']['dn'] : NULL,
+      '%dn' => isset($proposed_ldap_entry['dn']) ? $proposed_ldap_entry['dn'] : NULL,
       '%sid' => $this->ldapEntryProvisionServer,
       '%username' => $account->name,
       '%uid' => ($test_query || !property_exists($account, 'uid')) ? '' : $account->uid,
@@ -1071,7 +1074,7 @@ class LdapUserConf {
             drupal_set_message(t('User account creation failed because of invalid, empty derived Drupal username.'), 'error');
             watchdog('ldap_user',
               'Failed to create Drupal account %drupal_username because drupal username could not be derived.',
-              $tokens,
+              $watchdog_tokens,
               WATCHDOG_ERROR
             );
             return FALSE;
@@ -1080,7 +1083,7 @@ class LdapUserConf {
             drupal_set_message(t('User account creation failed because of invalid, empty derived email address.'), 'error');
             watchdog('ldap_user',
               'Failed to create Drupal account %drupal_username because email address could not be derived by LDAP User module',
-              $tokens,
+              $watchdog_tokens,
               WATCHDOG_ERROR
             );
             return FALSE;
@@ -1098,7 +1101,8 @@ class LdapUserConf {
             drupal_set_message(t('User account creation failed because of system problems.'), 'error');
           }
           else {
-            user_set_authmaps($account, array('authname_ldap_user' => $user_edit['name']));
+            user_set_authmaps($account, array('authname_ldap_user' => $account->name));
+            ldap_user_ldap_provision_semaphore('drupal_created', 'set', $account->name);
           }
           return $account;
         }
@@ -1207,7 +1211,10 @@ class LdapUserConf {
 
     if ($direction == LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER && in_array(LDAP_USER_EVENT_CREATE_DRUPAL_USER, $prov_events)) {
       $edit['mail'] = isset($edit['mail']) ? $edit['mail'] : $ldap_user['mail'];
-      $edit['pass'] = isset($edit['pass']) ? $edit['pass'] : user_password(20);
+      if (!isset($edit['pass'])) {
+        $edit['pass'] = user_password(20);
+        watchdog('ldap_user', '20 character random password generated for the %username account that has been created.', array('%username' => $drupal_username), WATCHDOG_INFO);
+      }
       $edit['init'] = isset($edit['init']) ? $edit['init'] : $edit['mail'];
       $edit['status'] = isset($edit['status']) ? $edit['status'] : 1;
       $edit['signature'] = isset($edit['signature']) ? $edit['signature'] : '';
@@ -1216,6 +1223,18 @@ class LdapUserConf {
         'sid'  => $ldap_user['sid'],
         'dn'   => $ldap_user['dn'],
         'mail' => $edit['mail'],
+      );
+    }
+
+    /*
+     * Make sure the user account has the latest ldap_user settings
+     * when syncing the profile.
+     */
+    if ($direction == LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER && in_array(LDAP_USER_EVENT_SYNCH_TO_DRUPAL_USER, $prov_events)) {
+       $edit['data']['ldap_user']['init'] = array(
+        'sid'  => $ldap_user['sid'],
+        'dn'   => $ldap_user['dn'],
+        'mail' => isset($edit['mail']) && !empty($edit['mail']) ? $edit['mail'] : $ldap_user['mail'],
       );
     }
 

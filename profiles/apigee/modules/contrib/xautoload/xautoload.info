@@ -3,9 +3,9 @@ description = "Autoload based on pseudo PSR-0 folder structure and module prefix
 core = 7.x
 php = 5.2
 
-; Information added by drupal.org packaging script on 2013-07-27
-version = "7.x-3.2"
+; Information added by drupal.org packaging script on 2013-09-26
+version = "7.x-3.3"
 core = "7.x"
 project = "xautoload"
-datestamp = "1374942429"
+datestamp = "1380217148"
 

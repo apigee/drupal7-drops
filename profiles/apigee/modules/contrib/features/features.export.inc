@@ -862,7 +862,8 @@ function features_get_component_states($features = array(), $rebuild_only = TRUE
     $cache = array();
   }
 
-  $features = !empty($features) ? $features : array_keys(features_get_features());
+  $all_features = features_get_features();
+  $features = !empty($features) ? $features : array_keys($all_features);
 
   // Retrieve only rebuildable components if requested.
   features_include();
@@ -877,8 +878,8 @@ function features_get_component_states($features = array(), $rebuild_only = TRUE
 
   foreach ($features as $feature) {
     $cache[$feature] = isset($cache[$feature]) ? $cache[$feature] : array();
-    if (module_exists($feature)) {
-      foreach ($components as $component) {
+    if (module_exists($feature) && !empty($all_features[$feature]->components)) {
+      foreach (array_intersect($all_features[$feature]->components, $components) as $component) {
         if (!isset($cache[$feature][$component])) {
           $normal = features_get_signature('normal', $feature, $component, $reset);
           $default = features_get_signature('default', $feature, $component, $reset);

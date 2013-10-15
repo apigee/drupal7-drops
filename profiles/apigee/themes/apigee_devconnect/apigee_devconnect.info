@@ -34,11 +34,3 @@ settings[footer_link_hover_color] = #0B4965
 settings[button_background_color] = #009FD0
 settings[button_text_color] = #FFFFFF
 settings[wide_layout] = 1
-
-
-; Information added by drush on 2013-09-25
-version = "7.x-4.23-dev"
-core = "7.x"
-project = "apigee_devconnect"
-datestamp = "1380144267"
-

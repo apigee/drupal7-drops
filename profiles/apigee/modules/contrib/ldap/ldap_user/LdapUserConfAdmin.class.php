@@ -65,6 +65,7 @@ class LdapUserConfAdmin extends LdapUserConf {
     $this->setTranslatableProperties();
 
     if ($servers = ldap_servers_get_servers(NULL, 'enabled')) {
+      $this->drupalAcctProvisionServerOptions[LDAP_USER_AUTH_SERVER_SID] = t('Use server which performed the authentication. Useful for multi-domain environments.');
       foreach ($servers as $sid => $ldap_server) {
         $enabled = ($ldap_server->status) ? 'Enabled' : 'Disabled';
         $this->drupalAcctProvisionServerOptions[$sid] = $ldap_server->name . ' (' . $ldap_server->address . ') Status: ' . $enabled;
@@ -145,6 +146,12 @@ class LdapUserConfAdmin extends LdapUserConf {
       '#default_value' => $this->drupalAcctProvisionTriggers,
       '#options' => $this->drupalAccountProvisionEventsOptions,
       '#description' => $this->drupalAccountProvisionEventsDescription,
+    );
+
+    $form['basic_to_drupal']['disableAdminPasswordField'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Disable the password fields at /admin/create/people since the password is going to be randomly generated anyway. This is useful if you are synching data to Drupal from LDAP, and not bringing the user password from LDAP.'),
+      '#default_value' => $this->disableAdminPasswordField,
     );
 
     $form['basic_to_drupal']['userConflictResolve'] = array(
@@ -592,6 +599,7 @@ EOT;
     $this->manualAccountConflict = $values['manualAccountConflict'];
     $this->userConflictResolve  = ($values['userConflictResolve']) ? (int)$values['userConflictResolve'] : NULL;
     $this->acctCreation  = ($values['acctCreation']) ? (int)$values['acctCreation'] : NULL;
+    $this->disableAdminPasswordField = $values['disableAdminPasswordField'];
    // $this->wsKey  = ($values['wsKey']) ? $values['wsKey'] : NULL;
 
    // $this->wsUserIps  = ($values['wsUserIps']) ? explode("\n", $values['wsUserIps']) : array();
@@ -967,7 +975,10 @@ EOT;
     $values['ldapEntryProvisionServerDescription'] = t('Check ONE LDAP server configuration to create ldap entries on.');
 
     $values['drupalAccountProvisionEventsDescription'] = t('Which user fields and properties are synched on create or synch is determined in the
-      "Provisioning from LDAP to Drupal mappings" table below in the right two columns.');
+      "Provisioning from LDAP to Drupal mappings" table below in the right two columns. If you are synching only from LDAP to Drupal, and not 
+      retrieving the user password from LDAP into their Drupal account, a 20 character random password will be generated automatically for
+      the user\'s Drupal account since Drupal requires a password for the "users" table. Check the watchdog at /admin/reports/dblog to
+      confirm that a random password was generated when the user account was created.');
 
     $values['drupalAccountProvisionEventsOptions'] = array(
       LDAP_USER_DRUPAL_USER_PROV_ON_AUTHENTICATE => t('Create or Synch to Drupal user on successful authentication with LDAP

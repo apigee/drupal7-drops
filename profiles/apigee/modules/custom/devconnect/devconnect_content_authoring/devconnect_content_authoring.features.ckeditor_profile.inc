@@ -8,6 +8,7 @@
  * Implements hook_ckeditor_profile_defaults().
  */
 function devconnect_content_authoring_ckeditor_profile_defaults() {
+  $cklink_path = '%base_path%' . drupal_get_path('module', 'ckeditor_link') . '/plugins/link/';
   $data = array(
     'Advanced' => array(
       'name' => 'Advanced',
@@ -69,7 +70,7 @@ function devconnect_content_authoring_ckeditor_profile_defaults() {
           'ckeditor_link' => array(
             'name' => 'drupal_path',
             'desc' => 'CKEditor Link - A plugin to easily create links to Drupal internal paths',
-            'path' => '%base_path%sites/all/modules/contrib/ckeditor_link/plugins/link/',
+            'path' => $cklink_path,
             'buttons' => FALSE,
           ),
           'drupalbreaks' => array(
@@ -191,7 +192,7 @@ function devconnect_content_authoring_ckeditor_profile_defaults() {
           'ckeditor_link' => array(
             'name' => 'drupal_path',
             'desc' => 'CKEditor Link - A plugin to easily create links to Drupal internal paths',
-            'path' => '%base_path%sites/all/modules/contrib/ckeditor_link/plugins/link/',
+            'path' => $cklink_path,
             'buttons' => FALSE,
           ),
           'drupalbreaks' => array(

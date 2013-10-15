@@ -173,3 +173,26 @@ function hook_ldap_server_search_results_alter(&$entries, $ldap_query_params) {
   // look for a specific part of the $results array
   // and maybe change it
 }
+
+/**
+ * Allows other modules to transform the Drupal login username to an LDAP
+ * UserName attribute.
+ * Invoked in LdapServer::userUsernameToLdapNameTransform()
+ *
+ * @param $ldap_username
+ *   The ldap username that will be used for the AuthName attribute
+ * @param $drupal_username
+ *   The Drupal user name
+ * @param $context
+ *   An array of additional contextual information
+ *   - ldap_server: The LDAP server that is invoking the hook
+ */
+function hook_user_ldap_servers_username_to_ldapname_alter(&$ldap_username, $drupal_username, $context) {
+  // Alter the name only if it has not been altered already, ie php eval code
+  if ($ldap_username == $drupal_username) {
+    $authname = ldap_user_get_authname($ldap_username);
+    if (!empty($authname)) {
+      $ldap_username = $authname;
+    }
+  }
+}

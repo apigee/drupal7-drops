@@ -1,5 +1,10 @@
 <?php
 
+/**
+* @file
+* collection of functions related to removing user data
+*/
+
 
 function ldap_severs_user_data_setup_batch($consumer_type = NULL) {
 

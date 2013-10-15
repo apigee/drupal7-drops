@@ -147,7 +147,8 @@ function devconnect_admin_form($form, &$form_state) {
   $form = array();
   $weight = 0;
   foreach ($my_variables as $name => $info) {
-    $default_value = variable_get($name, $info['default']);
+    $default = (isset($info['default'])) ? $info['default'] : '';
+    $default_value = variable_get($name, $default);
     $form_element = array();
     if (substr($name, -9) == '_curlauth') {
       $default_value = devconnect_get_endpoint_auth($default_value);
@@ -194,7 +195,8 @@ function devconnect_admin_form($form, &$form_state) {
   $curl_auth = $form['devconnect_curlauth']['#default_value'];
 
   // If this isn't supplied, than false
-  $status = $form_state['storage']['connection_status'];
+  $status = (isset($form_state['storage']['connection_status'])) ?
+    $form_state['storage']['connection_status'] : _devconnect_test_kms_connection($org, $endpoint, $curl_auth);
 
   $form['connect_test'] = array(
     '#type' => 'fieldset',
@@ -215,7 +217,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#type' => 'item',
     '#prefix' => '<div id="test-connect-result">',
     '#suffix' => '</div>',
-    '#markup' => (isset($status)) ? '<br/>' . $status : '<br/>' . _devconnect_test_kms_connection($org, $endpoint, $curl_auth),
+    '#markup' => '<br/>' . $status,
   );
 
   return system_settings_form($form);
@@ -252,14 +254,14 @@ function _devconnect_test_kms_connection($org, $endpoint, $curl_auth) {
     return '<span style="color:red">' . t('Invalid endpoint') . '</span>';
   }
   $client = new Apigee\Util\APIClient($endpoint, $org, $user, $pass);
-  $api_product = new Apigee\ManagementAPI\APIProduct($client);
+  $org = new Apigee\ManagementAPI\Organization($client);
+
   try {
-    if ($api_product->listProducts()) {
-      return '<span style="color:green">' . t('Connection Successful') . '</span>';
-    }
+    $org->load(); // loads the class with user supplied data, if it doesn't work - throw the exception
+    return '<span style="color:green">' . t('Connection Successful') . '</span>';
   }
   catch (Exception $e) {}
-  return '<span style="color:red">' . t('Connection Unsuccessful') . '</span>';
+  return '<span style="color:red">' . t('Connection Unsuccessful ' . $e->getCode()) . '</span>';
 }
 
 /**
@@ -617,21 +619,20 @@ class DevConnectApigeeApiproduct {
     return $names;
   }
 
+  /**
+   * This function once determined if an api_product had an OAuth policy.
+   * It now always returns FALSE or an empty array.
+   *
+   * @deprecated
+   *
+   * @var $api_product
+   * @return mixed
+   */
   public function has_oauth_policy($api_product = NULL) {
     if (isset($api_product)) {
-      $this->ensure_loaded($api_product);
-      $token_uris = $this->api_product->getOauthTokenUrls();
-      return (count($token_uris) > 0);
+      return FALSE;
     }
-
-    $products_with_policies = array();
-    $list = $this->api_product->listProducts(TRUE);
-    foreach ($list as $api_product) {
-      if ($this->has_oauth_policy($api_product)) {
-        $products_with_policies[] = $api_product;
-      }
-    }
-    return $products_with_policies;
+    return array();
   }
 }
 

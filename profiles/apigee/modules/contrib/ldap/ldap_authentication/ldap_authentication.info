@@ -14,9 +14,9 @@ files[] = ldap_authentication.theme.inc
 files[] = ldap_authentication.admin.inc
 files[] = tests/ldap_authentication.test
 
-; Information added by drupal.org packaging script on 2013-04-15
-version = "7.x-2.0-beta5"
+; Information added by drupal.org packaging script on 2013-10-08
+version = "7.x-2.0-beta6"
 core = "7.x"
 project = "ldap"
-datestamp = "1366003511"
+datestamp = "1381233714"
 

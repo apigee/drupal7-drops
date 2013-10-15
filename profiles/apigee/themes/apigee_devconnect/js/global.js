@@ -27,7 +27,8 @@
       }, function() {
         $(this).find('.dropdown-menu').stop(true, true).delay(50).fadeOut();
       });
-      
+
+      // Monetization Date Picker
       if ($.datepicker != undefined && $(".purchase-plan #datepicker").length) {
         $(".purchase-plan #datepicker").datepicker({
           minDate: -0,
@@ -35,7 +36,6 @@
           changeYear: true
         });
       }
-      
     }
   };
 })(jQuery);

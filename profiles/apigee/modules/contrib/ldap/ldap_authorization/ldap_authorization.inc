@@ -426,6 +426,10 @@ function _ldap_authorizations_user_authorizations_set(&$user, $consumer, $filter
   $consumer->sortConsumerIds('grant', $user_auth_data);  // keep in good display order
   $user_edit['data']['ldap_authorizations'][$consumer->consumerType] = $user_auth_data;
   $watchdog_tokens['%user_edit_presave'] = print_r($user_edit, TRUE);
+  if (empty($user->picture->fid)) { // see #1973352 and #935592
+    $user2 = user_load($user->uid);
+    $user->picture = $user2->picture;
+  }
   $user = user_save($user, $user_edit);
 
   $watchdog_tokens['%user_data_post_save'] = print_r($user->data, TRUE);

@@ -24,22 +24,32 @@ function apigee_install_load_profile(&$install_state) {
   // Loading the install profile normally
   install_load_profile($install_state);
 
-  if (defined('PANTHEON_ENVIRONMENT')) {
+  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
     $install_state['profile_info']['dependencies'][] = "pantheon_api";
     $install_state['profile_info']['dependencies'][] = "pantheon_apachesolr";
   }
 
   // Include any dependencies that we might have missed...
   $dependencies = $install_state['profile_info']['dependencies'];
+
   foreach ($dependencies as $module) {
     $module_info = drupal_parse_info_file(drupal_get_path('module', $module) . '/' . $module . '.info');
     if (!empty($module_info['dependencies'])) {
       foreach ($module_info['dependencies'] as $dependency) {
         $parts = explode(' (', $dependency, 2);
-        $dependencies[] = array_shift($parts);
+        $dependencies[] = $parts[0];
       }
     }
   }
+  // Do not enable apachesolr modules for OPDK builds.
+  if (getenv('OPDK_BUILD') == 'yes') {
+    foreach (array_keys($dependencies) as $i) {
+      if (substr($dependencies[$i], 0, 10) == 'apachesolr') {
+        unset($dependencies[$i]);
+      }
+    }
+  }
+
   $install_state['profile_info']['dependencies'] = array_unique($dependencies);
   //variable_set("install_profile_modules", $install_state['profile_info']['dependencies']);
   //$install_state['profiles'] = array("apigee");  
@@ -221,11 +231,24 @@ function apigee_install_pantheon_push_solr(&$context) {
 
   watchdog(__FUNCTION__, "Pushing Solr", array(), WATCHDOG_INFO);
 
-  if (defined('PANTHEON_ENVIRONMENT') && module_exists("pantheon_apachesolr")) {
+  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && module_exists("pantheon_apachesolr")) {
     module_load_include("module", "pantheon_apachesolr");
     pantheon_apachesolr_post_schema_exec("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
     $context['results'][] = "solr_push";
     $context['message'] = st('Solr config pushed to pantheon solr server.');
+  }
+  elseif (getenv('OPDK_BUILD') == 'yes') {
+    // If apachesolr crept into the build tree, disable it if this is an OPDK build.
+    $to_disable = array();
+    foreach (module_list(TRUE) as $module) {
+      if (substr($module, 0, 10) == 'apachesolr') {
+        $to_disable[] = $module;
+      }
+    }
+    if (count($to_disable) > 0) {
+      module_disable($to_disable);
+      drupal_uninstall_modules($to_disable);
+    }
   }
   else {
     watchdog(__FUNCTION__, "SOLR NOT ENABLED!!!", array(), WATCHDOG_ERROR);
@@ -572,7 +595,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     $org = $_REQUEST['devconnect_org'];
   }
   else {
-    if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
+    if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
       $org = str_replace($_SERVER['PANTHEON_ENVIRONMENT'] . "-", "", $_SERVER['HTTP_HOST']);
       $org = str_replace(".devportal.apigee.com", "", $org);
     }

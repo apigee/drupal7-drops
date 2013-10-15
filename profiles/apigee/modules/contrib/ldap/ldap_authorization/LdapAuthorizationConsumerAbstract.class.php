@@ -361,8 +361,8 @@ class LdapAuthorizationConsumerAbstract {
         watchdog('ldap_authorization', "user_auth_data after consumer $consumer_id" . print_r($user_auth_data, TRUE), $watchdog_tokens, WATCHDOG_DEBUG);
       }
 
-      $watchdog_tokens['%consumer_ids_log'] = (count($consumer_ids_log)) ? join('<hr/>', $consumer_ids_log) : t('no actions');
     }
+    $watchdog_tokens['%consumer_ids_log'] = (count($consumer_ids_log)) ? join('<hr/>', $consumer_ids_log) : t('no actions');
 
    // debug("user->data and user_auth_data"); debug($user->data); debug($user_auth_data);
     if ($user_save) {

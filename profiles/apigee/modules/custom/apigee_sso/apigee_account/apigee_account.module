@@ -211,6 +211,7 @@ function apigee_account_form_user_register_form_alter(&$form, &$form_state) {
       $form['account']['roles']['#default_value'] = array_unique(array_merge($form['account']['roles']['#default_value'], devconnect_user_get_admin_rids()));
     }
     $form['account']['name']['#default_value'] = $session_info['name'];
+    $form['account']['mail']['#default_value'] = $email;
   }
 }
 

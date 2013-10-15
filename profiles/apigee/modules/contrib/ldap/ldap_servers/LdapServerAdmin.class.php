@@ -672,7 +672,10 @@ public function drupalFormSubmit($op, $values) {
             LDAP_SERVERS_BIND_METHOD_USER => t('Bind with Users Credentials: Use user\'s entered credentials
             to bind to LDAP.<br/> This is only useful for modules that execute during user logon such
             as LDAP Authentication and LDAP Authorization.  <em>This option is not a best practice in most cases.</em>
-            The user\'s dn must be of the form "cn=[username],[base dn]" for this option to work.'),
+            This option skips the initial anonymous bind and anonymous search to determine the LDAP user DN, but you
+            can only use this option if your user DNs follow a consistent pattern, for example all of them being of
+            the form "cn=[username],[base dn]", or all of them being of the form "uid=[username],ou=accounts,[base dn]".
+            You specify the pattern under "Expression for user DN" in the next configuration block below.'),
 
             LDAP_SERVERS_BIND_METHOD_ANON_USER => t('Anonymous Bind for search, then Bind with Users Credentials:
             Searches for user dn then uses user\'s entered credentials to bind to LDAP.<br/> This is only useful for

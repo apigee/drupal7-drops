@@ -124,9 +124,9 @@ class LdapAuthenticationConf {
   public $ssoExcludedPaths = NULL;
   public $ssoExcludedHosts = NULL;
   public $seamlessLogin = FALSE;
+  public $ssoNotifyAuthentication = FALSE;
   public $ldapImplementation = FALSE;
   public $cookieExpire = LDAP_AUTHENTICATION_COOKIE_EXPIRE;
-
   public $apiPrefs = array();
 
   /**
@@ -188,6 +188,7 @@ class LdapAuthenticationConf {
     'ssoExcludedPaths',
     'ssoExcludedHosts',
     'seamlessLogin',
+    'ssoNotifyAuthentication',
     'ldapImplementation',
     'cookieExpire',
   );

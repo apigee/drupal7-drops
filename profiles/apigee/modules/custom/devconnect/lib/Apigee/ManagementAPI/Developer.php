@@ -176,8 +176,10 @@ class Developer extends Base implements DeveloperInterface {
     $developer->organizationName = $response['organizationName'];
     $developer->status = $response['status'];
     $developer->attributes = array();
-    foreach ($response['attributes'] as $attribute) {
-      $developer->attributes[$attribute['name']] = $attribute['value'];
+    if (array_key_exists('attributes', $response) && is_array($response['attributes'])) {
+      foreach ($response['attributes'] as $attribute) {
+        $developer->attributes[$attribute['name']] = $attribute['value'];
+      }
     }
     $developer->createdAt = $response['createdAt'];
     $developer->createdBy = $response['createdBy'];

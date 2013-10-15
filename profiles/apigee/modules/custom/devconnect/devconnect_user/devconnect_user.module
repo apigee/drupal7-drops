@@ -383,7 +383,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
 
   $action = 'create';
   try {
-    $entity = entity_load('developer', array($orig_mail));
+    $entity = entity_load_single('developer', $orig_mail);
     $action = 'update';
   }
   catch (Exception $e) {

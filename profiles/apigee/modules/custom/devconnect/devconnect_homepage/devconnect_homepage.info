@@ -3,11 +3,3 @@ description = "Homepage Header Block"
 core = "7.x"
 package = "DevConnect"
 version = "7.x-4.23"
-
-
-; Information added by drush on 2013-09-25
-version = "7.x-4.23-dev"
-core = "7.x"
-project = "devconnect"
-datestamp = "1380144267"
-

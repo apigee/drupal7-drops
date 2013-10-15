@@ -67,10 +67,3 @@ exclude[css][] = 'modules/taxonomy/taxonomy.css'
 exclude[css][] = 'modules/tracker/tracker.css'
 exclude[css][] = 'modules/update/update.css'
 exclude[css][] = 'modules/user/user.css'
-
-
-; Information added by drush on 2013-09-25
-version = "devconnect-dev"
-project = "apigee_base"
-datestamp = "1380144267"
-

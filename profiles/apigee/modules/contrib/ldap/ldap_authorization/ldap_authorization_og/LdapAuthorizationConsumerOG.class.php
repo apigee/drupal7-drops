@@ -465,11 +465,14 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
      *  based on all consumer ids granted and revokes
      */
     $og_actions = array('grants' => array(), 'revokes' => array());
+    $consumer_ids_log = "";
+
     //dpm('consumers');dpm($consumers); dpm('users_authorization_consumer_ids'); dpm($users_authorization_consumer_ids);
     foreach ($consumers as $consumer_id => $consumer) {
       if ($detailed_watchdog_log) {
         watchdog('ldap_authorization', "consumer_id=$consumer_id, user_save=$user_save, op=$op", $watchdog_tokens, WATCHDOG_DEBUG);
       }
+      $log = "consumer_id=$consumer_id, op=$op,";
 
       $user_has_authorization = in_array($consumer_id, $users_authorization_consumer_ids); // does user already have authorization ?
       $user_has_authorization_recorded = isset($user_auth_data[$consumer_id]);  // is authorization attribute to ldap_authorization_og in $user->data ?
@@ -483,7 +486,7 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
       else {
         list($entity_type, $gid, $rid) = $this->og2ConsumerIdParts($consumer_id);
       }
-
+      
       /** grants **/
       if ($op == 'grant') {
         if ($user_has_authorization && !$user_has_authorization_recorded) {
@@ -493,6 +496,8 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
             'date_granted' => time(),
             'consumer_id_mixed_case' => $consumer_id,
           );
+          $log .= "grant case 1: authorization id already exists for user, but is not ldap provisioned.  mark as ldap provisioned, but don't regrant";
+          $log .= $consumer_id;
         }
         elseif (!$user_has_authorization && $consumer['exists']) {
         // grant case 2: consumer exists, but user is not member. grant authorization
@@ -502,21 +507,27 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
           else {
             $og_actions['grants'][$entity_type][$gid][] = $rid;
           }
+          $log .= "grant case 2: consumer exists, but user is not member. grant authorization";
+          $log .= " ".$entity_type . ":" . $gid .":" . $rid;
         }
         elseif ($consumer['exists'] !== TRUE) {
         // grant case 3: something is wrong. consumers should have been created before calling grantsAndRevokes
           $results[$consumer_id] = FALSE;
-        }
+          $log .= "grant case 3: something is wrong. consumers should have been created before calling grantsAndRevokes";
+          $log .= " ".$consumer_id;        }
         elseif ($consumer['exists'] === TRUE) {
         // grant case 4: consumer exists and user has authorization recorded. do nothing
           $results[$consumer_id] = TRUE;
+          $log .= "grant case 4: consumer exists and user has authorization recorded. do nothing";
+          $log .= " ".$consumer_id;
         }
         else {
         // grant case 5: $consumer['exists'] has not been properly set before calling function
           $results[$consumer_id] = FALSE;
           watchdog('ldap_authorization', "grantsAndRevokes consumer[exists] not properly set. consumer_id=$consumer_id, op=$op, username=%username", $watchdog_tokens, WATCHDOG_ERROR);
-        }
-      }
+            $log .= "grantsAndRevokes consumer[exists] not properly set. consumer_id=$consumer_id, op=$op, username=%username";
+          }
+          $consumer_ids_log .= $log;      }
       /** revokes **/
       elseif ($op == 'revoke') {
         if ($user_has_authorization) {
@@ -527,23 +538,31 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
           else {
             $og_actions['revokes'][$entity_type][$gid][] = $rid;
           }
-          
+          $log .= "revoke case 1: user has authorization, revoke it.  revokeSingleAuthorization will remove $user_auth_data[$consumer_id]";
+          $log .=" ".$entity_type . ":" . $gid .":" . $rid ;          
         }
         elseif ($user_has_authorization_recorded)  {
           // revoke case 2: user does not have authorization, but has record of it. remove record of it.
           unset($user_auth_data[$consumer_id]);
           $results[$consumer_id] = TRUE;
+          $log .= "revoke case 2: user does not have authorization, but has record of it. remove record of it.";
+          $log .= $consumer_id;
         }
         else {
           // revoke case 3: trying to revoke something that isn't there
           $results[$consumer_id] = TRUE;
+          $log .= "revoke case 3: trying to revoke something that isn't there";
+          $log .= $consumer_id;
         }
       }
       if ($detailed_watchdog_log) {
         watchdog('ldap_authorization', "user_auth_data after consumer $consumer_id" . print_r($user_auth_data, TRUE), $watchdog_tokens, WATCHDOG_DEBUG);
       }
+      $consumer_ids_log .= $log;
     }
-
+    
+    $watchdog_tokens['%consumer_ids_log'] = $consumer_ids_log;
+    
     /**
      * Step #2: from array of form:
      *   og1.5: $og_actions['grants'|'revokes'][$gid][$rid]\
@@ -553,7 +572,7 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
      * - remove and grant og roles
      * - flush appropriate caches
      */
-    debug("og_actions"); debug($og_actions); debug("user_auth_data"); debug($user_auth_data);
+    //debug("og_actions"); debug($og_actions); debug("user_auth_data"); debug($user_auth_data);
     if ($this->ogVersion == 1) {
       $this->og1Grants($og_actions, $user, $user_auth_data);
       $this->og1Revokes($og_actions, $user, $user_auth_data);

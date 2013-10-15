@@ -59,6 +59,7 @@ projects[google_analytics][subdir]                             = "contrib"
 projects[google_analytics_reports][subdir]                     = "contrib"
 projects[gravatar][subdir]                                     = "contrib"
 projects[highcharts][subdir]                                   = "contrib"
+projects[http_client][subdir]                                  = "contrib"
 projects[imagemagick][subdir]                                  = "contrib"
 projects[i18n][subdir]                                         = "contrib"
 projects[import_html][subdir]                                  = "contrib"
@@ -73,7 +74,7 @@ projects[libraries][subdir]                                    = "contrib"
 projects[linkchecker][subdir]                                  = "contrib"
 projects[link][subdir]                                         = "contrib"
 projects[link_node][subdir]                                    = "contrib"
-projects[logintoboggan]['subdir']                              = "contrib"
+projects[logintoboggan][subdir]                                = "contrib"
 projects[markdown][subdir]                                     = "contrib"
 projects[mass_contact][subdir]                                 = "contrib"
 projects[mediaelement][subdir]                                 = "contrib"
@@ -100,6 +101,7 @@ projects[permission_grid][subdir]                              = "contrib"
 projects[readonlymode][subdir]                                 = "contrib"
 projects[recaptcha][subdir]                                    = "contrib"
 projects[redirect][subdir]                                     = "contrib"
+projects[redis][subdir]                                        = "contrib"
 projects[rules][subdir]                                        = "contrib"
 projects[services][subdir]                                     = "contrib"
 projects[services_views][subdir]                               = "contrib"
@@ -171,6 +173,7 @@ projects[apigee_sso][type]                                     = module
 projects[apigee_sso][subdir]                                   = custom
 projects[apigee_sso][download][type]                           = 'git'
 projects[apigee_sso][download][url]                            = "git@github.com:apigee/apigee_drupal_sso.git"
+projects[apigee_sso][download][branch]                         = "7.x-4.23"
 
 ; Libraries
 ; ------------------------------------------------------------------

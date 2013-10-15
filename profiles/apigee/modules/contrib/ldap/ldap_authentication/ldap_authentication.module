@@ -187,8 +187,8 @@ function ldap_authentication_ldap_authenticated($user) {
     return FALSE;
   }
 
-  $authmaps = db_query("SELECT module, authname FROM {authmap} WHERE uid = :uid", array(':uid' => $user->uid))->fetchAllKeyed();
-  return isset($authmaps['ldap_user']);
+  $authname = ldap_user_get_authname($user);
+  return !empty($authname);
 
 }
 
@@ -231,7 +231,7 @@ function ldap_authentication_ldap_server_in_use($sid, $server_name) {
 
   $use_warnings = array();
   $auth_conf = ldap_authentication_get_valid_conf();
-  if (in_array($sid, array_keys($auth_conf->sids))) {
+  if ($auth_conf && in_array($sid, array_keys($auth_conf->sids))) {
     $use_warnings[] = t('This server (%server_name) may not be deleted or
       disabled because it is being used for ldap authentication.',
       array('%server_name' => $server_name));

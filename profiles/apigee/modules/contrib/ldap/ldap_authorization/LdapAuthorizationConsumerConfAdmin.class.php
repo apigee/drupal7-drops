@@ -447,6 +447,7 @@ Representations of groups derived from LDAP might initially look like:
         'form_default' => array(),
         'schema' => array(
           'type' => 'text',
+          'size' => 'medium',
           'not null' => FALSE,
           'default' => NULL,
         )

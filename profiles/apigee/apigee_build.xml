@@ -68,10 +68,21 @@
   
   -->
   <target name="migrate-to-pantheon" depends="drush-pantheon-config">
+
     <!-- if you don't supply the alias @ORGNAME.dev is assumed -->
     <property name="pantheon-alias" value="@${orgname}.dev" override="false" />
     <property name="site-alias" value="${pantheon-alias}" />
+    <property name="old-hosting-sites-folder" value="sites/${environment}-${orgname}" />
     <property name="archive-filename" value="${environment}-${orgname}.tgz"/>
+    <php expression="str_replace(array('.dev', '.live', '.test', '@'), '', '${pantheon-alias}');" returnProperty="pantheon-sitename" />
+    <drush command="psite-uuid" assume="yes" returnProperty="pantheon-uuid">
+      <param>${pantheon-sitename}</param>
+    </drush>
+    <fail unless="pantheon-uuid" message="Cannot continue without a valid pantheon Site UUID" />
+    
+    <phingcall target="display-step">
+      <param name="message" value="====: BEGINNING MIGRATION OF ${orgname} to ${pantheon-alias} (uuid: ${pantheon-uuid}) :====" />
+    </phingcall>
     <drush command="site-alias" assume="yes" returnProperty="remote-host">
       <option name="component">remote-host</option>
       <param>${site-alias}</param>
@@ -83,11 +94,6 @@
       <option name="component">remote-user</option>
       <param>${site-alias}</param>
     </drush>
-    <php function="str_replace" returnProperty="pantheon-uuid">
-      <param value='dev.' />
-      <param value="" />
-      <param value="${remote-user}" />
-    </php>
     <phingcall target="display-step">
       <param name="message" value="Remote user set: ${remote-user}" />
     </phingcall>
@@ -167,8 +173,15 @@
     <phingcall target="drop-tables">
       <property name="tablename" value="apachesolr" />
     </phingcall>
+    <phingcall target="drop-tables">
+      <property name="tablename" value="rules" />
+    </phingcall>
     <phingcall target="mysql-query-string">
       <property name="query" value="update system set filename=REPLACE(filename, 'sites/all/modules', 'profiles/apigee/modules') where filename like 'sites/all/modules%';" />
+      <property name="mysql-connect" value="${mysql-connect}" />
+    </phingcall>
+    <phingcall target="mysql-query-string">
+      <property name="query" value="update system set filename=REPLACE(filename, 'sites/all/themes', 'profiles/apigee/themes') where filename like 'sites/all/themes%';" />
       <property name="mysql-connect" value="${mysql-connect}" />
     </phingcall>
     <phingcall target="mysql-query-string">
@@ -181,6 +194,24 @@
     </phingcall>
     <phingcall target="mysql-query-string">
       <property name="query" value="update registry set filename=REPLACE(filename, 'sites/all/themes', 'profiles/apigee/themes') where filename like 'sites/all/themes%';" />
+      <property name="mysql-connect" value="${mysql-connect}" />
+    </phingcall>
+    <phingcall target="mysql-query-string">
+      <property name="query" value="update registry set filename=REPLACE(filename, '${old-hosting-sites-folder}/themes', 'sites/all/themes') where filename like 'sites/${old-hosting-sites-folder}/themes%';" />
+      <property name="mysql-connect" value="${mysql-connect}" />
+    </phingcall>
+    
+    <phingcall target="mysql-query-string">
+      <property name="query" value="delete from system where name like '%Rules%';" />
+      <property name="mysql-connect" value="${mysql-connect}" />
+    </phingcall>
+    <phingcall target="mysql-query-string">
+      <property name="query" value="delete from registry where name like '%Rules%';" />
+      <property name="mysql-connect" value="${mysql-connect}" />
+    </phingcall>
+    
+    <phingcall target="mysql-query-string">
+      <property name="query" value="update registry set filename=REPLACE(filename, '${old-hosting-sites-folder}/modules', 'sites/all/modules') where filename like 'sites/${old-hosting-sites-folder}/modules%';" />
       <property name="mysql-connect" value="${mysql-connect}" />
     </phingcall>
     <phingcall target="mysql-query-string">
@@ -204,11 +235,11 @@
       <property name="mysql-connect" value="${mysql-connect}" />
     </phingcall>
     <phingcall target="mysql-query-string">
-      <property name="query" value="update system set weight=-10 where filename like '%rules%';" />
+      <property name="query" value="update system set status=0 where name like '%apachesolr%';" />
       <property name="mysql-connect" value="${mysql-connect}" />
     </phingcall>
     <phingcall target="mysql-query-string">
-      <property name="query" value="update system set status=0 where name like '%apachesolr%';" />
+      <property name="query" value="update system set status=0 where name like '%rules%';" />
       <property name="mysql-connect" value="${mysql-connect}" />
     </phingcall>
     <phingcall target="mysql-query-string">
@@ -217,6 +248,10 @@
     </phingcall>
     <phingcall target="mysql-query-string">
       <property name="query" value="update system set schema_version=-1 where name like '%apachesolr%';" />
+      <property name="mysql-connect" value="${mysql-connect}" />
+    </phingcall>
+    <phingcall target="mysql-query-string">
+      <property name="query" value="update system set schema_version=-1 where name like '%rules%';" />
       <property name="mysql-connect" value="${mysql-connect}" />
     </phingcall>
     <phingcall target="mysql-query-string">
@@ -231,6 +266,7 @@
       <param>install_profile</param>
       <param>apigee</param>
     </drush>
+    <drush alias="${site-alias}" command="rr" />
     <drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path">
       <param>file_public_path</param>
     </drush>
@@ -264,6 +300,10 @@
           <include name="ctools/**" />
         </fileset>
     </delete>
+    <drush alias="${site-alias}" command="rr" />
+    <drush alias="${site-alias}" command="cc">
+      <param>registry</param>
+    </drush>
     <phingcall target="rsync-command">
       <property name="source" value="${project.basedir}/archive/devconnect-111.8/${files-public}" />
       <property name="destination" value="${remote-user}@${remote-host}:~/." />
@@ -288,13 +328,54 @@
       <property name="remote-user" value="${remote-user}" />
       <property name="archive-sitedir"  value="${archive-sitedir}" />
     </phingcall>
-    <drush alias="${site-alias}" command="rr" />
-    <drush alias="${site-alias}" command="updatedb" assume="yes" />
+    <trycatch property="foo">
+      <try>
+        <drush alias="${site-alias}" command="rr" />
+        <drush alias="${site-alias}" command="updatedb" assume="yes" />
+      </try> 
+      <catch>
+        <drush alias="${site-alias}" command="updatedb" assume="yes" />
+      </catch>
+    </trycatch>
+    <drush alias="${site-alias}" command="dl" assume="yes">
+      <param>jira_issue_collector</param>
+    </drush>
     <drush alias="${site-alias}" command="pm-enable" assume="yes" >
       <param>apachesolr</param>
       <param>apachesolr_search</param>
       <param>pantheon_api</param>
       <param>pantheon_apachesolr</param>
+      <param>apigee_account</param>
+      <param>jira_issue_collector</param>
+    </drush>
+    <drush alias="${site-alias}" command="pm-disable" assume="yes">
+      <param>smtp</param>
+      <param>cdn</param>
+    </drush>
+    <drush alias="${site-alias}" command="vset" assume="yes">
+      <param>jira_issue_collector_code</param>
+      <param><![CDATA['<script type="text/javascript" src="https://apigeesc.atlassian.net/s/d41d8cd98f00b204e9800998ecf8427e/en_US-nfwzef-1988229788/6144/98/1.4.0-m6/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?collectorId=140f6a91"></script>']]></param>
+    </drush>
+    <drush alias="${site-alias}" command="vset" assume="yes">
+      <param>jira_issue_collector_url</param>
+      <param>"https://apigeesc.atlassian.net/s/d41d8cd98f00b204e9800998ecf8427e/en_US-nfwzef-1988229788/6144/98/1.4.0-m6/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?collectorId=140f6a91"</param>
+    </drush>
+    <php expression="json_encode(array( 1 => 1, 2 => 2, 5 => 5, 3 => 3));" returnProperty="json-array" />
+    <drush alias="${site-alias}" command="vset" assume="yes">
+      <param>jira_issue_collector_roles</param>
+      <param>'${json-array}'</param>
+      <option name="format">json</option>
+    </drush>
+    <drush alias="${site-alias}" command="vset" assume="yes">
+      <param>preprocess_js</param>
+      <param>"0"</param>
+    </drush>
+    <drush alias="${site-alias}" command="vset" assume="yes">
+      <param>preprocess_css</param>
+      <param>"0"</param>
+    </drush>
+    <drush alias="${site-alias}" command="cc" assume="yes">
+      <param>all</param>
     </drush>
   </target>
   <!-- 

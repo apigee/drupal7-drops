@@ -757,15 +757,17 @@ function ldap_servers_update_7203() {
  * Add picture_attr field in schema
  */
 function ldap_servers_update_7204() {
-  db_add_field(
-    'ldap_servers',
-    'picture_attr',
-    array(
-      'type' => 'varchar',
-      'length' => 255,
-      'not null' => FALSE,
-    )
-  );
+  if (!db_field_exists('ldap_servers', 'picture_attr')) {
+    db_add_field(
+      'ldap_servers',
+      'picture_attr',
+      array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      )
+    );
+  }
 }
 
 

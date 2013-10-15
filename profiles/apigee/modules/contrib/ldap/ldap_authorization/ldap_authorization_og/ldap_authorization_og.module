@@ -186,7 +186,7 @@ function ldap_authorization_og1_has_role($gid, $uid, $rid) {
 }
 
 /** avoid excessive calls to og_roles() **/
-function ldap_authorization_og1_roles($reset = false) {
+function ldap_authorization_og1_roles($reset = FALSE) {
   static $roles;
   if ($reset || !is_array($roles)) {
     $roles = og_roles();

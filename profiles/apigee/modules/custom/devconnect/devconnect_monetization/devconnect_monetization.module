@@ -647,7 +647,7 @@ function devconnect_monetization_package_getdetails ($username, $package_id, $ra
          * If plan has already started or starts today, then this is the active plan. *
          * It also replaces any active plan that ends today.                          *
          ******************************************************************************/
-        if ($dev_rate_plan_start_date >= $today) {
+        if ($dev_rate_plan_start_date <= $today) {
           $active_rate_plan_id = $developer_rate_plan->getRatePlan()->getId();
           $active_plan_name = $developer_rate_plan->getRatePlan()->getDisplayName();
         }
@@ -798,6 +798,7 @@ function devconnect_monetization_package_getdetails ($username, $package_id, $ra
         $prevent_from_purchase_message = t('You must accept !link before purchasing a plan.', array('!link' => $link));
       }
     }
+
 
     /* Set template variables */
     $variables = array();

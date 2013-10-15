@@ -631,17 +631,17 @@ class LdapServer {
       }
       if (count($all_entries) == 0) {
         $all_entries = $entries;
+        unset($all_entries['count']);
       }
       else {
-        $existing_count = $all_entries['count'];
+        $existing_count = count($all_entries);
         unset($entries['count']);
         foreach ($entries as $i => $entry) {
           $all_entries[$existing_count + $i] = $entry;
         }
-        $all_entries['count'] = count($all_entries);
       }
     }
-
+    $all_entries['count'] = count($all_entries);
     return $all_entries;
 
   }
@@ -957,6 +957,12 @@ class LdapServer {
     else {
       $ldap_username = $drupal_username;
     }
+
+    // Let other modules alter the ldap name
+    $context = array(
+      'ldap_server' => $this,
+    );
+    drupal_alter('ldap_servers_username_to_ldapname', $ldap_username, $drupal_username, $context);
 
     return $ldap_username;
 
@@ -1548,7 +1554,10 @@ class LdapServer {
     elseif ($this->groupGroupEntryMembershipsConfigured) {
       $group_dns = $this->groupUserMembershipsFromEntry($user_ldap_entry, $nested);
     }
-
+    else {
+      watchdog('ldap_servers', 'groupMembershipsFromUser: Group memberships for server have not been configured.', array(), WATCHDOG_WARNING);
+      return FALSE;
+    }
     if ($return == 'group_dns') {
       return $group_dns;
     }
@@ -1681,7 +1690,12 @@ class LdapServer {
       $member_value = $user_ldap_entry['attr'][$this->groupMembershipsAttrMatchingUserAttr][0];
     }
     $member_value = ldap_pear_escape_filter_value($member_value);
-    $group_query = '(&(objectClass=' . $this->groupObjectClass . ')(' . $this->groupMembershipsAttr . "=$member_value))";
+    if ($this->groupObjectClass == '') {
+      $group_query = '(' . $this->groupMembershipsAttr . "=$member_value)";
+    }
+    else {
+      $group_query = '(&(objectClass=' . $this->groupObjectClass . ')(' . $this->groupMembershipsAttr . "=$member_value))";
+    }
 
     foreach ($this->basedn as $base_dn) {  // need to search on all basedns one at a time
       $group_entries = $this->search($base_dn, $group_query, array()); // only need dn, so empty array forces return of no attributes

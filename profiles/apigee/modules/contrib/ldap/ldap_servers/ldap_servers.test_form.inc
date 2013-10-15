@@ -377,7 +377,8 @@ function ldap_servers_test_binding_credentials(&$ldap_server, $bindpw, &$results
   return array($errors, $results);
 }
 
-function ldap_servers_test_user_mapping($drupal_username, &$ldap_server, $direction = LDAP_USER_PROV_DIRECTION_ALL, $ldap_context = NULL) {
+function ldap_servers_test_user_mapping($drupal_username, &$ldap_server, $ldap_context = NULL) {
+
   $ldap_user = $ldap_server->userUserNameToExistingLdapEntry($drupal_username, $ldap_context);
   $errors = FALSE;
   if (!$ldap_user ) {
