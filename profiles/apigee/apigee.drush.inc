@@ -67,6 +67,16 @@ if (!function_exists("apigee_drush_command")) {
         "orgname" => "Apigee orgname of the site being created"
       )
     );
+    
+    $items['apigee-homepage-fix'] = array(
+      'description' => 'Fix the path of the homepage image',
+      'callback' => 'apigee_homepage_fix',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL, 
+      'examples' => array(
+        'drush @site apigee-homepage-fix' => 'no arguments',
+      ),
+      'aliases' => array('afx'),
+    );
 
     return $items;
   }
@@ -248,6 +258,14 @@ if (!function_exists("apigee_drush_command")) {
 
     
     
+  }
+  
+  
+  
+  function apigee_homepage_fix() {
+    variable_set("text_variable", str_replace( '/sites/all', "/profiles/apigee", variable_get("text_variable", false)));
+    drush_log(dt('homepage variable set: %variable', array("%variable" => variable_get("text_variable", "text_variable set incorrectly"))), 'ok');
+    return true;    
   }
 
 }
