@@ -1,0 +1,5 @@
+<?php
+function prlp_uninstall() {
+  module_load_include('inc', 'prlp', 'prlp.admin');
+  prlp_delete_config_variables();
+}
