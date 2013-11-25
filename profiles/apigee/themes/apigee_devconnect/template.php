@@ -48,8 +48,11 @@ function apigee_devconnect_preprocess_page(&$variables) {
     $search_form = drupal_render($search);
     $find = array('type="submit"', 'type="text"');
     $replace = array('type="hidden"', 'type="search" placeholder="search" autocapitalize="off" autocorrect="off"');
-    $vars['search_form'] = str_replace($find, $replace, $search_form);
+    $variables['search_form'] = str_replace($find, $replace, $search_form);
   }
+
+  $menu_tree = menu_tree_output(menu_tree_all_data('main-menu', NULL, 2));
+  $variables['primary_nav'] = drupal_render($menu_tree);
 
   // Custom Search
   $variables['search'] = FALSE;
@@ -57,9 +60,9 @@ function apigee_devconnect_preprocess_page(&$variables) {
     $variables['search'] = drupal_get_form('search_form');
   }
 
-  # Fix for long user names
-  global $user;
-  if ($user->uid >= 1 && property_exists($user, "mail")) {
+  if (!user_is_anonymous()) {
+    # Fix for long user names
+    global $user;
     $user_email = $user->mail;
     if (strlen($user_email) > 22) {
       $tmp = str_split($user_email, 16);
@@ -67,7 +70,7 @@ function apigee_devconnect_preprocess_page(&$variables) {
     }
     $variables['truncated_user_email'] = $user_email;
   } else {
-    $variables['truncated_user_email'] = "";
+    $variables['truncated_user_email'] = '';
   }
 }
 
@@ -132,7 +135,11 @@ function apigee_devconnect_menu_link(array $variables) {
   if ($element['#below']) {
     // Add our own wrapper
     unset($element['#below']['#theme_wrappers']);
-    $sub_menu = '<ul class="dropdown-menu">' . drupal_render($element['#below']) . '</ul>';
+    if (isset($element['#original_link']['module']) && $element['#original_link']['module'] == 'book') {
+      $sub_menu = '<ul>' . drupal_render($element['#below']) . '</ul>';
+    } else {
+      $sub_menu = '<ul class="dropdown-menu">' . drupal_render($element['#below']) . '</ul>';
+    }
     $element['#localized_options']['attributes']['class'][] = 'dropdown-toggle';
     $element['#localized_options']['attributes']['data-toggle'] = 'dropdown';
     // Check if this element is nested within another

@@ -36,6 +36,12 @@ function devconnect_drush_command() {
     'aliases' => array('dc-getorg')
   );
 
+  $items['devconnect-update-settings'] = array(
+    'callback' => 'devconnect_drush_update_settings',
+    'description' => dt('Migrates org settings from the database to the filesystem.'),
+    'aliases' => array('dc-settings')
+  );
+
   return $items;
 }
 
@@ -73,29 +79,30 @@ function devconnect_drush_set_authentication() {
     list($username, $password) = $args;
   }
 
-  // Make sure autoloader is loaded
-  drupal_load('module', 'devconnect');
-  devconnect_boot();
-
+  $config = _devconnect_drush_get_config();
   $password_encrypted = Apigee\Util\Crypto::encrypt($password);
-  variable_set('devconnect_curlauth', "$username:$password_encrypted");
+  $config->set('user', $username);
+  $config->set('pass', $password_encrypted);
+  $config->save();
   drush_print(t('Username and password have been set.'));
 }
 
 function devconnect_drush_get_authentication() {
-  $user_pass = variable_get('devconnect_curlauth', NULL);
-  if (!isset($user_pass) || strpos($user_pass, ':') === FALSE) {
-    drush_print(t('Username/password have not yet been set.'));
+  $config = _devconnect_drush_get_config();
+  $user = $config->get('user');
+  $pass_encrypted = $config->get('pass');
+  $pass = FALSE;
+  if ($pass_encrypted) {
+    $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
+  }
+  if (!$pass) {
+    $pass = 'secret';
+  }
+  if ($user == 'fixme' || $pass == 'secret') {
+    drush_print(dt('Username/password have not yet been set.'));
   }
   else {
-    list($user, $pass_encrypted) = explode(':', $user_pass);
-    // Make sure autoloader is loaded
-    drupal_load('module', 'devconnect');
-    devconnect_boot();
-
-    $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
-
-    drush_print(t('Username is @username, password is @pass.', array('@username' => $user, '@pass' => $pass)));
+    drush_print(dt('Username is @username, password is @pass.', array('@username' => $user, '@pass' => $pass)));
   }
 }
 
@@ -106,16 +113,38 @@ function devconnect_drush_set_org() {
     return;
   }
   list($org) = $args;
-  variable_set('devconnect_org', $org);
-  drush_print(t('Orgname has been set to @org', array('@org' => $org)));
+  $config = _devconnect_drush_get_config();
+  if ($org != $config->get('org')) {
+    $config->set('org', $org);
+    $config->save();
+    drush_print(dt('Orgname has been set to @org', array('@org' => $org)));
+  }
+  else {
+    drush_print(dt('Orgname @org remains unchanged.', array('@org' => $org)));
+  }
 }
 
 function devconnect_drush_get_org() {
-  $org = variable_get('devconnect_org', NULL);
-  if (!isset($org)) {
-    drush_print(t('Org name has not yet been set.'));
+  $config = _devconnect_drush_get_config();
+  $org = $config->get('org');
+  if ($org == 'fixme') {
+    drush_print(dt('Org name has not yet been set.'));
   }
   else {
-    drush_print(t('Org name is @orgname', array('@orgname' => $org)));
+    drush_print(dt('Org name is @orgname', array('@orgname' => $org)));
   }
+}
+
+function devconnect_drush_update_settings() {
+  module_load_install('devconnect');
+  devconnect_port_settings_to_d8cmi();
+  drush_print(dt('Settings have been moved to the filesystem.'));
+}
+
+function _devconnect_drush_get_config() {
+  drupal_load('module', 'devconnect');
+  drupal_load('module', 'd8cmi');
+  devconnect_boot();
+  d8cmi_init();
+  return Drupal::config('devconnect.settings');
 }

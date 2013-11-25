@@ -1,0 +1,23 @@
+{ "while_test" : {
+    "PLUGIN" : "action set",
+    "REQUIRES" : [ "rules", "rules_conditional", "rules_conditional_test" ],
+    "ACTION SET" : [
+      { "variable_add" : {
+          "USING" : { "type" : "integer", "value" : 0 },
+          "PROVIDE" : { "variable_added" : { "count" : "Count" } }
+        }
+      },
+      {
+        "WHILE" : { "NOT data_is" : { "data" : [ "count" ], "op" : "\u003E", "value" : 10 } },
+        "DO" : [
+          { "data_set" : {
+              "data" : [ "count" ],
+              "value" : { "select" : "count", "num_offset" : { "value" : 1 } }
+            }
+          }
+        ]
+      },
+      { "rules_conditional_test_throw" : { "message" : [ "count" ] } }
+    ]
+  }
+}

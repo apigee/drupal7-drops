@@ -17,6 +17,7 @@ function autologout_uninstall() {
   variable_del('autologout_enforce_admin');
   variable_del('autologout_role_logout');
   variable_del('autologout_max_timeout');
+  variable_del('autologout_no_dialog');
 
   foreach (user_roles(TRUE) as $key => $role) {
     variable_del('autologout_role_' . $key);
@@ -27,7 +28,7 @@ function autologout_uninstall() {
   $uids = array();
   // Remove all timeouts for individual users.
   $result = db_query("SELECT DISTINCT(uid) FROM {users}")->fetchAll();
-  foreach($result as $uid) {
+  foreach ($result as $uid) {
     $uid  = $uid -> uid;
     variable_del('autologout_user_' . $uid);
   }

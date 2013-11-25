@@ -53,6 +53,13 @@ class SupportedCurrency {
   public $creditLimit;
 
   /**
+   * @var float Minimum amount a developer can set a recurring amount
+   */
+  public $minimumRecurringAmount = 0;
+
+
+
+  /**
    * Constructor
    * @param array $data
    */

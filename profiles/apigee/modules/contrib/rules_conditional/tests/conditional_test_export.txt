@@ -1,0 +1,20 @@
+{ "conditional_test" : {
+    "PLUGIN" : "action set",
+    "REQUIRES" : [ "rules_conditional", "rules_conditional_test", "rules" ],
+    "USES VARIABLES" : { "node" : { "type" : "node", "label" : "Node" } },
+    "ACTION SET" : [
+      { "CONDITIONAL" : [
+          {
+            "IF" : { "data_is" : { "data" : [ "node:title" ], "value" : "if" } },
+            "DO" : [ { "rules_conditional_test_throw" : { "message" : "if" } } ]
+          },
+          {
+            "ELSE IF" : { "data_is" : { "data" : [ "node:title" ], "value" : "else if" } },
+            "DO" : [ { "rules_conditional_test_throw" : { "message" : "else if" } } ]
+          },
+          { "ELSE" : [ { "rules_conditional_test_throw" : { "message" : "else" } } ] }
+        ]
+      }
+    ]
+  }
+}

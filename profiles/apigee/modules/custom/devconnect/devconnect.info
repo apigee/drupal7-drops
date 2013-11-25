@@ -2,18 +2,12 @@ name = Devconnect API
 description = "SDK to contact and communicate with Apigee v4 product (KMS)"
 package = "DevConnect"
 core = "7.x"
-version = "7.x-4.23"
+version = "7.x-4.24"
 
 configure = admin/config/devconnect
+dependencies[] = d8cmi
 
 ;files[] = lib/tests/ManagementAPI/APIProductTestCase.test
 ;files[] = lib/tests/ManagementAPI/DeveloperTestCase.test
 ;files[] = lib/tests/ManagementAPI/DeveloperAppTestCase.test
 ;files[] = lib/tests/ManagementAPI/KeyValueMapTestCase.test
-
-; Information added by drush on 2013-09-16
-version = "7.x-4.23-dev"
-core = "7.x"
-project = "devconnect"
-datestamp = "1379375171"
-

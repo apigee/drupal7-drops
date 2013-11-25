@@ -35,7 +35,7 @@ function apigee_account_variable_info($options) {
   $variables = array();
 
   $variables['apigee_account_host'] = array(
-    "title" => t('Accounts Host'),
+    "title" => t('Apigee Accounts Host'),
     "type" => 'string',
     "description" => 'Apigee accounts manager instance which will be used to authenticate users',
     "default" => 'https://accounts.apigee.com'
@@ -78,7 +78,7 @@ function apigee_account_login() {
           $form_state['uid'] = $account->uid;
           user_login_submit(array(), $form_state);
           // Let other modules act on Apigee login
-          $destination = 'user/' . $account->uid . '/apps';
+          $destination = $form_state['redirect'];
           module_invoke_all('apigee_account_response', $session_info, $account, $destination);
           drupal_goto($destination);
         }
@@ -88,16 +88,20 @@ function apigee_account_login() {
       }
     }
     elseif (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL)) {
-      // Register new user.
-      $form_state = array(
-        'values' => array(
-          'op' => t('Create new account')
-        )
-      );
+      $values = $session_info;
+      // Put entity fields into their respective hierarchical arrays.
+      // First unset existing members.
+      unset($values['field_first_name']);
+      unset($values['field_last_name']);
+      $values['field_first_name'][LANGUAGE_NONE][0]['value'] = $session_info['field_first_name'];
+      $values['field_last_name'][LANGUAGE_NONE][0]['value'] = $session_info['field_last_name'];
+      $values['op'] = t('Create new account');
+      $values['pass'] = $session_info['password'];
+      $form_state['values'] = $values;
       drupal_form_submit('user_register_form', $form_state);
 
       if (!empty($form_state['user'])) {
-        $destination = 'user/' . $form_state['user']->uid . '/apps';
+        $destination = 'user/' . $form_state['user']->uid; // Drupal's default
         module_invoke_all('apigee_account_response', $session_info, $form_state['user'], $destination);
         drupal_goto($destination);
       }
@@ -147,13 +151,18 @@ function _apigee_account_session_info($token, $uuid) {
   $opts = array();
   $session_info = array();
   $response_obj = drupal_http_request($url, $opts);
+
   if ($response_obj->code == 200 && !empty($response_obj->data)) {
     $json = @json_decode($response_obj->data, TRUE);
+
     if (is_array($json) && $json['status'] == 'ok' && is_array($json['data']) && !$json['data']['disabled']) {
-      $session_info['username'] = $json['data']['username'];
-      $session_info['name'] = $json['data']['name'];
+      $aname = explode(' ', $json['data']['name']);
+      $session_info['field_first_name'] = reset($aname);
+      $session_info['field_last_name'] = end($aname);
+      $session_info['name'] = @array_shift(explode('-', $json['data']['username']));
       $session_info['email'] = $json['data']['email'];
       $session_info['token'] = $json['data']['token'];
+      $session_info['password'] = md5(microtime());
     }
   }
   return $session_info;
@@ -221,45 +230,30 @@ function apigee_account_form_user_register_form_alter(&$form, &$form_state) {
  * @param array $form
  * @return array
  */
-function apigee_account_set_field_defaults($form) {
+function apigee_account_set_field_defaults(&$form, &$form_state) {
   if (empty($_SESSION['aac_session'])) {
     return $form;
   }
   $session_info = $_SESSION['aac_session'];
   $name = $session_info['name'];
   $email = $session_info['email'];
-  if (strpos($name, ' ') > 0) {
-    list($first_name, $last_name) = explode(' ', $name, 2);
-  }
-  elseif (preg_match('!^([^@]+)[._+-]([^@]+)@.+$!', $email, $matches)) {
-    // Try to get first & last names from email if they're separated by dot,
-    // hyphen, plus or underscore
-    list(, $first_name, $last_name) = $matches;
-  }
-  else {
-    $first_name = $name;
-    $last_name = '';
-  }
+  $first_name = $session_info['field_first_name'];
+  $last_name = $session_info['field_last_name'];
 
   if (
-      !empty($first_name)
-      && array_key_exists('field_first_name', $form)
-      && array_key_exists(LANGUAGE_NONE, $form['field_first_name'])
-      && array_key_exists(0, $form['field_first_name'][LANGUAGE_NONE])
-      && array_key_exists('value', $form['field_first_name'][LANGUAGE_NONE][0])
+    !empty($first_name)
+    && array_key_exists('field_first_name', $form)
   ) {
-    $form['field_first_name'][LANGUAGE_NONE][0]['value']['#value'] = $first_name;
+    $form_state['values']['field_first_name'][LANGUAGE_NONE][0]['value'] = $first_name;
   }
   if (
     !empty($last_name)
     && array_key_exists('field_last_name', $form)
-    && array_key_exists(LANGUAGE_NONE, $form['field_last_name'])
-    && array_key_exists(0, $form['field_last_name'][LANGUAGE_NONE])
-    && array_key_exists('value', $form['field_last_name'][LANGUAGE_NONE][0])
   ) {
-    $form['field_last_name'][LANGUAGE_NONE][0]['value']['#value'] = $last_name;
+    $form_state['values']['field_last_name'][LANGUAGE_NONE][0]['value'] = $last_name;
   }
 
+  $form_state['pass'] = $session_info['password'];
   return $form;
 }
 

@@ -1,3 +1,16 @@
+#!/bin/bash
+if [[ $HAVE_COMMON_FUNCTIONS -ne 1 ]]; then
+# Get directory this script is running in
+  SOURCE="${BASH_SOURCE[0]}"
+  while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  done
+  export SCRIPT_PATH="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  source ${SCRIPT_PATH}/../common-functions.sh
+fi
+
 has_valid_settings="N";
 db_on_localhost="N";
 if [ -f /tmp/settings.php ]; then
@@ -12,14 +25,14 @@ export PORTAL_DB_NAME="devportal"
 export PORTAL_DB_HOSTNAME="localhost"
 export PORTAL_DB_PORT=3306
 
-if [ -f ${DRUPAL_WEBROOT}/sites/default/settings.php ] ; then
+if [[ -f ${DRUPAL_WEBROOT}/sites/default/settings.php && `ls -l ${DRUPAL_WEBROOT}/sites/default/settings.php | cut -d " " -f5` -gt 10 ]] ; then
   PORTAL_DB_NAME=`grep "'database'" ${DRUPAL_WEBROOT}/sites/default/settings.php | cut -d "'" -f4`
   PORTAL_DB_USERNAME=`grep "'username'" ${DRUPAL_WEBROOT}/sites/default/settings.php | cut -d "'" -f4`
   PORTAL_DB_PASSWORD=`grep "'password'" ${DRUPAL_WEBROOT}/sites/default/settings.php | cut -d "'" -f4`
   PORTAL_DB_HOSTNAME=`grep "'host'" ${DRUPAL_WEBROOT}/sites/default/settings.php | cut -d "'" -f4`
   PORTAL_DB_PORT=`grep "'port'" ${DRUPAL_WEBROOT}/sites/default/settings.php | cut -d "'" -f4`
   if [[ -n $PORTAL_DB_NAME && -n $PORTAL_DB_USERNAME && -n $PORTAL_DB_PASSWORD && -n $PORTAL_DB_HOSTNAME && -n $PORTAL_DB_PORT ]] ; then
-    mysql -u $PORTAL_DB_USERNAME -p${PORTAL_DB_PASSWORD} -h $PORTAL_DB_HOSTNAME -P $PORTAL_DB_PORT -D $PORTAL_DB_NAME -e 'SHOW TABLES' > /dev/null 2>&1 && has_valid_settings="y"
+    mysql -u $PORTAL_DB_USERNAME -p${PORTAL_DB_PASSWORD} -h $PORTAL_DB_HOSTNAME -P $PORTAL_DB_PORT -D $PORTAL_DB_NAME -e 'SHOW TABLES' > /dev/null 2>&1 && has_valid_settings="Y"
   fi
   if [[ $has_valid_settings = "Y" ]]; then
     question "A valid settings.php file was already found. Do you want to keep these settings?" has_valid_settings Yn
@@ -87,7 +100,7 @@ if [[ $INSTALL_MYSQL_SERVER == "Y" ]]; then
   mysql -u root -e "CREATE DATABASE ${PORTAL_DB_NAME}";
 
   # Check to see if user exists
-  IS_USER_CREATED=`mysql -u root --skip-column-names  -e "select count(*) from mysql.user where user='devportal' and host='localhost'"`
+  IS_USER_CREATED=`mysql -u root --skip-column-names  -e "SELECT COUNT(*) FROM mysql.user WHERE user='${PORTAL_DB_USERNAME}' AND host='${PORTAL_DB_HOST}'"`
 
   if [[ $IS_USER_CREATED -eq 0 ]]; then
     display "Creating MySQL user ${PORTAL_DB_USERNAME}..."
@@ -98,7 +111,7 @@ if [[ $INSTALL_MYSQL_SERVER == "Y" ]]; then
     display "MySQL user ${PORTAL_DB_USERNAME} already exists, updating password."
     mysql -u root  -e "SET PASSWORD FOR '${PORTAL_DB_USERNAME}'@'localhost' = PASSWORD('${PORTAL_DB_PASSWORD}');"
   fi
-elif [[ $has_valid_settings != 'y' ]]; then
+elif [[ $has_valid_settings != 'Y' ]]; then
   display_header "
 
   MySQL server has not been installed, so you will need to supply the connection information. The

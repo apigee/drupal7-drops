@@ -28,12 +28,13 @@ function devconnect_monetization_payment_form_commerce_checkout_form_checkout_al
   $account = $account[$user->uid];
 
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/global.js', 'file');
-  $client = devconnect_monetization_default_api_client();
+  $client = devconnect_monetization_default_org_config();
   $developer = new Developer($client);
   $developer->load($developer_id);
 
+  $address = NULL;
   foreach ($developer->getAddresses() as $address_item) {
-    if (is_array($address_item) && $address['isPrimary'] || $address_item->isPrimary()) {
+    if ((is_array($address_item) && $address_item['isPrimary']) || (is_object($address_item) && $address_item->isPrimary())) {
       $address = is_array($address_item) ? (object)$address_item : $address_item;
       break;
     }
@@ -47,81 +48,13 @@ function devconnect_monetization_payment_form_commerce_checkout_form_checkout_al
     $address_profile['locality'] = $address->getCity();
     $address_profile['first_name'] = isset($account->field_first_name[LANGUAGE_NONE][0]['value']) ? $account->field_first_name[LANGUAGE_NONE][0]['value'] : '';
     $address_profile['last_name'] = isset($account->field_last_name[LANGUAGE_NONE][0]['value']) ? $account->field_last_name[LANGUAGE_NONE][0]['value'] : '';
-    $address_profile['organisation_name'] = $developer->getClient()->getOrg();
+    $address_profile['organisation_name'] = $developer->getConfig()->orgName;
     $address_profile['administrative_area'] = $address->getState();
     $address_profile['postal_code'] = $address->getZip();
     if ($address->getCountry() != 'AF') {
       drupal_add_js('jQuery(function($){$("#edit-continue").attr("disabled", true); $("select[name=\'customer_profile_billing[commerce_customer_address][und][0][country]\']").val("' . strtoupper($address->getCountry()) . '").trigger("change");});', 'inline');
     }
   }
-}
-
-function devconnect_monetization_payment_commerce_payment_order_paid_in_full($order, $transaction) {
-
-    switch ($transaction->status) {
-      case COMMERCE_PAYMENT_STATUS_SUCCESS:
-        // We will allow hook_commerce_checkout_complete to manage the update
-        // in Mint API backend until we identify the issue with decimal points.
-        // Until then we will return from this hook
-        return;
-        try {
-          try {
-            $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-            $client = devconnect_monetization_default_api_client();
-            $developer = new Developer($client);
-            $developer->load($order->mail);
-            $developer->topUpPrepaidBalance(
-                strtolower($transaction->currency_code),
-                $transaction->amount/100,
-                $transaction->changed);
-            $vars = array(
-              '%developer' => $developer_id,
-              '%email' => $order->mail,
-              '%amount' => sprintf('%.2f', $transaction->amount/100),
-              '%currency' => $transaction->currency_code,
-            );
-            $message = t('Developer %developer with %email has topped up %amount %currency to his balance and updated Mint back end.', $vars);
-            Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
-            drupal_set_message(t('You have topped up @amount @currency to your balance.', array(
-                               '@amount' => sprintf('%.2f', $form_state['values']['top_up_amount']/100),
-                               '@currency' => $form_state['values']['currency_id']
-                               )), 'status');
-          }
-          catch(MintApiException $e) {
-            if ($GLOBALS['devconnect_monetization_debug_endpoint_response']) {
-              Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $ce->getMintMessage(TRUE));
-            }
-            Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $ce->getPrevious());
-            throw $e;
-          }
-        }
-        catch(Exception $e) {
-          // If $e instance of Apigee\Mint\Exceptions\MintApiException, then log entries
-          // have been already managed in the inner try/catch, if not then log it in here
-          if (!is_a($e, 'Apigee\Mint\Exceptions\MintApiException')) {
-            Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
-          }
-          // Queue the message to ask the developer to contact an administrator
-          drupal_set_message(t('There was an error trying to complete your transaction. Please contact your adminstrator.'), 'error');
-        }
-        break;
-      case COMMERCE_PAYMENT_STATUS_PENDING:
-        $message = t('Developer %developer with %email has topped up %amount %currency to his balance but is pending for authorization no update to Mint back end has been performed.', $vars);
-        Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE,  $message);
-        drupal_set_message(t('Your top up for @amount @currency is pending for authorization.', array(
-                '@amount' => sprintf('%.2f', $form_state['values']['top_up_amount']/100),
-                '@currency' => $form_state['values']['currency_id']
-            )), 'status');
-        break;
-      case COMMERCE_PAYMENT_STATUS_FAILURE:
-        $message = t('Developer %developer with %email has failed or was rejected top up %amount %currency to his balance.', $vars);
-        Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_WARNING, $message);
-        drupal_set_message(t('Your top up for @amount @currency has failed or was rejected.', array(
-                '@amount' => sprintf('%.2f', $form_state['values']['top_up_amount']/100),
-                '@currency' => $form_state['values']['currency_id']
-            )), 'error');
-        break;
-    }
 }
 
 function devconnect_monetization_payment_theme($existing, $type, $theme, $path) {
@@ -154,9 +87,9 @@ function devconnect_monetization_payment_commerce_checkout_pane_info(){
 
 function devconnect_monetization_payment_review_top_up_details_pane_checkout_form(&$form, $form_state, $checkout_pane, $order) {
 
-  $client = devconnect_monetization_default_api_client(TRUE);
-  $org = new Organization($client);
-  $org->load($client->getOrg());
+  $config = devconnect_monetization_default_org_config();
+  $org = new Organization($config);
+  $org->load();
 
   $variables = array(
     'order' => $order,
@@ -189,7 +122,7 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
             $developer_id = $order->mail;
           }
 
-          $client = devconnect_monetization_default_api_client();
+          $client = devconnect_monetization_default_org_config();
           $developer = new Developer($client);
           $developer->load($developer_id);
 
@@ -206,12 +139,18 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
           list($trans_id) = array_keys($transactions['commerce_payment_transaction']);
           $transaction = commerce_payment_transaction_load($trans_id);
 
-          $developer->topUpPrepaidBalance(
-              strtolower($amount['currency_code']),
-              $amount['amount']/100,
-              $transaction->payload[$transaction->revision_timestamp]['desc'],
-              $transaction->remote_id
-            );
+          $new_balance = array(
+            'amount' => commerce_currency_amount_to_decimal($amount['amount'], $amount['currency_code']),
+            'providerTxId' => $transaction->remote_id,
+            'txReference' => $transaction->payload[$transaction->revision_timestamp]['desc'],
+            'gatewayTxReference' => $transaction->payload[$transaction->revision_timestamp]['desc'],
+            'isRecurring' => 'false',
+            'supportedCurrency' => array(
+              'id' => strtolower($amount['currency_code']),
+            ),
+          );
+
+          $developer->topUpPrepaidBalance($new_balance);
 
           module_invoke_all('devconnect_monetization_developer_topped_up', $developer, $order);
 
@@ -275,19 +214,19 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
           $vars = array(
             '%developer' => $developer_id,
             '%email' => $order->mail,
-            '%amount' => sprintf('%.2f', $amount['amount']/100),
+            '%amount' => commerce_currency_format($amount['amount'], strtoupper($amount['currency_code'])),
             '%currency' => $amount['currency_code'],
             '@company_id' => $developer_id,
           );
           $message = t('Developer %developer with %email has topped up %amount %currency on behalf of @company_id\'s balance and updated Mint back end.', $vars);
           Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
         }
-        catch(MintApiException $e) {
+        catch(MintApiException $ce) {
           if ($GLOBALS['devconnect_monetization_debug_endpoint_response']) {
             Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $ce->getMintMessage(TRUE));
           }
           Apigee\Util\Log::write('devconnnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $ce);
-          throw $e;
+          throw $ce;
         }
       }
       catch(Exception $e) {

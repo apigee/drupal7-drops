@@ -1,7 +1,0 @@
-name = Devconnect Apigee Legacy Function Stubs
-description = "<strong>DEPRECATED</strong> function stubs which may be called by some legacy DevConnect implementations"
-package = "DevConnect"
-core = "7.x"
-version = "7.x-1.21"
-
-dependencies[] = devconnect

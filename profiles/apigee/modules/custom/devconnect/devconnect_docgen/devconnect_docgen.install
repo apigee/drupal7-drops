@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * Implements hook_schema
+ */
+function devconnect_docgen_schema() {
+  $schema['cache_docgen'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}
+
+
+/**
+ * Verify that mint is enabled for the customer organization
+ */
+function devconnect_docgen_requirements($phase) {
+  $result = array();
+  $t = get_t();
+
+  switch ($phase) {
+    case 'install':
+      try {
+        $client = devconnect_default_api_client();
+        $docgen = new \Apigee\DocGen\DocGenModel($client);
+        $docgen->getModels();
+      } catch (Exception $e) {
+        if ($e->getCode() != '200') {
+          $result['docgen_connection'] = array(
+            'severity' => REQUIREMENT_ERROR,
+            'title' => 'DevConnect DocGen',
+            'value' => $t('DevConnect DocGen is not available for the current organization.'),
+          );
+        }
+      }
+      break;
+    case 'runtime':
+      try {
+        $client = devconnect_default_api_client();
+        $docgen = new \Apigee\DocGen\DocGenModel($client);
+        $docgen->getModels();
+        $result['docgen_connection'] = array(
+          'severity' => REQUIREMENT_OK,
+          'title' => 'DevConnect Connection',
+          'value' => $t('DevConnect is connected to the management server.'),
+        );
+      } catch (Exception $e) {
+        if ($e->getCode() != '200') {
+          $result['docgen_connection'] = array(
+            'severity' => REQUIREMENT_ERROR,
+            'title' => 'DevConnect DocGen',
+            'value' => $t('DevConnect DocGen is not available for the current organization.'),
+          );
+        }
+      }
+      break;
+    default:
+      break;
+  }
+  return $result;
+}

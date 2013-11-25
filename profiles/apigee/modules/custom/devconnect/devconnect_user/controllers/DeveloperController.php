@@ -37,18 +37,22 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    *
    * @param array $names
    * @param array $conditions
+   *
+   * @throws Apigee\Exceptions\ResponseException
+   *
    * @return array
    */
   public function load($ids = array(), $conditions = array()) {
-    $client = devconnect_default_api_client();
-    $dev_obj = new Apigee\ManagementAPI\Developer($client);
+    $dev_obj = new Apigee\ManagementAPI\Developer(devconnect_default_api_client());
 
     $email_lookup = array();
 
     if (empty($ids)) {
+      // The following may throw Apigee\Exceptions\ResponseException if the
+      // endpoint is unreachable.
       $list = $dev_obj->loadAllDevelopers();
-      foreach($list as $d) {
-        $email= $d->getEmail();
+      foreach ($list as $d) {
+        $email = $d->getEmail();
         $this->devCache[$email] = $d;
         if (!array_key_exists($email, $this->emailCache)) {
           $email_lookup[] = $email;
@@ -63,13 +67,19 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
         }
         else {
           $my_dev = clone $dev_obj;
-          $my_dev->load($email);
-          $email = $my_dev->getEmail(); // correct for case
-          $this->devCache[$email] = $my_dev;
-          if (!array_key_exists($email, $this->emailCache)) {
-            $email_lookup[] = $email;
+          try {
+            $my_dev->load($email);
+            $email = $my_dev->getEmail(); // correct for case
+            $this->devCache[$email] = $my_dev;
+            if (!array_key_exists($email, $this->emailCache)) {
+              $email_lookup[] = $email;
+            }
+            $list[] = $my_dev;
+          } catch (Apigee\Exceptions\ResponseException $e) {
+            if ($e->getCode() != 404) {
+              throw $e;
+            }
           }
-          $list[] = $my_dev;
         }
       }
     }
@@ -106,7 +116,13 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   public function delete($ids) {
     $dev_app = new Apigee\ManagementAPI\Developer(devconnect_default_api_client());
     foreach ($ids as $id) {
-      $dev_app->delete($id);
+      try {
+        $dev_app->delete($id);
+      } catch (Apigee\Exceptions\ResponseException $e) {
+        if ($e->getCode() != 404) {
+          throw $e;
+        }
+      }
       if (isset($this->devCache[$id])) {
         unset ($this->devCache[$id]);
       }
@@ -137,7 +153,11 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     }
     $dev = new Apigee\ManagementAPI\Developer(devconnect_default_api_client());
     $dev->fromArray($entity);
-    $dev->save($is_update);
+    try {
+      $dev->save($is_update);
+    } catch (Apigee\Exceptions\ResponseException $e) {
+      return FALSE;
+    }
     $this->devCache[$entity['email']] = $entity;
 
     return ($is_update ? SAVED_UPDATED : SAVED_NEW);

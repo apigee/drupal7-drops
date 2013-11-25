@@ -1,0 +1,825 @@
+<?php
+/**
+ * @file
+ * SimpleTest testing suites.
+ */
+
+/**
+ * Base class for conditional rules testing.
+ */
+abstract class RulesConditionalBaseTestCase extends DrupalWebTestCase {
+  /**
+   * Asserts a test message from the execution of a rule configuration.
+   *
+   * @param $error
+   * @param RulesPlugin $config
+   * @param array $args
+   * @param string $message
+   */
+  protected function assertExecution($error, $config, array $args = array(), $message = '') {
+    if (empty($message)) {
+      $message = t('Message "@error" captured by executing rule configuration.', array('@error' => $error));
+    }
+    try {
+      $config->executeByArgs($args);
+      return $this->fail($message);
+    }
+    catch (RulesConditionalTestException $ex) {
+      return $this->assertEqual($error, $ex->getMessage(), $message);
+    }
+  }
+
+  /**
+   * Retrieves a file in the test directory.
+   */
+  protected function getFileContents($fileName) {
+    $filePath = drupal_get_path('module', 'rules_conditional_test') . '/' . $fileName;
+    return file_get_contents($filePath);
+  }
+}
+
+/**
+ * Framework tests.
+ */
+class RulesConditionalFrameworkTestCase extends RulesConditionalBaseTestCase {
+  /**
+   * Returns test info.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Framework',
+      'description' => 'Test the core conditional plugin framework.',
+      'group' => 'Conditional Rules',
+    );
+  }
+
+  /**
+   * Sets up test case.
+   */
+  protected function setUp() {
+    parent::setUp('rules_conditional_test');
+  }
+
+  /**
+   * Tests plugin label.
+   */
+  public function testPluginLabel() {
+    $container = new RulesConditionalTestStubContainer();
+    $label = $container->label();
+    $this->assertEqual('Stub conditional', $label, 'Default conditional container label uses the plugin label.');
+
+    $branch = new RulesConditionalTestStubElement();
+    $label = $branch->label();
+    $this->assertEqual('Stub conditional element', $label, 'Default conditional element label uses the plugin label.');
+  }
+
+  /**
+   * Tests intercepting a method.
+   */
+  public function testInterceptMethod() {
+    $message = 'Test magic method is intercepted.';
+    try {
+      $container = new RulesConditionalTestStubContainer();
+      $container->test();
+      $this->fail($message);
+    }
+    catch (Exception $ex) {
+      $this->assertEqual('intercept', $ex->getMessage(), $message);
+    }
+  }
+
+  /**
+   * Tests fluent interface.
+   */
+  public function testFluentInterface() {
+    $container = new RulesConditionalTestStubContainer();
+    $actions1 = new RulesActionSet();
+    $container->fluent($actions1)->action('drupal_message', array('message' => '[site:name]'));
+    $this->assertEqual(1, count($actions1->elements()), 'Fluent interface adds action to the active element.');
+    $actions2 = new RulesActionSet();
+    $container->fluent($actions2)->action('drupal_message', array('message' => '[site:name]'));
+    $this->assertEqual(1, count($actions1->elements()), 'Fluent interface does not add action to a previously active element.');
+  }
+
+  /**
+   * Tests branch sibling methods.
+   */
+  public function testBranchSibling() {
+    // Set up stub objects.
+    $container = new RulesConditionalTestStubContainer();
+    $branch1 = new RulesConditionalTestStubElement();
+    $branch1->setParent($container);
+    $branch2 = new RulesConditionalTestStubElement();
+    $branch2->setParent($container);
+    $orphanBranch = new RulesConditionalTestStubElement();
+
+    // Test obtaining siblings.
+    $this->assertIdentical($branch2, $branch1->getNextSibling(), 'Next sibling branch can be obtained.');
+    $this->assertIdentical($branch1, $branch2->getPreviousSibling(), 'Previous sibling branch can be obtained.');
+    $this->assertNull($branch1->getPreviousSibling(), 'First branch has no previous sibling.');
+    $this->assertNull($branch2->getNextSibling(), 'Last branch has no next sibling.');
+
+    // Test obtaining siblings from an orphan element.
+    $this->assertNull($orphanBranch->getNextSibling(), 'Orphan branch has no next sibling.');
+    $this->assertNull($orphanBranch->getPreviousSibling(), 'Orphan branch has no previous sibling.');
+  }
+
+  /**
+   * Tests integrity check.
+   */
+  public function testIntegrityCheck() {
+    $container = new RulesConditionalTestStubContainer();
+
+    $message = 'Dependent element does not validate without a required preceding element.';
+    $dependent = new RulesConditionalTestStubDependentElement();
+    $dependent->setParent($container);
+    try {
+      $dependent->integrityCheck();
+      $this->fail($message);
+    }
+    catch (RulesIntegrityException $ex) {
+      $element = new RulesConditionalTestStubElement();
+      $element->weight = -1;
+      $element->setParent($container);
+      $container->sortChildren();
+      $dependent->integrityCheck();
+      $this->pass($message);
+    }
+
+    $message = 'A single element does not validate if it occurs more than once in a conditional container.';
+    $single = new RulesConditionalTestStubSingleElement();
+    $single->setParent($container);
+    try {
+      $single->integrityCheck();
+      $single2 = new RulesConditionalTestStubSingleElement();
+      $single2->setParent($container);
+      try {
+        $single->integrityCheck();
+        $this->fail($message);
+      }
+      catch (RulesIntegrityException $ex) {
+        try {
+          $single2->integrityCheck();
+          $this->fail($message);
+        }
+        catch (RulesIntegrityException $ex) {
+          $single2->delete();
+          try {
+            $single->integrityCheck();
+            $this->pass($message);
+          }
+          catch (RulesIntegrityException $ex) {
+            $this->fail($message);
+          }
+        }
+      }
+    }
+    catch (RulesIntegrityException $ex) {
+      $this->fail($message);
+    }
+
+    $message = 'A default element does not validate if it precedes any element.';
+    $default = new RulesConditionalTestStubDefaultElement();
+    try {
+      $default->setParent($container);
+      $default->integrityCheck();
+      try {
+        $element = new RulesConditionalTestStubElement();
+        $element->setParent($container);
+        $default->integrityCheck();
+        $this->fail($message);
+      }
+      catch (RulesIntegrityException $ex) {
+        $element->delete();
+        try {
+          $default->integrityCheck();
+          $this->pass($message);
+        }
+        catch (RulesIntegrityException $ex) {
+          $this->fail($message);
+        }
+      }
+    }
+    catch (RulesIntegrityException $ex) {
+      $this->fail($message);
+    }
+  }
+
+  /**
+   * Tests basic evaluation.
+   */
+  public function testEvaluate() {
+    // Set up stub objects.
+    $container = new RulesConditionalTestStubContainer();
+    $branch = new RulesConditionalTestStubElement();
+    $branch->action('rules_conditional_test_throw', array('message' => 'evaluate'))
+      ->setParent($container);
+    $defaultBranch = new RulesConditionalTestStubDefaultElement();
+    $defaultBranch->action('rules_conditional_test_throw', array('message' => 'evaluate default'))
+      ->setParent($container);
+
+    // Evaluate an element.
+    $this->assertExecution('evaluate', $container, array(), 'Evaluating container evaluates elements.');
+    $branch->setPass(FALSE);
+    $this->assertExecution('evaluate default', $container, array(), 'Evaluating container evaluates default elements.');
+  }
+
+  /**
+   * Tests container provided variables.
+   */
+  public function testProvidesVariables() {
+    rules_action_set(array())->action($container = new RulesConditionalTestStubContainer());
+    $textVariable = array('variable_added:var' => 'text', 'type' => 'text');
+    $mixedVariable1 = array('variable_added:var' => 'mixed', 'type' => 'text');
+    $mixedVariable2 = array('variable_added:var' => 'mixed', 'type' => 'token');
+
+    $branch1 = new RulesConditionalTestStubElement();
+    $branch1->action('variable_add', $textVariable)
+      ->setParent($container);
+    $this->assertIdentical(array(), $container->providesVariables(), 'Container does not provide variables without a default branch.');
+
+    $defaultBranch = new RulesConditionalTestStubDefaultElement();
+    $defaultBranch->action('variable_add', $textVariable)
+      ->setParent($container);
+    $this->assertIdentical(array('text'), array_keys($container->providesVariables()), 'Container provides common variables in complete branches.');
+
+    $branch1->action('variable_add', $mixedVariable1);
+    $defaultBranch->action('variable_add', $mixedVariable2);
+    $this->assertIdentical(array('text'), array_keys($container->providesVariables()), 'Container does not provide variables with mixed types.');
+
+    $branch2 = new RulesConditionalTestStubElement();
+    $branch2->setParent($container);
+    $this->assertIdentical(array(), $container->providesVariables(), 'Container provides no variables if one branch provides none.');
+  }
+
+  /**
+   * Tests the base predicate element.
+   */
+  public function testPredicateElement() {
+    $predicateElement = new RulesConditionalTestStubPredicateElement();
+
+    // Test integrity check.
+    $message = 'Predicate element does not validate without predicate.';
+    try {
+      $predicateElement->integrityCheck();
+      $this->fail($message);
+    }
+    catch (RulesIntegrityException $ex) {
+      $expectedExceptionMessage = t('The conditional "%plugin" does not have a valid predicate.', array('%plugin' => $predicateElement->plugin()));
+      $this->assertEqual($expectedExceptionMessage, $ex->getMessage(), $message);
+    }
+
+    // Test variable assertion using a field in a content type.
+    field_create_field(array(
+      'field_name' => 'field_test',
+      'type' => 'text',
+    ));
+    field_create_instance(array(
+      'field_name' => 'field_test',
+      'entity_type' => 'node',
+      'bundle' => 'page',
+    ));
+    $settings = array(
+      'type' => 'page',
+      'field_test' => array(LANGUAGE_NONE => array(array('value' => 'test value'))),
+    );
+    $node = $this->drupalCreateNode($settings);
+
+    $predicateElement = new RulesConditionalTestStubPredicateElement('data_is', array(
+      'data:select' => 'node:type',
+      'op' => '==',
+      'value' => 'page',
+    ));
+    $actionSet = rules_action_set(array('node' => array('type' => 'node', 'label' => 'Node')))
+      ->action($predicateElement->action('rules_conditional_test_throw', array(
+        'message:select' => 'node:field_test',
+      )));
+    $this->assertExecution('test value', $actionSet->integrityCheck(), array($node), 'Predicate element correctly adds predicate assertions to state.');
+  }
+}
+
+/**
+ * Default if-else tests.
+ */
+class RulesConditionalTestCase extends RulesConditionalBaseTestCase {
+  /**
+   * Returns test info.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Conditional',
+      'description' => 'Test the if-else plugins.',
+      'group' => 'Conditional Rules',
+    );
+  }
+
+  /**
+   * Sets up test case.
+   */
+  protected function setUp() {
+    parent::setUp('rules_conditional_test');
+  }
+
+  /**
+   * Tests evaluation.
+   */
+  public function testEvaluate() {
+    // Create test objects.
+    $comp = $this->createTestComponent();
+    $this->assert($this->doTestEvaluate($comp), 'Conditional correctly evaluates.');
+  }
+
+  /**
+   * Tests exporting.
+   */
+  public function testExport() {
+    $comp = $this->createTestComponent();
+    $comp->name = 'conditional_test';
+    $export = $this->getFileContents('conditional_test_export.txt');
+    $this->assertEqual($export, $comp->export(), 'Conditional is correctly exported.');
+  }
+
+  /**
+   * Tests importing.
+   */
+  public function testImport() {
+    $export = $this->getFileContents('conditional_test_export.txt');
+    $comp = entity_import('rules_config', $export);
+    $this->assert($this->doTestEvaluate($comp), 'Imported conditional correctly evaluates.');
+  }
+
+  /**
+   * Creates an action set to test a conditional.
+   */
+  protected function createTestComponent() {
+    return rules_action_set(array('node' => array('type' => 'node', 'label' => 'Node')))
+      ->action(rules_conditional()
+        ->if('data_is', array('data:select' => 'node:title', 'value' => 'if'))
+        ->action('rules_conditional_test_throw', array('message' => 'if'))
+        ->elseIf('data_is', array('data:select' => 'node:title', 'value' => 'else if'))
+        ->action('rules_conditional_test_throw', array('message' => 'else if'))
+        ->else()
+        ->action('rules_conditional_test_throw', array('message' => 'else')));
+  }
+
+  /**
+   * Tests evaluating a conditional.
+   */
+  public function doTestEvaluate($comp) {
+    $node = $this->drupalCreateNode();
+    $result = TRUE;
+
+    // Test "if".
+    $node->title = 'if';
+    $result = $this->assertExecution('if', $comp, array($node)) && $result;
+
+    // Test "else if".
+    $node->title = 'else if';
+    $result = $this->assertExecution('else if', $comp, array($node)) && $result;
+
+    // Test "else".
+    $node->title = 'else';
+    $result = $this->assertExecution('else', $comp, array($node)) && $result;
+
+    return $result;
+  }
+}
+
+/**
+ * Switch tests.
+ */
+class RulesConditionalSwitchTestCase extends RulesConditionalBaseTestCase {
+  /**
+   * Returns test info.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Switch',
+      'description' => 'Test the switch plugins.',
+      'group' => 'Conditional Rules',
+    );
+  }
+
+  /**
+   * Sets up test case.
+   */
+  protected function setUp() {
+    parent::setUp('rules_conditional_test');
+  }
+
+  /**
+   * Tests evaluation.
+   */
+  public function testEvaluate() {
+    $comp = $this->createTestComponent();
+    $this->assert($this->doTestEvaluate($comp), 'Switch correctly evaluates.');
+  }
+
+  /**
+   * Tests exporting.
+   */
+  public function testExport() {
+    $comp = $this->createTestComponent();
+    $comp->name = 'switch_test';
+    $export = $this->getFileContents('switch_test_export.txt');
+    $this->assertEqual($export, $comp->export(), 'Switch is correctly exported.');
+  }
+
+  /**
+   * Tests importing.
+   */
+  public function testImport() {
+    $export = $this->getFileContents('switch_test_export.txt');
+    $comp = entity_import('rules_config', $export);
+    $this->assert($this->doTestEvaluate($comp), 'Imported switch correctly evaluates.');
+  }
+
+  /**
+   * Creates an action set to test a conditional.
+   */
+  protected function createTestComponent() {
+    return rules_action_set(array('node' => array('type' => 'node', 'label' => 'Node')))
+      ->action(rules_conditional_switch('node:title')
+        ->case(array('value' => 'case 1'))
+        ->action('rules_conditional_test_throw', array('message' => 'case'))
+        ->case(array('value' => 'case 2'), TRUE)
+        ->action('data_set', array('data:select' => 'node:title', 'value' => 'fall through'))
+        ->case(array('value' => 'case 3'))
+        ->action('rules_conditional_test_throw', array('message' => 'case 3'))
+        ->defaultCase()
+        ->action('rules_conditional_test_throw', array('message' => 'default')));
+  }
+
+  /**
+   * Tests evaluating a conditional.
+   */
+  public function doTestEvaluate($comp) {
+    $node = $this->drupalCreateNode();
+    $result = TRUE;
+
+    // Test basic "case".
+    $node->title = 'case 1';
+    $result = $this->assertExecution('case', $comp, array($node)) && $result;
+
+    // Test fall-through "case".
+    $node->title = 'case 2';
+    $result = $this->assertExecution('case 3', $comp, array($node)) && $result;
+    $result = $this->assertEqual('fall through', $node->title) && $result;
+
+    // Test "default case".
+    $node->title = 'anything';
+    $result = $this->assertExecution('default', $comp, array($node)) && $result;
+
+    return $result;
+  }
+}
+
+/**
+ * While tests.
+ */
+class RulesConditionalWhileTestCase extends RulesConditionalBaseTestCase {
+  /**
+   * Returns test info.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'While loop',
+      'description' => 'Test the while loop plugin.',
+      'group' => 'Conditional Rules',
+    );
+  }
+
+  /**
+   * Sets up test case.
+   */
+  protected function setUp() {
+    parent::setUp('rules_conditional_test');
+  }
+
+  /**
+   * Tests evaluation.
+   */
+  public function testEvaluate() {
+    // Cap iteration limit to prevent long-running tests.
+    variable_set('rules_conditional_max_iterations', 100);
+
+    $comp = $this->createTestComponent();
+    $this->assert($this->doTestEvaluate($comp), 'While loop correctly evaluates.');
+
+    // Constrain iteration limit and test again.
+    variable_set('rules_conditional_max_iterations', 5);
+    $this->assert($this->doTestEvaluate($comp, 5), 'While loop correctly evaluates with limited number of iterations.');
+  }
+
+  /**
+   * Tests exporting.
+   */
+  public function testExport() {
+    $comp = $this->createTestComponent();
+    $comp->name = 'while_test';
+    $export = $this->getFileContents('while_test_export.txt');
+    $this->assertEqual($export, $comp->export(), 'While loop is correctly exported.');
+  }
+
+  /**
+   * Tests importing.
+   */
+  public function testImport() {
+    // Cap iteration limit to prevent long-running tests.
+    variable_set('rules_conditional_max_iterations', 100);
+
+    $export = $this->getFileContents('while_test_export.txt');
+    $comp = entity_import('rules_config', $export);
+    $this->assert($this->doTestEvaluate($comp), 'Imported while loop correctly evaluates.');
+  }
+
+  /**
+   * Creates an action set to test a conditional.
+   */
+  protected function createTestComponent() {
+    return rules_action_set(array())
+      ->action('variable_add', array('type' => 'integer', 'value' => 0, 'variable_added:var' => 'count', 'variable_added:label' => 'Count'))
+      ->action(rules_conditional_while('data_is', array('data:select' => 'count', 'op' => '>', 'value' => 10))->negate()
+        ->action('data_set', array(
+          'data:select' => 'count',
+          'value:select' => 'count',
+          'value:process' => array(
+            'num_offset' => array('value' => 1),
+          ),
+        )))
+      ->action('rules_conditional_test_throw', array('message:select' => 'count'));
+  }
+
+  /**
+   * Tests evaluating a conditional.
+   */
+  public function doTestEvaluate($comp, $expectedCount = 11) {
+    return $this->assertExecution($expectedCount, $comp);
+  }
+}
+
+/**
+ * Rule condition set tests.
+ */
+class RuleConditionSetTestCase extends RulesConditionalBaseTestCase {
+  /**
+   * Returns test info.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Rule condition set',
+      'description' => 'Test the rule condition set plugin.',
+      'group' => 'Conditional Rules',
+    );
+  }
+
+  /**
+   * Sets up test case.
+   */
+  protected function setUp() {
+    parent::setUp('rules_conditional_test');
+  }
+
+  /**
+   * Tests evaluation.
+   */
+  public function testEvaluate() {
+    $set = $this->createConditionSet();
+    $this->assert($this->doTestEvaluate($set), 'Rule condition set correctly evaluates.');
+
+    // Test evaluating in a component.
+    $set->save('rule_condition_set_test');
+    $comp = $this->createTestComponent($set);
+    $comp->execute('test');
+    $this->pass('Rule condition set evaluates to FALSE as a condition.');
+    $this->assertExecution('condition set', $comp, array('condition set'), 'Rule condition set evaluates to TRUE as a condition.');
+  }
+
+  /**
+   * Tests exporting.
+   */
+  public function testExport() {
+    $comp = $this->createConditionSet();
+    $comp->name = 'rule_condition_set_test';
+    $export = $this->getFileContents('rule_condition_set_test_export.txt');
+    $this->assertEqual($export, $comp->export(), 'Rule condition set is correctly exported.');
+  }
+
+  /**
+   * Tests importing.
+   */
+  public function testImport() {
+    $export = $this->getFileContents('rule_condition_set_test_export.txt');
+    $comp = entity_import('rules_config', $export);
+    $this->assert($this->doTestEvaluate($comp), 'Imported rule condition set correctly evaluates.');
+  }
+
+  /**
+   * Creates a rule condition set.
+   */
+  protected function createConditionSet() {
+    $conditionVariables = array(
+      'test' => array('type' => 'text', 'label' => 'Test'),
+    );
+    $set = rule_condition_set($conditionVariables)
+      ->action('variable_add', array('type' => 'text', 'variable_added:var' => 'test2', 'variable_added:label' => 'Test 2'))
+      ->action('data_set', array('data:select' => 'test2', 'value:select' => 'test'))
+      ->condition('data_is', array('data:select' => 'test2', 'value' => 'condition set'));
+    $set->component = TRUE;
+    return $set;
+  }
+
+  /**
+   * Creates an action set to test a rule condition set.
+   */
+  protected function createTestComponent(RuleConditionSet $conditionSet) {
+    return rule(array('test' => array('type' => 'text', 'label' => 'Text')))
+      ->condition('component_' . $conditionSet->name, array('test:select' => 'test'))
+      ->action('rules_conditional_test_throw', array('message' => 'condition set'));
+  }
+
+  /**
+   * Tests evaluating a rule condition set.
+   */
+  public function doTestEvaluate(RulesPlugin $comp) {
+    $result = TRUE;
+    $result = $this->assertTrue($comp->execute('condition set')) && $result;
+    $result = $this->assertFalse($comp->execute('wrong value')) && $result;
+    return $result;
+  }
+}
+
+/**
+ * UI tests.
+ */
+class RulesConditionalUITestCase extends RulesConditionalBaseTestCase {
+  /**
+   * Returns test info.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'User interface',
+      'description' => 'Test the user interface implementations for conditional plugins.',
+      'group' => 'Conditional Rules',
+    );
+  }
+
+  /**
+   * Sets up test case.
+   */
+  protected function setUp() {
+    parent::setUp('rules_conditional_test', 'rules_admin');
+    $user = $this->drupalCreateUser(array('administer rules'));
+    $this->drupalLogin($user);
+  }
+
+  /**
+   * Tests RulesConditionalPluginUI.
+   */
+  public function testBaseUI() {
+    // Create component.
+    $componentName = 'base_test';
+    $comp = rules_action_set(array())
+      ->action($container = new RulesConditionalTestStubContainer());
+    $comp->component = TRUE;
+    $comp->integrityCheck()->save($componentName);
+
+    $componentPath = 'admin/config/workflow/rules/components';
+    RulesPluginUI::$basePath = $componentPath;
+    $managePath = RulesPluginUI::path($componentName);
+    $addSinglePath = RulesPluginUI::path($componentName, 'add', $container, 'stub conditional single element');
+    $addDependentPath = RulesPluginUI::path($componentName, 'add', $container, 'stub conditional dependent element');
+
+    // Test 'conditional depends'.
+    $this->drupalGet($managePath);
+
+    // Check dependent element cannot be added.
+    $this->assertNoLinkByHref(url($addDependentPath), 'Dependent plugin is unavailable to add.');
+
+    // Add element and then check for link to add dependent element.
+    $element = new RulesConditionalTestStubElement();
+    $element->setParent($container);
+    $comp->save();
+    $this->drupalGet($managePath);
+    $this->assertLinkByHref(url($addDependentPath), 0, 'Dependent plugin can be added on fulfilling prerequisite.');
+
+    // Test 'conditional single'.
+    $element = new RulesConditionalTestStubSingleElement();
+    $element->setParent($container);
+    $comp->save();
+    $this->drupalGet($managePath);
+    $this->assertNoLinkByHref(url($addSinglePath), 'Single plugins cannot be added more than once.');
+  }
+
+  /**
+   * Tests RulesConditionalEmptyUI.
+   */
+  public function testEmptyUI() {
+    // Create component.
+    $componentName = 'empty_test';
+    $comp = rules_action_set(array());
+    $comp->component = TRUE;
+    $comp->integrityCheck()->save($componentName);
+
+    $componentPath = 'admin/config/workflow/rules/components';
+    RulesPluginUI::$basePath = $componentPath;
+    $managePath = RulesPluginUI::path($componentName);
+    $addPath = RulesPluginUI::path($componentName, 'add', $comp, 'stub conditional');
+
+    // Test adding with empty UI.
+    $this->drupalGet($addPath);
+    $this->assertUrl($managePath, array(), 'Adding via the empty UI redirects to the parent edit form.');
+  }
+
+  /**
+   * Tests RulesConditionalPredicateUI.
+   */
+  public function testPredicateUI() {
+    // Create component.
+    $componentName = 'predicate_test';
+    $comp = rules_action_set(array(
+      'node' => array(
+        'type' => 'node',
+        'label' => t('Node'),
+      ),
+    ));
+    $comp->component = TRUE;
+    $comp->integrityCheck()->save($componentName);
+
+    $componentPath = 'admin/config/workflow/rules/components';
+    RulesPluginUI::$basePath = $componentPath;
+    $addPath = RulesPluginUI::path($componentName, 'add', $comp, 'stub conditional predicate element');
+    $addPredicatePath = RulesPluginUI::path($componentName, 'add-predicate', $comp, 'stub conditional predicate element');
+
+    // Test adding with predicate UI.
+    $this->drupalGet($addPath);
+    $this->assertUrl($addPredicatePath, array(), 'Adding via the predicate UI redirects to a special creation form.');
+
+    // Add 'data_is'.
+    $edit = array(
+      'element_name' => 'data_is',
+    );
+    $this->drupalPost(NULL, $edit, t('Continue'));
+    $this->assertFieldByName('parameter[data][settings][data:select]', '', 'Creating a predicate shows the condition form.');
+
+    // Save the condition.
+    $edit = array(
+      'parameter[data][settings][data:select]' => 'node:type',
+    );
+    $this->drupalPost(NULL, $edit, t('Continue'));
+    $edit = array(
+      'parameter[value][settings][value]' => 'page',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Reload and execute component.
+    $comp = rules_config_load($componentName);
+    $comp->elements()->current()
+      ->action('data_set', array(
+        'data:select' => 'node:title',
+        'value' => 'evaluate predicate',
+      ));
+    $comp->execute($node = $this->drupalCreateNode());
+    $this->assertEqual('evaluate predicate', $node->title, 'Element created from predicate UI can be evaluated.');
+  }
+
+  /**
+   * Tests RulesConditionalCaseUI.
+   */
+  public function testCaseUI() {
+    // Create component.
+    $componentName = 'case_test';
+    $comp = rules_action_set(array(
+      'node' => array(
+        'type' => 'node',
+        'label' => t('Node'),
+      ),
+    ))->action($switch = rules_conditional_switch('node:type'));
+    $comp->component = TRUE;
+    $comp->integrityCheck()->save($componentName);
+
+    $componentPath = 'admin/config/workflow/rules/components';
+    RulesPluginUI::$basePath = $componentPath;
+    $addPath = RulesPluginUI::path($componentName, 'add', $switch, 'case');
+
+    // Test adding a case.
+    $this->drupalGet($addPath);
+    $this->assertFieldByXPath("//select[@name='parameter[value][settings][value]']", NULL, 'Option case values are shown as select list.');
+    $edit = array(
+      'parameter[value][settings][value]' => 'page',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Reload and execute component.
+    $comp = rules_config_load($componentName);
+    // Navigate to switch.
+    $comp->elements()->current()
+      ->elements()->current()
+      ->action('data_set', array(
+        'data:select' => 'node:title',
+        'value' => 'evaluate case',
+      ));
+    $comp->execute($node = $this->drupalCreateNode());
+    $this->assertEqual('evaluate case', $node->title, 'Case element created from case UI can be evaluated.');
+  }
+}

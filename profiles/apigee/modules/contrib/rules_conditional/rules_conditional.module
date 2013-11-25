@@ -1,0 +1,74 @@
+<?php
+/**
+ * @file
+ * Main module file.
+ */
+
+/**
+ * Maximum number of loop iterations (effectively infinite).
+ */
+define('RULES_CONDITIONAL_MAX_ITERATIONS', 65535);
+
+/**
+ * Implements hook_rules_ui_menu_alter().
+ */
+function rules_conditional_rules_ui_menu_alter(&$items, $base_path, $base_count) {
+  module_load_include('inc', 'rules_conditional', 'includes/rules_conditional.rules_admin');
+  _rules_conditional_rules_ui_menu_alter($items, $base_path, $base_count);
+}
+
+/**
+ * Creates a conditional.
+ */
+function rules_conditional() {
+  return new RulesConditional();
+}
+
+/**
+ * Creates an "if".
+ */
+function rules_conditional_if($predicate, array $settings = array()) {
+  return new RulesConditionalIf($predicate, $settings);
+}
+
+/**
+ * Creates an "else".
+ */
+function rules_conditional_else() {
+  return new RulesConditionalElse();
+}
+
+/**
+ * Creates a "switch".
+ */
+function rules_conditional_switch($data_selector) {
+  return new RulesConditionalSwitch($data_selector);
+}
+
+/**
+ * Creates a "case".
+ */
+function rules_conditional_case(array $settings = array(), $fall_through = FALSE) {
+  return new RulesConditionalCase($settings, $fall_through);
+}
+
+/**
+ * Creates a "default case".
+ */
+function rules_conditional_default_case() {
+  return new RulesConditionalDefaultCase();
+}
+
+/**
+ * Creates a "while".
+ */
+function rules_conditional_while($predicate, array $settings = array()) {
+  return new RulesConditionalWhile($predicate, $settings);
+}
+
+/**
+ * Creates a rule condition set.
+ */
+function rule_condition_set(array $variables = array()) {
+  return new RuleConditionSet($variables);
+}

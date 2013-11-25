@@ -1,0 +1,75 @@
+<?php
+
+/**
+ * Implements hook_init().
+ */
+function apigee_sso_ui_init() {
+  drupal_add_css(drupal_get_path('module', 'apigee_sso_ui') . '/apigee_sso.css',
+    array('group' => CSS_THEME, 'every_page' => TRUE));
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * @return array
+ */
+function apigee_sso_ui_theme() {
+  return array(
+    'apigee-sso-ui-signin-block' => array(
+      'template' => 'apigee_sso_ui_signin_block',
+      'path' => drupal_get_path('module', 'apigee_sso_ui') . "/templates"
+    )
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function apigee_sso_ui_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_login':
+      $block = apigee_sso_ui_block_view();
+      $form['sso_buttons'] = array(
+        '#type' => 'markup',
+        '#markup' => $block['content'],
+        '#weight' => -99
+      );
+      break;
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ *
+ * @param int $delta
+ * @return array
+ */
+function apigee_sso_ui_block_info($delta = 0) {
+  $blocks = array();
+  $blocks[0] = array(
+    'info' => t('Apigee SSO'),
+    'weight' => 0,
+    'status' => 0,
+    'region' => 'sidebar_first'
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * @param string $delta
+ * @return array
+ */
+function apigee_sso_ui_block_view($delta = '') {
+  switch ($delta) {
+    default:
+      $block = array();
+      $block['subject'] = t('Apigee SSO');
+      $block['content'] = theme('apigee-sso-ui-signin-block');
+  }
+  return $block;
+}

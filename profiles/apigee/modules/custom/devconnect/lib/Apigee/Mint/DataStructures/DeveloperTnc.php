@@ -8,7 +8,7 @@ class DeveloperTnc extends DataStructure {
 
   private $action;
 
-  private $audit_date;
+  private $auditDate;
 
   private $id;
 
@@ -29,10 +29,10 @@ class DeveloperTnc extends DataStructure {
   }
 
   public function getAuditDate() {
-    return $this->audit_date;
+    return $this->auditDate;
   }
   public function setAuditDate($audit_date) {
-    $this->audit_date = $audit_date;
+    $this->auditDate = $audit_date;
   }
 
   public function getId() {
@@ -52,7 +52,7 @@ class DeveloperTnc extends DataStructure {
   public function __toString() {
     $object = array(
       'action' => $this->action,
-      'auditDate' => $this->audit_date,
+      'auditDate' => $this->auditDate,
       'id' => $this->id,
     );
     return json_encode($object, JSON_FORCE_OBJECT);

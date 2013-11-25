@@ -3,7 +3,6 @@
 namespace Apigee\Mint;
 
 use Apigee\Util\CacheFactory;
-use Apigee\Util\Log as Log;
 
 use Apigee\Exceptions\ParameterException as ParameterException;
 { // class is inclosed in curly bracets due to an overlapping issue in namespaces. Need to figure out how to avoid it
@@ -26,7 +25,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * MonetizationPackage
      * @var \Apigee\Mint\MonetizationPackage
      */
-    private $monetization_package;
+    private $monetizationPackage;
 
     /**
      * Rate Plan currency
@@ -38,16 +37,16 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * Reference rate plan id RatePlan
      * @var \Apigee\Mint\RatePlan
      */
-    private $parent_rate_plan;
+    private $parentRatePlan;
 
-    private $payment_due_days;
+    private $paymentDueDays;
 
     /**
      * References a rate plan that this plan belongs to if any. This is for
      * devconnect internal logic.
      * @var \Apigee\Mint\RatePlan
      */
-    private $child_rate_plan;
+    private $childRatePlan;
 
     /**
      * com.apigee.mint.model.Developer
@@ -59,7 +58,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * com.apigee.mint.model.DeveloperCategory
      * @var \Apigee\Mint\DeveloperCategory
      */
-    private $developer_category;
+    private $developerCategory;
 
     /**
      * Array of DeveloperRatePlan
@@ -71,13 +70,13 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * com.apigee.mint.model.ApplicationCategory
      * @var \Apigee\Mint\ApplicationCategory
      */
-    private $application_category;
+    private $applicationCategory;
 
     /**
      * Exchange Organization
      * @var \Apigee\Mint\Organization
      */
-    private $exchange_organization; //@TODO Verify if required
+    private $exchangeOrganization; //@TODO Verify if required
 
     /**
      * Rate plan type.
@@ -95,7 +94,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * Display Name
      * @var string
      */
-    private $display_name;
+    private $displayName;
 
     /**
      *  Description
@@ -107,38 +106,38 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * One time set up fee
      * @var double
      */
-    private $set_up_fee;
+    private $setUpFee;
 
     /**
      * Recurring time set up fee
      * @var double
      */
-    private $recurring_fee;
+    private $recurringFee;
 
     /**
      * Duration
      * @var int
      */
-    private $frequency_duration;
+    private $frequencyDuration;
 
     /**
      * Duration Type.
      * @var string
      */
-    private $frequency_duration_type;
+    private $frequencyDurationType;
 
     /**
      * Recurring Type Used to define if scheduler needs to be run based on Calendar or Custom (plan start date)
      * Possible values:
      * @var string
      */
-    private $recurring_type;
+    private $recurringType;
 
     /**
      * Recurring start unit this is only used if the recurringType is CALENDAR
      * @var int
      */
-    private $recurring_start_unit;
+    private $recurringStartUnit;
 
     /**
      * Should this package be prorated?
@@ -150,37 +149,37 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * Early termination fee
      * @var double
      */
-    private $early_termination_fee;
+    private $earlyTerminationFee;
 
     /**
      * Effective Start date
      * @var string
      */
-    private $start_date;
+    private $startDate;
 
     /**
      * Effective End date
      * @var string
      */
-    private $end_date;
+    private $endDate;
 
     /**
      * Freemium duration
      * @var int
      */
-    private $freemium_duration;
+    private $freemiumDuration;
 
     /**
      * Freemium number of units
      * @var int
      */
-    private $freemium_unit;
+    private $freemiumUnit;
 
     /**
      * Freemium Duration Type
      * @var string
      */
-    private $freemium_duration_type;
+    private $freemiumDurationType;
 
     /**
      * Is published?
@@ -192,31 +191,31 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * Contract duration
      * @var int
      */
-    private $contract_duration;
+    private $contractDuration;
 
     /**
      * Contract Duration Type .
      * @var string
      */
-    private $contract_duration_type;
+    private $contractDurationType;
 
     /**
      * Keep developer original start date (used for rate plan revisions)
      * @var boolean
      */
-    private $keep_original_start_date;
+    private $keepOriginalStartDate;
 
     /**
      * Rate plan details
      * @var array Array must elements must be instances of Apigee\Mint\DataStructures\RatePlanRate
      */
-    private $rate_plan_details = array();
+    private $ratePlanDetails = array();
 
     /**
      * Monetization Package id
      * @var string
      */
-    private $m_package_id;
+    private $mPackageId;
 
     /**
      * @var string
@@ -226,15 +225,15 @@ use Apigee\Exceptions\ParameterException as ParameterException;
     /**
      * Class constructor
      * @param string $m_package_id Monetization Package id
-     * @param \Apigee\Util\APIClient $client
+     * @param \Apigee\Util\OrgConfig $config
      */
-    public function __construct($m_package_id, \Apigee\Util\APIClient $client) {
-      $this->init($client);
-      $this->m_package_id = $m_package_id;
+    public function __construct($m_package_id, \Apigee\Util\OrgConfig $config) {
+      $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/monetization-packages/' . rawurlencode($m_package_id) . '/rate-plans';
+      $this->init($config, $base_url);
+      $this->mPackageId = $m_package_id;
 
-      $this->base_url = '/mint/organizations/' . rawurlencode($client->getOrg()) . '/monetization-packages/' . rawurlencode($m_package_id) . '/rate-plans';
-      $this->wrapper_tag = 'ratePlan';
-      $this->id_field = 'id';
+      $this->wrapperTag = 'ratePlan';
+      $this->idField = 'id';
 
       $this->initValues();
     }
@@ -246,16 +245,22 @@ use Apigee\Exceptions\ParameterException as ParameterException;
         return parent::getList();
       }
 
-      $current = $current ? 'true' : 'false';
-      $all_available = $all_available ? 'true' : 'false';
+      $options = array(
+        'query' => array(
+          'current' =>  $current ? 'true' : 'false',
+          'allAvailable' => $all_available ? 'true' : 'false',
+        ),
+      );
 
-      $url = '/mint/organizations/' . rawurlencode($this->client->getOrg()) . '/monetization-packages/' . rawurlencode($this->m_package_id) . '/developers/' . rawurlencode($this->developer->getEmail()) . '/rate-plans?current=' . $current . '&allAvailable=' . $all_available;
-      $this->client->get($url);
-      $response = $this->getResponse();
+      $url = '/mint/organizations/' . rawurlencode($this->config->orgName) . '/monetization-packages/' . rawurlencode($this->mPackageId) . '/developers/' . rawurlencode($this->developer->getEmail()) . '/rate-plans';
+      $this->setBaseUrl($url);
+      $this->get(NULL, 'application/json; charset=utf-8', array(), $options);
+      $this->restoreBaseUrl();
+      $response = $this->responseObj;
 
       $return_objects = array();
 
-      foreach ($response[$this->wrapper_tag] as $response_data) {
+      foreach ($response[$this->wrapperTag] as $response_data) {
         $obj = $this->instantiateNew();
         $obj->loadFromRawData($response_data);
         $return_objects[] = $obj;
@@ -266,7 +271,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
     // Implementation of BaseObject abstract methods
 
     public function instantiateNew() {
-      return new RatePlan($this->m_package_id, $this->client);
+      return new RatePlan($this->mPackageId, $this->config);
     }
 
     public function loadFromRawData($data, $reset = FALSE) {
@@ -301,22 +306,22 @@ use Apigee\Exceptions\ParameterException as ParameterException;
           $this->$setter_method($data[$property]);
         }
         else {
-          Log::write(__CLASS__, Log::LOGLEVEL_NOTICE, 'No setter method was found for property "' . $property . '"');
+          self::$logger->notice('No setter method was found for property "' . $property . '"');
         }
       }
 
       // Set objects
 
       if (isset($data['organization'])) {
-        $organization = new Organization($this->client);
+        $organization = new Organization($this->config);
         $organization->loadFromRawData($data['organization']);
         $this->organization = $organization;
       }
 
       if (isset($data['monetizationPackage'])) {
-        $monetizationPackage = new MonetizationPackage($this->client);
+        $monetizationPackage = new MonetizationPackage($this->config);
         $monetizationPackage->loadFromRawData($data['monetizationPackage']);
-        $this->monetization_package = $monetizationPackage;
+        $this->monetizationPackage = $monetizationPackage;
       }
 
       if (isset($data['currency'])) {
@@ -324,13 +329,13 @@ use Apigee\Exceptions\ParameterException as ParameterException;
       }
 
       if (isset($data['parentRatePlan'])) {
-        $rate_plan = new RatePlan($this->m_package_id, $this->client);
+        $rate_plan = new RatePlan($this->mPackageId, $this->config);
         $rate_plan->loadFromRawData($data['parentRatePlan']);
         $this->setParentRatePlan($rate_plan);
       }
 
       if (isset($data['developer'])) {
-        $dev = new Developer($this->client);
+        $dev = new Developer($this->config);
         $dev->loadFromRawData($data['developer']);
         $this->developer = $dev;
       }
@@ -342,14 +347,14 @@ use Apigee\Exceptions\ParameterException as ParameterException;
       //@TODO Implement load of applicationCategory
 
       if (isset($data['exchangeOrganization'])) {
-        $organization = new Organization($this->client);
+        $organization = new Organization($this->config);
         $organization->loadFromRawData($data['exchangeOrganization']);
-        $this->exchange_organization = $organization;
+        $this->exchangeOrganization = $organization;
       }
 
       if (isset($data['ratePlanDetails'])) {
         foreach ($data['ratePlanDetails'] as $ratePlanDetail) {
-          $this->rate_plan_details[] = new DataStructures\RatePlanDetail($ratePlanDetail, $this->client);
+          $this->ratePlanDetails[] = new DataStructures\RatePlanDetail($ratePlanDetail, $this->config);
         }
       }
     }
@@ -357,37 +362,37 @@ use Apigee\Exceptions\ParameterException as ParameterException;
     protected function initValues() {
       $this->advance = FALSE;
       $this->organization = NULL;
-      $this->monetization_package = NULL;
+      $this->monetizationPackage = NULL;
       $this->currency = NULL;
-      $this->child_rate_plan = NULL;
-      $this->parent_rate_plan = NULL;
+      $this->childRatePlan = NULL;
+      $this->parentRatePlan = NULL;
       $this->developer = NULL;
-      $this->developer_category = NULL;
+      $this->developerCategory = NULL;
       $this->developers = array();
-      $this->application_category = NULL;
-      $this->exchange_organization = NULL;
+      $this->applicationCategory = NULL;
+      $this->exchangeOrganization = NULL;
       $this->type = '';
       $this->name = '';
-      $this->display_name = '';
+      $this->displayName = '';
       $this->description = '';
-      $this->set_up_fee = 0;
-      $this->recurring_fee = 0;
-      $this->frequency_duration = 0;
-      $this->frequency_duration_type = '';
-      $this->recurring_type = '';
-      $this->recurring_start_unit = 0;
+      $this->setUpFee = 0;
+      $this->recurringFee = 0;
+      $this->frequencyDuration = 0;
+      $this->frequencyDurationType = '';
+      $this->recurringType = '';
+      $this->recurringStartUnit = 0;
       $this->prorate = FALSE;
-      $this->early_termination_fee = 0;
-      $this->start_date = '';
-      $this->end_date = '';
-      $this->freemium_duration = 0;
-      $this->freemium_unit = 0;
-      $this->freemium_duration_type = '';
+      $this->earlyTerminationFee = 0;
+      $this->startDate = '';
+      $this->endDate = '';
+      $this->freemiumDuration = 0;
+      $this->freemiumUnit = 0;
+      $this->freemiumDurationType = '';
       $this->published = FALSE;
-      $this->contract_duration = 0;
-      $this->contract_duration_type = '';
-      $this->keep_original_start_date = FALSE;
-      $this->rate_plan_details = array();
+      $this->contractDuration = 0;
+      $this->contractDurationType = '';
+      $this->keepOriginalStartDate = FALSE;
+      $this->ratePlanDetails = array();
     }
 
     public function __toString() {
@@ -418,7 +423,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return \Apigee\Mint\MonetizationPackage
      */
     public function getMonetizationPackage() {
-      return $this->monetization_package;
+      return $this->monetizationPackage;
     }
 
     /**
@@ -434,15 +439,15 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return \Apigee\Mint\RatePlan
      */
     public function getParentRatePlan() {
-      return $this->parent_rate_plan;
+      return $this->parentRatePlan;
     }
 
     public function getPaymentDueDays() {
-      return $this->payment_due_days;
+      return $this->paymentDueDays;
     }
 
     public function getChildRatePlan() {
-      return $this->child_rate_plan;
+      return $this->childRatePlan;
     }
 
     /**
@@ -458,7 +463,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return \Apigee\Mint\DeveloperCategory
      */
     public function getDeveloperCategory() {
-      return $this->developer_category;
+      return $this->developerCategory;
     }
 
     /**
@@ -474,7 +479,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return \Apigee\Mint\ApplicationCategory
      */
     public function getApplicationCategory() {
-      return $this->application_category;
+      return $this->applicationCategory;
     }
 
     /**
@@ -482,7 +487,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return \Apigee\Mint\Organization
      */
     public function getExchangeOrganization() {
-      return $this->exchange_organization;
+      return $this->exchangeOrganization;
     }
 
     /**
@@ -506,7 +511,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return string
      */
     public function getDisplayName() {
-      return $this->display_name;
+      return $this->displayName;
     }
 
     /**
@@ -522,7 +527,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return double
      */
     public function getSetUpFee() {
-      return $this->set_up_fee;
+      return $this->setUpFee;
     }
 
     /**
@@ -530,7 +535,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return double
      */
     public function getRecurringFee() {
-      return $this->recurring_fee;
+      return $this->recurringFee;
     }
 
     /**
@@ -538,7 +543,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return int
      */
     public function getFrequencyDuration() {
-      return $this->frequency_duration;
+      return $this->frequencyDuration;
     }
 
     /**
@@ -546,7 +551,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return string
      */
     public function getFrequencyDurationType() {
-      return $this->frequency_duration_type;
+      return $this->frequencyDurationType;
     }
 
     /**
@@ -554,7 +559,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return string
      */
     public function getRecurringType() {
-      return $this->recurring_type;
+      return $this->recurringType;
     }
 
     /**
@@ -562,7 +567,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return int
      */
     public function getRecurringStartUnit() {
-      return $this->recurring_start_unit;
+      return $this->recurringStartUnit;
     }
 
     /**
@@ -578,7 +583,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return double
      */
     public function getEarlyTerminationFee() {
-      return $this->early_termination_fee;
+      return $this->earlyTerminationFee;
     }
 
     /**
@@ -586,7 +591,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return string
      */
     public function getStartDate() {
-      return $this->start_date;
+      return $this->startDate;
     }
 
     /**
@@ -594,7 +599,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return string
      */
     public function getEndDate() {
-      return $this->end_date;
+      return $this->endDate;
     }
 
     /**
@@ -602,7 +607,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return int
      */
     public function getFreemiumDuration() {
-      return $this->freemium_duration;
+      return $this->freemiumDuration;
     }
 
     /**
@@ -610,7 +615,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return int
      */
     public function getFreemiumUnit() {
-      return $this->freemium_unit;
+      return $this->freemiumUnit;
     }
 
     /**
@@ -618,7 +623,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return string
      */
     public function getFreemiumDurationType() {
-      return $this->freemium_duration_type;
+      return $this->freemiumDurationType;
     }
 
     /**
@@ -634,7 +639,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return int
      */
     public function getContractDuration() {
-      return $this->contract_duration;
+      return $this->contractDuration;
     }
 
     /**
@@ -642,7 +647,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return string
      */
     public function getContractDurationType() {
-      return $this->contract_duration_type;
+      return $this->contractDurationType;
     }
 
     /**
@@ -650,7 +655,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return boolean
      */
     public function getKeepOriginalStartDate() {
-      return $this->keep_original_start_date;
+      return $this->keepOriginalStartDate;
     }
 
     /**
@@ -658,16 +663,16 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @return array Array must elements must be instances of Apigee\Mint\DataStructures\RatePlanRate
      */
     public function getRatePlanDetails() {
-      return $this->rate_plan_details;
+      return $this->ratePlanDetails;
     }
 
     public function getRatePlanDetailsByProduct(Product $product = NULL) {
       if ($product == NULL) {
-        return $this->rate_plan_details;
+        return $this->ratePlanDetails;
       }
       else {
         $rate_plan_details = array();
-        foreach ($this->rate_plan_details as &$rate_plan_detail) {
+        foreach ($this->ratePlanDetails as &$rate_plan_detail) {
           if (isset($rate_plan_detail->product) && $rate_plan_detail->product->getId() == $product->getId()) {
             $rate_plan_details[] = $rate_plan_detail;
           }
@@ -698,7 +703,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param \Apigee\Mint\MonetizationPackage $monetization_package
      */
     public function setMonetizationPackage(MonetizationPackage $monetization_package) {
-      $this->monetization_package = $monetization_package;
+      $this->monetizationPackage = $monetization_package;
     }
 
     /**
@@ -715,11 +720,11 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      */
     public function setParentRatePlan(RatePlan $parent_rate_plan) {
       $parent_rate_plan->setChildRatePlan($this);
-      $this->parent_rate_plan = $parent_rate_plan;
+      $this->parentRatePlan = $parent_rate_plan;
     }
 
     public function setPaymentDueDays($payment_due_days) {
-      $this->payment_due_days = $payment_due_days;
+      $this->paymentDueDays = $payment_due_days;
     }
 
     /**
@@ -727,7 +732,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param RatePlan $rate_plan
      */
     public function setChildRatePlan(RatePlan $rate_plan) {
-      $this->child_rate_plan = $rate_plan;
+      $this->childRatePlan = $rate_plan;
     }
 
     /**
@@ -743,7 +748,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param \Apigee\Mint\DeveloperCategory $developer_category
      */
     public function setDeveloperCategory(DeveloperCategory $developer_category) {
-      $this->developer_category = $developer_category;
+      $this->developerCategory = $developer_category;
     }
 
     /**
@@ -766,7 +771,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param \Apigee\Mint\ApplicationCategory $application_category
      */
     public function setApplicationCategory($application_category) {
-      $this->application_category = $application_category;
+      $this->applicationCategory = $application_category;
     }
 
     /**
@@ -774,7 +779,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param \Apigee\Mint\Organization $exchange_organization
      */
     public function setExchangeOrganization($exchange_organization) {
-      $this->exchange_organization = $exchange_organization;
+      $this->exchangeOrganization = $exchange_organization;
     }
 
     /**
@@ -810,7 +815,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $display_name
      */
     public function setDisplayName($display_name) {
-      $this->display_name = $display_name;
+      $this->displayName = $display_name;
     }
 
     /**
@@ -826,7 +831,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param double $set_up_fee
      */
     public function setSetUpFee($set_up_fee) {
-      $this->set_up_fee = $set_up_fee;
+      $this->setUpFee = $set_up_fee;
     }
 
     /**
@@ -834,7 +839,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param double $recurring_fee
      */
     public function setRecurringFee($recurring_fee) {
-      $this->recurring_fee = $recurring_fee;
+      $this->recurringFee = $recurring_fee;
     }
 
     /**
@@ -842,7 +847,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param int $frequency_duration
      */
     public function setFrequencyDuration($frequency_duration) {
-      $this->frequency_duration = $frequency_duration;
+      $this->frequencyDuration = $frequency_duration;
     }
 
     /**
@@ -855,7 +860,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
       if (!in_array($frequency_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
         throw new ParameterException('Invalid frequency duration type: ' . $frequency_duration_type);
       }
-      $this->frequency_duration_type = $frequency_duration_type;
+      $this->frequencyDurationType = $frequency_duration_type;
     }
 
     /**
@@ -868,7 +873,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
       if (!in_array($recurring_type, array('CALENDAR', 'CUSTOM'))) {
         throw new ParameterException('Invalid recurring type: ' . $recurring_type);
       }
-      $this->recurring_type = $recurring_type;
+      $this->recurringType = $recurring_type;
     }
 
     /**
@@ -876,7 +881,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param int $recurring_start_unit
      */
     public function setRecurringStartUnit($recurring_start_unit) {
-      $this->recurring_start_unit = $recurring_start_unit;
+      $this->recurringStartUnit = $recurring_start_unit;
     }
 
     /**
@@ -892,7 +897,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param double $early_termination_fee
      */
     public function setEarlyTerminationFee($early_termination_fee) {
-      $this->early_termination_fee = $early_termination_fee;
+      $this->earlyTerminationFee = $early_termination_fee;
     }
 
     /**
@@ -900,7 +905,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $start_date
      */
     public function setStartDate($start_date) {
-      $this->start_date = $start_date;
+      $this->startDate = $start_date;
     }
 
     /**
@@ -908,7 +913,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $end_date
      */
     public function setEndDate($end_date) {
-      $this->end_date = $end_date;
+      $this->endDate = $end_date;
     }
 
     /**
@@ -916,7 +921,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param int $freemium_duration
      */
     public function setFreemiumDuration($freemium_duration) {
-      $this->freemium_duration = $freemium_duration;
+      $this->freemiumDuration = $freemium_duration;
     }
 
     /**
@@ -924,7 +929,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param int $freemium_unit
      */
     public function setFreemiumUnit($freemium_unit) {
-      $this->freemium_unit = $freemium_unit;
+      $this->freemiumUnit = $freemium_unit;
     }
 
     /**
@@ -937,7 +942,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
       if (!in_array($freemium_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
         throw new ParameterException('Invalid freemium duration type: ' . $freemium_duration_type);
       }
-      $this->freemium_duration_type = $freemium_duration_type;
+      $this->freemiumDurationType = $freemium_duration_type;
     }
 
     /**
@@ -953,7 +958,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param int $contract_duration
      */
     public function setContractDuration($contract_duration) {
-      $this->contract_duration = $contract_duration;
+      $this->contractDuration = $contract_duration;
     }
 
     /**
@@ -966,7 +971,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
       if (!in_array($contract_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
         throw new ParameterException('Invalid contract duration type: ' . $contract_duration_type);
       }
-      $this->contract_duration_type = $contract_duration_type;
+      $this->contractDurationType = $contract_duration_type;
     }
 
     /**
@@ -974,7 +979,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param boolean $keep_original_start_date
      */
     public function setKeepOriginalStartDate($keep_original_start_date) {
-      $this->keep_original_start_date = $keep_original_start_date;
+      $this->keepOriginalStartDate = (bool)$keep_original_start_date;
     }
 
     /**
@@ -982,14 +987,14 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param \Apigee\Mint\DataStructures\RatePlanRate $rate_plan_detail
      */
     public function addRatePlanDetails(DataStructures\RatePlanRate $rate_plan_detail) {
-      $this->rate_plan_details[] = $rate_plan_detail;
+      $this->ratePlanDetails[] = $rate_plan_detail;
     }
 
     /**
      * Remove all RatePlanDetail from this RatePlan
      */
     public function clearRatePlanDetails() {
-      $this->rate_plan_details = array();
+      $this->ratePlanDetails = array();
     }
 
     public function getId() {
@@ -1003,7 +1008,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
 
     public function isGroupPlan() {
       $is_group_plan = TRUE;
-      foreach ($this->rate_plan_details as $ratePlanDetails) {
+      foreach ($this->ratePlanDetails as $ratePlanDetails) {
         if ($ratePlanDetails->getOrganization()->getParent() == NULL) {
           $is_group_plan = FALSE;
           break;
@@ -1018,7 +1023,7 @@ use Apigee\Exceptions\ParameterException as ParameterException;
 
     public function load($id = NULL) {
       if (!isset($id)) {
-        $id = $this->{$this->id_field};
+        $id = $this->{$this->idField};
       }
       if (!isset($id)) {
         throw new ParameterException('No object identifier was specified.');
@@ -1026,9 +1031,9 @@ use Apigee\Exceptions\ParameterException as ParameterException;
       $cache_manager = CacheFactory::getCacheManager(NULL);
       $data = $cache_manager->get('rate_plan:' . $id, NULL);
       if (!isset($data)) {
-        $url = $this->base_url . '/' . rawurlencode($id);
-        $this->client->get($url);
-        $data = $this->getResponse();
+        $url = rawurlencode($id);
+        $this->get($url);
+        $data = $this->responseObj;
         $cache_manager->set('rate_plan:' . $id, $data);
       }
       $this->initValues();

@@ -7,7 +7,7 @@ use \ReflectionClass;
 
 abstract class Type {
 
-  private static $concret_types = array();
+  private static $concreteTypes = array();
 
   /**
    * This method verifies that $value is declared as a constant in the
@@ -40,11 +40,11 @@ abstract class Type {
    */
   public static function get($value) {
     $type = get_called_class();
-    if (!array_key_exists($type, self::$concret_types)) {
+    if (!array_key_exists($type, self::$concreteTypes)) {
       $class = new ReflectionClass($type);
-      self::$concret_types[$type] = $class->getConstants();
+      self::$concreteTypes[$type] = $class->getConstants();
     }
-    if (in_array($value, self::$concret_types[$type])) {
+    if (in_array($value, self::$concreteTypes[$type])) {
       return $value;
     }
     else {

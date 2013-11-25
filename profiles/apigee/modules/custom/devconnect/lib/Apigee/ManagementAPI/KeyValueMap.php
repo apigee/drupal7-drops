@@ -1,21 +1,19 @@
 <?php
 
 namespace Apigee\ManagementAPI;
+
 use Apigee\Exceptions\ResponseException;
-use Apigee\Util\APIClient;
 
 class KeyValueMap extends Base implements KeyValueMapInterface {
-
-  protected $baseUrl;
 
   /**
    * Initializes default values of all member variables.
    *
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    */
-  public function __construct(APIClient $client) {
-    $this->init($client);
-    $this->baseUrl = '/organizations/' . $this->urlEncode($client->getOrg()) . '/keyvaluemaps';
+  public function __construct(\Apigee\Util\OrgConfig $config) {
+    $base_url = '/o/' . $this->urlEncode($config->orgName) . '/keyvaluemaps';
+    $this->init($config, $base_url);
   }
 
   /**
@@ -27,11 +25,11 @@ class KeyValueMap extends Base implements KeyValueMapInterface {
    * @return null|string
    */
   public function getEntryValue($map_name, $key_name) {
-    $url = $this->baseUrl . '/' . $this->urlEncode($map_name) . '/entries/' . $this->urlEncode($key_name);
+    $url = $this->urlEncode($map_name) . '/entries/' . $this->urlEncode($key_name);
     $value = NULL;
     try {
-      $this->client->get($url);
-      $response_obj = $this->getResponse();
+      $this->get($url);
+      $response_obj = $this->responseObj;
       $value = $response_obj['value'];
     }
     catch (ResponseException $e) {}
@@ -48,11 +46,10 @@ class KeyValueMap extends Base implements KeyValueMapInterface {
    * @return array
    */
   public function getAllEntries($map_name) {
-    $url = $this->baseUrl . '/' . $this->urlEncode($map_name);
-    $this->client->get($url);
-    $entries = array();
     // If something went wrong, the following line will throw a ResponseException.
-    $response = $this->getResponse();
+    $this->get($this->urlEncode($map_name));
+    $entries = array();
+    $response = $this->responseObj;
     foreach ($response['entry'] as $entry) {
       $entries[$entry['name']] = $entry['value'];
     }
@@ -70,7 +67,7 @@ class KeyValueMap extends Base implements KeyValueMapInterface {
    * @param $value
    */
   public function setEntryValue($map_name, $key_name, $value) {
-    $url = $this->baseUrl . '/' . $this->urlEncode($map_name) . '/entries/' . $this->urlEncode($key_name);
+    $url = $this->urlEncode($map_name) . '/entries/' . $this->urlEncode($key_name);
     $payload = array(
       'entry' => array(
          array(
@@ -80,16 +77,14 @@ class KeyValueMap extends Base implements KeyValueMapInterface {
       ),
       'name' => $map_name
     );
-    $this->client->put($url, $payload);
     // If something went wrong, the following line will throw a ResponseException.
-    $this->getResponse();
+    $this->put($url, $payload);
   }
 
   public function deleteEntry($map_name, $key_name) {
-    $url = $this->baseUrl . '/' . $this->urlEncode($map_name) . '/entries/' . $this->urlEncode($key_name);
-    $this->client->delete($url);
+    $url = $this->urlEncode($map_name) . '/entries/' . $this->urlEncode($key_name);
     // If something went wrong, the following line will throw a ResponseException.
-    $this->getResponse();
+    $this->http_delete($url);
   }
 
   public function create($map_name, $entries = NULL) {
@@ -102,15 +97,12 @@ class KeyValueMap extends Base implements KeyValueMapInterface {
         $payload['entry'][] = array('name' => $key, 'value' => $value);
       }
     }
-    $this->client->post($this->baseUrl, $payload);
     // If something went wrong, the following line will throw a ResponseException.
-    $this->getResponse();
+    $this->post(NULL, $payload);
   }
 
   public function delete($map_name) {
-    $url = $this->baseUrl . '/' . $this->urlEncode($map_name);
-    $this->client->delete($url);
     // If something went wrong, the following line will throw a ResponseException.
-    $this->getResponse();
+    $this->http_delete($this->urlEncode($map_name));
   }
 }

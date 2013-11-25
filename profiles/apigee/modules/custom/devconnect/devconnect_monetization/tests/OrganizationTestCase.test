@@ -23,11 +23,11 @@ class OrganizationTestCase extends MintTest {
 
   public function setUp() {
     parent::setUp();
-    $this->org = new Apigee\Mint\Organization($this->client);
+    $this->org = new Apigee\Mint\Organization($this->config);
   }
 
   public function testOrg() {
-    $my_org = $this->client->getOrg();
+    $my_org = $this->config->orgName;
     try {
       $list = $this->org->listOrganizationIdentifiers();
       $this->assert(count($list) > 0, 'Organization list is not empty');

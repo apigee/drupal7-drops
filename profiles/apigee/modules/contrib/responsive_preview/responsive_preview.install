@@ -1,0 +1,212 @@
+<?php
+/**
+ * @file
+ * responsive_preview.install
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function responsive_preview_schema() {
+  $schema['responsive_preview'] = array(
+    'description' => '',
+    'fields' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Device machine name.',
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "Human readable device label.",
+      ),
+      'width' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The width of the device screen in pixels.',
+      ),
+      'height' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The height of the device screen in pixels.',
+      ),
+      'dppx' => array(
+        'type' => 'float',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The number of dots per pixel unit.',
+      ),
+      'orientation' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "The default orientation of the device.",
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Weight, used in lists of devices.',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Whether a device is available to end users for previewing. (0 = no, 1 = yes)',
+      ),
+      'langcode' => array(
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "Language code, e.g. 'de' or 'en-US'.",
+      ),
+    ),
+    'primary key' => array('name'),
+    'indexes' => array(
+      'list' => array('weight', 'name'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function responsive_preview_install() {
+  /* References:
+   * - http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
+   * - http://www.w3.org/blog/CSS/2012/06/14/unprefix-webkit-device-pixel-ratio/
+   * - http://pieroxy.net/blog/2012/10/18/media_features_of_the_most_common_devices.html
+   */
+  $devices = array(
+    array(
+      'name' => 'small',
+      'label' => 'Smart phone',
+      'width' => 768,
+      'height' => 1280,
+      'dppx' => 2,
+      'orientation' => 'portrait',
+      'weight' => 0,
+      'status' => 0,
+      'langcode' => 'en',
+    ),
+    array(
+      'name' => 'medium',
+      'label' => 'Tablet',
+      'width' => 800,
+      'height' => 1280,
+      'dppx' => 1.325,
+      'orientation' => 'portrait',
+      'weight' => 1,
+      'status' => 0,
+      'langcode' => 'en',
+    ),
+    array(
+      'name' => 'large',
+      'label' => 'Typical desktop',
+      'width' => 1366,
+      'height' => 768,
+      'dppx' => 1,
+      'orientation' => 'landscape',
+      'weight' => 2,
+      'status' => 0,
+      'langcode' => 'en',
+    ),
+    array(
+      'name' => 'iphone5',
+      'label' => 'iPhone 5',
+      'width' => 640,
+      'height' => 1136,
+      'dppx' => 2,
+      'orientation' => 'portrait',
+      'weight' => 3,
+      'status' => 1,
+      'langcode' => 'en',
+    ),
+    array(
+      'name' => 'iphone4',
+      'label' => 'iPhone 4',
+      'width' => 640,
+      'height' => 960,
+      'dppx' => 2,
+      'orientation' => 'portrait',
+      'weight' => 4,
+      'status' => 1,
+      'langcode' => 'en',
+    ),
+    array(
+      'name' => 'ipad',
+      'label' => 'iPad',
+      'width' => 1536,
+      'height' => 2048,
+      'dppx' => 2,
+      'orientation' => 'portrait',
+      'weight' => 5,
+      'status' => 1,
+      'langcode' => 'en',
+    ),
+    array(
+      'name' => 'nexus4',
+      'label' => 'Nexus 4',
+      'width' => 768,
+      'height' => 1280,
+      'dppx' => 2,
+      'orientation' => 'portrait',
+      'weight' => 6,
+      'status' => 1,
+      'langcode' => 'en',
+    ),
+    array(
+      'name' => 'nexus7',
+      'label' => 'Nexus 7',
+      'width' => 800,
+      'height' => 1280,
+      'dppx' => 1.325,
+      'orientation' => 'portrait',
+      'weight' => 7,
+      'status' => 1,
+      'langcode' => 'en',
+    ),
+  );
+
+  // Insert the preconfigured devices into the database.
+  $query = db_insert('responsive_preview');
+  $query->fields(array(
+    'name',
+    'label',
+    'width',
+    'height',
+    'dppx',
+    'orientation',
+    'weight',
+    'status',
+    'langcode',
+  ));
+  foreach($devices as $device) {
+    $query->values($device);
+  }
+  $transaction = db_transaction();
+  try {
+    $query->execute();
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('responsive_preview', $e);
+    throw $e;
+  }
+}

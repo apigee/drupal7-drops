@@ -7,119 +7,118 @@ class CommerceCriteria extends DataStructure {
   /**
    * @var bool
    */
-  private $as_xorg;
+  private $asXorg;
 
   /**
    * @var string
    */
-  private $current_option;
+  private $currencyOption;
 
   /**
    * @var string
    *   Date value formatted as YYYY-mm-dd
    */
-  private $from_date;
+  private $fromDate;
 
   /**
    * @var array
    */
-  private $group_by;
+  private $groupBy;
 
   /**
    * @var bool
    */
-  private $show_rev_share_pct;
+  private $showRevSharePct;
 
   /**
    * @var bool
    */
-  private $show_summary;
+  private $showSummary;
 
   /**
    * @var bool
    */
-  private $show_tx_detail;
+  private $showTxDetail;
 
   /**
    * @var bool
    */
-  private $show_tx_type;
+  private $showTxType;
 
   /**
    * @var string
    *   Date value formatted as YYYY-mm-dd
    */
-  private $to_date;
+  private $toDate;
 
   public function __construct($data = NULL) {
     if (is_array($data)) {
+      // TODO FIXME loadFromRawData is not defined
       $this->loadFromRawData($data);
     }
   }
 
   // accessors/setters
   public function asXorg() {
-    return $this->as_xorg;
+    return $this->asXorg;
   }
   public function setAsXorg($as_xorg) {
-    $this->as_xorg = $as_xorg;
+    $this->asXorg = $as_xorg;
   }
 
   public function getCurrencyOption() {
-    return $this->current_option;
+    return $this->currencyOption;
   }
   public function setCurrencyOption($currency_option) {
-    $this->current_option = $currency_option;
+    $this->currencyOption = $currency_option;
   }
 
   public function getFromDate() {
-    return $this->from_date;
+    return $this->fromDate;
   }
   public function setFromDate($from_date) {
-    $this->from_date = $from_date;
+    $this->fromDate = $from_date;
   }
 
   public function getGroupBy() {
-    return $this->group_by;
+    return $this->groupBy;
   }
   public function setGroupBy($group_by) {
-    $this->group_by = $group_by;
+    $this->groupBy = $group_by;
   }
 
   public function showRevSharePct() {
-    return $this->show_rev_share_pct;
+    return $this->showRevSharePct;
   }
   public function setShowRevSharePct($show_rev_share_pct) {
-    $this->show_rev_share_pct = $show_rev_share_pct;
+    $this->showRevSharePct = $show_rev_share_pct;
   }
 
   public function showSummary() {
-    return $this->show_summary;
+    return $this->showSummary;
   }
   public function setShowSummary($show_summary) {
-    $this->show_summary = $show_summary;
+    $this->showSummary = $show_summary;
   }
 
   public function showTxDetail() {
-    return $this->show_tx_detail;
+    return $this->showTxDetail;
   }
   public function setShowTxDetail($show_tx_detail) {
-    $this->show_tx_detail = $show_tx_detail;
+    $this->showTxDetail = $show_tx_detail;
   }
 
   public function showTxType() {
-    return $this->show_tx_type;
+    return $this->showTxType;
   }
   public function setSowTxType($show_tx_type) {
-    $this->show_tx_type = $show_tx_type;
+    $this->showTxType = $show_tx_type;
   }
 
   public function getToDate() {
-    return $this->to_date;
+    return $this->toDate;
   }
   public function setToDate($to_date) {
-    $this->to_date = $to_date;
+    $this->toDate = $to_date;
   }
-
-
 }

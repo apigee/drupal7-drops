@@ -1,7 +1,7 @@
 <?php
 
-define('APP_ATTRIBUTES_ADMIN_PATH', 'admin/config/system/app-attributes');
-define('APP_ATTRIBUTES_ADMIN_PATH_COUNT', count(explode('/', APP_ATTRIBUTES_ADMIN_PATH)));
+define('APP_ATTRIBUTES_ADMIN_PATH', 'admin/config/devconnect/app-attributes');
+define('APP_ATTRIBUTES_ADMIN_PATH_COUNT', substr_count(APP_ATTRIBUTES_ADMIN_PATH, '/') + 1);
 
 /**
  * Implements hook_menu().
@@ -12,27 +12,27 @@ function devconnect_app_attributes_menu() {
   $items = array();
 
   $items[APP_ATTRIBUTES_ADMIN_PATH] = array(
-    'title' => t('DevConnect App Attributes'),
+    'title' => t('Dev Portal App Attributes'),
     'page callback' => 'devconnect_app_attributes_list',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/add'] = array(
-    'title' => t('Add DevConnect App Attribute'),
+    'title' => t('Add Dev Portal App Attribute'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_edit'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/edit/%'] = array(
-    'title' => t('Edit DevConnect App Attribute'),
+    'title' => t('Edit Dev Portal App Attribute'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_edit', APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/delete/%'] = array(
-    'title' => t('Delete DevConnect App Attribute'),
+    'title' => t('Delete Dev Portal App Attribute'),
     'page callback' => 'devconnect_app_attributes_delete',
     'page arguments' => array(APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
     'access arguments' => array('administer site configuration'),
@@ -52,7 +52,7 @@ function devconnect_app_attributes_list() {
 
   if (count($attributes) > 0) {
     $form = drupal_get_form('devconnect_app_attributes_listing', $attributes);
-    $output = theme_devconnect_app_attributes_listing($form);
+    $output = theme('devconnect_app_attributes_listing', $form);
   }
   else {
     $output = '<h4>' . t('No app attributes have been defined yet.') . '</h4>';
@@ -73,8 +73,10 @@ function devconnect_app_attributes_list() {
  */
 function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NULL) {
 
-
   $attribute = NULL;
+  if (!empty($form_state['input'])) {
+    $attribute = $form_state['input'];
+  }
   if (isset($machine_name)) {
     $attributes = variable_get('app_attributes', array());
     if (isset($attributes[$machine_name])) {
@@ -84,7 +86,7 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
 
   $form['creating'] = array(
     '#type' => 'value',
-    '#value' => (isset($machine_name))
+    '#value' => (!isset($machine_name))
   );
 
   $form['machine_name'] = array(
@@ -99,7 +101,7 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
     '#maxlength' => 64,
     '#default_value' => (isset($machine_name) ? $machine_name : ''),
     '#element_validate' => array('devconnect_app_attributes_validate_machine_name'),
-    '#description' => t('This is the attribute name as it is stored in KMS. It must be unique to this Devconnect instance, and should consist exclusively of numbers, letters, underscores, hyphens and periods.')
+    '#description' => t('This is the attribute name as it is stored in KMS. It must be unique to this Dev Portal instance, and should consist exclusively of numbers, letters, underscores, hyphens and periods.')
   );
 
   $form['title'] = array(
@@ -111,7 +113,7 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
     ),
     '#maxlength' => 64,
     '#default_value' => (isset($attribute) ? $attribute['title'] : ''),
-    '#description' => t('This is the name of the attribute as it is shown to the Devconnect end user.')
+    '#description' => t('This is the name of the attribute as it is shown to the Dev Portal end user.')
   );
 
   $form['description'] = array(
@@ -121,31 +123,6 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
     '#maxlength' => 1024,
     '#default_value' => (isset($attribute) ? $attribute['description'] : ''),
     '#description' => t('This is shown as help text underneath the attribute\'s form element on the app creation/edit page. This is a plaintext field; please do not enter markup.')
-  );
-
-  $form['widget'] = array(
-    '#title' => t('Widget'),
-    '#type' => 'radios',
-    '#required' => TRUE,
-    '#options' => array(
-      'textfield' => t('Text Box'),
-      'textarea' => t('Text Area'),
-      // TODO: Implement other widgets:
-      //'select' => t('Drop-down Select'),
-      //'checkbox' => t('Single Checkbox'),
-      //'radios' => t('Radio Buttons')
-    ),
-    '#default_value' => (isset($attribute) ? $attribute['widget'] : 'textfield'),
-    '#description' => t('This sets the type of input field shown on the app creation/edit page.')
-  );
-
-  $form['maxlength'] = array(
-    '#title' => t('Maximum Length'),
-    '#type' => 'textfield',
-    '#required' => FALSE,
-    '#default_value' => (isset($attribute) ? intval($attribute['maxlength']) : NULL),
-    '#post_render' => array('_devconnect_app_attributes_number_postrender'),
-    '#description' => t('If set, this limits the possible length of the attribute content. Leave blank to allow unlimited content length.')
   );
 
   $form['required'] = array(
@@ -161,36 +138,108 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
     '#type' => 'checkbox',
     '#default_value' => (isset($attribute) ? $attribute['display'] : FALSE),
     '#return_value' => 1,
-    '#description' => t('If this box is checked, the attribute will be displayed on the user\'s app listing page.')
+    '#description' => t('If this box is checked, the attribute will be displayed on the user’s app listing page.')
   );
 
-  $form['pattern'] = array(
-    '#title' => t('Pattern Regex'),
-    '#type' => 'textfield',
-    '#required' => FALSE,
-    '#maxlength' => 64,
-    '#default_value' => (isset($attribute) ? $attribute['pattern'] : ''),
-    '#element_validate' => array('devconnect_app_attributes_validate_regex'),
-    '#description' => t('If set, this must be a valid regular expression. <strong>Please omit regex delimiters.</strong> Any input for this attribute will be validated against the regular expression; content failing to match will be rejected.')
+  $widget = isset($attribute) ? $attribute['widget'] : 'textfield';
+
+  $form['widget'] = array(
+    '#title' => t('Widget'),
+    '#type' => 'radios',
+    '#required' => TRUE,
+    '#options' => array(
+      'textfield' => t('Text Box'),
+      'textarea' => t('Text Area'),
+      'select' => t('Drop-down Select'),
+      'checkbox' => t('Single Checkbox'),
+      'radios' => t('Radio Buttons')
+    ),
+    '#default_value' => $widget,
+    '#description' => t('This sets the type of input field shown on the app creation/edit page.'),
+    '#ajax' => array(
+      'callback' => '_devconnect_app_attributes_widget_callback',
+      'wrapper' => 'widget-specific-settings',
+      'method' => 'replace',
+      'effect' => 'fade',
+      'progress' => array('type' =>'throbber')
+    )
   );
 
-  $form['tooltip'] = array(
-    '#title' => t('Tooltip'),
-    '#description' => t('If Pattern Regex is not empty, this should contain a human-readable high-level description of the valid pattern, to be shown in the browser when the user enters an invalid pattern.'),
-    '#type' => 'textfield',
-    '#required' => FALSE,
-    '#maxlength' => 256,
-    '#default_value' => (isset($attribute) ? $attribute['tooltip'] : '')
+  $form['widget_specific_settings'] = array(
+    '#prefix' => '<div id="widget-specific-settings">',
+    '#suffix' => '</div>'
   );
 
-  $form['default'] = array(
-    '#title' => t('Default Value'),
-    '#description' => t('When the user does not enter a value for the attribute, this value should be assumed.'),
-    '#type' => 'textarea',
-    '#required' => FALSE,
-    '#maxlength' => 1024,
-    '#default_value' => (isset($attribute) ? $attribute['default'] : '')
-  );
+  switch ($widget) {
+    case 'textfield':
+    case 'textarea':
+      $form['widget_specific_settings']['maxlength'] = array(
+        '#title' => t('Maximum Length'),
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#default_value' => (isset($attribute) ? intval($attribute['maxlength']) : NULL),
+        '#post_render' => array('_devconnect_app_attributes_number_postrender'),
+        '#description' => t('If set, this limits the possible length of the attribute content. Leave blank to allow unlimited content length.')
+      );
+
+      $form['widget_specific_settings']['pattern'] = array(
+        '#title' => t('Pattern Regex'),
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#maxlength' => 64,
+        '#default_value' => (isset($attribute) ? $attribute['pattern'] : ''),
+        '#element_validate' => array('devconnect_app_attributes_validate_regex'),
+        '#description' => t('If set, this must be a valid regular expression. <strong>Please omit regex delimiters.</strong> Any input for this attribute will be validated against the regular expression; content failing to match will be rejected.')
+      );
+
+      $form['widget_specific_settings']['tooltip'] = array(
+        '#title' => t('Tooltip'),
+        '#description' => t('If Pattern Regex is not empty, this should contain a human-readable high-level description of the valid pattern, to be shown in the browser when the user enters an invalid pattern.'),
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#maxlength' => 256,
+        '#default_value' => (isset($attribute) ? $attribute['tooltip'] : '')
+      );
+
+      $form['widget_specific_settings']['default'] = array(
+        '#title' => t('Default Value'),
+        '#description' => t('When the user does not enter a value for the attribute, this value should be assumed.'),
+        '#type' => 'textarea',
+        '#required' => FALSE,
+        '#maxlength' => 1024,
+        '#default_value' => (isset($attribute) ? $attribute['default'] : '')
+      );
+      break;
+    case 'select':
+    case 'radios':
+      $options = array_key_exists('options', $attribute) ? $attribute['options'] : '';
+      if (is_array($options)) {
+        $option_string = '';
+        foreach ($options as $key => $value) {
+          $option_string .= "$key|$value\n";
+        }
+        $options = $option_string;
+      }
+      $caption = ($widget == 'select' ? 'Drop-down select box options' : 'Radio button options');
+      $form['widget_specific_settings']['options'] = array(
+        '#type' => 'textarea',
+        '#title' => t($caption),
+        '#description' => t('Enter one option per line. Each line may consist of a machine value and a display value, separated by a pipe. Example: my_custom_option|My Custom Option. The first option given will be the default.'),
+        '#default_value' => $options,
+        '#required' => TRUE
+      );
+      break;
+    case 'checkbox':
+      $form['widget_specific_settings']['default'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Value when checked'),
+        '#description' => t('When this checkbox is checked, this is the value that will be saved for the attribute. When it is left unchecked, a blank value will be saved.'),
+        '#maxlength' => 255,
+        '#default_value' => (isset($attribute['default']) ? $attribute['default'] : ''),
+        '#required' => TRUE
+      );
+      break;
+  }
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -213,6 +262,10 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
   $form['#submit'] = array('devconnect_app_attributes_save');
 
   return $form;
+}
+
+function _devconnect_app_attributes_widget_callback($form, &$form_state) {
+  return $form['widget_specific_settings'];
 }
 
 /**
@@ -268,11 +321,51 @@ function devconnect_app_attributes_validate_regex($element, &$form_state, $form)
 function devconnect_app_attributes_save($form, &$form_state) {
   $values = $form_state['values'];
   $machine_name = $values['machine_name'];
-  unset($values['submit'], $values['machine_name'], $values['creating'], $values['form_id'], $values['form_token'], $values['form_build_id'], $values['op']);
+
+  $attribute = array(
+    'title' => $values['title'],
+    'description' => $values['description'],
+    'required' => $values['required'],
+    'display' => $values['display'],
+    'widget' => $values['widget']
+  );
+  switch ($values['widget']) {
+    case 'textfield':
+    case 'textarea':
+      $attribute['maxlength'] = $values['maxlength'];
+      $attribute['pattern'] = $values['pattern'];
+      $attribute['tooltip'] = $values['tooltip'];
+      $attribute['default'] = $values['default'];
+      break;
+    case 'checkbox':
+      $attribute['default'] = $values['default'];
+      break;
+    case 'select':
+    case 'radios':
+      $attribute['options'] = array();
+      $option_input = preg_split('![\r\n]+!', $values['options']);
+      foreach ($option_input as $option_line) {
+        $option_line = trim($option_line);
+        if (strlen($option_line) == 0) {
+          continue;
+        }
+        if (strpos($option_line, '|') === FALSE) {
+          $key = $value = $option_line;
+        }
+        else {
+          list($key, $value) = explode('|', $option_line, 2);
+        }
+        $attribute['options'][$key] = $value;
+        if (!isset($attribute['default'])) {
+          $attribute['default'] = $key;
+        }
+      }
+      break;
+  }
 
   $attributes = variable_get('app_attributes', array());
   $action = (isset($attributes[$machine_name]) ? t('updated') : t('created'));
-  $attributes[$machine_name] = $values;
+  $attributes[$machine_name] = $attribute;
   variable_set('app_attributes', $attributes);
   drupal_set_message(t('The @attr attribute has been @action.', array('@attr' => check_plain($values['title']), '@action' => $action)), 'notice');
   $form_state['redirect'] = APP_ATTRIBUTES_ADMIN_PATH;
@@ -307,7 +400,7 @@ function devconnect_app_attributes_devconnect_app_attributes() {
   $attributes = variable_get('app_attributes', array());
 
   $items = array();
-  $optional_fields = array('pattern', 'tooltip', 'description', 'default', 'maxlength');
+  $optional_fields = array('pattern', 'tooltip', 'description', 'default', 'maxlength', 'title', 'options');
   foreach ($attributes as $machine_name => $attribute) {
     $item = array(
       'name' => $attribute['title'],
@@ -315,7 +408,7 @@ function devconnect_app_attributes_devconnect_app_attributes() {
       'required' => (bool) $attribute['required'],
     );
     foreach ($optional_fields as $field) {
-      if (isset($attribute[$field]) && strlen($attribute[$field]) > 0) {
+      if (isset($attribute[$field]) && !empty($attribute[$field])) {
         $item[$field] = $attribute[$field];
       }
     }
@@ -427,7 +520,7 @@ function devconnect_app_attributes_listing($form, &$form_state, $attributes = ar
         '#type' => 'weight',
         '#delta' => 10,
         '#default_value' => $curr_weight++,
-        '#attributes' => array('class' => 'attribute-weight')
+        '#attributes' => array('class' => array('attribute-weight'))
       )
     );
   }
@@ -451,21 +544,21 @@ function devconnect_app_attributes_listing($form, &$form_state, $attributes = ar
  */
 function devconnect_app_attributes_listing_submit($form, &$form_state) {
   // Read weight values from submitted data
-  $values = array();
+  $names = array();
   foreach ($form_state['values']['attributes'] as $key => $weight) {
-    $values[$key] = $weight['weight'];
+    $names[$key] = $weight['weight'];
   }
   // Put attribute machine names in weight order
-  asort($values);
+  asort($names);
 
-  $values = array_keys($values);
+  $names = array_keys($names);
   $ordered_attributes = array();
   $attributes = variable_get('app_attributes', array());
 
   // put our existing data in the correct order.
-  foreach($values as $name) {
+  foreach($names as $name) {
     if (isset($attributes[$name])) {
-      $ordered_attributes[] = $attributes[$name];
+      $ordered_attributes[$name] = $attributes[$name];
       unset($attributes[$name]);
     }
   }
@@ -499,6 +592,10 @@ function devconnect_app_attributes_theme() {
  */
 function theme_devconnect_app_attributes_listing($form) {
   $variables = array('element' => $form);
+
+  if (count($form) == 1 && array_key_exists('form', $form)) {
+    $form = $form['form'];
+  }
 
   $table_rows = array();
   foreach ($form['attributes'] as $machine_name => $row) {

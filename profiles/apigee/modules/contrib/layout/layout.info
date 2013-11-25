@@ -1,0 +1,15 @@
+name = Panels responsive layouts
+description = Responsive layout editor for panels.
+core = 7.x
+
+dependencies[] = panels
+dependencies[] = gridbuilder
+dependencies[] = json2
+dependencies[] = jquery_update
+
+; Information added by drupal.org packaging script on 2013-03-21
+version = "7.x-1.0-alpha6"
+core = "7.x"
+project = "layout"
+datestamp = "1363878012"
+

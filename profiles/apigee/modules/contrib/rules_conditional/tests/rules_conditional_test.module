@@ -1,0 +1,105 @@
+<?php
+/**
+ * @file
+ * Testing module.
+ */
+
+/**
+ * Implements hook_rules_plugin_info().
+ */
+function rules_conditional_test_rules_plugin_info() {
+  return array(
+    'stub conditional' => array(
+      'label' => 'Stub conditional',
+      'class' => 'RulesConditionalTestStubContainer',
+      'embeddable' => 'RulesActionContainer',
+      'extenders' => array(
+        'RulesPluginUIInterface' => array(
+          'class' => 'RulesConditionalEmptyUI',
+        ),
+      ),
+    ),
+    'stub conditional element' => array(
+      'label' => 'Stub conditional element',
+      'class' => 'RulesConditionalTestStubElement',
+      'embeddable' => 'RulesConditionalTestStubContainer',
+      'extenders' => array(
+        'RulesPluginUIInterface' => array(
+          'class' => 'RulesPluginUI',
+        ),
+      ),
+    ),
+    'stub conditional default element' => array(
+      'label' => 'Stub conditional default element',
+      'class' => 'RulesConditionalTestStubDefaultElement',
+      'embeddable' => 'RulesConditionalTestStubContainer',
+      'extenders' => array(
+        'RulesPluginUIInterface' => array(
+          'class' => 'RulesPluginUI',
+        ),
+      ),
+    ),
+    'stub conditional single element' => array(
+      'label' => 'Stub single element',
+      'class' => 'RulesConditionalTestStubSingleElement',
+      'embeddable' => 'RulesConditionalTestStubContainer',
+      'conditional single' => TRUE,
+      'extenders' => array(
+        'RulesPluginUIInterface' => array(
+          'class' => 'RulesPluginUI',
+        ),
+      ),
+    ),
+    'stub conditional dependent element' => array(
+      'label' => 'Stub dependent element',
+      'class' => 'RulesConditionalTestStubDependentElement',
+      'embeddable' => 'RulesConditionalTestStubContainer',
+      'conditional depends' => array('stub conditional element'),
+      'extenders' => array(
+        'RulesPluginUIInterface' => array(
+          'class' => 'RulesPluginUI',
+        ),
+      ),
+    ),
+    'stub conditional predicate element' => array(
+      'label' => 'Stub predicate element',
+      'class' => 'RulesConditionalTestStubPredicateElement',
+      'embeddable' => 'RulesActionContainer',
+      'extenders' => array(
+        'RulesPluginUIInterface' => array(
+          'class' => 'RulesConditionalPredicateUI',
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_rules_action_info().
+ */
+function rules_conditional_test_rules_action_info() {
+  return array(
+    'rules_conditional_test_throw' => array(
+      'label' => t('Throw a test message'),
+      'group' => t('Conditional Rules Test'),
+      'parameter' => array(
+        'message' => array(
+          'label' => t('Message'),
+          'type' => 'text',
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Throws a test exception.
+ */
+function rules_conditional_test_throw($message) {
+  throw new RulesConditionalTestException($message);
+}
+
+/**
+ * Test exception.
+ */
+class RulesConditionalTestException extends Exception {}

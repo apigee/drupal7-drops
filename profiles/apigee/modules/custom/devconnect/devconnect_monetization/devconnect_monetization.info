@@ -1,10 +1,10 @@
 name = DevConnect Monetization
 description = Provides connection to Apigee's monetization services API
 core = 7.x
-package = DevConnect
+package = DevConnect Mint
 php = 5.3
 version = 7.x-4.22
-project = devconnect
+project = devconnect-mint
 
 dependencies[] = devconnect
 dependencies[] = devconnect_developer_apps
@@ -18,6 +18,7 @@ dependencies[] = commerce_order
 dependencies[] = commerce_order_ui
 dependencies[] = commerce_payment
 dependencies[] = commerce_payment_ui
+dependencies[] = commerce_product
 dependencies[] = special_menu_items
 dependencies[] = me
 dependencies[] = menu
@@ -31,9 +32,4 @@ files[] = MintCacheManager.php
 
 configure = admin/config/devconnect
 
-; Information added by drush on 2013-09-16
-version = "7.x-4.23-dev"
-core = "7.x"
-project = "devconnect"
-datestamp = "1379375171"
 

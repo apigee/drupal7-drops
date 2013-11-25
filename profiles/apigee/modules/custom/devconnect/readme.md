@@ -2,21 +2,19 @@ Main readme moved to Apigee-Drupal repo: [https://github.com/apigee/apigee-drupa
 
 Summary of submodules:
 * devconnect_admin_notify: enabled by default
-* devconnect_apigee: disabled by devconnect.install, deprecated. Will be removed in R24
 * devconnect_app_attributes: enabled by default
 * devconnect_content_admin: disabled by default. Feature. Should we deprecate this?
 * devconnect_content_authoring: disabled by default. Feature. Should we deprecate this?
 * devconnect_default_content/{content,structure}: enabled in new installs via apigee.profile.
 * devconnect_developer_apps: enabled by default.
+* devconnect_docgen: disabled by default.
 * devconnect_downloads: disabled by default. Used by some customers.
-* devconnect_faq_ext: disabled by devconnect.install, deprecated. Will be removed in R24
 * devconnect_homepage: enabled by default. Supplies header block for homepage.
 * devconnect_key_value_map: disabled by default. For use in customer customizations.
 * devconnect_monetization: disabled by default. Used by some customers.
 * devconnect_ui: disabled by default.
 * devconnect_user: enabled by default.
-* devconnect_validate: disabled by devconnect.install, deprecated. Will be removed in R24.
-* devconnect_wadl: enabled by default.
+* devconnect_wadl: disabled by default. Forcibly disabled in devconnect.install, will be removed in R25.
 
 Available Translations:
 

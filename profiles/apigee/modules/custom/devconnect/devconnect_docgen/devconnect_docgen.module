@@ -1,0 +1,912 @@
+<?php
+
+/**
+ * @file: DevConnect Document Generation Module
+ * @about: Module that creates Drupal entities based off of the Apigee Modeling API.
+ *
+ * @author: Brian Hasselbeck <bhasselbeck@apigee.com>
+ * @version: v1.0
+ */
+
+module_load_include('inc', 'devconnect_docgen', 'includes/devconnect_docgen.node_alter');
+
+/**
+ * Implements hook_init
+ */
+function devconnect_docgen_init() {
+  drupal_add_css(drupal_get_path('module', 'devconnect_docgen') . '/css/devconnect_docgen.css');
+}
+
+/**
+ * Implements hook_menu
+ */
+function devconnect_docgen_menu() {
+  $items['admin/content/docgen'] = array(
+    'title' => t('Smart Docs'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_docgen_content'),
+    'access arguments' => array('administer docgen content'),
+  );
+  $items['admin/content/docgen/add-model'] = array(
+    'title' => 'Add',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_docgen_add_content'),
+    'access arguments' => array('administer docgen content'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+  );
+
+  $models = entity_load('docgen_model');
+
+  foreach($models as $model) {
+    $items['admin/content/docgen/list/'.$model['name'].'/detail'] = array(
+      'title' => $model['displayName'],
+      'page callback' => 'drupal_get_form',
+      'type' => MENU_LOCAL_TASK,
+      'page arguments' => array('devconnect_docgen_model_detail', 4),
+      'access arguments' => array('administer docgen content'),
+      'weight' => -4,
+    );
+  }
+
+  $items['admin/content/docgen/list'] = array(
+    'title' => 'Models',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/content/docgen/import'] = array(
+    'title' => 'Import',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_docgen_import_content'),
+    'access arguments' => array('administer docgen content'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -0,
+  );
+  $items['admin/content/docgen/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_docgen_settings'),
+    'access arguments' => array('administer docgen content'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -0,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission
+ */
+function devconnect_docgen_permission() {
+  return array(
+    'administer devconnect docgen' => array(
+      'title' => t('Administer DevConnect Docgen'),
+      'description' => t('Perform administration tasks for Apigee Docgen.'),
+    ),
+    'administer docgen content' => array(
+      'title' => t('Administer DevConnect Docgen Content'),
+      'description' => t('Administer DevConnect Docgen Content.'),
+    ),
+  );
+}
+
+function devconnect_docgen_settings($form, $form_state) {
+  $form = array();
+  $form['cache_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cache Settings for Smart Docs'),
+    '#collapsed' => FALSE,
+    '#collapsible' => FALSE,
+  );
+  $form['cache_settings']['clear_cache'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear Smart Docs HTML Caches'),
+    '#submit' => array('devconnect_docgen_clear_caches')
+  );
+  $form['settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('General Settings'),
+    '#collapsed' => FALSE,
+    '#disabled' => TRUE,
+    '#collapsible' => FALSE,
+  );
+  $form['settings']['use_docgen_templates'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use Modeling Template System'),
+    '#default_value' => variable_get('use_docgen_templates', 1),
+    '#description' => t('By enabling this setting, you will override all node templates with model templates.')
+  );
+  $form['templates'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Templates'),
+    '#collapsed' => FALSE,
+    '#collapsible' => FALSE,
+  );
+
+  $models = entity_load('docgen_model');
+
+  foreach($models as $model) {
+
+    $template = entity_get_controller('docgen_template')->loadTemplate($model['name'], 'method');
+
+    $form['templates'][$model['name']][$model['name'] . '_method_template'] = array(
+      '#type' => 'textarea',
+      '#title' => $model['name'] . ' ' . t('Method Template'),
+      '#description' => t('This is the template used for methods.'),
+      '#rows' => 15,
+      '#default_value' => $template,
+      '#prefix' => '<div id="' . $model['name'] . '-wrapper">',
+      '#suffix' => '<br/></div>',
+    );
+    $form['templates'][$model['name']]['method_save'] = array(
+      '#type' => 'submit',
+      '#value' => 'Save ' . $model['name'] . ' Template',
+      '#submit' => array('_devconnect_docgen_method_save'),
+      '#model' => $model['name'],
+      '#suffix' => '<br/><br/>',
+      '#ajax' => array(
+        'callback' => '_devconnect_docgen_method_callback',
+        'wrapper' => $model['name'] . '-wrapper',
+        'method' => 'replace',
+        'effect' => 'fade',
+        'progress' => array(
+          'type' =>'throbber',
+        )
+      ),
+    );
+  }
+  return system_settings_form($form);
+}
+
+/**
+ * Submit Callback for Model Template
+ */
+function _devconnect_docgen_method_save($form, &$form_state) {
+  $form_state['storage']['ajaxed'] = TRUE;
+  $name = $form_state['clicked_button']['#model'];
+
+  $models = entity_load('docgen_model');
+
+  foreach($models as $model) {
+    if ($name == $model['name']) {
+      try {
+        $html = $form_state['values'][$model['name'] . '_method_template'];
+        if ($save = entity_get_controller('docgen_template')->saveTemplate($model['name'], 'method', $html)) {
+          drupal_set_message('Template Saved. Cache cleared for the ' . $name . ' model.');
+          cache_clear_all('html_' . $name, 'cache_docgen', TRUE);
+        }
+      } catch (Exception $e) {}
+    }
+  }
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Ajax Callback for Model Template
+ */
+function _devconnect_docgen_method_callback($form, &$form_state) {
+  $name = $form_state['clicked_button']['#model'];
+  return $form['templates'][$name][$name . '_method_template'];
+}
+
+/**
+ * Function that clears all of the method HTML caches for each model
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_docgen_clear_caches(&$form, $form_state) {
+  $models = variable_get('devconnect_docgen_content_types', array());
+  foreach ($models as $machine => $model) {
+    cache_clear_all('html_' . $machine, 'cache_docgen', TRUE);
+  }
+  drupal_set_message('Smart Docs Cache Cleared', 'status');
+}
+
+/**
+ * Page callback for admin/content/models
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function devconnect_docgen_content($form, &$form_state) {
+  $form = array();
+
+  $docgen = entity_load('docgen_model');
+  $models = variable_get('devconnect_docgen_content_types', array());
+
+  $header = array(
+    'name' => t('Model Name'),
+    'description' => t('Description'),
+    'tags' => t('Tags'),
+    'attributes' => t('Attributes'),
+  );
+
+  $options = array();
+  $types = array();
+  $rebuild = FALSE;
+
+  foreach($docgen as $entity) {
+    $types[] = $entity['name'];
+    $options[$entity['name']] = array (
+      'name' => l($entity['displayName'], 'admin/content/docgen/list/' . $entity['name'] . '/detail'),
+      'description' => check_plain($entity['description']),
+      'tags' => $entity['tags'],
+      'attributes' => $entity['customAttributes'],
+    );
+  }
+  foreach($types as $type) {
+    if (!in_array($type, array_keys($models))) {
+      $rebuild = TRUE;
+    }
+  }
+  if ($rebuild) {
+    menu_rebuild();
+  }
+  $form['options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Update options'),
+    '#attributes' => array('class' => array('container-inline')),
+    '#access' => array('administer docgen content'),
+  );
+  $form['options']['operation'] = array(
+    '#type' => 'select',
+    '#title' => t('Operation'),
+    '#title_display' => 'invisible',
+    '#options' => array(
+      'delete' => t('Delete selected models'),
+    ),
+    '#default_value' => 'approve',
+  );
+  $form['options']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+  $form['model_table'] = array(
+    '#type' => 'tableselect',
+    '#header' => $header,
+    '#options' => $options,
+    '#empty' => t('No models found'),
+  );
+  return $form;
+}
+
+/**
+ * Submit Callback for devconnect_docgen_content()
+ */
+function devconnect_docgen_content_submit($form, &$form_state) {
+  switch($form_state['input']['operation']) {
+    case 'delete':
+      foreach($form_state['input']['model_table'] as $id => $model) {
+        if (!is_null($model)) {
+          try {
+            entity_get_controller('docgen_model')->delete($model);
+            menu_rebuild();
+            drupal_set_message(t('%model has been deleted.', array('%model' => $model)), 'status');
+          } catch (Exception $e) {
+            drupal_set_message('There was an error deleting the model(s).', 'error');
+          }
+        }
+      }
+      break;
+    default;
+      break;
+  }
+}
+
+/**
+ * Submit function for devconnect_docgen_model_templates() form
+ */
+function devconnect_docgen_model_templates_submit($form, &$form_state) {
+
+  $types = array(
+    'method',
+    'index',
+  );
+
+  $success = TRUE;
+
+  foreach($types as $type) {
+    $html = $form_state['values']['devconnect_'.$form_state['values']['mid'].'_' . $type . '_template'];
+    try{
+      entity_get_controller('docgen_template')->saveTemplate($form_state['values']['mid'], $type, $html);
+      try {
+        variable_set('devconnect_'.$form_state['values']['mid'].'_' . $type .'_template', $html);
+      } catch (Exception $e) {
+        drupal_set_message('Count not clear cache for the ' . $form_state['values']['mid'] . ' model.', 'error');
+        $success = FALSE;
+      }
+    } catch (Exception $e) {
+      drupal_set_message($e->getMessage(), 'error');
+      $success = FALSE;
+    }
+  }
+  if ($success) {
+    drupal_set_message('Configuration has been saved.', 'status');
+  } else {
+    drupal_set_message('Configuration could not be saved', 'error');
+  }
+}
+
+/**
+ * Function that flushed the devconnect_docgen template cache
+ */
+function devconnect_docgen_flush_template_cache() {
+  $docgen = entity_load('docgen_model');
+  foreach($docgen as $model) {
+    try {
+      $html = entity_get_controller('docgen_template')->loadTemplate($model['id'], 'operation');
+      variable_set('devconnect_'.$model['id'].'_operation_template', $html);
+      drupal_set_message('Cache cleared for the ' . $model['name'] . ' model', 'status');
+    } catch (Exception $e) {
+      drupal_set_message('Count not clear cache for the ' . $model['name'] . ' model.', 'error');
+    }
+  }
+}
+
+/**
+ * Page Callback for devconnect_docgen_model_detail
+ */
+function devconnect_docgen_model_detail($form, &$form_state, $mid) {
+
+  $rev = (isset($_GET['rev']) && is_numeric($_GET['rev'])) ? $_GET['rev'] : NULL;
+
+  $model = entity_get_controller('docgen_model')->loadSingle($mid);
+
+  if (isset($model['latestRevisionNum'])) {
+    for ($i = 1; $i <= $model['latestRevisionNum']; $i++) {
+      $model['revisions'][$i] = entity_get_controller('docgen_revision')->loadVerbose($mid, $i);
+      $model['revisions'][$i]['displayName'] = $model['displayName'];
+    }
+  }
+
+  $nodes = variable_get($mid . '_nodes', array());
+
+  $form['options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Update options'),
+    '#attributes' => array('class' => array('container-inline')),
+    '#access' => array('administer docgen content'),
+  );
+  $form['options']['operation'] = array(
+    '#type' => 'select',
+    '#title' => t('Operation'),
+    '#title_display' => 'invisible',
+    '#options' => array(
+      'render_nodes' => t('Render Nodes'),
+      'render_entities' => t('Render Entities'),
+    ),
+    '#default_value' => 'approve',
+  );
+  $form['options']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+
+  $models = array();
+
+  $header = array(
+    'tax' => t('Taxonomy'),
+    'path' => t('Path'),
+    'name' => t('Name'),
+    'description' => t('Description'),
+    'method' => t('Method'),
+    'auth' => t('Authentication'),
+    'node' => t('Node Association'),
+  );
+
+  if (isset($model['revisions'])) {
+    if (is_null($rev)) {
+      $count = count($model['revisions']);
+      foreach ($model['revisions'] as $key => $entity) {
+        if ($entity['revision'] == $count) {
+          $models = array($model['revisions'][$key]);
+        }
+      }
+    } else {
+      foreach ($model['revisions'] as $key => $entity) {
+        if ($entity['revision'] == $rev) {
+          $models = array($model['revisions'][$key]);
+        }
+      }
+    }
+    foreach($models as $key => $entity) {
+
+      $form['verbose'] = array(
+        '#type' => 'hidden',
+        '#value' => drupal_json_encode($entity),
+      );
+      $form['mid'] = array(
+        '#type' => 'hidden',
+        '#value' => $mid,
+      );
+      $form[$entity['revision']] = array(
+        '#type' => 'fieldset',
+        '#title' => t(' %r: ' . $entity['baseUrl'], array('%r' => 'Revision: #' . $entity['revision'])),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+      );
+      if (is_array($entity['resources'])) {
+        $tags = array();
+        foreach ($entity['resources'] as $id => $resource) {
+          if (isset($resource['methods']) && is_array($resource['methods'])) {
+            foreach ($resource['methods'] as $operation) {
+              if (substr($resource['path'], 0, strlen($entity['baseUrl'])) == $entity['baseUrl']) {
+                $resource['path'] = ltrim($resource['path'], $entity['baseUrl']);
+              }
+              if (isset($entity['baseUrl']) && (substr($entity['baseUrl'], -1) == '/')) {
+                if (substr($resource['path'], 0, 1) == '/') {
+                  $resource['path'] = $entity['baseUrl'] . ltrim($resource['path'], '/');
+                } else {
+                  $resource['path'] = $entity['baseUrl'] . $resource['path'];
+                }
+              } else {
+                if (substr($resource['path'], 0, 1) == '/') {
+                  $resource['path'] = $entity['baseUrl'] . $resource['path'];
+                } else {
+                  $resource['path'] = $entity['baseUrl'] . '/' . $resource['path'];
+                }
+              }
+              if (isset($operation['tags']) && is_array($operation['tags']) && !empty($operation['tags'])) {
+                foreach($operation['tags'] as $tag) {
+                  $tags[$operation['id']][$operation['name']]['tags'] = $operation['tags'];
+                  $tags[$operation['id']][$operation['name']]['verb'] = $operation['verb'];
+                  $tags[$operation['id']][$operation['name']]['name'] = $operation['name'];
+                  if (isset($operation['displayName'])) {
+                    $tags[$operation['id']][$operation['name']]['displayName'] = $operation['displayName'];
+                  }
+                  if (isset($operation['description'])) {
+                    $tags[$operation['id']][$operation['name']]['description'] = check_plain($operation['description']);
+                  }
+                  $tags[$operation['id']][$operation['name']]['resources'][$resource['id']]['name'] = $resource['name'];
+                  $tags[$operation['id']][$operation['name']]['resources'][$resource['id']]['path'] = $resource['path'];
+                  foreach($operation['authSchemes'] as $auth) {
+                    $tags[$operation['id']][$operation['name']]['authSchemes'][$auth] = $auth;
+                  }
+                }
+              } else {
+                $tags[$operation['id']][$operation['name']]['verb'] = $operation['verb'];
+                $tags[$operation['id']][$operation['name']]['name'] = $operation['name'];
+                if (isset($operation['displayName'])) {
+                  $tags[$operation['id']][$operation['name']]['displayName'] = $operation['displayName'];
+                }
+                if (isset($operation['description'])) {
+                  $tags[$operation['id']][$operation['name']]['description'] = check_plain($operation['description']);
+                }
+                $tags[$operation['id']][$operation['name']]['resources'][$resource['id']]['name'] = $resource['name'];
+                $tags[$operation['id']][$operation['name']]['resources'][$resource['id']]['path'] = $resource['path'];
+                foreach($operation['authSchemes'] as $auth) {
+                  $tags[$operation['id']][$operation['name']]['authSchemes'][$auth] = $auth;
+                }
+              }
+            }
+          }
+        }
+        ksort($tags);
+        $options = array();
+        foreach ($tags as $tax => $tag) {
+          foreach ($tag as $name => $property) {
+            if (isset($property['resources']) && is_array($property['resources'])) {
+              foreach ($property['resources'] as $key => $resources) {
+                $node = (isset($nodes[$tax]) && !empty($nodes[$tax])) ? t('NID: %nid', array('%nid' => $nodes[$tax])) : '';
+                $options[$tax] = array(
+                  'tax' => (isset($property['tags'])) ? implode(', ', $property['tags']) : '',
+                  'path' => $resources['path'],
+                  'name' => (isset($property['displayName'])) ? check_plain($property['displayName']) : check_plain($property['name']),
+                  'description' => (isset($property['description'])) ? $property['description'] : '',
+                  'method' => $property['verb'],
+                  'auth' => (isset($property['authSchemes'])) ? implode(', ', $property['authSchemes']) : '',
+                  'node' => (isset($nodes[$tax]) && !empty($nodes[$tax])) ? l($node, 'node/' . $nodes[$tax], array(
+                    'html' => TRUE,
+                    'attributes' => array(
+                      'target' => '_blank',
+                    )
+                  )) : '<span style="color:red;">No</span>',
+                );
+              }
+            }
+          }
+        }
+        _devconnect_docgen_detail_sort($options, 'tax');
+        $form[$entity['revision']]['api_model_table'] = array(
+          '#type' => 'tableselect',
+          '#header' => $header,
+          '#options' => $options,
+          '#empty' => t('No Revisions found'),
+        );
+      }
+      break;
+    }
+    if (isset($model['revisions'])) {
+      foreach($model['revisions'] as $key => $entity) {
+        $revs[(int)$entity['revision']] = $entity['revision'];
+      }
+      ksort($revs);
+      if (is_null($rev) && count($model['revisions']) > 1) {
+        array_pop($revs);
+      }
+      foreach($revs as $id => $revision) {
+        if (count($model['revisions']) > 1) {
+          if (!is_null($rev)) {
+            if ($id != $rev) {
+              $form['options']['old_revision_' . $id] = array(
+                '#markup' => '<br/>' . l('Load Revision #' . $id, 'admin/content/docgen/list/' . $mid .'/detail',
+                  array(
+                    'query' => array(
+                      'rev' => $id
+                    )
+                  )
+                ),
+              );
+            } else {
+              $form['options']['old_revision_' . $id] = array(
+                '#markup' => '<br/>' . t('Revision #' . $rev .' is loaded'),
+              );
+            }
+          } else {
+            $form['options']['old_revision_' . $id] = array(
+              '#markup' => '<br/>' . l('Load Revision #' . $id, 'admin/content/docgen/list/' . $mid .'/detail',
+                array(
+                  'query' => array(
+                    'rev' => $id
+                  )
+                )
+              ),
+            );
+          }
+        }
+      }
+      if (is_null($rev) && count($model['revisions']) > 1) {
+        $form['options']['old_revision_' . ($id + 1)] = array(
+          '#markup' => '<br/>' . t('Revision #' . ($id + 1) .' is loaded'),
+        );
+      }
+      if (count($model['revisions']) == 1) {
+        $form['options']['old_revision_1'] = array(
+          '#markup' => '<br/><br/>' . t('Revision #1 is loaded'),
+        );
+      }
+    }
+  } else {
+    $no = t('No Revisions found');
+    $form['api_model_table'] = array(
+      '#type' => 'tableselect',
+      '#header' => $header,
+      '#options' => array(),
+      '#empty' => $no . '. Please ' . l('import', 'admin/content/docgen/import', array(
+        'query' => array(
+          'mid' => $mid,
+        )
+      )) .
+        ' a WADL or use the ' . l('modeling API', 'https://api.enterprise.apigee.com/alpha/o/demo/apimodels/modeling/doc') . ' to get started.'
+    );
+  }
+  return $form;
+}
+
+/**
+ * Sorting function for the details table
+ *
+ * @param $array
+ * @param $key
+ */
+function _devconnect_docgen_detail_sort(&$array, $key) {
+  $sorter = array();
+  $ret = array();
+  reset($array);
+  foreach($array as $ii => $va) {
+    $sorter[$ii] = $va[$key];
+  }
+  asort($sorter);
+  foreach($sorter as $ii => $va) {
+    $ret[$ii] = $array[$ii];
+  }
+  $array = $ret;
+}
+
+/**
+ * Submit Callback for devconnect_docgen_model_detail()
+ */
+function devconnect_docgen_model_detail_submit($form, &$form_state) {
+  module_load_include('inc', 'devconnect_docgen', 'includes/devconnect_docgen.batch_import');
+  switch($form_state['input']['operation']) {
+    case 'render_nodes':
+      $verbose = drupal_json_decode($form_state['input']['verbose']);
+      $selected = array();
+      foreach ($form_state['input']['api_model_table'] as $import) {
+        if (!is_null($import)) {
+          $selected[] = $import;
+        }
+      }
+      if (!empty($selected)) {
+        batch_set(_devconnect_docgen_import_nodes($form_state['input']['mid'], $verbose, $selected));
+      } else {
+        drupal_set_message('Please select the methods you would like to render.', 'error');
+      }
+      break;
+    default;
+      break;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function devconnect_docgen_theme($existing, $type, $theme, $path) {
+  return array(
+    'devconnect_docgen_param_table' => array(
+      'render element' => 'element'
+    ),
+    'operation_template' => array(
+      'variables' => array(
+        'vars' => NULL,
+        'mid' => NULL,
+      ),
+      'template' => 'operation'
+    )
+  );
+}
+
+/**
+ * Page callback for admin/content/docgen/add-model
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function devconnect_docgen_add_content($form, &$form_state) {
+  $form = array();
+
+  $form['display_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Display Name'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+  $form['model_name'] = array(
+    '#type' => 'machine_name',
+    '#maxlength' => 8,
+    '#machine_name' => array(
+      'exists' => '_devconnect_docgen_model_exist',
+    ),
+  );
+  $form['model_description'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Description'),
+    '#required' => TRUE,
+  );
+  $form['model_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Create Model')
+  );
+  $form['#submit'][] = 'devconnect_docgen_add_content_submit';
+  return $form;
+}
+
+/**
+ * Function that checks if the model exists already
+ */
+function _devconnect_docgen_model_exist($name) {
+  $docgen = entity_load('docgen_model');
+  foreach($docgen as $model) {
+    if ($model['name'] == $name) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Submit Callback for devconnect_docgen_add_content()
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_docgen_add_content_submit($form, &$form_state) {
+  $payload = array(
+    'model_name' => trim($form_state['values']['model_name']),
+    'display_name' => trim($form_state['values']['display_name']),
+    'model_description' => trim($form_state['values']['model_description']),
+  );
+  try {
+    // creates the model
+    entity_get_controller('docgen_model')->create($payload);
+    // renders the appropriate HTML for Drupal
+    _devconnect_docgen_render_operation_template($payload['model_name']);
+    drupal_set_message(t('The API Model %title has been created', array('%title' => $form_state['values']['model_name'])), 'status');
+    menu_rebuild();
+    drupal_goto('admin/content/docgen');
+  } catch (Exception $e) {
+    drupal_set_message(t('There was an error when trying to create the model.'), 'error');
+  }
+}
+
+/**
+ * Updates the Model's operation template to use Drupal specific HTML and CSS
+ */
+function _devconnect_docgen_render_operation_template($apiId) {
+  $html = file_get_contents(drupal_get_path('module', 'devconnect_docgen') . '/includes/base.html');
+  try {
+    entity_get_controller('docgen_template')->saveTemplate($apiId, 'method', $html);
+    drupal_set_message(t('The model\'s HTML was reformatted to fit this theme.'), 'status');
+  } catch (Exception $e) {
+    drupal_set_message(t('There was an error when trying to update the operation template for the model.'), 'error');
+  }
+}
+
+/**
+ * Implements hook_node_delete()
+ */
+function devconnect_docgen_node_delete($node) {
+  $nodes = variable_get($node->type . '_nodes', array());
+
+  _devconnect_docgen_sync_nodes($node->nid, NULL, $nodes, $node->type, 'delete');
+  drupal_set_message(t('The node %title has also been unsynced from the %type model.', array(
+    '%title' => $node->title,
+    '%type' => $node->type,
+  )), 'warning');
+}
+
+/**
+ * Ensures correct node association
+ *
+ * @param $nid
+ * @param $uuid
+ * @param $nodes
+ */
+function _devconnect_docgen_sync_nodes($nid, $uuid, $nodes, $mid, $action) {
+  $exists = variable_get($mid . '_nodes', array());
+  switch($action) {
+    case 'delete':
+      if (!empty($exists)) {
+        $nids = array_flip($exists);
+        unset($nids[$nid]);
+        variable_set($mid . '_nodes', array_flip($nids));
+      }
+      break;
+    case 'create':
+      $exists[$uuid] = $nid;
+      variable_set($mid . '_nodes', $exists);
+      break;
+  }
+}
+
+/**
+ * Page callback for admin/content/docgen/import
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function devconnect_docgen_import_content($form, &$form_state) {
+  $form = array();
+
+  $options = entity_load('docgen_model');
+  $choices = array();
+
+  foreach ($options as $option) {
+    $choices[$option['name']] = $option['displayName'];
+  }
+
+  if (!empty($choices)) {
+
+    $keys = array_keys($choices);
+    if (isset($_GET['mid']) && in_array($_GET['mid'], $keys)) {
+      $default = $_GET['mid'];
+    }
+
+    $form['model'] = array(
+      '#type' => 'select',
+      '#title' => t('Select a model'),
+      '#options' => $choices,
+      '#default_value' => (isset($default)) ? $default : ''
+    );
+
+    $form['model_import'] = array(
+      '#type' => 'textarea',
+      '#title' => t('WADL'),
+      '#rows' => 15,
+      '#description' => t('Copy and Paste your WADL file contents here.'),
+      '#required' => TRUE,
+    );
+
+    $form['model_submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Import')
+    );
+  } else {
+    $form['create_model'] = array(
+      '#markup' => 'In order to import documentation, you must first ' . l('create a model', 'admin/content/docgen/add-model') . '.',
+    );
+  }
+
+  $form['#submit'][] = 'devconnect_docgen_import_content_submit';
+
+  return $form;
+}
+
+/**
+ * Submit Callback for devconnect_docgen_import_content()
+ */
+function devconnect_docgen_import_content_submit($form, &$form_state) {
+  $entity = array(
+    'xml' => $form_state['values']['model_import'],
+    'apiId' => $form_state['values']['model'],
+  );
+  try {
+    entity_get_controller('docgen_model')->import($entity);
+    drupal_set_message(t('The WADL XML has been imported into the %model model.',
+        array(
+          '%model' => $form_state['values']['model'])), 'status'
+    );
+    drupal_goto('admin/content/docgen/list/' . $form_state['values']['model'] .'/detail');
+  } catch (Exception $e) {
+    drupal_set_message('There was an error importing the WADL XML.', 'error');
+  }
+}
+
+/**
+ * Implements hook_entity_info()
+ */
+function devconnect_docgen_entity_info() {
+  $info = array();
+
+  $info['docgen_model'] = array(
+    'label' => t('Docgen Model'),
+    'controller class' => 'DocGenModelController',
+    'fieldable' => TRUE,
+  );
+  $info['docgen_revision'] = array(
+    'label' => t('Docgen Revision'),
+    'controller class' => 'DocGenRevisionController',
+    'fieldable' => TRUE,
+  );
+  $info['docgen_resource'] = array(
+    'label' => t('Docgen Resource'),
+    'controller class' => 'DocGenResourceController',
+    'static cache' => TRUE,
+  );
+  $info['docgen_operation'] = array(
+    'label' => t('Docgen Operation'),
+    'controller class' => 'DocGenOperationController',
+    'fieldable' => TRUE,
+  );
+  $info['docgen_doc'] = array(
+    'label' => t('Docgen Doc'),
+    'controller class' => 'DocGenDocController',
+    'fieldable' => TRUE,
+  );
+  $info['docgen_template'] = array(
+    'label' => t('Docgen Template'),
+    'controller class' => 'DocGenTemplateController',
+    'fieldable' => TRUE,
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_views_api()
+ *
+ * @return array
+ */
+function devconnect_docgen_views_api() {
+  return array(
+    'api' => 2.0,
+  );
+}
+
+/**
+ * Implementation of hook_views_default_views().
+ */
+function devconnect_docgen_views_default_views() {
+  $views = array();
+  $files = file_scan_directory('private://', '/\.view$/');
+  foreach ($files as $absolute => $file) {
+    require $absolute;
+    if (isset($view)) {
+      $views[$file->name] = $view;
+    }
+  }
+  return $views;
+}

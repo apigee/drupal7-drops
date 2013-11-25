@@ -15,17 +15,7 @@ class DeveloperAppEntityTestCase extends DrupalWebTestCase {
   }
 
   public function setUp() {
-    // Read Drupal vars *before* simpletest switches us to a sandbox db
-    $org = variable_get('devconnect_org', NULL);
-    $endpoint = variable_get('devconnect_endpoint', NULL);
-    $endpoint_auth = variable_get('devconnect_curlauth', NULL);
-
     parent::setUp('devconnect_user', 'devconnect_developer_apps');
-
-    variable_set('devconnect_org', $org);
-    variable_set('devconnect_endpoint', $endpoint);
-    variable_set('devconnect_curlauth', $endpoint_auth);
-
     $rid = $this->drupalCreateRole(array('access content'));
     $edit = array(
       'name' => $this->randomName(),
@@ -136,19 +126,19 @@ class DeveloperAppEntityTestCase extends DrupalWebTestCase {
       return;
     }
     $this->app_entity = reset($entities);
-    $this->app_id = $this->app_entity['appId'];
+    $this->app_id = $this->app_entity->appId;
 
-    $key = $this->app_entity['consumerKey'];
-    $secret = $this->app_entity['consumerSecret'];
+    $key = $this->app_entity->consumerKey;
+    $secret = $this->app_entity->consumerSecret;
 
     if (count($api_product_list) > 1) {
-      $this->app_entity['apiProducts'] = array($api_product_list[1]);
+      $this->app_entity->apiProducts = array($api_product_list[1]);
       entity_save('developer_app', $this->app_entity);
 
       $entities = entity_load('developer_app', array($this->app_id), array(), TRUE);
       $this->app_entity = reset($entities);
-      $this->assertEqual($key, $this->app_entity['consumerKey'], 'Consumer Key should be unchanged.');
-      $this->assertEqual($secret, $this->app_entity['consumerSecret'], 'Consumer Secret should be unchanged.');
+      $this->assertEqual($key, $this->app_entity->consumerKey, 'Consumer Key should be unchanged.');
+      $this->assertEqual($secret, $this->app_entity->consumerSecret, 'Consumer Secret should be unchanged.');
     }
 
     $deleted = FALSE;

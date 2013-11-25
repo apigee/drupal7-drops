@@ -100,10 +100,7 @@ use Apigee\Mint\Types\Country;
           </tbody>
         </table>
         <?php endif; ?>
-        <?php foreach ($rate_plan->getRatePlanDetails() as $rate_plan_detail): ?>
-          <?php print theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list)); ?>
-          <?php if ($rate_plan->isGroupPlan()) { break; } ?>
-        <?php endforeach; ?>
+        <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, $product_list); ?>
         <div class="purchase-plan well">
           <?php if ($rate_plan->getId() != $active_rate_plan_id || array_key_exists($rate_plan->getId(), $plans_dates['can_purchase'])): ?>
             <?php if (!isset($prevent_from_purchase_message)): ?>
@@ -148,10 +145,7 @@ use Apigee\Mint\Types\Country;
           </tbody>
         </table>
         <?php endif; ?>
-        <?php foreach ($rate_plan->getRatePlanDetails() as $rate_plan_detail): ?>
-          <?php echo theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list)); ?>
-          <?php if ($rate_plan->isGroupPlan()) { break; } ?>
-        <?php endforeach; ?>
+        <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, $product_list); ?>
       </div>
     </div>
   </div>
@@ -225,16 +219,7 @@ use Apigee\Mint\Types\Country;
                   <br>
                   <br>
                 <?php endif; ?>
-                <?php $displayed_products = array(); ?>
-                <?php foreach ($rate_plan->getRatePlanDetails() as $rate_plan_detail): ?>
-                  <?php if (!isset($rate_plan_detail->product)): ?>
-                    <?php echo theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list)); ?>
-                    <?php if ($rate_plan->isGroupPlan()) { break; } ?>
-                  <?php elseif (!in_array($rate_plan_detail->product->getId(), $displayed_products)): ?>
-                    <?php echo theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list)); ?>
-                    <?php $displayed_products[] = $rate_plan_detail->product->getId(); ?>
-                  <?php  endif; ?>
-                <?php endforeach; ?>
+                <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, $product_list); ?>
                 <br><br>
                 <div class="purchase-plan well">
                   <?php if (array_key_exists($rate_plan->getId(), $plans_dates['can_purchase'])): ?>
@@ -286,17 +271,7 @@ use Apigee\Mint\Types\Country;
                       <br>
                       <br>
                     <?php endif; ?>
-
-                    <?php $displayed_products = array(); ?>
-                    <?php foreach ($rate_plan->getRatePlanDetails() as $rate_plan_detail): ?>
-                      <?php if (!isset($rate_plan_detail->product)): ?>
-                        <?php echo theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list)); ?>
-                        <?php if ($rate_plan->isGroupPlan()) { break; } ?>
-                      <?php elseif (!in_array($rate_plan_detail->product->getId(), $displayed_products)): ?>
-                        <?php echo theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list)); ?>
-                        <?php $displayed_products[] = $rate_plan_detail->product->getId(); ?>
-                      <?php  endif; ?>
-                    <?php endforeach; ?>
+                    <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, $product_list); ?>
                   </div>
                 </div>
             </div>
@@ -314,7 +289,7 @@ use Apigee\Mint\Types\Country;
 <div id="topUpPurchase" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="topUpLabel" aria-hidden="true">
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 id="topUpLabel">Insuffient Prepaid Balance <span id="currency_title"></span></h3>
+    <h3 id="topUpLabel">Insufficient Prepaid Balance <span id="currency_title"></span></h3>
     <div id="topup_alert" class="alert hide">
       <strong>Warning!</strong>&nbsp;The Amount to Top Up must be a valid number and bigger than zero.
     </div>
@@ -324,9 +299,8 @@ use Apigee\Mint\Types\Country;
   </div>
   <div class="modal-body">
     <?php print isset($forms['top_up_form']) ? $forms['top_up_form'] : ''; ?>
-    <p>You have insuffient funds to purchase this plan.</p>
-    <p>To top up your prepaid balance you will be taken to World Pay to process your payment.<br>
-      Please enter the desired balance amount below.</p>
+    <p>You have insufficient funds to purchase this plan.</p>
+    <p>To top up your prepaid balance you will be taken to World Pay to process your payment.<br>Please enter the desired balance amount below.</p>
       <div style="margin-bottom: 10px;">
         <span class="topup-modal-label">Current Balance:</span>
         <span id="topUpCurrentBalance" class="topup-modal-value"></span>&nbsp;
@@ -336,7 +310,7 @@ use Apigee\Mint\Types\Country;
         <span class="topup-modal-label">Amount to Top Up:</span>
         <span class="topup-modal-value">
           <input id="top-up-balance-input" type="text" placeholder="enter an amount" onkeyup="javascript: restrictRegexOnChangeEvent(this, /^[1-9][0-9]*((\.[0-9]{1,2})|\.)?$/, '#valid_top_up');">
-          <input id="valid_top_up" type="hidden" />
+          <input id="valid_top_up" type="hidden">
         </span>
       </div>
       <div>
@@ -346,8 +320,7 @@ use Apigee\Mint\Types\Country;
       </div>
   </div>
   <div class="modal-footer">
-    <a href="javascript: validateBalanceToTopUp();" class="btn btn-primary">Proceed to World Pay</a>
+    <a href="javascript: validateBalanceToTopUp();" class="btn btn-primary">Proceed to next step</a>
     <a class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
   </div>
 </div>
-

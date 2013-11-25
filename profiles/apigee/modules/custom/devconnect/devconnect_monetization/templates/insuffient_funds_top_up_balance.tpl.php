@@ -20,7 +20,7 @@
 </div>
 <div class="modal-body">
     <?php print isset($top_up_form) ? $top_up_form : ''; ?>
-    <p>You have insuffient funds to purchase this plan.</p>
+    <p>You have insufficent funds to purchase this plan.</p>
     <p>To top up your prepaid balance you will be taken to World Pay to process your payment.<br>
       Please enter the desired balance amount below.</p>
       <div style="margin-bottom: 10px;">
@@ -42,7 +42,7 @@
       </div>
   </div>
   <div class="modal-footer">
-    <a href="javascript: validateBalanceToTopUp();" class="btn btn-primary">Proceed to World Pay</a>
+    <a href="javascript: validateBalanceToTopUp();" class="btn btn-primary">Proceed to next step</a>
     <a class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
   </div>
 </div>

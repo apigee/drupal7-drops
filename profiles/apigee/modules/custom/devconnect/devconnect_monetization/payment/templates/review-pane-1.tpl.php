@@ -15,7 +15,7 @@
               <div class="name-block">API Provider: <?php echo $api_provider; ?></div>
             </div>
             <div class="addressfield-container-inline name-block">
-              <div class="name-block">Amount: <?php echo sprintf('%s %.2f', $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'], $order->commerce_order_total[LANGUAGE_NONE][0]['amount']/100); ?></div>
+              <div class="name-block">Amount: <?php print commerce_currency_format($order->commerce_order_total[LANGUAGE_NONE][0]['amount'], $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code']); ?></div>
             </div>
           </div>
         </div>

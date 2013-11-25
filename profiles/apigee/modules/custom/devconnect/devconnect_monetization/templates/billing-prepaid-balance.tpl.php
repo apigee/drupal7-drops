@@ -30,20 +30,24 @@
       <?php foreach ($balances as $balance) : ?>
         <tr>
           <td><?php print $balance->supportedCurrency->name; ?></td>
-          <td><?php print sprintf('%.2f', $balance->previousBalance); ?></td>
-          <td><?php print sprintf('%.2f', $balance->topups); ?></td>
-          <td><?php print sprintf('%.2f', $balance->usage); ?></td>
-          <td><?php print sprintf('%.2f', $balance->tax); ?></td>
+          <td><?php print commerce_currency_format($balance->previousBalance, $balance->supportedCurrency->name, NULL, FALSE); ?></td>
+          <td><?php print commerce_currency_format($balance->topups, $balance->supportedCurrency->name, NULL, FALSE); ?></td>
+          <td><?php print commerce_currency_format($balance->usage, $balance->supportedCurrency->name, NULL, FALSE); ?></td>
+          <td><?php print commerce_currency_format($balance->tax, $balance->supportedCurrency->name, NULL, FALSE); ?></td>
           <td>
-            <?php print sprintf('%.2f', $balance->currentBalance); ?>
+            <?php print  commerce_currency_format($balance->currentBalance, $balance->supportedCurrency->name, NULL, FALSE); ?>
             <?php if ($download_prepaid_report_perm) : ?>&nbsp;&nbsp;
               <?php print l(t('Balance Detail (CSV)'), 'users/me/monetization/billing/billing/' . rawurlencode($balance->supportedCurrency->name) . '/' . rawurlencode(date('F-Y', time())), array('attributes' => array('style' => 'float:right'))); ?>
             <?php endif; ?>
           </td>
         <?php if ($top_up_balance_perm) : ?>
+          <?php if ($balance->supportedCurrency->name != 'POINTS'): ?>
           <td>
-            <a href="javascript: topUpBalance('<?php print $balance->id; ?>', <?php print sprintf('%.2f', $balance->currentBalance); ?>, '<?php print $balance->supportedCurrency->name; ?>');" role="button" class="btn" >Top Up Balance</a>
+            <a href="javascript: topUpBalance('<?php print $balance->id; ?>', <?php print devconnect_monetization_format_amount($balance->currentBalance, $balance->supportedCurrency->name); ?>, '<?php print $balance->supportedCurrency->name; ?>');" role="button" class="btn" >Top Up Balance</a>
           </td>
+          <?php else: ?>
+            <td>&nbsp;</td>
+          <?php endif; ?>
         <?php endif; ?>
         </tr>
       <?php endforeach; ?>
@@ -114,7 +118,7 @@
       </div>
   </div>
   <div class="modal-footer">
-    <a href="javascript: validateBalanceToTopUp();" class="btn btn-primary">Proceed to World Pay</a>
+    <a href="javascript: validateBalanceToTopUp();" class="btn btn-primary">Proceed to next step</a>
     <a class="btn" data-dismiss="modal" aria-hidden="true">Cancel</a>
   </div>
 </div>

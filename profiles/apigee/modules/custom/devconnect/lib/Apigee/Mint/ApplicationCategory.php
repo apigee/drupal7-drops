@@ -20,11 +20,11 @@ class ApplicationCategory extends Base\BaseObject {
    */
   private $id;
 
-  public function __construct(\Apigee\Util\APIClient $client) {
-    $this->init($client);
-    $this->base_url = '/mint/organizations/' . rawurlencode($this->client->getOrg()) . '/application-categories';
-    $this->id_field = 'id';
-    $this->wrapper_tag = 'applicationCategory';
+  public function __construct(\Apigee\Util\OrgConfig $config) {
+    $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/application-categories';
+    $this->init($config, $base_url);
+    $this->idField = 'id';
+    $this->wrapperTag = 'applicationCategory';
     $this->initValues();
   }
 
@@ -53,7 +53,7 @@ class ApplicationCategory extends Base\BaseObject {
   }
 
   public function instantiateNew() {
-    return new ApplicationCategory($this->client);
+    return new ApplicationCategory($this->config);
   }
 
   /*

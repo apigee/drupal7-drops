@@ -3,14 +3,14 @@ AutoReqProv: no
 
 %define drupaldir /var/www/html
 Name: apigee-drupal
-Version:  7.23
-Release:  3%{?dist}
+Version:  %{?VERSION}
+Release:  %{?BUILD_NUMBER}
 Summary: An open-source content-management platform
 
 Group: Applications/Publishing
 License: GPLv2+ and BSD and MIT
 URL: http://www.drupal.org
-Source0: drupal-7.23.tar.gz
+Source0: apigee-drupal.tar.gz
 Source1: %{name}.conf
 Source3: %{name}-cron
 Source6: %{name}.attr
@@ -21,7 +21,7 @@ Source11: %{name}.req.rpm-lt-4-9-compat
 
 
 BuildArch: noarch
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRoot: %{_tmppath}/%{name}-7.x-%{version}.%{release}-root-%(%{__id_u} -n)
 Requires: php, php-gd, php-mbstring, wget, php-pdo, php-xml
 Requires: crontabs
 
@@ -97,7 +97,7 @@ Group:   Development/Tools
 %{summary}.
 
 %prep
-%setup -q -n drupal-%{version}
+%setup -q -n apigee-drupal
 
 
 chmod -x scripts/drupal.sh
@@ -153,6 +153,6 @@ rm -rf %{buildroot}
 %{_prefix}/lib/rpm/%{name}.req
 
 %changelog
+*Mon Nov 20 2013 Tom Stovall <stovak@apigee.comu> 7.x-4.24
 *Mon Sep 23 2013 Tom Stovall <stovak@apigee.comu> 7.x-4.23.94
--item 1
 -item 2

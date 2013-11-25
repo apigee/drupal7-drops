@@ -5,6 +5,8 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
 
   private static $lastAppId;
 
+  private static $appCount = 0;
+
   /**
    * Implements DrupalEntityControllerInterface::__construct().
    *
@@ -47,9 +49,18 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       else {
         // Not in cache. Fetch, then delete.
         $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), '');
-        $dev_app->loadByAppId($id, TRUE);
+        try {
+          $dev_app->loadByAppId($id, TRUE);
+        } catch (Apigee\Exceptions\ResponseException $e) {
+          $dev_app = NULL;
+        }
       }
-      $dev_app->delete();
+      if (isset($dev_app)) {
+        try {
+          $dev_app->delete();
+        } catch (Apigee\Exceptions\ResponseException $e) {
+        }
+      }
     }
   }
 
@@ -69,6 +80,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @param $entity
    */
   public function save($entity) {
+    $entity = (array)$entity;
     $is_update = !empty($entity['appId']);
     $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), $entity['developer']);
     $product_cache = NULL;
@@ -80,8 +92,12 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     if (!empty($product_cache)) {
       $dev_app->setApiProductCache($product_cache);
     }
-    $dev_app->save($is_update);
-    $this->appCache[$dev_app->getAppId()] = $dev_app;
+    try {
+      $dev_app->save($is_update);
+      $this->appCache[$dev_app->getAppId()] = $dev_app;
+    } catch (Apigee\Exceptions\ResponseException $e) {
+      return FALSE;
+    }
 
     self::$lastAppId = $dev_app->getAppId();
 
@@ -100,7 +116,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   public function create(array $values = array()) {
     $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), '');
     $dev_app->fromArray($values);
-    return $dev_app->toArray();
+    return (object)$dev_app->toArray();
   }
 
   /**
@@ -164,11 +180,19 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   public function load($ids = array(), $conditions = array()) {
     $client = devconnect_default_api_client();
 
+    $page = (isset($conditions['page']) ? intval($conditions['page']) : 0);
+    $items_per_page = (isset($conditions['items_per_page']) ? intval($conditions['items_per_page']) : 0);
+    $sort = (isset($conditions['sort']) ? intval($conditions['sort']) : 'createdAt');
+
     if (isset($conditions['mail'])) {
       $dev_app = new Apigee\ManagementAPI\DeveloperApp($client, $conditions['mail']);
       if (isset($conditions['name'])) {
-        $dev_app->load($conditions['name']);
-        $list = array($dev_app);
+        try {
+          $dev_app->load($conditions['name']);
+          $list = array($dev_app);
+        } catch (Apigee\Exceptions\ResponseException $e) {
+          $list = array();
+        }
       }
       else {
         $list = $dev_app->getListDetail();
@@ -178,8 +202,12 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     // TODO: add more conditions here such as Status
     elseif (empty($ids)) { // Fetch all apps in the org.
       $dev_app = new Apigee\ManagementAPI\DeveloperApp($client, '');
-      $list = $dev_app->listAllOrgApps();
-      $this->addListToCache($list, $ids);
+      try {
+        $list = $dev_app->listAllOrgApps();
+        $this->addListToCache($list, $ids);
+      } catch (Apigee\Exceptions\ResponseException $e) {
+        $list = array();
+      }
     }
     else {
       // We have a list of appIds. Fetch them now.
@@ -194,8 +222,12 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $dev_app = new Apigee\ManagementAPI\DeveloperApp($client, '');
         foreach ($remaining_ids as $id) {
           $app = clone($dev_app);
-          $app->loadByAppId($id);
-          $list[] = $app;
+          try {
+            $app->loadByAppId($id);
+            $list[] = $app;
+          } catch (Apigee\Exceptions\ResponseException $e) {
+            // do nothing
+          }
         }
         $this->addListToCache($list, $ids);
       }
@@ -211,21 +243,60 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     }
 
     if (!empty($uids)) {
-      $uids = db_select('users', 'u')
-        ->fields('u', array('mail', 'uid'))
+      $stmt = db_select('users', 'u');
+      $stmt->addExpression('LOWER(mail)', 'mail');
+      $uids = $stmt->fields('u', array('uid'))
         ->condition('mail', array_keys($uids))
         ->execute()
         ->fetchAllKeyed();
     }
+    $uids = array_flip($uids);
 
     $app_entities = array();
+    $sort_by = array();
+    $first_iteration = TRUE;
     foreach ($list as $dev_app) {
+      $id = $dev_app->getAppId();
       $mail = strtolower($dev_app->getDeveloperMail());
       $array = $dev_app->toArray();
       $array['uid'] = (isset($uids[$mail]) ? $uids[$mail] : NULL);
-      $app_entities[$dev_app->getAppId()] = $array;
+      // Validate that sort field is an existing key
+      if ($first_iteration) {
+        if (!array_key_exists($sort, $array)) {
+          $sort = 'createdAt';
+        }
+        $first_iteration = FALSE;
+      }
+      $app_entities[$id] = $array;
+      $sort_by[$id] = $array[$sort];
     }
-    return $app_entities;
+
+    self::$appCount = count($app_entities);
+
+    natcasesort($sort_by);
+    if ($sort_by == 'createdAt' || $sort_by == 'modifiedAt') {
+      $sort_by = array_reverse($sort_by);
+    }
+
+    $start = $page * $items_per_page;
+    $end = ($items_per_page > 0 ? $start + $items_per_page : NULL);
+
+    $entities_sorted = array();
+    $app_index = 0;
+
+    // Sort and page results
+    foreach(array_keys($sort_by) as $id) {
+      if ($app_index < $start) {
+        continue;
+      }
+      if ($end && $app_index > $end) {
+        break;
+      }
+      $entities_sorted[$id] = (object)$app_entities[$id];
+      $app_index++;
+    }
+
+    return $entities_sorted;
   }
 
   private function getKey(Apigee\ManagementAPI\DeveloperApp $app) {
@@ -245,4 +316,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       }
     }
   }
+
+  public static function getAppCount() {
+    return self::$appCount;
+  }
 }
+

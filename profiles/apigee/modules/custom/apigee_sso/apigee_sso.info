@@ -5,3 +5,4 @@ package = "apigee.com"
 version = "7.x-4.24"
 
 dependencies[] = openid
+dependencies[] = apigee_sso_ui

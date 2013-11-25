@@ -4,8 +4,6 @@ namespace Apigee\Util;
 
 use Apigee\Exceptions\ParameterException;
 
-use Apigee\Util\Log;
-
 class CacheFactory {
 
   /**
@@ -33,7 +31,7 @@ class CacheFactory {
    * getCacheManager is invoked with $cache_manager_class_name as NULL
    * it will return this cache manager
    *
-   * @param Apigee\Util\CacheManager $cacheManager
+   * @param \Apigee\Util\CacheManager $cacheManager
    */
   public static function setDefault(CacheManager $cache_manager) {
     self::$default_cache_manager = $cache_manager;
@@ -54,9 +52,10 @@ class CacheFactory {
    * @param string $cache_manager_class_name
    *   Class name of the cache manager to retrieve. This class name must be of a class
    *   that extends CacheManager, otherwise it will thrown a Apigee\Exceptions\ParameterException
-   * @return Apigee\Util\CacheManager
+   * @param \Psr\Log\LoggerInterface|null $logger
+   * @return \Apigee\Util\CacheManager
    */
-  public static function getCacheManager($cache_manager_class_name = 'Apigee\Util\CacheManager') {
+  public static function getCacheManager($cache_manager_class_name = 'Apigee\Util\CacheManager', $logger = NULL) {
     if (!self::$is_setup) {
       self::setup();
     }
@@ -76,12 +75,16 @@ class CacheFactory {
           $cache_managers[$cache_manager_class_name] = $cache_manager;
         }
         else {
-          Log::write('Apigee\Util\CacheFactory', Log::LOGLEVEL_ERROR, 'Class ' . $cache_manager_class_name . ' does not extend Apigee\Util\Cache, an instance of  Apigee\Util\Cache will be used instead');
+          if ($logger instanceof \Psr\Log\LoggerInterface) {
+            $logger->error('Class ' . $cache_manager_class_name . ' does not extend Apigee\Util\Cache, an instance of  Apigee\Util\Cache will be used instead');
+          }
           throw new ParameterException('Class ' . $cache_manager_class_name . ' does extend Apigee\Util\CacheManager');
         }
       }
       catch (\ReflectionException $re) {
-        Log::write('Apigee\Util\CacheFactory', Log::LOGLEVEL_ERROR, 'Could not load cache manager class ' . $cache_manager_class_name);
+        if ($logger instanceof \Psr\Log\LoggerInterface) {
+          $logger->error('Could not load cache manager class ' . $cache_manager_class_name);
+        }
         throw new ParameterException('Could not load cache manager class ' . $cache_manager_class_name . '.');
       }
     }

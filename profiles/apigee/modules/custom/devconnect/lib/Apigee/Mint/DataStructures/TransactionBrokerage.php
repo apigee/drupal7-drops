@@ -10,17 +10,17 @@ class TransactionBrokerage extends DataStructure {
   /**
    * @var string
    */
-  private $transaction_id;
+  private $transactionId;
 
   /**
    * @var boolean
    */
-  private $broker_id;
+  private $brokerId;
 
   /**
    * @var double
    */
-  private $calculated_revenue_share;
+  private $calculatedRevenueShare;
 
   /**
    * @var double
@@ -49,30 +49,30 @@ class TransactionBrokerage extends DataStructure {
   }
 
   public function getTransactionId() {
-    return $this->transaction_id;
+    return $this->transactionId;
   }
   public function setTransactionId($trans_id) {
-    $this->transaction_id = $trans_id;
+    $this->transactionId = $trans_id;
   }
 
   public function getBrokerId() {
-    return $this->broker_id;
+    return $this->brokerId;
   }
   public function setBrokerId($broker_id) {
-    $this->broker_id = $broker_id;
+    $this->brokerId = $broker_id;
   }
 
   public function getCalculatedRevenueShare() {
-    return $this->calculated_revenue_share;
+    return $this->calculatedRevenueShare;
   }
   public function setCalculatedRevenueShare($calculated_revenue_share) {
-    $this->calculated_revenue_share = $calculated_revenue_share;
+    $this->calculatedRevenueShare = $calculated_revenue_share;
   }
 
   public function getFee() {
     return $this->fee;
   }
-  public function setFee() {
+  public function setFee($fee) {
     $this->fee = $fee;
   }
 

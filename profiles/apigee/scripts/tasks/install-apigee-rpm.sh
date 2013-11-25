@@ -46,7 +46,7 @@ if [ ! -f /etc/drush/devportal.aliases.drushrc.php ] ; then
     echo "<?php"
     echo "\$aliases['devportal'] = array("
     echo "  'root' => '${DRUPAL_WEBROOT}',"
-    echo "  'uri' => '${DEV_PORTAL_HOSTNAME}"
+    echo "  'uri' => '${DEV_PORTAL_HOSTNAME}'"
     echo ");"
   ) > /etc/drush/devportal.aliases.drushrc.php
   display "A drush alias of 'devportal' has been created for this Drupal instance."

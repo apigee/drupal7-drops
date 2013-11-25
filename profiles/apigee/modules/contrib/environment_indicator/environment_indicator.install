@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Install implementation file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function environment_indicator_schema() {
+  $schema['environment_indicator_environment'] = array(
+    'description' => t('Table storing preset definitions.'),
+    'export' => array(
+      'key' => 'machine',
+      'key name' => 'Machine name',
+      'primary key' => 'envid',
+      'identifier' => 'environment', // Exports will be defined as $environment
+      'default hook' => 'default_environment_indicator_environment',  // Function hook name.
+      'api' => array(
+        'owner' => 'environment_indicator',
+        'api' => 'default_environment_indicator_environments',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'machine' => array(
+        'type' => 'varchar',
+        'length' => '32',
+        'description' => 'Unique ID for environments.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'description' => 'Name for the environments.',
+      ),
+      'envid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
+        'no export' => TRUE, // Do not export database-only keys.
+      ),
+      'regexurl' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'description' => 'A regular expression to match against the url.',
+      ),
+      'settings' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'Serialized array with the configuration for the environment.',
+      ),
+    ),
+    'primary key' => array('envid'),
+    'unique keys' => array(
+      'name' => array('machine'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Add table when updating from 1.x
+ */
+function environment_indicator_update_7200(&$sandbox) {
+  if (!db_table_exists('environment_indicator_environment')) {
+    $schema = environment_indicator_schema();
+    db_create_table('environment_indicator_environment', $schema['environment_indicator_environment']);
+  }
+}

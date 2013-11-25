@@ -2,8 +2,6 @@
 
 namespace Apigee\ManagementAPI;
 
-use \Apigee\Util\APIClient;
-
 class Organization extends Base implements OrganizationInterface {
 
   /**
@@ -127,22 +125,20 @@ class Organization extends Base implements OrganizationInterface {
   /**
    * Initializes default values of all member variables.
    *
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    */
-  public function __construct(APIClient $client) {
-    $this->init($client);
-    $this->baseUrl = '/organizations';
-    $this->name = $client->getOrg();
+  public function __construct(\Apigee\Util\OrgConfig $config) {
+    $this->init($config, '/organizations');
+    $this->name = $config->orgName;
   }
 
   /**
    * @param string|null $org
    */
   public function load($org = NULL) {
-    $org = isset($org) ? $org : $this->name;
-    $url = $this->baseUrl . '/' . $this->urlEncode($org);
-    $this->client->get($url);
-    $organization = $this->getResponse();
+    $org = $org ?: $this->name;
+    $this->get($this->urlEncode($org));
+    $organization = $this->responseObj;
 
     $this->name = $organization['name'];
     $this->displayName = $organization['displayName'];
@@ -154,10 +150,11 @@ class Organization extends Base implements OrganizationInterface {
     $this->lastModifiedBy = $organization['lastModifiedBy'];
     $this->properties = array();
 
-    if (isset($organization['properties'])) {
-      foreach ($organization['properties'] as $prop) {
-        list($property) = $prop;
-        $this->properties[$property['name']] = $property['value'];
+    if (array_key_exists('properties', $organization) && array_key_exists('property', $organization['properties'])) {
+      foreach ($organization['properties']['property'] as $prop) {
+        if (array_key_exists('name', $prop) && array_key_exists('value', $prop)) {
+          $this->properties[$prop['name']] = $prop['value'];
+        }
       }
     }
   }

@@ -9,18 +9,22 @@
  * $applications - array of arrays, each of which has the following keys:
  *  - app_name
  *  - callback_url
- *  - credential
+ *  - credential (each member has apiproduct, status, displayName keys)
  *  - delete_url
  */
 
-?>
-<?php
 // Set Title
-drupal_set_title(t('My Apps'));
+if ($user->uid == $GLOBALS['user']->uid) {
+  $title = t('My Apps');
+}
+else {
+  $title = t('@name’s Apps', array('@name' => $user->name));
+}
+drupal_set_title($title);
 
 // Build Breadcrumbs
 $breadcrumb = array();
-$breadcrumb[] = l(t('Home'), '<front>');
+$breadcrumb[] = l('Home', '<front>');
 
 // Set Breadcrumbs
 drupal_set_breadcrumb($breadcrumb);
@@ -40,12 +44,11 @@ $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
 
 <?php
   foreach ($applications as $app) {
-
     if ($show_status) {
       if (isset($app['credential'])) {
         $statuses = array();
         foreach ($app['credential']['apiProducts'] as $product) {
-          $statuses[$product['apiproduct']] = (empty($product['status']) ? 'unknown' : $product['status']);
+          $statuses[$product['displayName']] = (empty($product['status']) ? t('unknown') : t($product['status']));
         }
       }
       else {
@@ -53,7 +56,9 @@ $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
       }
     }
     print '<div class="app-delete">';
-    print '<button class="btn primary action button-processed" title="Delete App" data-url="' . $app['delete_url'] . '"></button>';
+    if (!empty($app['delete_url'])) {
+      print '<button class="btn primary action button-processed" title="' . t('Delete App') . '" data-url="' . $app['delete_url'] . '"></button>';
+    }
     print '</div>';
     print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], 'user/' . $user->uid . '/app-detail/' . $app['app_name']) . '</h4>';
     if (!empty($app['attributes']['Description'])) {
@@ -62,11 +67,17 @@ $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
     print '</div>';
 
     if ($show_status && !empty($statuses)) {
-      print '<div class="app-status"><strong>Status:</strong><br>';
-      foreach ($statuses as $apiproduct => $status) {
-        print '<div><span class="api-product-name"><strong>' . check_plain($apiproduct) . '</strong></span>&nbsp;-&nbsp;<span class="api-product-status">' . check_plain($status) . '</span></div>';
+      print '<div class="app-status"><strong class="app-status-caption">' . t('Credential Status') . ':</strong> ';
+      if (count($statuses) == 1) {
+        $status = reset($statuses);
+        print '<div class="credential-api-product single-product">' . check_plain($status) . '</div>';
       }
-      print '</div>';
+      else {
+        foreach ($statuses as $apiproduct => $status) {
+          print '<div class="credential-api-product multiple-products"><span class="api-product-name"><strong>' . check_plain($apiproduct) . '</strong></span>&nbsp;-&nbsp;<span class="api-product-status">' . check_plain($status) . '</span></div>';
+        }
+      }
+      print '</div>'; // end app-status
     }
     print '<br><hr>';
   }

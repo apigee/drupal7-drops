@@ -1,5 +1,4 @@
 <?php
-// $Id:
 
 /**
  * @file
@@ -19,7 +18,7 @@ function autologout_settings() {
     }
 
     if (variable_get('jstimer_js_load_option', 0) != 1) {
-      drupal_set_message(t('The Javascript timer module\'s "Javascript load options" setting should be set to "Every page" for the dynamic countdown to work in the automated logout block.'), 'error');
+      drupal_set_message(t("The Javascript timer module's 'Javascript load options' setting should be set to 'Every page' for the dynamic countdown to work in the automated logout block."), 'error');
     }
   }
 
@@ -67,6 +66,13 @@ function autologout_settings() {
     '#description' => t('Send users to this internal page when they are logged out.'),
   );
 
+  $form['autologout_no_dialog'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Do not display the logout dialog'),
+    '#default_value' => variable_get('autologout_no_dialog', FALSE),
+    '#description' => t('Enable this if you want users to logout right away and skip displaying the logout dialog.'),
+  );
+
   $form['autologout_message']  = array(
     '#type' => 'textarea',
     '#title' => t('Message to display in the logout dialog'),
@@ -102,7 +108,7 @@ function autologout_settings() {
       '#type' => 'textfield',
       '#title' => t('Autologout block time format'),
       '#default_value' => variable_get('autologout_jstimer_format', '%hours%:%mins%:%secs%'),
-      '#description' => t('Change the display of the dynamic timer.  Available replacement values are: %day%, %month%, %year%, %dow%, %moy%, %years%, %ydays%, %days%, %hours%, %mins%, and %secs%.')
+      '#description' => t('Change the display of the dynamic timer.  Available replacement values are: %day%, %month%, %year%, %dow%, %moy%, %years%, %ydays%, %days%, %hours%, %mins%, and %secs%.'),
     );
   }
 
@@ -113,22 +119,22 @@ function autologout_settings() {
     '#theme' => 'autologout_render_table',
   );
 
-  foreach (user_roles(TRUE) as $key => $role){
+  foreach (user_roles(TRUE) as $key => $role) {
 
-    $form['table']['autologout_roles']['autologout_role_'. $key .'_timeout'] = array(
+    $form['table']['autologout_roles']['autologout_role_' . $key . '_timeout'] = array(
       '#type' => 'textfield',
-      '#default_value' => variable_get('autologout_role_' . $key.'_timeout', $timeout),
+      '#default_value' => variable_get('autologout_role_' . $key . '_timeout', $timeout),
       '#size' => 8,
       '#theme' => 'textfield',
     );
 
   }
 
-  foreach (user_roles(TRUE) as $key => $role){
+  foreach (user_roles(TRUE) as $key => $role) {
     $form['table']['autologout_roles']['autologout_role_' . $key] = array(
       '#type' => 'checkbox',
       '#default_value' => variable_get('autologout_role_' . $key, FALSE),
-      '#theme' => 'checkbox'
+      '#theme' => 'checkbox',
     );
   }
 

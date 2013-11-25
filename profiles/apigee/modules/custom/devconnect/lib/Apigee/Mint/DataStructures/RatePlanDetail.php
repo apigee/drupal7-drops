@@ -96,9 +96,9 @@ class RatePlanDetail {
   /**
    * Class constructor.
    * @param array|null $data
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    */
-  public function __construct($data = NULL, \Apigee\Util\APIClient $client) {
+  public function __construct($data = NULL, \Apigee\Util\OrgConfig $config) {
     if (is_array($data)) {
 
       if (isset($data['ratePlanRates'])) {
@@ -112,13 +112,13 @@ class RatePlanDetail {
       }
 
       if (isset($data['organization'])) {
-        $organization = new \Apigee\Mint\Organization($client);
+        $organization = new \Apigee\Mint\Organization($config);
         $organization->loadFromRawData($data['organization']);
         $this->organization = $organization;
       }
 
       if (isset($data['product'])) {
-        $product = new \Apigee\Mint\Product($client);
+        $product = new \Apigee\Mint\Product($config);
         $product->loadFromRawData($data['product']);
         $this->product = $product;
       }

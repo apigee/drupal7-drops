@@ -83,3 +83,6 @@
   margin-left: 10px;
   width: 270px;
 }
+.front .page-content .container{
+  background: url("/profiles/apigee/themes/apigee_devconnect/images/homepage-content-bg-wide.png") repeat-y scroll 0 0 transparent;
+}

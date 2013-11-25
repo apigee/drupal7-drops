@@ -2,6 +2,8 @@
 
 require_once(dirname(__FILE__) . '/modules/custom/devconnect/lib/Apigee/Exceptions/InstallException.php');
 require_once(dirname(__FILE__) . '/modules/custom/devconnect/lib/Apigee/Util/Crypto.php');
+require_once(dirname(__FILE__) . '/modules/custom/d8cmi/lib/Drupal.php');
+require_once(dirname(__FILE__) . '/modules/custom/d8cmi/lib/Config.php');
 // Make Crypto work properly with R23
 if (method_exists('Apigee\Util\Crypto', 'setKey')) {
   Apigee\Util\Crypto::setKey(hash('SHA256', 'w3-Love_ap|s', TRUE));
@@ -27,6 +29,7 @@ function apigee_install_load_profile(&$install_state) {
   if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
     $install_state['profile_info']['dependencies'][] = "pantheon_api";
     $install_state['profile_info']['dependencies'][] = "pantheon_apachesolr";
+    $install_state['profile_info']['dependencies'][] = "environment_indicator";
   }
 
   // Include any dependencies that we might have missed...
@@ -52,65 +55,9 @@ function apigee_install_load_profile(&$install_state) {
 
   $install_state['profile_info']['dependencies'] = array_unique($dependencies);
   //variable_set("install_profile_modules", $install_state['profile_info']['dependencies']);
-  //$install_state['profiles'] = array("apigee");  
+  //$install_state['profiles'] = array("apigee");
   //drupal_get_messages();
 }
-
-/**
- * Settings install
- *
- * @param string $install_state
- * @return void
- * @author Tom Stovall
- */
-
-
-function apigee_install_settings(&$install_state) {
-
-  drupal_static_reset('conf_path');
-  $conf_path = './' . conf_path(FALSE);
-  $settings_file = $conf_path . '/settings.php';
-
-  //if (!is_pantheon()) {
-  try {
-    $mysqli = new mysqli("localhost", "root");
-    /* check connection */
-    if ($mysqli->connect_errno) {
-      throw new Exception($mysqli->connect_error);
-    }
-    if ($mysqli->query("create database if not exists drops7") === TRUE) {
-      $mysqli->close();
-    }
-    else {
-      throw new Exception($mysqli->error);
-    }
-  } catch (Exception $e) {
-    throw new \Apigee\Exceptions\InstallException($e->getMessage());
-  }
-  //}
-
-  $settings = array(
-    "host" => "localhost",
-    "driver" => "mysql",
-    "username" => "root",
-    "password" => NULL,
-    'database' => 'drops7',
-    'prefix' => NULL
-  );
-
-  $errors = install_database_errors($settings, $settings_file);
-  if (count($errors) >= 1) {
-    throw new \Apigee\Exceptions\InstallException($errors[0]);
-  }
-  else {
-    $form_state = array('values' => $settings);
-    install_settings_form_submit(array(), $form_state);
-  }
-
-  $install_state['settings_verified'] = TRUE;
-  $install_state['completed_task'] = install_verify_completed_task();
-}
-
 
 /**
  * Create batch items for apigee install
@@ -212,9 +159,10 @@ function apigee_install_configure_variables(&$context) {
   variable_set('jquery_update_jquery_cdn', 'google');
   variable_set('jquery_update_jquery_version', '1.7');
   variable_set('user_email_verification', FALSE);
+  variable_set('error_level', 0);
 
   $context['results'][] = "variables";
-  $context['message'] = st('Defautl variables set.');
+  $context['message'] = st('Default variables set.');
 }
 
 /**
@@ -441,8 +389,8 @@ function apigee_install_create_default_content(&$context) {
   $gen = array();
   $gen['values'] = array(
     'node_types' => array(
-      'blog' => 'blog',
       'page' => 'page',
+      'blog' => 'blog',
       'forum' => 'forum'
     ),
     'title_length' => 6,
@@ -452,12 +400,86 @@ function apigee_install_create_default_content(&$context) {
   );
   try {
     module_load_include('inc', 'devel_generate');
+    $blog_vid = taxonomy_vocabulary_machine_name_load('blog')->vid;
+    $forums_vid = taxonomy_vocabulary_machine_name_load('forums')->vid;
+    $tax = taxonomy_vocabulary_load_multiple(array($blog_vid,$forums_vid));
+    devel_generate_term_data($tax, 2, 12, 0, NULL);
     devel_generate_content($gen);
+
+    $posts = array(
+      array(
+        'title' => 'Portal Start Up Guide',
+        'body' => '<p>The&nbsp;<em>developer portal</em>&nbsp;is a template portal, designed as a base that you can easily' .
+          ' customize to meet your specific requirements</p>
+          <p>Your customized developer portal should educate developers about your API&mdash;what it is and how it\'s used. It' .
+          ' should also enable you to manage developer use of your API. This could include authorizing developers to use your API,' .
+          ' giving developers an easy way to create apps that use your API products, assigning developers specific roles and permissions' .
+          ' related to the API, or revoking developer access to the API as necessary. Beyond that, your developer portal can serve' .
+          ' as the focal point for community activity, where developers can contribute API-related content to social media repositories' .
+          ' such as blogs and forums.</p>' .
+          ' <p>View more information about developer portals at ' .
+          l('apigee.com','http://apigee.com/docs/developer-channel/content/what-developer-portal') . '</p>',
+        'keyword' => 'Portal',
+      ),
+      array(
+        'title' => 'Customizing your portal',
+        'body' => '<p>You can customize the appearance of the developer portal to match your company theme, to add new content areas' .
+          ' to the portal, or to change the layout of any page on the portal. Much of this configuration requires a working knowledge' .
+          ' of ' . l('Drupal','https://drupal.org') .'. However, there is documentation that describes some of the basic tasks that you might want to' .
+          ' perform to customize your portal.</p>' .
+          ' <p>View more information about customizing your developer portals at ' .
+          l('www.apigee.com','http://apigee.com/docs/developer-channel/content/customize-appearance') . '.</p>',
+        'keyword' => 'Tutorials',
+      ),
+    );
+
+    $vid = taxonomy_vocabulary_machine_name_load('blog')->vid;
+
+    foreach($posts as $post) {
+      $node = new stdClass();
+      $node->type = 'blog';
+      node_object_prepare($node);
+      $node->uid = 1;
+      $node->name = 'admin';
+      $node->title = $post['title'];
+      $node->language = LANGUAGE_NONE;
+      $node->body[$node->language][0]['value'] = $post['body'];
+      $node->body[$node->language][0]['summary'] = $post['body'];
+      $node->body[$node->language][0]['format'] = 'filtered_html';
+      $node->comment = 1;
+      $node->status = 1;
+      $node->promote = 0;
+      $node->revision = 0;
+      $node->changed = time();
+      $node->created = time();
+      $term = taxonomy_get_term_by_name($post['keyword'], 'blog');
+      if (empty($term)) {
+        if ($vid) {
+          taxonomy_term_save((object) array(
+            'name' => $post['keyword'],
+            'vid' => $vid,
+          ));
+          $keyword = taxonomy_get_term_by_name($post['keyword'], 'blog');
+        }
+      } else {
+        if ($vid) {
+          $keyword = taxonomy_get_term_by_name($post['keyword'], 'blog');
+        }
+      }
+      if (isset($keyword)) {
+        foreach ($keyword as $obj) {
+          $node->field_keywords[$node->language][]['tid'] = $obj->tid;
+        }
+      }
+      node_submit($node);
+      node_save($node);
+    }
+
   } catch (Exception $e) {
     watchdog_exception(__FUNCTION__, $e, "Error generating default content: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
   }
   $context['results'][] = "content_created";
-  $context['message'] = st('Default Content Generated!');
+  $context['message'] = st('Default Content Generated' . $ex . '!');
 }
 
 
@@ -471,6 +493,12 @@ function apigee_install_rebuild_permissions(&$context) {
   $context['results'][] = "content_permissions";
   $context['message'] = st('Content Permissions Rebuilt');
 }
+
+function apigee_install_revert_features(&$context) {
+  module_enable(array("curate"));
+  features_revert(array('module' => array('curate')));
+}
+
 
 function apigee_install_clear_caches_flush(&$context) {
   watchdog(__FUNCTION__, "Flushing CSS/JS", array(), WATCHDOG_INFO);
@@ -580,7 +608,7 @@ function apigee_install_bootstrap_status(&$context) {
 }
 
 /**
- *  Set the apigee endpoint configuration vars
+ * Set the apigee endpoint configuration vars
  *
  * @param string $form
  * @param string $form_state
@@ -616,145 +644,88 @@ function apigee_install_api_endpoint($form, &$form_state) {
     "spellcheck" => "false"
   );
   $form = array();
-  $form['devconnect_org'] = array(
+
+  $form['org'] = array(
     '#type' => 'textfield',
-    '#title' => t("Devconnect Organization"),
+    '#title' => t('Dev Portal Organization'),
+    '#required' => TRUE,
     '#default_value' => $org,
     '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
-    '#required' => TRUE,
     '#attributes' => $attributes
   );
-  $form['devconnect_endpoint'] = array(
+
+  $form['endpoint'] = array(
     '#type' => 'textfield',
-    '#title' => t("Devconnect Endpoint"),
+    '#title' => t('Dev Portal Endpoint URL'),
+    '#required' => TRUE,
     '#default_value' => $endpoint,
-    '#description' => t('URL to which to make Apigee Management UI REST calls. For on-prem installs you will need to change this value.'),
-    '#required' => TRUE,
+    '#description' => t('URL to which to make Apigee REST calls. For on-prem installs you will need to change this value.'),
     '#attributes' => $attributes
   );
-  $form['devconnect_curlauth'] = array(
+
+  $form['user'] = array(
     '#type' => 'textfield',
-    '#title' => t("Authentication for the Endpoint"),
-    '#default_value' => "<USERNAME>:<PASSWORD>",
-    '#description' => t('These values be used to authenticate with the endpoint. Separate the Username and Password with a colon (e.g. "guest:secret").'),
+    '#title' => t('Endpoint Authenticated User'),
     '#required' => TRUE,
-    '#attributes' => $attributes
+    '#default_value' => '',
+    '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
+    '#attributes' => $attributes + array('placeholder' => 'username')
   );
 
-  /**
-   * Test connection functionality uses ajax, therefore we need to be on the same form where we supply the info to test.
-
-  $test_org = $form['devconnect_org']['#default_value'];
-  $test_endpoint = $form['devconnect_endpoint']['#default_value'];
-  $test_curl_auth = $form['devconnect_curlauth']['#default_value'];
-
-  if (array_key_exists('storage', $form_state) && array_key_exists('connection_status', $form_state['storage'])) {
-    $status = $form_state['storage']['connection_status'];
-  }
-  else {
-    $status = '';
-  }
-
-  $form['connect_test'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Connection Configuration'),
-    '#weight' => 100,
+  $form['pass'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Authenticated User’s Password'),
+    '#required' => TRUE,
+    '#default_value' => '',
+    '#description' => t('Password used when authenticating with the endpoint.'),
+    '#attributes' => $attributes + array('placeholder' => 'password')
   );
-  $form['connect_test']['test_connection'] = array(
-    '#type' => 'submit',
-    '#value' => t('Test Connection'),
-    '#submit' => array('_apigee_install_test_management_connection_submit'),
-    '#ajax' => array(
-      'callback' => '_apigee_install_test_management_connection_ajax',
-      'wrapper' => 'test-connect-result',
-      'method' => 'replace',
-      'effect' => 'fade',
-    ),
-  );
-  $form['connect_test']['test_connection_status'] = array(
-    '#type' => 'item',
-    '#prefix' => '<div id="test-connect-result">',
-    '#suffix' => '</div>',
-    '#markup' => (isset($status)) ? '<br/>' . $status : '<br/>' .
-       _apigee_install_test_kms_connection($test_org, $test_endpoint, $test_curl_auth),
-  );
-   *
-   *
-   */
 
   $form['actions'] = array(
     '#weight' => 100,
+    '#attributes' => array(
+      'class' => array('container-inline'),
+    ),
   );
   $form['actions']['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+  );
+  $form['actions']['skip'] = array(
+    '#type' => 'submit',
+    '#limit_validation_errors' => array(),
+    '#value' => t('Skip this config'),
+    '#submit' => array('apigee_skip_api_endpoint'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+
   );
   $form['#submit'][] = "apigee_install_api_endpoint_submit";
-
-  // @todo, you should test the connection in a hook validate too - force a form_set_error
 
   return $form;
 }
 
 /**
- * Ajax Callback for Testing the KMS Connection
- *
- * @param $form
- * @param $form_state
- * @return mixed
- * @author Brian Hasselbeck
+ * Custom function that skips the devconnect installation piece
  */
-function _apigee_install_test_management_connection_ajax($form, &$form_state) {
-  return $form['connect_test']['test_connection_status'];
-}
-
-/**
- * Submit Callback for testing the KMS Connection
- *
- * @param $form
- * @param $form_state
- * @author Brian Hasselbeck
- */
-function _apigee_install_test_management_connection_submit($form, &$form_state) {
-  // provide the currently user supplied credentials
-  $org = $form_state['input']['devconnect_org'];
-  $endpoint = $form_state['input']['devconnect_endpoint'];
-  $curl_auth = $form_state['input']['devconnect_curlauth'];
-
-  // make the form states rebuild and store important variables
-  $form_state['rebuild'] = TRUE;
-  $form_state['storage']['ajaxed'] = TRUE;
-  $form_state['storage']['connection_status'] = _apigee_install_test_kms_connection($org, $endpoint, $curl_auth);
-}
-
-/**
- * Test Function for connectivity to the KMS
- *
- * @param $org
- * @param $endpoint
- * @param $curl_auth
- * @return string
- * @author Brian Hasselbeck, Daniel Johnson
- */
-function _apigee_install_test_kms_connection($org, $endpoint, $curl_auth) {
-  if (defined('APIGEE_DEVCONNECT_DEFAULT_ORG') && $org == APIGEE_DEVCONNECT_DEFAULT_ORG) {
-    return '<span style="color:red">' . t('Invalid org') . '</span>';
+function apigee_skip_api_endpoint($form, &$form_state) {
+  // skips the config, so let's turn off the devconnect modules
+  $modules = module_list();
+  $disable = array();
+  foreach ($modules as $name => $module) {
+    if ($name) {
+      if (strpos($name, 'devconnect') !== false) {
+        $disable[] = $name;
+      }
+    }
   }
-  if (!valid_url($endpoint)) {
-    return '<span style="color:red">' . t('Invalid endpoint') . '</span>';
-  }
-  list($user, $pass) = explode(':', $curl_auth, 2);
+  // module_disable($disable);
 
-  // Register the autoloader
-  devconnect_boot();
-  $client = new Apigee\Util\APIClient($endpoint, $org, $user, $pass);
-  $dev_app = new Apigee\ManagementAPI\DeveloperAppAnalytics($client);
-  try {
-    $dev_app->queryEnvironments(); // uses R23 camelCase in methods
-    return '<span style="color:green">' . t('Connection Successful') . '</span>';
-  }
-  catch (Exception $e) {}
-  return '<span style="color:red">' . t('Connection Unsuccessful') . '</span>';
+  $install_state['completed_task'] = install_verify_completed_task();
 }
 
 /**
@@ -768,18 +739,15 @@ function _apigee_install_test_kms_connection($org, $endpoint, $curl_auth) {
 
 function apigee_install_api_endpoint_submit($form, &$form_state) {
 
-
-  $raw_auth = $form_state['values']['devconnect_curlauth'];
-  list($username, $raw_pass) = explode(':', $raw_auth, 2);
-  $pass = Apigee\Util\Crypto::encrypt($raw_pass);
-  $form_state['values']['devconnect_curlauth'] = "{$username}:{$pass}";
-
-  $values = $form_state['values'];
-  foreach ($values as $key => $value) {
-    if (substr($key, 0, 10) == "devconnect") {
-      variable_set($key, $value);
+  $config = Drupal::config('devconnect.settings');
+  foreach (array('org', 'endpoint', 'user', 'pass') as $key) {
+    $value = $form_state['values'][$key];
+    if ($key == 'pass') {
+      $value = Apigee\Util\Crypto::encrypt($value);
     }
+    $config->set($key, $value);
   }
+  $config->save();
 
   $install_state['completed_task'] = install_verify_completed_task();
 }
@@ -805,6 +773,4 @@ function apigee_install_settings_form_submit($form, &$form_state, &$install_stat
 
 
 }
-
-
 

@@ -24,6 +24,7 @@ To find the <channel-name>, use the following command:
   rhn-channel -L -u <rhn-username> -p <rhn-password> | grep server-optional
 
 "
+    # Current channel name is rhel-x86_64-server-optional-6.4.z
     exit 1
   fi
 fi

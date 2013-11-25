@@ -1,0 +1,299 @@
+<link href="https://apigee.com/git/docs/css/main.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8"/>
+<link href="https://apigee.com/git/docs/css/cms.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8"/>
+<link href="https://apigee.com/git/docs/css/codemirror.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8"/>
+<link href="https://apigee.com/git/docs/css/prism.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8"/>
+<script type="text/javascript">
+    var apiName = "{{apiName}}";
+    var revisionNumber = "{{revisionNumber}}";
+</script>
+<div id="container">
+<div id="content">
+<div class="admin_auth_section hide">
+    <a class="set_admin_credentials hide" href="javascript:void(0)" title="set admin credentials.">Set Admin Credentials...</a>
+    <a class="auth_admin_email" title="reset admin credentials." href="javascript:void(0)"></a>
+    <i title="Clear admin credentials." class="icon-remove"></i>
+</div>
+<div>
+    <div class="resource_summary">
+        <h4>Resource Summary</h4>
+        <div>
+            <p class="title">Auth Type</p>
+            <p class="data auth_type" data-role="auth-type">
+                {{#if authSchemes}}
+                {{#each authSchemes}}{{.}},{{/each}}
+                {{else}}
+                NOAUTH
+                {{/if}}
+            </p>
+        </div>
+        <div>
+            <p class="title">Content Types</p>
+            <p class="data" data-role="content-type">
+                {{#if sampleCalls}}{{#each sampleCalls}}{{contentType}}{{/each}}{{/if}}
+            </p>
+        </div>
+        <div>
+            <p class="title">Category</p>
+            <p class="data" data-role="category">
+                {{#each tags}}{{.}},{{/each}}
+            </p>
+        </div>
+        <div>
+            <p class="title">Updated</p>
+            <p class="data" data-role="modified-time">{{createdTime}}</p>
+        </div>
+    </div>
+    <div class="resource_details">
+        <span id="method_name" data-role="method-name" class="hide">{{name}}</span>
+        <div>
+            <div class="verb_container">
+                <p class="{{verb}}" data-role="verb">{{verb}}</p>
+                {{#if authSchemes}}
+                <span class="icon_lock"></span>
+                {{/if}}
+            </div>
+            <h2 data-role="method-title" data-allow-edit="true">{{#if displayName}}{{displayName}}{{else}}{{name}}{{/if}}</h2>
+        </div>
+        <div class="description_and_url_container">
+            <div class="description_container">
+                <div class="resource_description" data-allow-edit="true" data-role="method-description">{{{description}}}</div>
+            </div>
+            <h3>Resource URL</h3>
+            <div class="url_container">
+                <p id="resource_URL" data-role="method-url"><span data-role="host">{{baseUrl}}</span><span data-role="basePath"></span><span data-role="path">{{path}}</span> </p>
+            </div>
+        </div>
+    </div>
+</div>
+<div>
+    {{#if-query-param this.parameters}}
+    <ul class="method_table">
+        <h3>Query Parameters</h3>
+        <li class="method_title">
+            <div class="method_data title">Name</div>
+            <div class="method_data value">Value</div>
+            <div class="method_data description">Description</div>
+        </li>
+        {{#query-list this.parameters}}
+        <li class="method_details" data-role="query-param-list" data-scope="{{scope}}">
+            <div class="method_data title">
+                <span data-role="name">{{name}}</span>
+                {{#required}}
+                <br/><span class="required" data-role="required">(required)</span>
+                {{/required}}
+            </div>
+            <div class="method_data value">
+                {{#if required}}
+                <input type="text" data-role="value" value="{{defaultValue}}"/>
+                {{else}}
+                <input type="text" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                {{/if}}
+            </div>
+            <div class="method_data description">
+                <p data-role="description" data-allow-edit="true">
+                    {{description}}
+                </p>
+            </div>
+        </li>
+        {{/query-list}}
+    </ul>
+    {{/if-query-param}}
+    {{#if-header-param this.parameters}}
+    <ul class="method_table">
+        <h3>Header Parameters</h3>
+        <li class="method_title">
+            <div class="method_data title">Name</div>
+            <div class="method_data value">Value</div>
+            <div class="method_data description">Description</div>
+        </li>
+        {{#header-list this.parameters}}
+        <li class="method_details" data-role="header-param-list" data-scope="{{scope}}">
+            <div class="method_data title">
+                <span data-role="name">{{name}}</span>
+                {{#required}}
+                <br/><span class="required" data-role="required">(required)</span>
+                {{/required}}
+            </div>
+            <div class="method_data value">
+                {{#if required}}
+                <input type="text" data-role="value" value="{{defaultValue}}"/>
+                {{else}}
+                <input type="text" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                {{/if}}
+            </div>
+            <div class="method_data description">
+                <p data-role="description" data-allow-edit="true">
+                    {{description}}
+                </p>
+            </div>
+        </li>
+        {{/header-list}}
+    </ul>
+    {{/if-header-param}}
+    <ul class="method_table">
+        {{#if attachments}}
+        <form enctype="multipart/form-data" method="post" name="formAttachment" id="formAttachment">
+            <h3>Attachments</h3>
+            <li class="method_title">
+                <div class="method_data title">Name</div>
+                <div class="method_data value">Value</div>
+                <div class="method_data description">Description</div>
+            </li>
+            {{/if}}
+            {{#each attachments}}
+            <li class="method_details" data-role="attachments-list" data-scope="{{#if resourceParam}}resource{{else}}method{{/if}}">
+                <div class="method_data title">
+                    <span data-role="name">{{name}}</span>
+                    {{#required}}
+                    <br/><span class="required" data-role="required">(required)</span>
+                    {{/required}}
+                </div>
+                <div class="method_data value">
+                    {{#if required}}
+                    <input name="{{name}}" type="file" data-role="value" required/>
+                    {{else}}
+                    <input name="{{name}}" type="file" data-role="value" />
+                    {{/if}}
+                </div>
+                <div class="method_data description">
+                    <p data-role="description" data-allow-edit="true">
+                        {{description}}
+                    </p>
+                </div>
+            </li>
+            {{/each}}
+        </form>
+    </ul>
+</div>
+{{#if sampleCalls}}
+{{#each sampleCalls}}
+{{#if rawRequestContent}}
+<div class="request_payload">
+    <h3>Body</h3>
+    {{#if request.doc}}
+    <ul class="nav nav-pills" data-role="request-payload-link">
+        <li class="active">
+            <a href="javascript:void(0)" data-role="example-link">Raw</a>
+        </li>
+        <li>
+            <a href="javascript:void(0)" data-role="docs-link">Docs</a>
+        </li>
+    </ul>
+    {{/if}}
+    <div data-role="request-payload-docs" class="docs">
+        {{{request.doc}}}
+    </div>
+    <div data-role="request-payload-example">
+        <textarea data-format="{{contentType}}">
+            {{rawRequestContent}}
+        </textarea>
+    </div>
+</div>
+{{/if}}
+{{#if request.doc}}
+{{#if rawRequestContent}}
+{{else}}
+<div class="request_payload">
+    <h3>Body</h3>
+    <ul class="nav nav-pills" data-role="request-payload-link">
+        <li class="active">
+            <a href="javascript:void(0)" data-role="docs-link">Description</a>
+        </li>
+    </ul>
+    <div data-role="request-payload-docs" class="docs">
+        {{{request.doc}}}
+    </div>
+</div>
+{{/if}}
+{{/if}}
+{{/each}}
+{{/if}}
+{{#if-template-param this.parameters}}
+<div class="hide" data-role="template-params">
+    {{#template-list this.parameters}}
+    <p data-scope="{{scope}}"><span data-role="name">{{name}}</span><span data-role="description">{{description}}</span></p>
+    {{/template-list}}
+</div>
+{{/if-template-param}}
+
+<div class="operation_container">
+    <div class="authentication">
+    </div>
+    <button id="send_request">Send this request<br/><span>using the values above</span></button>
+    <a href="javascript:void(0)" class="link_reset_default" title="Reset to default request parameters and body content.">Reset</a>
+</div>
+<div class="request_response_tabs" >
+    <a href="javascript:void(0)" id="link_request_tab" data-role="request-link">Request</a>
+    <a href="javascript:void(0)" id="link_response_tab" data-role="response-link" class="selected">Response</a>
+</div>
+<div id="request_response_container">
+    <div class="response" data-role="response-container">
+        <p>Make a request and see the response.</p>
+    </div>
+    <div class="request" data-role="request-container">
+        <p>Make a request and see the response.</p>
+    </div>
+</div>
+{{#if sampleCalls}}
+{{#each sampleCalls}}
+{{#if response.doc}}
+<div class="response_payload">
+    <h3>Response Payload Elements</h3>
+    <div data-role="response-payload-docs">
+        {{{response.doc}}}
+    </div>
+</div>
+{{/if}}
+{{/each}}
+{{/if}}
+</div>
+</div>
+<div id="overlay_container"></div>
+<div id="working_alert"><p>Working...</p></div>
+<div class="modal hide">
+    <div class="modal-header">
+        <button aria-hidden="true" data-dismiss="modal" class="close button_close_modal" type="button">x</button>
+        <h3>Set Authentication</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="error_container"></div>
+            <div class="control-group">
+                <label class="control-label" for="inputEmail">Email/Username</label>
+                <div class="controls">
+                    <input type="text" id="inputEmail" placeholder="Email"/>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="inputPassword">Password</label>
+                <div class="controls">
+                    <input type="password" id="inputPassword" placeholder="Password"/>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <p>Your credentials are saved for the session only.</p>
+        <a class="btn btn-primary button_save_modal" href="javascript:void(0)">Save</a>
+        <a class="button_close_modal" href="javascript:void(0)">Cancel</a>
+    </div>
+    <script type="text/javascript">
+        var apiModelBaseUrl =  "https://api.krypton.apigee.net/v1";
+        var proxyURLHardCoded = "http://jaksapi-test.apigee.net/v1/apim";
+        var organizationName = "{{organizationName}}";
+        var apiName = "{{apiName}}";
+        var revisionNumber = "{{revision}}";
+        var resourceId = "{{resourceId}}";
+        var methodId = "{{id}}";
+    </script>
+</div>
+<script>var methodType="details";</script>
+<script src="https://apigee.com/git/docs/js/jquery_1.7.2.min.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/bootstrap-tooltip.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/codemirror.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/codemirror_javascript.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/codemirror_xml.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/prism.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/base64_min.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/model.js" type="text/javascript"></script>
+<script src="https://apigee.com/git/docs/js/controller.js" type="text/javascript"></script>

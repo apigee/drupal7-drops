@@ -22,7 +22,7 @@ fi
 if [[ `pear info drush/drush | grep -c 'No information found'` -eq 0 ]] ; then
   display "Drush is already installed."
 else
-  pear install -a drush/drush >> $LOGFILE 2>&1
+  pear install -a drush/drush-5.9.0 >> $LOGFILE 2>&1
 fi
 
 drush -y dl registry_rebuild >> $LOGFILE 2>&1

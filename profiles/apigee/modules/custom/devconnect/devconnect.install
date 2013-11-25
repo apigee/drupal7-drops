@@ -10,9 +10,9 @@
  */
 function devconnect_requirements($phase) {
   $requirements = array();
+  $t = get_t();
 
   if ($phase == 'install') {
-    $t = get_t();
 
     if (!defined('MCRYPT_RIJNDAEL_128')) {
       $requirements['mcrypt'] = array(
@@ -21,25 +21,45 @@ function devconnect_requirements($phase) {
         'value' => $t('Please install the PHP mcrypt extension.'),
         'title' => $t('Missing library'),
       );
+    }
 
-      if (!defined('CURLE_OK')) {
-        $requirements['cURL'] = array(
-          'description' => 'PHP must have the cURL library for DevConnect to work.',
-          'severity' => REQUIREMENT_ERROR,
-          'value' => $t('Please install the PHP cURL extension.'),
-          'title' => $t('Missing library'),
-        );
-      }
+    if (!defined('CURLE_OK')) {
+      $requirements['cURL'] = array(
+        'description' => 'PHP must have the cURL library for DevConnect to work.',
+        'severity' => REQUIREMENT_ERROR,
+        'value' => $t('Please install the PHP cURL extension.'),
+        'title' => $t('Missing library'),
+      );
+    }
+  }
+  if ($phase == 'runtime') {
 
-      $result = drupal_http_request('http://www.google.com/', array('method' => 'HEAD'));
-      if (floor($result->code / 100) != 2) {
-        $requirements['setsebool'] = array(
-          'description' => 'Apache\'s process must be able to create outbound network connections.',
-          'severity' => REQUIREMENT_ERROR,
-          'value' => $t('Please run the following command:') . "\nsetsebool -P httpd_can_network_connect 1",
-          'title' => $t('SELinux configuration problem')
-        );
-      }
+    module_load_include('module', 'devconnect');
+    module_load_include('module', 'd8cmi');
+    // Make sure all autoloaders are registered
+    devconnect_boot();
+    d8cmi_init();
+
+    $config = Drupal::config('devconnect.settings');
+    $org = $config->get('org');
+    $endpoint = $config->get('endpoint');
+    $user = $config->get('user');
+    $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+
+    if (_devconnect_test_kms_connection($org, $endpoint, "$user:$pass", TRUE)) {
+      $requirements['devconnect_connection'] = array(
+        'severity' => REQUIREMENT_OK,
+        'title' => 'DevConnect Connection',
+        'value' => $t('DevConnect is connected to the management server.'),
+      );
+    }
+    else {
+      $requirements['devconnect_connection'] = array(
+        'severity' => REQUIREMENT_ERROR,
+        'title' => 'DevConnect Connection',
+        'value' => $t('DevConnect is not connected to the management server.'),
+        'description' => $t('To configure these settings, please go to @url.' , array('@url' => base_path() . 'admin/config/devconnect')),
+      );
     }
   }
 
@@ -119,4 +139,82 @@ function devconnect_update_7423(&$sandbox) {
 
   variable_del('devconnect_appname_bug');
   variable_del('devconnect_oauth_token_urls');
+}
+
+/**
+ * Correctly configure ckeditor javascript configuration if the ckeditor module is enabled
+ *
+ * @param $sandbox
+ */
+function devconnect_update_7424(&$sandbox) {
+  /**
+   * Fix for https://apigeesc.atlassian.net/browse/DEVCHAN-30
+   *
+   * This update should append config.allowedContent = true; to the javascript configuration
+   *
+   */
+  if (module_exists('ckeditor')) {
+    if (function_exists('drush_print')) {
+      drush_print('Allowing default content in ckeditor');
+    }
+    $query = db_select('ckeditor_settings', 'c')
+      ->fields('c', array('name', 'settings'));
+    $result = $query->execute();
+    foreach ($result as $res) {
+      $name = $res->name;
+      $settings = unserialize($res->settings);
+      if (isset($settings['js_conf'])) {
+        $allow = 'config.allowedContent = true;';
+        $settings['js_conf'] = $allow;
+        if (!empty($name)) {
+          $update = db_update('ckeditor_settings')
+            ->fields(array(
+              'settings' => serialize($settings),
+            ))->condition('name', $res->name, '=');
+          $update->execute();
+        }
+      }
+    }
+  }
+
+  if (!module_exists('d8cmi')) {
+    module_enable(array('d8cmi'));
+  }
+  devconnect_port_settings_to_d8cmi();
+  if (module_exists('devconnect_wadl')) {
+    module_disable(array('devconnect_wadl'), FALSE);
+  }
+}
+
+function devconnect_port_settings_to_d8cmi() {
+  module_load_include('module', 'devconnect');
+  module_load_include('module', 'd8cmi');
+  // Make sure all autoloaders are registered
+  devconnect_boot();
+  d8cmi_init();
+
+  $config = Drupal::config('devconnect.settings');
+
+  $org = variable_get('devconnect_org', $config->get('org'));
+  $config->set('org', $org);
+
+  $endpoint = variable_get('devconnect_endpoint', $config->get('endpoint'));
+  $config->set('endpoint', $endpoint);
+
+  $curlauth = variable_get('devconnect_curlauth', NULL);
+  if ($curlauth) {
+    list($user, $pass) = explode(':', $curlauth, 2);
+    $config->set('user', $user);
+    $config->set('pass', $pass);
+  }
+
+  $threshold = variable_get('apigee_log_threshold', $config->get('log_threshold'));
+  $config->set('log_threshold', $threshold);
+
+  $config->save();
+
+  variable_del('devconnect_org');
+  variable_del('devconnect_endpoint');
+  variable_del('devconnect_curlauth');
+  variable_del('apigee_log_threshold');
 }

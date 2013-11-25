@@ -11,7 +11,6 @@ namespace Apigee\ManagementAPI;
 use Apigee\Exceptions\ParameterException;
 use Apigee\Exceptions\EnvironmentException;
 use Apigee\Util\Cache;
-use Apigee\Util\APIClient;
 
 class DeveloperAppAnalytics extends Base implements DeveloperAppAnalyticsInterface {
   /**
@@ -19,15 +18,14 @@ class DeveloperAppAnalytics extends Base implements DeveloperAppAnalyticsInterfa
    */
   protected $environment;
 
-  protected $baseUrl;
-
   /**
    * Initializes the environment and sets up the APIClient.
-   * @param \Apigee\Util\APIClient $client
+   *
+   * @param \Apigee\Util\OrgConfig $config
    * @param string $env
    */
-  public function __construct(APIClient $client, $env = '*') {
-    $this->init($client);
+  public function __construct(\Apigee\Util\OrgConfig $config, $env = '*') {
+    $this->init($config, '');
     $this->setEnvironment($env);
   }
 
@@ -45,7 +43,8 @@ class DeveloperAppAnalytics extends Base implements DeveloperAppAnalyticsInterfa
       }
     }
     $this->environment = $env;
-    $this->baseUrl = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/environments/' . $this->urlEncode($env) . '/stats/';
+    $environment_url = '/o/' . $this->urlEncode($this->config->orgName) . '/environments/' . $this->urlEncode($env) . '/stats/';
+    $this->setBaseUrl($environment_url);
   }
 
   /**
@@ -87,16 +86,13 @@ class DeveloperAppAnalytics extends Base implements DeveloperAppAnalyticsInterfa
   public function getByAppName($developer_id, $app_name, $metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order = 'ASC') {
     $params = self::validateParameters($metric, $time_start, $time_end, $time_unit, $sort_by, $sort_order);
 
-    $filter = "(developer_app eq '$app_name'";
     if (!empty($developer_id)) {
-      $org = $this->client->getOrg();
-      $filter .= " and developer eq '$org@@@$developer_id'";
+      $org = $this->config->orgName;
+      $params['filter'] = "(developer eq '$org@@@$developer_id')";
     }
-    $filter .= ')';
+    $params['developer_app'] = $app_name;
 
-    $params['filter'] = $filter;
-
-    $url = $this->baseUrl . 'apps?';
+    $url = 'apps?';
     $first = TRUE;
     foreach ($params as $name => $val) {
       if ($first) {
@@ -107,9 +103,8 @@ class DeveloperAppAnalytics extends Base implements DeveloperAppAnalyticsInterfa
       }
       $url .= $name . '=' . urlencode($val);
     }
-    $this->client->get($url);
-    $response = $this->getResponse();
-    $response = $response['Response'];
+    $this->get($url);
+    $response = $this->responseObj['Response'];
 
     $datapoints = array();
     $timestamps = array();
@@ -143,10 +138,11 @@ class DeveloperAppAnalytics extends Base implements DeveloperAppAnalyticsInterfa
    * @return array
    */
   public function queryEnvironments() {
-    $org = $this->getClient()->getOrg();
-    $env_url = '/organizations/' . $this->urlEncode($org) . '/environments';
-    $this->client->get($env_url);
-    return $this->getResponse();
+    $env_url = '/o/' . $this->urlEncode($this->config->orgName) . '/environments';
+    $this->setBaseUrl($env_url);
+    $this->get();
+    $this->restoreBaseUrl();
+    return $this->responseObj;
   }
 
   /**

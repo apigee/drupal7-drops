@@ -7,9 +7,9 @@ use Apigee\Exceptions\ResponseException;
 
   class MintApiException extends \Exception {
 
-    private $mint_code;
+    private $mintCode;
 
-    private $mint_message;
+    private $mintMessage;
 
     private $contexts;
 
@@ -84,12 +84,12 @@ use Apigee\Exceptions\ResponseException;
         throw new ParameterException('Not a registered mint exception.', $e);
       }
       $error_info = json_decode($e->getResponse());
-      $this->mint_code = $error_info->code;
-      $this->mint_message = $error_info->message;
+      $this->mintCode = $error_info->code;
+      $this->mintMessage = $error_info->message;
     }
 
     public function getMintCode() {
-      return $this->mint_code;
+      return $this->mintCode;
     }
 
     /**
@@ -97,10 +97,10 @@ use Apigee\Exceptions\ResponseException;
      * otherwise NULL is return
      */
     public function getMintMessage($response_message = FALSE, $no_code = FALSE) {
-      if ($this->mint_code == self::DEVELOPER_HAS_FOLLOWING_OVERLAP_RATE_PLANS) {
-        return $this->mint_message;
+      if ($this->mintCode == self::DEVELOPER_HAS_FOLLOWING_OVERLAP_RATE_PLANS) {
+        return $this->mintMessage;
       }
-      return $response_message ? (!$no_code ? $this->mint_code . ': ' : '') . $this->mint_message : self::$codes[$this->mint_code];
+      return $response_message ? (!$no_code ? $this->mintCode . ': ' : '') . $this->mintMessage : self::$codes[$this->mintCode];
     }
   }
 

@@ -2,8 +2,7 @@
 namespace Apigee\Mint;
 
 use Apigee\Util\CacheFactory;
-use \Apigee\Exceptions\ParameterException as ParameterException;
-use \Apigee\Util\Log as Log;
+use Apigee\Exceptions\ParameterException as ParameterException;
 
 class PricePoint extends Base\BaseObject {
 
@@ -17,25 +16,25 @@ class PricePoint extends Base\BaseObject {
    * Net Price Start range
    * @var double
    */
-  private $net_start_price;
+  private $netStartPrice;
 
   /**
    * Net Price End range
    * @var double
    */
-  private $net_end_price;
+  private $netEndPrice;
 
   /**
    * Gross Price Start range
    * @var double
    */
-  private $gross_start_price;
+  private $grossStartPrice;
 
   /**
    * Gross Price End range
    * @var double
    */
-  private $gross_end_price;
+  private $grossEndPrice;
 
   /**
    * Is published?
@@ -47,13 +46,13 @@ class PricePoint extends Base\BaseObject {
    * Effective Start date
    * @var string
    */
-  private $start_date;
+  private $startDate;
 
   /**
    * Effective End date
    * @var string
    */
-  private $end_date;
+  private $endDate;
 
   /**
    * Organization
@@ -62,29 +61,23 @@ class PricePoint extends Base\BaseObject {
   private $organization;
 
   /**
-   * Name of the organization this PricePoint is in
-   * @var string
-   */
-  private $org;
-
-  /**
    * Product id this PricePoint is in
    * @var string
    */
-  private $product_id;
+  private $productId;
 
   /**
    * PricePoint class constructor
    * @param string $product_id Product Id this PricePoint is in
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    */
-  public function __construct($product_id, \Apigee\Util\APIClient $client) {
-    $this->init($client);
-    $this->org = $this->client->getOrg();
-    $this->product_id = $product_id;
-    $this->base_url = '/mint/organizations/' . rawurlencode($this->org) . '/products/' . rawurlencode($product_id) . '/price-points';
-    $this->wrapper_tag = 'pricePoint';
-    $this->id_field = 'id';
+  public function __construct($product_id, \Apigee\Util\OrgConfig $config) {
+    $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/products/' . rawurlencode($product_id) . '/price-points';
+
+    $this->init($config, $base_url);
+    $this->productId = $product_id;
+    $this->wrapperTag = 'pricePoint';
+    $this->idField = 'id';
 
     $this->initValues();
   }
@@ -106,7 +99,7 @@ class PricePoint extends Base\BaseObject {
   // Implementation of BaseObject abstract methods
 
   public function instantiateNew() {
-    return new PricePoint($this->product_id, $this->client);
+    return new PricePoint($this->productId, $this->config);
   }
 
   public function loadFromRawData($data, $reset = FALSE) {
@@ -114,7 +107,7 @@ class PricePoint extends Base\BaseObject {
       $this->initValues();
     }
 
-    $excluded_properties = array('org', 'product_id', 'organization');
+    $excluded_properties = array('org', 'productId', 'organization');
     foreach (array_keys($data) as $property) {
       if (in_array($property, $excluded_properties)) {
         continue;
@@ -127,12 +120,12 @@ class PricePoint extends Base\BaseObject {
         $this->$setter_method($data[$property]);
       }
       else {
-        Log::write(__CLASS__, Log::LOGLEVEL_NOTICE, 'No setter method was found for property "' . $property . '"');
+        self::$logger->notice('No setter method was found for property "' . $property . '"');
       }
     }
 
     if (isset($data['organization'])) {
-      $organization = new Organization($this->client);
+      $organization = new Organization($this->config);
       $organization->loadFromRawData($data['organization']);
       $this->organization = $organization;
     }
@@ -140,13 +133,13 @@ class PricePoint extends Base\BaseObject {
 
   public function initValues() {
     $this->id = '';
-    $this->net_start_price = NULL;
-    $this->net_end_price = NULL;
-    $this->gross_start_price = NULL;
-    $this->gross_end_price = NULL;
+    $this->netStartPrice = NULL;
+    $this->netEndPrice = NULL;
+    $this->grossStartPrice = NULL;
+    $this->grossEndPrice = NULL;
     $this->published = FALSE;
-    $this->start_date = '';
-    $this->end_date = '';
+    $this->startDate = '';
+    $this->endDate = '';
     $this->organization = FALSE;
   }
 
@@ -154,7 +147,7 @@ class PricePoint extends Base\BaseObject {
     // @TODO Verify
     $obj = array();
     $properties = array_keys(get_object_vars($this));
-    $excluded_properties = array('org', 'product_id');
+    $excluded_properties = array('org', 'productId');
     $excluded_properties = array_merge(array_keys(get_class_vars(get_parent_class($this))), $excluded_properties);
     foreach ($properties as $property) {
       if (in_array($property, $excluded_properties)) {
@@ -196,7 +189,7 @@ class PricePoint extends Base\BaseObject {
    * @return double
    */
   public function getNetStartPrice() {
-    return $this->net_start_price;
+    return $this->netStartPrice;
   }
 
   /**
@@ -205,7 +198,7 @@ class PricePoint extends Base\BaseObject {
    * @return void
    */
   public function setNetStartPrice($net_start_price) {
-    $this->net_start_price = $net_start_price;
+    $this->netStartPrice = $net_start_price;
   }
 
   /**
@@ -213,7 +206,7 @@ class PricePoint extends Base\BaseObject {
    * @return double
    */
   public function getNetEndPrice() {
-    return $this->net_end_price;
+    return $this->netEndPrice;
   }
 
   /**
@@ -222,7 +215,7 @@ class PricePoint extends Base\BaseObject {
    * @return void
    */
   public function setNetEndPrice($net_end_price) {
-    $this->net_end_price = $net_end_price;
+    $this->netEndPrice = $net_end_price;
   }
 
   /**
@@ -230,7 +223,7 @@ class PricePoint extends Base\BaseObject {
    * @return double
    */
   public function getGrossStartPrice() {
-    return $this->gross_start_price;
+    return $this->grossStartPrice;
   }
 
   /**
@@ -239,7 +232,7 @@ class PricePoint extends Base\BaseObject {
    * @return void
    */
   public function setGrossStartPrice($gross_start_price) {
-    $this->gross_start_price = $gross_start_price;
+    $this->grossStartPrice = $gross_start_price;
   }
 
   /**
@@ -247,7 +240,7 @@ class PricePoint extends Base\BaseObject {
    * @return double
    */
   public function getGrossEndPrice() {
-    return $this->gross_end_price;
+    return $this->grossEndPrice;
   }
 
   /**
@@ -256,7 +249,7 @@ class PricePoint extends Base\BaseObject {
    * @return void
    */
   public function setGrossEndPrice($gross_end_price) {
-    $this->gross_end_price = $gross_end_price;
+    $this->grossEndPrice = $gross_end_price;
   }
 
   /**
@@ -281,7 +274,7 @@ class PricePoint extends Base\BaseObject {
    * @return string
    */
   public function getStartDate() {
-    return $this->start_date;
+    return $this->startDate;
   }
 
   /**
@@ -290,7 +283,7 @@ class PricePoint extends Base\BaseObject {
    * @return void
    */
   public function setStartDate($start_date) {
-    $this->start_date = $start_date;
+    $this->startDate = $start_date;
   }
 
   /**
@@ -298,7 +291,7 @@ class PricePoint extends Base\BaseObject {
    * @return string
    */
   public function getEndDate() {
-    return $this->end_date;
+    return $this->endDate;
   }
 
   /**
@@ -307,7 +300,7 @@ class PricePoint extends Base\BaseObject {
    * @return void
    */
   public function setEndDate($end_date) {
-    $this->end_date = $end_date;
+    $this->endDate = $end_date;
   }
 
   /**
@@ -329,16 +322,16 @@ class PricePoint extends Base\BaseObject {
 
   public function getList($page_num = NULL, $page_size = 20) {
     $cache_manager = CacheFactory::getCacheManager(NULL);
-    $data = $cache_manager->get('price_points:' . $this->product_id, NULL);
+    $data = $cache_manager->get('price_points:' . $this->productId, NULL);
     if (!isset($data)) {
-      $this->client->get($this->base_url);
-      $data = $this->getResponse();
-      $cache_manager->set('price_points:' . $this->product_id, $data);
+      $this->get();
+      $data = $this->responseObj;
+      $cache_manager->set('price_points:' . $this->productId, $data);
     }
 
     $return_objects = array();
 
-    foreach ($data[$this->wrapper_tag] as $response_data) {
+    foreach ($data[$this->wrapperTag] as $response_data) {
       $obj = $this->instantiateNew();
       $obj->loadFromRawData($response_data);
       $return_objects[] = $obj;

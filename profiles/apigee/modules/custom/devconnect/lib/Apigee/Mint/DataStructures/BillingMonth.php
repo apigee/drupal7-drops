@@ -5,7 +5,7 @@ namespace Apigee\Mint\DataStructures;
 class BillingMonth extends DataStructure {
   private $month;
 
-  private $month_enum;
+  private $monthEnum;
 
   private $status;
 
@@ -23,10 +23,10 @@ class BillingMonth extends DataStructure {
   }
 
   public function setMonthEnum($month_enum) {
-    $this->month_enum = $month_enum;
+    $this->monthEnum = $month_enum;
   }
   public function getMonthEnum() {
-    return $this->month_enum;
+    return $this->monthEnum;
   }
 
   public function setStatus($status) {

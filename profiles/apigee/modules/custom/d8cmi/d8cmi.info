@@ -1,0 +1,11 @@
+name = Drupal 8 Configuration Management compatibility layer
+description = Provides API to fulfill future-compatible CMI capabilities.
+package = Future Compatibility
+core = "7.x"
+version = "7.x-1.x-dev"
+
+; Information added by drush on 2013-11-25
+version = "unknown"
+project = "d8cmi"
+datestamp = "1385398377"
+

@@ -1,0 +1,75 @@
+<?php
+
+/**
+* Implements hook_menu_alter()
+*/
+function workbench_moderation_notes_menu_alter(&$items) {
+  $items['node/%node/moderation']['page callback'] = 'workbench_moderation_notes_node_history_view';
+  $items['node/%node/moderation']['file'] = 'workbench_moderation_notes.pages.inc';
+  $items['node/%node/moderation']['file path'] = drupal_get_path('module', 'workbench_moderation_notes');
+}
+
+function workbench_moderation_notes_form_workbench_moderation_moderate_form_alter(&$form) {
+  if (isset($form['#access']) && $form['#access'] === FALSE) {
+    return;
+  }
+  $form['note'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Notes'),
+    '#rows' => 2,
+    '#weight' => -4,
+    );
+  unset($form['#theme']);
+  unset($form['#attributes']['class']);
+  $form['state']['#title'] = t('Select new status');
+  $form['submit']['#value'] = t('Save');
+  $form['#submit'][] = 'workbench_moderation_notes_form_workbench_moderation_moderate_form_alter_submit';
+  foreach($form['#submit'] as $k => $callback) {
+    if ($callback == 'workbench_moderation_moderate_form_submit') {
+      unset($form['#submit'][$k]);
+    }
+  }
+}
+
+/*
+ * Submit callback to add the note to a workbench record.
+ */
+function workbench_moderation_notes_form_workbench_moderation_moderate_form_alter_submit($form, $form_state) {
+  if (_workbench_moderation_moderate_access($form_state['values']['node'], $form_state['values']['state'])) {
+    workbench_moderation_moderate($form_state['values']['node'], $form_state['values']['state']);
+  }
+
+  // This is not ideal, but if the form is invoked from a node's draft tab and
+  // used to publish the node, the draft tab will not be available after
+  // publishing, and Drupal's will throw an access denied error before it is
+  // able to redirect to the published revision.
+  
+  $query = db_select('workbench_moderation_node_history', 'w')
+                  ->condition('w.nid', $form_state['values']['node']->nid);
+  $query->addExpression('max(w.hid)', 'max_hid');
+  $latest_id = $query->execute()
+                  ->fetchField();
+  db_update('workbench_moderation_node_history')
+    ->condition('nid', $form_state['values']['node']->nid)
+    ->condition('hid', $latest_id)
+    ->fields(array('note' => $form_state['values']['note']))
+    ->execute();
+  if (!empty($form['#destination'])) {
+    if ($form_state['values']['state'] == workbench_moderation_state_published()) {
+      if ($uri = entity_uri('node', $form['node']['#value'])) {
+        $form_state['redirect'] = array($uri['path'], $uri['options']);
+      }
+    }
+    else {
+      $form_state['redirect'] = $form['#destination'];
+    }
+    drupal_redirect_form($form_state);
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function workbench_moderation_notes_views_api() {
+  return array('api' => 2.0);
+}

@@ -2,8 +2,6 @@
 
 namespace Apigee\Mint;
 
-use \Apigee\Util\Log as Log;
-
 class DeveloperCategory extends Base\BaseObject {
 
   /**
@@ -24,12 +22,12 @@ class DeveloperCategory extends Base\BaseObject {
 
   /**
    * Class constructor
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    */
-  public function __construct(\Apigee\Util\APIClient $client) {
-    $this->init($client);
+  public function __construct(\Apigee\Util\OrgConfig $config) {
+    $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/developer-categories';
+    $this->init($config, $base_url);
 
-    $this->base_url = '/mint/organizations/' . rawurlencode($this->client->getOrg()) . '/developer-categories';
     $this->wrapper_tag = 'developerCategory';
     $this->id_field = 'id';
 
@@ -42,7 +40,7 @@ class DeveloperCategory extends Base\BaseObject {
    * @return DeveloperCategory
    */
   public function instantiateNew() {
-    return new DeveloperCategory($this->client);
+    return new DeveloperCategory($this->config);
   }
 
   /**
@@ -68,7 +66,7 @@ class DeveloperCategory extends Base\BaseObject {
         $this->$setter_method($data[$property]);
       }
       else {
-        Log::write(__CLASS__, Log::LOGLEVEL_NOTICE, 'No setter method was found for property "' . $property . '"');
+        self::$logger->notice('No setter method was found for property "' . $property . '"');
       }
     }
   }

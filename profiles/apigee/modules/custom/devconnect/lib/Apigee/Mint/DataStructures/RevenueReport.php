@@ -7,7 +7,7 @@ use Apigee\Mint\Organization as Organization;
 
 class RevenueReport extends DataStructure {
 
-  private $mint_criteria;
+  private $mintCriteria;
 
   private $description;
 
@@ -29,7 +29,7 @@ class RevenueReport extends DataStructure {
     }
 
     if (isset($data['mintCriteria'])) {
-      $this->mint_criteria = new MintCriteria($data['mintCriteria']);
+      $this->mintCriteria = new MintCriteria($data['mintCriteria']);
     }
 
     $this->developer = $developer;
@@ -44,10 +44,10 @@ class RevenueReport extends DataStructure {
   }
 
   public function getMintCriteria() {
-    return $this->mint_criteria;
+    return $this->mintCriteria;
   }
   public function setMintCriteria($mint_criteria) {
-    $this->mint_criteria = $mint_criteria;
+    $this->mintCriteria = $mint_criteria;
   }
 
   public function getDescription() {

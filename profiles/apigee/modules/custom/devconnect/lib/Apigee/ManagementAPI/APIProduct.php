@@ -13,7 +13,6 @@
 namespace Apigee\ManagementAPI;
 
 use Apigee\Util\Cache as Cache;
-use Apigee\Util\APIClient as APIClient;
 
 class APIProduct extends Base implements APIProductInterface {
 
@@ -93,29 +92,19 @@ class APIProduct extends Base implements APIProductInterface {
    * Attributes must be protected because Base wants to twiddle with it.
    */
   protected $attributes;
-
-  /**
-   * @var string
-   */
-  protected $baseUrl;
   /**
    * @var bool
    */
   protected $loaded;
-  /**
-   * @var string
-   */
-  protected $org;
 
   /**
    * Initializes all member variables
    *
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    */
-  public function __construct(APIClient $client) {
-    $this->init($client);
-    $this->org = $client->getOrg();
-    $this->baseUrl = '/organizations/' . $this->urlEncode($this->org) . '/apiproducts';
+  public function __construct(\Apigee\Util\OrgConfig $config) {
+    $baseUrl = '/o/' . $this->urlEncode($config->orgName) . '/apiproducts';
+    $this->init($config, $baseUrl);
     $this->blankValues();
   }
 
@@ -132,12 +121,10 @@ class APIProduct extends Base implements APIProductInterface {
    * @param null|array $response
    */
   public function load($name = NULL, $response = NULL) {
-    if (!isset($name)) {
-      $name = $this->name;
-    }
+    $name = $name ?: $this->name;
     if (!isset($response)) {
-      $this->client->get($this->baseUrl . '/' . $this->urlEncode($name));
-      $response = $this->getResponse();
+      $this->get($this->urlEncode($name));
+      $response = $this->responseObj;
     }
     $this->apiResources = $response['apiResources'];
     $this->approvalType = $response['approvalType'];
@@ -178,12 +165,11 @@ class APIProduct extends Base implements APIProductInterface {
       'scopes' => $this->scopes
     );
     $this->writeAttributes($payload);
-    $url = $this->baseUrl;
+    $url = NULL;
     if ($this->modifiedBy) {
-      $url .= '/' . $this->name;
+      $url = $this->name;
     }
-    $this->client->post($url, $payload);
-    $this->getResponse();
+    $this->post($url, $payload);
   }
 
   /**
@@ -194,11 +180,8 @@ class APIProduct extends Base implements APIProductInterface {
    * @param null|string $name
    */
   public function delete($name = NULL) {
-    if (!isset($name)) {
-      $name = $this->name;
-    }
-    $this->client->delete($this->baseUrl . '/' . $this->urlEncode($name));
-    $this->getResponse();
+    $name = $name ?: $this->name;
+    $this->delete($this->urlEncode($name));
     if ($name == $this->name) {
       $this->blankValues();
     }
@@ -240,11 +223,10 @@ class APIProduct extends Base implements APIProductInterface {
   protected function getProductsCache() {
     static $api_products;
     if (!isset($api_products)) {
-      $class = __CLASS__;
-      $this->client->get($this->baseUrl . '?expand=true');
-      $response = $this->getResponse();
+      $this->get('?expand=true');
+      $response = $this->responseObj;
       foreach ($response['apiProduct'] as $prod) {
-        $product = new $class($this->getClient());
+        $product = new self($this->getConfig());
         $product->load(NULL, $prod);
         $api_products[] = $product;
       }
@@ -414,19 +396,38 @@ class APIProduct extends Base implements APIProductInterface {
    * @return array
    */
   public function toArray() {
-    $properties = array_keys(get_object_vars($this));
-    $excluded_properties = array_keys(get_class_vars(get_parent_class($this)));
-    $excluded_properties[] = 'loaded';
-    $excluded_properties[] = 'baseUrl';
-    $excluded_properties[] = 'org';
     $output = array();
-    foreach ($properties as $property) {
-      if (!in_array($property, $excluded_properties)) {
+    foreach (self::getAPIProductProperties() as $property) {
+      if ($property == 'debugData') {
+        $output[$property] = $this->getDebugData();
+      }
+      else {
         $output[$property] = $this->$property;
       }
     }
-    $output['debugData'] = $this->getDebugData();
     return $output;
+  }
+
+  public static function getAPIProductProperties() {
+    $properties = array_keys(get_class_vars(__CLASS__));
+
+    $parent_class = get_parent_class();
+    $grandparent_class = get_parent_class($parent_class);
+
+    $excluded_properties = array_keys(get_class_vars($parent_class));
+    if ($grandparent_class) {
+      $excluded_properties = array_merge($excluded_properties, array_keys(get_class_vars($grandparent_class)));
+    }
+    $excluded_properties[] = 'loaded';
+
+    $count = count($properties);
+    for ($i = 0; $i < $count; $i++) {
+      if (in_array($properties[$i], $excluded_properties)) {
+        unset($properties[$i]);
+      }
+    }
+    $properties[] = 'debugData';
+    return array_values($properties);
   }
 
   /**
@@ -437,7 +438,7 @@ class APIProduct extends Base implements APIProductInterface {
    */
   public function fromArray($array) {
     foreach($array as $key => $value) {
-      if (property_exists($this, $key) && $key != 'debugData' && $key != 'loaded' && $key != 'org') {
+      if (property_exists($this, $key) && $key != 'debugData' && $key != 'loaded') {
         $this->{$key} = $value;
       }
     }

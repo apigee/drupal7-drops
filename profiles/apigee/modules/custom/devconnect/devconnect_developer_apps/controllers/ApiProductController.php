@@ -35,19 +35,23 @@ class ApiProductController implements DrupalEntityControllerInterface {
    *
    * @param array $names
    * @param array $conditions
+   *
    * @return array
    */
   public function load($ids = array(), $conditions = array('show_private' => FALSE)) {
-    $client = devconnect_default_api_client();
-    $api_product = new Apigee\ManagementAPI\APIProduct($client);
+    $api_product = new Apigee\ManagementAPI\APIProduct(devconnect_default_api_client());
     if (!isset($conditions['show_private'])) {
       $conditions['show_private'] = FALSE;
     }
 
     if (empty($ids)) {
-      $list = $api_product->listProducts($conditions['show_private']);
-      foreach($list as $p) {
-        $this->productCache[$p->getName()] = $p;
+      try {
+        $list = $api_product->listProducts($conditions['show_private']);
+        foreach ($list as $p) {
+          $this->productCache[$p->getName()] = $p;
+        }
+      } catch (Apigee\Exception\ResponseException $e) {
+        return array();
       }
     }
     else {
@@ -58,10 +62,14 @@ class ApiProductController implements DrupalEntityControllerInterface {
         }
         else {
           $my_product = clone $api_product;
-          $my_product->load($name);
-          $this->productCache[$my_product->getName()] = $my_product;
-          if ($my_product->isPublic() || $conditions['show_private']) {
-            $list[] = $my_product;
+          try {
+            $my_product->load($name);
+            $this->productCache[$my_product->getName()] = $my_product;
+            if ($my_product->isPublic() || $conditions['show_private']) {
+              $list[] = $my_product;
+            }
+          } catch (Apigee\Exceptions\ResponseException $e) {
+            // do nothing
           }
         }
       }

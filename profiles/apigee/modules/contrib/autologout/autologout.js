@@ -16,6 +16,9 @@
       // interacted with the page.
       var activity;
 
+      // Timer to keep track of activity resets.
+      var activityResetTimer;
+
       // Prevent settings being overriden by ajax callbacks by cloning the settings.
       localSettings = jQuery.extend(true, {}, settings.autologout);
 
@@ -48,6 +51,15 @@
           // When the preventAutologout event fires
           // we set activity to true.
           activity = true;
+
+          // Clear timer if one exists.
+          clearTimeout(activityResetTimer);
+
+          // Set a timer that goes off and resets this activity indicator
+          // after a minute, otherwise sessions never timeout.
+          activityResetTimer = setTimeout(function () {
+            activity = false;
+          }, 60000);
         });
 
         // On pages where the user can be logged out, set the timer to popup
@@ -56,6 +68,8 @@
       }
 
       function init() {
+        var noDialog = Drupal.settings.autologout.no_dialog;
+
         if (activity) {
           // The user has been active on the page.
           activity = false;
@@ -76,6 +90,11 @@
                 t = setTimeout(init, time);
               }
               else {
+                // Logout user right away without displaying a confirmation dialog.
+                if (noDialog) {
+                  logout();
+                  return;
+                }
                 theDialog = dialog();
               }
           });
@@ -95,7 +114,7 @@
           logout();
         };
 
-        return $('<div> ' +  localSettings.message + '</div>').dialog({
+        return $('<div id="autologout-confirm"> ' +  localSettings.message + '</div>').dialog({
           modal: true,
                closeOnEscape: false,
                width: "auto",
@@ -125,13 +144,13 @@
 
       function logout() {
         $.ajax({
-          url: Drupal.settings.basePath + "autologout_ahah_logout",
+          url: Drupal.settings.basePath + "?q=autologout_ahah_logout",
           type: "POST",
           success: function() {
             window.location = localSettings.redirect_url;
           },
           error: function(XMLHttpRequest, textStatus) {
-            if (XMLHttpRequest.status == 403) {
+            if (XMLHttpRequest.status == 403 || XMLHttpRequest.status == 404) {
               window.location = localSettings.redirect_url;
             }
           }
@@ -179,8 +198,11 @@
       };
 
       Drupal.ajax['autologout.getTimeLeft'] = new Drupal.ajax(null, $(document.body), {
-        url: Drupal.settings.basePath  + 'autologout_ajax_get_time_left',
-        event: 'autologout.getTimeLeft'
+        url: Drupal.settings.basePath  + '?q=autologout_ajax_get_time_left',
+        event: 'autologout.getTimeLeft',
+        error: function(XMLHttpRequest, textStatus) {
+          // Disable error reporting to the screen.
+        }
       });
 
       /**
@@ -226,8 +248,11 @@
       };
 
       Drupal.ajax['autologout.refresh'] = new Drupal.ajax(null, $(document.body), {
-        url: Drupal.settings.basePath  + 'autologout_ahah_set_last',
-        event: 'autologout.refresh'
+        url: Drupal.settings.basePath  + '?q=autologout_ahah_set_last',
+        event: 'autologout.refresh',
+        error: function(XMLHttpRequest, textStatus) {
+          // Disable error reporting to the screen.
+        }
       });
 
       function keepAlive() {

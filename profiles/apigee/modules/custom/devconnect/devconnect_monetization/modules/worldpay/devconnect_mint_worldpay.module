@@ -1,0 +1,426 @@
+<?php
+/**
+ * Author: Isaias Arellano
+ * Mail: isaias@apigee.com
+ * Date: 10/31/13
+ * Time: 10:15 AM
+ */
+
+use Apigee\Mint\CurrencyISO4217;
+use Apigee\Mint\Developer;
+use Apigee\Mint\DeveloperBalance;
+use Apigee\Mint\Provider;
+
+define('SUCCESS_RESPONSE_URL', 'devconnect/mint/payment/wp/success');
+define('PENDING_RESPONSE_URL', 'devconnect/mint/payment/wp/pending');
+define('FAILURE_RESPONSE_URL', 'devconnect/mint/payment/wp/failure');
+define('CANCEL_RESPONSE_URL', 'devconnect/mint/payment/wp/cancel');
+
+/**
+ * Implement hook_menu
+ */
+function devconnect_mint_worldpay_menu() {
+  $items = array();
+  $items['admin/config/devconnect_mint_wp_cg'] = array(
+    'title' => 'Apigee Mint Recurring Payment via Corporate Gateway Worldpay',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_mint_worldpay_settings_form'),
+    'access arguments' => array('administer payment methods'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  // The page WorldPay redirects the user on successfull transaction event.
+  $items[SUCCESS_RESPONSE_URL] = array(
+    'title' => 'Worldpay success response page',
+    'page callback' => 'devconnect_mint_worldpay_success',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  // The page WorldPay redirects the user on pending transaction event.
+  $items[PENDING_RESPONSE_URL] = array(
+    'title' => 'Worldpay pending response page',
+    'page callback' => 'devconnect_mint_worldpay_pending',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  // The page WorldPay redirects the user on failed transaction event.
+  $items[FAILURE_RESPONSE_URL] = array(
+    'title' => 'Worldpay failure response page',
+    'page callback' => 'devconnect_mint_worldpay_failure',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  // The page WorldPay redirects the user on canceled transaction event.
+  $items[CANCEL_RESPONSE_URL] = array(
+    'title' => 'Worldpay cancel response page',
+    'page callback' => 'devconnect_mint_worldpay_cancel',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+function devconnect_mint_worldpay_settings_form($settings = NULL) {
+
+  $settings = (array) $settings + array(
+    'devconnect_mint_worldpay_provider_id' => 'fixme',
+    'devconnect_mint_worldpay_mac_secret' => 'fixme',
+    'devconnect_mint_worldpay_signature_fields' => implode('+', _devconnect_mint_worldpay_signature_fields()),
+  );
+
+  $form = array();
+  $form['devconnect_mint_worldpay_provider_id'] = array(
+    '#title' => t("Provider ID"),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#description' => t('Provider ID from Back end.'),
+    '#default_value' => $settings['devconnect_mint_worldpay_provider_id'],
+  );
+  $form['devconnect_mint_worldpay_mac_secret'] = array(
+    '#title' => t('MAC Secret'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#default_value' => $settings['devconnect_mint_worldpay_mac_secret'],
+  );
+  $form['devconnect_mint_worldpay_signature_fields'] = array(
+    '#title' => t("Worldpay Corporate Gateway Signature Fields"),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#description' => t('Signature fields used in calculating the MAC response value to verify the authenticity of the response from Worldpay. Use [mac secret] as a placeholder for MAC, MAC secret is set in the field above. Signature fields must be joined with a plus sign.'),
+    '#default_value' => $settings['devconnect_mint_worldpay_signature_fields'],
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function devconnect_mint_worldpay_commerce_payment_method_info() {
+  $payment_methods = array(
+    'devconnect_mint_worldpay' => array(
+      'title' => t('Apigee Mint Recurring Payment via Corporate Gateway Worldpay'),
+      'description' => t('Integration with Worldpay\'s Corporate Gateway method.'),
+      'active' => TRUE,
+      'offsite' => TRUE,
+      'offsite_autoredirect' => TRUE,
+      'checkout' => devconnect_mint_worldpay_is_payment_method_enabled(),
+      'callbacks' => array(
+        'settings_form' => 'devconnect_mint_worldpay_settings_form',
+        'submit_form' => 'devconnect_mint_payment_submit_form',
+        'submit_form_validate' => 'devconnect_mint_payment_submit_form_validate',
+        'submit_form_submit' => 'devconnect_mint_payment_submit_form_submit',
+        'redirect_form' =>  'devconnect_mint_payment_redirect_form',
+      ),
+    ),
+  );
+  return $payment_methods;
+}
+
+/**
+ * Implement hook_mint_dispatch_redirect_form()
+ *
+ * @param array $form
+ * @param array $form_state
+ * @param object $order
+ * @param array $payment_method
+ * @param \Apigee\Mint\DataStructures\Payment $payment
+ *
+ * @return array
+ */
+function devconnect_mint_worldpay_mint_dispatch_redirect_form($form, $form_state, $order, $payment_method, \Apigee\Mint\DataStructures\Payment $payment) {
+
+  $options = array(
+    'absolute' => TRUE,
+    'query' => array(
+      'orderid' => $order->order_id,
+    ),
+  );
+
+  $callbacks = array(
+    'successURL' => url(SUCCESS_RESPONSE_URL, $options),
+    'pendingURL' => url(PENDING_RESPONSE_URL, $options),
+    'failureURL' => url(FAILURE_RESPONSE_URL, $options),
+    'cancelURL' => url(CANCEL_RESPONSE_URL, $options),
+  );
+
+  $form = array(
+    '#action' => url($payment->getReferenceUrl(), array('query' => $callbacks)),
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Proceed to WorldPay'),
+    ),
+  );
+
+
+  return $form;
+}
+
+function devconnect_mint_worldpay_success() {
+  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $order = commerce_order_load($data['query.params']['orderid']);
+  $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
+
+  $valid_message = _devconnect_mint_worldpay_verify_mac($payment_method, $data['query.params']);
+  if (!$valid_message) {
+    drupal_set_message(t('Your response from WorldPay seems to be corrupted.'), 'warning');
+    watchdog('payment_tampered', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
+    drupal_goto('checkout/' . rawurlencode($data['query.params']['orderid']) . '/complete');
+  }
+
+  if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
+    drupal_set_message(t('This order has already been processed.'), 'warning');
+    watchdog('payment_tampered', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
+    drupal_goto('checkout/' . rawurlencode($data['query.params']['orderid']) . '/complete');
+  }
+
+  devconnect_mint_worldpay_transaction_process($order, $payment_method, $data['query.params']);
+
+  if ($data['query.params']['paymentStatus'] == 'AUTHORISED') {
+
+    $order_key_parts = explode('^', $data['query.params']['orderKey']);
+    $wp_oder_id = $order_key_parts[count($order_key_parts)-1];
+
+    $currency = $data['query.params']['paymentCurrency'];
+
+    $recurring = $order->data['devconnect_mint_pane_values'];
+    $new_balance = array(
+      'amount' => commerce_currency_amount_to_decimal($data['query.params']['paymentAmount'], $data['query.params']['paymentCurrency']),
+      'providerTxId' => $wp_oder_id,
+      'txReference' => $data['query.params']['orderKey'],
+      'gatewayTxReference' => $data['query.params']['orderKey'],
+      'isRecurring' => $recurring['is_recurring'] == 'yes' ? 'true' : 'false',
+      'supportedCurrency' => array(
+        'id' => $currency,
+      ),
+    );
+
+    $config = devconnect_monetization_default_org_config();
+    $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+    $developer = new Developer($config);
+    $developer->load($developer_id);
+
+    try {
+      $developer->topUpPrepaidBalance($new_balance);
+    }
+    catch (Exception $tue) {
+      drupal_set_message(t('Error trying to process your transaction. Please contact your administrator.'), 'error');
+    }
+
+    try {
+      if (isset($recurring) && $recurring['is_recurring'] == 'yes') {
+        $recurring_amount = $recurring['recurring_amount'];
+        $replenish_amount = $recurring['replenish_amount'];
+
+        $developerBalance = new DeveloperBalance($developer_id, $config);
+        $developerBalance->updateRecurringSetup($currency, true, $replenish_amount, $recurring_amount, devconnect_mint_worldpay_mint_provider_id());
+      }
+      if (isset($order->data['purchase'])) {
+        devconnect_mint_payment_purchase_plan($order);
+      }
+    }
+    catch (Exception $urse) {
+      watchdog('Could not update recurring setup values', array(), WATCHDOG_WARNING);
+    }
+    module_invoke_all('devconnect_monetization_developer_topped_up', $developer, $order);
+  }
+  watchdog('payment_success', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
+  drupal_goto('checkout/' . $order->order_id . '/complete');
+}
+
+function devconnect_mint_worldpay_pending() {
+  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $order = commerce_order_load($data['query.params']['orderid']);
+  if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
+    return '';
+  }
+  $order->status = 'pending';
+  $order->log = t('Transaction status has been moved to pending by Worldpay.');
+  commerce_order_save($order);
+  drupal_set_message('Your transaction is still being processing.', 'status');
+  watchdog('payment_pending', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
+  drupal_goto('users/me/monetization/billing/prepaid-balance');
+}
+
+function devconnect_mint_worldpay_failure() {
+  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $order = commerce_order_load($data['query.params']['orderid']);
+  if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
+    return '';
+  }
+  $order->status = 'pending';
+  $order->log = t('There was an error while trying to process your transaction');
+  commerce_order_save($order);
+  drupal_set_message('Error while processing your transaction', 'error');
+  watchdog('payment_failure', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
+  drupal_goto('users/me/monetization/billing/prepaid-balance');
+}
+
+function devconnect_mint_worldpay_cancel() {
+  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $order = commerce_order_load($data['query.params']['orderid']);
+  if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
+    return '';
+  }
+  $order->data['processed'] = TRUE;
+  $order->status = 'canceled';
+  $order->log = t('Transaction has been canceled.');
+  commerce_order_save($order);
+  drupal_set_message('Your transaction has been canceled', 'error');
+  watchdog('payment_canceled', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
+  drupal_goto('users/me/monetization/billing/prepaid-balance');
+}
+
+/**
+ * Return the name of the fields that make up the signature value
+ * @return array
+ */
+function _devconnect_mint_worldpay_signature_fields() {
+  $fields = array(
+    'orderKey',
+    'paymentAmount',
+    'paymentCurrency',
+    'paymentStatus',
+    '[mac secret]'
+  );
+  return variable_get('devconnect_mint_worldpay_signature_fields', $fields);
+}
+
+/**
+ * Verify the authenticity that response from WorldPay has not been tampered.
+ *
+ * @param $payment_method
+ * @param $values
+ *
+ * @return bool
+ */
+function _devconnect_mint_worldpay_verify_mac($payment_method, $values) {
+  $signature_fields = explode('+', $payment_method['settings']['devconnect_mint_worldpay_signature_fields']);
+  $signature_values = array();
+  foreach($signature_fields as $signature_field) {
+    if ($signature_field == '[mac secret]') {
+      $signature_values[] = $payment_method['settings']['devconnect_mint_worldpay_mac_secret'];
+    }
+    else {
+      $signature_values[] = $values[$signature_field];
+    }
+  }
+  $signature = implode('', $signature_values);
+  return md5($signature) == $values['mac'];
+}
+
+/**
+ * Process the WPPR once it's been validated.
+ */
+function devconnect_mint_worldpay_transaction_process($order, $payment_method, &$data) {
+  // Exit when we don't get a payment status we recognize.
+  if (!in_array($data['paymentStatus'], array('AUTHORISED', 'REFUSED'))) {
+    commerce_payment_redirect_pane_previous_page($order);
+    return FALSE;
+  }
+
+  // Create a new payment transaction for the order.
+  $transaction = commerce_payment_transaction_new('devconnect_mint_worldpay', $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+
+  $transaction->remote_id = $data['orderKey'];
+
+  $currencies = CurrencyISO4217::getList();
+  $currency_factor = pow(10, $currencies[strtoupper($data['paymentCurrency'])]->minorUnit);
+  $transaction->amount = floor($data['paymentAmount'] * $currency_factor);
+
+  $transaction->currency_code = $data['paymentCurrency'];
+  $transaction->payload[REQUEST_TIME] = $data;
+
+
+  // Set the transaction's statuses based on the IPN's payment_status.
+  $transaction->remote_status = $data['paymentStatus'];
+
+  // They don't give us very detailed transaction information do they?
+  switch ($data['paymentStatus']) {
+    case 'AUTHORISED':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $transaction->message = t('WorldPay excepted the user\'s transaction.');
+      $order->status = 'completed';
+      break;
+
+    case 'REFUSED':
+      $transaction->status = 'refused';
+      $transaction->message = t('WorldPay refused the user\'s transaction.');
+      $order->status = 'refused';
+      break;
+  }
+
+  // Save the transaction information.
+  commerce_payment_transaction_save($transaction);
+  $data['transaction_id'] = $transaction->transaction_id;
+
+
+  $order->data['processed'] = TRUE;
+  commerce_order_save($order);
+
+  watchdog('devconnect_mint_worldpay', 'Payment Response processed for Order @order_number with ID @txn_id.', array('@txn_id' => $data['transId'], '@order_number' => $order->order_number), WATCHDOG_INFO);
+}
+
+/**
+ * Implement hook_mint_provider_id()
+ */
+function devconnect_mint_worldpay_mint_provider_id() {
+  $payment_method = commerce_payment_method_instance_load('devconnect_mint_worldpay|commerce_payment_devconnect_mint_worldpay');
+  return $payment_method['settings']['devconnect_mint_worldpay_provider_id'];
+}
+
+/**
+* Check if payment provider is enabled in mint backend
+* @return bool
+*/
+function devconnect_mint_worldpay_is_payment_method_enabled() {
+  $config = devconnect_monetization_default_org_config();
+  $providerAPIObj = new Provider($config);
+  $providers = $providerAPIObj->getList();
+  $payment_method = commerce_payment_method_instance_load('devconnect_mint_worldpay|commerce_payment_devconnect_mint_worldpay');
+  // Loop through available payment methods
+  foreach ($providers as $provider) {
+    if ($provider->getId() == $payment_method['settings']['devconnect_mint_worldpay_provider_id']) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+
+
+/**
+ * Implement hook_mint_continue_complete_message()
+ * @return null|string
+ */
+function devconnect_mint_worldpay_mint_continue_complete_message() {
+  return t('(Continue with checkout to complete payment via WorldPay.)');
+}
+
+function devconnect_mint_worldpay_form_commerce_checkout_form_review_alter(&$form, &$form_state) {
+  if (isset($form['commerce_payment']['payment_method']['#options']['devconnect_mint_worldpay|commerce_payment_devconnect_mint_worldpay'])) {
+    $form['commerce_payment']['payment_method']['#options']['devconnect_mint_worldpay|commerce_payment_devconnect_mint_worldpay'] = devconnect_mint_worldpay_payment_method_title();
+    $form['#attached']['css'][] = drupal_get_path('module', 'devconnect_mint_worldpay') . '/css/devconnect_mint_worldpay.css';
+    $form['#attached']['js'][] = array(
+      'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/validator.js',
+      'type' => 'file'
+    );
+  }
+}
+
+function devconnect_mint_worldpay_payment_method_title() {
+  $args = array(
+    '!worldpay_logo' => '<a href="http://www.worldpay.com/" target="_blank" title="Payment Processing - WorldPay - Opens in new browser window"><img src="http://www.worldpay.com/images/poweredByWorldPay.gif" border="0" alt="WorldPay Payments Processing" class="worlpay-payment-logo"></a>',
+    '!refund_policy' => variable_get('devconnect_mint_worldpay_refound_policy', l('Refund Policy', 'worldpay-refund-policy')),
+    '!cards' => '<img src=http://www.worldpay.com/images/cardlogos/VISA.gif border=0 alt="Visa Credit payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/visa_debit.gif border=0 alt="Visa Debit payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/visa_electron.gif border=0 alt="Visa Electron payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/mastercard.gif border=0 alt="Mastercard payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/maestro.gif border=0 alt="Maestro payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/AMEX.gif border=0 alt="American Express payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/diners.gif border=0 alt="Diners payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/JCB.gif border=0 alt="JCB payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/laser.gif border=0 alt="Laser payments supported by WorldPay">' .
+                '<img src=http://www.worldpay.com/images/cardlogos/ELV.gif border=0 alt="ELV payments supported by WorldPay">'
+  );
+  return t('<div>!worldpay_logo (!refund_policy)</div><div class="payment-worldpay-cards">!cards</div>', $args);
+}

@@ -1,6 +1,43 @@
 Apache Solr integration 7.x-1.x, xxxx-xx-xx
 -----------------------------
 
+Apache Solr integration 7.x-1.6, 2013-11-14
+-----------------------------
+#2008832 by Nick_vh, j0rd: Re-apply added Allow turning off 'successful" actions in watchdog.
+REVERTED: #1827868 and releated path changes in #2008832
+
+Apache Solr integration 7.x-1.5, 2013-10-23
+-----------------------------
+#2118947 by Nick_vh: Added Allow mapping to accept multiple index_callbacks().
+#1828014 by ianthomas_uk, Nick_vh, DeFr: Fixed Mass re-indexation can miss (a lot of) content.
+#2106693 by wulff: Fixed Drush help refers to non-existent command.
+#2011492 by ianmthomasuk: Added Remove duplicated indexing code. (2/2)
+#2093031 by Nick_vh: Fixed Speed up indexing process significantly : make use of the filter cache.
+#1925026 by blazindrop: Added Allow modules to modify query used to select nodes for reindexing.
+#2012244 by Nick_vh, joseph.zhao: Added In Drupal 7, using short summary in the teaser.
+#1938976 by ajw, Nick_vh: Fixed Escape sort strings to support function sorts like geodist().
+#1361854 by acbramley, Nick_vh, wiifm: Added Ability to control the 'Did you mean?' by asking Solr for spellcheck.extendedResults.
+#1828134 by ianmthomasuk, Nick_vh: Fixed apachesolr_entity_delete() should apply to all writable environments.
+#2006602 by pwolanin, David_Rothstein: Fixed Documents are deleted from the Solr index in read-only environments.
+#1916558 by jwalz: Fixed Custom Filters are ignored in facet blocks on non-search paths.
+#2008832 by Nick_vh, j0rd: Added Allow to optionally turn off 'successful" actions in watchdog.
+#1952296 by David_Rothstein, zerolab, SamChez: Added Date facet granularity support.
+#1930686 by kevin.dutra: Fixed Multiple search pages can have the same path.
+REVERTED: #1827868 by ianmthomasuk, Nick_vh: Added Improve usability of admin interface when using multiple environments.
+#1433366 by Darren Oh | becw: Added Text field values not mapped in field_apachesolr_field_mappings().
+#1881878 by thsutton: Added Include source field ID in facet admin interface.
+#1365304 by brianV, deviantintegral, Nick_vh: Fixed Date field minimum/maximum range callbacks don't handle some cases; cause Solr exceptions.
+#1834862 by rupl: Improve documentation of hook_apachesolr_query_alter().
+#1825426 by cpliakas: Added an API function apachesolr_get_field_mappings().
+#1827216 by ianmthomasuk, ciss, Nick_vh: Fixed Bundle specific overrides for status callback and document callback ignored.
+#2072211 by pwolanin: Document the behavior of apachesolr_access() relative to hook_node_access().
+#1708200 by ianmthomasuk: Added Improve error reporting for invalid sorts and invalid solr responses.
+#1852088 by pwolanin | brianV: Fixed Apachesolr search results come back with $doc->url starting with 'default'.
+#2089845 by Nick_vh: Fixed When indexing, the module pings solr way too much.
+#2033913 by Nick_vh | epieddy: Fixed Small error in schema.xml.
+#1974124 by Nick_vh: Fixed Allow a more configurable soft commit status so we can start taking advantage of Solr 4."
+#2014067 by David_Rothstein: Fixed File types provided by the File Entity module are not always recognized by Apache Solr.
+
 Apache Solr integration 7.x-1.4, 2013-07-25
 -----------------------------
 #1807552 by pwolanin: further fixes to use the right language field.

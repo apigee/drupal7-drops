@@ -34,7 +34,7 @@ function cck_phone_theme() {
       'render element' => 'element',
     ),
     'phone_number_extension' => array(
-      'render element' => 'element',
+      'variables' => array('extension' => NULL),
     ),
     'cck_phone_formatter_global_phone_number' => array(
       'variables' => array('element' => NULL),
@@ -65,8 +65,66 @@ function cck_phone_field_info() {
       ),
       'default_widget' => 'phone_number',
       'default_formatter' => 'global_phone_number',
+       // Support hook_entity_property_info() from contrib "Entity API".
+      'property_type' => 'field_item_phone_number',
+      'property_callbacks' => array('cck_phone_field_property_info_callback'),
     ),
   );
+}
+
+/**
+ * Additional callback to adapt the property info of phone number fields.
+ * @see entity_metadata_field_entity_property_info().
+ */
+function cck_phone_field_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+
+  // Define a data structure so it's possible constituent parts of field.
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+
+  // Auto-create the field item as soon as a property is set.
+  $property['auto creation'] = 'cck_phone_field_item_create';
+
+  $property['property info'] = cck_phone_field_item_property_info();
+  $property['property info']['country_codes']['required'] = !$instance['settings']['enable_default_country'];
+  if (!$instance['settings']['enable_extension']) {
+    unset($property['property info']['extension']);
+  }
+
+  unset($property['query callback']);
+}
+
+/**
+ * Callback for creating a new, empty phone number field item.
+ *
+ * @see cck_phone_field_property_info_callback()
+ */
+function cck_phone_field_item_create() {
+  return array('number' => NULL);
+}
+
+
+/**
+ * Defines info for the properties of the phone number field item data structure.
+ */
+function cck_phone_field_item_property_info() {
+  $properties['number'] = array(
+    'type' => 'text',
+    'label' => t('The phone number.'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['country_codes'] = array(
+    'type' => 'text',
+    'label' => t('The country code for a given phone number.'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['extension'] = array(
+    'type' => 'text',
+    'label' => t('The extension for a given phone number.'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  return $properties;
 }
 
 /**
@@ -255,8 +313,8 @@ function cck_phone_field_is_empty($item, $field) {
 /**
  * Theme function for phone extension.
  */
-function theme_phone_number_extension($element = '') {
-  return t('<em> ext.</em> %extension', array('%extension' => $element['element']));
+function theme_phone_number_extension($variables) {
+  return '<em>' . t('ext.') . '</em> ' . check_plain($variables['extension']);
 }
 
 /**
@@ -267,7 +325,7 @@ function theme_cck_phone_formatter_global_phone_number($element) {
 
   // Display a global phone number with country code.
   if (!empty($element['number']) && !empty($element['country_codes'])) {
-    // Call country default formatter if exist
+    // Call country default formatter if exists.
     $custom_cc = _cck_phone_custom_cc();
     if (isset($custom_cc[$element['country_codes']])) {
       $function = $element['country_codes'] . '_formatter_default';
@@ -276,15 +334,16 @@ function theme_cck_phone_formatter_global_phone_number($element) {
       }
     }
 
-    // Output a raw value if no custom formatter or formatter return empty
+    // Output a raw value if no custom formatter or formatter returns empty
+    // value.
     if (empty($phone)) {
       $cc = cck_phone_countrycodes($element['country_codes']);
       $phone = $cc['code'] . '-' . $element['number'];
     }
 
-    // Extension
+    // Extension.
     if (!empty($element['extension'])) {
-      $phone = $phone . theme('phone_number_extension', $element['extension']);
+      $phone = $phone . theme('phone_number_extension', $element);
     }
   }
 
@@ -299,7 +358,7 @@ function theme_cck_phone_formatter_local_phone_number($element) {
 
   // Display a local phone number without country code.
   if (!empty($element['number'])) {
-    // Call country local formatter if exist
+    // Call country local formatter if exists.
     $custom_cc = _cck_phone_custom_cc();
     if (isset($custom_cc[$element['country_codes']])) {
       $function = $element['country_codes'] . '_formatter_local';
@@ -308,14 +367,14 @@ function theme_cck_phone_formatter_local_phone_number($element) {
       }
     }
 
-    // Output a raw value if no custom formatter or formatter return empty
+    // Output a raw value if no custom formatter or formatter return empty.
     if (empty($phone)) {
       $phone = $element['number'];
     }
 
-    // Extension
+    // Extension.
     if (!empty($element['extension'])) {
-      $phone = $phone . theme('phone_number_extension', $element['extension']);
+      $phone = $phone . theme('phone_number_extension', $element);
     }
   }
 
@@ -352,6 +411,7 @@ function _cck_phone_cc_options($show_custom = FALSE, $country_selection = array(
     $options[$cc] = check_plain($cc_name);
   }
 
+  asort($options);
   return $options;
 }
 
@@ -632,6 +692,9 @@ function cck_phone_field_widget_process($element, &$form_state, $form) {
      '#required' => FALSE,
      '#default_value' => isset($item['extension']) ? $item['extension'] : NULL,
      '#weight' => 2,
+     '#attributes' => array(
+       'class' => array('extension'),
+     ),
     );
   }
 
@@ -688,6 +751,9 @@ function cck_phone_phone_number_process($element, &$form_state, $form) {
       )
     ),
     '#weight' => 0,
+    '#attributes' => array(
+      'class' => array('phone-number'),
+    ),
   );
 
   // If only one country code, make it as hidden form item
@@ -705,6 +771,9 @@ function cck_phone_phone_number_process($element, &$form_state, $form) {
             '#type' => 'item',
             '#markup' => $value = $cc['country'] . ' (' . $cc['code'] . ')',
             '#weight' => ($settings['country_code_position'] == 'after' ? 1 : -1),
+            '#attributes' => array(
+              'class' => array('country-code'),
+            ),
           );
         }
       }
@@ -716,6 +785,9 @@ function cck_phone_phone_number_process($element, &$form_state, $form) {
   //    '#title' => 'Country code',
       '#options' => _cck_phone_cc_options(),
       '#weight' => ($settings['country_code_position'] == 'after' ? 1 : -1),
+      '#attributes' => array(
+        'class' => array('country-code'),
+      ),
     );
   }
 

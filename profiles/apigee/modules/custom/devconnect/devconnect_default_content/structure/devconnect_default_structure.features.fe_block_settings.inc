@@ -78,12 +78,12 @@ function devconnect_default_structure_default_fe_block_settings() {
     'visibility' => '0',
   );
 
-  $export['apigee_sso-0'] = array(
+  $export['apigee_sso_ui-0'] = array(
     'cache' => '1',
     'css_class' => '',
     'custom' => '0',
     'delta' => '0',
-    'module' => 'apigee_sso',
+    'module' => 'apigee_sso_ui',
     'node_types' => array(),
     'pages' => '',
     'roles' => array(),

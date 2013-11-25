@@ -12,17 +12,17 @@ if (!function_exists("apigee_drush_command")) {
     $items['apigee-migrate'] = array(
       'description' => 'Migrate a sites archive from Apigee internal to Pantheon distro',
       'callback' => 'apigee_migrate',
-      'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, 
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
       'examples' => array(
         'drush apm @site' => 'run queries against @site to update database from Apigee Hosting',
       ),
       'aliases' => array('apm'),
     );
-  
+
     $items['apigee-restore'] = array(
       'description' => 'Migrate a sites archive from Apigee to Pantheon hosting',
       'callback' => 'apigee_restore',
-      'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, 
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
       'options' => array(
         'file' => 'Path to a file containing the SQL to be run.'
       ),
@@ -35,7 +35,7 @@ if (!function_exists("apigee_drush_command")) {
     $items['apigee-liveify'] = array(
       'description' => 'Update site settings in preparation for going live',
       'callback' => 'apigee_livify',
-      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL, 
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
       'examples' => array(
         'drush @site apigee-liveify' => 'run queries against @site to update database from Apigee Hosting',
       ),
@@ -45,7 +45,7 @@ if (!function_exists("apigee_drush_command")) {
     $items['apigee-environment'] = array(
       'description' => 'show the live environment $_ENV variables in .json format',
       'callback' => 'apigee_environment',
-      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL, 
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
       'examples' => array(
         'drush @site apigee-environment' => 'run queries against @site to update database from Apigee Hosting',
       ),
@@ -102,13 +102,13 @@ if (!function_exists("apigee_drush_command")) {
       db_query("truncate {$table}");
       drush_log(dt('Database table :table truncated.', array(":table" => $table)), 'ok');
     }
-  
+
     $tables = db_find_tables("%apachesolr%");
     foreach ($tables as $table){
-      db_drop_table($table);    
+      db_drop_table($table);
       drush_log(dt('Database table :table dropped.', array(":table" => $table)), 'ok');
     }
-  
+
     db_query("update system set filename=REPLACE(filename, 'sites/all/modules', 'profiles/apigee/modules') where filename like 'sites/all/modules%';");
     db_query("update system set filename=REPLACE(filename, 'sites/all/themes', 'profiles/apigee/themes') where filename like 'sites/all/themes%';");
     db_query("update registry set filename=REPLACE(filename, 'sites/all/modules', 'profiles/apigee/modules') where filename like 'sites/all/modules%';");
@@ -124,7 +124,7 @@ if (!function_exists("apigee_drush_command")) {
     db_query("update system set schema_version=-1 where name like '%apachesolr%';");
     db_query("delete from variable where name like 'apachesolr%'");
     db_query("drop table if exists temp_og_users_roles;");
-    //TODO: disable vairable_realm, Rules, oAuth
+    //TODO: disable variable_realm, Rules, oAuth
     drush_log(dt('Database updated with distro file locations.'), 'ok');
     variable_set("install_profile", "apigee");
     $base = variable_get("theme_apigee_base_settings", array());
@@ -145,7 +145,7 @@ if (!function_exists("apigee_drush_command")) {
     drush_invoke("rr");
     module_load_include("php", "devconnect", "lib/Apigee/Util/Log");
     module_load_include("module", "devconnect");
-    
+
     try{
       drush_include_engine('drupal', 'update', drush_drupal_major_version());
       if (update_main() === FALSE) {
@@ -165,7 +165,7 @@ if (!function_exists("apigee_drush_command")) {
     drush_cache_command_clear("menu");
     drush_drupal_cache_clear_all();
     drush_log(dt('The database has been imported and all the caches cleared.'), 'success');
-  
+
   }
 
   /**
@@ -188,7 +188,7 @@ if (!function_exists("apigee_drush_command")) {
       }
     } else {
       drush_log(dt('No tables to drop.'), 'ok');
-    } 
+    }
     $file = drush_get_option("file", null);
     if ($file) {
       try{
@@ -197,19 +197,19 @@ if (!function_exists("apigee_drush_command")) {
       } catch(Exception $e) {
         drush_set_error("APIGEE_MIGRATE", dt("Unable to restore from :filename", array(":filename" => $file) ));
       }
-    } 
+    }
   }
-  
+
   function apigee_liveify() {
     ini_set('memory_limit', -1);
-    
+
   }
-  
-  
+
+
   function apigee_environment($variable = "PRESSFLOW_SETTINGS") {
-    
+
     $pf = json_decode($_SERVER['PRESSFLOW_SETTINGS'], true);
-    
+
     if (array_key_exists($variable, $_SERVER)) {
       drush_print($_SERVER[$variable], 0, null, false);
     } else {
@@ -222,7 +222,7 @@ if (!function_exists("apigee_drush_command")) {
     // drush_print(print_r(get_defined_vars()));
 
   }
-  
+
   function apigee_portal($orgname = null) {
     
     $portal_password = trim(drush_get_option('portal-password', NULL));
@@ -248,7 +248,7 @@ if (!function_exists("apigee_drush_command")) {
     drush_invoke_process("site-install", array("apigee",
         "apigee_install_api_endpoint.devconnect_org={$orgname}",
         "apigee_install_api_endpoint.devconnect_endpoint='https://api.enterprise.apigee.com/v1'",
-        "apigee_install_api_endpoint.devconnect_curlauth='dc_devportal+{$orgname}:{$portal_password}'"
+        "apigee_install_api_endpoint.devconnect_curlauth='dc_devportal+{$orgname}@apigee.com:{$portal_password}'"
      ), "");
 
     
@@ -261,5 +261,4 @@ if (!function_exists("apigee_drush_command")) {
     drush_log(dt('homepage variable set: %variable', array("%variable" => variable_get("text_variable", "text_variable set incorrectly"))), 'ok');
     return true;    
   }
-
 }

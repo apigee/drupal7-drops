@@ -10,11 +10,9 @@ class Address extends DataStructure {
   private $city = NULL;
   private $country = NULL;
   private $id = NULL;
-  private $is_primary = NULL;
+  private $isPrimary = NULL;
   private $state = NULL;
   private $zip = NULL;
-
-  private $isPrimary;
 
   public function __construct($data = NULL) {
     if (is_array($data)) {
@@ -63,10 +61,10 @@ class Address extends DataStructure {
   }
 
   public function setIsPrimary($is_primary) {
-    $this->is_primary = $is_primary;
+    $this->isPrimary = $is_primary;
   }
   public function isPrimary() {
-    return $this->is_primary;
+    return $this->isPrimary;
   }
 
   public function setState($state) {

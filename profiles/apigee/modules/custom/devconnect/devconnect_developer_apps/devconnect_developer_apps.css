@@ -28,3 +28,12 @@ div#analytics-highchart {
   height: 300px;
   margin: 0 auto;
 }
+
+.credential-api-product.single-product {
+  display: inline;
+}
+
+.tab-content.app-details .key-status-pending .key-value, .tab-content.app-details .key-status-revoked .key-value {
+  color: #999999;
+  text-decoration: line-through;
+}

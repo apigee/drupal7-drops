@@ -4,6 +4,9 @@
  * Provides a common logging mechanism.
  *
  * @author djohnson
+ *
+ * @deprecated
+ * Use Psr\Log\LoggerInterface implementations instead.
  */
 
 namespace Apigee\Util;

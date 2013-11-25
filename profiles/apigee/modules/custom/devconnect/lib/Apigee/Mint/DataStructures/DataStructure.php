@@ -3,11 +3,10 @@
 namespace Apigee\Mint\DataStructures;
 
 use \ReflectionClass;
-use Apigee\Util\Log as Log;
 
 class DataStructure {
 
-  private static $child_setters = array();
+  private static $childSetters = array();
 
   private static function getSetterMethods($class_name) {
     $class = new ReflectionClass($class_name);
@@ -30,8 +29,8 @@ class DataStructure {
 
   protected function loadFromRawData($data, $exclude_variables = array()) {
     $class_name = get_class($this);
-    if (!array_key_exists($class_name, self::$child_setters)) {
-      self::$child_setters[$class_name] = self::getSetterMethods($class_name);
+    if (!array_key_exists($class_name, self::$childSetters)) {
+      self::$childSetters[$class_name] = self::getSetterMethods($class_name);
     }
 
     foreach ($data as $property_name => $property_value) {
@@ -39,12 +38,12 @@ class DataStructure {
         continue;
       }
       $property_setter_name = 'set' . ucfirst($property_name);
-      if (array_key_exists($property_setter_name, self::$child_setters[$class_name])) {
-        $method = self::$child_setters[$class_name][$property_setter_name];
+      if (array_key_exists($property_setter_name, self::$childSetters[$class_name])) {
+        $method = self::$childSetters[$class_name][$property_setter_name];
         $method->invoke($this, $property_value);
       }
       else {
-        Log::write($class_name, Log::LOGLEVEL_NOTICE, 'No setter method was found for property "' . $property_name . '"');
+        \Apigee\Util\APIObject::$logger->notice('No setter method was found for property "' . $property_name . '"');
       }
     }
   }

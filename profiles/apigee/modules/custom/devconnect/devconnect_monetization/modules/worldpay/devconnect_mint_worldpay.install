@@ -1,0 +1,5 @@
+<?php
+
+function devconnect_mint_worldpay_requirements($phase) {
+
+}

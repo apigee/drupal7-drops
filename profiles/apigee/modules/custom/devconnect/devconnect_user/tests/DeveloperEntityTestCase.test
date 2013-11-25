@@ -13,16 +13,7 @@ class DeveloperEntityTestCase extends DrupalWebTestCase {
   }
 
   public function setUp() {
-    // Read Drupal vars *before* simpletest switches us to a sandbox db
-    $org = variable_get('devconnect_org', NULL);
-    $endpoint = variable_get('devconnect_endpoint', NULL);
-    $endpoint_auth = variable_get('devconnect_curlauth', NULL);
-
     parent::setUp('devconnect_user');
-
-    variable_set('devconnect_org', $org);
-    variable_set('devconnect_endpoint', $endpoint);
-    variable_set('devconnect_curlauth', $endpoint_auth);
   }
 
   protected function tearDown() {

@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function devconnect_developer_apps_install() {
+  _devconnect_developer_apps_assign_perms();
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Assigns default permissions.
+ *
+ * @param $sandbox
+ */
+function devconnect_developer_apps_update_7424(&$sandbox) {
+  _devconnect_developer_apps_assign_perms();
+}
+
+/**
+ * Assigns the "View/Create/Edit/Delete Developer Apps" permissions to all
+ * authenticated users, and assigns "Administer Developer Apps" to admins.
+ */
+function _devconnect_developer_apps_assign_perms() {
+  $perms = array();
+  foreach (array('view', 'edit', 'create', 'delete') as $action) {
+    $perms[] = "$action developer apps";
+  }
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, $perms);
+  $roles = user_roles();
+  foreach ($roles as $rid => $role) {
+    if (stripos($role->name, 'administrator') !== FALSE) {
+      user_role_grant_permissions($rid, array('administer developer apps'));
+    }
+  }
+}

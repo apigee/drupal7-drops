@@ -2,9 +2,6 @@ name = Acounts.apigee.com login
 description = Slingshot to accounts.apigee.com to verify identity
 core = 7.x
 package = "apigee.com"
-version = "7.x-4.23"
+version = "7.x-4.24"
 
-; Keep module hidden until testing is complete
-hidden = TRUE
-
-dependencies[] = apigee_sso
+dependencies[] = apigee_sso_ui

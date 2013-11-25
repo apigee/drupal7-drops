@@ -2,7 +2,7 @@ name = DevConnect Developer Apps
 description = CRUD Apps with REST interface to Apigee 4
 package = "DevConnect"
 core = 7.x
-version = "7.x-4.23"
+version = "7.x-4.24"
 
 dependencies[] = devconnect
 dependencies[] = devconnect_user

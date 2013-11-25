@@ -10,11 +10,11 @@
  */
 function autologout_permission() {
   return array(
-    'change own logout threshold' => array( // Change own timeout value.
+    'change own logout threshold' => array(
       'title' => t('Change own logout threshold'),
       'description' => t('Selected users will be able to edit there own logout threshold.'),
     ),
-    'administer autologout'  => array( // Change autologout settings and timeouts for other users.
+    'administer autologout'  => array(
       'title' => t('Administer Autologout'),
       'description' => t('Administer the autologout settings'),
     ),
@@ -22,7 +22,7 @@ function autologout_permission() {
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function autologout_menu() {
   $items = array();
@@ -158,7 +158,7 @@ function autologout_block_configure($delta = '') {
     }
 
     if (variable_get('jstimer_js_load_option', 0) != 1) {
-      drupal_set_message(t('The Javascript timer module\'s "Javascript load options" setting should be set to "Every page" for the dynamic countdown to work in the automated logout block.'), 'error');
+      drupal_set_message(t("The Javascript timer module's 'Javascript load options' setting should be set to 'Every page' for the dynamic countdown to work in the automated logout block."), 'error');
     }
   }
 
@@ -169,12 +169,16 @@ function autologout_block_configure($delta = '') {
  * Implements hook_help().
  */
 function autologout_help($path, $arg) {
-  $output = _autologout_get_user_timeout();
+  $seconds = _autologout_get_user_timeout();
+  $message = NULL;
 
   switch ($path) {
-    case 'admin/help#autologout':
-      return '<p>' . t('This module allows you to force site users to be logged out after a given amount of time due to inactivity after first being presented with a confirmation dialog. Your current logout threshold is ' . $output . " seconds.") . '</p>';
+    case 'admin/help#autologout' :
+      $message = '<p>' . t("This module allows you to force site users to be logged out after a given amount of time due to inactivity after first being presented with a confirmation dialog. Your current logout threshold is %seconds seconds.", array('%seconds' => $seconds)) . '</p>';
+      break;
   }
+
+  return $message;
 }
 
 /**
@@ -201,25 +205,26 @@ function autologout_theme() {
 function theme_autologout_render_table($variables) {
   $output = "";
   if ($variables) {
-    $element = $variables['element']; //Get form elements
+    $element = $variables['element'];
   }
-  // Create table header
+
   $header = array(
     'enable' => t('Enable'),
     'name' => t('Role Name'),
     'timeout' => t('Timeout (seconds)'),
   );
+
   $rows = array();
   foreach (user_roles(TRUE) as $key => $role) {
     $rows[] = array(
-      'enable' => drupal_render($element['autologout_roles']['autologout_role_' . $key]), // Add autologout_role_key Checkboxs to rows in table.
+      'enable' => drupal_render($element['autologout_roles']['autologout_role_' . $key]),
       'name' => t($role),
-      'timeout' => drupal_render($element['autologout_roles']['autologout_role_' . $key . '_timeout']), // Add autologout_role_key_timeout Textfields to rows in table.
+      'timeout' => drupal_render($element['autologout_roles']['autologout_role_' . $key . '_timeout']),
     );
   }
 
-  $table = theme('table', array('header' => $header, 'rows' => $rows)); // Create table.
-  $output = $table; // Add table to output.
+  $table = theme('table', array('header' => $header, 'rows' => $rows));
+  $output = $table;
 
   return $output;
 }
@@ -301,6 +306,9 @@ function autologout_form_user_profile_form_alter(&$form, $form_state) {
   }
 }
 
+/**
+ * Form validation.
+ */
 function _autologout_user_uid_timeout_validate($element, &$form_state) {
   $max_timeout = variable_get('autologout_max_timeout', 172800);
   $timeout = $element['#value'];
@@ -319,7 +327,8 @@ function autologout_user_profile_submit(&$form, &$form_state) {
   $current_uid = $user->uid;
   $userid = $form_state['user']->uid;
   $access = FALSE;
-  if ((user_access('change own logout threshold') && $current_uid == $userid) || user_access('administer autologout')) { // If user has access to change, and they are changing their own and only thier own timeout. Or they are an admin
+
+  if ((user_access('change own logout threshold') && $current_uid == $userid) || user_access('administer autologout')) {
     $access = TRUE;
   }
 
@@ -328,7 +337,7 @@ function autologout_user_profile_submit(&$form, &$form_state) {
   if ($access) {
     $userid = $form_state['user'] -> uid;
     $val = $form_state['values']['autologout_user_' . $userid];
-    variable_set('autologout_user_' . $userid, $val); // If valid set timeout to users new personal timeout
+    variable_set('autologout_user_' . $userid, $val);
   }
 }
 
@@ -360,6 +369,7 @@ function autologout_init() {
   $timeout_padding = variable_get('autologout_padding', 10);
   $redirect_url = variable_get('autologout_redirect_url', 'user/login');
   $redirect_query = drupal_get_destination() + array('autologout_timeout' => 1);
+  $no_dialog = variable_get('autologout_no_dialog', FALSE);
   drupal_add_library('system', 'ui.dialog');
 
   // Get all settings JS will need for dialog.
@@ -371,6 +381,7 @@ function autologout_init() {
     'redirect_url' => url($redirect_url, array('query' => $redirect_query)),
     'title' => t('@name Alert', array('@name' => variable_get('site_name', 'Drupal'))),
     'refresh_only' => $refresh_only,
+    'no_dialog' => $no_dialog,
   );
 
   drupal_add_library('system', 'drupal.ajax');
@@ -443,11 +454,11 @@ function autologout_autologout_refresh_only() {
 /**
  * Implements hook_page_build().
  *
- * Add a form element to every page which is used to detect if the page was loaded
- * from browser cache. This happens when the browser's back button is pressed for
- * example. The JS will set the value of the hidden input element to 1 after initial
- * load. If this is 1 on subsequent loads, the page was loaded from cache and an
- * autologout timeout refresh needs to be triggered.
+ * Add a form element to every page which is used to detect if the page was
+ * loaded from browser cache. This happens when the browser's back button is
+ * pressed for example. The JS will set the value of the hidden input element
+ * to 1 after initial load. If this is 1 on subsequent loads, the page was
+ * loaded from cache and an autologout timeout refresh needs to be triggered.
  */
 function autologout_page_build(&$page) {
   if (!_autologout_prevent()) {
@@ -656,4 +667,46 @@ function _autologout_refresh_only() {
   }
 
   return FALSE;
+}
+
+/**
+ * Implements hook_user_login().
+ *
+ * Delete stale sessions for the user on login. This stops
+ * session_limit module thinking the user has reached their
+ * session limit.
+ */
+function autologout_user_login(&$edit, $account) {
+
+  // Cleanup old sessions.
+  $timeout = _autologout_get_user_timeout($account->uid);
+
+  if (empty($timeout)) {
+    // Users that don't get logged have their sessions left.
+    return;
+  }
+
+  $now = time();
+  $timeout_padding = variable_get('autologout_padding', 10);
+  $timestamp = time() - ($timeout + $timeout_padding);
+
+  // Find all stale sessions.
+  $results = db_select('sessions', 's')
+    ->fields('s')
+    ->condition('uid', $account->uid)
+    ->condition('timestamp', $timestamp, '<')
+    ->orderBy('timestamp', 'DESC')
+    ->execute();
+
+  $sids = array();
+  foreach ($results as $session) {
+    $sids[] = $session->sid;
+  }
+
+  if (!empty($sids)) {
+    // Delete stale sessions at login.
+    db_delete('sessions')
+      ->condition('sid', $sids, 'IN')
+      ->execute();
+  }
 }

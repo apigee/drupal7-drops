@@ -1,0 +1,14 @@
+name = Conditional Rules Test
+core = 7.x
+dependencies[] = rules
+dependencies[] = rules_conditional
+files[] = rules_conditional_test.inc
+package = Rules
+hidden = TRUE
+
+; Information added by drupal.org packaging script on 2012-11-12
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "rules_conditional"
+datestamp = "1352752992"
+

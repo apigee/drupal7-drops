@@ -16,10 +16,10 @@ function topUpBalancePurchase(id, currentBalance, cur) {
       topUpBalance = isNaN(topUpBalance) ? 0 : topUpBalance;
       var newBalance = currentBalance + topUpBalance;
       $("#newBalance").html(newBalance.toFixed(2));
-      $topUp = $(this).val() - 0;
+      var topUp = $(this).val() - 0;
 
       // Verify top up amount is valid
-      if (isNaN($topUp) || $topUp <= 0) {
+      if (isNaN(topUp) || topUp <= 0) {
         $("#topup_alert").show();
       } else {
         $("#topup_alert").hide();
@@ -29,7 +29,7 @@ function topUpBalancePurchase(id, currentBalance, cur) {
 
     $("#topUpPurchase").modal({
       'keyboard' : true,
-      'show' : true,
+      'show' : true
     });
     $("#topup_alert").show();
   })(jQuery, id, currentBalance);

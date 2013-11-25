@@ -59,7 +59,6 @@ function theme_developer_app_panes(array $variables) {
 }
 
 function devconnect_developer_apps_keys_pane($variables) {
-  //kpr($variables); die();
   $pane = array('#id' => 'keys', '#weight' => 0);
 
   $pane['pane_title'] = array(
@@ -79,7 +78,7 @@ function devconnect_developer_apps_keys_pane($variables) {
   $pane['details'] = array('#weight' => 2);
   if (isset($variables['credentials'][0])) {
     $pane['details']['consumer_key'] = array(
-      '#prefix' => '<div class="key">',
+      '#prefix' => '<div class="key key-status-' . $variables['overallStatus'] . '">',
       '#suffix' => '</div>',
       'label' => array(
         '#type' => 'markup',
@@ -89,12 +88,14 @@ function devconnect_developer_apps_keys_pane($variables) {
       ),
       'content' => array(
         '#type' => 'markup',
-        '#markup' => check_plain($variables['credentials'][0]['consumer_key'])
+        '#markup' => check_plain($variables['credentials'][0]['consumer_key']),
+        '#prefix' => '<span class="key-value">',
+        '#suffix' => '</span>'
       ),
       '#weight' => 0
     );
     $pane['details']['consumer_secret'] = array(
-      '#prefix' => '<div class="key">',
+      '#prefix' => '<div class="key key-status-' . $variables['overallStatus'] . '">',
       '#suffix' => '</div>',
       'label' => array(
         '#type' => 'markup',
@@ -104,7 +105,9 @@ function devconnect_developer_apps_keys_pane($variables) {
       ),
       'content' => array(
         '#type' => 'markup',
-        '#markup' => check_plain($variables['credentials'][0]['consumer_secret'])
+        '#markup' => check_plain($variables['credentials'][0]['consumer_secret']),
+        '#prefix' => '<span class="key-value">',
+        '#suffix' => '</span>'
       ),
       '#weight' => 1
     );
@@ -335,7 +338,7 @@ function devconnect_developer_apps_detail_pane($variables) {
       '#prefix' => '<div>',
       '#suffix' => '</div>',
       '#type' => 'markup',
-      '#markup' => check_plain($variables['credentials'][0]['status']),
+      '#markup' => check_plain($variables['overallStatus']),
       '#weight' => 1
     )
   );

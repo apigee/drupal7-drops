@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * Implements hook_update_N(&$sandbox)
+ */
+function devconnect_content_authoring_update_7000(&$sandbox) {
+  // Fix for https://apigeesc.atlassian.net/browse/DEVCHAN-30
+  if (module_exists('ckeditor')) {
+    $query = db_select('ckeditor_settings', 'c')
+      ->fields('c', array('name', 'settings'));
+    $result = $query->execute();
+    foreach($result as $res) {
+      $name = $res->name;
+      $settings = unserialize($res->settings);
+      if (isset($settings['js_conf'])) {
+        $allow = 'config.allowedContent = true;';
+        $settings['js_conf'] = $allow;
+        if (!empty($name)) {
+          $update = db_update('ckeditor_settings')
+            ->fields(array(
+            'settings' => serialize($settings),
+          ))->condition('name', $res->name, '=');
+          $update->execute();
+        }
+      }
+    }
+  }
+}

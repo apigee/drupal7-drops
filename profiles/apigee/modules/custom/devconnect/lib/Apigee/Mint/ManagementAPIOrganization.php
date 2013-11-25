@@ -8,7 +8,7 @@ use Apigee\Util\Cache as Cache;
 
 /**
  * ManagementAPIOrganization is used in monetization instead of
- * Organization so we can cache it's response since it is somehow
+ * Organization so we can cache its response since it is somehow
  * more heavily used in this module
  */
 class ManagementAPIOrganization extends \Apigee\ManagementAPI\Organization {
@@ -18,9 +18,9 @@ class ManagementAPIOrganization extends \Apigee\ManagementAPI\Organization {
     $cache_manager = CacheFactory::getCacheManager(NULL);
     $organization = $cache_manager->get('mngmt_organization:' . $org, NULL);
     if (!isset($organization)) {
-      $url = $this->baseUrl . '/' . $this->urlEncode($org);
-      $this->client->get($url);
-      $organization = $this->getResponse();
+      $url = $this->urlEncode($org);
+      $this->get($url);
+      $organization = $this->responseObj;
       $cache_manager->set('mngmt_organization:' . $org, $organization);
     }
     $this->name = $organization['name'];

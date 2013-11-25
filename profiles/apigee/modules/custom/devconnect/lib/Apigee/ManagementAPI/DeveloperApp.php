@@ -10,7 +10,6 @@
 namespace Apigee\ManagementAPI;
 
 use Apigee\Exceptions\ParameterException as ParameterException;
-use Apigee\Util\APIClient as APIClient;
 
 class DeveloperApp extends Base implements DeveloperAppInterface {
 
@@ -355,11 +354,10 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
   /**
    * Initializes this object
    *
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    * @param mixed $developer
    */
-  public function __construct(APIClient $client, $developer) {
-    $this->init($client);
+  public function __construct(\Apigee\Util\OrgConfig $config, $developer) {
     if ($developer instanceof DeveloperInterface) {
       $this->developer = $developer->getEmail();
     }
@@ -367,7 +365,8 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
       // $developer may be either an email or a developerId.
       $this->developer = $developer;
     }
-    $this->baseUrl = '/organizations/' . $this->urlEncode($client->getOrg()) . '/developers/' . $this->urlEncode($this->developer) . '/apps';
+    $baseUrl = '/o/' . $this->urlEncode($config->orgName) . '/developers/' . $this->developer . '/apps';
+    $this->init($config, $baseUrl);
     $this->blankValues();
   }
 
@@ -379,7 +378,7 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @param DeveloperApp $obj
    * @param array $response
    */
-  protected static function loadFromResponse(DeveloperApp &$obj, array $response) {
+  protected static function loadFromResponse(DeveloperApp &$obj, array $response, $developer_mail = NULL) {
     $obj->accessType = $response['accessType'];
     $obj->appFamily = (isset($response['appFamily']) ? $response['appFamily'] : NULL);
     $obj->appId = $response['appId'];
@@ -392,6 +391,12 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
     $obj->scopes = $response['scopes'];
     $obj->status = $response['status'];
     $obj->developerId = $response['developerId'];
+    if (!empty($developer_mail)) {
+      $obj->developer = $developer_mail;
+    }
+    elseif (!preg_match('!^[^@]+@[^@]+$!', $obj->developer)) {
+      $obj->developer = $obj->getDeveloperMailById($response['developerId']);
+    }
 
     $obj->readAttributes($response);
 
@@ -458,6 +463,41 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
   }
 
   /**
+   * Finds the overall status of this app. We first check app status, then
+   * credential status, then credential->apiproduct status. If any are
+   * 'revoked', we return revoked; otherwise if any are 'pending', that's what
+   * we return; else we return 'approved'.
+   *
+   * @return string
+   */
+  public function getOverallStatus() {
+    static $statuses;
+    if (!isset($statuses)) {
+      $statuses = array(
+        'approved' => 0,
+        'pending' => 1,
+        'revoked' => 2
+      );
+    }
+    $app_status = (array_key_exists($this->status, $statuses) ? $statuses[$this->status] : 0);
+    $cred_status = (array_key_exists($this->credentialStatus, $statuses) ? $statuses[$this->credentialStatus] : 0);
+
+    $current_status = max($app_status, $cred_status);
+    if ($current_status < 2) {
+      foreach ($this->credentialApiProducts as $api_product) {
+        if (!array_key_exists($api_product['status'], $statuses)) {
+          continue;
+        }
+        $current_status = max($current_status, $statuses[$api_product['status']]);
+        if ($current_status == 2) {
+          break;
+        }
+      }
+    }
+    return array_search($current_status, $statuses);
+  }
+
+  /**
    * Populates this object with information retrieved from the Management API.
    *
    * If $name is not passed, $this->name is used.
@@ -465,13 +505,10 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @param null|string $name
    */
   public function load($name = NULL) {
-    if (!isset($name)) {
-      $name = $this->getName();
-    }
-    $url = $this->baseUrl . '/' . $this->urlEncode($name);
-    $this->client->get($url);
-    $response = $this->getResponse();
-    self::loadFromResponse($this, $response);
+    $name = $name ?: $this->name;
+    $this->get($this->urlEncode($name));
+    $response = $this->responseObj;
+    self::loadFromResponse($this, $response, $this->developer);
   }
 
   /**
@@ -483,12 +520,13 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @return bool
    */
   public function validate($name = NULL) {
-    if (!isset($name)) {
-      $name = $this->getName();
+    $name = $name ?: $this->name;
+    try {
+      $this->get($this->urlEncode($name));
+      return FALSE;
     }
-    $url = $this->baseUrl . '/' . $this->urlEncode($name);
-    $this->client->get($url);
-    return $this->client->wasSuccessful();
+    catch (\Apigee\Exceptions\ResponseException $e) {}
+    return TRUE;
   }
 
   /**
@@ -535,11 +573,28 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
       'name' => $this->getName(),
       'callbackUrl' => $this->getCallbackUrl()
     );
+    // Make sure DisplayName attribute is saved. It seems to be required or
+    // expected on the Enterprise UI.
+    if (!array_key_exists('DisplayName', $this->attributes)) {
+      $display_name = $this->name;
+      if (strpos($display_name, ' ') === FALSE) {
+        $display_name = ucwords(str_replace(array('_', '-'), ' ', $display_name));
+      }
+      $this->attributes['DisplayName'] = $display_name;
+    }
+    // Set other attributes that Enterprise UI sets by default.
+    $this->attributes['Developer'] = $this->developer;
+    $this->attributes['lastModified'] = gmdate('Y-m-d H:i A');
+    $this->attributes['lastModifier'] = $this->config->user_mail;
+    if (!$is_update && !array_key_exists('creationDate', $this->attributes)) {
+      $this->attributes['creationDate'] = gmdate('Y-m-d H:i A');
+    }
+
     $this->writeAttributes($payload);
 
-    $url = $this->baseUrl;
+    $url = NULL;
     if ($is_update) {
-      $url .= '/' . $this->urlEncode($this->getName());
+      $url = $this->urlEncode($this->getName());
     }
     $created_new_key = FALSE;
     // NOTE: On update, we send APIProduct information separately from other
@@ -549,18 +604,16 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
     // APIProducts list must be handled separately from additions.
     $consumer_key = $this->getConsumerKey();
     if ($is_update && !empty($consumer_key)) {
-      $key_uri = "$url/keys/" . $this->urlEncode($consumer_key);
+      $key_uri = ltrim("$url/keys/", '/') . $this->urlEncode($consumer_key);
       $diff = $this->apiProductsDiff();
       // api-product deletions must happen one-by-one.
       foreach ($diff->to_delete as $api_product) {
         $delete_uri = "$key_uri/apiproducts/" . $this->urlEncode($api_product);
-        $this->client->delete($delete_uri);
-        $this->getResponse();
+        $this->http_delete($delete_uri);
       }
       // api-product additions can happen in a batch.
       if (count($diff->to_add) > 0) {
-        $this->client->post($key_uri, array('apiProducts' => $diff->to_add));
-        $this->getResponse();
+        $this->post($key_uri, array('apiProducts' => $diff->to_add));
       }
     }
     else {
@@ -570,8 +623,8 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
 
     self::preSave($payload, $this);
 
-    $this->client->post($url, $payload);
-    $response = $this->getResponse();
+    $this->post($url, $payload);
+    $response = $this->responseObj;
 
     // If we created a new key, add a create_date attribute to it.
     if ($created_new_key && count($response['credentials']) > 0) {
@@ -607,16 +660,16 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
         $payload = $new_credential;
         // Payload only has to send bare minimum for update.
         unset($payload['apiProducts'], $payload['scopes'], $payload['status']);
-        $url = $this->baseUrl . '/' . $this->urlEncode($this->name) . '/keys/' . $key;
+        $url = $this->urlEncode($this->name) . '/keys/' . $key;
 
         self::preSaveCredential($payload, $new_credential, $response);
         // POST that sucker!
-        $this->client->post($url, $payload);
+        $this->post($url, $payload);
       }
     }
 
     // Refresh our fields so we get latest autogenerated data such as consumer key etc.
-    self::loadFromResponse($this, $response);
+    self::loadFromResponse($this, $response, $this->developer);
   }
 
   /**
@@ -674,11 +727,10 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
     if (strlen($this->getConsumerKey()) == 0) {
       throw new ParameterException('App has no consumer key; cannot set key status.');
     }
-    $base_url = $this->baseUrl . '/' . $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($this->getConsumerKey());
+    $base_url = $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($this->getConsumerKey());
     // First, approve or revoke the overall key for the app.
     $app_url = $base_url . '?action=' . $status;
-    $this->client->post($app_url, '');
-    $this->getResponse();
+    $this->post($app_url, '');
 
     // Now, unless specified otherwise, approve or revoke the same key for all
     // associated API Products.
@@ -687,8 +739,7 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
       if (!empty($api_products)) {
         foreach ($api_products as $api_product) {
           $product_url = $base_url . '/apiproducts/' . $this->urlEncode($api_product) . '?action=' . $status;
-          $this->client->post($product_url, '');
-          $this->getResponse();
+          $this->post($product_url, '');
         }
       }
     }
@@ -702,11 +753,8 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @param null|string $name
    */
   public function delete($name = NULL) {
-    if (!isset($name)) {
-      $name = $this->getName();
-    }
-    $this->client->delete($this->baseUrl . '/' . $this->urlEncode($name));
-    $this->getResponse();
+    $name = $name ?: $this->name;
+    $this->http_delete($this->urlEncode($name));
     if ($name == $this->getName()) {
       $this->blankValues();
     }
@@ -718,8 +766,8 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @return array
    */
   public function getList() {
-    $this->client->get($this->baseUrl);
-    return $this->getResponse();
+    $this->get();
+    return $this->responseObj;
   }
 
   /**
@@ -729,20 +777,21 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @return array
    */
   public function getListDetail($developer_mail = NULL) {
-    if (!isset($developer_mail)) {
-      $developer_mail = $this->getDeveloperMail();
-    }
-    $url = '/organizations/' . $this->urlEncode($this->getClient()
-        ->getOrg()) . '/developers/' . $this->urlEncode($developer_mail) . '/apps?expand=true';
-    $this->client->get($url);
-    $list = $this->getResponse();
+    $developer_mail = $developer_mail ?: $this->developer;
+
+    $this->setBaseUrl('/o/' . $this->urlEncode($this->config->orgName) . '/developers/' . $this->urlEncode($developer_mail) . '/apps');
+
+    $this->get('?expand=true');
+    $list = $this->responseObj;
+    $this->restoreBaseUrl();
+
     $app_list = array();
     if (!array_key_exists('app', $list) || empty($list['app'])) {
       return $app_list;
     }
     foreach ($list['app'] as $response) {
-      $app = new DeveloperApp($this->getClient(), $developer_mail);
-      self::loadFromResponse($app, $response);
+      $app = new DeveloperApp($this->getConfig(), $developer_mail);
+      self::loadFromResponse($app, $response, $developer_mail);
       $app_list[] = $app;
     }
     return $app_list;
@@ -759,7 +808,7 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    */
   public function createKey($consumer_key, $consumer_secret) {
     if (strlen($consumer_key) < 5 || strlen($consumer_secret) < 5) {
-      throw new ParameterException('Consumer Key and Consumer Secret must both be at least 5 characters long.');
+      throw new ParameterException('Consumer Key and Consumer Secret must each be at least 5 characters long.');
     }
     // This is by nature a two-step process. API Products cannot be added
     // to a new key at the time of key creation, for some reason.
@@ -771,18 +820,18 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
       'scopes' => $this->getCredentialScopes(),
     );
 
-    $url = $this->baseUrl . '/' . $this->urlEncode($this->name) . '/keys/create';
-    $this->client->post($url, $payload);
+    $url = $this->urlEncode($this->name) . '/keys/create';
+    $this->post($url, $payload);
 
-    $new_credential = $this->getResponse();
+    $new_credential = $this->responseObj;
     // We now have the new key, sans apiproducts. Let us add them now.
     $new_credential['apiProducts'] = $this->getCredentialApiProducts();
     $key = $new_credential['consumerKey'];
-    $url = $this->baseUrl . '/' . $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($key);
-    $this->client->post($url, $new_credential);
+    $url = $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($key);
+    $this->post($url, $new_credential);
     // The following line may throw an exception if the POST was unsuccessful
     // (e.g. consumer_key already exists, etc.)
-    $credential = $this->getResponse();
+    $credential = $this->responseObj;
 
     if ($credential['status'] == 'approved' || empty($this->consumerKey)) {
       // Update $this with new credential info ONLY if the key is auto-approved
@@ -805,8 +854,11 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @param string $consumer_key
    */
   public function deleteKey($consumer_key) {
-    $url = $this->baseUrl . '/' . $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($consumer_key);
-    $this->client->delete($url);
+    $url = $this->urlEncode($this->getName()) . '/keys/' . $this->urlEncode($consumer_key);
+    try {
+      $this->http_delete($url);
+    }
+    catch (\Apigee\Exceptions\ResponseException $e) {}
     // We ignore whether or not the delete was successful. Either way, we can
     // be sure it doesn't exist now, if it did before.
 
@@ -821,13 +873,15 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @return array
    */
   public function listAllOrgApps() {
-    $url = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/apps?expand=true';
-    $this->client->get($url);
-    $response = $this->getResponse();
+    $url = '/o/' . $this->urlEncode($this->config->orgName);
+    $this->setBaseUrl($url);
+    $this->get('apps?expand=true');
+    $response = $this->responseObj;
+    $this->restoreBaseUrl();
     $app_list = array();
     foreach ($response['app'] as $app_detail) {
-      $developer = $app_detail['developerId'];
-      $app = new self($this->client, $developer);
+      $developer = $this->getDeveloperMailById($app_detail['developerId']);
+      $app = new self($this->config, $developer);
       self::loadFromResponse($app, $app_detail);
       $app_list[] = $app;
     }
@@ -839,17 +893,27 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
       throw new ParameterException('Invalid UUID passed as appId.');
     }
 
-    $url = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/apps/' . $appId;
-    $this->client->get($url);
-    $response = $this->getResponse();
-    self::loadFromResponse($this, $response);
+    $url = '/o/' . $this->urlEncode($this->config->orgName) . '/apps';
+    $this->setBaseUrl($url);
+    $this->get($appId);
+    $this->restoreBaseUrl();
+    $response = $this->responseObj;
+    $developer = $this->getDeveloperMailById($response['developerId']);
+    self::loadFromResponse($this, $response, $developer);
     // Must load developer to get email
-    if ($reset_developer || empty($this->developer)) {
-      $developer = new Developer($this->client);
-      $developer->load($response['developerId']);
-      $this->developer = $developer->getEmail();
-      $this->baseUrl = '/organizations/' . $this->urlEncode($this->getClient()->getOrg()) . '/developers/' . $this->urlEncode($this->developer) . '/apps';
+    if ($reset_developer) {
+      $this->client->setBaseUrl('/o/' . $this->urlEncode($this->config->orgName) . '/developers/' . $this->urlEncode($developer));
     }
+  }
+
+  private function getDeveloperMailById($id) {
+    static $devs = array();
+    if (!isset($devs[$id])) {
+      $dev = new Developer($this->config);
+      $dev->load($id);
+      $devs[$id] = $dev->getEmail();
+    }
+    return $devs[$id];
   }
 
   /**
@@ -861,7 +925,7 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
     $this->appFamily = NULL;
     $this->appId = NULL;
     $this->attributes = array();
-    $this->callbackUrl = NULL;
+    $this->callbackUrl = '';
     $this->createdAt = NULL;
     $this->createdBy = NULL;
     $this->modifiedAt = NULL;
@@ -887,18 +951,45 @@ class DeveloperApp extends Base implements DeveloperAppInterface {
    * @return array
    */
   public function toArray() {
-    $properties = array_keys(get_object_vars($this));
-    $excluded_properties = array_keys(get_class_vars(get_parent_class($this)));
-    $excluded_properties[] = 'cachedApiProducts';
-    $excluded_properties[] = 'baseUrl';
     $output = array();
-    foreach ($properties as $property) {
-      if (!in_array($property, $excluded_properties)) {
-        $output[$property] = $this->$property;
+    foreach (self::getAppProperties() as $property) {
+      switch ($property) {
+        case 'debugData':
+          $output[$property] = $this->getDebugData();
+          break;
+        case 'overallStatus':
+          $output[$property] = $this->getOverallStatus();
+          break;
+        default:
+          $output[$property] = $this->$property;
+          break;
       }
     }
-    $output['debugData'] = $this->getDebugData();
     return $output;
+  }
+
+  public static function getAppProperties() {
+    $properties = array_keys(get_class_vars(__CLASS__));
+
+    $parent_class = get_parent_class();
+    $grandparent_class = get_parent_class($parent_class);
+
+    $excluded_properties = array_keys(get_class_vars($parent_class));
+    if ($grandparent_class) {
+      $excluded_properties += array_keys(get_class_vars($grandparent_class));
+    }
+    $excluded_properties[] = 'cachedApiProducts';
+    $excluded_properties[] = 'baseUrl';
+
+    $count = count($properties);
+    for ($i = 0; $i < $count; $i++) {
+      if (in_array($properties[$i], $excluded_properties)) {
+        unset($properties[$i]);
+      }
+    }
+    $properties[] = 'debugData';
+    $properties[] = 'overallStatus';
+    return array_values($properties);
   }
 
   /**

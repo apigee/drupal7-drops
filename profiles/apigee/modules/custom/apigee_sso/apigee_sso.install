@@ -18,4 +18,8 @@ function apigee_sso_update_7424(&$sandbox) {
     ->fields(array('weight' => $locale_weight + 1))
     ->condition('name', 'apigee_sso')
     ->execute();
+  // New dependency
+  if (!module_exists('apigee_sso_ui')) {
+    module_enable(array('apigee_sso_ui'));
+  }
 }

@@ -1,0 +1,32 @@
+{ "switch_test" : {
+    "PLUGIN" : "action set",
+    "REQUIRES" : [ "rules_conditional", "rules_conditional_test", "rules" ],
+    "USES VARIABLES" : { "node" : { "type" : "node", "label" : "Node" } },
+    "ACTION SET" : [
+      { "SWITCH" : {
+          "USING" : { "data" : [ "node:title" ] },
+          "DO" : [
+            { "CASE" : {
+                "USING" : { "value" : "case 1" },
+                "DO" : [ { "rules_conditional_test_throw" : { "message" : "case" } } ]
+              }
+            },
+            { "CASE" : {
+                "USING" : { "value" : "case 2", "fall_through" : true },
+                "DO" : [
+                  { "data_set" : { "data" : [ "node:title" ], "value" : "fall through" } }
+                ]
+              }
+            },
+            { "CASE" : {
+                "USING" : { "value" : "case 3" },
+                "DO" : [ { "rules_conditional_test_throw" : { "message" : "case 3" } } ]
+              }
+            },
+            { "DEFAULT CASE" : [ { "rules_conditional_test_throw" : { "message" : "default" } } ] }
+          ]
+        }
+      }
+    ]
+  }
+}

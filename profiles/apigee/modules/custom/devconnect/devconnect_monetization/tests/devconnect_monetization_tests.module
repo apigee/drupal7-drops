@@ -3,26 +3,33 @@
 class MintTest extends DrupalWebTestCase {
 
   /**
-   * @var Apigee\Util\APIClient
+   * @var Apigee\Util\OrgConfig
    */
-  protected $client;
+  protected $config;
 
   protected function setUp() {
-    // Read Drupal vars *before* simpletest switches us to a sandbox db
-    $org = variable_get('devconnect_monetization_org', variable_get('devconnect_org', NULL));
-    $endpoint = variable_get('devconnect_monetization_endpoint', variable_get('devconnect_endpoint', NULL));
-    $endpoint_auth = variable_get('devconnect_monetization_curlauth', variable_get('devconnect_curlauth', NULL));
+    $config = Drupal::config('devconnect.settings');
+    $org = $config->get('org');
+    $endpoint = $config->get('endpoint');
+    $username = $config->get('user');
+    $password = \Apigee\Util\Crypto::decrypt($config->get('pass'));
+    $curl_auth = "$username:$password";
 
+    $morg = variable_get('devconnect_monetization_org', $org);
+    $mendpoint = variable_get('devconnect_monetization_endpoint', $endpoint);
+    $mcurl_auth = variable_get('devconnect_monetization_curlauth', $curl_auth);
+    $curl_auth2 = devconnect_get_endpoint_auth($curl_auth);
+    list($username, $password) = explode(':', $curl_auth2, 2);
+    $this->config = new \Apigee\Util\OrgConfig($org, $endpoint, $username, $password);
     // Now make the switch to the sandbox.
     parent::setUp();
-
-    if (empty($org) || empty($endpoint) || empty($endpoint_auth)) {
+    if (empty($org) || empty($endpoint) || empty($curl_auth)) {
       throw new Exception('Cannot read org/endpoint/endpoint-auth variables.');
     }
-
-    list($username, $pass_encrypted) = explode(':', $endpoint_auth);
-    $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
-    $this->client = Apigee\Util\APIClient::getInstance($endpoint, $org, $username, $password);
+    $this->refreshVariables();
+    variable_set('devconnect_monetization_org', $morg);
+    variable_set('devconnect_monetization_endpoint', $mendpoint);
+    variable_set('devconnect_monetization_curlauth', $mcurl_auth);
   }
 
 }

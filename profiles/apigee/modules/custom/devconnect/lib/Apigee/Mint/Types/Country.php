@@ -299,7 +299,7 @@ final class Country {
   public static function getStateName($country_iso_code, $state_code) {
     switch ($country_iso_code) {
       case 'US':
-        $valid_states = array();
+        $valid_states = array(); // TODO
     }
   }
 

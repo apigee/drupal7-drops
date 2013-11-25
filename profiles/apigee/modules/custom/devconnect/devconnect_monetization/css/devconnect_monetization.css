@@ -1,0 +1,18 @@
+/**** Make EN Theme work with Monetization javascript *****/
+div#topUpPurchase.modal {
+    bottom:auto;
+    left:50%;
+    right:50%;
+}
+div#topUpPurchase.hide {
+    display:block !important;
+}
+
+div#topUp.modal {
+    bottom:auto;
+    left:50%;
+    right:50%;
+}
+div#topUp.hide {
+    display:block !important;
+}

@@ -1,5 +1,6 @@
 <?php
 
+use Apigee\Mint\CurrencyISO4217;
 use Apigee\Mint\Types\BillingType;
 use Apigee\Mint\Types\BillingDocumentType;
 use Apigee\Mint\BillingDocument;
@@ -7,8 +8,6 @@ use Apigee\Mint\ReportDefinition;
 use Apigee\Util\Debugger;
 use Apigee\Mint\Exceptions\MintApiException;
 use Apigee\Mint\Organization;
-use Apigee\Mint\DataStructures\Address;
-use Apigee\Mint\DataStructures\DeveloperBalance;
 use Apigee\Mint\Developer;
 
 function devconnet_monetization_billing_tabs($user, $active_tab) {
@@ -26,14 +25,14 @@ function devconnet_monetization_billing_tabs($user, $active_tab) {
       $base_path . '/prepaid-balance' => array(
         'text' => t('Prepaid Balance'),
         'access callback' => 'devconnect_monetization_billing_prepaid_access',
-        'access args' => array('access prepaid reports'),
+        'access args' => array('access mint prepaid reports'),
         'active' => 'prepaid-balance' == $active_tab,
         'callback' => 'devconnect_monetization_prepaid_balance',
       ),
       $base_path . '/developer-reports' => array(
         'text' => t('Reports'),
         'access callback' => 'user_access',
-        'access args' => array('download revenue report'),
+        'access args' => array('download mint revenue report'),
         'active' => 'developer-reports' == $active_tab,
         'callback' => 'drupal_get_form',
         'callback args' => array('devconnect_monetization_developer_report_form'),
@@ -41,8 +40,8 @@ function devconnet_monetization_billing_tabs($user, $active_tab) {
       $base_path . '/billing-document' => array(
         'text' => t('Received Bills'),
         'access callback' => 'user_access',
-        'access args' => array('download billing documents'),
-        'pane' => array ('class' => 'tnc'),
+        'access args' => array('download mint billing documents'),
+        'pane' => array('class' => 'tnc'),
         'active' => 'billing-document' == $active_tab,
         'callback' => 'devconnect_monetization_billing_documents',
       ),
@@ -59,30 +58,29 @@ function devconnet_monetization_billing_tabs($user, $active_tab) {
 function devconnect_monetization_billing_prepaid_access() {
   $args = func_get_args();
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $client = devconnect_monetization_default_api_client();
-  $developer = new Developer($client);
+  $developer = new Developer(devconnect_monetization_default_org_config());
   $developer->load($developer_id);
   return $developer->getBillingType() == BillingType::PREPAID && call_user_func_array('user_access', $args);
 }
 
 function devconnect_monetization_prepaid_balance() {
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $client = devconnect_monetization_default_api_client();
-  $developer = new Developer($client);
+  $config = devconnect_monetization_default_org_config();
+  $developer = new Developer($config);
   $developer->setEmail($developer_id);
 
-  $access_prepaid_reports = user_access('access prepaid reports');
+  $access_prepaid_reports = user_access('access mint prepaid reports');
   if ($access_prepaid_reports) {
-    $top_up_balance_perm = user_access('top up balance');
+    $top_up_balance_perm = user_access('top up mint balance');
     if ($top_up_balance_perm) {
       $form = drupal_get_form('devconnect_monetization_top_up_balance_form');
       $top_up_form = drupal_render($form);
     }
-    $download_prepaid_report_perm = user_access('download prepaid report');
-    $organization = new Organization($client);
+    $download_prepaid_report_perm = user_access('download mint prepaid report');
+    $organization = new Organization($config);
     $currencies = $organization->listSupportedCurrencies();
 
-    $billing_documents = new BillingDocument($client);
+    $billing_documents = new BillingDocument($config);
     $billing_months = $billing_documents->listBillingMonths();
     $years = array();
     foreach ($billing_months as $billing_month) {
@@ -113,6 +111,14 @@ function devconnect_monetization_prepaid_balance() {
       }
     }
   }
+  else {
+    $balances = array();
+    $top_up_form = '';
+    $top_up_balance_perm = FALSE;
+    $currencies = array();
+    $topped_up_currencies = 0;
+    $download_prepaid_report_perm = FALSE;
+  }
   $variables = array(
     'access_prepaid_reports' => $access_prepaid_reports,
     'balances' => $balances,
@@ -135,12 +141,24 @@ function devconnect_monetization_billing_documents() {
   $docs = array();
   foreach ($billing_docs_collection as &$doc) {
     switch ($doc->getType()) {
-      case BillingDocumentType::REV_STMT: $type = 'Revenue Share Statement'; break;
-      case BillingDocumentType::GPA: $type = 'GPA'; break;
-      case BillingDocumentType::NPA: $type = 'NPA'; break;
-      case BillingDocumentType::SELF_INVOICE: $type = 'Self Invoice'; break;
-      case BillingDocumentType::INVOICE: $type = 'Invoice'; break;
-      case BillingDocumentType::NETTING_STMT: $type = 'Netting Statement';  break;
+      case BillingDocumentType::REV_STMT:
+        $type = 'Revenue Share Statement';
+        break;
+      case BillingDocumentType::GPA:
+        $type = 'GPA';
+        break;
+      case BillingDocumentType::NPA:
+        $type = 'NPA';
+        break;
+      case BillingDocumentType::SELF_INVOICE:
+        $type = 'Self Invoice';
+        break;
+      case BillingDocumentType::INVOICE:
+        $type = 'Invoice';
+        break;
+      case BillingDocumentType::NETTING_STMT:
+        $type = 'Netting Statement';
+        break;
     }
     $products = array();
     foreach ($doc->getProducts() as $product) {
@@ -183,6 +201,7 @@ function devconnect_monetization_top_up_balance_form($form, $form_state) {
     '#type' => 'hidden',
   );
 
+  $form['#attached']['css'][] = drupal_get_path('module', 'devconnect_monetization') . '/css/devconnect_monetization.css';
   $form['#validate'][] = 'devconnect_monetization_top_up_balance_form_validate';
   $form['#submit'][] = 'devconnect_monetization_top_up_balance_form_submit';
 
@@ -190,49 +209,29 @@ function devconnect_monetization_top_up_balance_form($form, $form_state) {
 }
 
 function devconnect_monetization_top_up_balance_form_validate(&$form, &$form_state) {
-  $top_up_amount = (double)$form_state['values']['top_up_amount'];
+  $top_up_amount = (double) $form_state['values']['top_up_amount'];
   $rate_plancurrency = isset($form_state['values']['currency']) ? $form_state['values']['currency'] : NULL;
   $currency = isset($form_state['values']['currency']) ? $form_state['values']['currency'] : NULL;
+  // TODO: do something with these values.
 }
 
 function devconnect_monetization_top_up_balance_form_submit(&$form, &$form_state) {
-  if (!user_access('top up balance')) {
+  if (!user_access('top up mint balance')) {
     drupal_access_denied();
   }
   try {
     global $user;
-    $currency = strtoupper($form_state['values']['currency_id']);
+    $values = array(
+      'currency_id' => $form_state['values']['currency_id'],
+      'amount' => $form_state['values']['amount'],
+      'notes' => $form_state['values']['notes'],
+    );
 
-    $deposit = commerce_product_new('deposit');
-
-    $deposit->uid = $user->uid;
-    $deposit->sku = 'deposit_' . $user->uid . '_' . $form_state['values']['amount'] . '_' . microtime();
-
-    $deposit->commerce_price['und'][0]['amount'] = $form_state['values']['amount'] * 100;
-    $deposit->commerce_price['und'][0]['currency_code'] = $currency;
-
-    $deposit->title = t('Deposit @amount', array('@amount' => commerce_currency_format($form_state['values']['amount'] * 100, $currency)));
-
-    commerce_product_save($deposit);
-
-    $deposit_order = ($user->uid) ? commerce_order_new($user->uid, 'checkout_checkout') : commerce_cart_order_new();
-
-    $line_item = commerce_product_line_item_new($deposit, 1, $deposit_order->order_id);
-
-    commerce_line_item_save($line_item);
-
-    $order_wrapper = entity_metadata_wrapper('commerce_order', $deposit_order);
-
-    $order_wrapper->commerce_line_items[] = $line_item;
-
-
-    $deposit_order->data['type'] = 'commerce_funds_deposit';
-    $deposit_order->data['notes'] = $form_state['values']['notes'];
-
+    $deposit_order = devconnect_monetization_start_payment_order($user, $values);
     $plan_id = isset($_REQUEST['planid']) && strlen($_REQUEST['planid']) ? $_REQUEST['planid'] : NULL;
     if (isset($plan_id)) {
       $deposit_order->data['purchase'] = array(
-        'packageid' => rawurldecode(arg(4)),
+        'packageid' => $_REQUEST['packageid'],
         'planid' => $plan_id,
         'date' => $_REQUEST['date'],
         'overlap' => $_REQUEST['overlap'],
@@ -243,8 +242,7 @@ function devconnect_monetization_top_up_balance_form_submit(&$form, &$form_state
 
     drupal_goto('checkout/' . $deposit_order->order_id);
 
-  }
-  catch(Exception $e) {
+  } catch (Exception $e) {
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
     Apigee\Util\Log::write('devconnect_monetization', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
   }
@@ -254,13 +252,11 @@ function devconnect_monetization_download_report($currency_id, $date) {
   $currency_id = rawurldecode($currency_id);
   $date = rawurldecode($date);
 
+  list($month, $year) = explode('-', $date);
   try {
     $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-    $client = devconnect_monetization_default_api_client();
 
-    list($month, $year) = explode('-', $date);
-
-    $org = new Organization($client);
+    $org = new Organization(devconnect_monetization_default_org_config());
     $response = $org->getPrepaidBalanceReport($month, $year, $developer_id, $currency_id);
 
     header('Content-Disposition: attachment; filename="Prepaid_Balance-' . $month . $year . '_' . time() . '.csv"');
@@ -269,10 +265,10 @@ function devconnect_monetization_download_report($currency_id, $date) {
     header('Connection: close');
 
     echo $response;
-    return;
-  }
-  catch (MintApiException $cae) {
-    if ( $cae->getMintCode() == MintApiException::RESOURCE_DOES_NOT_EXIST) {
+    module_invoke_all('exit');
+    exit;
+  } catch (MintApiException $cae) {
+    if ($cae->getMintCode() == MintApiException::RESOURCE_DOES_NOT_EXIST) {
       drupal_set_message(t('There is no report for account @account in @month-@year', array(
         '@account' => $currency_id,
         '@month' => $month,
@@ -330,13 +326,12 @@ function devconnect_monetization_dowload_prepaid_report_form($form, $form_state)
 function devconnect_monetization_billing_get_billing_months_by_year($form, &$form_state) {
 
   $year = $form_state['values']['year'];
-  $client = devconnect_monetization_default_api_client();
-  $billing_document = new BillingDocument($client);
+  $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
   $billing_months = $billing_document->listBillingMonths();
   $months = array();
   foreach ($billing_months as $billing_month) {
     if ($billing_month->getYear() == $year) {
-      $months[(int)$billing_month->getMonth()] = $billing_month->getMonthEnum();
+      $months[(int) $billing_month->getMonth()] = $billing_month->getMonthEnum();
     }
   }
   ksort($months);
@@ -347,22 +342,27 @@ function devconnect_monetization_billing_get_billing_months_by_year($form, &$for
 
   $commands = array();
   $commands[] = ajax_command_replace('#devconnect-monetization-dowload-prepaid-report-form select:last option', $options);
-  $commands[] = ajax_command_invoke('#devconnect-monetization-dowload-prepaid-report-form select:last option:first-child', 'attr', array('disabled', true));
-  $commands[] = ajax_command_invoke('#devconnect-monetization-dowload-prepaid-report-form select:last option:first-child', 'attr', array('selected', true));
+  $commands[] = ajax_command_invoke('#devconnect-monetization-dowload-prepaid-report-form select:last option:first-child', 'attr', array(
+    'disabled',
+    TRUE
+  ));
+  $commands[] = ajax_command_invoke('#devconnect-monetization-dowload-prepaid-report-form select:last option:first-child', 'attr', array(
+    'selected',
+    TRUE
+  ));
   $commands[] = ajax_command_invoke(NULL, 'fixBillingMonthSelect');
   return array('#type' => 'ajax', '#commands' => $commands);
 }
 
 function devconnect_monetization_developer_report_form() {
-  $client = devconnect_monetization_default_api_client();
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
 
   $user = user_load_by_mail($developer_id);
   $account = entity_load_single('user', $user->uid);
 
   $preferences = isset($account->field_mint_rev_reprt_preferences[LANGUAGE_NONE][0]['value']) ? json_decode($account->field_mint_rev_reprt_preferences[LANGUAGE_NONE][0]['value']) : NULL;
-  $preferences = $preferences != NULL ? (array)$preferences : array();
-  $org = new Organization($client);
+  $preferences = $preferences != NULL ? (array) $preferences : array();
+  $org = new Organization(devconnect_monetization_default_org_config());
   $org->load();
   $currencies = $org->listSupportedCurrencies();
   $currs = array();
@@ -380,7 +380,7 @@ function devconnect_monetization_developer_report_form() {
     }
   }
 
-  if ($show_local_currency_option ||  count($currs) == 0 || $count_default > 1) {
+  if ($show_local_currency_option || count($currs) == 0 || $count_default > 1) {
     $currs = array('LOCAL' => t('Local Currency')) + $currs;
   }
 
@@ -392,75 +392,74 @@ function devconnect_monetization_developer_report_form() {
   );
 
   $form['start_date'] = array(
-      '#title' => t('From'),
-      '#type' => 'textfield',
-      '#required' => TRUE,
-      '#date_format' => 'j F Y',
-      '#attributes' => array(
-          'size' => 23,
-          'class' => array('date')
-      ),
-      '#default_value' => date('m/d/Y', time()),
+    '#title' => t('From'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#date_format' => 'j F Y',
+    '#attributes' => array(
+      'size' => 23,
+      'class' => array('date')
+    ),
+    '#default_value' => date('m/d/Y', time()),
   );
 
   $form['end_date'] = array(
-      '#title' => t('To'),
-      '#type' => 'textfield',
-      '#required' => TRUE,
-      '#size' => 10,
-      '#date_format' => 'j F Y',
-      '#attributes' => array(
-          'size' => 23,
-          'class' => array('date')
-      ),
-      '#default_value' => date('m/d/Y', time()),
+    '#title' => t('To'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#size' => 10,
+    '#date_format' => 'j F Y',
+    '#attributes' => array(
+      'size' => 23,
+      'class' => array('date')
+    ),
+    '#default_value' => date('m/d/Y', time()),
   );
 
   $form['reporting_level'] = array(
-      '#type' => 'radios',
-      '#required' => TRUE,
-      '#options' => array(
-          'SUMMARY' => t('Summary Report'),
-          'DETAILED' => t('Detailed Report'),
-      ),
-      '#default_value' => isset($preferences['reporting_level']) ? $preferences['reporting_level'] : 'SUMMARY',
+    '#type' => 'radios',
+    '#required' => TRUE,
+    '#options' => array(
+      'SUMMARY' => t('Summary Report'),
+      'DETAILED' => t('Detailed Report'),
+    ),
+    '#default_value' => isset($preferences['reporting_level']) ? $preferences['reporting_level'] : 'SUMMARY',
   );
 
   if (count($currs) > 1) {
     list($default_currency) = array_keys($currs);
     $form['currency'] = array(
-        '#type' => 'radios',
-        '#required' => TRUE,
-        '#options' => $currs,
-        '#default_value' => isset($preferences['currency']) && array_key_exists($preferences['currency'], $currs) ? $preferences['currency'] : $default_currency,
+      '#type' => 'radios',
+      '#required' => TRUE,
+      '#options' => $currs,
+      '#default_value' => isset($preferences['currency']) && array_key_exists($preferences['currency'], $currs) ? $preferences['currency'] : $default_currency,
     );
   }
   else {
-    $currs_keys = array_keys($currs);
     $form['currency'] = array(
-        '#type' => 'value',
-        '#value' => 'LOCAL',
+      '#type' => 'value',
+      '#value' => 'LOCAL',
     );
   }
 
   $form['report_name'] = array(
-      '#type' => 'textfield',
+    '#type' => 'textfield',
   );
   $form['report_desc'] = array(
-      '#type' => 'textfield',
-      '#attributes' => array('placeholder' => t('Enter a description...')),
+    '#type' => 'textfield',
+    '#attributes' => array('placeholder' => t('Enter a description...')),
   );
   $form['#base_inputs'] = array(
-      'date_range',
-      'reporting_level',
-      'currency',
-      'report_name',
-      'report_desc',
+    'date_range',
+    'reporting_level',
+    'currency',
+    'report_name',
+    'report_desc',
   );
 
   $form['download_report'] = array(
-      '#type' => 'submit',
-      '#value' => t('Download Report (CSV)'),
+    '#type' => 'submit',
+    '#value' => t('Download Report (CSV)'),
   );
 
   $form['#attached']['js'][] = drupal_get_path('module', 'devconnect_monetization') . '/js/global.js';
@@ -501,25 +500,32 @@ function devconnect_monetization_developer_report_validate($form, &$form_state) 
     $form_state['values']['end_date_parsed'] = $end_date;
   }
 
-  if (count(form_get_errors()>0)) {
+  if (count(form_get_errors() > 0)) {
     drupal_add_js('jQuery("div.reports.tabbable a[href=\'#tab2\']").tab("show");', 'inline');
   }
 }
 
 function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
-  if (!user_access('download revenue report')) {
+  if (!user_access('download mint revenue report')) {
     drupal_access_denied();
   }
-  $client = devconnect_monetization_default_api_client();
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $dev = new Developer($client);
+  $dev = new Developer(devconnect_monetization_default_org_config());
   $dev->setEmail($developer_id);
 
   $report = new stdClass();
   $report->currencyOption = $form_state['values']['currency'];
-  $report->transactionTypes = array('PURCHASE', 'CHARGE', 'REFUND', 'CREDIT', 'SETUPFEES', 'TERMINATIONFEES', 'RECURRINGFEES');
+  $report->transactionTypes = array(
+    'PURCHASE',
+    'CHARGE',
+    'REFUND',
+    'CREDIT',
+    'SETUPFEES',
+    'TERMINATIONFEES',
+    'RECURRINGFEES'
+  );
   if ($form_state['values']['reporting_level'] == 'SUMMARY') {
-    $report->showSummary = true;
+    $report->showSummary = TRUE;
     $report->groupBy = array('PACKAGE', 'PRODUCT', 'DEVELOPER', 'APPLICATION');
     $report_prefix_file_name = 'Summarized';
   }
@@ -534,10 +540,10 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
   $report->toDate = $form_state['values']['end_date_parsed']->setTimezone($utc_timezone)->format('Y-m-d H:i:s');
 
   $preferences = array(
-      'start_date' => $form_state['values']['start_date'],
-      'end_date' => $form_state['values']['end_date'],
-      'reporting_level' => $form_state['values']['reporting_level'],
-      'currency' => $form_state['values']['currency'],
+    'start_date' => $form_state['values']['start_date'],
+    'end_date' => $form_state['values']['end_date'],
+    'reporting_level' => $form_state['values']['reporting_level'],
+    'currency' => $form_state['values']['currency'],
   );
 
   $user = user_load_by_mail($developer_id);
@@ -561,15 +567,15 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
   try {
     $response = $dev->getRevenueReport($report);
 
-    header('Content-Disposition: attachment; filename="' . $report_prefix_file_name . '_Revenuew_Report-' . $report->fromDate . '_to_' . $report->toDate . '-' . time() . '.csv"');
+    header('Content-Disposition: attachment; filename="' . $report_prefix_file_name . '_Revenue_Report-' . $report->fromDate . '_to_' . $report->toDate . '-' . time() . '.csv"');
     header('Content-Type: application/octet-stream;charset=utf-8');
     header('Content-Length: ' . strlen($response));
     header('Connection: close');
 
     echo $response;
-    die();
-  }
-  catch(Exception $e) {
+    module_invoke_all('exit');
+    exit();
+  } catch (Exception $e) {
     if ($e->getCode() == 404) {
       drupal_set_message(t('There is no data within this date range. Please try another date range'), 'warning');
     }
@@ -581,16 +587,15 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
 
 function devconnect_monetization_billing_document_form($form, &$form_state) {
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $client = devconnect_monetization_default_api_client();
 
-  $billing_document = new BillingDocument($client);
+  $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
   $billing_months = $billing_document->listBillingMonths();
 
   $months = array();
   foreach ($billing_months as $billing_month) {
     // Build the key as float made of Y as interger part and month as decimal part pad with 0 e.g. January 2013 = 2013.01
     // This way we can sort them descending
-    $months[(float)$billing_month->getYear() . '.' . str_pad($billing_month->getMonth(), 2, '0', STR_PAD_LEFT)] = $billing_month;
+    $months[(float) $billing_month->getYear() . '.' . str_pad($billing_month->getMonth(), 2, '0', STR_PAD_LEFT)] = $billing_month;
   }
 
   // Sort billing months by descending order
@@ -612,53 +617,53 @@ function devconnect_monetization_billing_document_form($form, &$form_state) {
 
 
   $form['search-billing-doc'] = array(
-      '#type' => 'textfield',
-      '#title_display' => 'invisible',
-      '#attributes' => array(
-          'class' => array('input-large', 'search-query'),
-          'placeholder' => t('Search Billing Documents'),
-      ),
-      '#prefix' => '<div style="float:right;margin-top:-46px;display:none;">',
+    '#type' => 'textfield',
+    '#title_display' => 'invisible',
+    '#attributes' => array(
+      'class' => array('input-large', 'search-query'),
+      'placeholder' => t('Search Billing Documents'),
+    ),
+    '#prefix' => '<div style="float:right;margin-top:-46px;display:none;">',
   );
 
   $form['search'] = array(
-      '#type' => 'submit',
-      '#value' => t('Go'),
-      '#attributes' => array(
-          'class' => array('btn'),
-      ),
-      '#suffix' => '</div>',
+    '#type' => 'submit',
+    '#value' => t('Go'),
+    '#attributes' => array(
+      'class' => array('btn'),
+    ),
+    '#suffix' => '</div>',
   );
 
   $form['list'] = array(
-      '#type' => 'submit',
-      '#value' => 'list',
-      '#attributes' => array('style' => 'display:none;'),
+    '#type' => 'submit',
+    '#value' => 'list',
+    '#attributes' => array('style' => 'display:none;'),
   );
 
   $unwrap_script = 'jQuery(document).ready(function(){ jQuery("#edit-search-billing-doc").unwrap().unwrap().parent().show(); });';
   $form += array(
-      '#attributes' => array(
-          'class' => array('form-search', 'form-horizontal'),
+    '#attributes' => array(
+      'class' => array('form-search', 'form-horizontal'),
+    ),
+    '#attached' => array(
+      'js' => array(
+        $unwrap_script => array('type' => 'inline'),
       ),
-      '#attached' => array(
-          'js' => array(
-              $unwrap_script => array('type' => 'inline'),
-          ),
-      ),
+    ),
   );
 
   if (isset($form_state['data'])) {
     $form['#billing_docs'] = $form_state['data'];
     $form['#submited'] = TRUE;
   }
-  else if (count($opts) > 0) {
-    list($default_billing_month) = array_keys($opts);
-    list($month, $year) = explode('-', $default_billing_month);
-
-    //@TODO Remove FALSE parameter once confirmation of field values is right
-    $form['#billing_docs'] = $billing_document->getBillingDocuments($developer_id, strtoupper($month), $year, TRUE);
-    $form['#submited'] = FALSE;
+  else {
+    if (count($opts) > 0) {
+      list($default_billing_month) = array_keys($opts);
+      list($month, $year) = explode('-', $default_billing_month);
+      $form['#billing_docs'] = $billing_document->getBillingDocuments($developer_id, strtoupper($month), $year, TRUE);
+      $form['#submited'] = FALSE;
+    }
   }
 
   $form['#submit'][] = 'devconnect_monetization_billing_document_form_submit';
@@ -668,20 +673,17 @@ function devconnect_monetization_billing_document_form($form, &$form_state) {
 function devconnect_monetization_billing_document_form_submit(&$form, &$form_state) {
 
   try {
-    if (!user_access('download billing documents')) {
+    if (!user_access('download mint billing documents')) {
       drupal_access_denied();
     }
     $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-    $client = devconnect_monetization_default_api_client();
 
     list($month, $year) = explode('-', $form_state['values']['billing_month']);
-    $billing_document = new BillingDocument($client);
-    //@TODO Remove FALSE parameter once confirmation of field values is right
+    $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
     if (strlen($form_state['values']['search-billing-doc'])) {
       try {
         $billing_docs = $billing_document->searchBillingDoc($form_state['values']['search-billing-doc'], $developer_id);
-      }
-      catch (MintApiException $re) {
+      } catch (MintApiException $re) {
         drupal_set_message($re->getMintMessage(TRUE, TRUE), 'warning');
         return;
       }
@@ -692,8 +694,7 @@ function devconnect_monetization_billing_document_form_submit(&$form, &$form_sta
 
     $form_state['rebuild'] = TRUE;
     $form_state['data'] = $billing_docs;
-  }
-  catch(Exception $e) {
+  } catch (Exception $e) {
     drupal_set_message(t('Could not retrieve billing documents. Please try again later'), 'error');
   }
 }
@@ -701,21 +702,68 @@ function devconnect_monetization_billing_document_form_submit(&$form, &$form_sta
 function devconnect_monetization_billing_get_billing_document($doc_id) {
   try {
     $doc_id = rawurldecode($doc_id);
-    $client = devconnect_monetization_default_api_client();
-    $doc = new BillingDocument($client);
+    $doc = new BillingDocument(devconnect_monetization_default_org_config());
     $doc->load($doc_id);
-    $file = $doc->getFile();
+    $report = $doc->getFile();
 
-    header('Content-Disposition: attachment; filename="Billing_Document-' . $doc->getDocumentNumber() . '_' . time() . '.htm"');
-    header('Content-Type: application/octet-stream');
-    header('Content-Length: ' . strlen($file));
-    header('Connection: close');
-
-    echo (string)$file;
-    die();
-  }
-  catch (Exception $e) {
+    drupal_add_http_header('Content-Disposition', 'filename="Billing_Document-' . $doc->getDocumentNumber() . '_' . time() . '.pdf');
+    drupal_add_http_header('Content-Type', 'application/octet-stream');
+    drupal_add_http_header('Content-Length', $report['lenght']);
+    drupal_add_http_header('Connection', 'close');
+    echo $report['content'];
+    drupal_exit();
+  } catch (Exception $e) {
     drupal_set_message(t('Error while trying to serve your Billing Document. Please try again later.'), 'error');
     Apigee\Util\Log::write('devconnect_monetization', Apigee\Util\Log::LOGLEVEL_ERROR, $e);
   }
+  return "";
+}
+
+/**
+ * Create an order to top up
+ *
+ * @param $user
+ * @param $values
+ *  keys:
+ *    currency_id: Id of the currency to top up
+ *    amount: the amount to top up
+ *    notes: Notes to include in the the order
+ * @return mixed order object
+ */
+function devconnect_monetization_start_payment_order($user, $values) {
+  $currency = strtoupper($values['currency_id']);
+
+  $deposit = commerce_product_new('deposit');
+
+  $deposit->uid = $user->uid;
+  $deposit->sku = 'deposit_' . $user->uid . '_' . $values['amount'] . '_' . microtime(TRUE);
+
+
+  $currencies = CurrencyISO4217::getList();
+  $currency_factor = pow(10, (int) $currencies[$currency]->minorUnit);
+  $deposit->commerce_price['und'][0]['amount'] =  floor($values['amount'] * $currency_factor);
+
+  $deposit->commerce_price['und'][0]['currency_code'] = $currency;
+
+  $deposit->title = t('Deposit @amount', array('@amount' => commerce_currency_format($values['amount'] * 100, $currency)));
+
+  commerce_product_save($deposit);
+
+  $deposit_order = ($user->uid) ? commerce_order_new($user->uid, 'checkout_checkout') : commerce_cart_order_new();
+
+  $line_item = commerce_product_line_item_new($deposit, 1, $deposit_order->order_id);
+
+  commerce_line_item_save($line_item);
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $deposit_order);
+
+  $order_wrapper->commerce_line_items[] = $line_item;
+
+
+  $deposit_order->data['type'] = 'commerce_funds_deposit';
+  $deposit_order->data['notes'] = $values['notes'];
+
+  commerce_order_save($deposit_order);
+
+  return $deposit_order;
 }

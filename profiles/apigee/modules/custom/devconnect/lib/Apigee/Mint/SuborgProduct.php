@@ -26,12 +26,6 @@ class SuborgProduct extends Base\BaseObject {
   private $status;
 
   /**
-   * Organization id
-   * @var string
-   */
-  private $org;
-
-  /**
    * Product id
    * @var string
    */
@@ -40,14 +34,13 @@ class SuborgProduct extends Base\BaseObject {
   /**
    * Class constructor
    * @param string $product_id Product id
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $config
    */
-  public function __construct($product_id, \Apigee\Util\APIClient $client) {
-    $this->init($client);
-    $this->org = $this->client->getOrg();
-    $this->base_url = '/mint/organizations/' . rawurlencode($this->org) . '/products/' . rawurlencode($product_id) . '/suborg-products';
-    $this->wrapper_tag = 'suborgProduct';
-    $this->id_field = 'id';
+  public function __construct($product_id, \Apigee\Util\OrgConfig $config) {
+    $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/products/' . rawurlencode($product_id) . '/suborg-products';
+    $this->init($config, $base_url);
+    $this->wrapperTag = 'suborgProduct';
+    $this->idField = 'id';
     $this->productId = $product_id;
     $this->initValues();
   }
@@ -69,7 +62,7 @@ class SuborgProduct extends Base\BaseObject {
   // Implementation of BaseObject abstract methods
 
   public function instantiateNew() {
-    return new SuborgProduct($this->productId, $this->client);
+    return new SuborgProduct($this->productId, $this->config);
   }
 
   public function loadFromRawData($data, $reset = FALSE) {
@@ -78,13 +71,13 @@ class SuborgProduct extends Base\BaseObject {
     }
 
     if (isset($data['organization']) && is_array($data['organization'])) {
-      $organization = new Organization($this->client);
+      $organization = new Organization($this->config);
       $organization->loadFromRawData($data['organization']);
       $this->organization = $organization;
     }
 
     if (isset($data['product'])) {
-      $product = new Product($this->client);
+      $product = new Product($this->config);
       $product->loadFromRawData($data['product']);
       $this->product = $product;
     }
@@ -179,14 +172,14 @@ class SuborgProduct extends Base\BaseObject {
     $cache_manager = CacheFactory::getCacheManager(NULL);
     $data = $cache_manager->get('suborg_product:' . $this->productId, NULL);
     if (!isset($data)) {
-      $this->client->get($this->base_url);
-      $data = $this->getResponse();
+      $this->get();
+      $data = $this->responseObj;
       $cache_manager->set('suborg_product:' . $this->productId, $data);
     }
 
     $return_objects = array();
 
-    foreach ($data[$this->wrapper_tag] as $response_data) {
+    foreach ($data[$this->wrapperTag] as $response_data) {
       $obj = $this->instantiateNew();
       $obj->loadFromRawData($response_data);
       $return_objects[] = $obj;

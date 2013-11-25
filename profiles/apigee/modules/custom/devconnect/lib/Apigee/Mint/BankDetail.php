@@ -1,15 +1,13 @@
 <?php
 namespace Apigee\Mint;
 
-use \Apigee\Util\Log as Log;
-
 class BankDetail extends Base\BaseObject {
 
   /**
    * @var string
    *   Developer's email owning this banks details
    */
-  private $dev_email;
+  private $devEmail;
 
   /**
    * @var \Apigee\Mint\DataStructures\Address
@@ -27,13 +25,13 @@ class BankDetail extends Base\BaseObject {
    * @var string
    *     Account name
    */
-  private $account_name;
+  private $accountName;
 
   /**
    * @var string
    *     Account number
    */
-  private $account_number;
+  private $accountNumber;
 
   /**
    * @var string
@@ -51,7 +49,7 @@ class BankDetail extends Base\BaseObject {
    * @var string
    *     Bank's IBAN/Router number
    */
-  private $iban_number;
+  private $ibanNumber;
 
   /**
    * @var string
@@ -69,41 +67,41 @@ class BankDetail extends Base\BaseObject {
    * @var string
    *     Bank's Sort Code
    */
-  private $sort_code;
+  private $sortCode;
 
 
-  public function __construct($developer_email, \Apigee\Util\APIClient $client) {
-    $this->init($client);
-    $this->dev_email = $developer_email;
-    $this->base_url = '/mint/organizations/' . rawurlencode($this->client->getOrg()) . '/developers/' . rawurldecode($developer_email) . '/bank-details';
-    $this->wrapper_tag = 'bankDetail';
-    $this->id_field = 'id';
+  public function __construct($developer_email, \Apigee\Util\OrgConfig $config) {
+    $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/developers/' . rawurldecode($developer_email) . '/bank-details';
+    $this->init($config, $base_url);
+    $this->devEmail = $developer_email;
+    $this->wrapperTag = 'bankDetail';
+    $this->idField = 'id';
 
     $this->initValues();
   }
 
   protected function initValues() {
     $this->aban = NULL;
-    $this->account_name = NULL;
-    $this->account_number = NULL;
+    $this->accountName = NULL;
+    $this->accountNumber = NULL;
     $this->address = NULL;
     $this->bic = NULL;
     $this->currency = NULL;
-    $this->iban_number = NULL;
+    $this->ibanNumber = NULL;
     $this->id = NULL;
     $this->name = NULL;
-    $this->sort_code = NULL;
+    $this->sortCode = NULL;
   }
 
   public function instantiateNew() {
-    return new BankDetail($this->dev_email, $this->client);
+    return new BankDetail($this->devEmail, $this->config);
   }
 
   public function load($id = NULL) {
-    $url = $this->base_url;
-    $this->client->get($url);
-    $data = $this->getResponse();
-    foreach ($data[$this->wrapper_tag] as $bank_detail_data) {
+    $url = rawurlencode($id);
+    $this->get($url);
+    $data = $this->responseObj;
+    foreach ($data[$this->wrapperTag] as $bank_detail_data) {
       $this->loadFromRawData($bank_detail_data);
       break;
     }
@@ -126,7 +124,7 @@ class BankDetail extends Base\BaseObject {
         $this->$setter_method($data[$property]);
       }
       else {
-        Log::write(__CLASS__, Log::LOGLEVEL_NOTICE, 'No setter method was found for property "' . $property . '"');
+        self::$logger->notice('No setter method was found for property "' . $property . '"');
       }
     }
 
@@ -136,8 +134,8 @@ class BankDetail extends Base\BaseObject {
   }
 
   private static function getSetterMethods($class_name) {
-    $class = new ReflectionClass($class_name);
-    $getter_methods = array();
+    $class = new \ReflectionClass($class_name);
+    $setter_methods = array();
     foreach ($class->getMethods() as $method) {
       if ($method->getDeclaringClass() != $class) {
         continue;
@@ -157,30 +155,31 @@ class BankDetail extends Base\BaseObject {
 
   public function save($save_method) {
     if ($this->id == NULL) {
-      $url = $this->base_url;
-      $this->client->post($url, $this->__toString(), 'application/json', 'application/json');
+      $this->post(NULL, $this->__toString());
     }
     else {
-      $url = '/mint/organizations/'. rawurlencode($this->client->getOrg()) . '/bank-details/' . $this->id;
-      $this->client->put($url, $this->__toString());
+      $this->setBaseUrl('/mint/organizations/'. rawurlencode($this->config->orgName) . '/bank-details/' . $this->id);
+      $this->put(NULL, $this->__toString());
+      $this->restoreBaseUrl();
     }
   }
 
   public function delete() {
-    $url = '/mint/organizations/' . rawurlencode($this->client->getOrg()) . '/bank-details/' . $this->id;
-    $this->client->delete($url);
+    $this->setBaseUrl('/mint/organizations/' . rawurlencode($this->config->orgName) . '/bank-details/' . $this->id);
+    $this->http_delete();
+    $this->restoreBaseUrl();
   }
 
   public function __toString() {
     $object = array(
       'name' => $this->name,
-      'accountName' => $this->account_name,
-      'accountNumber' => $this->account_number,
+      'accountName' => $this->accountName,
+      'accountNumber' => $this->accountNumber,
       'currency' => $this->currency,
-      'sortCode' => $this->sort_code,
+      'sortCode' => $this->sortCode,
       'aban' => $this->aban,
       'bic' => $this->bic,
-      'ibanNumber' => $this->iban_number,
+      'ibanNumber' => $this->ibanNumber,
     );
 
     if (isset($this->id)) {
@@ -209,16 +208,16 @@ class BankDetail extends Base\BaseObject {
     $this->aban = $aban;
   }
   public function getAccountName() {
-    return $this->account_name;
+    return $this->accountName;
   }
   public function setAccountName($name) {
-    $this->account_name = $name;
+    $this->accountName = $name;
   }
   public function getAccountNumber() {
-    return $this->account_number;
+    return $this->accountNumber;
   }
   public function setAccountNumber($num) {
-    $this->account_number = $num;
+    $this->accountNumber = $num;
   }
   public function getAddress() {
     return $this->address;
@@ -240,11 +239,11 @@ class BankDetail extends Base\BaseObject {
     $this->currency = $curr;
   }
   public function getIbanNumber() {
-    return $this->iban_number;
+    return $this->ibanNumber;
   }
   public function setIbanNumber($num) {
     // TODO: validate?
-    $this->iban_number = $num;
+    $this->ibanNumber = $num;
   }
   public function getId() {
     return $this->id;
@@ -259,11 +258,11 @@ class BankDetail extends Base\BaseObject {
     $this->name = $name;
   }
   public function getSortCode() {
-    return $this->sort_code;
+    return $this->sortCode;
   }
   public function setSortCode($code) {
     // TODO: validate
-    $this->sort_code = $code;
+    $this->sortCode = $code;
   }
 
 }

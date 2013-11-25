@@ -64,29 +64,31 @@
     </div>
   </div>
   <!-- Title -->
+  <?php if (isset($dna) && $dna) { ?>
+  <?php } else { ?>
   <?php if (drupal_is_front_page()): ?>
-  <section class="page-header">
-    <div class="container">
-      <div class="row">
-        <div class="span9">
-          <div class="title">
-            <?php if (theme_get_setting('welcome_message')): ?>
+    <section class="page-header">
+      <div class="container">
+        <div class="row">
+          <div class="span9">
+            <div class="title">
+              <?php if (theme_get_setting('welcome_message')): ?>
               <h1><?php print theme_get_setting('welcome_message'); ?></h1>
-            <?php else: ?>
+              <?php else: ?>
               <h1><span class="welcome">Welcome</span><br />to the&nbsp;<span><?php print $site_name ?></h1></span>
-            <?php endif; ?>
-           </div>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+        <div class="page-header-content">
+          <?php print render($page['homepage_header']); ?>
         </div>
       </div>
-      <div class="page-header-content">
-        <?php print render($page['homepage_header']); ?>
-      </div>
-    </div>
-  </section>
-  <?php else: ?>
+    </section>
+    <?php else: ?>
     <section class="page-header">
-        <div class="container">
-          <div class="row">
+      <div class="container">
+        <div class="row">
             <span class="<?php print _apigee_base_content_span($columns); ?>">
               <!-- Title Prefix -->
               <?php print render($title_prefix); ?>
@@ -96,10 +98,11 @@
               <h2 class="subtitle"><?php print render($subtitle); ?></h2>              <!-- Title Suffix -->
               <?php print render($title_suffix); ?>
             </span>
-          </div>
         </div>
+      </div>
     </section>
-  <?php endif; ?>
+    <?php endif; ?>
+  <?php } ?>
   <div class="page-content">
     <div class="container">
       <?php print $messages; ?>
@@ -136,12 +139,12 @@
       </div>
     </div>
   </div>
-</div>
-<!-- Footer  -->
-<footer class="footer">
-  <div class="footer-inner">
-    <div class="container">
-      <?php print render($page['footer']); ?>
+  <!-- Footer  -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="container">
+        <?php print render($page['footer']); ?>
+      </div>
     </div>
-  </div>
-</footer>
+  </footer>
+</div>

@@ -1,0 +1,206 @@
+.node-teaser .method_details,
+.view .method_details {
+    border-bottom: 1px solid #CACACA;
+    padding: 10px 0;
+}
+
+.node-teaser .method_details .title a,
+.view .method_details .title a {
+    font-size: 15px;
+    line-height: 13px;
+}
+
+.node-teaser .method_details .title,
+.view .method_details .title {
+    float: left;
+    width:450px;
+}
+
+.node-teaser .method_details .title-header,
+.view .method_details .title-header {
+    float:left;
+    width: 450px;
+    font-size: 10px;
+    font-weight:bold;
+    text-transform: uppercase;
+}
+
+.node-teaser h3.method-tag-header,
+.view h3.method-tag-header {
+    margin-top:25px;
+}
+
+.node-teaser .method_details .description-header,
+.view .method_details .description-header {
+    float:left;
+    font-size: 10px;
+    font-weight:bold;
+    text-transform: uppercase;
+}
+
+.node-teaser .method_details:hover,
+.view .method_details:hover {
+    background-color: #FBFBFB;
+}
+
+.node-teaser .method_details .verb-auth,
+.node-teaser .method_details .title-description,
+.node-teaser .method_details .title-description-node,
+.view .method_details .verb-auth,
+.view .method_details .title-description,
+.view .method_details .title-description-node {
+    float:left;
+}
+
+.node-teaser .method_details .verb-auth,
+.view .method_details .verb-auth {
+    width:100px;
+}
+
+.node-teaser .method_details .title-description-node,
+.view .method_details .title-description-node {
+    max-width: 500px;
+    padding-left: 10px;
+    padding-right: 15px;
+}
+
+.node-teaser .method_details .title-description,
+.view .method_details .title-description {
+    max-width: 300px;
+    padding-left: 10px;
+}
+
+.node-teaser.method_details .description,
+.view .method_details .description {
+    float: left;
+    line-height: 20px;
+    max-width: 500px;
+}
+
+.node-teaser p.get,
+.node-teaser p.post,
+.node-teaser p.put,
+.node-teaser p.delete,
+.node-teaser p.GET,
+.node-teaser p.POST,
+.node-teaser p.PUT,
+.node-teaser p.DELETE,
+.view p.get,
+.view p.post,
+.view p.put,
+.view p.delete,
+.view p.GET,
+.view p.POST,
+.view p.PUT,
+.view p.DELETE {
+    border-radius: 3px 3px 3px 3px;
+    color: #FFFFFF;
+    float: left;
+    font-family: "Arial";
+    font-size: 11px;
+    line-height: 14px;
+    margin: 4px 0 0;
+    padding: 4px;
+    text-align: center;
+    text-transform: uppercase;
+    width: 50px;
+}
+
+.node-teaser span.icon_lock,
+.view span.icon_lock {
+    background: url("img/lock.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
+    display: inline-block;
+    float: left;
+    height: 12px;
+    margin: 8px 4px 4px;
+    width: 11px;
+}
+
+.node-teaser p.put, .node-teaser p.PUT,
+.view p.put, .view p.PUT {
+    background-color: #FA9400;
+}
+
+.node-teaser p.delete, .node-teaser p.DELETE,
+.view p.delete, .view p.DELETE {
+    background-color: #E50000;
+}
+
+.node-teaser p.get, .node-teaser p.GET,
+.view p.get, .view p.GET {
+    background-color: #008BFA;
+}
+
+.node-teaser p.post, .node-teaser p.POST,
+.view p.post, .view p.POST {
+    background-color: #15B946;
+}
+
+.node-teaser .method_details .title p.resource_path,
+.view .method_details .title p.resource_path {
+    margin:0;
+    padding:0;
+    padding-top:5px;
+    color: #AAAAAA;
+}
+
+.node-teaser .method_details,
+.view .method_details {
+    line-height:13px;
+}
+
+.node-teaser .resource_summary h4,
+.view .resource_summary h4 {
+    font-size: 16px;
+    margin: 0;
+    padding-bottom: 4px;
+}
+
+.node-teaser .resource_summary div.field-item,
+.view .resource_summary div.field-item {
+    float:right;
+    clear:both;
+}
+
+.node-teaser .resource_summary .row,
+.view .resource_summary .row {
+    margin-top:15px;
+}
+
+.node-teaser .table-condensed td,
+.view .table-condensed td {
+    word-break:break-all;
+}
+
+.node-teaser .table-condensed,
+.view .table-condensed {
+    table-layout: fixed
+}
+
+.node-teaser h2.subtitle,
+.view h2.subtitle {
+    float: inherit;
+    width: auto;
+}
+
+.node-teaser #resource_URL input,
+.view #resource_URL input {
+    position:relative;
+    top:4px;
+}
+
+.page-taxonomy .node-teaser footer {
+    display:none;
+}
+
+body.page-node #container #content,
+body.page-node #container #index_container {
+    width:100%;
+    border-right:0;
+}
+
+body.page-node #container h2 {
+    width:610px;
+    padding-bottom:15px;
+    font-family: "ars_maquette_proregular", Arial,sans-serif;
+}

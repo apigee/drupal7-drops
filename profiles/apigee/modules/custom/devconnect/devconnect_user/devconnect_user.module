@@ -370,8 +370,13 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     unset($edit['already_in_kms']);
     return;
   }
-  // Don't try to update users in KMS if devconnect_org hasn't been set yet.
-  if (variable_get('devconnect_org', DEVCONNECT_APIGEE_DEFAULT_ORG) == DEVCONNECT_APIGEE_DEFAULT_ORG) {
+  // Don't update user 1
+  if (is_object($account) && property_exists($account, 'uid') && $account->uid == 1) {
+    return;
+  }
+  // Don't try to update users in KMS if org hasn't been configured yet.
+  $config = Drupal::config('devconnect.settings');
+  if ($config->get('org') == 'fixme') {
     return;
   }
 
@@ -453,14 +458,12 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
 
   $entity['status'] = ($edit['status'] || (property_exists($account, 'status') && $account->status) ? 'active' : 'inactive');
 
-  try {
-    entity_save('developer', $entity);
-    $results = devconnect_get_debug_data();
-  } catch (Exception $e) {
-    $results = devconnect_get_debug_data();
-    Log::write('devconnect_user', Log::LOGLEVEL_ERROR, print_r($results, TRUE));
+  $saved = entity_save('developer', $entity);
+  $results = devconnect_get_debug_data();
+  if (!$saved) {
+    devconnect_default_api_client()->logger->error(print_r($results, TRUE));
 
-    if (user_access('administer users')) {
+    if (user_access('view devconnect errors')) {
       $summary = t('An error occurred while trying to @action this user. Please try again later.', array('@action' => $action));
       $detail = t('Status: @code @status', array(
           '@code' => $results['code'],
@@ -474,7 +477,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     $function = $module . '_devconnect_user_save';
     $function($results, $edit, $account);
   }
-  Log::write('devconnect_user', Log::LOGLEVEL_DEBUG, print_r($results, TRUE));
+  devconnect_default_api_client()->logger->debug(print_r($results, TRUE));
 }
 
 function _devconnect_user_scrub_attribute($field_value) {
@@ -501,21 +504,25 @@ function _devconnect_user_scrub_attribute($field_value) {
  * @param $account
  */
 function devconnect_user_user_delete($account) {
-
-  // Don't try to delete users from KMS if devconnect_org hasn't been set yet.
-  if (variable_get('devconnect_org', DEVCONNECT_APIGEE_DEFAULT_ORG) == DEVCONNECT_APIGEE_DEFAULT_ORG) {
+  // Don't try to delete users from KMS if org hasn't been configured yet.
+  $config = Drupal::config('devconnect.settings');
+  if ($config->get('org') == 'fixme') {
+    return;
+  }
+  // Don't update anonymous or user 1
+  if (property_exists($account, 'uid') && $account->uid < 2) {
     return;
   }
 
-  $log_level = Log::LOGLEVEL_DEBUG;
+  $log_level = 'debug';
   try {
     entity_delete('developer', $account->mail);
   }
   catch (Exception $e) {
-    $log_level = Log::LOGLEVEL_ERROR;
+    $log_level = 'error';
   }
   $results = devconnect_get_debug_data();
-  Log::write('devconnect_user', $log_level, print_r($results, TRUE));
+  devconnect_default_api_client()->logger->$log_level(print_r($results, TRUE));
   module_invoke_all('devconnect_user_delete', $results, $account);
 }
 
@@ -560,11 +567,10 @@ function devconnect_user_redirect_alter(&$redirect) {
 function devconnect_user_get_developer_id($user) {
   if (!isset($_SESSION['developer_id'])) {
     try {
-      $entity = entity_load('developer', array($user->mail));
+      $entity = entity_load_single('developer', $user->mail);
       if (empty($entity)) {
         return FALSE;
       }
-      $entity = reset($entity);
       $_SESSION['developer_id'] = $entity['developerId'];
     }
     catch (Exception $e) {
@@ -759,12 +765,16 @@ function _devconnect_user_save_entity($user) {
   $account = user_load($user->uid);
   $values = array(
     'email' => $account->mail,
-    'firstName' => $account->field_first_name[LANGUAGE_NONE][0]['value'],
-    'lastName' => $account->field_last_name[LANGUAGE_NONE][0]['value'],
     'userName' => $account->name,
     'status' => ($account->status ? 'active' : 'inactive'),
     'attributes' => array()
   );
+  if (property_exists($account, 'field_first_name') && array_key_exists(LANGUAGE_NONE, $account->field_first_name) && array_key_exists(0, $account->field_first_name[LANGUAGE_NONE]) && array_key_exists('value', $account->field_first_name[LANGUAGE_NONE][0])) {
+    $values['firstName'] = $account->field_first_name[LANGUAGE_NONE][0]['value'];
+  }
+  if (property_exists($account, 'field_last_name') && array_key_exists(LANGUAGE_NONE, $account->field_last_name) && array_key_exists(0, $account->field_last_name[LANGUAGE_NONE]) && array_key_exists('value', $account->field_last_name[LANGUAGE_NONE][0])) {
+    $values['lastName'] = $account->field_last_name[LANGUAGE_NONE][0]['value'];
+  }
   $vars = get_object_vars($account);
   foreach ($vars as $key => $value) {
     if (substr($key, 0, 10) == 'attribute_') {
@@ -808,7 +818,7 @@ function devconnect_user_sync() {
   // Fetch list of users in Drupal
   $stmt = db_select('users', 'u')
     ->fields('u', array('mail', 'uid'))
-    ->condition('u.uid', 0, '>')
+    ->condition('u.uid', 1, '>')
     ->execute();
   $drupal_users = array();
   while ($user_data = $stmt->fetchAssoc()) {

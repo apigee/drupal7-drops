@@ -1,4 +1,0 @@
-name = Devconnect Validation Module
-description = Responses for build servers to verify builds
-core = 7.x
-package = DevConnect

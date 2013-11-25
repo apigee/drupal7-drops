@@ -66,10 +66,12 @@ function apachesolr_search_init() {
           try {
             if (!empty($search_page['search_path'])) {
               $solr = apachesolr_get_solr($search_page['env_id']);
+              $conditions = apachesolr_search_conditions_default($search_page);
+
               // Initializes params for empty query.
               $params = array(
                 'spellcheck' => 'false',
-                'fq' => array(),
+                'fq' => isset($conditions['fq']) ? $conditions['fq'] : array(),
                 'rows' => 1,
               );
               $context['page_id'] = $search_page_id;
@@ -1351,9 +1353,9 @@ function apachesolr_search_process_response($response, DrupalSolrQueryInterface 
       );
 
       // Call entity-type-specific callbacks for extra handling.
-      $function = apachesolr_entity_get_callback($doc->entity_type, 'result callback', $bundle);
-      if (is_callable($function)) {
-        $function($doc, $result, $extra);
+      $result_callback = apachesolr_entity_get_callback($doc->entity_type, 'result callback', $bundle);
+      if (is_callable($result_callback)) {
+        $result_callback($doc, $result, $extra);
       }
 
       $result['extra'] = $extra;
@@ -1363,8 +1365,8 @@ function apachesolr_search_process_response($response, DrupalSolrQueryInterface 
   }
   // Hook to allow modifications of the retrieved results
   foreach (module_implements('apachesolr_process_results') as $module) {
-    $function = $module . '_apachesolr_process_results';
-    $function($results, $query);
+    $process_results_callback = $module . '_apachesolr_process_results';
+    $process_results_callback($results, $query);
   }
   return $results;
 }
@@ -1383,14 +1385,21 @@ function apachesolr_search_get_search_suggestions($env_id) {
     // Get spellchecker suggestions into an array.
     if (!empty($response->spellcheck->suggestions)) {
       $suggestions = get_object_vars($response->spellcheck->suggestions);
+      // allow the suggestions to be altered before processing
+      drupal_alter('apachesolr_suggestions', $suggestions, $env_id);
+
       if ($suggestions) {
         $replacements = array();
         // Get the original query and retrieve all words with suggestions.
         foreach ($suggestions as $word => $value) {
-          $replacements[$word] = $value->suggestion[0];
+          $suggestion = $value->suggestion;
+          // We need to check if it's an object as setting the spellcheck.extendedResults query parameter to true makes words
+          // objects instead of strings.
+          $replacements[$word] = is_object($suggestion[0]) ? $suggestion[0]->word : $suggestion[0];
         }
         // Replace the keyword with the suggested keyword.
         $suggested_keyword = strtr($keyword, $replacements);
+
         // Show only if suggestion is different than current query.
         if ($keyword != $suggested_keyword) {
           $suggestions_output[] = $suggested_keyword;

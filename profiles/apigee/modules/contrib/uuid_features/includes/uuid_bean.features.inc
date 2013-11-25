@@ -10,13 +10,13 @@
 function uuid_bean_features_export_options() {
   $options = array();
   if (module_exists("bean_uuid")) {
-    $query = 'SELECT b.bid, b.title, b.type, b.uuid
-      FROM {bean} b ORDER BY b.type, b.title ASC';
+    $query = 'SELECT b.bid, b.delta, b.type, b.uuid
+      FROM {bean} b ORDER BY b.type, b.delta ASC';
     $results = db_query($query);
     foreach ($results as $bean) {
-      $options[$bean->uuid] = t('@type: @title', array(
+      $options[$bean->uuid] = t('@type: @delta', array(
         '@type' => $bean->type,
-        '@title' => $bean->title,
+        '@delta' => $bean->delta,
       ));
     }
   }

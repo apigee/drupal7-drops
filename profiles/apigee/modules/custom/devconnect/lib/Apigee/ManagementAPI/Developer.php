@@ -11,7 +11,6 @@ namespace Apigee\ManagementAPI;
 
 use \Apigee\Exceptions\ResponseException;
 use \Apigee\Exceptions\ParameterException;
-use \Apigee\Util\APIClient;
 
 class Developer extends Base implements DeveloperInterface {
 
@@ -144,11 +143,10 @@ class Developer extends Base implements DeveloperInterface {
   /**
    * Initializes default values of all member variables.
    *
-   * @param \Apigee\Util\APIClient $client
+   * @param \Apigee\Util\OrgConfig $client
    */
-  public function __construct(APIClient $client) {
-    $this->init($client);
-    $this->baseUrl = '/organizations/' . $this->urlEncode($client->getOrg()) . '/developers';
+  public function __construct(\Apigee\Util\OrgConfig $config) {
+    $this->init($config, '/o/' . $this->urlEncode($config->orgName) . '/developers');
     $this->blankValues();
   }
 
@@ -160,9 +158,8 @@ class Developer extends Base implements DeveloperInterface {
    *    developerId.
    */
   public function load($email) {
-    $url = $this->baseUrl . '/' . $this->urlEncode($email);
-    $this->client->get($url);
-    $developer = $this->getResponse();
+    $this->get($this->urlEncode($email));
+    $developer = $this->responseObj;
     self::loadFromResponse($this, $developer);
   }
 
@@ -200,11 +197,10 @@ class Developer extends Base implements DeveloperInterface {
    * @return bool
    */
   public function validate($email = NULL) {
-    if (isset($email)) {
-      $url = $this->baseUrl . '/' . $this->urlEncode($email);
+    if (!empty($email)) {
       try {
-        $this->client->get($url);
-        return $this->client->wasSuccessful();
+        $this->get($this->urlEncode($email));
+        return TRUE;
       }
       catch (ResponseException $e) { }
     }
@@ -263,20 +259,19 @@ class Developer extends Base implements DeveloperInterface {
         $payload['attributes'][] = array('name' => $name, 'value' => $value);
       }
     }
-    $url = $this->baseUrl;
+    $url = NULL;
     if ($force_update || $this->createdAt) {
       if ($this->developerId) {
         $payload['developerId'] = $this->developerId;
       }
-      $url .= '/' . $this->urlEncode($this->email);
+      $url = $this->urlEncode($this->email);
     }
     if ($force_update) {
-      $this->client->put($url, $payload);
+      $this->put($url, $payload);
     }
     else {
-      $this->client->post($url, $payload);
+      $this->post($url, $payload);
     }
-    $this->getResponse();
   }
 
   /**
@@ -287,11 +282,8 @@ class Developer extends Base implements DeveloperInterface {
    * @param null|string $email
    */
   public function delete($email = NULL) {
-    if (!isset($email)) {
-      $email = $this->email;
-    }
-    $this->client->delete($this->baseUrl . '/' . $this->urlEncode($email));
-    $this->getResponse();
+    $email = $email ?: $this->email;
+    $this->http_delete($this->urlEncode($email));
     if ($email == $this->email) {
       $this->blankValues();
     }
@@ -303,8 +295,8 @@ class Developer extends Base implements DeveloperInterface {
    * @return array
    */
   public function listDevelopers() {
-    $this->client->get($this->baseUrl);
-    $developers = $this->getResponse();
+    $this->get();
+    $developers = $this->responseObj;
     return $developers;
   }
 
@@ -314,12 +306,11 @@ class Developer extends Base implements DeveloperInterface {
    * @return array
    */
   public function loadAllDevelopers() {
-    $url = $this->baseUrl . '?expand=true';
-    $this->client->get($url);
-    $developers = $this->getResponse();
+    $this->get('?expand=true');
+    $developers = $this->responseObj;
     $out = array();
     foreach ($developers['developer'] as $dev) {
-      $developer = new Developer($this->client);
+      $developer = new Developer($this->config);
       self::loadFromResponse($developer, $dev);
       $out[] = $developer;
     }
@@ -379,7 +370,6 @@ class Developer extends Base implements DeveloperInterface {
   public function toArray() {
     $properties = array_keys(get_object_vars($this));
     $excluded_properties = array_keys(get_class_vars(get_parent_class($this)));
-    $excluded_properties[] = 'baseUrl';
     $output = array();
     foreach ($properties as $property) {
       if (!in_array($property, $excluded_properties)) {
@@ -398,7 +388,7 @@ class Developer extends Base implements DeveloperInterface {
    */
   public function fromArray($array) {
     foreach($array as $key => $value) {
-      if (property_exists($this, $key) && $key != 'debugData' && $key != 'baseUrl') {
+      if (property_exists($this, $key) && $key != 'debugData') {
         $this->{$key} = $value;
       }
     }

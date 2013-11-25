@@ -34,20 +34,6 @@ while [[ $found_bundle -ne 1 ]]; do
   fi
 done
 
-if [[ ! -f ${BUNDLE_ROOT}/system-architecture ]] ; then
-  display_error "The bundle was created with an older version of standalone-bundle-creator.sh.\
-    Please re-create the bundle with the latest version and try again."
-  exit 1
-fi
-BUNDLE_ARCHITECTURE="$( cat ${BUNDLE_ROOT}/system-architecture )"
-SYSTEM_ARCHITECTURE="$( echo "${PLATFORM_NAME}-${PLATFORM_MAJOR_VERSION}-${PLATFORM_ARCHITECTURE}" | tr '[A-Z]' '[a-z]' )"
-if [[ "$BUNDLE_ARCHITECTURE" != "$SYSTEM_ARCHITECTURE" ]]; then
-  display_error "The bundle was created for a different architecture.\
-  Bundle architecture: ${BUNDLE_ARCHITECTURE}\
-  System architecture: ${SYSTEM_ARCHITECTURE}"
-  exit 1
-fi
-
 # Make sure Red Hat is properly registered
 #source ${SCRIPT_PATH}/tasks/validate-rhn-repos.sh
 
@@ -58,11 +44,11 @@ echo "*************************************************************************"
 
 source ${SCRIPT_PATH}/tasks/configure-devportal-repo.sh
 source ${SCRIPT_PATH}/tasks/install-required-packages.sh
-source ${SCRIPT_PATH}/tasks/install-apigee-rpm.sh
 source ${SCRIPT_PATH}/tasks/set-php-timezone.sh
 source ${SCRIPT_PATH}/tasks/configure-selinux.sh
 source ${SCRIPT_PATH}/tasks/configure-vhost.sh
 source ${SCRIPT_PATH}/tasks/install-mysql.sh
+source ${SCRIPT_PATH}/tasks/install-apigee-rpm.sh
 source ${SCRIPT_PATH}/tasks/install-pear-bundle.sh
 
 ## -----------------------------------------------------

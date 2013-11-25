@@ -9,20 +9,9 @@
 
 namespace Apigee\ManagementAPI;
 
-use Apigee\Exceptions\ResponseException as ResponseException;
-use Apigee\Util\APIClient as APIClient;
-use Apigee\Util\Log as Log;
+use Apigee\Exceptions\ResponseException;
 
 class Base extends \Apigee\Util\APIObject {
-
-  /**
-   * Initializes the APIClient for this class.
-   *
-   * @param \Apigee\Util\APIClient $client
-   */
-  protected function init(APIClient $client) {
-    parent::init($client);
-  }
 
   /**
    * URL-encodes parts of a KMS path.
@@ -44,7 +33,7 @@ class Base extends \Apigee\Util\APIObject {
    * @return array
    */
   public function getDebugData() {
-    return $this->debugData;
+    return \Apigee\Util\DebugData::toArray();
   }
 
   /**
@@ -61,7 +50,7 @@ class Base extends \Apigee\Util\APIObject {
         if ($name == 'apiResourcesInfo' && is_array($value)) {
           $value = json_encode($value);
         }
-        $payload['attributes'][] = array('name' => $name, 'value' => $value);
+        $payload['attributes'][] = array('name' => $name, 'value' => (string)$value);
       }
     }
   }

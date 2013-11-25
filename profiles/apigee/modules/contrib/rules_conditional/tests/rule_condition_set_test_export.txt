@@ -1,0 +1,15 @@
+{ "rule_condition_set_test" : {
+    "PLUGIN" : "rule condition set",
+    "REQUIRES" : [ "rules_conditional", "rules" ],
+    "USES VARIABLES" : { "test" : { "type" : "text", "label" : "Test" } },
+    "DO" : [
+      { "variable_add" : {
+          "USING" : { "type" : "text" },
+          "PROVIDE" : { "variable_added" : { "test2" : "Test 2" } }
+        }
+      },
+      { "data_set" : { "data" : [ "test2" ], "value" : [ "test" ] } }
+    ],
+    "RESULT" : [ { "data_is" : { "data" : [ "test2" ], "value" : "condition set" } } ]
+  }
+}

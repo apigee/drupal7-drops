@@ -583,7 +583,16 @@ function features_var_export($var, $prefix = '', $init = TRUE, $count = 0) {
     $output = intval($var);
   }
   else if (is_numeric($var)) {
-    $output = floatval($var);
+    $floatval = floatval($var);
+    if (is_string($var) && ((string) $floatval !== $var)) {
+      // Do not convert a string to a number if the string
+      // representation of that number is not identical to the
+      // original value.
+      $output = var_export($var, TRUE);
+    }
+    else {
+      $output = $floatval;
+    }
   }
   else if (is_string($var) && strpos($var, "\n") !== FALSE) {
     // Replace line breaks in strings with a token for replacement

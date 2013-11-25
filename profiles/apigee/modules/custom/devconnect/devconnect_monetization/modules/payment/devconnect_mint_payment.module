@@ -1,0 +1,415 @@
+<?php
+
+use Apigee\Mint\CurrencyISO4217;
+use Apigee\Mint\Developer;
+use Apigee\Mint\DeveloperBalance;
+use Apigee\Mint\Provider;
+use Apigee\Util\CacheFactory;
+use Apigee\Mint\RatePlan;
+use Apigee\Mint\DeveloperRatePlan;
+use Apigee\Mint\Organization as Organization;
+use Apigee\Mint\Exceptions\MintApiException as MintApiException;
+
+/**
+ *
+ * Implement callback_submit_form
+ *
+ * This forms is shown to the user when they select the payment provider.
+ * And it is shown either if there is no recurring payment for this currency or
+ * if the very first time they top up for this currency
+ *
+ * @param $payment_method
+ * @param $pane_values
+ * @param $checkout_pane
+ * @param $order
+ *
+ * @return array
+ */
+function devconnect_mint_payment_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+
+
+  $config = devconnect_monetization_default_org_config();
+  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+
+  $form = array(
+    '#payment_method' => $payment_method,
+    '#pane_values' => $pane_values,
+    '#checkout_pane' => $checkout_pane,
+    '#order' => $order,
+    'debug' => array(
+      //'#markup' => '<pre>' . print_r($payment_method, TRUE) . '</pre>',
+    ),
+  );
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $currencyId = strtolower($order_wrapper->commerce_order_total->currency_code->value());
+
+  $developerBalanceAPIObj = new DeveloperBalance($developer_id, $config);
+  $developerBalance = $developerBalanceAPIObj->getByCurrencyId($currencyId);
+
+  // If first top up on this currency or if is not recurring on this currency
+  // then show the recurring form
+  if (isset($developerBalance) && !$developerBalance->isRecurring() && variable_get('devconnect_monetization_recurring_enabled', FALSE)) {
+
+    $form['#attributes']['class'][] = 'form-horizontal';
+
+    $form['recurring_payment'] = array(
+      '#title' => t('Recurring Payment'),
+      '#type' => 'fieldset',
+      '#collapsible' => FALSE,
+    );
+
+    $form['recurring_payment']['is_recurring'] = array(
+      '#title' => t('Enable recurring payment'),
+      '#type' => 'radios',
+      '#required' => TRUE,
+      '#options' => array(
+        'isRecurring' => t('Yes'),
+        'chargePerUsage' => t('No'),
+      ),
+      '#default_value' => 'no',
+    );
+    $form['recurring_payment']['recurring_amount'] = array(
+      '#title' => t('Recurring Amount'),
+      '#type' => 'textfield',
+      '#description' => t('Amount to be topped up recurrently'),
+      '#default_value' => devconnect_monetization_format_amount($developerBalance->getSupportedCurrency()->minimumRecurringAmount, $currencyId),
+      '#disabled' => TRUE,
+      '#attributes' => array(
+        'class' => array(
+          'numeric',
+          'currency',
+        ),
+        'currency' => strtoupper($currencyId),
+        'minimum' => $developerBalance->getSupportedCurrency()->minimumRecurringAmount,
+      ),
+    );
+    $form['recurring_payment']['replenish_amount'] = array(
+      '#title' => t('Replenish Amount'),
+      '#type' => 'textfield',
+      '#default_value' => devconnect_monetization_format_amount($developerBalance->getSupportedCurrency()->minimumRecurringAmount, $currencyId),
+      '#description' => t('Once your balance reaches this amount, another payment will be triggered'),
+      '#disabled' => TRUE,
+      '#attributes' => array(
+        'class' => array(
+          'numeric',
+          'currency',
+        ),
+        'currency' => strtoupper($currencyId),
+        'minimum' => 0,
+      ),
+    );
+
+    $form['#attached']['js'][] = array(
+      'data' => drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js',
+      'type' => 'file',
+    );
+  }
+
+  $message = t('(Continue with checkout to complete payment.)');
+  if (module_hook($payment_method['module'], 'mint_continue_complete_message')) {
+    $message = module_invoke($payment_method['module'], 'mint_continue_complete_message');
+  }
+  $form['continue_complete_message'] = array(
+    '#markup' => $message,
+  );
+
+  return $form;
+}
+
+/**
+ *
+ * Implement callback_submit_form_validate
+ *
+ * @param array $payment_method
+ * @param array $pane_form
+ * @param array|mixed $pane_values
+ * @param object $order
+ * @param array $form_parents
+ *
+ * @return bool
+ */
+function devconnect_mint_payment_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  $is_recurring = ($pane_form['is_recurring']['#value'] == 'isRecurring');
+  if ($is_recurring) {
+    $recurring = $_POST['commerce_payment']['payment_method']['payment_details']['recurring_payment'];
+    $valid = TRUE;
+
+    // Values are cast to string and then to float to ensure float formatting
+    $recurring_amount = $recurring['recurring_amount'] * 1.0;
+    $replenish_amount = $recurring['replenish_amount'] * 1.0;
+    if ($recurring_amount <= 0) {
+      drupal_set_message(t('Recurring amount must be a valid numeric value and greater than 0.'), 'error');
+      $valid = FALSE;
+    }
+
+    if (strlent($pane_form['replenish_amount']['#value']) && $replenish_amount == 0) {
+      drupal_set_message(t('Replenish amount must be a valid numeric value.'), 'error');
+      $valid = FALSE;
+    }
+    if (!($recurring_amount > $replenish_amount)) {
+      drupal_set_message(t('Recurring amount must be greater than replenish amount.'), 'error');
+      $valid = FALSE;
+    }
+    return $valid;
+  }
+}
+
+/**
+ * Implement callback_submit_form_submit
+ *
+ * @param $payment_method
+ * @param $pane_form
+ * @param $pane_values
+ * @param $order
+ * @param $charge
+ */
+function devconnect_mint_payment_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  if (isset($_POST['commerce_payment']['payment_details']['recurring_payment']['is_recurring'])) {
+    $order->data['devconnect_mint_pane_values'] = $_POST['commerce_payment']['payment_details']['recurring_payment'];
+  }
+  else {
+    $order->data['devconnect_mint_pane_values'] = NULL;
+  }
+  $order->data['devconnect_mint_payment_method'] = $payment_method;
+  commerce_order_save($order);
+}
+
+/**
+ * Implements callback_redirect_form
+ *
+ * @param $form
+ * @param $form_state
+ * @param $order
+ * @param $payment_method
+ *
+ * @return array
+ */
+function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $payment_method, $address = NULL) {
+
+  $config = devconnect_monetization_default_org_config();
+  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $currency_code = strtolower($order_wrapper->commerce_order_total->currency_code->value());
+
+  $currencies = CurrencyISO4217::getList();
+  $currency_factor = pow(10, $currencies[strtoupper($currency_code)]->minorUnit);
+
+  $amount = $order_wrapper->commerce_order_total->amount->value() / $currency_factor;
+
+  $provider = module_invoke($payment_method['module'], 'mint_provider_id');
+
+  $parameters = array(
+    'supportedCurrencyId' => $currency_code,
+    'provider' => $provider,
+    'amount' => $amount,
+  );
+
+  $recurring = $order->data['devconnect_mint_pane_values'];
+  if (isset($recurring) && $recurring['is_recurring'] == 'isRecurring') {
+    $parameters['isRecurring'] = 'true';
+    $parameters['recurringAmount'] = $recurring['recurring_amount'];
+    $parameters['replenishAmount'] = $recurring['replenish_amount'];
+  }
+  else {
+    $parameters['chargePerUsage'] = 'true';
+  }
+
+  $profile = commerce_customer_profile_load($order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id']);
+
+  // Get user billing address.
+  if (!isset($address)) {
+    $address = $profile->commerce_customer_address[LANGUAGE_NONE][0];
+  }
+  $payload = devconnect_mint_payment_build_address_payload($address);
+
+  $developer = new Developer($config);
+  $developer->setEmail($developer_id);
+  $payment = $developer->createPayment($parameters, $payload);
+  $form = module_invoke($payment_method['module'], 'mint_dispatch_redirect_form', $form, $form_state, $order, $payment_method, $payment);
+  return $form;
+}
+
+
+function devconnect_mint_payment_build_address_payload($values) {
+  $doc = new DOMDocument();
+  $doc->formatOutput = true;
+  $doc->appendChild($doc->createElementNS('http://www.apigee.com/monetization-service', 'address'))
+  ->appendChild($doc->createElement('address1', $values['thoroughfare']))->parentNode
+    ->appendChild($doc->createElement('address2', $values['premise']))->parentNode
+    ->appendChild($doc->createElement('city', $values['locality']))->parentNode
+    ->appendChild($doc->createElement('country', $values['country']))->parentNode
+    ->appendChild($doc->createElement('state', $values['administrative_area']))->parentNode
+    ->appendChild($doc->createElement('zip', $values['postal_code']));
+  return $doc->saveXML();
+}
+
+/**
+ * Implement hook_form_FORM_ID_alter()
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_mint_payment_form_commerce_checkout_form_checkout_alter(&$form, &$form_state) {
+
+  $country_callback = &$form['customer_profile_billing']['commerce_customer_address'][LANGUAGE_NONE][0]['country']['#ajax'];
+
+  $country_callback['effect'] = 'slide';
+  $country_callback['prevent'] = 'click';
+
+  $form['#attributes']['class'][] = 'form-horizontal';
+  $form['#attached']['js'][] = array(
+    'data' => drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js',
+    'type' => 'file',
+  ) ;
+
+  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+  $user = user_load_by_mail($developer_id);
+
+  $account = entity_load('user', array($user->uid));
+  $account = $account[$user->uid];
+
+  $client = devconnect_monetization_default_org_config();
+  $developer = new Developer($client);
+  $developer->load($developer_id);
+
+  $address = NULL;
+  foreach ($developer->getAddresses() as $address_item) {
+    if ((is_array($address_item) && $address_item['isPrimary']) || (is_object($address_item) && $address_item->isPrimary())) {
+      $address = is_array($address_item) ? (object) $address_item : $address_item;
+      break;
+    }
+  }
+
+  if (is_object($address)) {
+    $address_profile = &$form['customer_profile_billing']['commerce_customer_address'][LANGUAGE_NONE][0]['#address'];
+    $address_profile['name_line'] = $developer->getLegalName();
+    $address_profile['thoroughfare'] = $address->getAddress1();
+    $address_profile['premise'] = $address->getAddress2();
+    $address_profile['locality'] = $address->getCity();
+    $address_profile['first_name'] = isset($account->field_first_name[LANGUAGE_NONE][0]['value']) ? $account->field_first_name[LANGUAGE_NONE][0]['value'] : '';
+    $address_profile['last_name'] = isset($account->field_last_name[LANGUAGE_NONE][0]['value']) ? $account->field_last_name[LANGUAGE_NONE][0]['value'] : '';
+    $address_profile['organisation_name'] = $developer->getConfig()->orgName;
+    $address_profile['administrative_area'] = $address->getState();
+    $address_profile['postal_code'] = $address->getZip();
+    drupal_add_js(array('devconnect_mint_payment' => array('initial_address_country' => $address->getCountry())), 'setting');
+  }
+}
+
+
+function devconnect_mint_payment_theme($existing, $type, $theme, $path) {
+  $items = array();
+  $template_path = drupal_get_path('module', 'devconnect_mint_payment') . '/templates';
+
+  $items['devconnect_mint_payment_review_pane_1'] = array(
+    'template'  => 'review-pane-1',
+    'arguments' => array('user' => NULL),
+    'path'      => $template_path
+  );
+
+  return $items;
+}
+
+function devconnect_mint_payment_commerce_checkout_pane_info(){
+  $panes = array();
+  $panes['devconnect_mint_payment_review_top_up_details_pane'] = array(
+    'title' => 'Top up details',
+    'page' => 'review',
+    'enabled' => TRUE,
+    'review' => FALSE,
+    'fieldset' => TRUE,
+    'collapsible' => FALSE,
+    'collapsed' => FALSE,
+    'base' => 'devconnect_mint_payment_review_top_up_details_pane',
+  );
+  return $panes;
+}
+
+function devconnect_mint_payment_review_top_up_details_pane_checkout_form(&$form, $form_state, $checkout_pane, $order) {
+
+  $config = devconnect_monetization_default_org_config();
+  $org = new Organization($config);
+  $org->load();
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $currency_code = strtolower($order_wrapper->commerce_order_total->currency_code->value());
+
+  $currencies = CurrencyISO4217::getList();
+  $currency_factor = pow(10, $currencies[strtoupper($currency_code)]->minorUnit);
+
+  $amount = $order_wrapper->commerce_order_total->amount->value() / $currency_factor;
+
+  $variables = array(
+    'order' => $order,
+    'api_provider' => $org->getDescription(),
+    'amount' => $amount,
+  );
+
+  $form = array();
+  $form['review_pane_1'] = array(
+    '#type' => 'item',
+    '#markup' => theme('devconnect_mint_payment_review_pane_1', $variables),
+  );
+  $form['#attached']['js'][] = array(
+    'data' => drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js',
+    'type' => 'file',
+  );
+  return $form;
+}
+
+function devconnect_mint_payment_purchase_plan($order) {
+
+  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+  $config = devconnect_monetization_default_org_config();
+  $package_id = $order->data['purchase']['packageid'];
+  $rate_plan_id = $order->data['purchase']['planid'];
+  $submitted_start_date = $order->data['purchase']['date'];
+
+  $developer_rate_plan = new DeveloperRatePlan($developer_id, $config);
+  $rate_plan = new RatePlan($package_id, $config);
+  $rate_plan->load($rate_plan_id);
+  $order->data['purchase']['plan_name'] = $rate_plan->getDisplayName();
+  $order->data['purchase']['package_name'] = $rate_plan->getMonetizationPackage()->getDisplayName();
+  $developer_rate_plan->setRatePlan($rate_plan);
+
+  $org_timezone = new DateTimeZone($rate_plan->getOrganization()->getTimezone());
+  $utc_timezone = new DateTimeZone('UTC');
+  $separator = strpos($submitted_start_date, '/') > 0 ? '/' : '-';
+  $submitted_start_date .= ' 00:00:00';
+  $start_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $submitted_start_date, $org_timezone);
+  $start_date->setTimezone($utc_timezone);
+
+  try{
+    $developer_rate_plan->setId(NULL);
+    $developer_rate_plan->setStartDate($start_date->format('Y-m-d H:i:s'));
+    // We overlap since all previous validation has been performed.
+    $developer_rate_plan->force_save();
+    $order->data['purchase']['complete'] = TRUE;
+    CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
+    $order->data['purchase']['complete'] = TRUE;
+    module_invoke_all('devconnect_monetization_plan_purchased', $developer_rate_plan);
+    $vars = array(
+      '@developer' => $developer_id,
+      '@package' => $package_id,
+      '@plan' => $rate_plan_id,
+    );
+    $message = t('Plan @plan from package @package has been purchased by @developer.', $vars);
+    Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
+
+  }
+  catch(\Exception $e) {
+    Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
+  }
+  commerce_order_save($order);
+
+  $vars = array(
+    '%developer' => $developer_id,
+    '%email' => $order->mail,
+    '%amount' => sprintf('%.2f', $amount['amount']/100),
+    '%currency' => $amount['currency_code'],
+    '@company_id' => $developer_id,
+  );
+  $message = t('Developer %developer with %email has topped up %amount %currency on behalf of @company_id\'s balance and updated Mint back end.', $vars);
+  Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
+}
+

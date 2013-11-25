@@ -6,19 +6,21 @@ class MintTest extends DrupalWebTestCase{
 
   protected $privileged_user;
 
-  protected $client;
+  protected $config;
 
   public function setUp($args) {
 
-    $org = variable_get('devconnect_org', DEVCONNECT_APIGEE_DEFAULT_ORG);
-    $endpoint = variable_get('devconnect_endpoint', DEVCONNECT_APIGEE_DEFAULT_ENDPOINT);
-    $curl_auth = variable_get('devconnect_curlauth', DEVCONNECT_APIGEE_DEFAULT_USER . ':' . DEVCONNECT_APIGEE_DEFAULT_PASSWORD);
+    $config = Drupal::config('devconnect.settings');
+
+    $org = $config->get('org');
+    $endpoint = $config->get('endpoint');
+    $username = $config->get('user');
+    $password = \Apigee\Util\Crypto::decrypt($config->get('pass'));
+    $curl_auth = "$username:$password";
     $morg = variable_get('devconnect_monetization_org', $org);
     $mendpoint = variable_get('devconnect_monetization_endpoint', $endpoint);
     $mcurl_auth = variable_get('devconnect_monetization_curlauth', $curl_auth);
-    $curl_auth2 = devconnect_get_endpoint_auth($curl_auth);
-    list($username, $password) = explode(':', $curl_auth2, 2);
-    $this->client = Apigee\Util\APIClient::getInstance($endpoint, $org, $username, $password);
+    $this->config = new \Apigee\Util\OrgConfig($org, $endpoint, $username, $password);
     // Now make the switch to the sandbox.
     parent::setUp($args);
     if (empty($org) || empty($endpoint) || empty($curl_auth)) {
@@ -28,9 +30,6 @@ class MintTest extends DrupalWebTestCase{
     variable_set('devconnect_monetization_org', $morg);
     variable_set('devconnect_monetization_endpoint', $mendpoint);
     variable_set('devconnect_monetization_curlauth', $mcurl_auth);
-    variable_set('devconnect_org', $org);
-    variable_set('devconnect_endpoint', $endpoint);
-    variable_set('devconnect_curlauth', $curl_auth);
 
     $perms = func_get_arg(1);
 
@@ -49,7 +48,7 @@ class CompanyInfoSaveTest extends MintTest {
   }
 
   public function setUp() {
-    parent::setUp(array('devconnect_monetization'), array('edit company profile'));
+    parent::setUp(array('devconnect_monetization'), array('mint edit company profile'));
   }
 
   public function testSaveCompanyInfo() {
@@ -60,7 +59,7 @@ class CompanyInfoSaveTest extends MintTest {
     $edit['zip_code'] = 12345;
     $this->drupalPost('users/me/monetization/company/edit', $edit, t('Save Changes'));
     $this->assertText(t('Your Company Profile Info has been saved.'));
-    $developer = new Developer($this->client);
+    $developer = new Developer($this->config);
     $developer->delete($this->privileged_user->mail);
   }
 }
@@ -76,7 +75,7 @@ class CompanyInfoEditTest extends MintTest {
   }
 
   public function setUp() {
-    parent::setUp(array('devconnect_monetization'), array('edit company profile'));
+    parent::setUp(array('devconnect_monetization'), array('edit mint company profile'));
   }
 
   public function testEditCompanyInfo() {
@@ -89,7 +88,7 @@ class CompanyInfoEditTest extends MintTest {
     $this->assertText(t('Your Company Profile Info has been saved.'));
     $this->drupalPost('users/me/monetization/company/edit', $edit, t('Save Changes'));
     $this->assertText(t('Your Company Profile Info has been saved.'));
-    $developer = new Developer($this->client);
+    $developer = new Developer($this->config);
     $developer->delete($this->privileged_user->mail);
   }
 }
@@ -105,7 +104,7 @@ class BandkDetailSaveTest extends MintTest {
   }
 
   public function setUp() {
-    parent::setUp(array('devconnect_monetization'), array('edit bank details'));
+    parent::setUp(array('devconnect_monetization'), array('edit mint bank details'));
   }
 
   public function testSaveBankDetails() {
@@ -118,12 +117,12 @@ class BandkDetailSaveTest extends MintTest {
     $this->drupalPost('users/me/monetization/company/bank-details', $edit, t('Save Changes'));
     $this->assertText(t('Your Bank Details have been save.'));
 
-    $developer = new \Apigee\Mint\Developer($this->client);
+    $developer = new \Apigee\Mint\Developer($this->config);
     $developer->setEmail($this->privileged_user->mail);
     $bank_detail = $developer->getBankDetails();
     $bank_detail->delete();
 
-    $developer = new Developer($this->client);
+    $developer = new Developer($this->config);
     $developer->delete($this->privileged_user->mail);
   }
 }
@@ -139,7 +138,7 @@ class BankDetailEditTest extends MintTest {
   }
 
   public function setUp() {
-    parent::setUp(array('devconnect_monetization'), array('edit bank details'));
+    parent::setUp(array('devconnect_monetization'), array('edit mint bank details'));
   }
 
   public function testEditBankDetails() {
@@ -151,7 +150,7 @@ class BankDetailEditTest extends MintTest {
     $edit['account_currency'] = 'eur';
     $this->drupalPost('users/me/monetization/company/bank-details', $edit, t('Save Changes'));
     $this->assertText(t('Your Bank Details have been save.'));
-    $developer = new \Apigee\Mint\Developer($this->client);
+    $developer = new \Apigee\Mint\Developer($this->config);
     $developer->setEmail($this->privileged_user->mail);
     $bank_detail = $developer->getBankDetails();
     $edit['name'] = 'Bank Test2 ' . $this->randomName(16);
@@ -161,7 +160,7 @@ class BankDetailEditTest extends MintTest {
 
     $bank_detail->delete();
 
-    $developer = new Developer($this->client);
+    $developer = new Developer($this->config);
     $developer->delete($this->privileged_user->mail);
   }
 }
@@ -176,12 +175,12 @@ class AddUserToCompanyTest extends MintTest {
   }
 
   public function setUp() {
-    parent::setUp(array('devconnect_monetization'), array('edit developers roles'));
+    parent::setUp(array('devconnect_monetization'), array('edit mint developers roles'));
   }
 
   public function testAddUserToCompany() {
-    $temp_user_1 = $this->drupalCreateUser(array('edit company profile'));
-    $temp_user_2 = $this->drupalCreateUser(array('edit company profile'));
+    $temp_user_1 = $this->drupalCreateUser(array('edit mint company profile'));
+    $temp_user_2 = $this->drupalCreateUser(array('edit mint company profile'));
 
     $edit = array();
     $edit['user_email_address'] = $this->privileged_user->mail;
@@ -207,7 +206,7 @@ class AddUserToCompanyTest extends MintTest {
     $this->assertText(t('Developer @developer removed from your company.', array('@developer' => $temp_user_1->mail)));
     $this->verbose($this->drupalGetContent());
 
-    $developer = new Developer($this->client);
+    $developer = new Developer($this->config);
     $developer->delete($temp_user_1->mail);
     $developer->delete($temp_user_2->mail);
     $developer->delete($this->privileged_user->mail);

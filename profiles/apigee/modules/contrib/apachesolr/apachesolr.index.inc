@@ -35,9 +35,28 @@
  */
 function apachesolr_index_entities($env_id, $limit) {
   $documents_submitted = 0;
+
+  try {
+    // Get the $solr object
+    $solr = apachesolr_get_solr($env_id);
+    // If there is no server available, don't continue.
+    if (!$solr->ping(variable_get('apachesolr_ping_timeout', 4))) {
+      throw new Exception(t('No Solr instance available during indexing.'));
+    }
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    return FALSE;
+  }
+
   foreach (entity_get_info() as $entity_type => $info) {
     // With each pass through the callback, retrieve the next group of nids.
     $rows = apachesolr_index_get_entities_to_index($env_id, $entity_type, $limit);
+    // If there are none for this entity type - ignore it and go to the next
+    // entity type.
+    if (!count($rows)) {
+      continue;
+    }
     $documents = array();
     foreach ($rows as $row) {
       $row_documents = apachesolr_index_entities_document($row, $entity_type, $env_id);
@@ -47,20 +66,23 @@ function apachesolr_index_entities($env_id, $limit) {
     $indexed = apachesolr_index_send_to_solr($env_id, $documents);
     if ($indexed !== FALSE) {
       $documents_submitted += count($documents);
-      $index_position = apachesolr_get_last_index_position($env_id, $entity_type);
-      $max_changed = $index_position['last_changed'];
-      $max_entity_id = $index_position['last_entity_id'];
-      foreach ($rows as $row) {
-        if (!empty($row->status)) {
-          if ($row->changed > $max_changed) {
-            $max_changed = $row->changed;
-          }
-          if ($row->entity_id > $max_entity_id) {
-            $max_entity_id = $row->entity_id;
-          }
-        }
+      // Check who's the last in line
+      $last_row = end($rows);
+
+      // set our last position to the entity id and changed value so we can
+      // keep track where we left off
+      if (!empty($last_row->changed) && !empty($last_row->entity_id)) {
+        apachesolr_set_last_index_position($env_id, $entity_type, $last_row->changed, $last_row->entity_id);
       }
-      apachesolr_set_last_index_position($env_id, $entity_type, $max_changed, $max_entity_id);
+      else {
+        $message = 'Failure recording indexing progress. Last entity id processed: %entity_id with timestamp %last_changed';
+        $variables = array(
+          '%entity_id' => $last_row->entity_id,
+          '%last_changed' => $last_row->changed,
+        );
+        // Add it to watchdog
+        watchdog('Apache Solr', $message, $variables, WATCHDOG_ERROR);
+      }
       apachesolr_set_last_index_updated($env_id, REQUEST_TIME);
     }
   }
@@ -138,30 +160,14 @@ function apachesolr_index_status($env_id) {
     }
 
     $table = apachesolr_get_indexer_table($entity_type);
-    $query = db_select($table, 'asn')->condition('asn.status', 1)->condition('asn.bundle', $bundles);
-    $total += $query->countQuery()->execute()->fetchField();
-
-    // Get $last_entity_id and $last_changed.
-    $last_index_position = apachesolr_get_last_index_position($env_id, $entity_type);
-    $last_entity_id = $last_index_position['last_entity_id'];
-    $last_changed = $last_index_position['last_changed'];
-
-    // Find the remaining entities to index for this entity type.
     $query = db_select($table, 'aie')
-      ->condition('aie.bundle', $bundles)
       ->condition('aie.status', 1)
-      ->condition(db_or()
-        ->condition('aie.changed', $last_changed, '>')
-        ->condition(db_and()
-          ->condition('aie.changed', $last_changed, '<=')
-          ->condition('aie.entity_id', $last_entity_id, '>')))
+      ->condition('aie.bundle', $bundles)
       ->addTag('apachesolr_index_' . $entity_type);
 
+    $total += $query->countQuery()->execute()->fetchField();
 
-    if ($table == 'apachesolr_index_entities') {
-      // Other, entity-specific tables don't need this condition.
-      $query->condition('aie.entity_type', $entity_type);
-    }
+    $query = _apachesolr_index_get_next_set_query($env_id, $entity_type);
     $remaining += $query->countQuery()->execute()->fetchField();
   }
   return array('remaining' => $remaining, 'total' => $total);
@@ -274,11 +280,11 @@ function apachesolr_convert_entity_to_documents($entity, $entity_type, $env_id) 
   $document = _apachesolr_index_process_entity_get_document($entity, $entity_type);
 
   //Get the callback array to add stuff to the document
-  $callbacks = apachesolr_entity_get_callback($entity_type, 'document callback', $bundle);
+  $document_callbacks = apachesolr_entity_get_callback($entity_type, 'document callback', $bundle);
   $documents = array();
-  foreach ($callbacks as $callback) {
+  foreach ($document_callbacks as $document_callback) {
     // Call a type-specific callback to add stuff to the document.
-    $documents = array_merge($documents, $callback($document, $entity, $entity_type, $env_id));
+    $documents = array_merge($documents, $document_callback($document, $entity, $entity_type, $env_id));
   }
 
   //do this for all possible documents that were returned by the callbacks
@@ -330,33 +336,29 @@ function apachesolr_convert_entity_to_documents($entity, $entity_type, $env_id) 
  * @throws Exception
  */
 function apachesolr_index_send_to_solr($env_id, array $documents) {
-  try {
-    // Get the $solr object
-    $solr = apachesolr_get_solr($env_id);
-    // If there is no server available, don't continue.
-    if (!$solr->ping(variable_get('apachesolr_ping_timeout', 4))) {
-      throw new Exception(t('No Solr instance available during indexing.'));
-    }
-  }
-  catch (Exception $e) {
-    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
-    return FALSE;
-  }
+  // Get the $solr object
+  $solr = apachesolr_get_solr($env_id);
+
   // Do not index when we do not have any documents to send
   // Send TRUE because this is not an error
   if (empty($documents)) {
     return TRUE;
   }
   // Send the document off to Solr.
-  watchdog('Apache Solr', 'Adding @count documents.', array('@count' => count($documents)));
+  $log_success = variable_get('apachesolr_watchdog_successes', TRUE);
+  if ($log_success) {
+    watchdog('Apache Solr', 'Adding @count documents.', array('@count' => count($documents)));
+  }
   try {
     $docs_chunk = array_chunk($documents, 20);
     foreach ($docs_chunk as $docs) {
       $solr->addDocuments($docs);
     }
-    watchdog('Apache Solr', 'Indexing succeeded on @count documents', array(
-      '@count' => count($documents),
-    ), WATCHDOG_INFO);
+    if ($log_success) {
+      watchdog('Apache Solr', 'Indexing succeeded on @count documents', array(
+        '@count' => count($documents),
+      ), WATCHDOG_INFO);
+    }
     return count($documents);
   }
   catch (Exception $e) {
@@ -501,40 +503,20 @@ function apachesolr_index_get_entities_to_index($env_id, $entity_type, $limit) {
     return $rows;
   }
 
-  $table = apachesolr_get_indexer_table($entity_type);
-  // Get $last_entity_id and $last_changed.
-  $last_index_position = apachesolr_get_last_index_position($env_id, $entity_type);
-  $last_entity_id = $last_index_position['last_entity_id'];
-  $last_changed = $last_index_position['last_changed'];
-
-  // Find the next batch of entities to index for this entity type.  Note that
-  // for ordering we're grabbing the oldest first and then ordering by ID so
-  // that we get a definitive order.
-  // Also note that we fetch ALL fields from the indexer table
-  $query = db_select($table, 'aie')
-    ->fields('aie')
-    ->condition('aie.bundle', $bundles)
-    ->condition(db_or()
-      ->condition('aie.changed', $last_changed, '>')
-      ->condition(db_and()
-        ->condition('aie.changed', $last_changed, '<=')
-        ->condition('aie.entity_id', $last_entity_id, '>')))
-    ->orderBy('aie.changed', 'ASC')
-    ->orderBy('aie.entity_id', 'ASC')
-    ->addTag('apachesolr_index_' . $entity_type);
-
-  if ($table == 'apachesolr_index_entities') {
-    // Other, entity-specific tables don't need this condition.
-    $query->condition('aie.entity_type', $entity_type);
-  }
+  // Get next batch of entities to index
+  $query = _apachesolr_index_get_next_set_query($env_id, $entity_type);
+  
   $query->range(0, $limit);
   $records = $query->execute();
 
-  $status_callbacks = apachesolr_entity_get_callback($entity_type, 'status callback');
+  $status_callbacks = array();
   foreach ($records as $record) {
+    if (!isset($status_callbacks[$record->bundle])) {
+      $status_callbacks[$record->bundle] = apachesolr_entity_get_callback($entity_type, 'status callback', $record->bundle);
+    }
     // Check status and status callbacks before sending to the index
-    if (is_array($status_callbacks)) {
-      foreach($status_callbacks as $status_callback) {
+    if (is_array($status_callbacks[$record->bundle])) {
+      foreach ($status_callbacks[$record->bundle] as $status_callback) {
         if (is_callable($status_callback)) {
           // by placing $status in front we prevent calling any other callback
           // after one status callback returned false
@@ -557,8 +539,15 @@ function apachesolr_index_get_entities_to_index($env_id, $entity_type, $limit) {
  * @param string $bundle
  *   (optional) also specify a bundle to remove just the bundle from
  *   the index.
+ *
+ * @return
+ *   TRUE for success, FALSE if an error occured.
  */
 function apachesolr_index_delete_index($env_id, $entity_type = NULL, $bundle = NULL) {
+  if (apachesolr_environment_variable_get($env_id, 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
+    watchdog('Apache Solr', 'Trying to update the Solr index while the environment %env_id is read-only in function %function', array('%function' => __FUNCTION__, '%env_id' => $env_id), WATCHDOG_WARNING);
+    return FALSE;
+  }
   // Instantiate a new Solr object.
   try {
     $solr = apachesolr_get_solr($env_id);
@@ -582,9 +571,9 @@ function apachesolr_index_delete_index($env_id, $entity_type = NULL, $bundle = N
     watchdog('Apache Solr', 'Deleted documents from index with query @query', array('@query' => $query), WATCHDOG_INFO);
 
     if (!empty($entity_type)) {
-      $rebuild_callback = apachesolr_entity_get_callback($entity_type, 'reindex callback');
-      if (is_callable($rebuild_callback)) {
-        $rebuild_callback($env_id, $bundle);
+      $reindex_callback = apachesolr_entity_get_callback($entity_type, 'reindex callback');
+      if (is_callable($reindex_callback)) {
+        $reindex_callback($env_id, $bundle);
       }
     }
     else {
@@ -595,7 +584,57 @@ function apachesolr_index_delete_index($env_id, $entity_type = NULL, $bundle = N
   }
   catch (Exception $e) {
     watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    return FALSE;
   }
+  return TRUE;
+}
+
+/**
+ * Internal function that identifies entities that are still due to be indexed.
+ *
+ * @param string $env_id Environment ID
+ * @param string $entity_type
+ *
+ * @return SelectQuery
+ */
+function _apachesolr_index_get_next_set_query($env_id, $entity_type) {
+  $table = apachesolr_get_indexer_table($entity_type);
+  // Get $last_entity_id and $last_changed.
+  $last_index_position = apachesolr_get_last_index_position($env_id, $entity_type);
+  $bundles = apachesolr_get_index_bundles($env_id, $entity_type);
+
+  $last_entity_id = $last_index_position['last_entity_id'];
+  $last_changed = $last_index_position['last_changed'];
+
+  // Find the next batch of entities to index for this entity type.  Note that
+  // for ordering we're grabbing the oldest first and then ordering by ID so
+  // that we get a definitive order.
+  // Also note that we fetch ALL fields from the indexer table
+  $query = db_select($table, 'aie')
+    ->fields('aie')
+    ->condition('aie.bundle', $bundles)
+    ->condition('aie.status', 1)
+    ->condition(db_or()
+      ->condition('aie.changed', $last_changed, '>')
+      // Tie breaker for entities that were changed at exactly
+      // the same second as the last indexed entity
+      ->condition(db_and()
+        ->condition('aie.changed', $last_changed, '=')
+        ->condition('aie.entity_id', $last_entity_id, '>')
+      )
+    )
+    // It is important that everything is indexed in order of changed date and
+    // then on entity_id because otherwise the conditions above will not match
+    // correctly
+    ->orderBy('aie.changed', 'ASC')
+    ->orderBy('aie.entity_id', 'ASC')
+    ->addTag('apachesolr_index_' . $entity_type);
+
+  if ($table == 'apachesolr_index_entities') {
+    // Other, entity-specific tables don't need this condition.
+    $query->condition('aie.entity_type', $entity_type);
+  }
+  return $query;
 }
 
 /**
@@ -611,6 +650,10 @@ function apachesolr_index_delete_index($env_id, $entity_type = NULL, $bundle = N
  * @return true on success, false on failure.
  */
 function apachesolr_index_delete_bundles($env_id, $entity_type, array $excluded_bundles) {
+  if (apachesolr_environment_variable_get($env_id, 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
+    watchdog('Apache Solr', 'Trying to update the Solr index while the environment %env_id is read-only in function %function', array('%function' => __FUNCTION__, '%env_id' => $env_id), WATCHDOG_WARNING);
+    return FALSE;
+  }
   // Remove newly omitted bundles.
   try {
     $solr = apachesolr_get_solr($env_id);
@@ -655,6 +698,7 @@ function apachesolr_index_delete_entity_from_index($env_id, $entity_type, $entit
     return FALSE;
   }
   if (apachesolr_environment_variable_get($env_id, 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
+    watchdog('Apache Solr', 'Trying to update the Solr index while the environment %env_id is read-only in function %function', array('%function' => __FUNCTION__, '%env_id' => $env_id), WATCHDOG_WARNING);
     return FALSE;
   }
   try {
@@ -788,9 +832,13 @@ function apachesolr_index_node_solr_document(ApacheSolrDocument $document, $node
   $document->label = apachesolr_clean_text($node->title);
 
   // Build the node body.
-  $build = node_view($node, 'search_index', !empty($node->language) ? $node->language : LANGUAGE_NONE);
+  $language = !empty($node->language) ? $node->language : LANGUAGE_NONE;
+  $build = node_view($node, 'search_index', $language);
   // Remove useless html crap out of the render.
   unset($build['#theme']);
+  // Allow cache if it's present
+  $build['#cache'] = true;
+  // Render it into html
   $text = drupal_render($build);
   $document->content = apachesolr_clean_text($text);
 
@@ -799,7 +847,15 @@ function apachesolr_index_node_solr_document(ApacheSolrDocument $document, $node
     $document->teaser = apachesolr_clean_text($node->teaser);
   }
   else {
-    $document->teaser = truncate_utf8($document->content, 300, TRUE);
+    // If there is no node teaser we will have to generate the teaser
+    // ourselves. We have to be careful to not leak the author and other
+    // information that is normally also not visible.
+    if (isset($node->body[$language][0]['safe_summary'])) {
+      $document->teaser = apachesolr_clean_text($node->body[$language][0]['safe_summary']);
+    }
+    else {
+      $document->teaser = truncate_utf8($document->content, 300, TRUE);
+    }
   }
 
   // Author information
@@ -1327,12 +1383,12 @@ function apachesolr_index_node_check_table() {
   // We do not check more nodes than double the cron limit per time
   // Update or delete at most this many in each Solr query.
   $limit = variable_get('apachesolr_cron_mass_limit', 500);
-  $query = db_select($table, 'aien')
+  $query = db_select($table, 'aie')
     ->fields('n', array('nid', 'status'))
-    ->where('aien.status <> n.status')
+    ->where('aie.status <> n.status')
     ->range(0, ($limit * 2))
     ->addTag('apachesolr_index_node');
-  $query->innerJoin('node', 'n', 'n.nid = aien.entity_id');
+  $query->innerJoin('node', 'n', 'n.nid = aie.entity_id');
   $nodes = $query->execute()->fetchAllAssoc('nid');
 
   $node_lists = array_chunk($nodes, $limit, TRUE);
@@ -1379,7 +1435,8 @@ function apachesolr_index_nodeapi_mass_update(array $nodes, $table = NULL) {
   }
 
   if (apachesolr_environment_variable_get(apachesolr_default_environment(), 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
-    return TRUE;
+    watchdog('Apache Solr', 'Trying to update the Solr index while the environment %env_id is read-only in function %function', array('%function' => __FUNCTION__, '%env_id' => apachesolr_default_environment()), WATCHDOG_WARNING);
+    return FALSE;
   }
 
   $published_ids = array();
@@ -1436,7 +1493,8 @@ function apachesolr_index_nodeapi_mass_delete(array $nodes, $table = NULL) {
   }
 
   if (apachesolr_environment_variable_get(apachesolr_default_environment(), 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
-    return TRUE;
+    watchdog('Apache Solr', 'Trying to update the Solr index while the environment %env_id is read-only in function %function', array('%function' => __FUNCTION__, '%env_id' => apachesolr_default_environment()), WATCHDOG_WARNING);
+    return FALSE;
   }
 
   $ids = array();

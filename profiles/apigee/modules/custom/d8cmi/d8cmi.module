@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * Implements hook_init().
+ *
+ * Preloads two classes used for D8 CMI compatibility.
+ */
+function d8cmi_init() {
+  static $already_booted = FALSE;
+  if (!$already_booted) {
+    require_once __DIR__ . '/lib/Config.php';
+    require_once __DIR__ . '/lib/Drupal.php';
+  }
+}

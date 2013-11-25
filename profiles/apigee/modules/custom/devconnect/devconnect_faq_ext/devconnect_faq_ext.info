@@ -1,6 +1,0 @@
-name = DevConnect Frequently Asked Questions Extension
-description = "Developer Connect Manages configuration of questions for a FAQ page."
-package = "DevConnect"
-dependencies[] = faq
-core = 7.x
-version = "7.x-4.22

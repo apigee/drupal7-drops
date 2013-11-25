@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<project name="apigee-drupal-project" default="build-distro" description="Apigee Drupal Build">
+  <!--
+
+        Two types of builds: internal and external build. Internal builds are those who have access to the apigee/drupal-settings repo.
+        External builds are those who do not. Default is an external build. Internal builds will have ${build.type} = internal
+        in their Jenkins default properties.
+
+  ============== To Install Phing  ======================
+  to install phing: sudo sh ./pear-installs.sh
+
+
+  ============== FOR LOCAL DEVELOPMENT  ======================
+        From the command line: phing apigee-drupal -Dbuild.type=local
+
+
+
+        -->
+    <!-- 
+    Defaults:
+    -->
+  <property name="VERSION" value="pantheon-4.24.${env.BUILD_NUMBER}"/>
+  <property name="branchname" value="master" override="false" />
+  <property name="create-new-branch-for-build" value="no" />
+
+  <!-- 
+  Drush Task:
+  -->
+  <taskdef name="drush" classname="tasks.drush.DrushTask"/>
+  
+  <target name="preflight">
+    <delete dir="${project.basedir}/webapp" quiet="true" />
+    <delete dir="${user.home}/.drush/cache" quiet="true" />
+    <fail unless="repo-uri" message="You must supply a repo-uri into which this build will be checked. Optionally you may include repo-branch." />
+	<if>
+		<available file="${user.home}/.drush/terminus" type="dir" />
+		<then>
+		    <exec command="composer update --no-dev --working-dir $HOME/.drush/terminus" logoutput="true"/>
+		</then>
+		<else>
+		    <exec command="composer create-project pantheon-systems/terminus $HOME/.drush/terminus -s dev --no-dev -n" logoutput="true"/>
+		</else>
+	</if>
+    <if>
+      <contains string="${repo-uri}" substring="drush.in:2222" />
+      <then>
+        <fail unless="pantheon-email" message="If you are using a pantheon github repo, you must authenticate using your pantheon username/password." />
+        <fail unless="pantheon-password" message="If you are using a pantheon github repo, you must authenticate using your pantheon username/password." />
+        <drush command="pantheon-auth" assume="yes">
+          <option name="password">"${pantheon-password}"</option>
+          <param>${pantheon-email}</param>
+        </drush>
+        <drush command="pantheon-aliases" assume="yes" />
+        <php expression="str_replace('@codeserver', '', array_pop(array_splice(explode('.', '${repo-uri}'), 2,1)))" returnProperty="pantheon-uuid" />
+        <drush command="psite-cmode" assume="yes">
+          <param>"${pantheon-uuid}"</param>
+          <param>dev</param>
+          <param>GIT</param>
+        </drush>
+      </then>
+    </if>
+  </target>
+  <!-- 
+    
+    
+    -->
+  <target name="init" depends="preflight">
+    <drush command="cc">
+      <param>drush</param>
+    </drush>
+    <exec command="which git" outputProperty="git-binary" />
+  </target>
+  <!-- 
+    
+    
+    -->
+  <target name="build-distro" depends="init">
+    <gitclone repository="${repo-uri}" targetPath="${project.basedir}/webapp" />
+    <if>
+      <not>
+        <equals arg1="${repo-branch}" arg2="master" />
+      </not>
+      <then>
+        <gitcheckout repository="${project.basedir}/webapp" branchname="${repo-branch}" />
+      </then>
+    </if>
+    <phingcall target="display-step">
+      <property name="message" value="Starting point: ${repo-uri} => ${repo-branch}" />
+    </phingcall>
+    <if>
+      <equals arg1="${create-new-branch-for-build}" arg2="yes" />
+      <then>
+        <gitbranch repository="${project.basedir}/webapp" branchname="${VERSION}" />
+        <gitcheckout repository="${project.basedir}/webapp" branchname="${VERSION}" />
+        <property name="push-branch" value="${VERSION}" />
+      </then>
+      <else>
+        <property name="push-branch" value="${repo-branch}" />
+      </else>
+    </if>
+    <phingcall target="display-step">
+      <property name="message" value="Checking results of build into ${repo-uri} => ${push-branch}" />
+    </phingcall>
+    <gitpull repository="${project.basedir}/webapp" 
+      source="git://github.com/pantheon-systems/drops-7.git" 
+      refspec="+refs/heads/master:+refs/remotes/origin/master" 
+      quiet="false" 
+      strategyOption="theirs" 
+      />
+    <delete dir="${project.basedir}/webapp/profiles/apigee" quiet="true" />
+    <gitclone repository="git@github.com:apigee/apigee-drupal-profile" targetPath="${project.basedir}/webapp/profiles/apigee" />
+    <!-- gitcheckout repository="${project.basedir}/webapp/profiles/apigee" branchname="7.x-4.24" /   -->
+    <delete dir="${project.basedir}/webapp/profiles/apigee/.git" quiet="true"/>
+    <exec command="drush make --no-core --contrib-destination=. --yes --nocolor apigee.make" dir="${project.basedir}/webapp/profiles/apigee" logoutput="true" passthru="true" />
+    <if>
+      <not>
+        <or>
+        <available file="${project.basedir}/webapp/profiles/apigee/modules" type="dir" />
+        <available file="${project.basedir}/webapp/profiles/apigee/themes" type="dir" />
+        <available file="${project.basedir}/webapp/profiles/apigee/libraries" type="dir" />
+        </or>
+      </not>
+      <then>
+        <phingcall target="display-step">
+          <property name="message" value="Drush make command failed. Check to make sure ~/.drush/cache is getting deleted before every build and that there's enough space on the drive" />
+        </phingcall>
+        <fail />
+      </then>
+    </if>
+    <exec command="mv '${project.basedir}/webapp/profiles/apigee/modules/libraries' '${project.basedir}/webapp/profiles/apigee/modules/contrib' " logoutput="true" passthru="true"/>
+    <phingcall target="build-info-file"/>
+    <exec command="touch ${project.basedir}/webapp/sites/default/settings.php"/>
+    <exec command="git add * --all" dir="${project.basedir}/webapp" logoutput="true" />
+    <exec command="git commit -m 'distro build ${VERSION}'" dir="${project.basedir}/webapp" logoutput="true" />
+    <exec command="git push origin ${push-branch}" dir="${project.basedir}/webapp" />
+  </target>
+  <!-- 
+    
+    
+    -->
+  <target name="build-info-file">
+    <tstamp/>
+    <echo file="${project.basedir}/webapp/buildInfo" append="false" level="verbose">Version: ${VERSION}
+Build Timestamp: ${DSTAMP}.${TSTAMP}
+SCM Revision: ${env.GIT_COMMIT}
+    </echo>
+  </target>
+  
+  <target name="display-step">
+    <echo>
+
+            -------------------------------------------------</echo>
+    <echo>=&gt; ${message}</echo>
+    <echo>-------------------------------------------------
+    
+    </echo>
+  </target>
+
+</project>

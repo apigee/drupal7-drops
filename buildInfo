@@ -1,4 +1,4 @@
-Version: pantheon-4.23.112
-Build Timestamp: 20131015.2027
-SCM Revision: ${env.GIT_COMMIT}
+Version: pantheon-4.24.198
+Build Timestamp: 20131125.1654
+SCM Revision: 1de43c9b594d79a539d08b672fe96f522818ad4e
     

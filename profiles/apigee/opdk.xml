@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<project name="apigee-drupal-opdk" default="build-opdk" description="Apigee Drupal Build">
+  <!-- 
+    
+    
+    -->
+	<property name="DEVTOOLS_IS_INSTALLED" value="false" override="false"/>
+	<property name="DISTRO_SOURCE" value="git@github.com:apigee/drupal7-drops" override="false"/>
+  <property prefix="s3cfg" file="${user.home}/.s3cfg"/>
+  <!-- 
+    
+    
+    -->
+	<target name="clean">
+		<delete dir="${project.basedir}/scripts/bundle" quiet="true"/>
+		<delete dir="${user.home}/rpmbuild" quiet="true"/>
+		<delete dir="/tmp/${env.BUILD_ID}" quiet="true"/>
+		<mkdir dir="${project.basedir}/scripts/bundle/devportal-repo" />
+		<mkdir dir="/tmp/${env.BUILD_ID}" />
+	</target>
+  <!-- 
+    
+   	Build RPM for portal distro
+	  
+    -->
+	<target name="build-rpm" depends="clean">
+		<exec command="rpm -q rpmdevtools" returnproperty="DEVTOOLS_IS_INSTALLED"/>
+		<if>
+			<equals arg1="${DEVTOOLS_IS_INSTALLED}" arg2="package rpmdevtools is not installed"/>
+			<then>
+				<exec command="sudo yum install -y rpmdevtools" logoutput="true"/>
+			</then>
+		</if>
+		<exec command="rpmdev-setuptree"/>
+		<copy todir="${user.home}/rpmbuild/SOURCES">
+			<fileset dir="${project.basedir}/rpmspec">
+				<include name="**/**"/>
+			</fileset>
+		</copy>
+		<copy todir="${user.home}/rpmbuild/SPECS">
+			<fileset dir="${project.basedir}/rpmspec">
+				<include name="**/**"/>
+			</fileset>
+		</copy>
+		<gitclone repository="${DISTRO_SOURCE}" targetpath="/tmp/${env.BUILD_ID}/apigee-drupal" />
+		<tar destfile="${user.home}/rpmbuild/SOURCES/apigee-drupal.tar.gz" compression="gzip" includeemptydirs="true" >
+			<fileset dir="/tmp/${env.BUILD_ID}">
+				<include name="**/**"/>
+			</fileset>
+		</tar>
+		<exec command="rpmbuild --define 'BUILD_NUMBER '$BUILD_NUMBER --define 'VERSION '4.24 -ba apigee-drupal.spec" dir="${user.home}/rpmbuild/SPECS" logoutput="true"/>
+		<copy todir="${project.basedir}/scripts/bundle/devportal-repo">
+			<fileset dir="${user.home}/rpmbuild/RPMS/noarch">
+				<include name="**/*.rpm"/>
+			</fileset>
+		</copy>
+	</target>
+  <!-- 
+    
+		Build entire package
+    
+    -->
+	<target name="build-opdk" depends="build-rpm">
+		<property name="OPDK_VERSION" value="7.x-4.24.${env.BUILD_NUMBER}" />
+		<property name="OPDK_FILENAME" value="DevChanOPDK-${OPDK_VERSION}.tar.gz" />
+		<tar destfile="${project.basedir}/${OPDK_FILENAME}" compression="gzip" includeemptydirs="true" >
+			<fileset dir="${project.basedir}/scripts">
+				<include name="**/**"/>
+			</fileset>
+		</tar>
+    <s3put key="${s3cfg.access_key}" secret="${s3cfg.secret_key}" bucket="apigee-cloudfront" object="${OPDK_FILENAME}" source="${project.basedir}/${OPDK_FILENAME}" />
+		
+	</target>
+	
+</project>

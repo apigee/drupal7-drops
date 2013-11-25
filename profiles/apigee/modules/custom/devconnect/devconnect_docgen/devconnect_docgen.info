@@ -1,0 +1,21 @@
+name = DevConnect Document Generation
+description = "Provides integration to Apigee Modeling API"
+package = "DevConnect"
+core = 7.x
+version = "7.x-4.23"
+
+dependencies[] = devconnect
+dependencies[] = entity
+dependencies[] = node
+dependencies[] = views
+dependencies[] = taxonomy
+dependencies[] = pathauto
+
+files[] = includes/devconnect_docgen.batch_import.inc
+files[] = includes/templates/views/default_view.template.inc
+files[] = controllers/ModelController.php
+files[] = controllers/OperationController.php
+files[] = controllers/ResourceController.php
+files[] = controllers/RevisionController.php
+files[] = controllers/TemplateController.php
+files[] = controllers/DocController.php

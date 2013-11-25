@@ -191,6 +191,17 @@ function devconnect_monetization_theme_tabs_render(array $tabs) {
         $tab_contents .= '>' . $content . '</div>';
       }
     }
+    // If it is active tab but user has no access to it, then redirect
+    // the user to the first tab the that he has access to
+    else if ($tab['active'] === TRUE) {
+      foreach ($tabs['tabs'] as $path2 => &$tab2) {
+        $access_callback = $tab2['access callback'];
+        if ($access_callback === TRUE || call_user_func_array($access_callback, $tab['access args'])) {
+          drupal_goto($path2);
+          break 2;
+        }
+      }
+    }
   }
   $output .= '</ul>';
   if (!empty($tab_contents)) {

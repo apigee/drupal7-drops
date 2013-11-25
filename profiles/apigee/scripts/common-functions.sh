@@ -3,6 +3,8 @@
 # install scripts.
 ###############################################################################
 
+export HAVE_COMMON_FUNCTIONS=1
+
 export LOGFILE="/var/log/apigee-drupal-install.log"
 # initialize empty logfile
 echo -n "" > $LOGFILE 2>&1 || ( echo "Log file ${LOGFILE} is not writable. Cannot proceed."; exit 1 )
@@ -266,7 +268,11 @@ export PLATFORM_ARCHITECTURE=
 # Determine RHEL or CentOS
 if [[ -f /etc/system-release && `cat /etc/system-release | cut -d " " -f1` == 'CentOS' ]] ; then
   PLATFORM_NAME="CentOS"
-  PLATFORM_MAJOR_VERSION=`cat /etc/system-release | cut -d " " -f3 | cut -d. -f1`
+  if [[ `cat /etc/system-release | cut -d " " -f2` == 'Linux' ]]; then
+    PLATFORM_MAJOR_VERSION=`cat /etc/system-release | cut -d " " -f4 | cut -d. -f1`
+  else
+    PLATFORM_MAJOR_VERSION=`cat /etc/system-release | cut -d " " -f3 | cut -d. -f1`
+  fi
 elif [[ -f /etc/redhat-release && `cat /etc/redhat-release | cut -d " " -f1` == "Red" ]] ; then
   PLATFORM_NAME="Redhat"
   PLATFORM_MAJOR_VERSION=`cat /etc/redhat-release | cut -d " " -f7 | cut -d. -f1`
