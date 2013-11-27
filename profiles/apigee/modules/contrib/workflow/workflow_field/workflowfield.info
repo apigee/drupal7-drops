@@ -1,0 +1,16 @@
+name = Workflow Field
+description = Defines a Workflow field, widget and formatter.
+package = Workflow
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = field
+dependencies[] = options
+dependencies[] = workflow
+
+; Information added by  packaging script on 2013-11-25
+version = "7.x-2.0-beta1"
+core = "7.x"
+project = "workflow"
+datestamp = "1385419107"
+

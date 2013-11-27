@@ -2,10 +2,16 @@
 
 /**
  * @file
- * Intergrates workflow with features.
+ * Integrates workflow with features.
  */
 
 define('WORKFLOW_FEATURES_AUTHOR_NAME', 'workflow_features_author_name');
+
+// This include has not been fully tested with Workflow Field and its classes.
+// Therefore we include the file with deprecated functions. 
+module_load_include('inc', 'workflow', 'workflow.deprecated');
+// Even if workflow Node is not enabled, Features may use Node API's type_maps.
+module_load_include('inc', 'workflow', 'workflow.node.type_map');
 
 /**
  * Workflows are a **faux-exportable** component.
@@ -18,9 +24,10 @@ function workflow_features_export($data, &$export, $module_name = '') {
   // fontyourface_default_fonts integration is provided by Features.
   $export['dependencies']['features'] = 'features';
   $export['dependencies']['workflow'] = 'workflow';
-  foreach (workflow_get_workflows() as $workflow) {
-    if (in_array($workflow->name, $data)) {
-      $export['features']['workflow'][$workflow->name] = $workflow->name;
+  foreach (Workflow::getWorkflows() as $workflow) {
+    $name = $workflow->getName();
+    if (in_array($name, $data)) {
+      $export['features']['workflow'][$name] = $name;
     }
   }
   return $export;
@@ -34,7 +41,7 @@ function workflow_features_export_render($module, $data) {
   $code[] = '  $workflows = array();';
   $code[] = '';
 
-  $workflows = workflow_get_workflows();
+  $workflows = Workflow::getWorkflows();
   foreach ($data as $name) {
     if ($workflow = workflow_get_workflows_full_object($name)) {
       unset($workflow->wid);
@@ -56,8 +63,9 @@ function workflow_features_export_render($module, $data) {
  */
 function workflow_features_export_options() {
   $workflows = array();
-  foreach (workflow_get_workflows() as $workflow) {
-    $workflows[$workflow->name] = $workflow->name;
+  foreach (Workflow::getWorkflows() as $workflow) {
+    $name = $workflow->getName();
+    $workflows[$name] = $name;
   }
   return $workflows;
 }
@@ -66,7 +74,7 @@ function workflow_features_export_options() {
  * Implements hook_features_revert().
  */
 function workflow_features_revert($module) {
-  // Including the features inc to make sure this func is available during install of a Features module.
+  // Including the features inc to make sure this function is available during install of a Features module.
   module_load_include('inc', 'features', 'features.export');
   foreach (features_get_default('workflow', $module) as $key => $workflow) {
     workflow_update_workflows_full_object($workflow);
@@ -105,11 +113,11 @@ function workflow_update_workflows_full_object($workflow) {
   unset($workflow->states, $workflow->transitions, $workflow->node_types);
 
   // Then make a workflow so we can track by wid.
-  if ($orig_workflow = workflow_get_workflows_by_name($workflow->name)) {
+  if ($orig_workflow = Workflow::getWorkflowByName($workflow->name)) {
     $workflow->wid = $orig_workflow->wid;
   }
 
-  workflow_update_workflows($workflow, FALSE);
+  workflow_update_workflows($workflow, FALSE); // @todo: deprecated function.
 
   // Cancel out if workflow failed to save.
   if (!isset($workflow->wid) || empty($workflow->wid)) {
@@ -156,12 +164,8 @@ function workflow_update_workflows_full_object($workflow) {
   }
   // Then add the node_type mapping.
   foreach ($node_types as $node_type) {
-    $node_type = (object) array(
-      'type' => $node_type,
-      'wid' => $workflow->wid
-    );
     // Insert, nodes only have one workflow. Insert will delete any prior workflow assoc.
-    workflow_insert_workflow_type_map($node_type);
+    workflow_insert_workflow_type_map($node_type, $workflow->wid);
   }
 
   return TRUE;
@@ -177,7 +181,7 @@ function workflow_update_workflows_full_object($workflow) {
  *   A fully loaded workflow object with type and statue mappings.
  */
 function workflow_get_workflows_full_object($name) {
-  if ($workflow = workflow_get_workflows_by_name($name)) {
+  if ($workflow = Workflow::getWorkflowByName($name)) {
     // Now we need to add data to the object for each state, an array of sub-objects.
     $options = array('status' => 1); // We only want active states for this export.
     $active_states = array();
@@ -192,7 +196,7 @@ function workflow_get_workflows_full_object($name) {
     // Now we need to add data to the export for each transition, an array of sub-objects.
     // Same goes for transitions, see above re: states.
     foreach ($active_states as $sid => $state) {
-      // We're going to look everythign up by the start state, not state involved, to avoid dupes.
+      // We're going to look everything up by the start state, not state involved, to avoid dupes.
       foreach (workflow_get_workflow_transitions_by_sid($sid, $options) as $transition) {
         // And to get the target state (by name) we need to look it up too.
         $target_state = workflow_get_workflow_states_by_sid($transition->target_sid);
@@ -234,7 +238,7 @@ function _workflow_user_roles($reset = FALSE) {
  *   A string of roles or fake 'author' role.
  *
  * @return
- *   A string of RIDs seperated by commas.
+ *   A string of RIDs separated by commas.
  */
 function _workflow_roles_to_rids($role_string) {
   $roles = _workflow_user_roles();
@@ -257,7 +261,7 @@ function _workflow_roles_to_rids($role_string) {
  *   A string of rids or fake 'author' role.
  *
  * @return
- *   A string of role names seperated by commas.
+ *   A string of role names separated by commas.
  */
 function _workflow_rids_to_roles($rid_string) {
   $roles = _workflow_user_roles();

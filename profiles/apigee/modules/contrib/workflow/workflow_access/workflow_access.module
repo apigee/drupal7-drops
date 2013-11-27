@@ -38,12 +38,16 @@ function workflow_access_node_grants($account, $op) {
  * Implements hook_node_access_records().
  *
  * Returns a list of grant records for the passed in node object.
+ * @todo: support Workflow Field.
  */
 function workflow_access_node_access_records($node) {
   $grants = array();
-  if ($state = workflow_get_workflow_node_by_nid($node->nid)) {
-    $state = workflow_get_workflow_states_by_sid($state->sid);
-    foreach (workflow_access_get_workflow_access_by_sid($state->sid) as $grant) {
+  //@todo: read history or field instead of workflow_node, to read current status.
+  if ($workflow_node = workflow_get_workflow_node_by_nid($node->nid)) {
+    $sid = $workflow_node->sid;
+    // @todo: since we only use sid, the next line is superfluous.
+    $state = WorkflowState::load($workflow_node->sid);
+    foreach (workflow_access_get_workflow_access_by_sid($sid) as $grant) {
       $grants[] = array(
         'realm' => ($grant->rid == -1) ? 'workflow_access_owner' : 'workflow_access',
         'gid' => ($grant->rid == -1) ? $node->uid : $grant->rid,
@@ -82,7 +86,7 @@ function workflow_access_node_access_explain($row) {
 function workflow_access_workflow_operations($op, $workflow = NULL, $state = NULL) {
   switch ($op) {
     case 'workflow':
-      $alt = t('Control content access for @wf', array('@wf' => $workflow->name));
+      $alt = t('Control content access for @wf', array('@wf' => $workflow->getName()));
       $actions = array(
         'workflow_access_form' => array(
           'title' => t('Access'),
@@ -103,7 +107,7 @@ function workflow_access_workflow_operations($op, $workflow = NULL, $state = NUL
  */
 function workflow_access_form($form, $form_state, $workflow) {
   if ($workflow) {
-    drupal_set_title(t('@name Access', array('@name' => $workflow->name)));
+    drupal_set_title(t('@name Access', array('@name' => $workflow->getName())));
   }
   else {
     drupal_set_message(t('Unknown workflow'));
@@ -129,9 +133,8 @@ function workflow_access_form($form, $form_state, $workflow) {
   $rids['-1'] = t('author');
 
   // Add a table for every workflow state.
-  $options = array('status' => 1);
-  foreach (workflow_get_workflow_states_by_wid($workflow->wid, $options) as $state) {
-    if ($state->state == t('(creation)')) {
+  foreach ($workflow->getStates() as $state) {
+    if ($state->isCreationState()) {
       // No need to set perms on creation.
       continue;
     }
@@ -157,7 +160,7 @@ function workflow_access_form($form, $form_state, $workflow) {
     // TODO better tables using a #theme function instead of direct #prefixing
     $form[$state->sid] = array(
       '#type' => 'fieldset',
-      '#title' => t('@state', array('@state' => $state->state)),
+      '#title' => $state->label(),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#tree' => TRUE,
@@ -232,6 +235,7 @@ function workflow_access_form_submit($form, &$form_state) {
     foreach (workflow_get_workflow_node_by_sid($sid) as $data) {
       // Instead of trying to construct what the grants should be per node as we save.
       // Let's fall back on existing node grant systems that will find it for us.
+      $entity_type = 'node'; // @todo: add support for other entity types in workflow_access_form_submit()
       $node = node_load($data->nid);
       node_access_acquire_grants($node);
     }
@@ -239,33 +243,6 @@ function workflow_access_form_submit($form, &$form_state) {
 
   drupal_set_message(t('Workflow access permissions updated.'));
   $form_state['redirect'] = 'admin/config/workflow/workflow/' . $form['#wid'];
-}
-
-/**
- * Implements hook_workflow().
- *
- * Update grants when a node changes workflow state.
- * This is already called when node_save is called.
- */
-function workflow_access_workflow($op, $old_sid, $sid, $node) {
-  // ALERT:
-  // This is a tricky spot when called on node_insert as part of the transition from create to state1.
-  // node_save invokes this function as a hook before calling node_access_acquire_grants.
-  // But when it calls node_access_acquire_grants later, it does so without deleting the access
-  // set when calling workflow_node_insert because it is an insert and no prior grants are expected.
-  // This leads to a SQL error of duplicate grants which causes a rollback of all changes.
-  // Unfortunately, setting access rights isn't the only thing we're doing on node_insert so we
-  // can't skip the whole thing. So we need to fix it further downstream in order to get this to work.
-  // Here we don't want to run this in the case of (and ONLY in the case of) a brand new node.
-  // Node access grants will be run as part of node_save's own granting after this.
-  //
-  // NOTE: Any module that sets node access rights on insert will hit this situation.
-  //
-  if ($old_state = workflow_get_workflow_states_by_sid($old_sid)) {
-    if ($op == 'transition post' && $old_sid != $sid && (empty($node->is_new) || !$node->is_new)) {
-      node_access_acquire_grants($node);
-    }
-  }
 }
 
 /**

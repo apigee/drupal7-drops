@@ -7,9 +7,9 @@ dependencies[] = entity
 dependencies[] = field (>=7.22)
 
 
-; Information added by drush on 2013-11-25
+; Information added by drush on 2013-11-27
 version = "7.x-1.0-alpha11+1-dev"
 core = "7.x"
 project = "edit"
-datestamp = "1385398404"
+datestamp = "1385581781"
 

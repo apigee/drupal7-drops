@@ -37,7 +37,7 @@ function workflow_views_views_data() {
     'title' => t('Current state name'),
     'help' => t('The readable name of the workflow state that the node is in. (Less efficient, use only when click-sorting by state name.)'),
     'field' => array(
-      'handler' => 'views_handler_field',
+      'handler' => 'workflow_views_handler_field_state',
       'click sortable' => TRUE,
     ),
   );

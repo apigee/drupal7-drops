@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the list module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ * This schema is copied from workflow.install, $schema['workflow_node'] .
+ */
+function workflowfield_field_schema($field) {
+//$schema['workflow_node'] = array(
+//    'fields' => array(
+//      'nid' => array(
+//        'description' => 'The {node}.nid this record is for.',
+//        'type' => 'int',
+//        'unsigned' => TRUE,
+//        'not null' => TRUE,
+//        'default' => 0,
+//        'disp-width' => '10',
+//      ),
+//      'sid' => array(
+
+    $columns = array(
+      'value' => array(
+        'description' => 'The {workflow_states}.sid that this node is currently in.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
+/*
+// todo: these columns may not be necessary in the Field API
+      'uid' => array(
+        'description' => 'The {users}.uid who triggered this state.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '10',
+      ),
+      'stamp' => array(
+        'description' => 'The unique stamp for the transition.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11',
+      ),
+ */
+    );
+
+  return array(
+    'columns' => $columns,
+//    'primary key' => array('nid'),
+//    'indexes' => array(
+//      'nid' => array('nid', 'sid'),
+//    ),
+    'indexes' => array(
+      'value' => array('value'),
+    ),
+  );
+}

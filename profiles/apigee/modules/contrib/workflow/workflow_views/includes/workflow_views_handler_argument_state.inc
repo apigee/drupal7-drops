@@ -18,7 +18,7 @@ class views_handler_argument_workflow_state extends views_handler_argument {
    * of the workflow state.
    */
   function summary_name($data) {
-    return $this->workflow_states($data->{$this->name_alias});
+    return _workflow_views_get_workflow_state_name($data->{$this->name_alias});
   }
 
   /**
@@ -26,27 +26,6 @@ class views_handler_argument_workflow_state extends views_handler_argument {
    * workflow state.
    */
   function title() {
-    return $this->workflow_states($this->argument);
-  }
-
-  /**
-   * Helper function, to gather the workflow name from a given arguement.
-   */
-  function workflow_states($sid) {
-    if (empty($sid)) {
-      return t('No state');
-    }
-    static $states;
-    if (!isset($states)) {
-      // Get all, even the non-active states, filter by sid.
-      foreach (workflow_get_workflow_states() as $state) {
-        $states[$state->sid] = check_plain($state->state);
-      }
-    }
-    $output = $states[$sid];
-    if (empty($output)) {
-      $output = t('No state');
-    }
-    return check_plain($output);
+    return _workflow_views_get_workflow_state_name($this->argument);
   }
 }

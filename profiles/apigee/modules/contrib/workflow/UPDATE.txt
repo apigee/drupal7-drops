@@ -9,7 +9,7 @@ CONTENTS OF THIS FILE
 UPDATE FROM DRUPAL 6 TO DRUPAL 7 INSTRUCTIONS
 ------------
 
-Upgrading from 6 to 7 for Workflow using this module is fairly simple. The tables and formats of Drupal 6 configurations have not been changed, nor have the names of tokens or of Views filters and plugins.
+Upgrading from 6 to 7 for Workflow using this module is fairly simple. The tables and formats of Drupal 6 configurations have not been changed, nor have the names of tokens or of Views filters and plug-ins.
 
 The only major change in the Drupal 7 update was to the Rules integration of Workflow. The following steps should lead you through the process:
 

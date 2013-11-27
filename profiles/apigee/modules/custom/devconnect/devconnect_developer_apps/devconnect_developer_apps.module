@@ -133,6 +133,11 @@ function devconnect_developer_apps_entity_info() {
  * @return array
  */
 function devconnect_developer_apps_entity_property_info() {
+  // Make sure devconnect_boot has run. This is necessary in certain cases
+  // when upgrading R23 sites to R24.
+  devconnect_boot();
+  d8cmi_init();
+
   $raw_properties = Apigee\ManagementAPI\DeveloperApp::getAppProperties();
   $dev_app_properties = array();
   foreach ($raw_properties as $raw_property) {

@@ -38,8 +38,8 @@ SQL;
  */
 function workflow_access_features_export_options() {
   $workflows = array();
-  foreach (workflow_get_workflows() as $workflow) {
-    $workflows[$workflow->name] = t('workflow access configuration for: ') . $workflow->name;
+  foreach (Workflow::getWorkflows() as $workflow) {
+    $workflows[$workflow->getName()] = t('workflow access configuration for: ') . $workflow->getName();
   }
 
   return $workflows;
@@ -58,7 +58,7 @@ function workflow_access_features_export($data, &$export, $module_name = '') {
   foreach ($data as $component) {
     $export['features']['workflow_access'][$component] = $component;
 
-    // Access configuration for a workflow needs that worfklow to exist.
+    // Access configuration for a workflow needs that workflow to exist.
     $pipe['workflow'][$component] = $component;
 
     // And it needs the roles to which rights are granted.
@@ -83,15 +83,15 @@ function workflow_access_features_export_render($module_name, $data, $export = N
   // For each selected workflow, fetch all related workflow access records
   // we want to put into code.
   foreach ($data as $workflow_name) {
-    $workflow = workflow_get_workflows_by_name($workflow_name);
-    if (!empty($workflow)) {
-      $states = workflow_get_workflow_states_by_wid($workflow->wid);
-      if (!empty($states)) {
+    $workflow = Workflow::getWorkflowByName($workflow_name);
+    if ($workflow) {
+      $states = $workflow->getStates($all = TRUE);
+      if ($states) {
         $code[] = "\n  \$workflows['$workflow_name'] = array();";
         foreach ($states as $state) {
           $access_records = workflow_access_get_features_workflow_access_by_sid($state->sid);
           if (!empty($access_records)) {
-            $state_name = $state->state;
+            $state_name = $state->getName();
             $code[] = "  \$workflows['$workflow_name']['$state_name'] = array();";
             foreach ($access_records as $record) {
               $rname = $record->rname;
@@ -121,12 +121,12 @@ function workflow_access_features_rebuild($module) {
   // retrieve the workflow ids
   $wids = array();
   foreach ($workflow_access_records as $workflow_name => $state) {
-    $workflow = workflow_get_workflows_by_name($workflow_name);
+    $workflow = Workflow::getWorkflowByName($workflow_name);
     $wids[$workflow_name] = $workflow->wid;
   }
 
   foreach ($wids as $workflow_name => $wid) {
-    $states = workflow_get_workflow_states_by_wid($wid);
+    $states = $workflow->getStates($all = TRUE);
     foreach ($states as $state) {
       // Remove all workflow access records for states belonging to this
       // workflow. We don't want lingering entries - we only want the ones we're
@@ -139,7 +139,7 @@ function workflow_access_features_rebuild($module) {
   // workflow_name[state_name][role_name] => array(grant_name => 0|1, ...)
   foreach ($workflow_access_records as $workflow_name => $states) {
     foreach ($states as $state_name => $records) {
-      $state = workflow_get_workflow_states_by_wid_state($wids[$workflow_name], $state_name);
+      $state = WorkflowState::getStatesByName($state_name, $wids[$workflow_name]);
       if (is_array($state)) {
         $state = array_pop($state);
       }

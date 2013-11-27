@@ -5,9 +5,9 @@ dependencies[] = entity
 core = 7.x
 package = Workflow
 
-; Information added by drupal.org packaging script on 2013-07-04
-version = "7.x-1.2"
+; Information added by  packaging script on 2013-11-25
+version = "7.x-2.0-beta1"
 core = "7.x"
 project = "workflow"
-datestamp = "1372980654"
+datestamp = "1385419107"
 

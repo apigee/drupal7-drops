@@ -13,20 +13,18 @@ function workflow_search_api_entity_property_info_alter(&$info) {
     'label' => t('Workflow state name'),
     'sanitized' => TRUE,
     'getter callback' => 'workflow_search_api_property_workflow_state_getter_callback',
-    );
+  );
 }
 
 /**
  * Getter callback for workflow state defined in workflow_search_api_entity_property_info_alter.
  */
 function workflow_search_api_property_workflow_state_getter_callback($item) {
-  if ($item->workflow) {
+  $state_name = '';
+  if ($sid = $item->workflow) {
     // Get text value of workflow state.
-    $state = workflow_get_workflow_states_by_sid($item->workflow);
-    $state_name = $state->state;
-  }
-  else {
-    $state_name = '';
+    $state = WorkflowState::load($sid);
+    $state_name = $state->getName();
   }
 
   return $state_name;

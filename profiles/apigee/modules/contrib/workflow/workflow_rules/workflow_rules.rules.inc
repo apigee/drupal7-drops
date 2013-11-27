@@ -4,20 +4,35 @@
  * Rules integration for the Workflow module
  */
 
+/*
+ * Include the Condition and Actions for Nodes and Entity.
+ * They are in separate files, but must be kept in sync.
+ * They contain separate logic for the 'conventional' Workflow Node API
+ * and the 'new' Workfow Field API.
+ */
+module_load_include('inc', 'workflow_rules', 'workflow_rules.node');
+module_load_include('inc', 'workflow_rules', 'workflow_rules.field');
+
 /**
  * Implements hook_rules_event_info().
+ *
+ * @todo: add support for any entity type in hook_rules_event_info.
  */
 function workflow_rules_rules_event_info() {
+  $label = t('updated content');
+  // Add variables for the 'node' type.
+  $node_variables = rules_events_node_variables($label, TRUE);
+
   $events = array(
     'workflow_state_changed' => array(
       'group' => t('Workflow'),
       'label' => t('Workflow state has changed'),
-      'variables' => rules_events_node_variables(t('updated content'), TRUE),
+      'variables' => $node_variables,
     ),
     'workflow_comment_added' => array(
       'group' => t('Workflow'),
       'label' => t('Workflow comment was added, but state did not change'),
-      'variables' => rules_events_node_variables(t('updated content'), TRUE),
+      'variables' => $node_variables,
     ),
   );
   return $events;
@@ -27,184 +42,160 @@ function workflow_rules_rules_event_info() {
  * Implements hook_rules_condition_info().
  */
 function workflow_rules_rules_condition_info() {
-  return array(
-    'workflow_check_transition' => array(
-      'group' => t('Workflow'),
-      'label' => t('Check workflow transition'),
-      'parameter' => array(
-        'node' => array(
-          'type' => 'node',
-          'label' => t('Node'),
-          'description' => t('The node whose workflow state is being checked.'),
-        ),
-        'old_state' => array(
-          'type' => 'list<integer>',
-          'label' => t('Old workflow state'),
-          'options list' => '_workflow_rules_condition_select',
-          'description' => t('The workflow state moved from.'),
-        ),
-        'new_state' => array(
-          'type' => 'list<integer>',
-          'label' => t('New workflow state'),
-          'options list' => '_workflow_rules_condition_select',
-          'description' => t('The workflow state moved to.'),
-        ),
-      ),
-    ),
-    'workflow_check_state' => array(
-      'group' => t('Workflow'),
-      'label' => t('Content has a workflow state'),
-      'parameter' => array(
-        'node' => array(
-          'type' => 'node',
-          'label' => t('Node'),
-          'description' => t('The node to compare the current workflow state of.'),
-        ),
-        'workflow_state' => array(
-          'type' => 'list<integer>',
-          'label' => t('Compare workflow state'),
-          'options list' => '_workflow_rules_condition_select',
-          'description' => t('The possible workflow states to compare against.'),
-        ),
-      ),
-    ),
-    'workflow_check_previous_state' => array(
-      'group' => t('Workflow'),
-      'label' => t('Content has a previous workflow state'),
-      'parameter' => array(
-        'node' => array(
-          'type' => 'node',
-          'label' => t('Node'),
-          'description' => t('The node to compare the previous workflow state of.'),
-        ),
-        'workflow_state' => array(
-          'type' => 'list<integer>',
-          'label' => t('Compare workflow state'),
-          'options list' => '_workflow_rules_condition_select',
-          'description' => t('The possible workflow states to compare against.'),
-        ),
-      ),
-    ),
-  );
+  $conditions = array();
+  if (module_exists('workflownode')) {
+    $conditions += _workflow_rules_rules_node_condition_info();
+  }
+  if (module_exists('workflowfield')) {
+    $conditions += _workflow_rules_rules_field_condition_info();
+  }
+  return $conditions;
 }
 
 /**
  * Implements hook_rules_action_info().
  */
 function workflow_rules_rules_action_info() {
-  return array(
-    'workflow_rules_set_state' => array(
-      'group' => t('Workflow'),
-      'label' => t('Set workflow state for content'),
-      'parameter' => array(
-        'node' => array(
-          'type' => 'node',
-          'label' => t('Node'),
-          'description' => t('The node to set the current workflow state of.'),
-//          'save' => TRUE,
-        ),
-        'workflow_state' => array(
-          'type' => 'list<integer>',
-          'label' => t('New workflow state'),
-          'options list' => '_workflow_rules_action_select',
-          'description' => t('The workflow state to set (select only one).'),
-        ),
-        'workflow_comment' => array(
-          'type' => 'text',
-          'label' => t('Workflow Comment'),
-          'description' => t('The workflow comment to set.'),
-          'optional' => TRUE,
-        ),
-      ),
-    ),
-  );
+  $actions = array();
+  if (module_exists('workflownode')) {
+    $actions += _workflow_rules_rules_node_action_info();
+  }
+  if (module_exists('workflowfield')) {
+    $actions += _workflow_rules_rules_field_action_info();
+  }
+  return $actions;
+}
+
+/*
+ * Helper function to parse a token "node:<field_name>".
+ * @param string $token
+ * @return string $field_name
+ */
+function _workflow_rules_token_replace($field_name) {
+  // This is a poorman's effort to convert a token into a field name.
+  $field_name = str_replace('node:', '', $field_name);
+  $field_name = str_replace('field:', '', $field_name);
+  $field_name = str_replace('-', '_', $field_name);
+  return $field_name;
 }
 
 /**
- * Condition callback: gather all workflow states.
+ * Condition callback: gather all workflow states, to show in list_options.
  */
-function _workflow_rules_condition_select() {
+function _workflow_rules_workflow_get_options($data) {
+  $wid = 0;
+  // This is a poorman's effort to convert a token into a field name.
+  $token = isset($data->settings['field:select']) ? $data->settings['field:select'] : '';
+  $field_name = _workflow_rules_token_replace($token);
+  $field = field_info_field($field_name);
+  $wid = !empty($field) ? $field['settings']['wid'] : 0 ;
+
   $options['ANY'] = 'ANY state';
-  foreach (workflow_get_workflows() as $workflow) {
-    foreach (workflow_get_workflow_states_by_wid($workflow->wid) as $state) {
-      $states[$state->sid] = check_plain($workflow->name) . ': ' . check_plain($state->state);
-    }
-  }
-  $options = $options + $states;
+  $options += workflow_get_workflow_options($wid, $grouped = TRUE);
   return $options;
 }
 
 /**
- * Condition callback: gather all workflow states.
+ * Condition implementation helper function: check given state.
+ * @param $sid
+ *   a State ID, to compare with the given list of allowed State ID's
+ * @param array $sids
+ *   a list of allowed State ID's
+ * @return bool
+ *   TRUE or FALSE
  */
-function _workflow_rules_action_select() {
-  foreach (workflow_get_workflows() as $workflow) {
-    foreach (workflow_get_workflow_states_by_wid($workflow->wid) as $state) {
-      $states[$state->sid] = check_plain($workflow->name) . ': ' . check_plain($state->state);
-    }
-  }
-  return $states;
+function _workflow_rules_workflow_check_given_state($sid, array $sids) {
+  return in_array('ANY', $sids) || in_array($sid, $sids);
+}
+
+
+/**
+ * Condition implementation: check state transition for Workflow Node API.
+ * 
+ * @param $node
+ *  the node with the new values. Other entity types are not supported.
+ * @param array $old_sids
+ *  an array of old sids to meet the condition.
+ * @param array $new_sids
+ *  an array of new sids to meet the condition.
+ * @param array $condition
+ *  a RulesCondition->settings array.
+ */
+function _workflow_rules_node_check_transition($node, array $old_sids, array $new_sids, array $condition) {
+  $old_sid = workflow_node_previous_state($node, 'node');
+  $new_sid = workflow_node_current_state($node, 'node');
+
+  return _workflow_rules_workflow_check_given_state($old_sid, $old_sids) &&
+         _workflow_rules_workflow_check_given_state($new_sid, $new_sids);
 }
 
 /**
- * Condition implementation: check state transition.
+ * Condition implementation: check current state for Workflow Node API.
+ * 
+ * @param $node
+ *  the node with the new values. Other entity types are not supported.
+ * @param array $sids
+ *  an array of sids to meet the condition.
  */
-function workflow_check_transition($node, $old_states, $new_states) {
-  $node_current_state = workflow_node_current_state($node);
-  $node_old_state = workflow_node_previous_state($node);
-
-  if (in_array('ANY', $old_states)) {
-    if (in_array('ANY', $new_states)) {
-      return TRUE;
-    }
-    return in_array($node_current_state, $new_states);
-  }
-
-  if (in_array('ANY', $new_states)) {
-    return in_array($node_old_state, $old_states);
-  }
-  return in_array($node_old_state, $old_states) && in_array($node_current_state, $new_states);
-}
-
-/**
- * Condition implementation: check current state.
- */
-function workflow_check_state($node, $states) {
-  $node_state = workflow_node_current_state($node);
-  return workflow_check_given_state($node, $states, $node_state);
+function _workflow_rules_node_check_state($node, $sids) {
+  $sid = workflow_node_current_state($node, 'node');
+  return _workflow_rules_workflow_check_given_state($sid, $sids);
 }
 
 /**
  * Condition implementation: check previous state.
  */
-function workflow_check_previous_state($node, $states) {
-  $node_state = workflow_node_previous_state($node);
-  return workflow_check_given_state($node, $states, $node_state);
+function _workflow_rules_node_check_previous_state($node, $sids) {
+  $sid = workflow_node_previous_state($node, 'node');
+  return _workflow_rules_workflow_check_given_state($sid, $sids);
 }
 
 /**
- * Condition implementation helper function: check given state.
+ * Action implementation: set current state, ignoring current user permission.
  */
-function workflow_check_given_state($node, $states, $node_state) {
-  if (in_array('ANY', $states)) {
-    return TRUE;
-  }
-
-  if (in_array($node_state, $states)) {
-    return TRUE;
-  }
-  return FALSE;
-}
-
-/**
- * Action implementation: set current state, ignoring current user permissione.
- */
-function workflow_rules_set_state($node, $states, $comment = NULL) {
+function _workflow_rules_node_set_state($node, $sids, $comment = NULL) {
   // Select the last state on the list.
-  $sid = array_pop($states);
+  $sid = array_pop($sids);
   if (!empty($comment)) {
     $node->workflow_comment = $comment;
   }
   workflow_transition($node, $sid, TRUE);
   unset($node->workflow_comment);
+}
+
+/**
+ * Action implementation: set current state, ignoring current user permission.
+ */
+function _workflow_rules_field_set_state($entity, $field, $sids, $comment = NULL, array $settings = array()) {
+  global $user;
+
+  // Select the last state on the list.
+  $new_sid = array_pop($sids);
+
+  // This is a poorman's effort to convert a token into a field name.
+  $token = isset($settings['field:select']) ? $settings['field:select'] : '';
+  $field_name = _workflow_rules_token_replace($token);
+  $instance = array();
+  if ($field_name && isset($entity->{$field_name})) {
+    $entity_type = 'node'; // @todo: add Entity support in workflow_rules.
+    $entity_id = entity_id($entity_type, $entity);
+
+    $old_sid = workflow_node_current_state($entity, $entity_type, $field_name); // Todo : entity support.
+    $transition = new WorkflowTransition($entity_type, $entity, $field_name, $old_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
+    $transition->force($force = TRUE); // "ignoring current user permission."
+    if ($error = $transition->isAllowed($force)) {
+      drupal_set_message($error, 'error');
+      $sid = 0;
+    }
+    else {
+      $sid = $transition->execute($force);
+    }
+    // Save the entity, but not through entity_save(), since this will check permissions again and trigger rules.
+    if ($sid == $new_sid) {
+      $entity->{$field_name}['und'] = array();
+      $entity->{$field_name}['und'][0]['workflow']['workflow_options'] = $new_sid;
+      $entity->{$field_name}['und'][0]['workflow']['workflow_comment'] = $comment;
+      field_attach_update($entity_type, $entity);
+    }
+  }
 }

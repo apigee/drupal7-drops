@@ -29,3 +29,18 @@ function workflow_views_views_api() {
     'path' => drupal_get_path('module', 'workflow_views') . '/includes',
   );
 }
+
+/**
+ * Helper function, to gather the workflow name from a given arguement.
+ */
+function _workflow_views_get_workflow_state_name($sid) {
+  if (empty($sid)) {
+    return t('No state');
+  }
+  $output = t('Unknown state');
+  if ($state = WorkflowState::load($sid)) {
+    $name = $state->getName();
+    $output = !empty($name) ? check_plain($name) : $output;
+  }
+  return $output;
+}

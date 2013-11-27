@@ -169,9 +169,9 @@ features[variable][] = workbench_moderation_default_state_article
 features[variable][] = workbench_moderation_default_state_page
 
 
-; Information added by drush on 2013-11-25
+; Information added by drush on 2013-11-27
 version = "7.x-1.0"
 core = "7.x"
 project = "curate"
-datestamp = "1385398372"
+datestamp = "1385581745"
 

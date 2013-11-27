@@ -22,7 +22,7 @@ the content type.
 
 So: KEEP YOUR CONTENT TYPE NAMES SHORT.
 
-Unfortunately the code that handles this is in core, so not readily changable. If
+Unfortunately the code that handles this is in core, so not readily changeable. If
 you have trouble seeing your actions check your name lengths.
 
 See further discussion at:

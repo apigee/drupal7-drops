@@ -12,28 +12,18 @@ class workflow_views_handler_filter_sid extends views_handler_filter_in_operator
 
   function get_value_options() {
     if (!isset($this->value_options)) {
+      $this->value_options = array();
       $this->value_title = t('Workflow state');
-      $workflows = array();
-      foreach (workflow_get_workflows() as $data) {
-        $workflows[$data->wid] = check_plain(t($data->name));
+
+      $states = array();
+      $workflows = Workflow::getWorkflows();
+      $count = count($workflows);
+      if ($count > 1) {
+        $states += array('' => t('No state'));
       }
-      if (!isset($workflows) || empty($workflows)) {
-        $this->value_options = array();
-        return;
-      }
-      $options = array('status' => 1);
-      if (count($workflows) > 1) {
-        $states = array('' => t('No state'));
-        foreach ($workflows as $wid => $name) {
-          foreach (workflow_get_workflow_states_by_wid($wid, $options) as $state) {
-            $states[$state->sid] = check_plain($name . ': ' . $state->state);
-          }
-        }
-      }
-      else {
-        foreach (workflow_get_workflow_states($options) as $state) {
-          $states[$state->sid] = check_plain($state->state);
-        }
+      foreach ($workflows as $workflow) {
+        // Only show the workflow name if more then 1 workflows exist.
+        $states += $workflow->getOptions($grouped = ($count != 1));
       }
       $this->value_options = $states;
     }

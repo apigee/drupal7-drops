@@ -149,3 +149,146 @@ Issue #1993408 by NancyDru: Default new states to active.
 Issue #1542188 by justanothermark: Fix workflow display.
 Issue #2027507 by NancyDru: Fix sorting issue on history page.
 Issue #1993408 by NancyDru: Sysid not always set correctly.
+
+Since 7.x-1.2
+Issue #2037459 by johnv: Fix typo.
+Issue #2037531 by johnv, NancyDru: Fix choices return value.
+Issue #2039859 by Scaythe: Fix double encoding.
+Issue #2043667 by rodrigoeg, johnv: Fix typo in tokens.
+Issue #2044199 by justanothermark: Fix Feature reversion on non-existent states.
+Issue #2019345 by NancyDru: Allow hooks to reside in separate file.
+Issue #2052707 by NancyDru: Fix typo in single state value.
+Issue #2056773 by ambientdrup: Fix typo in VBO.
+Issue #2041329 by johnv: Changed api: added workflow_get_workflows_by_type(), for shorter code.
+Issue #2071663 by johnv: Changed function workflow_node_tab_access to gain performance.
+Issue #2071733 by johnv: Changed determination of showing Form, with new function workflow_show_form.
+Issue #2071733 by johnv: Preserve compatibility with workflow_extensions.
+Issue #2041319 by johnv: Added function workflow_get_first_state(), to have more unified code.
+Issue #2072059 by johnv: Changed call to hook_form_alter, by using hook_form_BASE_FORM_ID_alter, creating better performance.
+Issue #2072203 by johnv: Moved all node API functions from module file to node.inc file, to facilitate introduction of field API.
+Issue #2072081 by johnv: Fixed typo in workflow_node_tab_access().
+Issue #2077693 by johnv: Added Field API support in workflow_field_choices().
+Issue #2078785 by johnv: Added Field API support in workflow_node_tab_access().
+Issue #2079017 by johnv: Added Field API support for workflow_execute_transition().
+Issue #2080857 by johnv: Added Field API support for workflow_tab_page().
+Issue #2080915 by NancyDru: Signal Rules on reversion.
+Issue #2082225 by johnv: Changed interface of hook_workflow() (new optional parameter) to support Field API.
+Issue #2082247 by johnv: Added caching to workflow_field_choices().
+Issue #1357406 by pikku-h: Fixed Cron Scheduling keeps repeating if Old state and New state are the same.
+Issue #2019345 by johnv: Create a Workflow Field, with basic options.
+Issue #2087851 by ttkaminski: Fixed failing upgrade 7001 due to missing function: workflow_get_workflows().
+Issue #2042345 by arpeggio, rickdonohoe, johnv: Added dependency on "Views>3.3" to Workflow Views submodule.
+Issue #2019345 by johnv: Added helper function _workflow_get_sid_by_items() for Workflow Field.
+Issue #2094031 by johnv: Added return parameter to workflow_execute_transition().
+Issue #2019345 by johnv: Added classes for WorkflowDefaultWidget, WorkflowItem (Field type), Workflow, WorkflowState.
+Issue #2019345 by johnv: Fixed Field API: do not save node, when a scheduled state chage is posed on a comment.
+Issue #884788 by gdud, liquidcms: Fixed Views field "State: Current state name" isn't translated.
+Issue #2086287 by dooug: Fixed many typos in workflow and sub-modules.
+Issue #2086605 by johnv: Added settings to hide TimeZone for "Schedule for state change" option.
+Issue #2019345 by johnv: Fixed #states to hide/show scheduling info in Workflow Field Widget.
+Issue #2095467 by johnv: Changed flow logic to use new class WorkflowScheduledTransition.
+Issue #2095467 by johnv: Moved deprecated functions for class WorkflowScheduledTransition to new file workflow.deprecated.inc.
+Issue #2071733 by johnv: Changed workflow_show_form() to work with both old and new workflow objects.
+Issue #2019345 by johnv: Updated Workflow classes to show Workflow Form also on Node View page.
+Issue #2019345 by johnv: Fixed some issues in workflow.module file when using WorkflowField submodule.
+Issue #2019345 by johnv: Changed workflow_field submodule to support Workflow Form on Node view page.
+Issue #2019345 by johnv: Moved Node specific function workflow_forms() from workflow.module to workflow.node.inc.
+Issue #2019345 by johnv: Fixed WorkflowItem did not save tab_roles properly on Field Settings page.
+Issue #2019345 by johnv: Added some functions to the Workflow Entity classes.
+Issue #2019345 by johnv: Changed calls to Workflow object in various includes.
+Issue #2019345 by johnv: Added Workflow Field support in History tab page.
+Issue #2019345 by johnv: Added new WorkflowTransition class.
+Issue #2019345 by johnv: Moved Workflow Form processing code from workflow.module into new WorkflowTransition class.
+Issue #2019345 by johnv: Replaced all functional calls to Workflow object by OOP Methods of Workflow class.
+Issue #2019345 by johnv: Fixed wrong calls to Workflow::getFirstSid().
+Issue #2102405 by johnv: Added basic Entity support for Workflow Field.
+Issue #2102405 by johnv: Added Entity support for Workflow Scheduled Transitions.
+Issue #2019345 by johnv: Fixed caching for WorkflowState:getStates.
+Issue #2019345 by johnv: Changed workflow_node_view() to use Workflow classes.
+Issue #2102405 by johnv: Fixed indices for Workflow Scheduled Transitions.
+Issue #2019345 by johnv: Fixed order of States in Options list doesn't respect weight.
+Issue #2019345 by johnv: Added 'property_info' to Workflow Field for Entity/ Rules support.
+Issue #2019345 by johnv: Moved 'workflow_load' functon back to main module, since this is a menu callback.
+Issue #2019345 by johnv: Added 'grouped' options for Workflow::getOptions().
+Issue #2102663 by johnv: Added support for Workflow Field to workflow_rules sub-module.
+Issue #2111043 by johnv: Moved function workflow_field_choices() to WorkflowState->getOptions().
+Issue #2102663 by johnv: Fixed apparently rules functions must be in main include.
+Issue #2111795 by johnv: Fixed error when adding a Workflow with a name that is a translation of other workflow's name.
+Issue #2112263 by Nancydru: Typo in workflow_get_workflow)by_sid().
+Issue #2019345 by johnv: Fixed accidentally removed includes from workflow.module file.
+Issue #2019345 by johnv: Added extra methods to Workflow objects.
+Issue #2019345 by johnv: Added workflow_admin_ui now uses classes, too.
+Issue #2019345 by johnv: Added workflow.features.inc now includes workflow.deprecated.inc.
+Issue #2019345 by johnv: Added workflow.tokens.inc now uses classes, too.
+Issue #2019345 by johnv: Added extra methods to Workflow objects.
+Issue #2019345 by johnv: Added workflow_access now uses classes, too.
+Issue #2019345 by johnv: Added workflow_node_view now uses classes, too.
+Issue #2019345 by johnv: Added workflow_revert now uses classes.
+Issue #2019345 by johnv: Added workflow_search_api now uses classes.
+Issue #2019345 by johnv: Added workflow_vbo now uses classes.
+Issue #2019345 by johnv: Added workflow.install now uses classes.
+Issue #2019345 by johnv: Fixed error in WorkflowTransition->IsAllowed().
+Issue #2019345 by johnv: Added workflow_views now uses classes.
+Issue #2019345 by johnv: Fixed notice when trying to load not-existing Workflow or State.
+Issue #2019345 by johnv: Added workflow_cleanup now uses WorkflowState class.
+Issue #2019345 by johnv: Moved workflow_state functions to workflow.deprecated.inc, since they are all replaced by Workflow State class.
+Issue #2116179 by johnv: Moved workflow_type_map functions to own file workflow.node.type_map.inc.
+Issue #2019345 by johnv: Fixed notice on workflow_tab_form when a node type has both Workflow_node and Workflow_field enabled.
+Issue #2019345 by johnv: Moved code from workflow_admin_ui to Workflow->validate(), and added this check to Field settings form.
+Issue #2115199 by johnv: Moved pages from workflow_admin_ui.module to workfow_admin_ui.pages.inc, reducing footprint for all-but-these pages.
+Issue #2019345 by johnv: Added a create() function to classes Workflow and WorkflowState.
+Issue #2115199 by johnv: Some cosmetic changes in workfow_admin_ui.pages.inc.
+Issue #2019345 by johnv: Fixed notice when updating node in certain circumstances.
+Issue #2019345 by johnv: Changed function names in workflow_rules to reflect they are Node API only.
+Issue #2019345 by johnv: Fixed notice when an existing node does not have a workflow value yet.
+Issue #1036580 by johnv: Fixed error in Workflow Node API on Node View page when another workflow was assigned to node type.
+Issue #2119921 by johnv: Added dependency to Entity API module.
+Issue #2102193 by johnv: Fixed documentation of hook_workflow() in workflow.api.inc
+Issue #2019345 by johnv: Moved workflow_field_choices() to deprecated.inc, since it is completely replaced by WorkflowState->getOptions($node).
+Issue #2019345 by johnv: Fixed messages from PAReview.sh.
+Issue #2119921 by johnv: Moved workflow_node db functions to workflow.node.inc file.
+Issue #2119921 by johnv: Moved workflow_requirements() to workflow.install file.
+Issue #2019345 by johnv: Fixed messages from PAReview.sh.
+Issue #2122541 by johnv: Added new submodule Workflow Node.
+Issue #2122541 by johnv: Moved workflow_node-specific code from WorkflowState::deactivate() to hook workflownode_workflow('state delete').
+Issue #2122541 by johnv: Changed call to workflow_node specific function in worflow_admin_ui.
+Issue #2019345 by johnv: Fixed error when adding node after PAreview.
+Issue #2122541 by johnv: Moved workflow_node-specific code from Workflow::delete() to hook workflownode_workflow('worflow delete').
+Issue #2019345 by johnv: Removed duplication of Workflow*Transition::__construct.
+Issue #2019345 by johnv: Fixed duplicate Workflow Form on Node View page.
+Issue #2019345 by johnv: Moved saving of workflow_node_history to WorkflowTransition class.
+Issue #2019345 by johnv: Fixed error when submitting a Workflow Field on a comment.
+Issue #2102405 by johnv: Added Entity support for Workflow Executed Transitions (workflow_node_history).
+Issue #2019345 by johnv: Changed interface of workflow_node_current_state() for Field API.
+Issue #2128423 by johnv: Moved page code of workflow_cleanup to own file workflow_cleanup.pages.inc.
+Issue #2019345 by johnv: Moved workflow_updates_workflows() to workflow.deprecated.inc.
+Issue #2019345 by johnv: Moved page code of workflow_revert to own file workflow_revert.pages.inc.
+Issue #2019345 by johnv: Changed interface of workfow_execute_transition() while centralizing code for Field API and Node API.
+Issue #2115199 by johnv: Moved workflow_admin_ui type_map page to own file, (since it is only valid for Node API) and fixed PAReview errors.
+Issue #2019345 by johnv: Moved code to WorkflowState::create() to hide State specific details.
+Issue #2019345 by johnv: Removed dependency on workflow.node.inc in common code.
+Issue #2102405 by johnv: Changed interface of workflow_tab_access, workflow_tab_page to be $entity_type resistent.
+Issue #2019345 by johnv: Moved some code in workflow.module.
+Issue #2019345 by johnv: Fixed workflow_revert now supports all entity types and field names.
+Issue #2019345 by johnv: Changed theme_workflow_history_table to add proper 'Operations column' to history table.
+Issue #2019345 by johnv: Updated workfow_rules to reflect latest code. Still only supports 'node'.
+Issue #2019345 by johnv: Changed constructor of Workflow to be protected.
+Issue #2102193 by johnv: Changed call to 'hook_workflow', 'transition permitted' - arguments were swapped.
+Issue #2019345 by johnv: Fixed 'force' parameter in call to hook_workflow.
+Issue #2019345 by johnv: Added some love to the Workflow Form: less space for schedule block.
+Issue #2019345 by johnv: Added some love to the Workflow Form.
+Issue #2019345 by johnv: Added some Node/Field API dependent flow logic.
+Issue #2137149 by johnv: Changed Workflow History Tab to show workflow_transition_form instead of workflow_node_form.
+Issue #2137149 by johnv: Changed Node View page to show workflow_transition_form instead of workflow_node_form.
+Issue #2137149 by johnv: Removed workflow_tab_form code, since it is replaced by workflow_transition_form.
+Issue #2137219 by johnv: Changed workflow_actions to support Workflow Field.
+Issue #2122541 by johnv: Fixed strict warnings in WorkflowScheduledTransition.
+Issue #2137149 by johnv: Changed Node Edit page to show workflow_transition_form instead of workflow_node_form.
+Issue #2019345 by johnv: Fixed notices on WorkflowDefaultWidget.
+Issue #2137149 by johnv: Changed Node Comment form to show workflow_transition_form instead of workflow_node_form.
+Issue #2137149 by johnv: Changed code to use workflow_state_formatter to show Current State on any form.
+Issue #2137149 by johnv: Removed workflow_node_form: use workflow_transition_form instead.
+Issue #2019345 by johnv: Fixed enable changing nodes on front page.
+Issue #2019345 by johnv: Fixed expand schedule block when +1 forms on a page.
+Issue #2120451 by Kirsten Pol: Fixed superfluous sort when loading workflow_history_node.
+Issue #212429 by johnv: Fixed do not revert to deleted, disabled, same state in workflow_revert.

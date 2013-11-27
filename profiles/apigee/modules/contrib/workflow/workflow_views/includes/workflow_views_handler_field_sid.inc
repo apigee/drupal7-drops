@@ -26,28 +26,12 @@ class workflow_views_handler_field_sid extends views_handler_field {
   }
 
   function render($values) {
+    $sid = $values->{$this->field_alias};
     if ($this->options['value']) {
-      if (empty($values->{$this->field_alias})) {
-        return NULL;
-      }
-      return $values->{$this->field_alias};
+      return (empty($sid)) ? NULL : $sid;
     }
     else {
-      if (empty($values->{$this->field_alias})) {
-        return t('No state');
-      }
-      static $states;
-      if (!isset($states)) {
-        $states = array();
-        foreach (workflow_get_workflow_states() as $state) {
-          $states[$state->sid] = $state->state;
-        }
-      }
-      $output = t($states[$values->{$this->field_alias}]);
-      if (empty($output)) {
-        $output = t('Unknown state');
-      }
-      return check_plain($output);
+      return _workflow_views_get_workflow_state_name($sid);
     }
   }
 }
