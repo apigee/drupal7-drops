@@ -333,6 +333,10 @@ libraries[jsonpath][download][type]          = "get"
 libraries[jsonpath][download][url]           = "https://jsonpath.googlecode.com/files/jsonpath-0.8.1.php"
 libraries[jsonpath][destination]             = "libraries"
 
+libraries[maskmoney][download][type]         = "get"
+libraries[maskmoney][download][url]          = "https://raw.github.com/plentz/jquery-maskmoney/master/jquery.maskMoney.js"
+libraries[maskmoney][destination]            = "libraries"
+
 libraries[mediaelement][destination]         = 'libraries'
 libraries[mediaelement][directory_name]      = 'mediaelement'
 libraries[mediaelement][download][type]      = "git"

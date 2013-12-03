@@ -91,7 +91,7 @@ function _workflow_rules_workflow_get_options($data) {
   $wid = !empty($field) ? $field['settings']['wid'] : 0 ;
 
   $options['ANY'] = 'ANY state';
-  $options += workflow_get_workflow_options($wid, $grouped = TRUE);
+  $options += workflow_get_workflow_state_names($wid, $grouped = TRUE);
   return $options;
 }
 
@@ -122,8 +122,9 @@ function _workflow_rules_workflow_check_given_state($sid, array $sids) {
  *  a RulesCondition->settings array.
  */
 function _workflow_rules_node_check_transition($node, array $old_sids, array $new_sids, array $condition) {
-  $old_sid = workflow_node_previous_state($node, 'node');
-  $new_sid = workflow_node_current_state($node, 'node');
+ $last_transition = array_pop(WorkflowTransition::load('node', $node->nid, '', 1));
+ $old_sid = $last_transition->old_sid;
+ $new_sid = $last_transition->new_sid;
 
   return _workflow_rules_workflow_check_given_state($old_sid, $old_sids) &&
          _workflow_rules_workflow_check_given_state($new_sid, $new_sids);
@@ -146,7 +147,9 @@ function _workflow_rules_node_check_state($node, $sids) {
  * Condition implementation: check previous state.
  */
 function _workflow_rules_node_check_previous_state($node, $sids) {
-  $sid = workflow_node_previous_state($node, 'node');
+  // $sid = workflow_node_previous_state($node, 'node');
+  $last_transition = array_pop(WorkflowTransition::load('node', $node->nid, '', 1));
+  $sid = $last_transition->old_sid;
   return _workflow_rules_workflow_check_given_state($sid, $sids);
 }
 
@@ -193,7 +196,7 @@ function _workflow_rules_field_set_state($entity, $field, $sids, $comment = NULL
     // Save the entity, but not through entity_save(), since this will check permissions again and trigger rules.
     if ($sid == $new_sid) {
       $entity->{$field_name}['und'] = array();
-      $entity->{$field_name}['und'][0]['workflow']['workflow_options'] = $new_sid;
+      $entity->{$field_name}['und'][0]['workflow']['workflow_sid'] = $new_sid;
       $entity->{$field_name}['und'][0]['workflow']['workflow_comment'] = $comment;
       field_attach_update($entity_type, $entity);
     }

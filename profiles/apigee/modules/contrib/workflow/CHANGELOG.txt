@@ -292,3 +292,46 @@ Issue #2019345 by johnv: Fixed enable changing nodes on front page.
 Issue #2019345 by johnv: Fixed expand schedule block when +1 forms on a page.
 Issue #2120451 by Kirsten Pol: Fixed superfluous sort when loading workflow_history_node.
 Issue #212429 by johnv: Fixed do not revert to deleted, disabled, same state in workflow_revert.
+
+Since 7.x-2.0-beta1
+Issue #2141763 by johnv: Fixed avoid calling hook_worflow when saving an Entity and state has not changed.
+Issue #1408398 by johnv: Fixed incorrect field type for 'sid' in table workflow_access.
+Issue #2142659 by johnv: Changed path of workflow_access, to be in sync with other submodules.
+Issue #2142677 by johnv: Changed location of workflow_access Admin UI page to own file.
+Issue #0437874 by hefox, johnv, e.a.: Fixed hide workflow tab and 'author' transitions for anonymous users on nodes with anonymous author.
+Issue #0437874 by hefox, johnv, e.a.: Fixed access grants in workflow_access for anonymous users on nodes with anonymous author.
+Issue #2019345 by johnv: Fixed in create form, Widget should show the first option, not the last.
+Issue #2121765 by johnv: Fixed show correct state in preview mode.
+Issue #2137219 by johnv: Fixed warning for workflow_actions.
+Issue #2146411 by johnv: Reverted cache for workflow_node_current_state.
+Issue #2137149 by johnv: Fixed double code in Transition->execute().
+Issue #2146411 by johnv: Fixed workflow_node_previous_state.
+Issue #2065799 by johnv: Added WorkflowState->count() to count nodes per State.
+Issue #2137149 by johnv: Changed 'workflow_options' to 'workflow_sid' in workflow_transition_form().
+Issue #2146411 by johnv: Fixed old&new state in Rules integration.
+Issue #2137149 by johnv: Fixed constructor of WorkflowTransition.
+Issue #2137149 by johnv: Added README.txt for Workflow_rules.
+Issue #2115671 by johnv: Changed workflow_views to Views 3 API structure.
+Issue #2019345 by johnv: Fixed selection of Options in Workflow object.
+Issue #658880 by johnv: Added filter on CreationState and Workflow in worklow_views_handler_filter_sid.
+Issue #2137149 by johnv: Fixed constructor of WorkflowTransition.
+Issue #1021126 by johnv: Fixed 'Workflow: state' Views Filter doesn't handle nodes without a workflow state.
+Issue #2147511 by johnv: Removed Views filters/fields/etc for {workflow_node} when module Worflow Node disabled.
+Issue #2147535 by johnv: Added Views filter and field for 'Transition: old sid', to complent existing 'new sid'.
+Issue #2147535 by johnv: Added More Views filter/field/sort for 'Workflow: current transition'.
+Issue #2147673 by johnv: Marked 'workflow: states' field and sort as deprecated: should be implemented using a relationship.
+Issue #2019345 by johnv: Renamed _workflow_view_workflow_get_state_name() to workflow_get_sid_label().
+Issue #2130783 by johnv: Added formatter 'count entities with this state' to 'Workflow: state' Views Field.
+Issue #2019345 by johnv: Added workflow_get_wid_label().
+Issue #2019345 by johnv: Fixed workflow_get_states() in workflow_admin_ui.
+Issue #1589254 by fedia.io1: Fixed Rename D6 hook_features_export_rebuild() to D7 hook_features_rebuild().
+Issue #2019345 by johnv: Renamed Workflow->getOptions() to workflow_get_state_names().
+Issue #2019345 by johnv: Fixed workflow.features.inc helper functions.
+Issue #2124915 by fedia.io1, Liam Mitchell: Fixed Transition's target_state and roles aren't exported with features.
+Issue #2126867 by slite: Fixed Reverting features causes warning.
+Issue #2147781 by zihong0: Fixed error, due to typo in workflow_acces.module.
+Issue #2144817 by zihong0: Fixed PHP 5.3/5.4 'Warning: Parameter 1' in workflow_transition_form().
+Issue #2019345 by johnv: Renamed Workflow*->get*ByName() to Workflow*->loadByName().
+Issue #2124915 by johnv: Fixed transfer transitions with Features.
+Issue #2148851 by johnv: Fixed transfer 'tab_roles' using machine names with Features.
+Issue #2148851 by brad.bulger, johnv: Fixed warning in Tokens when an old_state is deleted.

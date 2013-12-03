@@ -10,13 +10,14 @@
 function workflow_access_menu() {
   $items = array();
 
-  $items["admin/config/workflow/access/%workflow"] = array(
+  $items["admin/config/workflow/workflow/access/%workflow"] = array(
     'title' => 'Access',
+    'file' => 'workflow_access.pages.inc',
     'access arguments' => array('administer workflow'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('workflow_access_form', 4),
+    'page arguments' => array('workflow_access_form', 5),
     'type' => MENU_CALLBACK,
-    );
+  );
 
   return $items;
 }
@@ -42,15 +43,17 @@ function workflow_access_node_grants($account, $op) {
  */
 function workflow_access_node_access_records($node) {
   $grants = array();
-  //@todo: read history or field instead of workflow_node, to read current status.
-  if ($workflow_node = workflow_get_workflow_node_by_nid($node->nid)) {
-    $sid = $workflow_node->sid;
-    // @todo: since we only use sid, the next line is superfluous.
-    $state = WorkflowState::load($workflow_node->sid);
-    foreach (workflow_access_get_workflow_access_by_sid($sid) as $grant) {
+
+  if($current_sid = workflow_node_current_state($node)) {
+    // Get 'author' of this entity.
+    // - Some entities (e.g, taxonomy_term) do not have a uid.
+    // Anonymous ($uid == 0) author is not allowed for role 'author' (== -1).
+    $uid = isset($node->uid) ? $node->uid : 0;
+
+    foreach (workflow_access_get_workflow_access_by_sid($current_sid) as $grant) {
       $grants[] = array(
-        'realm' => ($grant->rid == -1) ? 'workflow_access_owner' : 'workflow_access',
-        'gid' => ($grant->rid == -1) ? $node->uid : $grant->rid,
+        'realm' => ($uid > 0 && $grant->rid == -1) ? 'workflow_access_owner' : 'workflow_access',
+        'gid' => ($uid > 0 && $grant->rid == -1) ? $node->uid : $grant->rid,
         'grant_view' => $grant->grant_view,
         'grant_update' => $grant->grant_update,
         'grant_delete' => $grant->grant_delete,
@@ -90,159 +93,13 @@ function workflow_access_workflow_operations($op, $workflow = NULL, $state = NUL
       $actions = array(
         'workflow_access_form' => array(
           'title' => t('Access'),
-          'href' => "admin/config/workflow/access/$workflow->wid",
+          'href' => "admin/config/workflow/workflow/access/$workflow->wid",
           'attributes' => array('alt' => $alt, 'title' => $alt),
           ),
         );
 
       return $actions;
   }
-}
-
-/**
- * Implements hook_form().
- *
- * Add a "three dimensional" (state, role, permission type) configuration
- * interface to the workflow edit form.
- */
-function workflow_access_form($form, $form_state, $workflow) {
-  if ($workflow) {
-    drupal_set_title(t('@name Access', array('@name' => $workflow->getName())));
-  }
-  else {
-    drupal_set_message(t('Unknown workflow'));
-    drupal_goto('admin/config/workflow/workflow');
-  }
-
-  $bc = array(l(t('Home'), '<front>'));
-  $bc[] = l(t('Configuration'), 'admin/config');
-  $bc[] = l(t('Workflow'), 'admin/config/workflow');
-  $bc[] = l(t('Workflow'), 'admin/config/workflow/workflow');
-  $bc[] = l(t($workflow->name), "admin/config/workflow/workflow/$workflow->wid");
-//  $bc[] = l(t('Access'), "admin/config/workflow/access/$workflow->wid");
-  drupal_set_breadcrumb($bc);
-
-  $form = array('#tree' => TRUE);
-
-  $form['#wid'] = $workflow->wid;
-
-  // A list of roles available on the site and our
-  // special -1 role used to represent the node author.
-  $rids = user_roles(FALSE, 'participate in workflow');
-
-  $rids['-1'] = t('author');
-
-  // Add a table for every workflow state.
-  foreach ($workflow->getStates() as $state) {
-    if ($state->isCreationState()) {
-      // No need to set perms on creation.
-      continue;
-    }
-    $view = $update = $delete = array();
-    $count = 0;
-    foreach (workflow_access_get_workflow_access_by_sid($state->sid) as $access) {
-      $count++;
-      if ($access->grant_view) {
-        $view[] = $access->rid;
-      }
-      if ($access->grant_update) {
-        $update[] = $access->rid;
-      }
-      if ($access->grant_delete) {
-        $delete[] = $access->rid;
-      }
-    }
-    // Allow view grants by default for anonymous and authenticated users,
-    // if no grants were set up earlier.
-    if (!$count) {
-      $view = array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID);
-    }
-    // TODO better tables using a #theme function instead of direct #prefixing
-    $form[$state->sid] = array(
-      '#type' => 'fieldset',
-      '#title' => $state->label(),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#tree' => TRUE,
-      );
-
-    $form[$state->sid]['view'] = array(
-      '#type' => 'checkboxes',
-      '#options' => $rids,
-      '#default_value' => $view,
-      '#title' => t('Roles who can view posts in this state'),
-      '#prefix' => '<table width="100%" style="border: 0;"><tbody style="border: 0;"><tr><td>',
-      );
-
-    $form[$state->sid]['update'] = array(
-      '#type' => 'checkboxes',
-      '#options' => $rids,
-      '#default_value' => $update,
-      '#title' => t('Roles who can edit posts in this state'),
-      '#prefix' => "</td><td>",
-      );
-
-    $form[$state->sid]['delete'] = array(
-      '#type' => 'checkboxes',
-      '#options' => $rids,
-      '#default_value' => $delete,
-      '#title' => t('Roles who can delete posts in this state'),
-      '#prefix' => "</td><td>",
-      '#suffix' => "</td></tr></tbody></table>",
-    );
-  }
-
-  $form['warning'] = array(
-    '#type' => 'markup',
-    '#markup' => '<p><strong>'
-      . t('WARNING:')
-      . '</strong> '
-      . t('Use of the "Edit any," "Edit own," and even "View published content" permissions
-        for the content type may override these access settings.')
-      . '</p>',
-      );
-
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
-
-  return $form;
-  // Place our block comfortably down the page.
-  $form['submit']['#weight'] = 10;
-  $form['#submit'][] = 'workflow_access_form_submit';
-}
-
-/**
- * Store permission settings for workflow states.
- */
-function workflow_access_form_submit($form, &$form_state) {
-  foreach ($form_state['values'] as $sid => $access) {
-    // Ignore irrelevant keys.
-    if (!is_numeric($sid)) {
-      continue;
-    }
-    $grants = array();
-    foreach ($access['view'] as $rid => $checked) {
-      $data = array(
-        'sid' => $sid,
-        'rid' => $rid,
-        'grant_view' => (!empty($checked)) ? (bool) $checked : 0,
-        'grant_update' => (!empty($access['update'][$rid])) ? (bool) $access['update'][$rid] : 0,
-        'grant_delete' => (!empty($access['delete'][$rid])) ? (bool) $access['delete'][$rid] : 0,
-      );
-      $id = workflow_access_insert_workflow_access_by_sid($data);
-    }
-
-    // Update all nodes having same workflow state to reflect new settings.
-    foreach (workflow_get_workflow_node_by_sid($sid) as $data) {
-      // Instead of trying to construct what the grants should be per node as we save.
-      // Let's fall back on existing node grant systems that will find it for us.
-      $entity_type = 'node'; // @todo: add support for other entity types in workflow_access_form_submit()
-      $node = node_load($data->nid);
-      node_access_acquire_grants($node);
-    }
-  }
-
-  drupal_set_message(t('Workflow access permissions updated.'));
-  $form_state['redirect'] = 'admin/config/workflow/workflow/' . $form['#wid'];
 }
 
 /**
@@ -284,10 +141,12 @@ function workflow_access_insert_workflow_access_by_sid(&$data) {
  * Implements hook_form_alter().
  *
  * Tell the Features module that we intend to provide one exportable component.
+ * @todo: the location of this setting is not very good aligned with the other settings.
+ * @todo: this setting is on a page that is not accessible for Workflow Field.
  */
 function workflow_access_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
-    case 'workflow_admin_ui_types_form':
+    case 'workflow_admin_ui_overview_page':
       $form['workflow_access'] = array(
         '#type' => 'fieldset',
         '#title' => t('Workflow Access'),
@@ -304,7 +163,7 @@ function workflow_access_form_alter(&$form, &$form_state, $form_id) {
           . ' '
           . l(t('Read the manual.'), 'https://api.drupal.org/api/drupal/modules!node!node.api.php/function/hook_node_access_records/7'),
         );
-       
+
       $form['#submit'][] = 'workflow_access_priority_submit';
       return;
   }

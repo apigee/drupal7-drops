@@ -154,13 +154,13 @@ class WorkflowState {
    *
    * May return more then one State, since a name is not (yet) an UUID.
    */
-  public static function getStatesByName($name, $wid) {
-    foreach ($states = WorkflowState::getStates($wid) as $state) {
-      if ($name != $state->getName()) {
-        unset($states[$state->sid]);
+  public static function loadByName($name, $wid) {
+    foreach ($states = self::getStates($wid) as $state) {
+      if ($name == $state->getName()) {
+        return $state;
       }
     }
-    return $states;
+    return NULL;
   }
 
   /**
@@ -346,16 +346,21 @@ class WorkflowState {
     $workflow = Workflow::load($this->wid);
     if ($workflow) {
       $roles = array_keys($user->roles);
-      // Some entities (like taxonomy_term) do not have a field 'uid'.
-      if (!isset($entity->uid)) {
-        // $entity->uid = $user->uid;
+
+      // If this is a new page, give the authorship role.
+      if (!$entity_id) {
+        $roles = array_merge(array('author'), $roles);
       }
-      // If user is node author or this is a new page, give the authorship role.
-      if (!$entity_id || (!empty($entity->uid) && $user->uid == $entity->uid)) {
-        $roles += array('author' => 'author');
+      // Add 'author' role to user if user is author of this entity.
+      // - Some entities (e.g, taxonomy_term) do not have a uid.
+      // - If 'anonymous' is the author, don't allow access to History Tab,
+      //   since anyone can access it, and it will be published in Search engines. 
+      elseif (isset($entity->uid) && $entity->uid == $user->uid && $user->uid > 0) {
+        $roles = array_merge(array('author'), $roles);
       }
+
+      // Superuser is special. And $force allows Rules to cause transition.
       if ($user->uid == 1 || $force) {
-        // Superuser is special. And Force allows Rules to cause transition.
         $roles = 'ALL';
       }
 
@@ -385,6 +390,41 @@ class WorkflowState {
     }
 
     return $options;
+  }
+
+  /**
+   * Returns the number of entities with this state.
+   *
+   * @return integer
+   *  counted number.
+   * @todo: add $options, to select on entity type, etc.
+   */
+  public function count() {
+    $sid = $this->sid;
+    // Get the number for Workflow Node.
+    $result = db_select('workflow_node', 'wn')
+      ->fields('wn')
+      ->condition('sid', $sid,'=')
+      ->execute();
+    $count = $result->rowCount();
+
+    // Get the numbers for Workflow Field.
+    $fields = field_info_field_map();
+    foreach($fields as $field_name => $field_map) {
+      if ($field_map['type'] == 'workflow') {
+        $query = new EntityFieldQuery();
+        $query
+          ->fieldCondition($field_name, 'value', $sid, '=')
+          //->entityCondition('bundle', 'article')
+          // ->addMetaData('account', user_load(1)) // Run the query as user 1.
+          ->count(); // We only need the count.
+
+        $result = $query->execute();
+        $count += $result;
+      }
+    }
+
+    return $count;
   }
 
   /**

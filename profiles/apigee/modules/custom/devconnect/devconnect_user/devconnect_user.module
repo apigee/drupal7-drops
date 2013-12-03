@@ -306,14 +306,14 @@ function devconnect_user_attributes_form($form, &$form_state) {
       ),
       '#default_value' => isset($default_values[$field_name]["empty_action"]) ? $default_values[$field_name]["empty_action"] : 'null',
     );
-  }
 
-  $form['kms_persisted_user_attribute'][$field_name]["kms_attribute_set_to_string_boolean_$field_name"] = array (
-    '#title' => t('Convert to true|false string'),
-    '#type' => 'checkbox',
-    '#description' => t('Value to be sent to KMS will be set as (field_value ? \'true\' : \'false\')'),
-    '#default_value' => isset($default_values[$field_name]["convert_to_boolean_string_value"]) ? $default_values[$field_name]["convert_to_boolean_string_value"] : FALSE,
-  );
+    $form['kms_persisted_user_attribute'][$field_name]["kms_attribute_set_to_string_boolean_$field_name"] = array (
+      '#title' => t('Convert to true|false string'),
+      '#type' => 'checkbox',
+      '#description' => t('Value to be sent to KMS will be set as (field_value ? \'true\' : \'false\')'),
+      '#default_value' => isset($default_values[$field_name]["convert_to_boolean_string_value"]) ? $default_values[$field_name]["convert_to_boolean_string_value"] : FALSE,
+    );
+  }
 
   $form['devconnect_user_attributes_to_persist_in_kms'] = array(
     '#type' => 'value',
@@ -350,9 +350,14 @@ function devconnect_user_attributes_form_validate($form, &$form_state) {
         $field_name = substr($input, 28);
         unset($form_state['values']["kms_internal_attribute_name_$field_name"]);
       }
+      else {
+        $field_name = NULL;
+      }
     }
-    unset($form_state['values']["kms_attribute_empty_action_$field_name"]);
-    unset($form_state['values']["kms_attribute_set_to_string_boolean_$field_name"]);
+    if (isset($field_name)) {
+      unset($form_state['values']["kms_attribute_empty_action_$field_name"]);
+      unset($form_state['values']["kms_attribute_set_to_string_boolean_$field_name"]);
+    }
   }
   $form_state['values']['devconnect_user_attributes_to_persist_in_kms'] = $default_values;
 }

@@ -2,8 +2,7 @@ name = Devconnect Admin notification
 description = Notifies administrator of new user registrations.
 core = 7.x
 package = "DevConnect"
-version = 7.x-4.22
+version = 7.x-4.24
 
-files[] = devconnect_admin_notify.module
 files[] = devconnect_admin_notify.admin.inc
 

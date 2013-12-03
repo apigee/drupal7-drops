@@ -71,3 +71,64 @@ function environment_indicator_update_7200(&$sandbox) {
     db_create_table('environment_indicator_environment', $schema['environment_indicator_environment']);
   }
 }
+
+/**
+ * Add the default text color for existing environments.
+ */
+function environment_indicator_update_7201(&$sandbox) {
+  module_load_include('inc', 'ctools', 'includes/export');
+  $environments = ctools_export_crud_load_all('environment_indicator_environment');
+  foreach ($environments as $machine => $environment) {
+    if (!isset($environment->settings['text_color'])) {
+      $environment->settings['text_color'] = '#ffffff';
+      ctools_export_crud_save('environment_indicator_environment', $environment);
+    }
+  }
+}
+
+/**
+ * Migrate the old variables to the default environment.
+ */
+function environment_indicator_update_7202(&$sandbox) {
+  module_load_include('inc', 'ctools', 'includes/export');
+  $default_environment = ctools_export_crud_load('environment_indicator_environment', 'default_environment');
+  // We want to load the environment variables directly from the database, not
+  // from settings.php. Using variable_get() is thus not an option, since it
+  // uses the values from settings.php to override those in the database.
+  $result = db_query("SELECT * FROM {variable} WHERE name LIKE 'environment_indicator_%'");
+  $updated = FALSE;
+  if ($result) {
+    while ($row = $result->fetchAssoc()) {
+      switch ($row['name']) {
+        case 'environment_indicator_color':
+          $default_environment->settings['color'] = unserialize($row['value']);
+          variable_del($row['name']);
+          $updated = TRUE;
+          break;
+
+        case 'environment_indicator_text':
+          $default_environment->name = unserialize($row['value']);
+          variable_del($row['name']);
+          $updated = TRUE;
+          break;
+
+        case 'environment_indicator_enabled':
+        case 'environment_indicator_margin':
+        case 'environment_indicator_position':
+          // This variable is no longer used. Remove it.
+          variable_del($row['name']);
+          break;
+        case 'environment_indicator_suppress_pages':
+          // This variable is still used, keep it.
+          break;
+      }
+    }
+  }
+
+  // Only save if the default environment was not edited yet. The old variables
+  // have been removed nonetheless.
+  if (!($defaut_environment->export_type & EXPORT_IN_DATABASE) && $default_environment->export_module == 'environment_indicator' && $updated) {
+    ctools_export_crud_save('environment_indicator_environment', $default_environment);
+    return t('Your default environment was updated with your previous configuration.');
+  }
+}

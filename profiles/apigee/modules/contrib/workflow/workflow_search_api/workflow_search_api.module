@@ -10,7 +10,7 @@
 function workflow_search_api_entity_property_info_alter(&$info) {
   $info['node']['properties']['workflow_state_name'] = array(
     'type' => 'text',
-    'label' => t('Workflow state name'),
+    'label' => t('Workflow state label'),
     'sanitized' => TRUE,
     'getter callback' => 'workflow_search_api_property_workflow_state_getter_callback',
   );
@@ -20,12 +20,6 @@ function workflow_search_api_entity_property_info_alter(&$info) {
  * Getter callback for workflow state defined in workflow_search_api_entity_property_info_alter.
  */
 function workflow_search_api_property_workflow_state_getter_callback($item) {
-  $state_name = '';
-  if ($sid = $item->workflow) {
-    // Get text value of workflow state.
-    $state = WorkflowState::load($sid);
-    $state_name = $state->getName();
-  }
-
-  return $state_name;
+  // Get text value of workflow state.
+  return workflow_get_sid_label($sid = $item->workflow);
 }

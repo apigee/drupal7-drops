@@ -89,26 +89,36 @@ function workflow_tab_access($entity_type, $entity) {
   static $access = array();
 
   // $figure out the $entity's bundle and id.
-  list($id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
+  list($entity_id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
 
-  if (isset($access[$user->uid][$entity_type][$id])) {
-    return $access[$user->uid][$entity_type][$id];
+  if (isset($access[$user->uid][$entity_type][$entity_id])) {
+    return $access[$user->uid][$entity_type][$entity_id];
   }
 
   if ($workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
+    // Get the roles of the user.
     $roles = array_keys($user->roles);
-    // Some entities, do not have a uid.
-    if (isset($entity->uid) && $entity->uid == $user->uid) {
+
+    // If this is a new page, give the authorship role.
+    if (!$entity_id) {
       $roles = array_merge(array('author'), $roles);
     }
+    // Add 'author' role to user if user is author of this entity.
+    // N.B.1: Some entities (e.g, taxonomy_term) do not have a uid.
+    // N.B.2: If 'anonymous' is the author, don't allow access to History Tab,
+    // since anyone can access it, and it will be published in Search engines. 
+    elseif (isset($entity->uid) && $entity->uid == $user->uid && $user->uid > 0) {
+      $roles = array_merge(array('author'), $roles);
+    }
+
     $allowed_roles = $workflow->tab_roles ? explode(',', $workflow->tab_roles) : array();
     if (user_access('administer nodes') || array_intersect($roles, $allowed_roles)) {
-      $access[$user->uid][$entity_type][$id] = TRUE;
+      $access[$user->uid][$entity_type][$entity_id] = TRUE;
     }
     else {
-      $access[$user->uid][$entity_type][$id] = FALSE;
+      $access[$user->uid][$entity_type][$entity_id] = FALSE;
     }
-    return $access[$user->uid][$entity_type][$id];
+    return $access[$user->uid][$entity_type][$entity_id];
   }
   return FALSE;
 }
@@ -259,7 +269,7 @@ function workflow_forms($form_id, $args) {
 /**
  * Form builder. Allow workflow state change and scheduling from workflow tab.
  */
-function workflow_transition_form(&$form, &$form_state, $field, $instance, $entity_type, $entity) {
+function workflow_transition_form($form, &$form_state, $field, $instance, $entity_type, $entity) {
   if (!isset ($instance['widget']['settings']['submit_function']) ) {
     $instance['widget']['settings']['submit_function'] = 'workflow_save_transition';
   }
@@ -296,9 +306,9 @@ function workflow_state_formatter($entity_type, $entity, $field = array(), $inst
   else {
     // This is a Workflow Node workflow.
     $current_state = WorkflowState::load($current_sid);
-    $output = theme('workflow_current_state', array('state' => $current_state->label(),
+    $output = theme('workflow_current_state', array('state' => workflow_get_sid_label($current_sid),
                                                     'state_system_name' => $current_state->getName(),
-                                                    'sid' => $current_state->sid));
+                                                    'sid' => $current_sid));
     return array(
       '#type' => 'item',
       // '#title' => t('Current state'),
@@ -392,6 +402,11 @@ function workflow_execute_transition($entity_type, $entity, $field_name, $transi
   return $new_sid;
 }
 
+
+/**
+ * Functions to be used in non-OO modules, like workflow_rules, workflow_views.
+ */
+
 /**
  * Get an options list for workflow states (to show in a widget).
  *
@@ -402,16 +417,79 @@ function workflow_execute_transition($entity_type, $entity, $field_name, $transi
  * @param bool $grouped
  *   Indicates if the value must be grouped per workflow.
  *   This influence the rendering of the select_list options.
+ * @param bool $all
+ *   Indicates to return all (TRUE) or active (FALSE) states of a workflow.
  *
  * @return array $options
  *   An array of $sid => state->label(), grouped per Workfllow.
  */
-function workflow_get_workflow_options($wid = 0, $grouped = FALSE) {
+function workflow_get_workflow_state_names($wid = 0, $grouped = FALSE, $all = FALSE) {
   $options = array();
   foreach (Workflow::getWorkflows($wid) as $workflow) {
-    $options += $workflow->getOptions($grouped);
+    $workflow_options = array();
+    foreach ($workflow->getStates($all) as $state) {
+      $workflow_options[$state->value()] = check_plain($state->label());
+    }
+
+    if (!$grouped) {
+      $options += $workflow_options;
+    }
+    else {
+      // Make a group for each Workflow.
+      $options[$workflow->label()] = $workflow_options;
+    }
   }
+
   return $options;
+}
+
+/**
+ * Get an options list for workflows (to show in a widget).
+ *
+ * To be used in non-OO modules.
+ *
+ * @return array $options
+ *   An array of $wid => workflow->label().
+ */
+function workflow_get_workflow_names() {
+  $options = array();
+  foreach (Workflow::getWorkflows() as $workflow) {
+    $options[$workflow->wid] = $workflow->label();
+  }
+
+  return $options;
+}
+
+/**
+ * Helper function, to get the label of a given state.
+ */
+function workflow_get_sid_label($sid) {
+  if (empty($sid)) {
+    $output = t('No state');
+  }
+  elseif ($state = WorkflowState::load($sid)) {
+    $output = $state->label();
+  }
+  else {
+    $output = t('Unknown state');
+  }
+  return $output;
+}
+
+/**
+ * Helper function, to get the label of a given state.
+ */
+function workflow_get_wid_label($wid) {
+  if (empty($wid)) {
+    $output = t('No workflow');
+  }
+  elseif ($workflow = Workflow::load($wid)) {
+    $output = $workflow->label();
+  }
+  else {
+    $output = t('Unknown workflow');
+  }
+  return $output;
 }
 
 /**
@@ -426,18 +504,20 @@ function workflow_get_workflow_options($wid = 0, $grouped = FALSE) {
  *
  * @return mixed $sid
  *   The ID of the current state.
- * @todo: If you changed the workflow type for a field/node, they never reach the new workflow. see https://drupal.org/node/1036580
  */
 function workflow_node_current_state($entity, $entity_type = 'node', $field_name = '') {
   $sid = FALSE;
   static $sids = array();
 
-  // Return cached value of $sid.
   $entity_id = entity_id($entity_type, $entity);
-  if (isset($sids[$entity_type][$entity_id][$field_name])) {
-    $sid = $sids[$entity_type][$entity_id][$field_name];
-    return $sid;
-  }
+
+// There is no need to use a page cache.
+// The performance is OK, and it gives prolems when using Rules.
+  // // Return cached value of $sid.
+  // if (isset($sids[$entity_type][$entity_id][$field_name])) {
+  //   $sid = $sids[$entity_type][$entity_id][$field_name];
+  //   return $sid;
+  // }
 
   // Field API: Get current/previous state.
   if ($field_name) {
@@ -445,16 +525,15 @@ function workflow_node_current_state($entity, $entity_type = 'node', $field_name
       // A new node has no sid. Fetch it later.
       $sid = FALSE;
     }
-    elseif (isset($entity->original)) {
-      // A changed node.
-      $referenced_entity = $entity->original;
-      $items = field_get_items($entity_type, $referenced_entity, $field_name);
-      $sid = _workflow_get_sid_by_items($items);
-    }
+//    elseif (isset($entity->original)) {
+//      // A changed node.
+//      $items = isset($entity->original->{$field_name}['und']) ? $entity->original->{$field_name}['und'] : NULL;
+//      $sid = ($items) ? _workflow_get_sid_by_items($items) : FALSE;
+//    }
     else {
       // A normal node, on Node view page / Workflow history tab.
-      $items = field_get_items($entity_type, $entity, $field_name);
-      $sid = ($items) ? _workflow_get_sid_by_items($items) : 0;
+      $items = isset($entity->{$field_name}['und']) ? $entity->{$field_name}['und'] : NULL;
+      $sid = ($items) ? _workflow_get_sid_by_items($items) : FALSE;
     }
     // No current state. Use creation state.
     if (!$sid) {
@@ -465,35 +544,44 @@ function workflow_node_current_state($entity, $entity_type = 'node', $field_name
   }
   else {
     // Node API: Get current/previous state.
-    // There is no nid when creating a node.
-    if (!$sid && !empty($entity_id)) {
-      if ($state = workflow_get_workflow_node_by_nid($entity->nid)) {
-        $sid = $state->sid;
-      }
+    // Do not use a page cache. This gives problems with Rules.
+    if (isset($entity->workflow)) {
+      $sid = $entity->workflow;
     }
-    if (!$sid && !empty($entity->type)) {
-      // No current state. Use creation state.
-      if ($workflow = workflow_get_workflows_by_type($entity->type, $entity_type)) {
-        $sid = $workflow->getCreationSid();
-      }
+    elseif ($workflow = workflow_get_workflows_by_type($entity->type, $entity_type)) {
+      $sid = $workflow->getCreationSid();
     }
   }
 
-  $sids[$entity_type][$entity_id][$field_name] = $sid;
+  // $sids[$entity_type][$entity_id][$field_name] = $sid;
   return $sid;
 }
 
 function workflow_node_previous_state($entity, $entity_type = 'node', $field_name = '') {
   $sid = FALSE;
+  // Get Id. Is empty when creating a node.
   $entity_id = entity_id($entity_type, $entity);
-  // There is no nid when creating a node.
-  if ($last_transition = WorkflowTransition::load($entity_type, $entity_id, $field_name, 1)) {
-    $last_transition = array_pop($last_transition);
-    $sid = $last_transition->old_sid;
+
+  if ($field_name && isset($entity->original)) {
+    // A changed node.
+    $items = isset($entity->original->{$field_name}['und']) ? $entity->original->{$field_name}['und'] : NULL;
+    $sid = ($items) ? _workflow_get_sid_by_items($items) : FALSE;
   }
-  if (!$sid && !empty($node->type)) {
+
+  if (!$sid && $last_transition = WorkflowTransition::load($entity_type, $entity_id, $field_name, 1)) {
+    $last_transition = array_pop($last_transition);
+    $sid = $last_transition->new_sid;
+  }
+  if (!$sid) {
+    // Figure out the $entity's bundle and Id. Id is empty on node create.
+    if (!empty($entity->type)) {
+      $entity_bundle = $entity->type;
+    }
+    else {
+      list($entity_id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
+    }
     // No current state. Use creation state.
-    if ($workflow = workflow_get_workflows_by_type($node->type, $entity_type)) {
+    if ($workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
       $sid = $workflow->getCreationSid();
     }
   }
@@ -892,6 +980,6 @@ function _workflow_get_sid_by_items($items) {
   // On a normal widget:
   $sid = isset($items[0]['value']) ? $items[0]['value'] : 0;
   // On a workflow form widget:
-  $sid = isset($items[0]['workflow']['workflow_options']) ? $items[0]['workflow']['workflow_options'] : $sid;
+  $sid = isset($items[0]['workflow']['workflow_sid']) ? $items[0]['workflow']['workflow_sid'] : $sid;
   return $sid;
 }

@@ -4,16 +4,17 @@ core = 7.x
 
 dependencies[] = ctools
 
+scripts[] = tinycon.min.js
 scripts[] = environment_indicator.js
 scripts[] = color.js
 
-files[] = plugins/ctools_export_ui_environment_indicator.class.php
+files[] = plugins/export_ui/ctools_export_ui_environment_indicator.class.php
 
 stylesheets[all][] = environment_indicator.css
 
-; Information added by drupal.org packaging script on 2013-08-20
-version = "7.x-2.0"
+; Information added by  packaging script on 2013-12-01
+version = "7.x-2.2"
 core = "7.x"
 project = "environment_indicator"
-datestamp = "1377024690"
+datestamp = "1385935410"
 

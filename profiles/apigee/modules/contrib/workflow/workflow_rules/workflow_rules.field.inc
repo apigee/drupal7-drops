@@ -35,7 +35,7 @@ function _workflow_rules_rules_field_condition_info() {
       'field' => array(
         'type' => WORKFLOWFIELD_PROPERTY_TYPE,
         'label' => t('Workflow state to compare'),
-        'description' => t('The state to be compared. Use "node:" to compare the previous state, use "node-unchanged:" to compare the new state.'),
+        'description' => t('The state to be compared. Use "node:" to compare the new state; use "node-unchanged:" to compare the previous state.'),
         'restriction' => 'selector',
 //        'allow null' => TRUE,
       ),

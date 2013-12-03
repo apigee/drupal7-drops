@@ -365,11 +365,8 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
    *  and used for all nodes on a page.
    */
   public function getAllowedValues() {
-    $options = array();
     // Get all state names, including inactive states.
-    foreach (Workflow::getWorkflows() as $workflow) {
-      $options += $workflow->getOptions($grouped = FALSE);
-    }
+    $options = workflow_get_workflow_state_names(0, $grouped = FALSE, $all = TRUE);
     return $options;
   }
 

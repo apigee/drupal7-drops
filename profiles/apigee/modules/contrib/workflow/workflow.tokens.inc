@@ -96,7 +96,8 @@ function workflow_tokens($type, $tokens, array $data = array(), array $options =
               $replacements[$original] = $sanitize ? check_plain($states[$sid]->getName()) : $states[$sid]->getName();
               break;
             case 'workflow-old-state-name':
-              $replacements[$original] = $sanitize ? check_plain($states[$old_sid]->getName()) : $states[$old_sid]->getName();
+              $old_state_name = (!empty($states[$old_sid])) ? $states[$old_sid]->getName() : 'Deleted state';
+              $replacements[$original] = $sanitize ? check_plain($old_state_name) : $old_state_name;
               break;
             case 'workflow-current-state-updating-user-name':
               $name = format_username($account);

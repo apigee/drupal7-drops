@@ -28,10 +28,10 @@ function workflow_get_workflows_by_wid($wid, $reset = FALSE) {
 
 /**
  * Get a specific workflow, name is a unique ID.
- * @deprecated: workflow_get_workflows_by_name() --> Workflow::getWorkflowByName($name)
+ * @deprecated: workflow_get_workflows_by_name() --> Workflow::loadByName($name)
  */
-function workflow_get_workflows_by_name($name, $unserialize_options = FALSE) {
-  return Workflow::getWorkflowByName($name, $unserialize_options);
+function workflow_get_workflows_by_name($name) {
+  return Workflow::loadByName($name);
 }
 
 /**
@@ -118,14 +118,8 @@ function workflow_delete_workflows_by_wid($wid) {
  * @deprecated: workflow_get_workflow_states_all() --> Workflow::getOptions()
  */
 function workflow_get_workflow_states_all() {
-  $options = array();
-
   // Get all states, only where active.
-  foreach (Workflow::getWorkflows() as $workflow) {
-    $options += $workflow->getOptions($grouped = FALSE);
-  }
-
-  return $options;
+  return workflow_get_workflow_state_names($wid = 0, $grouped = FALSE, $all = FALSE);
 }
 
 /**
@@ -217,7 +211,7 @@ function workflow_transition($entity, $new_sid, $force = FALSE, $field = array()
   $form_state = array();
   $items = array();
   $items[0]['workflow'] = (array) $entity;
-  $items[0]['workflow']['workflow_options'] = $new_sid;
+  $items[0]['workflow']['workflow_sid'] = $new_sid;
   $widget->submit($form, $form_state, $items, $force);
 }
 

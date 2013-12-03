@@ -111,11 +111,9 @@ function workflow_vbo_given_state_action_form(array $context) {
 
   // @todo: prevent choosing a state from an illegal Workflow.
   // Get all states, only where active.
-  foreach (Workflow::getWorkflows() as $workflow) {
-    $options += $workflow->getOptions($grouped = TRUE);
-  }
+  $options = workflow_get_workflow_state_names(0, $grouped = TRUE, $all = FALSE);
 
-  $form['workflow_options'] = array(
+  $form['workflow_sid'] = array(
     '#type' => 'select',
     '#title' => t('Target state'),
     '#description' => t('Please select the state that should be assigned when this action runs.'),
@@ -148,11 +146,11 @@ function workflow_vbo_given_state_action_form(array $context) {
  * @see workflow_vbo_given_state_action_form()
  */
 function workflow_vbo_given_state_action_submit($form_id, $form_state) {
-  $new_sid = $form_state['values']['workflow_options'];
-  if ($state = WorkflowState::load($new_sid)) {
+  $new_sid = $form_state['values']['workflow_sid'];
+  if ($new_sid) {
     return array(
-      'target_sid' => $state->sid,
-      'state_name' => check_plain($state->getName()),
+      'target_sid' => $new_sid,
+      'state_name' => workflow_get_sid_label($new_sid),
       'force' => $form_state['values']['workflow_force'],
       'workflow_comment' => $form_state['values']['workflow_comment'],
     );

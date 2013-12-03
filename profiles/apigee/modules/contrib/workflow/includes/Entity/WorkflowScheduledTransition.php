@@ -18,8 +18,9 @@ class WorkflowScheduledTransition extends WorkflowTransition {
    *
    * @todo: use parent::__construct ?
    */
-  public function __construct($entity_type = '', $entity = NULL, $field_name = '', $old_sid = 0, $new_sid = 0, $uid = 0, $stamp = 0, $comment = '') {
-    parent::__construct($entity_type, $entity, $field_name, $old_sid, $new_sid, $uid, $stamp, $comment);
+  public function __construct($entity_type = '', $entity = NULL, $field_name = '', $old_sid = 0, $new_sid = 0, $uid = 0, $scheduled = 0, $comment = '') {
+    parent::__construct($entity_type, $entity, $field_name, $old_sid, $new_sid, $uid, $stamp = 0, $comment);
+    $this->scheduled = $scheduled;
   }
 
   /**

@@ -3,7 +3,7 @@
   text-align: center;
   white-space: nowrap;
   color: white;
-  text-shadow: 0 -1px 1px #333;
+  text-shadow: 0 -1px 1px #333333;
   font-weight: bold;
   z-index: 10;
   left: 0;
@@ -57,7 +57,7 @@ div#toolbar div.toolbar-menu { padding: 5px 20px 5px 10px; }
 #toolbar .item-list ul.environment-switcher-container li.environment-switcher {
   list-style: none;
   float: left;
-  background-color: #333;
+  background-color: #333333;
   margin: 0 3px;
   padding: 3px 8px;
   -moz-border-radius: 15px;
@@ -70,24 +70,24 @@ div#toolbar div.toolbar-menu { padding: 5px 20px 5px 10px; }
 
 #environment-indicator .item-list ul.environment-switcher-container li.environment-switcher:hover,
 #toolbar .item-list ul.environment-switcher-container li.environment-switcher:hover {
-  background-color: #DDD;
-  -moz-box-shadow: inset 0 1px 5px #333;
-  -webkit-box-shadow: inset 0 1px 5px #333;
-  -o-box-shadow: inset 0 1px 5px #333;
-  box-shadow: inset 0 1px 5px #333;
+  background-color: #dddddd;
+  -moz-box-shadow: inset 0 1px 5px #333333;
+  -webkit-box-shadow: inset 0 1px 5px #333333;
+  -o-box-shadow: inset 0 1px 5px #333333;
+  box-shadow: inset 0 1px 5px #333333;
 }
 #environment-indicator .item-list ul.environment-switcher-container li.environment-switcher a,
-#toolbar .item-list ul.environment-switcher-container li.environment-switcher a { color: #DDD; text-decoration: none; background-color: transparent !important; }
+#toolbar .item-list ul.environment-switcher-container li.environment-switcher a { color: #dddddd; text-decoration: none; background-color: transparent !important; }
 #environment-indicator .item-list ul.environment-switcher-container li.environment-switcher:hover a,
-#toolbar .item-list ul.environment-switcher-container li.environment-switcher:hover a { color: #333; }
+#toolbar .item-list ul.environment-switcher-container li.environment-switcher:hover a { color: #333333; }
 
 #environment-indicator .item-list, #toolbar .item-list {
   display: none;
   padding: 10px;
-  -moz-box-shadow: inset 0 0 5px #333;
-  -webkit-box-shadow: inset 0 0 5px #333;
-  -o-box-shadow: inset 0 0 5px #333;
-  box-shadow: inset 0 0 5px #333;
+  -moz-box-shadow: inset 0 0 5px #333333;
+  -webkit-box-shadow: inset 0 0 5px #333333;
+  -o-box-shadow: inset 0 0 5px #333333;
+  box-shadow: inset 0 0 5px #333333;
 }
 
 #admin-menu #environment-indicator .item-list {

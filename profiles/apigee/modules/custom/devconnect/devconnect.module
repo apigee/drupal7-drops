@@ -1,5 +1,6 @@
 <?php
 
+// These constants are deprecated and will be removed in R25.
 define('DEVCONNECT_APIGEE_DEFAULT_USER', 'fixme');
 define('DEVCONNECT_APIGEE_DEFAULT_PASSWORD', 'fnt996QUJucOlMGEkYOp5wGwcwNGdfcOX3dZutRJCfDQ=='); // "secret" encrypted
 define('DEVCONNECT_APIGEE_DEFAULT_ENDPOINT', 'https://api.enterprise.apigee.com/v1');

@@ -4,8 +4,8 @@ package = Future Compatibility
 core = "7.x"
 version = "7.x-1.x-dev"
 
-; Information added by drush on 2013-11-27
+; Information added by drush on 2013-12-03
 version = "unknown"
 project = "d8cmi"
-datestamp = "1385581736"
+datestamp = "1386106321"
 

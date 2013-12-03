@@ -148,13 +148,13 @@ function workflow_admin_ui_view_permissions_form($workflow) {
 
     $all = array();
     $roles = workflow_admin_ui_get_roles();
-    foreach ($roles as $role => $value) {
-      $all[$role]['name'] = $value;
+    foreach ($roles as $rid => $value) {
+      $all[$rid]['name'] = $value;
     }
 
     // TODO return to this, this looks similar to actions stuff (transitions) - should be it's own function.
     $result = db_query(
-      'SELECT t.roles, s1.state AS state_name, s2.state AS target_state_name ' .
+      'SELECT t.tid, t.roles, s1.state AS state_name, s2.state AS target_state_name ' .
       'FROM {workflow_transitions} t ' .
       'INNER JOIN {workflow_states} s1 ON s1.sid = t.sid ' .
       'INNER JOIN {workflow_states} s2 ON s2.sid = t.target_sid ' .
@@ -162,8 +162,8 @@ function workflow_admin_ui_view_permissions_form($workflow) {
       'ORDER BY s1.weight ASC , s1.state ASC , s2.weight ASC , s2.state ASC',
       array(':wid' => $workflow->wid));
     foreach ($result as $data) {
-      foreach (explode(',', $data->roles) as $role) {
-        $all[$role]['transitions'][] = array(check_plain(t($data->state_name)), WORKFLOW_ADMIN_UI_ARROW, check_plain(t($data->target_state_name)));
+      foreach (explode(',', $data->roles) as $rid) {
+        $all[$rid]['transitions'][] = array(check_plain(t($data->state_name)), WORKFLOW_ADMIN_UI_ARROW, check_plain(t($data->target_state_name)));
       }
     }
 
@@ -171,10 +171,9 @@ function workflow_admin_ui_view_permissions_form($workflow) {
     $output = '';
 
     // TODO we should theme out the html here.
-    foreach ($all as $role => $value) {
-      if (!empty($value['name'])) {
-        $output .= '<h3>' . t('%role may do these transitions:', array('%role' => $value['name'])) . '</h3>';
-      }
+    foreach ($all as $rid => $value) {
+      $role_name = !empty($value['name']) ? $value['name'] : t('deleted role !rid', array('!rid' => $rid));
+      $output .= '<h3>' . t('%role may do these transitions:', array('%role' => $role_name)) . '</h3>';
       if (!empty($value['transitions'])) {
         $output .= theme('table', array('header' => $header, 'rows' => $value['transitions'])) . '<p></p>';
       }
@@ -198,7 +197,7 @@ function theme_workflow_admin_ui_view_permissions_form($variables) {
   $all = $variables['all'];
   $output = '';
 
-  foreach ($all as $role => $value) {
+  foreach ($all as $rid => $value) {
     if (!empty($value['name'])) {
       $output .= '<h3>' . t('%role may do these transitions:', array('%role' => $value['name'])) . '</h3>';
     }
@@ -488,7 +487,7 @@ function theme_workflow_admin_ui_transitions_form($variables) {
   if ($workflow) {
     drupal_set_title(t('Edit workflow %name transitions', array('%name' => $name)), PASS_THROUGH);
 
-    $states = $workflow->getStates();
+    $states = $workflow->getStates($all = 'CREATION');
     if ($states) {
       $roles = workflow_admin_ui_get_roles();
 
@@ -562,7 +561,7 @@ function _workflow_admin_ui_transition_grid_form($workflow) {
 
   $roles = workflow_admin_ui_get_roles();
 
-  $states = $workflow->getStates();
+  $states = $workflow->getStates($all = 'CREATION');
   if (!$states) {
     $form['error'] = array(
       '#type' => 'markup',
@@ -638,7 +637,7 @@ function workflow_admin_ui_states_form($form, $form_state, $workflow) {
   // Build select options for reassigning states.
   // We put a blank state first for validation.
   $state_list = array('' => ' ');
-  $state_list += $workflow->getOptions();
+  $state_list += workflow_get_workflow_state_names($workflow->wid, $grouped = FALSE, $all = FALSE);
   // Is this the last state available?
   $form['#last_mohican'] = count($state_list) == 2;
 
@@ -688,7 +687,7 @@ function workflow_admin_ui_states_form($form, $form_state, $workflow) {
 
       'count' => array(
         '#type' => 'value',
-        '#value' => count(workflow_get_workflow_node_by_sid($state->sid)),
+        '#value' => $state->count(),
       ),
 
       'ops' => array(

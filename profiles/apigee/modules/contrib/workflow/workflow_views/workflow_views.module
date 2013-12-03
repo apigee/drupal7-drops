@@ -22,25 +22,14 @@ function workflow_views_permission() {
 
 /**
  * Implements hook_views_api().
+ *
+ * @todo D8: remove hook_views_api. See [#1875596]
  */
 function workflow_views_views_api() {
   return array(
-    'api' => 2,
-    'path' => drupal_get_path('module', 'workflow_views') . '/includes',
+    'api' => 3,
+    // The views.inc files are already in the root directory,
+    // as required in D8.
+    // 'path' => drupal_get_path('module', 'workflow_views'),
   );
-}
-
-/**
- * Helper function, to gather the workflow name from a given arguement.
- */
-function _workflow_views_get_workflow_state_name($sid) {
-  if (empty($sid)) {
-    return t('No state');
-  }
-  $output = t('Unknown state');
-  if ($state = WorkflowState::load($sid)) {
-    $name = $state->getName();
-    $output = !empty($name) ? check_plain($name) : $output;
-  }
-  return $output;
 }

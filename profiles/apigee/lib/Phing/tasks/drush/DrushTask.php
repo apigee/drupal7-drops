@@ -293,7 +293,7 @@ class DrushTask extends Task {
     }
     // Set value of the 'pipe' property.
     if (!empty($this->return_property)) {
-      $this->getProject()->setProperty($this->returnProperty, implode($this->return_glue, $output));
+      $this->getProject()->setProperty($this->return_property, implode($this->return_glue, $output));
     }
     // Build fail.
     if ($this->haltonerror && $return != 0) {

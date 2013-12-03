@@ -13,7 +13,7 @@ Bug reports, feature suggestions and latest developments:
 
 -- REQUIREMENTS --
 
-* None.
+* CTools
 
 
 -- INSTALLATION --
@@ -39,7 +39,7 @@ overridden in settings.php, but the most common three are:
       $conf['environment_indicator_overwritten_name'] = 'Staging'
   - environment_indicator_overwritten_color
       A valid css color. e.g:
-      $conf['environment_indicator_overwritten_color'] = '#F55'
+      $conf['environment_indicator_overwritten_color'] = '#ff5555'
   - environment_indicator_overwritten_position
       Where your indicator may appear. Allowed values are "top" and "bottom".
       e.g:

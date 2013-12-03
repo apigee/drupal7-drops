@@ -24,7 +24,7 @@
 	  
     -->
 	<target name="build-rpm" depends="clean">
-		<exec command="rpm -q rpmdevtools" returnproperty="DEVTOOLS_IS_INSTALLED"/>
+		<exec command="rpm -q rpmdevtools" returnProperty="DEVTOOLS_IS_INSTALLED"/>
 		<if>
 			<equals arg1="${DEVTOOLS_IS_INSTALLED}" arg2="package rpmdevtools is not installed"/>
 			<then>
@@ -42,7 +42,7 @@
 				<include name="**/**"/>
 			</fileset>
 		</copy>
-		<gitclone repository="${DISTRO_SOURCE}" targetpath="/tmp/${env.BUILD_ID}/apigee-drupal" />
+		<gitclone repository="${DISTRO_SOURCE}" targetPath="/tmp/${env.BUILD_ID}/apigee-drupal" />
 		<tar destfile="${user.home}/rpmbuild/SOURCES/apigee-drupal.tar.gz" compression="gzip" includeemptydirs="true" >
 			<fileset dir="/tmp/${env.BUILD_ID}">
 				<include name="**/**"/>

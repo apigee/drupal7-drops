@@ -134,8 +134,14 @@ function devconnect_developer_apps_entity_info() {
  */
 function devconnect_developer_apps_entity_property_info() {
   // Make sure devconnect_boot has run. This is necessary in certain cases
-  // when upgrading R23 sites to R24.
+  // when upgrading <= R23 sites to R24.
   devconnect_boot();
+  // When running update.php, we might reach this code before we get to the
+  // code that enables the d8cmi module. In that case, manually force the
+  // module to load.
+  if (!module_exists('d8cmi')) {
+    module_load_include('module', 'd8cmi');
+  }
   d8cmi_init();
 
   $raw_properties = Apigee\ManagementAPI\DeveloperApp::getAppProperties();

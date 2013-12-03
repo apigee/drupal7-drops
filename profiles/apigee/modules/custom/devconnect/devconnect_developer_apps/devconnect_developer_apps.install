@@ -30,7 +30,7 @@ function _devconnect_developer_apps_assign_perms() {
   user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, $perms);
   $roles = user_roles();
   foreach ($roles as $rid => $role) {
-    if (stripos($role->name, 'administrator') !== FALSE) {
+    if (stripos($role, 'administrator') !== FALSE) {
       user_role_grant_permissions($rid, array('administer developer apps'));
     }
   }

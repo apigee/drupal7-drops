@@ -22,7 +22,7 @@ Source11: %{name}.req.rpm-lt-4-9-compat
 
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-7.x-%{version}.%{release}-root-%(%{__id_u} -n)
-Requires: php, php-gd, php-mbstring, wget, php-pdo, php-xml
+Requires: php, php-gd, php-mbstring, php-mcrypt, php-mysql, php-pecl-apc, php-xml
 Requires: crontabs
 
 # Virtual provides
@@ -111,7 +111,9 @@ rm -rf %{buildroot}
 install -d %{buildroot}%{drupaldir}
 cp -pr * %{buildroot}%{drupaldir}
 cp -pr .htaccess %{buildroot}%{drupaldir}
-
+mkdir --mode=777 -p %{buildroot}%{drupaldir}/sites/default/{files,tmp,private}
+cp -p sites/default/default.settings.php %{buildroot}%{drupaldir}/sites/default/settings.php
+chmod 666 %{buildroot}%{drupaldir}/sites/default/settings.php
 
 # rpmbuild
 # RPM >= 4.9

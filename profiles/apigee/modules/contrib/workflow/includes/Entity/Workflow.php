@@ -7,7 +7,7 @@
 
 class Workflow {
   // Since workflows do not change, it is implemented as a singleton.
-  private static $workflows = array();
+  protected static $workflows = array();
 
   public $wid = 0;
   public $name = '';
@@ -24,11 +24,12 @@ class Workflow {
 
   /**
    * Constructor.
-   * The execution of the query instantiates objects and saves them in a static array.
+   *
+   * The query instantiates objects and saves them in a static array.
    */
   protected function __construct($wid = 0) {
     if (!$wid) {
-      // automatic constructor when casting an array or object.
+      // Automatic constructor when casting an array or object.
       if (!is_array($this->options)) {
         $this->options = unserialize($this->options);
       }
@@ -53,7 +54,14 @@ class Workflow {
   }
 
   /**
-   * Creates and returns a new Workflow object.
+   * Functions to creates and return a new or existing Workflow object.
+   * Implements a 'Factory' pattern to get Workflow objects from the database.
+   *
+   * "New considered harmful".
+   */
+
+  /**
+   * Creates a new Workflow object.
    *
    * $param string $name
    *  The name of the new Workflow
@@ -61,7 +69,6 @@ class Workflow {
    * $return Workflow $workflow
    *  A new Workflow object
    *
-   * "New considered harmful".
    */
   public static function create($name) {
     $workflow = new Workflow();
@@ -70,7 +77,8 @@ class Workflow {
   }
 
   /**
-   * Loads a Workflow object from table {workflows}
+   * Loads a Workflow object from table {workflows}.
+   *
    * Implements a 'Factory' pattern to get Workflow objects from the database.
    *
    * $param string $wid
@@ -88,17 +96,11 @@ class Workflow {
   /**
    * Implements a 'Factory' pattern to get Workflow objects from the database.
    *
-   * This is only called by CRUD functions in workflow.features.inc
-   * More than likely in prep for an import / export action.
-   * Therefore we don't want to fiddle with the response.
-   * @deprecated: workflow_get_workflows_by_name() --> Workflow::getWorkflowByName($name)
+   * @deprecated: workflow_get_workflows_by_name() --> Workflow::loadByName($name)
    */
-  public static function getWorkflowByName($name, $unserialize_options = FALSE) {
+  public static function loadByName($name) {
     foreach ($workflows = self::getWorkflows() as $workflow) {
       if ($name == $workflow->getName()) {
-        if (!$unserialize_options) {
-          $workflow->options = serialize($workflow->options);
-        }
         return $workflow;
       }
     }
@@ -106,7 +108,7 @@ class Workflow {
   }
 
   /**
-   * Returns an array of Workflows, reading them from table table {workflows}
+   * Returns an array of Workflows, reading them from table table {workflows}.
    */
   public static function getWorkflows($wid = 0, $reset = FALSE) {
     if ($reset) {
@@ -119,7 +121,8 @@ class Workflow {
     }
 
     // Build the query.
-    // If all are requested: read from db ($todo: cache this, but only used on Admin UI.)
+    // If all are requested: read from db
+    // (@todo: cache this, but only used on Admin UI.)
     // If requested one is not cached: read from db.
     $query = db_select('workflows', 'w');
     $query->leftJoin('workflow_states', 'ws', 'w.wid = ws.wid');
@@ -133,7 +136,7 @@ class Workflow {
     // Return array of objects, even if only 1 is requested.
     // Note: self::workflows[] is populated in respective constructors.
     if ($wid > 0) {
-      // return 1 object.
+      // Return 1 object.
       $workflow = isset(self::$workflows[$wid]) ? self::$workflows[$wid] : NULL;
       return array($wid => $workflow);
     }
@@ -201,14 +204,15 @@ class Workflow {
    * - Workflow node: workflow_admin_ui_type_map_form()
    * - Workflow field: WorkflowItem->settingsForm()
    *
-   * @return bool $is_valid
+   * @return bool
+   *   $is_valid
    */
   public function validate() {
     $is_valid = TRUE;
 
-    // Don't allow workflows with no states. (There should always be a creation state.)
-    $states = $this->getStates();
-    if (count($states) < 2) {
+    // Don't allow workflows with no states. There should always be a creation state.
+    $states = $this->getStates($all = FALSE);
+    if (count($states) < 1) {
       // That's all, so let's remind them to create some states.
       $message = t('Workflow %workflow has no states defined, so it cannot be assigned to content yet.',
         array('%workflow' => ucwords($this->getName())));
@@ -239,7 +243,7 @@ class Workflow {
    */
 
   /**
-   * Gets the initial state for a newly created entity
+   * Gets the initial state for a newly created entity.
    */
   public function getCreationState() {
     if (!isset($this->creation_state)) {
@@ -281,17 +285,26 @@ class Workflow {
   /**
    * Gets all states for a given workflow.
    *
-   * @param bool $all
-   *   Indicates to return all (TRUE) or active (FALSE) states of a workflow.
+   * @param mixed $all
+   *   Indicates to which states to return.
+   *   - TRUE = all, including Creation and Inactive;
+   *   - FALSE = only Active states, not Creation;
+   *   - 'CREATION' = only Active states, including Creation. 
    *
-   * @return array $states
+   * @return array
    *   An array of WorkflowState objects.
    */
   public function getStates($all = FALSE) {
     $states = WorkflowState::getStates($this->wid);
-    if (!$all) {
+    if ($all !== TRUE) {
       foreach ($states as $state) {
-        if (!$state->isActive() && !$state->isCreationState()) {
+        if (($all == FALSE) && $state->isCreationState()) {
+          unset($states[$state->sid]);
+        }
+        elseif (($all === FALSE) && !$state->isActive()) {
+          unset($states[$state->sid]);
+        }
+        elseif (($all == 'CREATION') && !$state->isActive()) {
           unset($states[$state->sid]);
         }
       }
@@ -305,35 +318,11 @@ class Workflow {
    * @param $sid
    *   A state ID.
    *
-   * @return
+   * @return WorkflowState
    *   A WorkflowState object.
    */
   public function getState($sid) {
     return WorkflowState::load($sid, $this->wid);
-  }
-
-  /**
-   * Gets all valid transitions from a given state, in Options format.
-   *
-   * @param bool $grouped
-   *   Indicates if the value must be grouped per workflow.
-   *   This influence the rendering of the select_list options.
-   *
-   * @return array $options
-   *   All states in a Workflow, as an array of $key => $label.
-   */
-  public function getOptions($grouped = FALSE) {
-    $options = array();
-    foreach ($this->getStates() as $state) {
-      $options[$state->value()] = check_plain($state->label());
-    }
-    if ($grouped) {
-      // Make a group for each Workflow.
-      $label = check_plain($this->label());
-      $grouped_options[$label] = $options;
-      return $grouped_options;
-    }
-    return $options;
   }
 
   /**
@@ -361,7 +350,7 @@ class Workflow {
   }
 
   /**
-   * Helper function for workflow_get_workflows_by_type()
+   * Helper function for workflow_get_workflows_by_type().
    *
    * Get/set the Item of a particular Workflow.
    * It loads the Workflow object with the particular Field Instance data.
@@ -380,7 +369,7 @@ class Workflow {
   public function label($langcode = NULL) {
     return t($this->name, $args = array(), $options = array('langcode' => $langcode));
   }
-  public  function getName() {
+  public function getName() {
     return $this->name;
   }
   public function value() {

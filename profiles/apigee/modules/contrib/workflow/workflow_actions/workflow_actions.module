@@ -39,7 +39,7 @@ function workflow_actions_trigger_info() {
   if (module_exists('workflownode')) {
     $tm = workflow_get_workflow_type_map();
     foreach ($tm as $type => $wid) {
-      $type_map[$wid][] = $type; 
+      $type_map[$wid][] = array('entity_type' => 'node', 'bundle' => $type); 
     }
   }
 

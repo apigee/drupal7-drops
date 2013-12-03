@@ -6,17 +6,15 @@ core = 7.x
 dependencies[] = workflow
 dependencies[] = views (>3.3)
 
-files[] = includes/workflow_views.views.inc
-files[] = includes/workflow_views.views_default.inc
-files[] = includes/workflow_views_handler_filter_sid.inc
-files[] = includes/workflow_views_handler_field_sid.inc
-files[] = includes/workflow_views_handler_field_state.inc
-files[] = includes/workflow_views_handler_field_username.inc
-files[] = includes/workflow_views_handler_argument_state.inc
+files[] = handlers/workflow_views_handler_filter_sid.inc
+files[] = handlers/workflow_views_handler_field_sid.inc
+files[] = handlers/workflow_views_handler_field_state.inc
+files[] = handlers/workflow_views_handler_field_username.inc
+files[] = handlers/workflow_views_handler_argument_state.inc
 
-; Information added by  packaging script on 2013-11-25
-version = "7.x-2.0-beta1"
+; Information added by  packaging script on 2013-12-03
+version = "7.x-2.0-beta2"
 core = "7.x"
 project = "workflow"
-datestamp = "1385419107"
+datestamp = "1386099513"
 
