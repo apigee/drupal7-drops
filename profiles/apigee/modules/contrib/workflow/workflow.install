@@ -3,14 +3,13 @@
 /**
  * @file
  * Install, update and uninstall functions for the workflow module.
- *
  */
 
 /**
  * Implements hook_install().
  */
-function workflow_install() {
-}
+// function workflow_install() {
+// }
 
 /**
  * Implements hook_uninstall().
@@ -34,8 +33,10 @@ function workflow_requirements($phase) {
   switch ($phase) {
     case 'install':
       break;
+
     case 'update':
       break;
+
     case 'runtime':
       // Show info on admin/reports/status
       $types = db_query('SELECT wid, type FROM {workflow_type_map} WHERE wid <> 0 ORDER BY type')->fetchAllKeyed();
@@ -62,9 +63,11 @@ function workflow_requirements($phase) {
         'value' => t('Workflow is active on the @types content types.', array('@types' => $type_list)),
         'severity' => REQUIREMENT_OK,
       );
+      break;
 
-    return $requirements;
   }
+
+  return $requirements;
 }
 
 /**
@@ -77,27 +80,27 @@ function workflow_schema() {
       'wid' => array(
         'description' => 'The primary identifier for a node.',
         'type' => 'serial',
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'name' => array(
         'description' => 'The name of the workflow (used as machine name for features integration).',
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'default' => ''
+        'default' => '',
       ),
       'tab_roles' => array(
         'description' => 'The role IDs that can access the workflow tabs on node pages.',
         'type' => 'varchar',
         'length' => '60',
         'not null' => TRUE,
-        'default' => ''
+        'default' => '',
       ),
       'options' => array(
         'description' => 'Additional settings for the workflow.',
         'type' => 'text',
         'size' => 'big',
-        'not null' => FALSE
+        'not null' => FALSE,
       ),
     ),
     'primary key' => array('wid'),
@@ -110,7 +113,7 @@ function workflow_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
-        'default' => ''
+        'default' => '',
       ),
       'wid' => array(
         'description' => 'The {workflows}.wid this record affects.',
@@ -118,7 +121,7 @@ function workflow_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'disp-width' => '10'
+        'disp-width' => '10',
       ),
     ),
     'indexes' => array(
@@ -130,7 +133,7 @@ function workflow_schema() {
       'tid' => array(
         'description' => 'The primary identifier for a workflow transition.',
         'type' => 'serial',
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'sid' => array(
         'description' => 'The {workflow_states}.sid start state.',
@@ -138,7 +141,7 @@ function workflow_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'disp-width' => '10'
+        'disp-width' => '10',
       ),
       'target_sid' => array(
         'description' => 'The {workflow_states}.sid target state.',
@@ -146,7 +149,7 @@ function workflow_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'disp-width' => '10'
+        'disp-width' => '10',
       ),
       'roles' => array(
         'description' => 'The {role}.sid that a user must have to perform transition.',
@@ -174,7 +177,7 @@ function workflow_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
-        'disp-width' => '10'
+        'disp-width' => '10',
       ),
       'state' => array(
         'description' => 'The name of the state.',
@@ -211,7 +214,7 @@ function workflow_schema() {
     'primary key' => array('sid'),
     'indexes' => array(
       'sysid' => array('sysid'),
-      'wid' => array('wid')
+      'wid' => array('wid'),
     ),
   );
   $schema['workflow_scheduled_transition'] = array(
@@ -301,7 +304,7 @@ function workflow_schema() {
       'hid' => array(
         'description' => 'The unique ID for this record.',
         'type' => 'serial',
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'entity_type' => array(
         'description' => 'The type of entity this transition belongs to.',
@@ -434,7 +437,9 @@ function workflow_update_last_removed() {
 }
 
 /**
- * Table update from 6 to 7. Adding a unique key for fields (already held unique in code).
+ * Table update from 6 to 7.
+ *
+ * Adding a unique key for fields (already held unique in code).
  */
 function workflow_update_7000() {
   if (!db_index_exists('workflows', 'name')) {
@@ -449,7 +454,7 @@ function workflow_update_7000() {
  * Initialize all workflows to show watchdog messages.
  */
 function workflow_update_7001() {
-  // Not all module functions are available from within a hook_update_N() function.
+  // Not all module functions are available in a hook_update_N() function.
   // In order to call a function from your mymodule.module or an include file,
   // you need to explicitly load that file first.
   module_load_include('module', 'workflow');
@@ -509,7 +514,7 @@ function workflow_update_7003() {
     'length' => 32,
     'not null' => TRUE,
     'default' => '',
-   );
+  );
   db_add_field('workflow_scheduled_transition', 'language', $field);
   db_add_field('workflow_node_history', 'language', $field);
 
@@ -537,22 +542,31 @@ function workflow_update_7003() {
  * Update contents of table workflow_scheduled_transition for new columns.
  */
 function workflow_update_7004() {
-  // Not all module functions are available from within a hook_update_N() function.
+  // Not all module functions are available in a hook_update_N() function.
   // In order to call a function from your mymodule.module or an include file,
   // you need to explicitly load that file first.
   module_load_include('module', 'workflow');
 
   foreach (WorkflowScheduledTransition::loadBetween() as $scheduled_transition) {
-    $entity_type = $scheduled_transition->entity_type;
     // Set the correct entity_type. This will always be 'node'.
-    $entity_type = empty($entity_type) ? 'node' : $entity_type;
+    // But to be sure, better filter on it.
     $entity_id = $scheduled_transition->entity_id;
-    $entity = $scheduled_transition->setEntity($entity_type, $entity_id);
-    // When testing, we got Comments in the table. They should not be there, and do not have type set.
+    $entity_type = $scheduled_transition->entity_type;
+    $entity_type = empty($entity_type) ? 'node' : $entity_type;
+    $entity = node_load($entity_id);
+    // When testing, we got Comments in the scheduled_transition table.
+    // They should not be there, and do not have type set.
     $entity_bundle = isset($entity->type) ? $entity->type : '';
 
-    if ($entity_bundle && $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
-      // All missing data is set upon loading/constructing the ScheduledTransition.
+    if ($entity_type == 'node' && $entity_bundle && $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
+      // Save the original, since we're changing the key and cannot update. 
+      $old_transaction = clone $scheduled_transition;
+      $old_transaction->delete();
+
+      // Set missing field.
+      // All other missing data is set upon load/construct of ScheduledTransition.
+      $scheduled_transition->entity_type = $entity_type;
+
       if ($workflow_item = $workflow->getWorkflowItem()) {
         // Field API. The field name is set explicitely.
         $instance = $workflow_item->getInstance();
@@ -567,7 +581,7 @@ function workflow_update_7004() {
 }
 
 /**
- * Enable Workflow Node module. See https:\/\/drupal.org\/node\/2122541
+ * Enable Workflow Node module. See https:\/\/drupal.org\/node\/2122541 .
  */
 function workflow_update_7005() {
   module_enable(array('workflownode'));

@@ -6,9 +6,9 @@ package = Administration
 files[] = tests/*.test
 
 
-; Information added by drush on 2013-12-03
+; Information added by drush on 2013-12-04
 version = "7.x-1.0-beta3+3-dev"
 core = "7.x"
 project = "iib"
-datestamp = "1386106327"
+datestamp = "1386194884"
 

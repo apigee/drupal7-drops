@@ -2,6 +2,8 @@
 /**
  * @file
  * Adds workflow state information to Search API index.
+ * 
+ * This is only vald for Workflow Node, not Workflow Field.
  */
 
 /**

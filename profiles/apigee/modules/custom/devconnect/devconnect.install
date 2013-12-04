@@ -143,16 +143,9 @@ function devconnect_update_7423(&$sandbox) {
 
 /**
  * Correctly configure ckeditor javascript configuration if the ckeditor module is enabled
- *
- * @param $sandbox
  */
 function devconnect_update_7424(&$sandbox) {
-  /**
-   * Fix for https://apigeesc.atlassian.net/browse/DEVCHAN-30
-   *
-   * This update should append config.allowedContent = true; to the javascript configuration
-   *
-   */
+  // This update should append config.allowedContent = true; to the javascript configuration
   if (module_exists('ckeditor')) {
     if (function_exists('drush_print')) {
       drush_print('Allowing default content in ckeditor');

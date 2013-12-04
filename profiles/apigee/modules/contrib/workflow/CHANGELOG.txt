@@ -335,3 +335,13 @@ Issue #2019345 by johnv: Renamed Workflow*->get*ByName() to Workflow*->loadByNam
 Issue #2124915 by johnv: Fixed transfer transitions with Features.
 Issue #2148851 by johnv: Fixed transfer 'tab_roles' using machine names with Features.
 Issue #2148851 by brad.bulger, johnv: Fixed warning in Tokens when an old_state is deleted.
+
+Since 7.x-2.0-beta2
+Issue #2149027 by johnv: Fixed warning in workflow.rules.inc for PHP5.3/PHP5.4.
+Issue #2149121 by johnv: Restructured workflow_views_views_data().
+Issue #2149223 by johnv: Moved calls to Transition->isAllowed() into Transition->execute(), removing duplicate code.
+Issue #2149451 by hckurniawan: Fixed PHP Warnings in Drupal's core install.inc in distribution.
+Issue #2124429 by johnv: Removed obsolete code comment in workflow_revert.
+Issue #2019345 by johnv: Removed obsolete code comment in Workflow* classes.
+Issue #2149595 by johnv: Fixed Scheduled transitions are invisible, after upgrade to 7.x-2.0-beta2.
+Issue #2149671 by johnv: Added dependency on Workflow Node for workflow_search_api.

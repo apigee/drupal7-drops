@@ -14,7 +14,7 @@
 class WorkflowTransition {
   // Field data.
   public $entity_type;
-  public $field_name = ''; // @todo: add support for Fields in WorkflowTransition.
+  public $field_name = '';
   public $language = 'und';
   public $delta = 0;
   // Entity data.
@@ -24,7 +24,7 @@ class WorkflowTransition {
   // Transition data.
   public $old_sid = 0;
   public $new_sid = 0;
-  public $sid = 0; // @todo: remove $sid in D8: replaced by $new_sid. (requires conversion of Views displays.)
+  public $sid = 0; // @todo D8: remove $sid, use $new_sid. (requires conversion of Views displays.)
   public $uid = 0;
   public $stamp;
   public $comment = '';
@@ -80,7 +80,7 @@ class WorkflowTransition {
         'error');
     }
 
-    // Fill the 'new' fields correctly. @todo: rename these fields in db table.
+    // Fill the 'new' fields correctly. @todo D8: rename these fields in db table.
     $this->entity_id = $this->nid;
     $this->new_sid = $this->sid;
   }
@@ -100,7 +100,6 @@ class WorkflowTransition {
    *
    * @deprecate: workflow_get_workflow_node_history_by_nid() --> WorkflowTransition::load()
    * @deprecate: workflow_get_recent_node_history() --> WorkflowTransition::load()
-   * @todo: add support for entity/field.
    */
   public static function load($entity_type, $entity_id, $field_name = '', $limit = NULL) {
     if (!$entity_id) {
@@ -158,8 +157,9 @@ class WorkflowTransition {
   }
 
   /**
-   * Given a Entity, delete transitions for it.
-   * @todo: add support for Field.
+   * Given an Entity, delete transitions for it.
+   *
+   * @todo: With Field API, having 2 fields, both are deleted :-( .
    */
   public static function deleteById($entity_type, $entity_id) {
     $conditions = array(
@@ -180,8 +180,8 @@ class WorkflowTransition {
    * - in permissions
    * - by permission hooks, implemented by other modules.
    *
-   * @return string
-   *  message, empty if OK, else a message for drupal_set_message.
+   * @return bool
+   *  TRUE if OK, else FALSE.
    */
   public function isAllowed($force) {
     $old_sid = $this->old_sid;
@@ -193,23 +193,18 @@ class WorkflowTransition {
     // WorkflowState::getOptions() will consider all permissions, etc.
     $options = array();
     if ($old_state = WorkflowState::load($old_sid)) {
-      if ($force) {
-        $options = workflow_get_workflow_state_names($old_state->wid, $grouped = FALSE, $all = FALSE);
-      }
-      else {
-        $options = $old_state->getOptions($entity_type, $entity, $force);
-      }
+      $options = $old_state->getOptions($entity_type, $entity, $force);
     }
     if (!array_key_exists($new_sid, $options)) {
       $t_args = array(
         '%old_sid' => $old_sid,
         '%new_sid' => $new_sid,
       );
-      $error_message = t('The transition from %old_sid to %new_sid is not allowed.', $t_args);
-
-      return $error_message;
+      drupal_set_message(t('The transition from %old_sid to %new_sid is not allowed.', $t_args), 'error');
+      return FALSE;
     }
-    return '';
+
+    return TRUE;
   }
 
   /**
@@ -236,6 +231,11 @@ class WorkflowTransition {
     $state_changed = ($old_sid != $new_sid);
 
     if ($state_changed) {
+      if (!$this->isAllowed($force)) {
+        // If incorrect, quit.
+        return $old_sid;
+      }
+
       // State has changed. Do some checks upfront.
       if (!$force) {
         // Make sure this transition is allowed.

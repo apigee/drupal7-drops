@@ -1881,19 +1881,9 @@ function devconnect_monetization_requirements($phase) {
 }
 
 /**
- * Implement hook_update_N() Update user roles and permissions
- * @return null|string
+ * Update user roles and permissions
  */
 function devconnect_monetization_update_7424() {
-  devconnect_monetization_setup_mint_roles();
-  return t('Your site has been updated successfully');
-}
-
-/**
- * Implement hook_update_N() Update user roles and permissions
- * @return null|string
- */
-function devconnect_monetization_update_7425() {
   devconnect_monetization_setup_mint_roles();
   return t('Your site has been updated successfully');
 }

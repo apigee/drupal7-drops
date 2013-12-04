@@ -8,11 +8,7 @@ function devconnect_developer_apps_install() {
 }
 
 /**
- * Implements hook_update_N().
- *
- * Assigns default permissions.
- *
- * @param $sandbox
+ * Assigns default permissions for developer apps.
  */
 function devconnect_developer_apps_update_7424(&$sandbox) {
   _devconnect_developer_apps_assign_perms();

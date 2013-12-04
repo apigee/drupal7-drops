@@ -3,5 +3,5 @@ user: fixme
 endpoint: https://api.enterprise.apigee.com/v1
 pass: fnt996QUJucOlMGEkYOp5wGwcwNGdfcOX3dZutRJCfDQ==
 log_threshold: 4
-connection_timeout: 80 
-request_timeout: 80
+connection_timeout: 4
+request_timeout: 4

@@ -15,12 +15,10 @@ class WorkflowScheduledTransition extends WorkflowTransition {
 
   /**
    * Constructor
-   *
-   * @todo: use parent::__construct ?
    */
   public function __construct($entity_type = '', $entity = NULL, $field_name = '', $old_sid = 0, $new_sid = 0, $uid = 0, $scheduled = 0, $comment = '') {
     parent::__construct($entity_type, $entity, $field_name, $old_sid, $new_sid, $uid, $stamp = 0, $comment);
-    $this->scheduled = $scheduled;
+    $this->scheduled = (!$scheduled) ? $this->scheduled : $scheduled;
   }
 
   /**
@@ -40,13 +38,18 @@ class WorkflowScheduledTransition extends WorkflowTransition {
     if (!$entity_id) {
       return FALSE;
     }
-    $results = db_query('SELECT * ' .
-                        'FROM {workflow_scheduled_transition} ' .
-                        'WHERE entity_type = :entity_type ' .
-                        'AND   nid = :nid ' .
-                        'ORDER BY scheduled ASC ',
-                        array(':nid' => $entity_id, ':entity_type' => $entity_type));
-    $result = $results->fetchAll(PDO::FETCH_CLASS, 'WorkflowScheduledTransition');
+
+    $query = db_select('workflow_scheduled_transition', 'wst');
+    $query->fields('wst');
+    $query->condition('entity_type', $entity_type, '=');
+    $query->condition('nid', $entity_id, '=');
+    $query->orderBy('scheduled', 'ASC');
+    $query->addTag('workflow_scheduled_transition');
+    if ($limit) {
+      $query->range(0, $limit);
+    }
+    $result = $query->execute()->fetchAll(PDO::FETCH_CLASS, 'WorkflowScheduledTransition');
+
     return $result;
   }
 
@@ -54,13 +57,20 @@ class WorkflowScheduledTransition extends WorkflowTransition {
    * Given a timeframe, get all scheduled transitions.
    * @deprecated: workflow_get_workflow_scheduled_transition_by_between() --> WorkflowScheduledTransition::loadBetween()
    */
-  public static function loadBetween($start = 0, $end = REQUEST_TIME) {
-    $results = db_query('SELECT * ' .
-                        'FROM {workflow_scheduled_transition} ' .
-                        'WHERE scheduled > :start AND scheduled < :end ' .
-                        'ORDER BY scheduled ASC',
-                        array(':start' => $start, ':end' => $end));
-    $result = $results->fetchAll(PDO::FETCH_CLASS, 'WorkflowScheduledTransition');
+  public static function loadBetween($start = 0, $end = 0) {
+    $query = db_select('workflow_scheduled_transition', 'wst');
+    $query->fields('wst');
+    $query->orderBy('scheduled', 'ASC');
+    $query->addTag('workflow_scheduled_transition');
+
+    if ($start) {
+      $query->condition('scheduled', $start, '>');
+    }
+    if ($end) {
+      $query->condition('scheduled', $end, '<');
+    }
+
+    $result = $query->execute()->fetchAll(PDO::FETCH_CLASS, 'WorkflowScheduledTransition');
     return $result;
   }
 
@@ -70,24 +80,27 @@ class WorkflowScheduledTransition extends WorkflowTransition {
   public function save() {
     // If executed, save as logged transition.
     if ($this->is_executed) {
-      return parent::save();
+      $result = parent::save();
+      return $result;
     }
 
     // Avoid duplicate entries.
-    $this->delete();
+    $clone = clone $this;
+    $clone->delete();
     // Save (insert or update) a record to the database based upon the schema.
     drupal_write_record('workflow_scheduled_transition', $this);
 
     // Get name of state.
     if ($state = WorkflowState::load($this->new_sid)) {
+      $entity = $this->getEntity();
       $message = '@entity_title scheduled for state change to %state_name on %scheduled_date';
       $args = array(
         '@entity_type' => $this->entity_type,
-        '@entity_title' => $this->entity->title,
+        '@entity_title' => $entity->title,
         '%state_name' => $state->label(),
         '%scheduled_date' => format_date($this->scheduled),
       );
-      $uri = entity_uri($this->entity_type, $this->entity);
+      $uri = entity_uri($this->entity_type, $entity);
       watchdog('workflow', $message, $args, WATCHDOG_NOTICE, l('view', $uri['path'] . '/workflow'));
       drupal_set_message(t($message, $args));
     }
@@ -98,24 +111,27 @@ class WorkflowScheduledTransition extends WorkflowTransition {
    * @deprecated: workflow_delete_workflow_scheduled_transition_by_nid() --> WorkflowScheduledTransition::delete()
    */
   public function delete() {
-    return $this->deleteById($this->entity_type, $this->entity_id);
-  }
-
-  public static function deleteMultiple(array $conditions, $table = 'dummy') {
-    // The $table argument is to adhere to the parent::deleteMultiple interface. It must not be changeable.
-    return parent::deleteMultiple($conditions, $table = 'workflow_scheduled_transition');
+    $result = $this->deleteById($this->entity_type, $this->entity_id);
+    return $result;
   }
 
   /**
-   * Given a Entity, delete transitions for it.
+   * Given an Entity, delete transitions for it.
    * @todo: add support for Field.
    */
   public static function deleteById($entity_type, $entity_id) {
     $conditions = array(
-//      'entity_type' => $entity_type,
+      'entity_type' => $entity_type,
       'nid' => $entity_id,
     );
-    return self::deleteMultiple($conditions);
+    $result = self::deleteMultiple($conditions);
+    return $result;
+  }
+
+  public static function deleteMultiple(array $conditions, $table = 'dummy') {
+    // The $table argument is to adhere to the parent::deleteMultiple interface. It must not be changeable.
+    $result = parent::deleteMultiple($conditions, $table = 'workflow_scheduled_transition');
+    return $result;
   }
 
   /**
@@ -141,7 +157,7 @@ class WorkflowScheduledTransition extends WorkflowTransition {
     if (!empty($this->field_name)) {
       // @todo: read $field_name directly from table.
     }
-
+	
     $entity_type = $this->entity_type;
     $entity = $this->getEntity();
     $entity_bundle = $this->getEntity()->type;

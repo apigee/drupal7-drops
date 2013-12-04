@@ -16,7 +16,7 @@ function devconnect_developer_apps_menu() {
     'page arguments' => array(1),
     'access callback' => 'devconnect_developer_apps_access',
     'access arguments' => array(1, 'view'),
-    'menu_name' => 'main-menu', // https://apigeesc.atlassian.net/browse/DEVCHAN-35
+    'menu_name' => 'main-menu',
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
   );

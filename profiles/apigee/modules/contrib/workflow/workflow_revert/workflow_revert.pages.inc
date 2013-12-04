@@ -7,7 +7,6 @@
 /**
  * Menu callback to do the revert function.
  *
- * @todo: you can revert to an inactive state and to creation state.
  * @todo: add support for Field in workflow_revert.
  */
 function workflow_revert_form($form, $form_state, $entity_type, $id, $field_name, $previous_sid = NULL) {

@@ -351,6 +351,12 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
   if (!valid_url($endpoint)) {
     return '<span style="color:red">' . t('Invalid endpoint') . '</span>';
   }
+  // Make sure timeout does not exceed 8 seconds, or failure ensues.
+  $timeout = intval(min($timeout, 8));
+  // Zero timeout is infinite; big problem.
+  if ($timeout < 1) {
+    $timeout = 4;
+  }
 
   $options = array(
     'http_options' => array(
@@ -423,7 +429,7 @@ function devconnect_format_endpoint_auth($variable, $options) {
  * @param $form_id
  */
 function devconnect_form_alter(&$form, &$form_state, $form_id) {
-  if ($form_id == 'user_login') { // https://apigeesc.atlassian.net/browse/DEVCHAN-83 adds forgot password link
+  if ($form_id == 'user_login') {
     $form['userpasswordlink'] = array(
       '#markup' => '<br/>' . l('Forgot your password?', 'user/password') . '<br/><br/>',
       '#weight' => 100
@@ -463,6 +469,12 @@ function devconnect_theme() {
 function devconnect_default_api_client() {
   // make drush site-install happy
   devconnect_boot();
+  // When running update.php, we might reach this code before we get to the
+  // code that enables the d8cmi module. In that case, manually force the
+  // module to load.
+  if (!module_exists('d8cmi')) {
+    module_load_include('module', 'd8cmi');
+  }
   d8cmi_init();
 
   $config = Drupal::config('devconnect.settings');

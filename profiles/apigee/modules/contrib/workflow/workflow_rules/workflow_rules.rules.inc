@@ -88,7 +88,7 @@ function _workflow_rules_workflow_get_options($data) {
   $token = isset($data->settings['field:select']) ? $data->settings['field:select'] : '';
   $field_name = _workflow_rules_token_replace($token);
   $field = field_info_field($field_name);
-  $wid = !empty($field) ? $field['settings']['wid'] : 0 ;
+  $wid = !empty($field) ? $field['settings']['wid'] : 0;
 
   $options['ANY'] = 'ANY state';
   $options += workflow_get_workflow_state_names($wid, $grouped = TRUE);
@@ -97,10 +97,12 @@ function _workflow_rules_workflow_get_options($data) {
 
 /**
  * Condition implementation helper function: check given state.
- * @param $sid
+ *
+ * @param mixed $sid
  *   a State ID, to compare with the given list of allowed State ID's
  * @param array $sids
  *   a list of allowed State ID's
+ *
  * @return bool
  *   TRUE or FALSE
  */
@@ -112,19 +114,20 @@ function _workflow_rules_workflow_check_given_state($sid, array $sids) {
 /**
  * Condition implementation: check state transition for Workflow Node API.
  * 
- * @param $node
- *  the node with the new values. Other entity types are not supported.
+ * @param object $node
+ *   the node with the new values. Other entity types are not supported.
  * @param array $old_sids
- *  an array of old sids to meet the condition.
+ *   an array of old sids to meet the condition.
  * @param array $new_sids
- *  an array of new sids to meet the condition.
+ *   an array of new sids to meet the condition.
  * @param array $condition
- *  a RulesCondition->settings array.
+ *   a RulesCondition->settings array.
  */
 function _workflow_rules_node_check_transition($node, array $old_sids, array $new_sids, array $condition) {
- $last_transition = array_pop(WorkflowTransition::load('node', $node->nid, '', 1));
- $old_sid = $last_transition->old_sid;
- $new_sid = $last_transition->new_sid;
+  $transitions = WorkflowTransition::load('node', $node->nid, '', 1);
+  $last_transition = array_pop($transitions);
+  $old_sid = $last_transition->old_sid;
+  $new_sid = $last_transition->new_sid;
 
   return _workflow_rules_workflow_check_given_state($old_sid, $old_sids) &&
          _workflow_rules_workflow_check_given_state($new_sid, $new_sids);
@@ -133,10 +136,10 @@ function _workflow_rules_node_check_transition($node, array $old_sids, array $ne
 /**
  * Condition implementation: check current state for Workflow Node API.
  * 
- * @param $node
- *  the node with the new values. Other entity types are not supported.
+ * @param object $node
+ *   the node with the new values. Other entity types are not supported.
  * @param array $sids
- *  an array of sids to meet the condition.
+ *   an array of sids to meet the condition.
  */
 function _workflow_rules_node_check_state($node, $sids) {
   $sid = workflow_node_current_state($node, 'node');
@@ -148,7 +151,8 @@ function _workflow_rules_node_check_state($node, $sids) {
  */
 function _workflow_rules_node_check_previous_state($node, $sids) {
   // $sid = workflow_node_previous_state($node, 'node');
-  $last_transition = array_pop(WorkflowTransition::load('node', $node->nid, '', 1));
+  $transitions = WorkflowTransition::load('node', $node->nid, '', 1);
+  $last_transition = array_pop($transitions);
   $sid = $last_transition->old_sid;
   return _workflow_rules_workflow_check_given_state($sid, $sids);
 }
@@ -186,15 +190,12 @@ function _workflow_rules_field_set_state($entity, $field, $sids, $comment = NULL
     $old_sid = workflow_node_current_state($entity, $entity_type, $field_name); // Todo : entity support.
     $transition = new WorkflowTransition($entity_type, $entity, $field_name, $old_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
     $transition->force($force = TRUE); // "ignoring current user permission."
-    if ($error = $transition->isAllowed($force)) {
-      drupal_set_message($error, 'error');
-      $sid = 0;
-    }
-    else {
-      $sid = $transition->execute($force);
-    }
+
+    // Execute the transition. It may bounce, due to extra checks.
+    $sid = $transition->execute($force);
     // Save the entity, but not through entity_save(), since this will check permissions again and trigger rules.
     if ($sid == $new_sid) {
+      // The transition was succesfully executed, or else a message was raised.
       $entity->{$field_name}['und'] = array();
       $entity->{$field_name}['und'][0]['workflow']['workflow_sid'] = $new_sid;
       $entity->{$field_name}['und'][0]['workflow']['workflow_comment'] = $comment;

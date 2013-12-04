@@ -105,7 +105,7 @@
 				<phingcall target="display-step">
 					<param name="message" value="====: Installing Drupal :====" />
 				</phingcall>
-				<exec command="drush ${site-alias} si -y"/>
+				<exec command="drush ${site-alias} si -y" logoutput="true"/>
 				<drush command="pantheon-aliases" assume="yes" />
 				<drush command="psite-uuid" assume="yes" returnProperty="pantheon-uuid">
 					<param>${pantheon-sitename}</param>
@@ -125,7 +125,7 @@
 			<param>${pantheon-uuid}</param>
 			<param>stovak@apigee.com</param>
 		</drush>
-		<exec command="drush ${site-alias} sql-connect" outputProperty="mysql-connect" />
+		<exec command="drush ${site-alias} sql-connect" outputProperty="mysql-connect" logoutput="true" />
 		<phingcall target="display-step">
 			<param name="message" value="====: BEGINNING MIGRATION OF ${orgname} to ${pantheon-alias} (uuid: ${pantheon-uuid}) :====" />
 		</phingcall>
@@ -294,16 +294,19 @@
 		<phingcall target="mysql-query-string">
 			<property name="query" value="drop table if exists temp_og_users_roles;" />
 		</phingcall>
-		<exec command="drush ${site-alias} rr"/>
-		<exec command="drush ${site-alias} pm-disable variable -y"/>
-		<exec command="drush ${site-alias} pm-disable block_class -y"/>
-		<exec command="drush ${site-alias} pm-disable smtp cdn -y"/>
+		<exec command="drush ${site-alias} rr" logoutput="true" />
+		<phingcall target="mysql-query-string">
+			<property name="query" value="update system set status=1 where name = 'd8cmi';" />
+		</phingcall>
+		<exec command="drush ${site-alias} pm-disable variable -y" logoutput="true" />
+		<exec command="drush ${site-alias} pm-disable block_class -y" logoutput="true"  />
+		<exec command="drush ${site-alias} pm-disable smtp cdn -y" logoutput="true" />
 		<!-- R24 error, need to enable new module -->
-		<exec command="drush ${site-alias} pm-enable d8cmi -y"/>
-		<exec command="drush ${site-alias} pm-enable block_class -y"/>
-		<exec command="drush ${site-alias} pm-enable apachesolr apachesolr_search pantheon_api pantheon_apachesolr apigee_account -y"/>
-		<exec command="drush ${site-alias} rr"/>
-		<exec command="drush ${site-alias} cc all"/>
+		<exec command="drush ${site-alias} pm-enable d8cmi -y" logoutput="true" />
+		<exec command="drush ${site-alias} pm-enable block_class -y" logoutput="true" />
+		<exec command="drush ${site-alias} pm-enable apachesolr apachesolr_search pantheon_api pantheon_apachesolr apigee_account -y" logoutput="true" />
+		<exec command="drush ${site-alias} rr" logoutput="true" />
+		<exec command="drush ${site-alias} cc all" logoutput="true" />
 		<drush alias="${site-alias}" command="vset">
 			<param>install_profile</param>
 			<param>apigee</param>
@@ -372,14 +375,14 @@
 			<property name="source" value="${archive-unpacked}/devconnect-111.8/${archive-sitedir}/themes" />
 			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
 		</phingcall>
-		<exec command="drush ${site-alias} rr"/>
-		<exec command="drush ${site-alias} updatedb -y"/>
+		<exec command="drush ${site-alias} rr" logoutput="true"/>
+		<exec command="drush ${site-alias} updatedb -y" logoutput="true"/>
 		<trycatch property="foo5">
 			<try>
 				<drush alias="${site-alias}" command="dl" assume="yes">
 					<param>jira_issue_collector</param>
 				</drush>
-				<exec command="drush ${site-alias} pm-enable jira_issue_collector -y"/>
+				<exec command="drush ${site-alias} pm-enable jira_issue_collector -y" logoutput="true"/>
 				<drush alias="${site-alias}" command="vset" assume="yes">
 					<param>jira_issue_collector_code</param>
 					<param><![CDATA['<script type="text/javascript" src="https://apigeesc.atlassian.net/s/d41d8cd98f00b204e9800998ecf8427e/en_US-nfwzef-1988229788/6144/98/1.4.0-m6/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?collectorId=140f6a91"></script>']]></param>
@@ -401,12 +404,12 @@
 				</phingcall>
 			</catch>
 		</trycatch>
-		<exec command="drush ${site-alias} pm-disable variable -y"/>
-		<exec command="drush ${site-alias} pm-disable block_class -y"/>
-		<exec command="drush ${site-alias} pm-disable smtp cdn -y"/>
+		<exec command="drush ${site-alias} pm-disable variable -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-disable block_class -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-disable smtp cdn -y" logoutput="true"/>
 		<!-- R24 error, need to enable new module -->
 		<exec command="drush ${site-alias} pm-enable d8cmi -y"/>
-		<exec command="drush ${site-alias} pm-enable block_class -y"/>
+		<exec command="drush ${site-alias} pm-enable block_class -y" logoutput="true"/>
 		<exec command="drush ${site-alias} updb -y"/>
 		<trycatch property="foo7">
 			<try>
@@ -423,7 +426,7 @@
 				</phingcall>
 			</catch>
 		</trycatch>
-		<exec command="drush ${site-alias} cc all"/>
+		<exec command="drush ${site-alias} cc all" logoutput="true"/>
 		<if>
 			<equals arg1="${skip-entity-reference}" arg2="no" />
 			<then>
@@ -461,8 +464,15 @@
 				</phingcall>
 			</catch>
 		</trycatch>
-		<exec command="drush ${site-alias} cc all"/>
+		<exec command="drush ${site-alias} cc all" logoutput="true"/>
 		<phingcall target="cleanup" />
+		<property name="VERSION" value="pantheon-4.24.${env.BUILD_NUMBER}"/>
+		<exec command="drush psite-commit '${pantheon-uuid}' dev -y --message='distro migration ${VERSION}'" logoutput="true"/>
+		<drush command="psite-cmode" assume="yes">
+			<param>"${pantheon-uuid}"</param>
+			<param>dev</param>
+			<param>GIT</param>
+		</drush>
 	</target>
 	<!--
 
@@ -606,13 +616,9 @@ body.html.front.no-sidebars .page-content .container .row section.span24 section
 
 	-->
 	<target name="display-step">
-		<echo>
-
-			-------------------------------------------------</echo>
+		<echo>-------------------------------------------------</echo>
 		<echo>=&gt; ${message}</echo>
-		<echo>-------------------------------------------------
-
-		</echo>
+		<echo>-------------------------------------------------</echo>
 	</target>
 
 	<target name="cleanup">

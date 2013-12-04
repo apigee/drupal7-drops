@@ -36,11 +36,33 @@ function devconnect_drush_command() {
     'aliases' => array('dc-getorg')
   );
 
+  $items['devconnect-get-endpoint'] = array(
+    'callback' => 'devconnect_drush_get_endpoint',
+    'description' => dt('Gets the configured Apigee gateway management server endpoint URL.'),
+    'aliases' => array('dc-getend')
+  );
+  $items['devconnect-set-endpoint'] = array(
+    'callback' => 'devconnect_drush_set_endpoint',
+    'description' => dt('Sets the configured Apigee gateway management server endpoint URL.'),
+    'aliases' => array('dc-setend'),
+    'arguments' => array(
+      'endpoint' => dt('The endpoint URL')
+    ),
+  );
+
   $items['devconnect-update-settings'] = array(
     'callback' => 'devconnect_drush_update_settings',
     'description' => dt('Migrates org settings from the database to the filesystem.'),
     'aliases' => array('dc-settings')
   );
+
+
+  $items['devconnect-test-conn'] = array(
+    'callback' => 'devconnect_drush_test_connection',
+    'description' => dt('Tests the configured connection parameters.'),
+    'aliases' => array('dc-test')
+  );
+
 
   return $items;
 }
@@ -55,15 +77,24 @@ function devconnect_drush_help($section) {
   switch ($section) {
     case 'drush:devconnect-set-auth':
       return dt('This command sets the username and password which DevConnect uses to
-        communicate with the KMS backend.');
+        communicate with the Apigee gateway management server backend.');
     case 'drush:devconnect-get-auth':
       return dt('This command displays the username and password which DevConnect uses
-        to communicate with the KMS backend.');
+        to communicate with the Apigee gateway management server backend.');
     case 'drush:devconnect-set-org':
       return dt('This command displays the configured Apigee organization.');
     case 'drush:devconnect-get-org':
       return dt('This command sets the Apigee organization name.');
+    case 'drush:devconnect-set-endpoint':
+      return dt('This command sets the Apigee gateway management server endpoint URL.');
+    case 'drush:devconnect-get-endpoint':
+      return dt('This command displays the Apigee gateway management server endpoint URL.');
+    case 'drush:devconnect-update-settings':
+      return dt('This command migrates Drupal-var devconnect variables to a YAML file in the filesystem.');
+    case 'drush:devconnect-test-conn':
+      return dt('This command tests the configured connection parameters.');
   }
+  return NULL;
 }
 
 function devconnect_drush_set_authentication() {
@@ -85,6 +116,46 @@ function devconnect_drush_set_authentication() {
   $config->set('pass', $password_encrypted);
   $config->save();
   drush_print(t('Username and password have been set.'));
+}
+
+function devconnect_drush_test_connection() {
+  $config = _devconnect_drush_get_config(); // Load modules
+  $user = $config->get('user');
+  $pass_encrypted = $config->get('pass');
+  $pass = FALSE;
+  if ($pass_encrypted) {
+    $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
+  }
+  if (!$pass) {
+    $pass = 'secret';
+  }
+  if ($user == 'fixme' || $pass == 'secret') {
+    drush_print(dt('Username/password have not yet been set.'));
+    return;
+  }
+  $org = $config->get('org');
+  if ($org == 'fixme') {
+    drush_print(dt('Org name has not yet been set.'));
+    return;
+  }
+  $endpoint = $config->get('endpoint');
+
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, "$endpoint/o/$org");
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+  curl_setopt($ch, CURLOPT_USERPWD, "$user:$pass");
+  curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
+
+  curl_exec($ch);
+  $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  if ($response_code == 200) {
+    drush_print(dt('Connection to the endpoint succeeded.'));
+  }
+  else {
+    drush_print(dt('Connection to the endpoint failed.'));
+  }
 }
 
 function devconnect_drush_get_authentication() {
@@ -134,6 +205,31 @@ function devconnect_drush_get_org() {
     drush_print(dt('Org name is @orgname', array('@orgname' => $org)));
   }
 }
+
+function devconnect_drush_get_endpoint() {
+  $config = _devconnect_drush_get_config();
+  $endpoint = $config->get('endpoint');
+  drush_print(dt('Endpoint is @endpoint', array('@endpoint' => $endpoint)));
+}
+
+function devconnect_drush_set_endpoint() {
+  $args = func_get_args();
+  if (count($args) < 1) {
+    drush_set_error('Endpoint argument is required.');
+    return;
+  }
+  list($endpoint) = $args;
+  $config = _devconnect_drush_get_config();
+  if ($endpoint != $config->get('endpoint')) {
+    $config->set('endpoint', $endpoint);
+    $config->save();
+    drush_print(dt('Endpoint has been set to @endpoint', array('@endpoint' => $endpoint)));
+  }
+  else {
+    drush_print(dt('Endpoint @endpoint remains unchanged.', array('@endpoint' => $endpoint)));
+  }
+}
+
 
 function devconnect_drush_update_settings() {
   module_load_install('devconnect');

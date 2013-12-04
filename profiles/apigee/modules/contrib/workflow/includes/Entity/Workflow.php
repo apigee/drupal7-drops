@@ -178,7 +178,6 @@ class Workflow {
    * Given a wid, delete the workflow and its data.
    *
    * @deprecated: workflow_delete_workflows_by_wid() --> Workflow::delete().
-   * @todo: This function does NOT delete WorkflowStates.
    */
   public function delete() {
     $wid = $this->wid;
@@ -354,7 +353,8 @@ class Workflow {
    *
    * Get/set the Item of a particular Workflow.
    * It loads the Workflow object with the particular Field Instance data.
-   * @todo: this is not robust: 1 Item has 1 Workflow; 1 Workflow may have N Items (fields)
+   * @todo 1: this is not robust: 1 Item has 1 Workflow; 1 Workflow may have N Items (fields)
+   * @todo 2: find other solution.
    */
   public function getWorkflowItem(WorkflowItem $item = NULL) {
     if ($item) {

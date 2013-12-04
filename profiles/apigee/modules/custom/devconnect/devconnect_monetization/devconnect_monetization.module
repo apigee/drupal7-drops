@@ -85,6 +85,12 @@ function devconnect_monetization_default_org_config() {
 
   // make drush site-install happy
   devconnect_boot();
+  // When running update.php, we might reach this code before we get to the
+  // code that enables the d8cmi module. In that case, manually force the
+  // module to load.
+  if (!module_exists('d8cmi')) {
+    module_load_include('module', 'd8cmi');
+  }
   d8cmi_init();
 
   $config = Drupal::config('devconnect.settings');

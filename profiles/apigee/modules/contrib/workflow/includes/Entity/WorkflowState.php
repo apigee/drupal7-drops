@@ -13,7 +13,7 @@ class WorkflowState {
   public $wid = 0;
   public $weight = 0;
   protected $sysid = 0;
-  protected $state = ''; // @todo: rename to 'label'.
+  protected $state = ''; // @todo D8: remove $state, use $label/$name. (requires conversion of Views displays.)
   public $status = 1;
   protected $workflow = NULL;
 

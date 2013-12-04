@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Sets block_class CSS classes for develop-with-these block
+ */
 function devconnect_default_structure_update_7001() {
   devconnect_default_structure_set_css_classes();
 }

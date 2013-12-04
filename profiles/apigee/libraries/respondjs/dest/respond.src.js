@@ -58,7 +58,7 @@
   respond.queue = requestQueue;
   respond.regex = {
     media: /@media[^\{]+\{([^\{\}]*\{[^\}\{]*\})+/gi,
-    keyframes: /@.*keyframes[^\{]+\{(?:[^\{\}]*\{[^\}\{]*\})+[^\}]+\}/gi,
+    keyframes: /@(?:\-(?:o|moz|webkit)\-)?keyframes[^\{]+\{(?:[^\{\}]*\{[^\}\{]*\})+[^\}]*\}/gi,
     urls: /(url\()['"]?([^\/\)'"][^:\)'"]+)['"]?(\))/g,
     findStyles: /@media *([^\{]+)\{([\S\s]+?)$/,
     only: /(only\s+)?([a-zA-Z]+)\s?/,
@@ -79,7 +79,9 @@
     docElem.style.fontSize = "100%";
     body.style.fontSize = "100%";
     body.appendChild(div);
-    docElem.insertBefore(body, docElem.firstChild);
+    if (fakeUsed) {
+      docElem.insertBefore(body, docElem.firstChild);
+    }
     ret = div.offsetWidth;
     if (fakeUsed) {
       docElem.removeChild(body);

@@ -6,11 +6,7 @@
  */
 
 if (!defined('DEVCONNECT_ADMIN_NOTIFY_SUBJECT')) {
-  define('DEVCONNECT_ADMIN_NOTIFY_SUBJECT', t('Account details for !user_name at !site'));
-}
-
-if (!defined('DEVCONNECT_ADMIN_NOTIFY_BODY')) {
-  define('DEVCONNECT_ADMIN_NOTIFY_BODY', t("!user_name (!user_view) has !action account.\n\nEdit user: !user_edit\n\nDelete User: !user_delete\n\nUser Status: !approved\n\n"));
+  require_once __DIR__ . '/devconnect_admin_notify.module';
 }
 
 /**

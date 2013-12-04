@@ -275,15 +275,14 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
     $transition = $this->getTransition($old_sid, $items);
 
     $force = $force || $transition->isForced();
-    $new_sid = $transition->new_sid;
 
+    // Try to execute the transition. Return $old_sid when error.
+    $new_sid = $transition->new_sid;
     if (!$transition) {
-      drupal_set_message(t('Error when try to find a WorkflowTransition.'), 'status');
+      // This should only happen when testing/developing.
+      drupal_set_message(t('Error: the transition from %old_sid to %new_sid could not be generated.', $t_args), 'error');
       // The current value is still the previous state.
       $new_sid = $old_sid;
-    }
-    elseif ($error = $transition->isAllowed($force)) {
-      drupal_set_message($error, 'error');
     }
     elseif (!$transition->isScheduled()) {
       // Now the data is captured in the Transition, and before calling the Execution,
@@ -333,7 +332,7 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
   /**
    * Extract WorkflowTransition or WorkflowScheduledTransition from the form.
    *
-   * @todo: move validation and messages to errorElement();
+   * This merely extracts the transition from the form/widget. No validation.
    */
   public function getTransition($old_sid, array $items) {
     global $user;
@@ -375,6 +374,7 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
         // If Field Form is used, use plain values;
         // If Node Form is used, use fieldset 'workflow_scheduled_date_time'.
         $schedule = isset($items[0]['workflow']['workflow_scheduled_date_time']) ? $items[0]['workflow']['workflow_scheduled_date_time'] : $items[0]['workflow'];
+        // @todo: add validation/error message on value of 'time'. 
         if (!isset($schedule['workflow_scheduled_hour'])) {
           $schedule['workflow_scheduled_hour'] = '00:00';
         }

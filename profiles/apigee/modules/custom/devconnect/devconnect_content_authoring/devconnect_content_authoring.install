@@ -1,10 +1,9 @@
 <?php
 
 /**
- * Implements hook_update_N(&$sandbox)
+ * Updates CKEditor settings if ckeditor module is enabled.
  */
 function devconnect_content_authoring_update_7000(&$sandbox) {
-  // Fix for https://apigeesc.atlassian.net/browse/DEVCHAN-30
   if (module_exists('ckeditor')) {
     $query = db_select('ckeditor_settings', 'c')
       ->fields('c', array('name', 'settings'));
