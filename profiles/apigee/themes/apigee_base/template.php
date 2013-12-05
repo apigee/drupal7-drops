@@ -30,7 +30,7 @@ function apigee_base_theme() {
 function apigee_base_preprocess_html(&$variables) {
    // Try to load the library, if the apigee_base_ui module is in use.
   if (module_exists('apigee_base_ui')) {
-    $library = libraries_load('apigee_base', 'minified');
+    libraries_load('apigee_base', 'minified');
   }
 }
 
@@ -40,9 +40,8 @@ function apigee_base_preprocess_html(&$variables) {
  */
 function apigee_base_breadcrumb($variables) {
   if (!theme_get_setting('toggle_breadcrumbs')) {
-    return;
+    return '';
   }
-
 
   $breadcrumb = $variables['breadcrumb'];
 
@@ -57,6 +56,7 @@ function apigee_base_breadcrumb($variables) {
     $output .= '<div class="breadcrumb">' . implode(' &nbsp;/&nbsp; ', $breadcrumb) . '</div>';
     return $output;
   }
+  return '';
 }
 
 /**
@@ -120,9 +120,9 @@ function apigee_base_preprocess_comment(&$variables) {
   $variables['comment_author'] = $variables['elements']['#comment']->uid;
 
   if ($variables['comment_author'] > 0) {
-    $author_details = user_load(array('uid' => $variables['comment_author']));
-    $variables['author_first_name'] = $author_details->field_first_name['und'][0]['safe_value'];
-    $variables['author_last_name'] = $author_details->field_last_name['und'][0]['safe_value'];
+    $author_details = user_load($variables['comment_author']);
+    $variables['author_first_name'] = $author_details->field_first_name[LANGUAGE_NONE][0]['safe_value'];
+    $variables['author_last_name'] = $author_details->field_last_name[LANGUAGE_NONE][0]['safe_value'];
     $variables['author_email'] = check_plain($author_details->mail);
   }
   else {
@@ -265,6 +265,7 @@ function apigee_base_pager($variables) {
   $li_previous = theme('pager_previous', array('text' => (isset($tags[1]) ? $tags[1] : t('‹ previous')), 'element' => $element, 'interval' => 1, 'parameters' => $parameters));
   $li_next = theme('pager_next', array('text' => (isset($tags[3]) ? $tags[3] : t('next ›')), 'element' => $element, 'interval' => 1, 'parameters' => $parameters));
   $li_last = theme('pager_last', array('text' => (isset($tags[4]) ? $tags[4] : t('last »')), 'element' => $element, 'parameters' => $parameters));
+  $items = array();
 
   if ($pager_total[$element] > 1) {
     if ($li_first) {
@@ -316,6 +317,10 @@ function apigee_base_pager($variables) {
         'class' => array('pager-last'),
         'data' => $li_last,
       );
+    }
+
+    if (empty($items)) {
+      return '';
     }
 
     return '<div class="pagination">' . theme('item_list', array(

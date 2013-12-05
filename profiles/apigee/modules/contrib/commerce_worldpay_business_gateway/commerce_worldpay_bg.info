@@ -6,9 +6,9 @@ dependencies[] = commerce_payment
 core = 7.x
 
 
-; Information added by drush on 2013-12-04
+; Information added by drush on 2013-12-05
 version = "7.x-1.x-dev"
 core = "7.x"
 project = "commerce_worldpay_business_gateway"
-datestamp = "1386194893"
+datestamp = "1386268715"
 

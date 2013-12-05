@@ -7,9 +7,9 @@ files[] = timeago.install
 files[] = timeago.module
 
 
-; Information added by drush on 2013-12-04
+; Information added by drush on 2013-12-05
 version = "7.x-2.2+0-dev"
 core = "7.x"
 project = "timeago"
-datestamp = "1386194888"
+datestamp = "1386268711"
 

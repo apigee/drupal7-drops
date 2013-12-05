@@ -43,9 +43,9 @@ files[] = tests/lingotek.advanced_parsing.test
 stylesheets[all][] = style/base.css
 
 
-; Information added by drush on 2013-12-04
+; Information added by drush on 2013-12-05
 version = "7.x-4.x-dev"
 core = "7.x"
 project = "lingotek"
-datestamp = "1386194921"
+datestamp = "1386268844"
 

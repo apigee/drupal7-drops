@@ -202,7 +202,6 @@
 				</trycatch>
 			</then>
 		</if>
-
 		<trycatch property="foo3">
 			<try>
 				<phingcall target="display-step">
@@ -210,7 +209,6 @@
 				</phingcall>
 				<exec command="${mysql-connect} &lt; '${archive-unpacked}/${database-default-file}'" logoutput="true" passthru="false" />
 			</try>
-
 			<catch>
 				<fail message="Database command failed. Database was not restored." />
 			</catch>
@@ -294,22 +292,55 @@
 		<phingcall target="mysql-query-string">
 			<property name="query" value="drop table if exists temp_og_users_roles;" />
 		</phingcall>
-		<exec command="drush ${site-alias} rr" logoutput="true" />
+		<exec command="drush ${site-alias} -v rr" logoutput="true" />
 		<phingcall target="mysql-query-string">
 			<property name="query" value="update system set status=1 where name = 'd8cmi';" />
 		</phingcall>
-		<exec command="drush ${site-alias} pm-disable variable -y" logoutput="true" />
-		<exec command="drush ${site-alias} pm-disable block_class -y" logoutput="true"  />
-		<exec command="drush ${site-alias} pm-disable smtp cdn -y" logoutput="true" />
+		<phingcall target="display-step">
+			<param name="message" value="STARTING MIGRATION SPECIFIC TASKS" />
+		</phingcall>
+		<trycatch property="foo7">
+			<try>
+				<phingcall target="migration-fixes">
+					<property name="site-alias" value="${site-alias}" />
+					<property name="remote-host" value="${remote-host}" />
+					<property name="remote-user" value="${remote-user}" />
+					<property name="archive-sitedir" value="${archive-sitedir}" />
+				</phingcall>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="MIGRATION FIXES COULD NOT BE MADE" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<exec command="drush ${site-alias} cc -v all" logoutput="true"/>
+		<phingcall target="display-step">
+			<param name="message" value="DISABLING MODULES" />
+		</phingcall>
+		<exec command="drush ${site-alias} pm-disable variable -v -y" logoutput="true" />
+		<exec command="drush ${site-alias} pm-disable block_class -v -y" logoutput="true"  />
+		<exec command="drush ${site-alias} pm-disable smtp cdn -v -y" logoutput="true" />
 		<!-- R24 error, need to enable new module -->
-		<exec command="drush ${site-alias} pm-enable d8cmi -y" logoutput="true" />
-		<exec command="drush ${site-alias} pm-enable block_class -y" logoutput="true" />
-		<exec command="drush ${site-alias} pm-enable apachesolr apachesolr_search pantheon_api pantheon_apachesolr apigee_account -y" logoutput="true" />
-		<exec command="drush ${site-alias} rr" logoutput="true" />
-		<exec command="drush ${site-alias} cc all" logoutput="true" />
+		<phingcall target="display-step">
+			<param name="message" value="ENABLING MODULES" />
+		</phingcall>
+		<exec command="drush ${site-alias} pm-enable d8cmi -v -y" logoutput="true" />
+		<exec command="drush ${site-alias} pm-enable block_class -v -y" logoutput="true" />
+		<exec command="drush ${site-alias} pm-enable apachesolr apachesolr_search pantheon_api pantheon_apachesolr apigee_account -v -y" logoutput="true" />
+		<exec command="drush ${site-alias} pm-enable devconnect_migration -v -y" logoutput="true"/>
+		<exec command="drush ${site-alias} -v rr" logoutput="true" />
+		<exec command="drush ${site-alias} cc -v all" logoutput="true" />
+		<phingcall target="display-step">
+			<param name="message" value="SETTING VARIABLES" />
+		</phingcall>
 		<drush alias="${site-alias}" command="vset">
 			<param>install_profile</param>
 			<param>apigee</param>
+		</drush>
+		<drush alias="${site-alias}" command="vset">
+			<param>migration_occurred</param>
+			<param>1</param>
 		</drush>
 		<drush alias="${site-alias}" command="rr" />
 		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path">
@@ -341,10 +372,16 @@
 			<param>preprocess_css</param>
 			<param>"0"</param>
 		</drush>
+		<phingcall target="display-step">
+			<param name="message" value="RSYNCING CODE" />
+		</phingcall>
 		<!-- get any files not managed by drupal. Check both clusters and fail silently if nonexistant -->
 		<exec command="s3cmd sync --recursive s3://apigee-devconnect/rea1dc001/${environment}-${orgname}/files ." dir="${archive-unpacked}/devconnect-111.8/${archive-sitedir}" passthru="true" logoutput="true" checkreturn="false" />
 		<exec command="s3cmd sync --recursive s3://apigee-devconnect/rea1dc002/${environment}-${orgname}/files ." dir="${archive-unpacked}/devconnect-111.8/${archive-sitedir}" passthru="true" logoutput="true" checkreturn="false" />
 		<!-- Delete CSS/JS Aggregation -->
+		<phingcall target="display-step">
+			<param name="message" value="DELETING AGGREGATION" />
+		</phingcall>
 		<delete quiet="true">
 			<fileset dir="${archive-unpacked}/devconnect-111.8/${files-public}">
 				<include name="js/**" />
@@ -357,6 +394,9 @@
 		<drush alias="${site-alias}" command="cc">
 			<param>registry</param>
 		</drush>
+		<phingcall target="display-step">
+			<param name="message" value="RSYNCING FILES, MODULES, LIBRARIES, and THEMES" />
+		</phingcall>
 		<phingcall target="rsync-command">
 			<property name="source" value="${archive-unpacked}/devconnect-111.8/${files-public}" />
 			<property name="destination" value="${remote-user}@${remote-host}:~/." />
@@ -376,7 +416,10 @@
 			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
 		</phingcall>
 		<exec command="drush ${site-alias} rr" logoutput="true"/>
-		<exec command="drush ${site-alias} updatedb -y" logoutput="true"/>
+		<exec command="drush ${site-alias} updatedb -y"/>
+		<phingcall target="display-step">
+			<param name="message" value="ENABLING JIRA ISSUE COLLECTOR" />
+		</phingcall>
 		<trycatch property="foo5">
 			<try>
 				<drush alias="${site-alias}" command="dl" assume="yes">
@@ -404,29 +447,19 @@
 				</phingcall>
 			</catch>
 		</trycatch>
-		<exec command="drush ${site-alias} pm-disable variable -y" logoutput="true"/>
-		<exec command="drush ${site-alias} pm-disable block_class -y" logoutput="true"/>
-		<exec command="drush ${site-alias} pm-disable smtp cdn -y" logoutput="true"/>
+		<phingcall target="display-step">
+			<param name="message" value="FINALIZING and ENSURING MODULE TASKS" />
+		</phingcall>
+		<exec command="drush ${site-alias} pm-disable variable -v -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-disable block_class -v -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-disable smtp cdn -v -y" logoutput="true"/>
 		<!-- R24 error, need to enable new module -->
-		<exec command="drush ${site-alias} pm-enable d8cmi -y"/>
-		<exec command="drush ${site-alias} pm-enable block_class -y" logoutput="true"/>
-		<exec command="drush ${site-alias} updb -y"/>
-		<trycatch property="foo7">
-			<try>
-				<phingcall target="migration-css-fixes">
-					<property name="site-alias" value="${site-alias}" />
-					<property name="remote-host" value="${remote-host}" />
-					<property name="remote-user" value="${remote-user}" />
-					<property name="archive-sitedir" value="${archive-sitedir}" />
-				</phingcall>
-			</try>
-			<catch>
-				<phingcall target="display-step">
-					<param name="message" value="MIGRATION CSS FIXES COULD NOT BE MADE" />
-				</phingcall>
-			</catch>
-		</trycatch>
-		<exec command="drush ${site-alias} cc all" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-enable d8cmi -v -y"/>
+		<exec command="drush ${site-alias} pm-enable block_class -v -y" logoutput="true"/>
+		<exec command="drush ${site-alias} updb -v -y"/>
+		<phingcall target="display-step">
+			<param name="message" value="ENTITY MIGRATION TASKES" />
+		</phingcall>
 		<if>
 			<equals arg1="${skip-entity-reference}" arg2="no" />
 			<then>
@@ -449,6 +482,9 @@
 				</drush>
 			</then>
 		</if>
+		<phingcall target="display-step">
+			<param name="message" value="VIEWS TEMPLATE TASKS" />
+		</phingcall>
 		<trycatch property="foo8">
 			<try>
 				<phingcall target="views-template">
@@ -464,15 +500,38 @@
 				</phingcall>
 			</catch>
 		</trycatch>
-		<exec command="drush ${site-alias} cc all" logoutput="true"/>
+		<exec command="drush ${site-alias} cc -v all"/>
+		<phingcall target="display-step">
+			<param name="message" value="ATTEMPTING TO COMMIT CHANGES AND TURN BACK TO GIT" />
+		</phingcall>
+		<trycatch property="foo9">
+			<try>
+				<property name="VERSION" value="pantheon-4.24.${env.BUILD_NUMBER}"/>
+				<drush command="psite-commit" assume="yes">
+					<param>"${pantheon-uuid}"</param>
+					<param>--message="distro migration ${VERSION}"</param>
+				</drush>
+				<drush command="psite-cmode" assume="yes">
+					<param>"${pantheon-uuid}"</param>
+					<param>dev</param>
+					<param>GIT</param>
+				</drush>
+				<phingcall target="display-step">
+					<param name="message" value="ATTEMPT TO COMMIT CHANGES WAS SUCCESSFUL" />
+				</phingcall>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="ATTEMPT TO COMMIT CHANGES FAILED" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<phingcall target="display-step">
+			<param name="message" value="FINAL CLEAR CACHE and CLEANING" />
+		</phingcall>
+		<exec command="drush ${site-alias} -v rr" logoutput="true"/>
+		<exec command="drush ${site-alias} cc -v all" logoutput="true"/>
 		<phingcall target="cleanup" />
-		<property name="VERSION" value="pantheon-4.24.${env.BUILD_NUMBER}"/>
-		<exec command="drush psite-commit '${pantheon-uuid}' dev -y --message='distro migration ${VERSION}'" logoutput="true"/>
-		<drush command="psite-cmode" assume="yes">
-			<param>"${pantheon-uuid}"</param>
-			<param>dev</param>
-			<param>GIT</param>
-		</drush>
 	</target>
 	<!--
 
@@ -493,24 +552,21 @@
 	<!--
 
 	-->
-	<target name="migration-css-fixes">
-		<property name="css" value="body.html.front.no-sidebars .page-content .container .row,body.html.front.no-sidebars .page-content .container .row [class*=span]{margin-left:0}
-body.html.front.no-sidebars .page-content .container .row section.span24 section.develop-with-these{padding-right:25px;width:34%}
-body.html.front.no-sidebars .page-content .container .row section.span24 section.develop-with-these h3{padding-bottom:5px;padding-left:50px}
-body.html.front.no-sidebars .page-content .container .row section.span24 section.develop-with-these p{margin-top:-5px;padding-left:50px}
-body.html.front.no-sidebars .page-content .container .row section.span24 section.forum-discussions .view{border:0;padding-right:0}
-body.html.front.no-sidebars .page-content .container .row section.span24 section.forum-discussions{width:295px;padding:0 15px}
-body.html.front.no-sidebars .page-content .container .row section.span24 section.recent-blog-posts span.blog-icon{right:-25px}
-body.html.front.no-sidebars .page-content .container .row section.span24 section.recent-blog-posts{padding-left:14px;width:243px}
-body.html.front.no-sidebars .page-content .container .row section.span24 section div.view-recent-blog-posts .views-field-body{width:190px}
-.starter h3{url(/profiles/apigee/themes/apigee_devconnect/images/gear-green.png) no-repeat scroll 0 0 rgba(0, 0, 0, 0)}
-.provider h3{url(/profiles/apigee/themes/apigee_devconnect/images/gear-purple.png) no-repeat scroll 0 0 rgba(0, 0, 0, 0)}
-.front .page-content .container{background:url(/profiles/apigee/themes/apigee_devconnect/images/homepage-content-bg.png) repeat-y scroll 0 0 rgba(0,0,0,0)}"/>
-		<append destFile="${archive-unpacked}/devconnect-111.8/sites/all/themes/apigee_devconnect/css/apigee_devconnect.css" text="${css}"/>
-		<phingcall target="rsync-command">
-			<property name="source" value="${archive-unpacked}/devconnect-111.8/sites/all/themes/apigee_devconnect/css/apigee_devconnect.css" />
-			<property name="destination" value="${remote-user}@${remote-host}:code/profiles/apigee/themes/apigee_devconnect/css"/>
+	<target name="migration-fixes">
+		<phingcall target="display-step">
+			<param name="message" value="CLONING APIGEE DRUPAL MIGRATE REPO" />
 		</phingcall>
+		<mkdir dir="${archive-unpacked}/devconnect-111.8/sites/all/modules/custom/apigee_migration" />
+		<gitclone repository="git@github.com:apigee/apigee-drupal-migrate.git" targetPath="${archive-unpacked}/devconnect-111.8/sites/all/modules/custom/apigee_migration" />
+		<delete dir="${archive-unpacked}/devconnect-111.8/sites/all/modules/custom/apigee_migration/.git" quiet="true"/>
+		<phingcall target="rsync-command">
+			<property name="source" value="${archive-unpacked}/devconnect-111.8/sites/all/modules/custom/apigee_migration" />
+			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all/modules/custom"/>
+		</phingcall>
+		<phingcall target="display-step">
+			<param name="message" value="ENABLING THE APIGEE DRUPAL MIGRATE MODULE" />
+		</phingcall>
+		<exec command="drush ${site-alias} -v rr" logoutput="true"/>
 	</target>
 	<!--
 
@@ -616,9 +672,17 @@ body.html.front.no-sidebars .page-content .container .row section.span24 section
 
 	-->
 	<target name="display-step">
-		<echo>-------------------------------------------------</echo>
-		<echo>=&gt; ${message}</echo>
-		<echo>-------------------------------------------------</echo>
+		<echo> </echo>
+		<echo> </echo>
+		<echo>/** </echo>
+		<echo>* -------------------------------------------------</echo>
+		<echo>*</echo>
+		<echo>* =&gt; ${message}</echo>
+		<echo>*</echo>
+		<echo>* -------------------------------------------------</echo>
+		<echo>*/</echo>
+		<echo> </echo>
+		<echo> </echo>
 	</target>
 
 	<target name="cleanup">
