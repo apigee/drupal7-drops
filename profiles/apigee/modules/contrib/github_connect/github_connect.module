@@ -15,6 +15,15 @@ function github_connect_help($path, $arg) {
   }
 }
 
+/**
+ * Implements hook_permission().
+ */
+function github_connect_permission() {
+  $items['administer github_connect'] = array(
+    'title' => t('Administer Github Connect'),
+    'restrict access' => TRUE
+  );
+}
 
 /**
  * Implements hook_menu().

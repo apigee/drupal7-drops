@@ -11,5 +11,5 @@ files[] = timeago.module
 version = "7.x-2.2+0-dev"
 core = "7.x"
 project = "timeago"
-datestamp = "1386268711"
+datestamp = "1386271568"
 

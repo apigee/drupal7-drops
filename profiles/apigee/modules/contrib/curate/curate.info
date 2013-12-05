@@ -173,5 +173,5 @@ features[variable][] = workbench_moderation_default_state_page
 version = "7.x-1.0"
 core = "7.x"
 project = "curate"
-datestamp = "1386268705"
+datestamp = "1386271564"
 

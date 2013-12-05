@@ -8,5 +8,5 @@ dependencies[] = date_popup
 version = "7.x-1.x-dev"
 core = "7.x"
 project = "revision_scheduler"
-datestamp = "1386268706"
+datestamp = "1386271564"
 
