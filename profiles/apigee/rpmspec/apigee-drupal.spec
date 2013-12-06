@@ -115,6 +115,19 @@ mkdir --mode=777 -p %{buildroot}%{drupaldir}/sites/default/{files,tmp,private}
 cp -p sites/default/default.settings.php %{buildroot}%{drupaldir}/sites/default/settings.php
 chmod 666 %{buildroot}%{drupaldir}/sites/default/settings.php
 
+%post
+lokkit -p www-http:tcp
+service iptables restart
+/usr/bin/php -r "\$conf = file_get_contents('/etc/httpd/conf/httpd.conf');\
+if (preg_match('~<Directory \"/var/www/html\">(.*)</Directory>~Uims', \$conf, \$matches)) {\
+  if (stripos(\$matches[1], 'AllowOverride None') !== FALSE) {\
+    \$directive = str_ireplace('AllowOverride None', 'AllowOverride All', \$matches[1]);\
+    \$conf = str_replace(\$matches[1], \$directive, \$conf);\
+    file_put_contents('/etc/httpd/conf/httpd.conf', \$conf);\
+  }\
+}"
+service httpd restart
+
 # rpmbuild
 # RPM >= 4.9
 %if 0%{?_fileattrsdir:1}

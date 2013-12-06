@@ -15,6 +15,18 @@ function uuid_features_menu() {
 }
 
 /**
+ * Implements hook_entity_info_alter().
+ */
+function uuid_features_entity_info_alter(&$entity_info) {
+  // Provide a list of entities that provide bundles
+  // to be exported by uuid_features.
+  $entity_types = array('bean', 'node', 'taxonomy_term');
+  foreach ($entity_types as $type) {
+    $entity_info[$type]['uuid features'] = TRUE;
+  }
+}
+
+/**
  * Implements hook_features_api().
  */
 function uuid_features_features_api() {
@@ -38,7 +50,6 @@ function uuid_features_features_api() {
     );
   }
 
-  // Depends on http://drupal.org/node/808690
   if (function_exists('uuid_file_insert')) {
     $components['uuid_file'] = array(
       'name' => t('File'),
@@ -104,6 +115,7 @@ function uuid_features_features_pipe_taxonomy_alter(&$pipe, $data, $export) {
     }
   }
 }
+
 /**
  * Menu callback to configure module settings.
  */
@@ -117,27 +129,26 @@ function uuid_features_settings($form, &$form_state) {
   );
 
   $entity_info = entity_get_info();
+
   foreach ($entity_info as $type => $info) {
     foreach($info['bundles'] as $bundle => $bundle_info) {
       $bundles[$type][$bundle] = $bundle_info['label'];
     }
+    if (isset($info['uuid features']) && $info['uuid features'] === TRUE) {
+      $form['entity']['uuid_features_entity_' . $type] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Exportable ' . $info['label']  . ' bundles'),
+        '#default_value' => variable_get('uuid_features_entity_' . $type, array()),
+        '#options' => $bundles[$type],
+      );
+      $form['file']['uuid_features_file_' . $type] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Files exported for ' . $info['label'] . ' bundles'),
+        '#default_value' => variable_get('uuid_features_file_' . $type, array()),
+        '#options' => $bundles[$type],
+      );
+    }
   }
-
-  $form['file']['uuid_features_file_node_types'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Files exported for nodes'),
-    '#description' => t('Which content types should export file fields?'),
-    '#default_value' => variable_get('uuid_features_file_node_types', array()),
-    '#options' => $bundles['node'],
-  );
-
-  $form['file']['uuid_features_file_taxonomy_term_types'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Files exported for taxonomy terms'),
-    '#description' => t('Which vocabularies should export file fields?'),
-    '#default_value' => variable_get('uuid_features_file_taxonomy_term_types', array()),
-    '#options' => $bundles['taxonomy_term'],
-  );
 
   $form['file']['uuid_features_file_mode'] = array(
     '#type' => 'radios',
@@ -191,6 +202,9 @@ function uuid_features_file_field_export(&$export, $entity_type) {
   switch ($entity_type) {
     case "taxonomy_term":
       $export_bundle = $export->vocabulary_machine_name;
+      break;
+    case "bean":
+      $export_bundle = $export->type;
       break;
     case "node":
       $export_bundle = $export->type;
@@ -306,7 +320,7 @@ function uuid_features_file_field_export(&$export, $entity_type) {
     }
   }
 }
-//entity_type
+
 /**
  * Handle importing file fields.
  */

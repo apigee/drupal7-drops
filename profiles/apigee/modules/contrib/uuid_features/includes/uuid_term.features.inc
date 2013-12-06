@@ -9,16 +9,21 @@
  */
 function uuid_term_features_export_options() {
   $options = array();
-
-  $query = 'SELECT t.tid, t.name, v.name AS vname, t.uuid
-    FROM {taxonomy_term_data} t
-    INNER JOIN {taxonomy_vocabulary} v ON t.vid = v.vid
-    ORDER BY v.name ASC, t.name ASC';
-  $results = db_query($query);
-  foreach ($results as $term) {
-    $options[$term->uuid] = $term->vname . ' - ' . $term->name;
+  $vocabs = variable_get('uuid_features_entity_taxonomy_term', FALSE);
+  if (!empty($vocabs)) {
+    $query = db_select('taxonomy_term_data', 't');
+    $query->innerJoin('taxonomy_vocabulary', 'v', 't.vid = v.vid');
+    $query->condition('v.machine_name', $vocabs)
+     ->fields('t', array('tid', 'name', 'uuid'))
+     ->addField('v', 'name', 'vname');
+    $query->orderBy('v.name', 'ASC');
+    $query->orderBy('t.name', 'ASC');
+    $results = $query->execute()->fetchAll();
+    foreach ($results as $term) {
+      $options[$term->uuid] = $term->vname . ' - ' . $term->name;
+    }
   }
-
+  drupal_alter('uuid_term_features_export_options', $options);
   return $options;
 }
 
@@ -89,8 +94,7 @@ function uuid_term_features_export_render($module = 'foo', $data) {
   $code[] = '  $terms = array();';
   $code[] = '';
   foreach ($data as $uuid) {
-    // @todo reset = TRUE as otherwise references (parent, fields) were destroyed.
-    $terms = entity_uuid_load('taxonomy_term', array($uuid), array(), TRUE);
+    $terms = entity_uuid_load('taxonomy_term', array($uuid));
     if (!count($terms)) {
       continue;
     }
@@ -104,7 +108,8 @@ function uuid_term_features_export_render($module = 'foo', $data) {
       }
     }
 
-    $export = reset($terms);
+    $first_term = reset($terms);
+    $export = clone $first_term;
 
     // Do not export ids.
     unset($export->vid);

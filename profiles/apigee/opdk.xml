@@ -7,6 +7,7 @@
   <property name="DEVTOOLS_IS_INSTALLED" value="false" override="false"/>
   <property name="DISTRO_SOURCE" value="git@github.com:apigee/drupal7-drops" override="false"/>
   <property prefix="s3cfg" file="${user.home}/.s3cfg"/>
+  <property name="VERSION" value="4.24.${env.BUILD_NUMBER}"/>
   <!-- 
     
     
@@ -42,13 +43,25 @@
         <include name="**/**"/>
       </fileset>
     </copy>
+    <phingcall target="display-step">
+      <property name="message" value="Cloning Current repo: ${DISTRO_SOURCE}"/>
+    </phingcall>
     <gitclone repository="${DISTRO_SOURCE}" targetPath="/tmp/${env.BUILD_ID}/apigee-drupal"/>
+    <exec command="cat /tmp/${env.BUILD_ID}/apigee-drupal/buildInfo | awk -F'=| ' '/Version/ {print $2}' | cut -d'-' -f2" outputProperty="VERSION" logoutput="true" />
+    <phingcall target="display-step">
+      <property name="message" value="Setting version number to: ${VERSION}"/>
+    </phingcall>
     <tar destfile="${user.home}/rpmbuild/SOURCES/apigee-drupal.tar.gz" compression="gzip" includeemptydirs="true">
       <fileset dir="/tmp/${env.BUILD_ID}">
         <include name="**/**"/>
       </fileset>
     </tar>
-    <exec command="rpmbuild --define 'BUILD_NUMBER '$BUILD_NUMBER --define 'VERSION '4.24 -ba apigee-drupal.spec" dir="${user.home}/rpmbuild/SPECS" logoutput="true"/>
+    <exec command="rpmbuild --define 'BUILD_NUMBER '$BUILD_NUMBER --define 'VERSION '${VERSION} -ba apigee-drupal.spec" dir="${user.home}/rpmbuild/SPECS" logoutput="true"/>
+    <delete>
+      <fileset dir="${user.home}/rpmbuild/RPMS/noarch">
+        <include name="**/*rpmbuild*"/>
+      </fileset>
+    </delete>
   </target>
   <!-- 
     
@@ -56,11 +69,35 @@
     
     -->
   <target name="build-opdk" depends="build-rpm">
-    <s3put key="${s3cfg.access_key}" secret="${s3cfg.secret_key}" bucket="apigee-cloudfront" fileNameOnly="yes">
-      <fileset dir="${user.home}/rpmbuild/RPMS/noarch">
-        <include name="**/*.rpm"/>
-        <exclude name="**/*rpmbuild*"/>
+    <move file="${user.home}/rpmbuild/RPMS/noarch" tofile="${user.home}/rpmbuild/RPMS/DeveloperServices-${VERSION}" overwrite="true"/>
+    <copy todir="${user.home}/rpmbuild/RPMS/DeveloperServices-${VERSION}">
+      <fileset dir="${project.basedir}/docs">
+        <include name="**/*.pdf"/>
+        <include name="**/*.rtf"/>
       </fileset>
-    </s3put>
+    </copy>
+    <tar destfile="${user.home}/rpmbuild/DeveloperServices-${VERSION}.tar.gz" compression="gzip" includeemptydirs="true" basedir="${user.home}/rpmbuild/RPMS/DeveloperServices-${VERSION}"/>
+    <exec command="s3cmd put --progress ${user.home}/rpmbuild/DeveloperServices-${VERSION}.tar.gz s3://apigee-cloudfront/DeveloperServices-${VERSION}.tar.gz" logoutput="true" passthru="true" checkreturn="true"/>
+    <phingcall target="display-step">
+      <property name="message" value="Uploaded bundle to s3://apigee-cloudfront/DeveloperServices-${VERSION}.tar.gz"/>
+    </phingcall>
+  </target>
+  <!-- 
+    
+		Messages for debugging and information
+    
+    -->
+  <target name="display-step">
+    <echo> </echo>
+    <echo> </echo>
+    <echo>/** </echo>
+    <echo>* -------------------------------------------------</echo>
+    <echo>*</echo>
+    <echo>* =&gt; ${message}</echo>
+    <echo>*</echo>
+    <echo>* -------------------------------------------------</echo>
+    <echo>*/</echo>
+    <echo> </echo>
+    <echo> </echo>
   </target>
 </project>

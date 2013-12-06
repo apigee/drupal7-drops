@@ -244,9 +244,9 @@ features_exclude[field][node-landing-field_landing_identifiers] = node-landing-f
 features_exclude[field][node-webform-body] = node-webform-body
 
 
-; Information added by drush on 2013-12-05
+; Information added by drush on 2013-12-06
 version = "7.x-1.0"
 core = "7.x"
 project = "assemble"
-datestamp = "1386271569"
+datestamp = "1386359812"
 
