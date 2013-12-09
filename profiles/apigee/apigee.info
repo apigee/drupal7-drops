@@ -14,6 +14,7 @@ dependencies[] = admin_menu
 dependencies[] = apachesolr
 dependencies[] = apachesolr_search
 dependencies[] = apigee_sso
+dependencies[] = bean
 dependencies[] = block
 dependencies[] = block_class
 dependencies[] = blog

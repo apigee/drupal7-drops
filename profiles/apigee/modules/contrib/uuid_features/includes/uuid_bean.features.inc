@@ -103,6 +103,9 @@ function uuid_bean_features_export_render($module, $data) {
     unset($export->changed);
     unset($export->vid);
 
+    // Enable file field exports.
+    uuid_features_file_field_export($export, 'bean');
+
     // Allow other modules to alter the export rendering.
     // The hook_alter signature is:
     // hook_uuid_bean_features_export_render_alter(&$export, $bean, $module);
@@ -161,6 +164,8 @@ function uuid_bean_features_rebuild($module) {
           // Create a new bean.
           $bean = entity_create('bean', $data);
         }
+        // Import file fields.
+        uuid_features_file_field_import($bean, 'bean');
         if (!$bean->save()) {
           drupal_set_message('Failed to create ' . $data['type'] . ' bean ' . $data['label'], 'error');
         }

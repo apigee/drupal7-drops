@@ -460,8 +460,17 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
       $entity['attributes'][$field] = $field_value;
     }
   }
-
-  $entity['status'] = ($edit['status'] || (property_exists($account, 'status') && $account->status) ? 'active' : 'inactive');
+  
+  if (array_key_exists('status', $edit)) {
+    $status = (bool)$edit['status'];
+  }
+  elseif (property_exists($account, 'status')) {
+    $status = (bool)$account->status;
+  }
+  else {
+    $status = FALSE;
+  }
+  $entity['status'] = $status ? 'active' : 'inactive';
 
   $saved = entity_save('developer', $entity);
   $results = devconnect_get_debug_data();

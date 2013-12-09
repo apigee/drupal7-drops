@@ -356,12 +356,9 @@ function devconnect_developer_apps_admin_form_validate(array $form, array &$form
  */
 function devconnect_developer_apps_list_apiproducts() {
   $options = array('' => '[None]');
-  try {
-    $products = entity_load('api_product', FALSE, array('show_private' => TRUE));
-    foreach ($products as $product) {
-      $options[$product['name']] = $product['displayName'];
-    }
-  } catch (Exception $e) {
+  $products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+  foreach ($products as $product) {
+    $options[$product['name']] = $product['displayName'];
   }
   return $options;
 }
@@ -446,85 +443,67 @@ function devconnect_developer_apps_getlist($user) {
 
   drupal_add_js("$module_path/devconnect_developer_apps.js");
 
-  try {
-    $app_entities = entity_load('developer_app', FALSE, array('mail' => $user->mail));
+  $app_entities = entity_load('developer_app', FALSE, array('mail' => $user->mail));
 
-    if (count($app_entities) == 0) {
-      $parameters = array(
-        'application_count' => 0,
-        'applications' => array(),
-        'user' => $user
-      );
-    }
-    else {
-      $rows = array();
-      $api_products = FALSE;
-      foreach ($app_entities as $entity) {
-        if (count($entity->credentialApiProducts) > 0 && $api_products === FALSE) {
-          $api_products = array();
-          $api_product_entities = entity_load('api_product');
-          foreach ($api_product_entities as $api_product_entity) {
-            $api_products[$api_product_entity['name']] = $api_product_entity['displayName'];
-          }
-        }
-
-        $app_name = rawurlencode($entity->name);
-        $uid_arg = $user->uid;
-
-        // credentialApiProducts is an array with keys of 'apiproduct' and 'status'.
-        // Add displayName key as well.
-        foreach ($entity->credentialApiProducts as $key => $product) {
-          $entity->credentialApiProducts[$key]['displayName'] = (array_key_exists($product['apiproduct'], $api_products) ? $api_products[$product['apiproduct']] : $product['apiproduct']);
-        }
-
-        $row = array(
-          'app_name' => $entity->name,
-          'callback_url' => $entity->callbackUrl,
-          'attributes' => _devconnect_developer_apps_get_attributes($entity->attributes),
-          'createdAt' => floor($entity->createdAt / 1000),
-          'credential' => array(
-            'apiProducts' => $entity->credentialApiProducts,
-            'consumerKey' => $entity->consumerKey,
-            'consumerSecret' => $entity->consumerSecret,
-            'scopes' => $entity->credentialScopes,
-            'status' => $entity->credentialStatus
-          ),
-          'edit_url' => "user/$uid_arg/apps/$app_name/edit-app",
-          'entity' => $entity,
-        );
-        if (user_access('delete developer apps', $user)) {
-          $row['delete_url'] = "user/$uid_arg/apps/$app_name/delete";
-        }
-        $rows[] = $row;
-      }
-      $parameters = array(
-        'application_count' => count($rows),
-        'applications' => $rows,
-        'user' => $user,
-      );
-    }
-    // Invoke hook_devconnect_developer_app_list_alter() on this parm list.
-    drupal_alter('devconnect_developer_app_list', $parameters);
-
-    return theme('devconnect_developer_apps_list', $parameters);
-
-  } catch (Exception $e) {
-    $code = $e->getCode();
-    $status = $e->getMessage();
-
-    $summary = t('An error occurred while listing your apps. Please try again later.');
-    $detail = "STATUS: $code - $status";
-    if ($e instanceof Apigee\Exceptions\ResponseException) {
-      $detail .= "\n" . $e->getResponse();
-    }
-
-    $output = devconnect_notify($code, $summary, $detail, Apigee\Util\ErrorHandling::SEVERITY_ERROR, Apigee\Util\ErrorHandling::DISPLAY_INLINE);
-    if ($output === FALSE) {
-      $output = '';
-    }
-    devconnect_default_api_client()->logger->error($detail);
-    return $output;
+  if (count($app_entities) == 0) {
+    $parameters = array(
+      'application_count' => 0,
+      'applications' => array(),
+      'user' => $user
+    );
   }
+  else {
+    $rows = array();
+    $api_products = FALSE;
+    foreach ($app_entities as $entity) {
+      if (count($entity->credentialApiProducts) > 0 && $api_products === FALSE) {
+        $api_products = array();
+        $api_product_entities = entity_load('api_product');
+        foreach ($api_product_entities as $api_product_entity) {
+          $api_products[$api_product_entity['name']] = $api_product_entity['displayName'];
+        }
+      }
+
+      $app_name = rawurlencode($entity->name);
+      $uid_arg = $user->uid;
+
+      // credentialApiProducts is an array with keys of 'apiproduct' and 'status'.
+      // Add displayName key as well.
+      foreach ($entity->credentialApiProducts as $key => $product) {
+        $entity->credentialApiProducts[$key]['displayName'] = (array_key_exists($product['apiproduct'], $api_products) ? $api_products[$product['apiproduct']] : $product['apiproduct']);
+      }
+
+      $row = array(
+        'app_name' => $entity->name,
+        'callback_url' => $entity->callbackUrl,
+        'attributes' => _devconnect_developer_apps_get_attributes($entity->attributes),
+        'createdAt' => floor($entity->createdAt / 1000),
+        'credential' => array(
+          'apiProducts' => $entity->credentialApiProducts,
+          'consumerKey' => $entity->consumerKey,
+          'consumerSecret' => $entity->consumerSecret,
+          'scopes' => $entity->credentialScopes,
+          'status' => $entity->credentialStatus
+        ),
+        'edit_url' => "user/$uid_arg/apps/$app_name/edit-app",
+        'entity' => $entity,
+      );
+      if (user_access('delete developer apps', $user)) {
+        $row['delete_url'] = "user/$uid_arg/apps/$app_name/delete";
+      }
+      $rows[] = $row;
+    }
+    $parameters = array(
+      'application_count' => count($rows),
+      'applications' => $rows,
+      'user' => $user,
+    );
+  }
+  // Invoke hook_devconnect_developer_app_list_alter() on this parm list.
+  drupal_alter('devconnect_developer_app_list', $parameters);
+
+  return theme('devconnect_developer_apps_list', $parameters);
+
 }
 
 /**
@@ -543,18 +522,12 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
 
   $entity = NULL;
   if (isset($app_name)) {
-    try {
-      $entities = entity_load('developer_app', FALSE, array('mail' => $account->mail, 'name' => $app_name));
-      if (count($entities) == 0) {
-        drupal_not_found();
-        exit;
-      }
-      $entity = reset($entities);
-    } catch (Exception $e) {
-      devconnect_default_api_client()->logger->warning($e->getMessage());
+    $entities = entity_load('developer_app', FALSE, array('mail' => $account->mail, 'name' => $app_name));
+    if (count($entities) == 0) {
       drupal_not_found();
       exit;
     }
+    $entity = reset($entities);
   }
   // Set Title
   if (isset($app_name)) {
@@ -700,22 +673,12 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     }
   }
 
-  try {
-    $options = array();
+  $options = array();
 
-    $api_products = entity_load('api_product');
-    drupal_alter('apiproduct_list', $api_products);
-    foreach ($api_products as $api_product) {
-      $options['prod-' . $api_product['name']] = $api_product['displayName'];
-    }
-  } catch (Exception $e) {
-    $code = $e->getCode();
-    $summary = t('An error occurred while listing available API Products. Please try again later.');
-    $detail = $e->getMessage();
-
-    devconnect_notify($code, $summary, $detail);
-    devconnect_default_api_client()->logger->error($detail);
-    $options = array();
+  $api_products = entity_load('api_product');
+  drupal_alter('apiproduct_list', $api_products);
+  foreach ($api_products as $api_product) {
+    $options['prod-' . $api_product['name']] = $api_product['displayName'];
   }
 
   $preexisting_api_products = array();
@@ -939,9 +902,9 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
   }
 
   $middle_arg = (module_exists('me') && $user->uid == $GLOBALS['user']->uid ? 'me' : $user->uid);
-  try {
-    entity_save('developer_app', $entity);
-  } catch (Apigee\Exceptions\ResponseException $e) {
+  $saved = entity_save('developer_app', $entity);
+  if (!$saved) {
+    $e = DeveloperAppController::getLastException();
     $code = $e->getCode();
 
     // The following should never occur. Name clashes should have been handled in form validation above.
@@ -980,15 +943,6 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
     devconnect_notify($code, $summary, $detail);
     drupal_goto("user/$middle_arg/apps/add");
   }
-  catch (Exception $e) {
-    $summary = t('An error occurred while saving your app. Please try again later.');
-    $detail = $e->getMessage();
-    // Here we ignore the return value. Since this is a form_submit handler,
-    // errors MUST be displayed as Messages, not inline.
-    devconnect_notify($e->getCode(), $summary, $detail);
-    devconnect_default_api_client()->logger->error($detail);
-    drupal_goto("user/$middle_arg/apps/add");
-  }
 
   $summary = t('App @status!', array('@status' => $action_taken));
   $detail = NULL;
@@ -998,6 +952,9 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
   $form_state['storage']['entity'] =& $entity;
 
   $results = devconnect_get_debug_data();
+  if (!array_key_exists('appId', $results['data']) || empty($results['data']['appId'])) {
+    $results['data']['appId'] = DeveloperAppController::getLastAppId();
+  }
 
   // Invoke hook_devconnect_developer_app_save on all implementing modules
   devconnect_developer_apps_hook('save', $form_state, $results);
@@ -1037,12 +994,8 @@ function devconnect_developer_app_delete_form($form, &$form_state) {
     exit;
   }
 
-  $entity_loaded = FALSE;
-  try {
-    $entities = entity_load('developer_app', FALSE, array('mail' => $user->mail, 'name' => arg(3)));
-    $entity_loaded = (!empty($entities));
-  } catch (Exception $e) {
-  }
+  $entities = entity_load('developer_app', FALSE, array('mail' => $user->mail, 'name' => arg(3)));
+  $entity_loaded = (!empty($entities));
   if (!$entity_loaded) {
     drupal_not_found();
     exit;
@@ -1149,20 +1102,8 @@ function devconnect_developer_apps_menu_local_tasks_alter(&$data, $router_item, 
  * @return string
  */
 function devconnect_developer_apps_detail($user, $app_name) {
-  try {
-    $entities = entity_load('developer_app', FALSE, array('mail' => $user->mail, 'name' => $app_name));
-    $entity = reset($entities);
-  } catch (Exception $e) {
-    $code = Apigee\Util\ErrorHandling::CODE_APP_CANNOT_BE_LOADED;
-    $summary = t('An error occurred while retrieving your app. Please try again later.');
-    $detail = 'Error ' . $e->getCode() . "\n" . $e->getMessage();
-
-    $error_output = devconnect_notify($code, $summary, $detail);
-    if ($error_output === FALSE) {
-      $error_output = '';
-    }
-    return $error_output;
-  }
+  $entities = entity_load('developer_app', FALSE, array('mail' => $user->mail, 'name' => $app_name));
+  $entity = reset($entities);
   if (empty($entity)) {
     drupal_not_found();
     exit;
@@ -1213,19 +1154,15 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
 
   $cred = array('apiproducts' => array());
   foreach ($entity->credentialApiProducts as $api_product) {
-    try {
-      $product_entities = entity_load('api_product', array($api_product['apiproduct']));
-      if (!empty($product_entities)) {
-        $product_entity = reset($product_entities);
-        $cred['apiproducts'][] = array(
-          'display_name' => $product_entity['displayName'],
-          'description' => $product_entity['description'],
-          'status' => $api_product['status'],
-          'name' => $api_product['apiproduct']
-        );
-      }
-    } catch (Exception $e) {
-      devconnect_default_api_client()->logger->error(t('Could not load APIProduct @product', array('@product' => $api_product['apiproduct'])));
+    $product_entities = entity_load('api_product', array($api_product['apiproduct']));
+    if (!empty($product_entities)) {
+      $product_entity = reset($product_entities);
+      $cred['apiproducts'][] = array(
+        'display_name' => $product_entity['displayName'],
+        'description' => $product_entity['description'],
+        'status' => $api_product['status'],
+        'name' => $api_product['apiproduct']
+      );
     }
   }
   $cred['consumer_key'] = $entity->consumerKey;

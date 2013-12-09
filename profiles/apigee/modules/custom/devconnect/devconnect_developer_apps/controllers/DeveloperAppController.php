@@ -5,6 +5,8 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
 
   private static $lastAppId;
 
+  private static $lastException;
+
   private static $appCount = 0;
 
   /**
@@ -53,12 +55,14 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
           $dev_app->loadByAppId($id, TRUE);
         } catch (Apigee\Exceptions\ResponseException $e) {
           $dev_app = NULL;
+          self::$lastException = $e;
         }
       }
       if (isset($dev_app)) {
         try {
           $dev_app->delete();
         } catch (Apigee\Exceptions\ResponseException $e) {
+          self::$lastException = $e;
         }
       }
     }
@@ -96,6 +100,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       $dev_app->save($is_update);
       $this->appCache[$dev_app->getAppId()] = $dev_app;
     } catch (Apigee\Exceptions\ResponseException $e) {
+      self::$lastException = $e;
       return FALSE;
     }
 
@@ -192,6 +197,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
           $list = array($dev_app);
         } catch (Apigee\Exceptions\ResponseException $e) {
           $list = array();
+          self::$lastException = $e;
         }
       }
       else {
@@ -206,6 +212,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $list = $dev_app->listAllOrgApps();
         $this->addListToCache($list, $ids);
       } catch (Apigee\Exceptions\ResponseException $e) {
+        self::$lastException = $e;
         $list = array();
       }
     }
@@ -226,7 +233,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
             $app->loadByAppId($id);
             $list[] = $app;
           } catch (Apigee\Exceptions\ResponseException $e) {
-            // do nothing
+            self::$lastException = $e;
           }
         }
         $this->addListToCache($list, $ids);
@@ -319,6 +326,15 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
 
   public static function getAppCount() {
     return self::$appCount;
+  }
+
+  /**
+   * Returns the last exception returned from KMS
+   *
+   * @return Apigee\Exceptions\ResponseException
+   */
+  public static function getLastException() {
+    return self::$lastException;
   }
 }
 
