@@ -47,10 +47,12 @@ class ApiProductController implements DrupalEntityControllerInterface {
     if (empty($ids)) {
       try {
         $list = $api_product->listProducts($conditions['show_private']);
-        foreach ($list as $p) {
-          $this->productCache[$p->getName()] = $p;
+        if (!empty($list)) {
+          foreach ($list as $p) {
+            $this->productCache[$p->getName()] = $p;
+          }
         }
-      } catch (Apigee\Exception\ResponseException $e) {
+      } catch (Apigee\Exceptions\ResponseException $e) {
         return array();
       }
     }

@@ -242,11 +242,3 @@ features[variable][] = workbench_moderation_default_state_landing
 features_exclude[field][node-landing-field_landing_tags] = node-landing-field_landing_tags
 features_exclude[field][node-landing-field_landing_identifiers] = node-landing-field_landing_identifiers
 features_exclude[field][node-webform-body] = node-webform-body
-
-
-; Information added by drush on 2013-12-09
-version = "7.x-1.0"
-core = "7.x"
-project = "assemble"
-datestamp = "1386610223"
-

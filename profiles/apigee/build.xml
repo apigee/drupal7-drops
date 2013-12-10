@@ -111,7 +111,7 @@
     <gitclone repository="git@github.com:apigee/apigee-drupal-profile" targetPath="${project.basedir}/webapp/profiles/apigee" />
     <!-- gitcheckout repository="${project.basedir}/webapp/profiles/apigee" branchname="7.x-4.24" /   -->
     <delete dir="${project.basedir}/webapp/profiles/apigee/.git" quiet="true"/>
-    <exec command="drush make --no-core --contrib-destination=. --yes --nocolor apigee.make" dir="${project.basedir}/webapp/profiles/apigee" logoutput="true" passthru="true" />
+    <exec command="drush make --no-core --no-gitinfofile --contrib-destination=. --yes --nocolor apigee.make" dir="${project.basedir}/webapp/profiles/apigee" logoutput="true" passthru="true" />
     <if>
       <not>
         <or>

@@ -23,6 +23,7 @@ function github_connect_permission() {
     'title' => t('Administer Github Connect'),
     'restrict access' => TRUE
   );
+  return $items;
 }
 
 /**

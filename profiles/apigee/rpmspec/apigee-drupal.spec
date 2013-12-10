@@ -134,15 +134,14 @@ install -pm0755 %{SOURCE11} %{buildroot}%{_prefix}/lib/rpm/%{name}.req
 %post
 lokkit -p www-http:tcp
 service iptables restart
-#/usr/bin/php -r "\$conf = file_get_contents('/etc/httpd/conf/httpd.conf');\
-#if (preg_match('~<Directory \"/var/www/html\">(.*)</Directory>~Uims', \$conf, \$matches)) {\
-#  if (stripos(\$matches[1], 'AllowOverride None') !== FALSE) {\
-#    \$directive = str_ireplace('AllowOverride None', 'AllowOverride All', \$matches[1]);\
-#    \$conf = str_replace(\$matches[1], \$directive, \$conf);\
-#    file_put_contents('/etc/httpd/conf/httpd.conf', \$conf);\
-#  }\
-#}"
+cp /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.distro
+echo '<Directory "/var/www/html">'  >> /etc/httpd/conf/httpd.conf
+echo 'AllowOverride All' >> /etc/httpd/conf/httpd.conf
+echo '</Directory>' >> /etc/httpd/conf/httpd.conf
 service httpd restart
+chmod -R 755 /var/www/html
+chmod 777 /var/www/html/sites/default/{files,tmp,private}
+chown -R apache:apache /var/www/html
 
 %clean
 rm -rf %{buildroot}

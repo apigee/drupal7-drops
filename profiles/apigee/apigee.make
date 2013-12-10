@@ -66,7 +66,7 @@ projects[gist_filter][subdir]                = "contrib"
 projects[github_connect][subdir]             = "contrib"
 ; permissions
 ; see https://drupal.org/node/2150767
-projects[github_connect][patch][2150767]     = "https://drupal.org/files/issues/administer-github-connect-2150767.patch"
+projects[github_connect][patch][2150767]     = "https://drupal.org/files/issues/administer-github-connect-2150767-2.patch"
 projects[google_analytics][subdir]           = "contrib"
 projects[google_analytics_reports][subdir]   = "contrib"
 projects[gravatar][subdir]                   = "contrib"

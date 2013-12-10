@@ -8,11 +8,3 @@ dependencies[] = xautoload
 
 files[] = tests/CollectionWebTestCase.php
 files[] = tests/*.test
-
-
-; Information added by drush on 2013-12-09
-version = "7.x-1.0-alpha3+7-dev"
-core = "7.x"
-project = "collections"
-datestamp = "1386610221"
-
