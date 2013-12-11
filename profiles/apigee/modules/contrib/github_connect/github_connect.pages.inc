@@ -39,15 +39,44 @@ function github_connect_get_access_token() {
       else { // Otherwise register the user and log in
         $github_user = _github_connect_get_github_user_info($token);
 
-        if ($existing_user_by_mail = user_load_by_mail($github_user['email'])) {
-          // If a user with this email address exists, let him connect the github account to his already created account.
-          drupal_goto('github/verify/email/' . $existing_user_by_mail->uid . '/' . $token);
+        if ($account_mail = user_load_by_mail($github_user['email'])) {
+          $account_uid = db_select('authmap', 'a')
+            ->fields('a', array('uid'))
+            ->condition('module', 'github_connect')
+            ->condition('uid', $account_mail->uid)
+            ->execute()
+            ->fetchField();
+          if (!$account_uid) {
+            // User already registered to the site without Github, so let them
+            // merge those accounts.
+
+            // Remove an existing destination parameter that drupal_goto() will
+            // allow as an override.
+            unset($_GET['destination']);
+            drupal_goto("github/verify/email/$account_uid/$token");
+          }
+          else {
+            // User who previously logged in via Github has returned, so we can
+            // update the token and log them in.
+            db_update('github_connect_users')
+              ->fields(array(
+                'access_token' => $token,
+                'timestamp' => REQUEST_TIME,
+              ))
+              ->condition('uid', $account_mail->uid)
+              ->execute();
+            // Log the stored user in.
+            _github_connect_user_login($account_mail);
+            drupal_goto();
+          }
         }
         else {
           // Otherwise make sure there is no account with the same username
           if ($existing_user_by_name = user_load_by_name($github_user['login'])) {
+            unset($_GET['destination']);
             drupal_goto('github/username/' . $existing_user_by_name->uid . '/' . $token);
-          } else {
+          }
+          else {
             _github_connect_register($github_user, $token);
             drupal_goto();
           }
@@ -74,6 +103,8 @@ function github_connect_get_access_token() {
           drupal_set_message(t('Your GitHub account is now connected.'));
           drupal_goto('user/' . $user->uid . '/github');
         }
+
+        // TODO: what happens if we fall through here?
       }
     }
   }
@@ -96,10 +127,10 @@ function github_user_account($account) {
     $identity = $result['openid.claimed_id'];
     $query = db_insert('authmap')
       ->fields(array(
-      'uid' => $account->uid,
-      'authname' => $identity,
-      'module' => 'openid',
-    ))
+        'uid' => $account->uid,
+        'authname' => $identity,
+        'module' => 'openid',
+      ))
       ->execute();
     drupal_set_message(t('Successfully added %identity', array('%identity' => $identity)));
   }
@@ -109,7 +140,10 @@ function github_user_account($account) {
 
   $result = db_query("SELECT * FROM {authmap} WHERE module='github_connect' AND uid=:uid", array(':uid' => $account->uid));
   foreach ($result as $identity) {
-    $rows[] = array(check_plain($identity->authname), l(t('Delete'), 'user/' . $account->uid . '/github/delete/' . $identity->aid));
+    $rows[] = array(
+      check_plain($identity->authname),
+      l(t('Delete'), 'user/' . $account->uid . '/github/delete/' . $identity->aid)
+    );
   }
 
   $build['github_table'] = array(
@@ -154,7 +188,10 @@ function github_connect_user_delete_form($form, $form_state, $account, $aid = 0)
     ':aid' => $aid,
   ))
     ->fetchField();
-  return confirm_form(array(), t('Are you sure you want to disconnect the Github account %authname for %user?', array('%authname' => $authname, '%user' => $account->name)), 'user/' . $account->uid . '/github');
+  return confirm_form(array(), t('Are you sure you want to disconnect the Github account %authname for %user?', array(
+      '%authname' => $authname,
+      '%user' => $account->name
+    )), 'user/' . $account->uid . '/github');
 }
 
 function github_connect_user_delete_form_submit($form, &$form_state) {
@@ -187,7 +224,8 @@ function github_connect_verify_email_form($form, &$form_state, $account, $token)
     '#markup' => t('There is already an account associated with your GitHub email address. Type your !site account password to merge accounts.', array('!site' => variable_get('site_name'))),
   );
   $form['name'] = array('#type' => 'hidden', '#value' => $account->name);
-  $form['pass'] = array('#type' => 'password',
+  $form['pass'] = array(
+    '#type' => 'password',
     '#title' => t('Password'),
     '#description' => t('Enter your password.'),
     '#required' => TRUE,
@@ -246,7 +284,8 @@ function github_connect_username_choose_form($form, &$form_state, $account, $tok
       )),
   );
   $form['name'] = array('#type' => 'hidden', '#value' => $account->name);
-  $form['name_new'] = array('#type' => 'textfield',
+  $form['name_new'] = array(
+    '#type' => 'textfield',
     '#title' => t('New username'),
     '#description' => t('Enter another username.'),
     '#required' => TRUE,

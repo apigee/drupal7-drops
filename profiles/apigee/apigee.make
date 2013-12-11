@@ -67,6 +67,9 @@ projects[github_connect][subdir]             = "contrib"
 ; permissions
 ; see https://drupal.org/node/2150767
 projects[github_connect][patch][2150767]     = "https://drupal.org/files/issues/administer-github-connect-2150767-2.patch"
+; unset $_GET['destination']
+; see https://drupal.org/node/1895544
+projects[github_connect][patch][1895544]     = "https://drupal.org/files/issues/1895544-github-connect-return-user-5.patch"
 projects[google_analytics][subdir]           = "contrib"
 projects[google_analytics_reports][subdir]   = "contrib"
 projects[gravatar][subdir]                   = "contrib"
