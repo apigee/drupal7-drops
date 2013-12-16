@@ -83,56 +83,110 @@ function workflow_vbo_given_state_action($node, array $context) {
     return;
   }
 
-  $comment = t($context['workflow_comment'], array(
-      '%title' => check_plain($node->title),
-      '%state' => check_plain($context['state_name']),
-      '%user' => theme('username', array('account' => $user)),
-      ));
-
-  $entity_type = 'node';
-  $entity = $node;
-  $field_name = '';
-  $current_sid = $node->workflow;
-  $new_sid = $context['target_sid'];
-
-  // Fire the transition.
   $force = $context['force'];
-  $transition = new WorkflowTransition($entity_type, $entity, $field_name, $current_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
-  workflow_execute_transition($entity_type, $entity, $field_name, $transition, $force);
+
+  $form = $context['form'];
+  $form_state = $context['form_state'];
+
+  // The initial form was a VBO form, so add the entity.
+  $form_state['values']['workflow_entity'] = $node;
+
+  // Parse the $comment variables.
+  $new_sid = $form_state['input']['workflow_sid'];
+  $comment_string = $form_state['input']['workflow_comment'];
+  $comment = t($comment_string, array(
+      '%title' => check_plain($node->title),
+      '%state' => workflow_get_sid_label($new_sid),
+      '%user' => theme('username', array('account' => $user)),
+    )
+  );
+  $form_state['input']['workflow_comment'] = $comment;
+
+  // Submit the transition.
+  workflow_transition_form_submit($form, $form_state);
 }
 
 /**
  * Configuration form for "Change workflow state of post to new state" action.
  *
+ * This copies functionality from workflow_tab_page, and overrides some fields.
+ *
  * @see workflow_vbo_given_state_action()
  */
 function workflow_vbo_given_state_action_form(array $context) {
+  $form = array();
   $options = array();
 
+  // The following is a copy of function workflow_tab_page(), to re-use the form.
+  // This way, we can add comments, and schedule the form.
+
+  // First, create dummy data. // @todo: improve this logic, Add $workflow, $field_name.
+  $entity_type = 'node';
+  $entity = NULL;
+  $entity_id = '';
+  $workflow = Workflow::create('dummy VBO');
+  // Set some workflow options, that are normally fetched from the workflow.
+  $workflow->options['comment_log_tab'] = TRUE; 
+  $workflow->options['schedule'] = TRUE;
+  $workflow->options['schedule_timezone'] = TRUE;
+  $workflow->options['watchdog_log'] = TRUE;
+  $workflow->options['options'] = 'select';
+
+  // Show the current state and the Workflow form to allow state changing.
+  if ($workflow_item = $workflow->getWorkflowItem()) {
+    // This is a Workflow Field workflow.
+    $field = $workflow_item->getField();
+    $instance = $workflow_item->getInstance();
+  }
+  else {
+    // This is a Workflow Node workflow.
+    // Emulate a Field API interface.
+    $field = array();
+    $field['field_name'] = '';
+    $field['id'] = 0;
+    $field['settings']['wid'] = $workflow->wid;
+    $field['settings']['widget'] = $workflow->options;
+    // Careful: the following line is different from workflow_tab_page()
+    $field['settings']['widget']['comment'] = $workflow->options['comment_log_tab']; // vs. ['comment_log_node']; 
+
+    $field['settings']['widget']['current_status'] = FALSE;
+
+    $instance = array();
+    // Do not show the submit button on the VBO page.
+    $instance['widget']['settings']['submit_function'] = '';
+  }
+  // Add the form/widget to the formatter, and include the nid and field_id in the form id,
+  // to allow multiple forms per page (in listings, with hook_forms() ).
+  // Ultimately, this is a wrapper for WorkflowDefaultWidget.
+  $field_id = $field['id'];
+  $form['workflow_current_state'] = workflow_state_formatter($entity_type, $entity, $field, $instance);
+  $form += drupal_get_form(implode('_', array('workflow_transition_form', $entity_type, $entity_id, $field_id)), $field, $instance, $entity_type, $entity);
+
+  // Make adaptations for VBO-form:
+
+  // Change the options widget. Get all states, only where active.
   // @todo: prevent choosing a state from an illegal Workflow.
-  // Get all states, only where active.
-  $options = workflow_get_workflow_state_names(0, $grouped = TRUE, $all = FALSE);
+  $options = workflow_get_workflow_state_names(0, $grouped = ($workflow->options['options'] == 'select'), $all = FALSE);
 
-  $form['workflow_sid'] = array(
-    '#type' => 'select',
-    '#title' => t('Target state'),
-    '#description' => t('Please select the state that should be assigned when this action runs.'),
-    '#default_value' => isset($context['target_sid']) ? $context['target_sid'] : '',
-    '#options' => $options,
-  );
+  // Override the options widget.
+  $form['workflow']['workflow_sid']['#type'] = 'select';
+  $form['workflow']['workflow_sid']['#title'] = t('Target state');
+  $form['workflow']['workflow_sid']['#description'] = t('Please select the state that should be assigned when this action runs.');
+  $form['workflow']['workflow_sid']['#default_value'] = isset($context['target_sid']) ? $context['target_sid'] : '';
+  $form['workflow']['workflow_sid']['#options'] = $options;
 
-  $form['workflow_force'] = array(
+  $form['workflow']['workflow_force'] = array(
     '#type' => 'checkbox',
     '#title' => t('Force transition'),
     '#description' => t('If this box is checked, the new state will be assigned even if workflow permissions disallow it.'),
     '#default_value' => isset($context['force']) ? $context['force'] : '',
   );
 
-  $form['workflow_comment'] = array(
+  $form['workflow']['workflow_comment'] = array(
     '#type' => 'textfield',
     '#title' => t('Message'),
-    '#description' => t('This message will be written into the workflow history log when the action ' .
-      'runs. You may include the following variables: %state, %title, %user'),
+    '#description' => t('This message will be written into the workflow history log when the action
+      runs. You may include the following variables: %state, %title, %user.'),
     '#default_value' => isset($context['workflow_history']) ? $context['workflow_history'] : t('Action set %title to %state by %user.'),
   );
 
@@ -145,14 +199,15 @@ function workflow_vbo_given_state_action_form(array $context) {
  *
  * @see workflow_vbo_given_state_action_form()
  */
-function workflow_vbo_given_state_action_submit($form_id, $form_state) {
-  $new_sid = $form_state['values']['workflow_sid'];
-  if ($new_sid) {
-    return array(
-      'target_sid' => $new_sid,
-      'state_name' => workflow_get_sid_label($new_sid),
-      'force' => $form_state['values']['workflow_force'],
-      'workflow_comment' => $form_state['values']['workflow_comment'],
-    );
+function workflow_vbo_given_state_action_submit($form, $form_state) {
+  $new_sid = $form_state['input']['workflow_sid'];
+  if (!$new_sid) {
+    return;
   }
+
+  return array(
+    'force' => $form_state['input']['workflow_force'],
+    'form' => $form,
+    'form_state' => $form_state,
+  );
 }

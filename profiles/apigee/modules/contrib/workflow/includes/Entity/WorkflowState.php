@@ -347,21 +347,20 @@ class WorkflowState {
     if ($workflow) {
       $roles = array_keys($user->roles);
 
-      // If this is a new page, give the authorship role.
-      if (!$entity_id) {
-        $roles = array_merge(array('author'), $roles);
-      }
-      // Add 'author' role to user if user is author of this entity.
-      // - Some entities (e.g, taxonomy_term) do not have a uid.
-      // - If 'anonymous' is the author, don't allow access to History Tab,
-      //   since anyone can access it, and it will be published in Search engines. 
-      elseif (isset($entity->uid) && $entity->uid == $user->uid && $user->uid > 0) {
-        $roles = array_merge(array('author'), $roles);
-      }
-
-      // Superuser is special. And $force allows Rules to cause transition.
       if ($user->uid == 1 || $force) {
+        // Superuser is special. And $force allows Rules to cause transition.
         $roles = 'ALL';
+      }
+      elseif (!$entity_id) {
+        // If this is a new page, give the authorship role.
+        $roles = array_merge(array('author'), $roles);
+      }
+      elseif (isset($entity->uid) && $entity->uid == $user->uid && $user->uid > 0) {
+        // Add 'author' role to user if user is author of this entity.
+        // - Some entities (e.g, taxonomy_term) do not have a uid.
+        // - If 'anonymous' is the author, don't allow access to History Tab,
+        //   since anyone can access it, and it will be published in Search engines. 
+        $roles = array_merge(array('author'), $roles);
       }
 
       // Workflow_allowable_transitions() does not return the entire transition row. Would like it to, but doesn't.
@@ -371,14 +370,18 @@ class WorkflowState {
 
       // Include current state if it is not the (creation) state.
       foreach ($transitions as $transition) {
-        if ($transition->sysid != WORKFLOW_CREATION && !$force) {
+        if ($transition->sysid != WORKFLOW_CREATION) {
           // Invoke a callback indicating that we are collecting state choices.
           // Modules may veto a choice by returning FALSE.
           // In this case, the choice is never presented to the user.
           // @todo: for better performance, call a hook only once: can we find a way to pass all transitions at once
-          $result = module_invoke_all('workflow', 'transition permitted', $current_sid, $transition->state_id, $entity, $field_name = '');
+          $permitted = TRUE;
+          if (!$force) {
+            $new_sid = $transition->state_id;
+            $permitted = module_invoke_all('workflow', 'transition permitted', $current_sid, $new_sid, $entity, $force, $entity_type, $field_name = ''); // @todo: add $field_name.
+          }
           // Did anybody veto this choice?
-          if (!in_array(FALSE, $result)) {
+          if ($permitted !== FALSE) {
             // If not vetoed, add to list.
             $options[$transition->state_id] = check_plain(t($transition->state_name));
           }

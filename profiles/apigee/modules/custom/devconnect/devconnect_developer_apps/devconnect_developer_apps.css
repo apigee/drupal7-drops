@@ -37,3 +37,7 @@ div#analytics-highchart {
   color: #999999;
   text-decoration: line-through;
 }
+
+#devconnect-developer-apps-edit-form label.option.radio {
+  font-weight: normal;
+}

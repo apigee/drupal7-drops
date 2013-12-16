@@ -88,7 +88,7 @@ function devconnect_developer_apps_permission() {
     'delete',
     'administer'
   );
-
+  $perms = array();
   foreach ($actions as $action) {
     $perms["$action developer apps"]['title'] = t(ucfirst($action) . " Developer Apps");
   }
@@ -273,6 +273,37 @@ function devconnect_developer_apps_variable_info() {
     'description' => t('When this value is enabled, the \'Performance\' tab will be displayed on the developer app detail page.'),
     'group' => 'devconnect'
   );
+
+  $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_api_client());
+  $environments = $dca->getAllEnvironments();
+  $options = array('*' => 'All environments');
+  foreach($environments as $environment) {
+    switch ($environment) {
+      case 'prod': $env_name = 'Production'; break;
+      case 'test': $env_name = 'Test'; break;
+      case 'dev':  $env_name = 'Development'; break;
+      default: $env_name = $environment;
+    }
+    $options[$environment] = t($env_name);
+  }
+  if (array_key_exists('prod', $options)) {
+    $default_env = 'prod';
+  }
+  elseif (count($environments) > 0) {
+    $default_env = $environments[0];
+  }
+  else {
+    $default_env = '*';
+  }
+
+  $variables['devconnect_analytics_environment'] = array(
+    'type' => 'select',
+    'title' => t('Environment to query for analytics data'),
+    'default' => $default_env,
+    'options' => $options,
+    'group' => 'devconnect'
+  );
+
   $variables['devconnect_show_apiproduct_status'] = array(
     'type' => 'boolean',
     'title' => t('Show API Product status on the developer app list?'),

@@ -36,7 +36,7 @@ class WorkflowScheduledTransition extends WorkflowTransition {
    */
   public static function load($entity_type, $entity_id, $field_name = '', $limit = NULL) {
     if (!$entity_id) {
-      return FALSE;
+      return array();
     }
 
     $query = db_select('workflow_scheduled_transition', 'wst');

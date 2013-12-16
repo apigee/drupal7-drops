@@ -21,7 +21,11 @@ abstract class WorkflowD7Base {
   /**
    * Constructor, stub for D8 WidgetBase.
    */
-  public function __construct(array $field, array $instance, $entity_type = '', stdClass $entity = NULL) {
+  public function __construct(array $field, array $instance, $entity_type = '', $entity = NULL) {
+    if (!empty($entity) && !is_object($entity)) {
+      throw new Exception('Entity should be an object.');
+    }
+
     // Properties for Widget and Field.
     $this->field = $field;
     $this->instance = $instance;

@@ -90,9 +90,9 @@ function workflow_revert_workflow_history_alter(&$variables) {
     }
     else {
       // Let's ask other modules if the reversion is allowed. Reversing old and new sid!
-      $result = module_invoke_all('workflow', 'transition permitted', $transition->new_sid, $old_sid, $entity, FALSE);
+      $permitted = module_invoke_all('workflow', 'transition permitted', $transition->new_sid, $old_sid, $entity, $force = FALSE, $entity_type, $field_name);
       // Did anybody veto this choice?
-      if (!in_array(FALSE, $result)) {
+      if ($permitted !== FALSE) {
         // If not vetoed, mark it.
         $options = array('query' => array('token' => drupal_get_token('workflow_revert ' . $old_sid)));
         $path = 'workflow_revert/' . $entity_type . '/' . $id . '/' . $field_name . '/' . $old_sid;

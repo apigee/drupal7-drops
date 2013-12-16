@@ -12,16 +12,15 @@ define('MARK_STATE_IS_DELETED', '*');
 function workflow_tab_page($entity_type, $entity = NULL) {
   drupal_set_title(entity_label($entity_type, $entity));
 
+  $form = array();
+
   // $figure out the $entity's bundle and id.
   list($entity_id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
   $entity_id = entity_id($entity_type, $entity);
   $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type);
 
   // Show the current state and the Workflow form to allow state changing.
-  // (But only show form if we are not at the terminal state.)
-  // Choose a different form, depending if this is a Workflow Node or a Workflow Field.
-  // Probably this can be done in hook_forms(), but this is better to maintain.
-  if ($workflow_item = $workflow->getWorkflowItem()) {
+  if ($workflow && $workflow_item = $workflow->getWorkflowItem()) {
     // This is a Workflow Field workflow.
     $field = $workflow_item->getField();
     $instance = $workflow_item->getInstance();
@@ -34,9 +33,12 @@ function workflow_tab_page($entity_type, $entity = NULL) {
     $field['id'] = 0;
     $field['settings']['wid'] = $workflow->wid;
     $field['settings']['widget'] = $workflow->options;
-    $field['settings']['widget']['options'] = 'radios';
     $field['settings']['widget']['comment'] = $workflow->options['comment_log_tab']; // vs. ['comment_log_node']; 
+
     $field['settings']['widget']['current_status'] = TRUE;
+
+    //@todo: add the 'options' to all current workflow_node workflow.
+    $field['settings']['widget']['options'] = 'radios';
 
     $instance = array();
   }

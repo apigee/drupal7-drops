@@ -214,7 +214,7 @@ class Workflow {
     if (count($states) < 1) {
       // That's all, so let's remind them to create some states.
       $message = t('Workflow %workflow has no states defined, so it cannot be assigned to content yet.',
-        array('%workflow' => ucwords($this->getName())));
+        array('%workflow' => $this->getName()));
       drupal_set_message($message, 'warning');
 
       // Skip allowing this workflow.
@@ -227,11 +227,26 @@ class Workflow {
     if (count($transitions) < 2) {
       // That's all, so let's remind them to create some transitions.
       $message = t('Workflow %workflow has no transitions defined, so it cannot be assigned to content yet.',
-        array('%workflow' => ucwords($this->getName())));
+        array('%workflow' => $this->getName()));
       drupal_set_message($message, 'warning');
 
       // Skip allowing this workflow.
       $is_valid = FALSE;
+    }
+
+    // If the Workflow is mapped to a node type, check if workflow->options is set. 
+    if ($type_map = $this->getTypeMap() && !count($this->options)) {
+      // That's all, so let's remind them to create some transitions.
+      $message = t('Please maintain Workflow %workflow on its <a href="@url">settings</a> page.',
+        array(
+          '%workflow' => $this->getName(),
+          '@url' => url('admin/config/workflow/workflow/edit/' . $this->wid), 
+        )
+      );
+      drupal_set_message($message, 'warning');
+
+      // Skip allowing this workflow.
+      // $is_valid = FALSE;
     }
 
     return $is_valid;
@@ -322,6 +337,22 @@ class Workflow {
    */
   public function getState($sid) {
     return WorkflowState::load($sid, $this->wid);
+  }
+
+  /**
+   * Gets a the type map for a given workflow.
+   *
+   * @param $sid
+   *   A state ID.
+   *
+   * @return array
+   *   An array of typemaps.
+   */
+  public function getTypeMap() {
+    if (module_exists('workflownode')) {
+      return workflow_get_workflow_type_map_by_wid($this->wid);
+    }
+    return array();
   }
 
   /**

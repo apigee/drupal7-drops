@@ -77,6 +77,7 @@ function devconnect_developer_apps_keys_pane($variables) {
   );
   $pane['details'] = array('#weight' => 2);
   if (isset($variables['credentials'][0])) {
+    $pane['#credential_status'] = $variables['overallStatus'];
     $pane['details']['consumer_key'] = array(
       '#prefix' => '<div class="key key-status-' . $variables['overallStatus'] . '">',
       '#suffix' => '</div>',

@@ -11,32 +11,26 @@
 function workflownode_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $field_name = '') {
   switch ($op) {
     case 'transition permitted':
-      // The workflow module does nothing during this operation.
-      // This operation occurs when the list of available transitions
-      // is built. Your module's implementation could return FALSE
-      // here and disallow the presentation of the choice.
-      break;
+      return TRUE;
 
     case 'transition pre':
-      // The workflow module does nothing during this operation.
-      // But your module's implementation of the workflow hook could
-      // return FALSE here and veto the transition.
       break;
 
     case 'transition post':
       break;
 
     case 'transition delete':
-      // A transition is deleted Only the first parameter is used.
-      $tid = $id;
+      // A transition is deleted. Only the first parameter is used.
+      // $tid = $id;
       break;
 
     case 'state delete':
-      $current_sid = $id;
+      // A state is deleted. Only the first parameter is used.
+      // $current_sid = $id;
       break;
 
     case 'workflow delete':
-      // Only the first parameter is used.
+      // A workflow is deleted. Only the first parameter is used.
       $wid = $id;
       workflow_delete_workflow_type_map_by_wid($wid);
       break;

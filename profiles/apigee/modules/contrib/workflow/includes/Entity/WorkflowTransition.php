@@ -103,7 +103,7 @@ class WorkflowTransition {
    */
   public static function load($entity_type, $entity_id, $field_name = '', $limit = NULL) {
     if (!$entity_id) {
-      return FALSE;
+      return array();
     }
     $query = db_select('workflow_node_history', 'h');
     $query->condition('h.entity_type', $entity_type);
@@ -239,9 +239,9 @@ class WorkflowTransition {
       // State has changed. Do some checks upfront.
       if (!$force) {
         // Make sure this transition is allowed.
-        $result = module_invoke_all('workflow', 'transition permitted', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+        $permitted = module_invoke_all('workflow', 'transition permitted', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
         // Did anybody veto this choice?
-        if (in_array(FALSE, $result)) {
+        if ($permitted === FALSE) {
           // If vetoed, quit.
           return $old_sid;
         }

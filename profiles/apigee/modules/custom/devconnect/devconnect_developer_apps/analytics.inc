@@ -14,7 +14,8 @@ function &_devconnect_developer_apps_analytics_api_client() {
 
   if (!isset($dca)) {
     $client = devconnect_default_api_client();
-    $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics($client);
+    $environment = variable_get('devconnect_analytics_environment', 'prod');
+    $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics($client, $environment);
   }
   return $dca;
 }
@@ -385,9 +386,6 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
   }
 
   try {
-    if (isset($_GET['env'])) {
-      $dca->setEnvironment($_GET['env']);
-    }
     $developer_id = devconnect_user_get_developer_id($user);
     $datapoints = $dca->getByAppName($developer_id, $app_name, $metric, $start, $end, $unit, $metric, $order);
   }

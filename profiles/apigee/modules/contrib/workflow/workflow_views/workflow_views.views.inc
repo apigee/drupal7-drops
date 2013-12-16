@@ -18,6 +18,16 @@
  */
 function workflow_views_views_data() {
 
+  // A 'workflow link'.
+  $data['node']['workflow_node']['moved to'] = array('views_entity_node', 'workflow_node');
+  $data['views_entity_node']['workflow_node'] = array(
+    'field' => array(
+      'title' => t('Workflow link'),
+      'help' => t('Provide a link to the workflow history tab to change the state of the content.'),
+      'handler' => 'workflow_views_handler_field_node_link_workflow',
+    ),
+  );
+
   // This is a basic set of subfield data. It is then replicated for each table.
   $field_data['sid'] = array(
     'title' => t('New state'),

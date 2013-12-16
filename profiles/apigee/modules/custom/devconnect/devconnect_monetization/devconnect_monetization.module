@@ -290,6 +290,11 @@ function devconnect_monetization_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_menu_alter().
+ *
+ * @param $items
+ */
 function devconnect_monetization_menu_alter(&$items) {
   $items['user/%user/apps'] = array_merge($items['user/%user/apps'], array(
     'page callback' => 'devconnect_monetization_company_apps_getlist',
@@ -339,6 +344,11 @@ function devconnect_monetization_menu_alter(&$items) {
   ));
 }
 
+/**
+ * Access callback for company profile.
+ *
+ * @return bool
+ */
 function _devconnect_monetization_access_company_profile() {
   return user_access('edit mint company profile')
   || user_access('edit mint bank details')
@@ -347,6 +357,11 @@ function _devconnect_monetization_access_company_profile() {
   || user_access('edit mint developers roles');
 }
 
+/**
+ * Access callback for billing
+ *
+ * @return bool
+ */
 function _devconnect_monetization_access_billing() {
   return user_access('access mint prepaid reports')
   || user_access('download mint prepaid report')
@@ -355,7 +370,10 @@ function _devconnect_monetization_access_billing() {
 }
 
 /**
+ * Implements hook_boot().
+ *
  * Initialize cache manager at boot time
+ * @todo find out why this code is duplicated in devconnect_monetization_init().
  */
 function devconnect_monetization_boot() {
   require_once dirname(__FILE__)  . '/MintCacheManager.php';
@@ -401,6 +419,14 @@ function devconnect_monetization_form_devconnect_monetization_top_up_balance_for
   }
 }
 
+/**
+ * Page callback for users/%user/monetization/packages
+ *
+ * @todo find out why this isn't using $user parameter
+ * @todo separate business logic from UI here
+ *
+ * @return string
+ */
 function devconnect_monetization_packages() {
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
   drupal_set_title(t('Catalog & Plans'));
@@ -560,7 +586,18 @@ function devconnect_monetization_packages() {
   return '';
 }
 
-function devconnect_monetization_package_getdetails($username, $package_id, $rate_plan_id = NULL) {
+/**
+ * Page callback from users/%user/monetization/packages/%/rate-plans/%
+ *
+ * @todo find out why we aren't using $user parameter
+ * @todo separate business logic from UI presentation
+ *
+ * @param $username
+ * @param $package_id
+ * @param null $rate_plan_id
+ * @return null|string
+ */
+function devconnect_monetization_package_getdetails($user, $package_id, $rate_plan_id = NULL) {
   $package_id = rawurldecode($package_id);
   $rate_plan_id = is_null($rate_plan_id) ? NULL : rawurldecode($rate_plan_id);
   $config = devconnect_monetization_default_org_config();
@@ -999,6 +1036,16 @@ function devconnect_monetization_package_getdetails($username, $package_id, $rat
   return '';
 }
 
+/**
+ * Generate javascript for date widget based on parameters.
+ *
+ * Called in devconnect_monetization_package_getdetails().
+ *
+ * @param $plan_date
+ * @param $org_timezone
+ * @param null $plan_id
+ * @return string
+ */
 function _devconnect_monetization_build_date_widget($plan_date, $org_timezone, $plan_id = NULL) {
 
   $minKey = array_key_exists('available_since', $plan_date) ? 'available_since' : 'can_end_since';
@@ -1122,6 +1169,7 @@ function _devconnect_monetization_build_limit_text(Limit $product_limit, $pricin
     case QuotaType::Transactions :
       $limit_text .= ' transactions ';
       break;
+    // todo fixme SpendLimit is already handled above!
     case QuotaType::SpendLimit :
       $limit_text .= ' payment ';
       break;
@@ -1186,6 +1234,13 @@ function _devconnect_monetization_build_limit_text(Limit $product_limit, $pricin
   return $limit_text;
 }
 
+/**
+ * Sorts rate plan rates
+ *
+ * @param $rate_plan_rates
+ * @param bool $merge
+ * @return array
+ */
 function _devconnect_monetization_sort_rate_plan_rates($rate_plan_rates, $merge = FALSE) {
   $rate_values = array();
   $rate_types = array();
@@ -1239,6 +1294,7 @@ function _devconnect_monetization_get_rate_card($rate_plan_detail) {
 }
 
 /**
+ * Generates text to be shown in catalog-package.tpl.php (not used anywhere else)
  *
  * @param \Apigee\Mint\RatePlan $rate_plan
  * @param Apigee\Mint\DataStructures\RatePlanDetail $rate_plan_detail
@@ -1267,8 +1323,9 @@ function _devconnect_monetization_get_frequency_fee_text(RatePlan $rate_plan) {
 
 
 /**
+ * Generates text to be shown in catalog-package.tpl.php (not used anywhere else)
  *
- * @param Apigee\Mint\DataStructures\RatePlan $rate_plan
+ * @param Apigee\Mint\RatePlan $rate_plan
  */
 function _devconnect_monetization_get_free_quantity_text_for_rate_plan_level(RatePlan $rate_plan) {
   if ($rate_plan->getFreemiumUnit() == 0 && $rate_plan->getFreemiumDuration() == 0) {
@@ -1289,6 +1346,9 @@ function _devconnect_monetization_get_free_quantity_text_for_rate_plan_level(Rat
 }
 
 /**
+ * Generates text to be shown in catalog-package.tpl.php and product-detail.tpl.php
+ * (not used anywhere else)
+ *
  * @param Apigee\Mint\DataStructures\RatePlanDetail $rate_plan_detail
  * @param Apigee\Mint\RatePlan
  * @return string
@@ -1322,6 +1382,13 @@ function _devconnect_monetization_get_free_quantity_text(RatePlanDetail $rate_pl
   return strlen($text) > 0 ? $text : NULL;
 }
 
+/**
+ * Form constructor for form shown on catalog-package.tpl.php.
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
 function _devconnect_monetization_purchase_plan_form($form, &$form_state) {
   $rate_plan = $form_state['build_info']['args'][0];
   $multiple_plans = $form_state['build_info']['args'][1];
@@ -1483,6 +1550,18 @@ function _devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state
   }
 }
 
+/**
+ * Constructor for form used on users/%user/monetization/packages/%/rate-plans/%/dev-rate-plans/%
+ *
+ * @param $form
+ * @param $form_state
+ * @param $user
+ * @param $package_id
+ * @param $rate_plan_id
+ * @param $dev_rate_plan_id
+ * @param $start_date
+ * @return array
+ */
 function devconnect_monetization_overlap_plan_form($form, &$form_state, $user, $package_id, $rate_plan_id, $dev_rate_plan_id, $start_date) {
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
   $config = devconnect_monetization_default_org_config();

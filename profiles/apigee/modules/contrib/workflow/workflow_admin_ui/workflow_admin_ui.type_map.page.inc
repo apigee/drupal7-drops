@@ -11,7 +11,6 @@
  * to map workflows to content types and determine placement on content forms.
  */
 function workflow_admin_ui_type_map_form($form) {
-
   // Create list of all Workflow types. Include an initial empty value.
   // Validate each workflow, and generate a message if not complete.
   $workflows[0] = t('None');
@@ -54,6 +53,8 @@ function workflow_admin_ui_type_map_form($form) {
     );
   }
 
+  // $form['#validate'] = array('workflow_admin_ui_type_map_form_validate');
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save workflow mapping'),
@@ -67,7 +68,7 @@ function workflow_admin_ui_type_map_form($form) {
 /**
  * Theme the workflow type mapping form.
  */
-function theme_workflow_admin_type_map_form($variables) {
+function theme_workflow_admin_ui_type_map_form($variables) {
   $output = '';
   $form = $variables['form'];
 

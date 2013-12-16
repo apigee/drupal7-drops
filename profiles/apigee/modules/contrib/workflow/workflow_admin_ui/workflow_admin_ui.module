@@ -15,14 +15,29 @@ define('WORKFLOW_ADMIN_UI_ARROW', '&#8594;');
  */
 function workflow_admin_ui_help($path, $arg) {
   switch ($path) {
-    case 'admin/config/workflow/workflow/edit/%':
-      return t('You are currently viewing the possible transitions to and from workflow states. The state is shown in the left column; ' .
-      'the state to be moved to is to the right. For each transition, check the box next to the role(s) that may initiate the transition. ' .
-      'For example, if only the "production editor" role may move a node from Review state to the Published state, check the box next to ' .
-      '"production editor". The author role is built in and refers to the user who authored the node.');
     case 'admin/config/workflow/workflow/add':
-      return t('To get started, provide a name for your workflow. This name will be used as a label when the workflow status is shown ' .
-      'during node editing.');
+      return t('To get started, provide a name for your workflow. This name
+        will be used as a label when the workflow status is shown during node
+        editing.');
+
+    case 'admin/config/workflow/workflow/%':
+      return t("To create a new state, enter its name in the last row of the
+        'State' column. Check the 'Active' box to make it effective. You may
+        also drag it to the appropriate position.") . '<br />'
+      . t("A state must be marked as active, to be available in the
+        workflow's transitions.") . '<br />'
+      . t("If you wish to inactivate a state that has content (i.e. count is
+        not zero), then you need to select a state to which to reassign that
+        content.");
+
+    case 'admin/config/workflow/workflow/transitions/%':
+      return t('You are currently viewing the possible transitions to and from
+        workflow states. The state is shown in the left column; the state to be
+        moved to is to the right. For each transition, check the box next to
+        the role(s) that may initiate the transition. For example, if only the
+        "production editor" role may move a node from Review state to the
+        Published state, check the box next to "production editor". The author
+        role is built in and refers to the user who authored the node.');
   }
 }
 

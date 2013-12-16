@@ -122,15 +122,15 @@ function workflow_node_update($node) {
     return;
   }
 
-  $form_state['values']['workflow_field'] = $node->workflow_field;
-  $form_state['values']['workflow_instance'] = $node->workflow_instance;
-  $form['#entity_type'] = 'node';
-  $form['#entity'] = $node;
-  // For some reason, the Workflow Form does not return the form in an 'workflow' element.
+  $form = array();
+
+  // Add form values (field, instance, entity_type, entity), then form input.
+  // For some reason, the Workflow Form does not return the form in a 'workflow' array.
   // @todo: correct this, or filter on 'workflow' elements.
   $form_state['values'] = (array) $node;
+  $form_state['input'] = (array) $node;
 
-  workflow_save_transition($form, $form_state);
+  workflow_transition_form_submit($form, $form_state);
 }
 
 /**
@@ -173,17 +173,12 @@ function workflow_comment_update($comment) {
     return;
   }
 
-  $node = node_load($comment->nid);
-
-  $form_state['values']['workflow_field'] = $comment->workflow_field;
-  $form_state['values']['workflow_instance'] = $comment->workflow_instance;
-  $form['#entity_type'] = 'node';
-  $form['#entity'] = $node;
-  // For some reason, the Workflow Form does not return the form in an 'workflow' element.
-  // @todo: correct this, or filter on 'workflow' elements.
+  $form = array();
+  // Add form values (field, instance, entity_type, entity), then form input.
   $form_state['values'] = (array) $comment;
+  $form_state['input'] = (array) $comment;
 
-  workflow_save_transition($form, $form_state);
+  workflow_transition_form_submit($form, $form_state);
 }
 
 /**
