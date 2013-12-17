@@ -6,9 +6,9 @@ core = 7.x
 configure = admin/config/workflow/workflow
 stylesheets[all][] = workflow_admin_ui.css
 
-; Information added by Drupal.org packaging script on 2013-12-14
-version = "7.x-2.0-beta5"
+; Information added by Drupal.org packaging script on 2013-12-16
+version = "7.x-2.0-beta6"
 core = "7.x"
 project = "workflow"
-datestamp = "1387054710"
+datestamp = "1387233986"
 

@@ -3,6 +3,10 @@
 module_load_include('php', 'devconnect_developer_apps', 'controllers/DeveloperAppController');
 module_load_include('php', 'devconnect_developer_apps', 'controllers/ApiProductController');
 
+module_load_include('php', 'devconnect_developer_apps', 'entities/ArrayEntity');
+module_load_include('php', 'devconnect_developer_apps', 'entities/DeveloperAppEntity');
+module_load_include('php', 'devconnect_developer_apps', 'entities/ApiProductEntity');
+
 /**
  * Implements hook_menu().
  *
@@ -274,17 +278,24 @@ function devconnect_developer_apps_variable_info() {
     'group' => 'devconnect'
   );
 
-  $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_api_client());
-  $environments = $dca->getAllEnvironments();
   $options = array('*' => 'All environments');
-  foreach($environments as $environment) {
-    switch ($environment) {
-      case 'prod': $env_name = 'Production'; break;
-      case 'test': $env_name = 'Test'; break;
-      case 'dev':  $env_name = 'Development'; break;
-      default: $env_name = $environment;
+  try {
+    $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_api_client());
+    $environments = $dca->getAllEnvironments();
+    foreach($environments as $environment) {
+      switch ($environment) {
+        case 'prod': $env_name = 'Production'; break;
+        case 'test': $env_name = 'Test'; break;
+        case 'dev':  $env_name = 'Development'; break;
+        default: $env_name = $environment;
+      }
+      $options[$environment] = t($env_name);
     }
-    $options[$environment] = t($env_name);
+  }
+  catch (Apigee\Exceptions\ResponseException $e) {
+    // Ignore this exception. It is probably the result of a misconfigured
+    // endpoint.
+    $environments = array();
   }
   if (array_key_exists('prod', $options)) {
     $default_env = 'prod';
@@ -671,12 +682,15 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
         $default_value = (isset($entity->attributes[$machine_name]) ? $entity->attributes[$machine_name] : NULL);
       }
       $uses_options = FALSE;
-      if (($type == 'select' || $type == 'radios') && array_key_exists('options', $attribute)) {
+      if (($type == 'select' || $type == 'radios' || $type == 'checkboxes') && array_key_exists('options', $attribute)) {
         $uses_options = TRUE;
-        if (!isset($default_value) && $required) {
+        if ($type != 'checkboxes' && !isset($default_value) && $required) {
           $option_keys = array_keys($attribute['options']);
           $default_value = (count($option_keys) ? $option_keys[0] : NULL);
         }
+      }
+      if ($type == 'checkboxes') {
+        $default_value = explode(',', $default_value);
       }
 
       $form[$form_field_name] = array(
@@ -898,6 +912,13 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
   $values = $form_state['values'];
   $entity = $form_state['storage']['entity'];
   $user = $form['user']['#value'];
+
+  // Special handling for checkboxes: turn them into comma-delimited strings
+  foreach ($values as $name => $value) {
+    if (substr($name, 0, 10) == 'attribute_' && $form[$name]['#type'] == 'checkboxes' && is_array($value)) {
+      $values[$name] = join(',', $value);
+    }
+  }
 
   $action_taken = (!is_object($entity) || empty($entity->appId) ? 'Created' : 'Updated');
 

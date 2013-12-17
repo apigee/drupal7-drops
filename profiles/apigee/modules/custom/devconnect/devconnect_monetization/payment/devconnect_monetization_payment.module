@@ -142,8 +142,8 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
           $new_balance = array(
             'amount' => commerce_currency_amount_to_decimal($amount['amount'], $amount['currency_code']),
             'providerTxId' => $transaction->remote_id,
-            'txReference' => $transaction->payload[$transaction->revision_timestamp]['desc'],
-            'gatewayTxReference' => $transaction->payload[$transaction->revision_timestamp]['desc'],
+            'txReference' => $transaction->remote_id, //$transaction->payload[$transaction->revision_timestamp]['desc'],
+            'gatewayTxReference' => $transaction->remote_id, //$transaction->payload[$transaction->revision_timestamp]['desc'],
             'isRecurring' => 'false',
             'supportedCurrency' => array(
               'id' => strtolower($amount['currency_code']),

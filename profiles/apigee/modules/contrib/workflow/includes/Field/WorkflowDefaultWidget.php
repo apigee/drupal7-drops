@@ -378,7 +378,8 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
         $new_sid = $old_sid;
       }
 
-      $scheduled = $items[0]['workflow']['workflow_scheduled'];
+      // Remember, the workflow_scheduled element is not set on 'add' page.
+      $scheduled = !empty($items[0]['workflow']['workflow_scheduled']);
       if (!$scheduled) {
         $transition = new WorkflowTransition($entity_type, $entity, $field_name, $old_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
       }

@@ -357,3 +357,4 @@ Issue #934078 by johnv: Fixed ability force a bulk state change workflow_vbo, re
 Issue #2156737 by johnv: Fixed error when entering an invalid time in the workflow form.
 Issue #410538 by johnv: Added Views 'workflow' link, analog to the existing 'edit' link.
 Issue #2100445 by johnv: Fixed reassigning content to disabled state in workflow_admin_ui.
+Issue #2156737 by johnv: Reverted part of patch.

@@ -152,6 +152,7 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
       'textarea' => t('Text Area'),
       'select' => t('Drop-down Select'),
       'checkbox' => t('Single Checkbox'),
+      'checkboxes' => t('List of Checkboxes'),
       'radios' => t('Radio Buttons')
     ),
     '#default_value' => $widget,
@@ -212,6 +213,7 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
       break;
     case 'select':
     case 'radios':
+    case 'checkboxes':
       $options = array_key_exists('options', $attribute) ? $attribute['options'] : '';
       if (is_array($options)) {
         $option_string = '';
@@ -220,7 +222,15 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
         }
         $options = $option_string;
       }
-      $caption = ($widget == 'select' ? 'Drop-down select box options' : 'Radio button options');
+      if ($widget == 'select') {
+        $caption = 'Drop-down select box options';
+      }
+      elseif ($widget == 'radios') {
+        $caption = 'Radio button options';
+      }
+      else {
+        $caption = 'Checkbox options';
+      }
       $form['widget_specific_settings']['options'] = array(
         '#type' => 'textarea',
         '#title' => t($caption),
@@ -228,6 +238,9 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
         '#default_value' => $options,
         '#required' => TRUE
       );
+      if ($widget == 'checkboxes') {
+        $form['widget_specific_settings']['options']['#description'] .= ' ' . t('The value saved will be a comma-delimited concatenation of all selected checkboxes.');
+      }
       break;
     case 'checkbox':
       $form['widget_specific_settings']['default'] = array(
@@ -342,6 +355,7 @@ function devconnect_app_attributes_save($form, &$form_state) {
       break;
     case 'select':
     case 'radios':
+    case 'checkboxes':
       $attribute['options'] = array();
       $option_input = preg_split('![\r\n]+!', $values['options']);
       foreach ($option_input as $option_line) {
@@ -356,7 +370,7 @@ function devconnect_app_attributes_save($form, &$form_state) {
           list($key, $value) = explode('|', $option_line, 2);
         }
         $attribute['options'][$key] = $value;
-        if (!isset($attribute['default'])) {
+        if (!isset($attribute['default']) && $values['widget'] != 'checkboxes') {
           $attribute['default'] = $key;
         }
       }

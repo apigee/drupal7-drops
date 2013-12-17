@@ -120,7 +120,9 @@ class APIObject {
       DebugData::$exception = $e->getMessage();
       DebugData::$opts = array('request_headers' => $request->getRawHeaders());
       DebugData::$data = NULL;
-      throw new ResponseException($e->getError(), $e->getErrorNo(), $request->getUrl(), DebugData::$opts);
+      $exception = new ResponseException($e->getError(), $e->getErrorNo(), $request->getUrl(), DebugData::$opts);
+      $exception->requestObj = $request;
+      throw $exception;
     }
     $this->responseCode = $response->getStatusCode();
     $this->responseText = trim($response->getBody(TRUE));
@@ -170,13 +172,16 @@ class APIObject {
         }
       }
 
-      throw new ResponseException($status, $this->responseCode, $uri, DebugData::$opts, $this->responseText);
+      $exception = new ResponseException($status, $this->responseCode, $uri, DebugData::$opts, $this->responseText);
+      $exception->requestObj = $request;
+      $exception->responseObj = $response;
+      throw $exception;
     }
   }
 
   /**
    * Performs an HTTP GET on a URI. The result can be read from
-   * $this->respones* variables.
+   * $this->response* variables.
    *
    * @param string|null $uri
    * @param string $accept_mime_type

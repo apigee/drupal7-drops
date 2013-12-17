@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Updates the weight of the apigee_sso modules in order to properly form_alter contrib additions to the form
+ */
+function apigee_sso_ui_update_7424(&$sandbox) {
+  $query = db_select('system', 's')
+    ->condition('type', 'module')
+    ->condition('status', '1')
+    ->condition('name', 'apigee_sso_ui', '!=');
+  $query->addExpression('MAX(weight)', 'max_weight');
+  $weight = $query->execute()->fetchField() + 1;
+  db_update('system')
+    ->condition('name', 'apigee_sso_ui')
+    ->fields(array('weight' => $weight))
+    ->execute();
+}

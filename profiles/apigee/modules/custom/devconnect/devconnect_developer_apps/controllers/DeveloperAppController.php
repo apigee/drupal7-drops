@@ -127,7 +127,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   /**
    * Implements EntityAPIControllerInterface::export().
    *
-   * @param $entity
+   * @param stdClass $entity
    * @param string $prefix
    */
   public function export($entity, $prefix = '') {
@@ -201,7 +201,13 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         }
       }
       else {
-        $list = $dev_app->getListDetail();
+        try {
+          $list = $dev_app->getListDetail();
+        }
+        catch (Apigee\Exceptions\ResponseException $e) {
+          $list = array();
+          self::$lastException = $e;
+        }
       }
       $this->addListToCache($list, $ids);
     }

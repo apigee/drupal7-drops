@@ -87,17 +87,21 @@ function apigee_devconnect_preprocess_region(&$variables, $hook) {
   }
 
   if ($variables['region'] == "sidebar_second") {
-    $parent_id = 0;
-    foreach ($variables['elements']['book_navigation'] as $element) {
-      if (is_array($element) && isset($element['#theme'])) {
-        $tmp = explode('_', $element['#theme']);
-        $parent_id = $tmp[sizeof($tmp) - 1];
+    if (isset($variables['elements']['book_navigation'])) {
+      $parent_id = 0;
+      foreach ($variables['elements']['book_navigation'] as $element) {
+        if (is_array($element) && isset($element['#theme'])) {
+          $tmp = explode('_', $element['#theme']);
+          $parent_id = $tmp[sizeof($tmp) - 1];
+        }
+      }
+      if ($parent_id > 0) {
+        $parent_info = node_load($parent_id);
+        $tmp = $variables['content'];
+        $tmp = str_replace('<h2>Topics</h2>', '<h3><a href="/' . $parent_info -> book['link_path'] . '">' . $parent_info -> title . '</a></h3><h2>Topics</h2>', $tmp);
+        $variables['content'] = $tmp;
       }
     }
-    $parent_info = node_load($parent_id);
-    $tmp = $variables['content'];
-    $tmp = str_replace('<h2>Topics</h2>', '<h3><a href="/' . $parent_info -> book['link_path'] . '">' . $parent_info -> title . '</a></h3><h2>Topics</h2>', $tmp);
-    $variables['content'] = $tmp;
   }
 }
 

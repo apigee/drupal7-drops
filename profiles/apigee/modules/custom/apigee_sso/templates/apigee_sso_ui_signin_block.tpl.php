@@ -19,11 +19,9 @@ if (module_exists('apigee_account')) {
     <?php if ($can_use_apigee):?>
     <li><?php echo l("Authenticate with Apigee", 'aac-login', array('attributes' => array('class' => array('btn', 'aac'))));?></li>
     <?php endif; ?>
-    <?php if (module_exists("fbconnect")):?>
-    <li><?php echo l('Authenticate with Facebook', 'facebook', array('attributes' => array('class' => array('btn', 'facebook'))));?></li>
-    <?php endif; ?>
-    <?php if (module_exists('twitter_signin')):?>
+    <?php if (module_exists('twitter_signin') && (strlen(variable_get('twitter_consumer_secret', '')) > 0)
+      && (strlen(variable_get('twitter_consumer_key',''))) > 0) { ?>
     <li><?php echo l('Authenticate with Twitter', 'twitter/redirect', array('attributes' => array('class' => array('btn', 'twitter'))));?></li>
-    <?php endif; ?>
+    <?php } ?>
   </ul>
 </div>

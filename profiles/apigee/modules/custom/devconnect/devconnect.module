@@ -226,6 +226,20 @@ function devconnect_admin_form($form, &$form_state) {
       else {
         $form_element['#options'] = $info['options'];
       }
+      // If configured default value is not a valid option, but the
+      // hook_variable_info default is, use the hook_variable_info value.
+      if (!array_key_exists($default_value, $form_element['#options'])) {
+        if (array_key_exists($default, $form_element['#options'])) {
+          $form_element['#default_value'] = $default;
+        }
+        else {
+          // Choose the first option as a default.
+          $option_values = array_keys($form_element['#options']);
+          if (count($option_values) > 0) {
+            $form_element['#default_value'] = $option_values[0];
+          }
+        }
+      }
       if (count($form_element['#options']) < 7) {
         $form_element['#type'] = 'radios';
       }
@@ -399,10 +413,15 @@ function devconnect_permission() {
  */
 function devconnect_cron() {
   // query & store environments
-  $dev_app = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_api_client());
-
-  $environments = $dev_app->queryEnvironments();
-  variable_set('devconnect_org_environments', $environments);
+  try {
+    $dev_app = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_api_client());
+    $environments = $dev_app->queryEnvironments();
+    variable_set('devconnect_org_environments', $environments);
+  }
+  catch (Exception $e) {
+    // Ignore any exceptions thrown. These probably result from
+    // misconfiguration of the endpoint.
+  }
 }
 
 

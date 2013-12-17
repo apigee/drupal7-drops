@@ -31,12 +31,14 @@ function apigee_sso_ui_theme() {
 function apigee_sso_ui_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     case 'user_login':
-      $block = apigee_sso_ui_block_view();
       $form['sso_buttons'] = array(
         '#type' => 'markup',
-        '#markup' => $block['content'],
+        '#markup' => theme('apigee-sso-ui-signin-block'),
         '#weight' => -99
       );
+      if (isset($form['twitter_signin'])) {
+        unset($form['twitter_signin']);
+      }
       break;
   }
 }

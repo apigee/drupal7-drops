@@ -314,6 +314,7 @@ span.blog-icon{
 /* Blog */
 #block-views-hot-topics-block h2{
     background: url(/profiles/apigee/themes/apigee_devconnect/images/hot-icon.png) no-repeat scroll 110px center transparent;
+    min-width:100px;
 }
 .view-hot-topics .views-row ul{
     list-style: none;
