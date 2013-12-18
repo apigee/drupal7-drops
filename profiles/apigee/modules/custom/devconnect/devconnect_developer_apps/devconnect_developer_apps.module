@@ -3,10 +3,6 @@
 module_load_include('php', 'devconnect_developer_apps', 'controllers/DeveloperAppController');
 module_load_include('php', 'devconnect_developer_apps', 'controllers/ApiProductController');
 
-module_load_include('php', 'devconnect_developer_apps', 'entities/ArrayEntity');
-module_load_include('php', 'devconnect_developer_apps', 'entities/DeveloperAppEntity');
-module_load_include('php', 'devconnect_developer_apps', 'entities/ApiProductEntity');
-
 /**
  * Implements hook_menu().
  *
