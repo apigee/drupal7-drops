@@ -13,7 +13,7 @@ class xautoload_BootSchedule_Helper_PHP53 extends xautoload_BootSchedule_Helper_
     $prefix_maps = array();
     $namespace_maps = array();
     foreach ($extensions as $info) {
-      $extension_dir = dirname($info->filename);
+      $extension_dir = DRUPAL_ROOT . '/' . dirname($info->filename);
       $prefix_maps[$info->type][$info->name] = $extension_dir . '/lib';
       $namespace_maps[$info->type]['Drupal\\' . $info->name] = $extension_dir . '/lib/Drupal/' . $info->name;
     }

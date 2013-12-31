@@ -50,6 +50,34 @@ function devconnect_drush_command() {
     ),
   );
 
+  $items['devconnect-get-req-timeout'] = array(
+    'callback' => 'devconnect_drush_get_request_timeout',
+    'description' => dt('Gets the configured Apigee gateway request timeout in seconds.'),
+    'aliases' => array('dc-getrt')
+  );
+  $items['devconnect-set-req-timeout'] = array(
+    'callback' => 'devconnect_drush_set_request_timeout',
+    'description' => dt('Sets the configured Apigee gateway request timeout in seconds.'),
+    'aliases' => array('dc-setrt'),
+    'arguments' => array(
+      'timeout' => dt('The timeout value (integer) in seconds')
+    ),
+  );
+
+  $items['devconnect-get-con-timeout'] = array(
+    'callback' => 'devconnect_drush_get_connect_timeout',
+    'description' => dt('Gets the configured Apigee gateway connection timeout in seconds.'),
+    'aliases' => array('dc-getcon')
+  );
+  $items['devconnect-set-con-timeout'] = array(
+    'callback' => 'devconnect_drush_set_connect_timeout',
+    'description' => dt('Sets the configured Apigee gateway connection timeout in seconds.'),
+    'aliases' => array('dc-setcon'),
+    'arguments' => array(
+      'timeout' => dt('The timeout value (integer) in seconds')
+    ),
+  );
+
   $items['devconnect-update-settings'] = array(
     'callback' => 'devconnect_drush_update_settings',
     'description' => dt('Migrates org settings from the database to the filesystem.'),
@@ -243,4 +271,52 @@ function _devconnect_drush_get_config() {
   devconnect_boot();
   d8cmi_init();
   return Drupal::config('devconnect.settings');
+}
+
+function devconnect_drush_get_request_timeout() {
+  $config = _devconnect_drush_get_config();
+  $timeout = $config->get('request_timeout');
+  drush_print(dt('Request timeout is @sec seconds', array('@sec' => $timeout)));
+}
+function devconnect_drush_set_request_timeout() {
+  $args = func_get_args();
+  if (count($args) < 1) {
+    drush_set_error('Timeout argument is required.');
+    return;
+  }
+  list($timeout) = $args;
+  $config = _devconnect_drush_get_config();
+  if ($timeout != $config->get('request_timeout')) {
+    $config->set('request_timeout', $timeout);
+    $config->save();
+    drush_print(dt('Request timeout has been set to @sec seconds', array('@sec' => $timeout)));
+
+  }
+  else {
+    drush_print(dt('Request timeout @sec remains unchanged.', array('@sec' => $timeout)));
+  }
+}
+
+function devconnect_drush_get_connect_timeout() {
+  $config = _devconnect_drush_get_config();
+  $timeout = $config->get('connection_timeout');
+  drush_print(dt('Connection timeout is @sec seconds', array('@sec' => $timeout)));
+}
+function devconnect_drush_set_connect_timeout() {
+  $args = func_get_args();
+  if (count($args) < 1) {
+    drush_set_error('Timeout argument is required.');
+    return;
+  }
+  list($timeout) = $args;
+  $config = _devconnect_drush_get_config();
+  if ($timeout != $config->get('connection_timeout')) {
+    $config->set('connection_timeout', $timeout);
+    $config->save();
+    drush_print(dt('Connection timeout has been set to @sec seconds', array('@sec' => $timeout)));
+
+  }
+  else {
+    drush_print(dt('Connection timeout @sec remains unchanged.', array('@sec' => $timeout)));
+  }
 }

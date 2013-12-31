@@ -349,12 +349,17 @@ Issue #2152425 by Propaganistas: Fixed error in WorkflowD7Base::__construct() wh
 Issue #2019345 by johnv: Fixed workflow_revert now supports $entity_types and $field_name in hook 'transition permitted'.
 Issue #2153915 by johnv: Fixed incorrect allowed choices with $force == TRUE and hook 'transition permitted'.
 Issue #2019345 by johnv: Fixed flow logic, help texts, warnings of workflow_admin_ui.
-Issue #2019345 by johnv: Fixed return array in Workflwo*Transition::load().
-Issue #934078 by johnv: Added ability to bulk schedule in workflow_vbo, re-using standard workflow form.
+Issue #2019345 by johnv: Fixed return array in Workflow*Transition::load().
+Issue #0934078 by johnv: Added ability to bulk schedule in workflow_vbo, re-using standard workflow form.
 Issue #2019345 by johnv: Renamed workflow_save_transition() to workflow_transition_form_submit().
 Issue #2153529 by johnv: Fixed PDO exception upon node_save().
-Issue #934078 by johnv: Fixed ability force a bulk state change workflow_vbo, re-using standard workflow form.
+Issue #0934078 by johnv: Fixed ability force a bulk state change workflow_vbo, re-using standard workflow form.
 Issue #2156737 by johnv: Fixed error when entering an invalid time in the workflow form.
-Issue #410538 by johnv: Added Views 'workflow' link, analog to the existing 'edit' link.
+Issue #0410538 by johnv: Added Views 'workflow' link, analog to the existing 'edit' link.
 Issue #2100445 by johnv: Fixed reassigning content to disabled state in workflow_admin_ui.
 Issue #2156737 by johnv: Reverted part of patch.
+Issue #2149121 by zihong0: Fixed warnings from workflow_views.
+Issue #2157987 by zihong0: Added admin_summary in Views State filter handler.
+Issue #0658880 by johnv: Fixed warnings and bad behaviour when setting SID filter.
+Issue #2153529 by johnv: Fixed PDOException when saving new node.
+Issue #2100445 by johnv: Fixed reassigning content to disabled state in workflow_admin_ui -2-.

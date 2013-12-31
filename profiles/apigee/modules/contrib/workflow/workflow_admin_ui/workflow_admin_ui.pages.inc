@@ -655,7 +655,7 @@ function workflow_admin_ui_states_form($form, $form_state, $workflow) {
     $state_links = module_invoke_all('workflow_operations', 'state', $workflow, $state);
 
     // Make it impossible to reassign to the same state that is disabled.
-    if ($state->isCreationState() || !$state->sid) {
+    if ($state->isCreationState() || !$state->sid || !$state->isActive()) {
       $current_state = array();
       $current_state_list = array();
     }
@@ -721,7 +721,7 @@ function workflow_admin_ui_states_form($form, $form_state, $workflow) {
       $form['states'][$state->sid]['reassign']['#type'] = 'hidden';
       $form['states'][$state->sid]['reassign']['#disabled'] = TRUE;
     }
-    if (!$state->sid) {
+    if (!$state->sid || !$state->isActive()) {
       $form['states'][$state->sid]['reassign']['#type'] = 'hidden';
       $form['states'][$state->sid]['reassign']['#disabled'] = TRUE;
     }

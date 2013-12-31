@@ -341,7 +341,7 @@ libraries[jsonpath][download][url]           = "https://jsonpath.googlecode.com/
 libraries[jsonpath][destination]             = "libraries"
 
 libraries[maskmoney][download][type]         = "get"
-libraries[maskmoney][download][url]          = "https://raw.github.com/plentz/jquery-maskmoney/master/jquery.maskMoney.js"
+libraries[maskmoney][download][url]          = "https://raw.github.com/plentz/jquery-maskmoney/master/src/jquery.maskMoney.js"
 libraries[maskmoney][destination]            = "libraries"
 
 libraries[mediaelement][destination]         = 'libraries'

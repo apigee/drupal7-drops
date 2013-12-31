@@ -6,9 +6,9 @@ hidden = 1
 
 dependencies[] = xautoload
 
-; Information added by drupal.org packaging script on 2013-09-26
-version = "7.x-3.3"
+; Information added by Drupal.org packaging script on 2013-12-28
+version = "7.x-3.5"
 core = "7.x"
 project = "xautoload"
-datestamp = "1380217148"
+datestamp = "1388245405"
 

@@ -178,8 +178,8 @@ function workflow_views_views_data() {
 
   // Scheduled transitions do not have a stamp, but are scheduled.
   $data['workflow_scheduled_transition']['scheduled'] = $data['workflow_scheduled_transition']['stamp'];
-  $data['workflow_scheduled_transition']['scheduled'] = t('Scheduled time');
-  $data['workflow_scheduled_transition']['scheduled'] = t('The time at which the node will change workflow states.');
+  $data['workflow_scheduled_transition']['scheduled']['title'] = t('Scheduled time');
+  $data['workflow_scheduled_transition']['scheduled']['help'] = t('The time at which the node will change workflow states.');
   unset($data['workflow_scheduled_transition']['stamp']);
 
   // Workflow node history.

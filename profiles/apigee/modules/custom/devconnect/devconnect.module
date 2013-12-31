@@ -309,7 +309,7 @@ function devconnect_admin_form($form, &$form_state) {
 
 function devconnect_admin_form_submit($form, &$form_state) {
   $config = Drupal::config('devconnect.settings');
-  foreach (array('org', 'endpoint', 'user', 'pass', 'log_threshold') as $key) {
+  foreach (array('org', 'endpoint', 'user', 'pass', 'log_threshold', 'connection_timeout', 'request_timeout') as $key) {
     $value = $form_state['values'][$key];
     if ($key == 'pass') {
       $value = Apigee\Util\Crypto::encrypt($value);

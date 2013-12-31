@@ -3,6 +3,10 @@
 module_load_include('php', 'devconnect_developer_apps', 'controllers/DeveloperAppController');
 module_load_include('php', 'devconnect_developer_apps', 'controllers/ApiProductController');
 
+module_load_include('php', 'devconnect_developer_apps', 'entities/ArrayEntity');
+module_load_include('php', 'devconnect_developer_apps', 'entities/DeveloperAppEntity');
+module_load_include('php', 'devconnect_developer_apps', 'entities/ApiProductEntity');
+
 /**
  * Implements hook_menu().
  *
@@ -117,6 +121,12 @@ function devconnect_developer_apps_entity_info() {
       'controller class' => 'DeveloperAppController',
       'uri callback' => 'devconnect_developer_apps_entity_uri',
       'fieldable' => FALSE,
+      'module' => 'devconnect_developer_apps',
+      'access callback' => TRUE,
+      'entity keys' => array(
+        'id' => 'appId',
+        'name' => 'name'
+      )
     ),
     'api_product' => array(
       'label' => t('API Product'),
@@ -668,7 +678,10 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     $tooltip = (array_key_exists('tooltip', $attribute) ? $attribute['tooltip'] : NULL);
     $type = (array_key_exists('type', $attribute) ? $attribute['type'] : 'textfield');
 
-    $form_field_name = 'attribute_' . $machine_name;
+    // In cases that machine name contains chars that are not entirely legal
+    // for names of form elements (such as spaces), mangle them so that Drupal
+    // doesn't choke on them. At save time we will have to rawurldecode() them.
+    $form_field_name = 'attribute_' . rawurlencode($machine_name);
 
     if ($type == 'value') {
       $form[$form_field_name] = array('#type' => 'value', '#value' => $default_value);
@@ -912,6 +925,12 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
   // Special handling for checkboxes: turn them into comma-delimited strings
   foreach ($values as $name => $value) {
     if (substr($name, 0, 10) == 'attribute_' && $form[$name]['#type'] == 'checkboxes' && is_array($value)) {
+      // Unchecked checkboxes will have a value of zero set. Ignore these.
+      foreach (array_keys($value) as $i) {
+        if ($value[$i] === 0) {
+          unset($value[$i]);
+        }
+      }
       $values[$name] = join(',', $value);
     }
   }
@@ -945,7 +964,9 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
 
   foreach ($values as $key => $value) {
     if (substr($key, 0, 10) == 'attribute_') {
-      $entity->attributes[substr($key, 10)] = $value;
+      // unmangle attribute name in cases containing non-machine-legal chars
+      $attribute_name = rawurldecode(substr($key, 10));
+      $entity->attributes[$attribute_name] = $value;
     }
   }
 
@@ -1471,19 +1492,19 @@ function devconnect_developer_apps_tokens($type, array $tokens, array $data = ar
   foreach ($tokens as $name => $original) {
     switch ($name) {
       case 'appUrl':
-        $replacements[$original] = url('user/' . $app['uid'] . '/apps/' . $app['name'], $url_options);
+        $replacements[$original] = url('user/' . $app->uid . '/apps/' . $app->name, $url_options);
         break;
       // Timestamps
       case 'createdAt':
       case 'modifiedAt':
-        $replacements[$original] = format_date(floor($app[$name] / 1000), 'medium', '', NULL, $language_code);;
+        $replacements[$original] = format_date(floor($app->$name / 1000), 'medium', '', NULL, $language_code);;
         break;
       // Arrays of strings
       case 'apiProducts':
-        $replacements[$original] = $sanitize ? check_plain(join(', ', $app[$name])) : join(', ', $app[$name]);
+        $replacements[$original] = $sanitize ? check_plain(join(', ', $app->$name)) : join(', ', $app->$name);
         break;
       default:
-        $replacements[$original] = $sanitize ? check_plain($app[$name]) : $app[$name];
+        $replacements[$original] = $sanitize ? check_plain($app->$name) : $app->$name;
         break;
     }
   }

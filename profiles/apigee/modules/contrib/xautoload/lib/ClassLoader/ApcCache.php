@@ -58,7 +58,9 @@ class xautoload_ClassLoader_ApcCache extends xautoload_ClassLoader_NoCache {
       (!empty($file) && !is_file($file))
     ) {
       // Resolve cache miss.
-      apc_store($this->prefix . $class, $file = parent::findFile($class));
+      if ($file = parent::findFile($class)) {
+        apc_store($this->prefix . $class, $file);
+      }
     }
 
     return $file;

@@ -14,9 +14,9 @@ files[] = includes/Field/WorkflowD7Base.php
 files[] = includes/Field/WorkflowItem.php
 files[] = includes/Field/WorkflowDefaultWidget.php
 
-; Information added by Drupal.org packaging script on 2013-12-16
-version = "7.x-2.0-beta6"
+; Information added by Drupal.org packaging script on 2013-12-18
+version = "7.x-2.0-beta7"
 core = "7.x"
 project = "workflow"
-datestamp = "1387233986"
+datestamp = "1387406650"
 

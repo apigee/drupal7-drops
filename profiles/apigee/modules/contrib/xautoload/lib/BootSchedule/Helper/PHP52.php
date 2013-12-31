@@ -11,7 +11,7 @@ class xautoload_BootSchedule_Helper_PHP52 extends xautoload_BootSchedule_Helper_
   function registerExtensions($extensions) {
     $prefix_maps = array();
     foreach ($extensions as $info) {
-      $prefix_maps[$info->type][$info->name] = dirname($info->filename) . '/lib';
+      $prefix_maps[$info->type][$info->name] = DRUPAL_ROOT . '/' . dirname($info->filename) . '/lib';
     }
     $this->registerPrefixMaps($prefix_maps);
   }

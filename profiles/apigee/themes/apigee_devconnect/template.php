@@ -30,6 +30,23 @@ function apigee_devconnect_preprocess_html(&$variables) {
   drupal_add_css(".btn {background: $button_background_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".btn {color: $button_text_color}", array('group' => CSS_THEME, 'type' => 'inline'));
 
+  switch(theme_get_setting('logo_size')) {
+    case 'standard':
+      break;
+    case 'big':
+      drupal_add_css(".navbar .brand {padding:0;}", array('group' => CSS_THEME, 'type' => 'inline'));
+      drupal_add_css(".navbar .brand {padding-right:10px;}", array('group' => CSS_THEME, 'type' => 'inline'));
+      drupal_add_css("#breadcrumb-navbar {height:60px;}", array('group' => CSS_THEME, 'type' => 'inline'));
+      break;
+    case 'bigger':
+      drupal_add_css(".navbar .brand {padding:0;}", array('group' => CSS_THEME, 'type' => 'inline'));
+      drupal_add_css(".navbar .brand {padding-right:10px;}", array('group' => CSS_THEME, 'type' => 'inline'));
+      drupal_add_css("#breadcrumb-navbar {height:105px;}", array('group' => CSS_THEME, 'type' => 'inline'));
+      break;
+    default:
+      break;
+  }
+
 }
 
 /**

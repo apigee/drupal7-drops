@@ -17,7 +17,10 @@ function apigee_sso_ui_theme() {
   return array(
     'apigee-sso-ui-signin-block' => array(
       'template' => 'apigee_sso_ui_signin_block',
-      'path' => drupal_get_path('module', 'apigee_sso_ui') . "/templates"
+      'path' => drupal_get_path('module', 'apigee_sso_ui') . "/templates",
+      'variables' => array(
+        'github' => null
+      ),
     )
   );
 }
@@ -31,9 +34,24 @@ function apigee_sso_ui_theme() {
 function apigee_sso_ui_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     case 'user_login':
+      if (module_exists('github_connect')) {
+        $xml = simplexml_load_string($form['github_links']['#items'][0]['data']);
+        $list = $xml->xpath("//@href");
+        $url = '';
+        foreach($list as $item) {
+          $item = parse_url($item);
+          $url = 'https://' . $item['host'] . $item['path'] . '?' . $item['query'];
+        }
+        $vars = array(
+          'github' => $url,
+        );
+      } else {
+        $vars = array();
+      }
+      unset($form['github_links']);
       $form['sso_buttons'] = array(
         '#type' => 'markup',
-        '#markup' => theme('apigee-sso-ui-signin-block'),
+        '#markup' => theme('apigee-sso-ui-signin-block', $vars),
         '#weight' => -99
       );
       if (isset($form['twitter_signin'])) {

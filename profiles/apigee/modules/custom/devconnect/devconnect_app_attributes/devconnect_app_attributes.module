@@ -24,6 +24,19 @@ function devconnect_app_attributes_menu() {
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
+  $items[APP_ATTRIBUTES_ADMIN_PATH . '/import'] = array(
+    'title' => t('Import App Attributes'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_app_attributes_import'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items[APP_ATTRIBUTES_ADMIN_PATH . '/export'] = array(
+    'title' => t('Export App Attributes'),
+    'page callback' => 'devconnect_app_attributes_export',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+  );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/edit/%'] = array(
     'title' => t('Edit Dev Portal App Attribute'),
     'page callback' => 'drupal_get_form',
@@ -90,18 +103,13 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
   );
 
   $form['machine_name'] = array(
-    '#title' => t('Machine Name'),
+    '#title' => t('Internal Name'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#attributes' => array(
-      'required' => 'required',
-      'pattern' => '^[0-9A-Za-z_.-]+$',
-      'title' => t('Please use only numbers, letters, underscores, hyphens and periods.')
-    ),
     '#maxlength' => 64,
     '#default_value' => (isset($machine_name) ? $machine_name : ''),
     '#element_validate' => array('devconnect_app_attributes_validate_machine_name'),
-    '#description' => t('This is the attribute name as it is stored in KMS. It must be unique to this Dev Portal instance, and should consist exclusively of numbers, letters, underscores, hyphens and periods.')
+    '#description' => t('This is the attribute name as it is stored in KMS. It must be unique to this Dev Portal instance.')
   );
 
   $form['title'] = array(
@@ -122,7 +130,7 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
     '#required' => FALSE,
     '#maxlength' => 1024,
     '#default_value' => (isset($attribute) ? $attribute['description'] : ''),
-    '#description' => t('This is shown as help text underneath the attribute\'s form element on the app creation/edit page. This is a plaintext field; please do not enter markup.')
+    '#description' => t('This is shown as help text underneath the attribute’s form element on the app creation/edit page. This is a plaintext field; please do not enter markup.')
   );
 
   $form['required'] = array(
@@ -218,6 +226,13 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
       if (is_array($options)) {
         $option_string = '';
         foreach ($options as $key => $value) {
+          if (is_array($value)) {
+            $temp_value = '';
+            foreach ($value as $key2 => $value2) {
+              $temp_value .= ',' . $key2 . '|' . $value2;
+            }
+            $value = '[' . substr($temp_value, 1) . ']';
+          }
           $option_string .= "$key|$value\n";
         }
         $options = $option_string;
@@ -292,14 +307,9 @@ function _devconnect_app_attributes_widget_callback($form, &$form_state) {
  * @param $form
  */
 function devconnect_app_attributes_validate_machine_name($element, &$form_state, $form) {
-  $machine_name = $element['#value'];
-  $pattern = '!' . str_replace('!', '\!', $element['#attributes']['pattern']) . '!';
-  if (!preg_match($pattern, $machine_name)) {
-    form_error($element, t('Invalid machine name. Please only use letters, numbers, dashes, underscores and periods.'));
-  }
-  elseif ($form['creating']['#value']) {
+  if ($form['creating']['#value']) {
     $attributes = variable_get('app_attributes', array());
-    if (isset($attributes[$machine_name])) {
+    if (isset($attributes[$element['#value']])) {
       form_error($element, t('This machine name is already in use.'));
     }
   }
@@ -368,6 +378,24 @@ function devconnect_app_attributes_save($form, &$form_state) {
         }
         else {
           list($key, $value) = explode('|', $option_line, 2);
+          // Select boxes may have optgroups.
+          // These take the following line syntax
+          // key|[key1|value1,key2|value2]
+          if ($values['widget'] == 'select' && preg_match('!^\[(.+)\]$!', trim($value), $matches)) {
+            $subvalues = array();
+            $items = explode(',', $matches[1]);
+            foreach ($items as $item) {
+              $elements = explode('|', $item);
+              if (count($elements) < 2) {
+                $subkey = $subvalue = $elements[0];
+              }
+              else {
+                list($subkey, $subvalue) = $elements;
+              }
+              $subvalues[trim($subkey)] = trim($subvalue);
+            }
+            $value = $subvalues;
+          }
         }
         $attribute['options'][$key] = $value;
         if (!isset($attribute['default']) && $values['widget'] != 'checkboxes') {
@@ -650,4 +678,111 @@ function theme_devconnect_app_attributes_listing($form) {
   $variables['element']['#children'] = drupal_render_children($form);
   $output = theme_form($variables);
   return $output;
+}
+
+function devconnect_app_attributes_import() {
+  $form = array();
+
+  drupal_set_title(t('Import App Attributes'));
+  drupal_add_css('textarea.app-attributes-import{min-height:24em;font-family:monospace}', array('type' => 'inline'));
+
+  $form['app_attributes'] = array(
+    '#type' => 'textarea',
+    '#attributes' => array('class' => array('app-attributes-import')),
+    '#description' => t('Paste your app attribute information here. This text must be valid YAML. You may also leave this field blank to delete all existing app attributes.'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit')
+  );
+
+  return $form;
+}
+
+function devconnect_app_attributes_import_validate($form, &$form_state) {
+  $app_attributes = trim($form_state['values']['app_attributes']);
+  if (strlen($app_attributes) == 0) {
+    $form_state['storage']['parsed_attributes'] = array();
+    return;
+  }
+  try {
+    $obj = Symfony\Component\Yaml\Yaml::parse($app_attributes, TRUE);
+  }
+  catch (Symfony\Component\Yaml\Exception\ParseException $e) {
+    form_set_error('app_attributes', t('The text you supplied is not valid YAML.'));
+    return;
+  }
+  $errors = array();
+  foreach ($obj as $key => $value) {
+    if (empty($value['title'])) {
+      $errors[] = t('The @key field has no title attribute, which is required.', array('@key' => $key));
+    }
+    if (empty($value['widget'])) {
+      $errors[] = t('The @key field has no widget attribute, which is required.', array('@key' => $key));
+      continue;
+    }
+    if (!array_key_exists('description', $value)) {
+      $obj[$key]['description'] = '';
+    }
+    if (!array_key_exists('required', $value)) {
+      $obj[$key]['required'] = 0;
+    }
+    if (!array_key_exists('display', $value)) {
+      $obj[$key]['display'] = 0;
+    }
+    switch ($value['widget']) {
+      case 'textfield':
+      case 'textarea':
+        foreach (array('maxlength', 'pattern', 'tooltip', 'default') as $subkey) {
+          if (!array_key_exists($subkey, $value)) {
+            $obj[$key][$subkey] = '';
+          }
+        };
+        break;
+      case 'checkboxes':
+      case 'radios':
+      case 'select':
+        if (!array_key_exists('options', $value) || !is_array($value['options']) || empty($value['options'])) {
+          $errors[] = t('The @key field has no options defined.', array('@key' => $key));
+        }
+        break;
+      case 'checkbox':
+        if (!array_key_exists('default', $value) || empty($value['default']) || is_array($value['default'])) {
+          $errors[] = t('The @key field has a missing or invalid ‘default’ attribute.', array('@key' => $key));
+        }
+        break;
+      default:
+        $errors[] = t('The @key field has an invalid widget type.', array('@key' => $key));
+        break;
+    }
+
+  }
+
+  if (count($errors) > 0) {
+    $error_msg = theme('item_list', array('items' => $errors, 'type' => 'ul'));
+    form_set_error('app_attributes', t('The YAML you supplied is invalid for the following reasons:') . $error_msg);
+  }
+
+  $form_state['storage']['parsed_attributes'] = $obj;
+}
+
+function devconnect_app_attributes_import_submit($form, &$form_state) {
+  $attr = $form_state['storage']['parsed_attributes'];
+  variable_set('app_attributes', $attr);
+  if (empty($attr)) {
+    drupal_set_message(t('Your app attributes have been successfully erased.'));
+  }
+  else {
+    drupal_set_message(t('Your app attributes have been successfully imported.'));
+  }
+  drupal_goto(APP_ATTRIBUTES_ADMIN_PATH);
+}
+
+function devconnect_app_attributes_export() {
+  $attributes = variable_get('app_attributes', array());
+  $yaml = \Symfony\Component\Yaml\Yaml::dump($attributes, 4, 2);
+  drupal_set_title(t('Export App Attributes'));
+  drupal_add_css('pre.app-attributes-dump{background-color:#e0e0e0;border:1px solid #999999;border-radius:4px;padding:1em;}', array('type' => 'inline'));
+
+  return '<pre class="app-attributes-dump">' . check_plain($yaml) . '</pre>';
 }

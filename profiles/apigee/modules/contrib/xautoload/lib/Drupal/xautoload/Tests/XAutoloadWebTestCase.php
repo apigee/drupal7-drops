@@ -89,7 +89,15 @@ class XAutoloadWebTestCase extends \DrupalWebTestCase {
 
     $path = "$module.json";
     $json = $this->drupalGet($path);
+    if (empty($json)) {
+      $this->fail("$path returned an empty string.");
+    }
+
     $all = json_decode($json, TRUE);
+    if (NULL === $all && 'null' !== $json && 'NULL' !== $json) {
+      $json_safe = htmlentities($json);
+      $this->fail("Failed to parse the following json:<pre>$json_safe</pre>");
+    }
 
     if (!is_array($all) || empty($all)) {
       $this->fail("$path must return a non-empty json array.");
