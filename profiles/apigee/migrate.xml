@@ -209,6 +209,19 @@
 				<include name="ctools/**" />
 			</fileset>
 		</delete>
+		<trycatch property="contribdirattempt">
+			<try>
+				<mkdir dir="${remote-user}@${remote-host}:code/sites/all/modules/contrib" />
+				<phingcall target="display-step">
+					<param name="message" value="Created contrib directory" />
+				</phingcall>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Attempt to create contrib directory failed" />
+				</phingcall>
+			</catch>
+		</trycatch>
 		<phingcall target="display-step">
 			<param name="message" value="RSYNCING FILES, MODULES, LIBRARIES, and THEMES" />
 		</phingcall>
@@ -344,28 +357,56 @@
 			<param>migration_occurred</param>
 			<param>1</param>
 		</drush>
+		<exec command="drush ${site-alias} updb -y"/>
 		<drush alias="${site-alias}" command="rr" />
-		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path">
-			<param>file_public_path</param>
-		</drush>
-		<drush alias="${site-alias}" command="vset" assume="yes" >
-			<param>file_public_path</param>
-			<param>"${file_public_path}"</param>
-		</drush>
-		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_private_path" >
-			<param>file_private_path</param>
-		</drush>
-		<drush alias="${site-alias}" command="vset" assume="yes" >
-			<param>file_private_path</param>
-			<param>"${file_private_path}"</param>
-		</drush>
-		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_temporary_path">
-			<param>file_temporary_path</param>
-		</drush>
-		<drush alias="${site-alias}" command="vset" assume="yes" >
-			<param>file_temporary_path</param>
-			<param>"${file_temporary_path}"</param>
-		</drush>
+		<trycatch property="filepath1">
+			<try>
+				<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path">
+					<param>file_public_path</param>
+				</drush>
+				<drush alias="${site-alias}" command="vset" assume="yes" >
+					<param>file_public_path</param>
+					<param>"${file_public_path}"</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Issue with public path" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch property="filepath2">
+			<try>
+				<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_private_path" >
+					<param>file_private_path</param>
+				</drush>
+				<drush alias="${site-alias}" command="vset" assume="yes" >
+					<param>file_private_path</param>
+					<param>"${file_private_path}"</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Issue with private path" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch property="filepath3">
+			<try>
+				<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_temporary_path">
+					<param>file_temporary_path</param>
+				</drush>
+				<drush alias="${site-alias}" command="vset" assume="yes" >
+					<param>file_temporary_path</param>
+					<param>"${file_temporary_path}"</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Issue with temporary path" />
+				</phingcall>
+			</catch>
+		</trycatch>
 		<drush alias="${site-alias}" command="vset" assume="yes">
 			<param>preprocess_js</param>
 			<param>"0"</param>
@@ -374,7 +415,6 @@
 			<param>preprocess_css</param>
 			<param>"0"</param>
 		</drush>
-		<exec command="drush ${site-alias} updatedb -y"/>
 		<phingcall target="display-step">
 			<param name="message" value="ENABLING JIRA ISSUE COLLECTOR" />
 		</phingcall>

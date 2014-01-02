@@ -392,8 +392,8 @@ function devconnect_developer_apps_form_devconnect_admin_form_alter(array &$form
  * @param $form_state
  */
 function devconnect_developer_apps_admin_form_validate(array $form, array &$form_state) {
-  if ($form_state['values']['devconnect_api_product_handling'] == 'default_api_product' && empty($form_state['devconnect_default_api_product'])) {
-    form_error($form['devconnect_default_api_product'], t('When associating all apps with a Default API Product, a Default API Product must be specified.'));
+  if ($form_state['values']['devconnect_api_product_handling'] == 'default_api_product' && empty($form_state['values']['devconnect_default_api_product'])) {
+    form_error($form['devconnect_config_container']['devconnect_default_api_product'], t('When associating all apps with a Default API Product, a Default API Product must be specified.'));
   }
 }
 
@@ -779,15 +779,14 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   if ($api_product_handling == 'no_api_product') {
     $form['api_product'] = array(
       '#type' => 'value',
-      '#value' => array()
+      '#value' => NULL
     );
   }
   elseif ($api_product_handling == 'default_api_product') {
     $form['api_product'] = array(
       '#type' => 'value',
-      '#value' => array()
+      '#value' => variable_get('devconnect_default_api_product', NULL)
     );
-
   }
   else {
     $multiple = (strpos($api_product_handling, 'multiple') !== FALSE);
