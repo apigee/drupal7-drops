@@ -7,6 +7,7 @@ dependencies[] = entity
 
 files[] = includes/Entity/Workflow.php
 files[] = includes/Entity/WorkflowState.php
+files[] = includes/Entity/WorkflowConfigTransition.php
 files[] = includes/Entity/WorkflowTransition.php
 files[] = includes/Entity/WorkflowScheduledTransition.php
 
@@ -14,9 +15,9 @@ files[] = includes/Field/WorkflowD7Base.php
 files[] = includes/Field/WorkflowItem.php
 files[] = includes/Field/WorkflowDefaultWidget.php
 
-; Information added by Drupal.org packaging script on 2013-12-18
-version = "7.x-2.0-beta7"
+; Information added by Drupal.org packaging script on 2014-01-02
+version = "7.x-2.0-beta8"
 core = "7.x"
 project = "workflow"
-datestamp = "1387406650"
+datestamp = "1388666929"
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   Provides node access permissions based on workflow states.
+ * Provides node access permissions based on workflow states.
  */
 
 /**
@@ -44,7 +44,7 @@ function workflow_access_node_grants($account, $op) {
 function workflow_access_node_access_records($node) {
   $grants = array();
 
-  if($current_sid = workflow_node_current_state($node)) {
+  if ($current_sid = workflow_node_current_state($node)) {
     // Get 'author' of this entity.
     // - Some entities (e.g, taxonomy_term) do not have a uid.
     // Anonymous ($uid == 0) author is not allowed for role 'author' (== -1).
@@ -66,6 +66,7 @@ function workflow_access_node_access_records($node) {
 
 /**
  * Implements hook_node_access_explain().
+ *
  * This is a Devel Node Access hook.
  */
 function workflow_access_node_access_explain($row) {
@@ -74,6 +75,7 @@ function workflow_access_node_access_explain($row) {
     case 'workflow_access_owner':
       $interpretations[$row->gid] = t('Workflow access: author of the content may access');
       break;
+
     case 'workflow_access':
       $roles = user_roles();
       $interpretations[$row->gid] = t('Workflow access: %role may access', array('%role' => $roles[$row->gid]));
@@ -84,6 +86,7 @@ function workflow_access_node_access_explain($row) {
 
 /**
  * Implements hook_workflow_operations().
+ *
  * Create action link for access form.
  */
 function workflow_access_workflow_operations($op, $workflow = NULL, $state = NULL) {
@@ -95,8 +98,8 @@ function workflow_access_workflow_operations($op, $workflow = NULL, $state = NUL
           'title' => t('Access'),
           'href' => "admin/config/workflow/workflow/access/$workflow->wid",
           'attributes' => array('alt' => $alt, 'title' => $alt),
-          ),
-        );
+        ),
+      );
 
       return $actions;
   }
@@ -115,7 +118,7 @@ function workflow_access_get_workflow_access_by_sid($sid) {
 }
 
 /**
- * Given a sid and a rid (the  unique key), delete all access data for this state.
+ * Given a sid and rid (the unique key), delete all access data for this state.
  */
 function workflow_access_delete_workflow_access_by_sid_rid($sid, $rid) {
   db_delete('workflow_access')->condition('sid', $sid)->condition('rid', $rid)->execute();
@@ -141,7 +144,7 @@ function workflow_access_insert_workflow_access_by_sid(&$data) {
  * Implements hook_form_alter().
  *
  * Tell the Features module that we intend to provide one exportable component.
- * @todo: the location of this setting is not very good aligned with the other settings.
+ * @todo: align the location of this setting better with the other settings.
  * @todo: this setting is on a page that is not accessible for Workflow Field.
  */
 function workflow_access_form_alter(&$form, &$form_state, $form_id) {
@@ -152,17 +155,16 @@ function workflow_access_form_alter(&$form, &$form_state, $form_id) {
         '#title' => t('Workflow Access'),
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
-        );
+      );
       $form['workflow_access']['workflow_access_priority'] = array(
         '#type' => 'weight',
         '#delta' => 10,
         '#title' => t('Workflow Access Priority'),
         '#default_value' => variable_get('workflow_access_priority', 0),
-        '#description' => t('This sets the node access priority. This can be dangerous. If there is any doubt,
-          leave it at 0.')
-          . ' '
-          . l(t('Read the manual.'), 'https://api.drupal.org/api/drupal/modules!node!node.api.php/function/hook_node_access_records/7'),
-        );
+        '#description' => t('This sets the node access priority. Changing this
+          setting can be dangerous. If there is any doubt, leave it at 0. 
+          <a href="@url">Read the manual.</a>', array('@url' => url('https://api.drupal.org/api/drupal/modules!node!node.api.php/function/hook_node_access_records/7'))),
+      );
 
       $form['#submit'][] = 'workflow_access_priority_submit';
       return;

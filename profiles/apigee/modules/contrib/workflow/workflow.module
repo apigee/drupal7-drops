@@ -6,19 +6,10 @@
 
 define('WORKFLOW_CREATION', 1);
 define('WORKFLOW_CREATION_DEFAULT_WEIGHT', -50);
+define('WORKFLOW_CREATION_STATE_NAME', '(creation)');
 define('WORKFLOW_DELETION', 0);
 
-//module_load_include('inc', 'workflow', 'workflow.entity');
-
-/**
- * Menu wild card loader {wildcard_name}_load for '%workflow'.
- *
- * Used by add-on modules, such as workflow_admin_ui.
- * @see http://www.phpgainers.com/content/creating-menu-wildcard-loader-function-drupal-7
- */
-function workflow_load($wid) {
-  return Workflow::load($wid);
-}
+module_load_include('inc', 'workflow', 'workflow.entity');
 
 /**
  * Implements hook_permission().
@@ -38,33 +29,110 @@ function workflow_permission() {
 
 /**
  * Implements hook_menu().
- * 
- * @todo: add Workflow History Tab for every $entity_type, not only user, node, term.
+ *
+ * hook_menu in workflownode sets a '/workflow' menu item for entity type 'node'.
+ * hook_menu_alter in workflowfield sets a '/workflow' menu item for each relevant entity type.
  */
 function workflow_menu() {
+  if (!module_exists('workflownode')) {
+    return array();
+  }
+
+  $type = 'node';
+  $items['node/%node/workflow'] = array(
+    'title' => 'Workflow',
+    'page callback' => 'workflow_tab_page',
+    'page arguments' => array($type, 1),
+    'access callback' => 'workflow_tab_access',
+    'access arguments' => array($type, 1),
+    'file' => 'workflow.pages.inc',
+    'file path' => drupal_get_path('module', 'workflow'),
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+    'module' => 'workflow',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * hook_menu in workflownode sets a '/workflow' menu item for entity type 'node'.
+ * hook_menu_alter in workflowfield sets a '/workflow' menu item for each relevant entity type.
+ */
+function workflow_menu_alter(&$items) {
+  if (!module_exists('workflowfield')) {
+    return;
+  }
+
+  // Basic menu item.
   $menu_item = array(
     'title' => 'Workflow',
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'workflow.pages.inc',
     'page callback' => 'workflow_tab_page',
     'access callback' => 'workflow_tab_access',
+    'file' => 'workflow.pages.inc',
+    'file path' => drupal_get_path('module', 'workflow'),
     'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+    'module' => 'workflow',
   );
 
-  $items['node/%node/workflow'] = $menu_item + array(
-    'access arguments' => array('node', 1),
-    'page arguments' => array('node', 1),
-  );
-  $items['user/%user/workflow'] = $menu_item + array(
-    'access arguments' => array('user', 1),
-    'page arguments' => array('user', 1),
-  );
-  $items['taxonomy/term/%taxonomy_term/workflow'] = $menu_item + array(
-    'access arguments' => array('taxonomy_term', 2),
-    'page arguments' => array('taxonomy_term', 2),
-  );
+  // Get a cross-bundle map of all fields so we can add the workflow tab to all
+  // entities with a workflow field.
+  foreach (field_info_field_map() as $info) {
+    if ($info['type'] == 'workflow') {
+      // Loop over the entity types that have this field.
+      foreach ($info['bundles'] as $type => $bundles) {
+        $info = entity_get_info($type);
 
-  return $items;
+        // Add the workflow tab in the Entity Admin UI.
+        if (!empty($info['admin ui']['path'])) {
+          $entity_position = substr_count($info['admin ui']['path'], '/') + 2;
+          $wildcard = (isset($info['admin ui']['menu wildcard']) ? $info['admin ui']['menu wildcard'] : '%entity_object');
+          $items[$info['admin ui']['path'] . '/manage/' . $wildcard . '/workflow'] = $menu_item + array(
+              'page arguments' => array($type, $entity_position),
+              'access arguments' => array($type, $entity_position),
+              'load arguments' => array($type),
+            );
+        }
+
+        // We can only continue if the entity relies on a ENTITY_TYPE_load() load hook.
+        if ($info['load hook'] == $type . '_load') {
+          try {
+            foreach ($bundles as $bundle) {
+              // Get the default entity values.
+              $values = array($info['entity keys']['id'] => '%' . $type);
+              if ($info['entity keys']['bundle']) {
+                $values[$info['entity keys']['bundle']] = $bundle;
+              }
+
+              // Create a dummy entity and get the URI.
+              $entity = @entity_create($type, $values);
+              $uri = @$info['uri callback']($entity);
+              if (isset($uri['path'])) {
+                $uri = $uri['path'];
+
+                // Add the workflow tab if possible.
+                if (isset($items[$uri]) && !isset($items[$uri . '/workflow'])) {
+                  $entity_position = array_search('%' . $type, explode('/', $uri));
+
+                  if ($entity_position) {
+                    $items[$uri . '/workflow'] = $menu_item + array(
+                      'page arguments' => array($type, $entity_position),
+                      'access arguments' => array($type, $entity_position),
+                    );
+                  }
+                }
+              }
+            }
+          }
+          catch (Exception $ex) {
+            // The $type entity could not be created or the URI building failed.
+          }
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -108,7 +176,7 @@ function workflow_tab_access($entity_type, $entity) {
     // Add 'author' role to user if user is author of this entity.
     // N.B.1: Some entities (e.g, taxonomy_term) do not have a uid.
     // N.B.2: If 'anonymous' is the author, don't allow access to History Tab,
-    // since anyone can access it, and it will be published in Search engines. 
+    // since anyone can access it, and it will be published in Search engines.
     elseif (isset($entity->uid) && $entity->uid == $user->uid && $user->uid > 0) {
       $roles = array_merge(array('author'), $roles);
     }
@@ -348,29 +416,31 @@ function workflow_transition_form_submit($form, &$form_state) {
   $items[0]['workflow'] = $form_state['input'];
 
   // Determine is the transition is forced.
-  // This can be set by VBO in an additiona form element.
+  // This can be set by VBO in an additional form element.
   $force = isset($form_state['input']['workflow_force']) ? $form_state['input']['workflow_force'] : FALSE;
 
   if ($field_name) {
     // Save the entity, but only if we were not in edit mode.
-    if ($entity->changed != REQUEST_TIME) {
-      // Save $entity, but only if sid has changed.
-      // Use field_attach_update for this? Save always?  
-      $entity->{$field_name}['und'][0]['workflow'] = $form_state['input'];
-      entity_save($entity_type, $entity);
-    }
-    else {
+    // Perhaps there is a better way, but for now we use 'changed' property.
+    // Caveat: Some entities do not have 'changed' property set.
+    if ((isset($entity->changed)) && $entity->changed == REQUEST_TIME) {
       // We were in edit mode. No need to save the entity explicitly.
-      // Create a Transition. The Widget knows if it is scheduled. 
+      // Create a Transition. The Widget knows if it is scheduled.
       $widget = new WorkflowDefaultWidget($field, $instance, $entity_type, $entity);
       $new_sid = $widget->submit($form, $form_state, $items, $force);
+    }
+    else {
+      // Save $entity, but only if sid has changed.
+      // Use field_attach_update for this? Save always?
+      $entity->{$field_name}['und'][0]['workflow'] = $form_state['input'];
+      entity_save($entity_type, $entity);
     }
   }
   else {
     // For a Node API form, only contrib fields need to be filled.
     // No updating of the node itself.
     // (unless we need to record the stamp.)
-    // Create a Transition. The Widget knows if it is scheduled. 
+    // Create a Transition. The Widget knows if it is scheduled.
     $widget = new WorkflowDefaultWidget($field, $instance, $entity_type, $entity);
     $new_sid = $widget->submit($form, $form_state, $items, $force);
   }
@@ -422,7 +492,7 @@ function workflow_execute_transition($entity_type, $entity, $field_name, $transi
   }
   else {
     // For Node API, the node does not need to be saved, since all fields are custom.
-    // OTOH, we may need to refresh the cache, which is done by core on entity_save. 
+    // OTOH, we may need to refresh the cache, which is done by core on entity_save.
     $new_sid = $transition->execute($force = TRUE);
   }
 
@@ -613,29 +683,6 @@ function workflow_node_previous_state($entity, $entity_type = 'node', $field_nam
 }
 
 /**
- * See if a transition is allowed for a given role.
- *
- * @param int $tid
- *  A transition ID.
- * @param mixed $role
- *  A single role (int or string 'author') or array of roles.
- *
- * @return bool
- *  TRUE if the role is allowed to do the transition.
- */
-function workflow_transition_allowed($tid, $role = NULL) {
-  $transition = workflow_get_workflow_transitions_by_tid($tid);
-  $allowed = $transition->roles;
-  $allowed = explode(',', $allowed);
-  if ($role) {
-    if (!is_array($role)) {
-      $role = array($role);
-    }
-    return array_intersect($role, $allowed) == TRUE;
-  }
-}
-
-/**
  * DB functions. All SQL in workflow.module should be put into its own function and placed here.
  * This encourages good separation of code and reuse of SQL statements. It *also* makes it easy to
  * make schema updates and changes without rummaging through every single inch of code looking for SQL.
@@ -695,216 +742,6 @@ function workflow_get_workflows_by_type($entity_bundle, $entity_type = 'node') {
   }
 
   return $map[$entity_type][$entity_bundle];
-}
-
-/**
- * Functions related to table workflow_transitions.
- */
-
-/**
- * Given a wid get the transitions.
- */
-function workflow_get_workflow_transitions_by_wid($wid) {
-  static $transitions;
-  if (!isset($transitions[$wid])) {
-    $query = 'SELECT t.tid, t.sid, t.target_sid, t.roles, s1.wid '
-      . 'FROM {workflow_transitions} t '
-      . 'INNER JOIN {workflow_states} s1 ON t.sid=s1.sid '
-      . 'INNER JOIN {workflow_states} s2 ON t.target_sid=s2.sid '
-      . 'WHERE s1.wid = :wid AND s2.wid = :wid';
-    $transitions[$wid] = db_query('SELECT t.*, s1.wid FROM {workflow_transitions} AS t INNER JOIN {workflow_states} AS s1 ON t.sid=s1.sid INNER JOIN {workflow_states} AS s2 ON t.target_sid=s2.sid WHERE s1.wid = :wid AND s2.wid = :wid',
-      array(':wid' => $wid))->fetchAll();
-  }
-  return $transitions[$wid];
-}
-
-/**
- * Given a tid, get the transition. It is a unique object, only one return.
- */
-function workflow_get_workflow_transitions_by_tid($tid) {
-  static $transitions;
-  if (!isset($transitions[$tid])) {
-    $transitions[$tid] = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE tid = :tid',
-      array(':tid' => $tid))->fetchObject();
-  }
-  return $transitions[$tid];
-}
-
-/**
- * Given a sid, get the transition.
- */
-function workflow_get_workflow_transitions_by_sid($sid) {
-  static $transitions;
-  if (!isset($transitions[$sid])) {
-    $transitions[$sid] = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid',
-      array(':sid' => $sid))->fetchAll();
-  }
-  return $transitions[$sid];
-}
-
-/**
- * Given a target_sid, get the transition.
- */
-function workflow_get_workflow_transitions_by_target_sid($target_sid) {
-  static $transitions;
-  if (!isset($transitions[$target_sid])) {
-    $transitions[$target_sid] = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE target_sid = :target_sid',
-      array(':target_sid' => $target_sid))->fetchAll();
-  }
-  return $transitions[$target_sid];
-}
-
-/**
- * Given a sid get any transition involved.
- */
-function workflow_get_workflow_transitions_by_sid_involved($sid) {
-  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid OR target_sid = :sid', array(':sid' => $sid));
-  return $results->fetchAll();
-}
-
-/**
- * Given a role string get any transition involved.
- */
-function workflow_get_workflow_transitions_by_roles($roles) {
-  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE roles LIKE :roles', array(':roles' => $roles));
-  return $results->fetchAll();
-}
-
-/**
- * Given a sid and target_sid, get the transition. This will be unique.
- */
-function workflow_get_workflow_transitions_by_sid_target_sid($sid, $target_sid) {
-  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid AND target_sid = :target_sid', array(':sid' => $sid, ':target_sid' => $target_sid));
-  return $results->fetchObject();
-}
-
-/**
- * Given a tid, delete the transition.
- */
-function workflow_delete_workflow_transitions_by_tid($tid) {
-  // Notify any interested modules before we delete, in case there's data needed.
-  module_invoke_all('workflow', 'transition delete', $tid, NULL, NULL, FALSE);
-  return db_delete('workflow_transitions')->condition('tid', $tid)->execute();
-}
-
-/**
- * Given a sid and target_sid, get the transition. This will be unique.
- */
-function workflow_delete_workflow_transitions_by_roles($roles) {
-  // NOTE: This allows us to send notifications out.
-  foreach (workflow_get_workflow_transitions_by_roles($roles) as $transition) {
-    workflow_delete_workflow_transitions_by_tid($transition->tid);
-  }
-}
-
-/**
- * Given data, insert or update a workflow_transitions.
- */
-function workflow_update_workflow_transitions(&$data) {
-  $data = (object) $data;
-  $transition = workflow_get_workflow_transitions_by_sid_target_sid($data->sid, $data->target_sid);
-  if ($transition) {
-    $roles = explode(',', $transition->roles);
-    foreach (explode(',', $data->roles) as $role) {
-      if (array_search($role, $roles) === FALSE) {
-        $roles[] = $role;
-      }
-    }
-    $transition->roles = implode(',', $roles);
-    drupal_write_record('workflow_transitions', $transition, 'tid');
-    $data = $transition;
-  }
-  else {
-    drupal_write_record('workflow_transitions', $data);
-  }
-}
-
-/**
- * Given a tid and new roles, update them.
- * @todo - this should be refactored out, and the update made a full actual update.
- */
-function workflow_update_workflow_transitions_roles($tid, $roles) {
-  return db_update('workflow_transitions')->fields(array('roles' => implode(',', $roles)))->condition('tid', $tid, '=')->execute();
-}
-
-/**
- * Functions related to table workflow_states.
- */
-
-/**
- * Get allowable transitions for a given workflow state. Typical use:
- *
- * global $user;
- * $possible = workflow_allowable_transitions($sid, 'to', $user->roles);
- *
- * If the state ID corresponded to the state named "Draft", $possible now
- * contains the states that the current user may move to from the Draft state.
- *
- * @param $sid
- *   The ID of the state in question.
- * @param $dir
- *   The direction of the transition: 'to' or 'from' the state denoted by $sid.
- *   When set to 'to' all the allowable states that may be moved to are
- *   returned; when set to 'from' all the allowable states that may move to the
- *   current state are returned.
- * @param mixed $roles
- *   Array of ints (and possibly the string 'author') representing the user's
- *   roles. If the string 'ALL' is passed (instead of an array) the role
- *   constraint is ignored (this is the default for backwards compatibility).
- *
- * @return array
- *   Associative array of ($sid => $state_name), excluding current state.
- */
-function workflow_allowable_transitions($sid, $dir = 'to', $roles = 'ALL') {
-  $transitions = array();
-
-  // Main query from transitions table.
-  $query = db_select('workflow_transitions', 't')
-    ->fields('t', array('tid'));
-
-  if ($dir == 'to') {
-    $query->innerJoin('workflow_states', 's', 's.sid = t.target_sid');
-    $query->addField('t', 'target_sid', 'state_id');
-    $query->condition('t.sid', $sid);
-  }
-  else {
-    $query->innerJoin('workflow_states', 's', 's.sid = t.sid');
-    $query->addField('t', 'sid', 'state_id');
-    $query->condition('t.target_sid', $sid);
-  }
-
-  $query->addField('s', 'state', 'state_name');
-  $query->addField('s', 'weight', 'state_weight');
-  $query->addField('s', 'sysid');
-  $query->condition('s.status', 1);
-
-  // Now let's get the current state.
-  $query2 = db_select('workflow_states', 's');
-  $query2->addField('s', 'sid', 'tid');
-  $query2->addField('s', 'sid', 'state_id');
-  $query2->addField('s', 'state', 'state_name');
-  $query2->addField('s', 'weight', 'state_weight');
-  $query2->addField('s', 'sysid');
-  $query2->condition('s.status', 1);
-  $query2->condition('s.sid', $sid);
-
-  $query2->orderBy('state_weight');
-  $query2->orderBy('state_id');
-
-  // Add the union of the two queries.
-  $query->union($query2, 'UNION');
-
-  $results = $query->execute();
-
-  foreach ($results as $transition) {
-    if ($roles == 'ALL'  // Superuser.
-      || $sid == $transition->state_id // Include current state for same-state transitions.
-      || workflow_transition_allowed($transition->tid, $roles)) {
-      $transitions[] = $transition;
-      // $transitions[$transition->tid] = $transition; //@todo
-    }
-  }
-  return $transitions;
 }
 
 /**

@@ -586,3 +586,18 @@ function workflow_update_7004() {
 function workflow_update_7005() {
   module_enable(array('workflownode'));
 }
+
+
+/**
+ * Set historical records with no associated entity to "node".
+ * Otherwise, they won't show up in the Workflow tab.
+ */
+function workflow_update_7006() {
+  db_update('workflow_node_history')
+    ->fields(array(
+      'entity_type' => 'node',
+      )
+    )
+    ->condition('entity_type', '')
+    ->execute();
+}

@@ -129,7 +129,7 @@ function workflow_update_workflows_full_object($workflow_data) {
   $workflow->options = $workflow_data->options;
 
   $workflow->save(FALSE);
-  // Wid may by known only after save().
+  // Wid may be known only after save().
 
   // Cancel out if workflow failed to save.
   if (!isset($workflow->wid) || empty($workflow->wid)) {
@@ -143,7 +143,7 @@ function workflow_update_workflows_full_object($workflow_data) {
   foreach ($new_states as $state_data) {
     $name = $state_data['name'];
     if (!$state = WorkflowState::loadByName($name, $workflow->wid)) {
-      $state = WorkflowState::create($workflow->wid, $name);
+      $state = $workflow->createState($name);
     }
     $state->weight = $state_data['weight'];
     // $state->sysid = $state_data['*sysid'] // Creation state can't be changed.
@@ -161,21 +161,20 @@ function workflow_update_workflows_full_object($workflow_data) {
 
   // Then make transitions with the state mapping.
   $active_transitions = array();
-  foreach ($new_transitions as $transition) {
-    $transition = (object) $transition;
-    $transition->sid = $active_states[$transition->state_name];
-    $transition->target_sid = $active_states[$transition->target_state_name];
-    // Roles are exported by rolename, so need to translate to RID.
-    $transition->roles = !empty($transition->roles) ? _workflow_roles_to_rids($transition->roles) : '';
+  foreach ($new_transitions as $new_data) {
+    $transition = $workflow->createTransition($new_data['state_name'], $new_data['target_state_name']);
 
-    workflow_update_workflow_transitions($transition);
+    // Roles are exported by rolename, so need to translate to RID.
+    $transition->roles = !empty($new_data['roles']) ? explode(',', _workflow_roles_to_rids($new_data['roles'])) : '';
+    $transition->save();
+
     $active_transitions[] = $transition->tid;
   }
 
   // Delete any transitions in our workflow that are *not* in our original construction.
-  foreach (workflow_get_workflow_transitions_by_wid($workflow->wid) as $transition) {
+  foreach ($workflow->getTransitions() as $transition) {
     if (!in_array($transition->tid, $active_transitions)) {
-      workflow_delete_workflow_transitions_by_tid($transition->tid);
+      $transition->delete();
     }
   }
 
@@ -201,12 +200,16 @@ function workflow_get_workflows_full_object($name) {
   $workflow = NULL;
 
   if ($workflow = Workflow::loadByName($name)) {
-    // Translate to role names so works cross install.
+    // Clone so we can modify it independently of cached original.
+    $workflow = clone $workflow;
+
+    // Translate to role names so it works cross install.
     $workflow->tab_roles = !empty($workflow->tab_roles) ? _workflow_rids_to_roles($workflow->tab_roles) : '';
 
     // Add the active states for workflow, an array of sub-objects.
     // Add only the active ones and 'creation'.
-    foreach ($workflow->getStates(TRUE) as $sid => $state) {
+    $workflow->states = array();
+    foreach ($workflow->getStates('CREATION') as $sid => $state) {
       // Remove what we don't need to export.
       if ($state->isActive()) {
         // Clone so we can modify it independently of cached original.
@@ -220,23 +223,25 @@ function workflow_get_workflows_full_object($name) {
     }
 
     // Then, add the active transitions for workflow, an array of sub-objects.
-    $options = array('status' => 1); // We only want active transitions for this export.
+    // $options = array('status' => 1); // We only want active transitions for this export.
     foreach ($workflow->states as $sid => $state) {
       // We're going to look everything up by the start state, not state involved, to avoid dupes.
-      foreach (workflow_get_workflow_transitions_by_sid($sid, $options) as $transition) {
+      foreach ($t = $workflow->getTransitionsBySid($sid) as $transition) {
         // Clone so we can modify it independently of cached original.
         $transition = clone $transition;
 
         // And to get the target state (by name) we need to look it up, too.
         $target_state = WorkflowState::load($transition->target_sid);
         if ($target_state && $target_state->isActive() && $state->isActive()) {
-          $transition->state_name = $state->getName();
-          $transition->target_state_name = $target_state->getName();
-          // Translate to role names so works cross install.
-          $transition->roles = !empty($transition->roles) ? _workflow_rids_to_roles($transition->roles) : '';
+          // The Transition seems an exportable entity, so we need to copy it.
+          $new_transition = new stdClass();
+          $new_transition->state_name = $state->getName();
+          $new_transition->target_state_name = $target_state->getName();
+          // Translate to role names so it works cross install.
+          $new_transition->roles = !empty($transition->roles) ? _workflow_rids_to_roles(implode(',', $transition->roles)) : '';
           // Remove what we don't need to export.
           unset($transition->tid, $transition->sid, $transition->target_sid);
-          $workflow->transitions[] = $transition;
+          $workflow->transitions[] = $new_transition;
         }
       }
     }

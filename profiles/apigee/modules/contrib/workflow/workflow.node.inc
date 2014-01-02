@@ -78,21 +78,23 @@ function workflow_node_view($node, $view_mode, $langcode) {
 
   $choices = $current_state->getOptions($entity_type, $node);
   if ($current_state->showWidget($choices)) {
-    $workflow = $current_state->getWorkflow();
-
 //    // Show state change form at the bottom of the node display.
 //    module_load_include('inc', 'workflow', 'workflow.pages');
 
-    // Emulate a Field API interface.
-    $field = array();
-    $field['field_name'] = '';
-    $field['settings']['wid'] = $workflow->wid;
-    $field['settings']['widget'] = $workflow->options;
-    $field['settings']['widget']['options'] = 'radios';
-    $field['settings']['widget']['comment'] = !empty($workflow->options['comment_log_node']); // vs. ['comment_log_tab']; 
-    $field['settings']['widget']['current_status'] = FALSE;
+    $workflow = $current_state->getWorkflow();
 
-    $instance = array();
+    // Show the current state and the Workflow form to allow state changing.
+    // N.B. This part is replicated in hook_node_view and workflow_tab_page.
+    if ($workflow) {
+      $workflow_item = $workflow->getWorkflowItem();
+      $field = $workflow_item->getField();
+      $instance = $workflow_item->getInstance();
+      if (!$field['id']) {
+        // This is a Workflow Node workflow. Set widget options as in v7.x-1.2
+        $field['settings']['widget']['comment'] = !empty($workflow->options['comment_log_node']); // vs. ['comment_log_tab']; 
+        $field['settings']['widget']['current_status'] = FALSE;
+      }
+    }
 
     // By including the nid in the form id.
     $form = drupal_get_form('workflow_transition_form_' . $node->nid, $field, $instance, $entity_type, $node);
@@ -290,17 +292,21 @@ function _workflow_form_alter(&$form, &$form_state, $form_id) {
         '#weight' => 10,
       );
 */
-    // Emulate a Field API interface.
-    $field = array();
-    $field['field_name'] = '';
-    $field['settings']['wid'] = $workflow->wid;
-    $field['settings']['widget'] = $workflow->options;
-    $field['settings']['widget']['options'] = 'radios';
-    $field['settings']['widget']['comment'] = !empty($workflow->options['comment_log_node']); // vs. ['comment_log_tab']; 
-    $field['settings']['widget']['current_status'] = TRUE;
 
-    $instance = array();
-    $instance['widget']['settings'] = $workflow->options;
+    // Emulate a Field API interface.
+    // Show the current state and the Workflow form to allow state changing.
+    // N.B. This part is replicated in hook_node_view and workflow_tab_page.
+    if ($workflow) {
+      $workflow_item = $workflow->getWorkflowItem();
+      $field = $workflow_item->getField();
+      $instance = $workflow_item->getInstance();
+      if (!$field['id']) {
+        // This is a Workflow Node workflow. Set widget options as in v7.x-1.2
+        $field['settings']['widget']['comment'] = !empty($workflow->options['comment_log_node']); // vs. ['comment_log_tab']; 
+        $field['settings']['widget']['current_status'] = TRUE;
+      }
+    }
+
     // Do not include the default 'Update Workflow' button, since we are already in an Edit form.
     $instance['widget']['settings']['submit_function'] = '';
 

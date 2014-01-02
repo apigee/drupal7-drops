@@ -8,9 +8,9 @@ dependencies[] = rules
 
 configure = admin/config/workflow/rules
 
-; Information added by Drupal.org packaging script on 2013-12-18
-version = "7.x-2.0-beta7"
+; Information added by Drupal.org packaging script on 2014-01-02
+version = "7.x-2.0-beta8"
 core = "7.x"
 project = "workflow"
-datestamp = "1387406650"
+datestamp = "1388666929"
 

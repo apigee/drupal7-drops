@@ -8,12 +8,12 @@
 /**
  * Implements hook_install().
  */
-function workflow_access_install() { }
+//function workflow_access_install() {}
 
 /**
  * Implements hook_uninstall().
  */
-function workflow_access_uninstall() { }
+//function workflow_access_uninstall() {}
 
 /**
  * Implements hook_schema().
@@ -67,7 +67,7 @@ function workflow_access_schema() {
  */
 function workflow_access_update_7001() {
   db_drop_primary_key('workflow_access');
-  db_add_primary_key('workflow_access', array('sid', 'rid', ));
+  db_add_primary_key('workflow_access', array('sid', 'rid'));
   db_drop_index('workflow_access', 'sid');
   db_drop_index('workflow_access', 'rid');
 
@@ -77,7 +77,7 @@ function workflow_access_update_7001() {
   ));
 
   db_drop_primary_key('workflow_access');
-  db_add_primary_key('workflow_access', array('sid', 'rid', ));
+  db_add_primary_key('workflow_access', array('sid', 'rid'));
   db_add_index('workflow_access', 'rid', array('rid'));
 }
 

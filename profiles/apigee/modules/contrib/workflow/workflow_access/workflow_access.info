@@ -1,12 +1,12 @@
 name = Workflow access
-description = Content access control based on workflows and roles.
+description = Content access control based on workflows and roles. Depends on the node_access system, so only works for entities of type 'node'.
 dependencies[] = workflow
 package = Workflow
 core = 7.x
 
-; Information added by Drupal.org packaging script on 2013-12-18
-version = "7.x-2.0-beta7"
+; Information added by Drupal.org packaging script on 2014-01-02
+version = "7.x-2.0-beta8"
 core = "7.x"
 project = "workflow"
-datestamp = "1387406650"
+datestamp = "1388666929"
 

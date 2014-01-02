@@ -51,7 +51,7 @@ Issue #1468810 Timezones in scheduler
 Issue #1426844 by Bastlynn: Adding catch re: propery of last_history object being empty when node is not a workflow content type.
 Issue #1424008 by Bastlynn: Accounting for trying to go to views pg with workflow_views active, but no workflows in system.
 Issue #1400352 by Bastlynn: Fixing an error appearing udner E_STRICT in admin UI re: creating a default object.
-Something got wierd betwen the push/pull for this commit so trying that again.
+Something got weird between the push/pull for this commit so trying that again.
 Issue #1386430 by dylanhuang (patch by dozymoe): Views filter shows unknown when state selected in multi-workflow environment.
 Issue #1386430 by dylanhuang (patch by dozymoe): Views filter shows unknown when state selected in multi-workflow environment.
 Correcting for doubled ,, in install schema.
@@ -363,3 +363,21 @@ Issue #2157987 by zihong0: Added admin_summary in Views State filter handler.
 Issue #0658880 by johnv: Fixed warnings and bad behaviour when setting SID filter.
 Issue #2153529 by johnv: Fixed PDOException when saving new node.
 Issue #2100445 by johnv: Fixed reassigning content to disabled state in workflow_admin_ui -2-.
+Issue #2162333 by johnv: Fixed messages when adding/saving non-nodes with workflow_access enabled.
+Issue #2162333 by johnv: Added message in modules page 'workflow_access works only for nodes'.
+Issue #1212614 by johnv: State is changed twice - only when adding a comment during state change.
+Issue #2019345 by johnv: Added notices in info-file for better usage of submodules.
+Issue #2019345 by johnv: Added WorkflowConfigTransition as an Entity for workflow_transitions.
+Issue #2019345 by johnv: Fixed delete transitions even when no content is assigned.
+Issue #2019345 by johnv: Moved workflow_transitions functions to Workflow(ConfigTransition) classes.
+Issue #2163805 by johnv: Added user_access to workflow_revert link, not only page.
+Issue #2019345 by johnv: Fixed message on workflow_tab_page.
+Issue #2149223 by johnv: Moved code from workflow_allowable_transitions to central Workflow::getTransitions().
+Issue #2149223 by johnv: Moved code from workflow_transition_allowed to WorkflowConfigTransition::isAllowed().
+Issue #2165179 by colan: Fixed update of workflow_node_history.
+Issue #2160375 by Matthijs: Added workflow tab for all entities.
+Issue #2112199 by johnv: Fixed messages by PAReview.sh in WorkflowItem.php.
+Issue #2149223 by johnv: Moved code from workflow_transition_allowed to WorkflowConfigTransition::isAllowed() -2-.
+Issue #2019345 by johnv: Moved code to unify workflow_node and workflow_field.
+Issue #2019345 by johnv: Added function workflow_state_load.
+Issue #2165703 by protagonistas, johnv: Fixed strict warnings.

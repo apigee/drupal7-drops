@@ -119,7 +119,6 @@ function workflow_access_form_submit($form, &$form_state) {
     if (!is_numeric($sid)) {
       continue;
     }
-    $grants = array();
     foreach ($access['view'] as $rid => $checked) {
       $data = array(
         'sid' => $sid,

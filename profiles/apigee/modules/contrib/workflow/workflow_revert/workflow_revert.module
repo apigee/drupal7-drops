@@ -70,6 +70,15 @@ function workflow_revert_workflow_history_alter(&$variables) {
 
   $transition = $variables['transition'];
 
+  // Check access, to avoid that user sees a revert link, but is not allowed to
+  // view the revert form. Use $first to check only once per page. 
+  if ($first) {
+    if (!user_access('revert workflow')) {
+      $first = FALSE;
+      return;
+    }
+  }
+
   // Only mark the first row.
   if ($first) {
     $old_sid = $transition->old_sid;

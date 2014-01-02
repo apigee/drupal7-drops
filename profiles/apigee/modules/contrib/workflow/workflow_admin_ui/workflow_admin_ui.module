@@ -49,11 +49,11 @@ function workflow_admin_ui_permission() {
     'administer workflow' => array(
       'title' => t('Administer workflow'),
       'description' => t('Administer workflow configurations.'),
-      ),
+    ),
     'participate in workflow' => array(
       'title' => t('Participate in workflow'),
       'description' => t('Role is shown on workflow admin pages.'),
-      ),
+    ),
   );
 }
 
@@ -86,21 +86,23 @@ function workflow_admin_ui_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['admin/config/workflow/workflow/edit/%workflow'] = array(
-    'title' => 'Edit',
-    'file' => 'workflow_admin_ui.pages.inc',
-    'access arguments' => array('administer workflow'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('workflow_admin_ui_edit_form', 5),
-    'type' => MENU_CALLBACK,
-  );
+  if (module_exists('workflownode')) {
+    $items['admin/config/workflow/workflow/edit/%workflow'] = array(
+      'title' => 'Edit',
+      'file' => 'workflow_admin_ui.pages.inc',
+      'access arguments' => array('administer workflow'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('workflow_admin_ui_edit_form', 5),
+      'type' => MENU_CALLBACK,
+    );
+  }
 
   $items["admin/config/workflow/workflow/delete/%workflow"] = array(
     'title' => 'Delete',
     'file' => 'workflow_admin_ui.pages.inc',
     'access arguments' => array('administer workflow'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('workflow_admin_ui_delete_form',5),
+    'page arguments' => array('workflow_admin_ui_delete_form', 5),
     'type' => MENU_CALLBACK,
   );
 
@@ -109,9 +111,9 @@ function workflow_admin_ui_menu() {
     'file' => 'workflow_admin_ui.pages.inc',
     'access arguments' => array('administer workflow'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('workflow_admin_ui_transitions_form',5),
+    'page arguments' => array('workflow_admin_ui_transitions_form', 5),
     'type' => MENU_CALLBACK,
-   );
+  );
 
   $items["admin/config/workflow/workflow/perm_summary/%workflow"] = array(
     'title' => 'Permission Summary',
@@ -140,6 +142,7 @@ function workflow_admin_ui_theme() {
 
 /**
  * Implements hook_user_role_insert().
+ *
  * Make sure new roles are allowed to participate in workflows by default.
  */
 function workflow_admin_ui_user_role_insert($role) {
@@ -150,9 +153,10 @@ function workflow_admin_ui_user_role_insert($role) {
  * Helper function. Create breadcrumbs.
  *
  * @param $workflow
- *   The workflow object.
+ *  The workflow object.
  * @param $extra (optional)
- *   The link to the extra item to add to the end of the breadcrumbs.
+ *  The link to the extra item to add to the end of the breadcrumbs.
+ *
  * @return
  *   none.
  */
@@ -179,6 +183,7 @@ function workflow_admin_ui_breadcrumbs($workflow, $extra = NULL) {
 
 /**
  * Implements hook_workflow_operations().
+ *
  * Might as well eat our own cooking.
  */
 function workflow_admin_ui_workflow_operations($op, $workflow = NULL, $state = NULL) {
@@ -210,13 +215,22 @@ function workflow_admin_ui_workflow_operations($op, $workflow = NULL, $state = N
     case 'workflow':
       $name = $workflow->getName();
       $wid = $workflow->wid;
-      $actions = array(
-        'workflow_settings' => array(
-          'title' => t('Settings'),
-          'href' => "admin/config/workflow/workflow/edit/$wid",
-          'attributes' => array('alt' => t('Edit the @wf settings', array('@wf' => $name))),
-        ),
+      $actions = array();
 
+      if(module_exists('workflownode')) {
+        $actions += array(
+          'workflow_settings' => array(
+            'title' => t('Settings'),
+            'href' => "admin/config/workflow/workflow/edit/$wid",
+            'attributes' => array('alt' => t('Edit the @wf settings', array('@wf' => $name))),
+          ),
+        );
+      }
+      else {
+        // For Workflow Field, these settings are in the Field settings form.
+      }
+
+      $actions += array(
         'workflow_transitions' => array(
           'title' => t('Transitions'),
           'href' => "admin/config/workflow/workflow/transitions/$wid",
@@ -247,7 +261,7 @@ function workflow_admin_ui_workflow_operations($op, $workflow = NULL, $state = N
 /**
  * Get a list of roles.
  *
- * @return
+ * @return array
  *   Array of role names keyed by role ID, including the 'author' role.
  */
 function workflow_admin_ui_get_roles() {
@@ -260,53 +274,4 @@ function workflow_admin_ui_get_roles() {
     }
   }
   return $roles;
-}
-
-/**
- * Update the transitions for a workflow.
- *
- * @param array $transitions from values.
- *   Transitions, for example:
- *     18 => array(
- *       20 => array(
- *         'author' => 1,
- *         1        => 0,
- *         2        => 1,
- *       )
- *     )
- *   means the transition from state 18 to state 20 can be executed by
- *   the node author or a user in role 2. The $transitions array should
- *   contain ALL transitions for the workflow.
- */
-function _workflow_admin_ui_update_configured_transitions($transitions = array()) {
-  // Empty string is sometimes passed in instead of an array.
-  if (!$transitions) {
-    return;
-  }
-  foreach ($transitions as $from => $to_data) {
-    foreach ($to_data as $to => $role_data) {
-      foreach ($role_data as $role => $can_do) {
-        if ($can_do) {
-          $transition = array(
-            'sid' => $from,
-            'target_sid' => $to,
-            'roles' => $role,
-          );
-          workflow_update_workflow_transitions($transition);
-        }
-        else {
-          $roles = array();
-          if ($transition = workflow_get_workflow_transitions_by_sid_target_sid($from, $to)) {
-            $roles = explode(',', $transition->roles);
-            $tid = $transition->tid;
-            if (($i = array_search($role, $roles)) !== FALSE) {
-              unset($roles[$i]);
-              workflow_update_workflow_transitions_roles($tid, $roles);
-            }
-          }
-        }
-      }
-    }
-  }
-  workflow_delete_workflow_transitions_by_roles('');
 }

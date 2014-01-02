@@ -119,7 +119,7 @@ function workflow_access_features_export_render($module_name, $data, $export = N
  */
 function workflow_access_features_rebuild($module) {
   $workflow_access_records = module_invoke($module, 'workflow_access_features_default_settings');
-  // retrieve the workflow ids
+  // Retrieve the workflow IDs.
   $wids = array();
   foreach ($workflow_access_records as $workflow_name => $state) {
     $workflow = Workflow::loadByName($workflow_name);
@@ -178,8 +178,8 @@ function workflow_access_features_revert($module) {
  * given sid.
  */
 function workflow_access_get_features_workflow_access_by_sid($sid) {
-  // Get all workflow access rules for a sid, where wa.rid is either a valid role or -1,
-  // stands for the author
+  // Get all workflow access rules for a sid, where wa.rid is either a valid
+  // role or -1, which stands for the author.
   $sql = <<<SQL
 SELECT
   r.name as rname,

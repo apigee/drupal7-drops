@@ -18,7 +18,7 @@
  *   property_type' = WORKFLOWFIELD_PROPERTY_TYPE,
  * )
  */
-class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase implements PrepareCacheInterface {
+class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase implements PrepareCacheInterface {
   /*
    * Function, that gets replaced by the 'annotations' in D8. (@see comments above this class)
    */
@@ -29,7 +29,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
         'description' => t("This field stores Workflow values for a certain Workflow type from a list of allowed 'value => label' pairs, i.e. 'Publishing': 1 => unpublished, 2 => draft, 3 => published."),
         'settings' => array(
           'allowed_values_function' => 'workflowfield_allowed_values', // For the list.module formatter
-          // 'allowed_values_function' => 'WorkflowItem::getAllowedValues', // For the list.module formatter
+          // 'allowed_values_function' => 'WorkflowItem::getAllowedValues', // For the list.module formatter.
           'wid' => '',
           // 'history' => 1,
           // 'schedule' => 0,
@@ -43,7 +43,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
           ),
           'watchdog_log' => 1,
           'history' => array(
-            'show' => 1,
+            'history_tab_show' => 1,
             'roles' => array(),
           ),
         ),
@@ -94,8 +94,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
       '#default_value' => $wid,
       '#required' => TRUE,
       '#disabled' => $has_data,
-      '#description' => t('Choose the Workflow type.') . ' ' . 
-        t('Maintain workflows ') . l('here', 'admin/config/workflow/workflow'),
+      '#description' => t('Choose the Workflow type. Maintain workflows !url.', array('!url' => l(t('here'), 'admin/config/workflow/workflow'))),
     );
 
     // Inform the user of possible states.
@@ -109,8 +108,8 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
         '#title' => t('Allowed values for the selected Workflow type'),
         '#default_value' => $allowed_values_string,
         '#rows' => 10,
-        '#access' => TRUE, // user can see the data,
-        '#disabled' => TRUE, //.. but cannot change them.
+        '#access' => TRUE, // User can see the data,
+        '#disabled' => TRUE, // .. but cannot change them.
       );
     }
 
@@ -126,12 +125,13 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
       '#title' => t('How to show the available states'),
       '#required' => FALSE,
       '#default_value' => $settings['widget']['options'],
-//      '#multiple' => TRUE / FALSE,
-      '#options' => array(// These options are taken from options.module
-                          'select' => 'Select list',
-                          'radios' => 'Radio buttons',
-//                          'actions' => 'Action buttons', // by workflow contrib.
-                         ),
+      // '#multiple' => TRUE / FALSE,
+      '#options' => array(
+        // These options are taken from options.module
+        'select' => 'Select list',
+        'radios' => 'Radio buttons',
+        // 'actions' => 'Action buttons', // by workflow contrib.
+      ),
       '#description' => t('The Widget shows all available states. Decide which
         is the best way to show them.'
       ),
@@ -154,7 +154,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
       '#default_value' => $settings['widget']['schedule'],
       '#description' => t(
         'Workflow transitions may be scheduled to a moment in the future.
-         Soon after the desired moment, the transition is executed by Cron. 
+         Soon after the desired moment, the transition is executed by Cron.
          This may be hidden by settings in widgets, formatters or permissions.'
       ),
     );
@@ -171,7 +171,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
       '#default_value' => $settings['widget']['comment'],
       '#description' => t('On the Workflow form, a Comment form can be included
         so that the person making the state change can record reasons for doing
-        so. The comment is then included in the node\'s workflow history. This 
+        so. The comment is then included in the node\'s workflow history. This
         may be hidden by settings in widgets, formatters or permissions.'
       ),
     );
@@ -191,13 +191,15 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
-    $element['history']['show'] = array(
+    $element['history']['history_tab_show'] = array(
       '#type' => 'checkbox',
       '#title' => t('Use the workflow history, and show it on a separate tab.'),
       '#required' => FALSE,
-      '#default_value' => $settings['history']['show'],
-      '#description' => t("If checked, the state change is recorded in table {workflow_node_history},  
-        and a tab 'Workflow' is shown on the node page, which gives access to the History of the workflow."),
+      '#default_value' => $settings['history']['history_tab_show'],
+      '#description' => t("Every state change is recorded in table
+        {workflow_node_history}. If checked and user has proper permission, a
+        tab 'Workflow' is shown on the entity view page, which gives access to
+        the History of the workflow."),
     );
     $element['history']['roles'] = array(
       '#type' => 'checkboxes',
@@ -235,7 +237,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
   /**
    * Implements hook_field_update() -> FieldItemInterface::update().
    *
-   * @todo: in course of time, this is not used anymore... 
+   * @todo: in course of time, this is not used anymore...
    * It is called also from hook_field_insert(), since we need $nid to store {workflow_node_history}.
    * We cannot use hook_field_presave(), since $nid is not yet known at that moment.
    *
@@ -243,9 +245,9 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
    * "or the langcode of the field values as parameters. If needed, those can be accessed
    * "by the getEntity() and getLangcode() methods on the Field and FieldItem classes.
    */
-  public function update(&$items) { // ($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  public function update(&$items) {// ($entity_type, $entity, $field, $instance, $langcode, &$items) {
 
-    // @todo: apparentlly, in course of time, this is not used anymore. Restore or remove. 
+    // @todo: apparentlly, in course of time, this is not used anymore. Restore or remove.
     $field_name = $this->field['field_name'];
     $wid = $this->field['settings']['wid'];
     $new_state = WorkflowState::load($sid = _workflow_get_sid_by_items($items), $wid);
@@ -279,10 +281,10 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
       //
       // Widget::submit() returns the new value in a 'sane' state.
       // Save the referenced entity, but only is transition succeeded, and is not scheduled.
-      $old_sid = _workflow_get_sid_by_items($referenced_entity->{$field_name}['und']);
+      $old_sid = _workflow_get_sid_by_items($referenced_entity->{$field_name}[LANGUAGE_NONE]);
       $new_sid = _workflow_get_sid_by_items($items);
       if ($old_sid != $new_sid) {
-        $referenced_entity->{$field_name}['und'] = $items;
+        $referenced_entity->{$field_name}[LANGUAGE_NONE] = $items;
         entity_save($referenced_entity_type, $referenced_entity);
       }
     }
@@ -299,7 +301,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
         $widget->submit($form, $form_state, $items); // $items is a proprietary D7 parameter.
       }
       else {
-        drupal_set_message('error in WorkfowItem->update()', 'error');
+        drupal_set_message(t('error in WorkfowItem->update()'), 'error');
       }
     }
     // A 'normal' node add page.
@@ -354,7 +356,7 @@ class WorkflowItem extends WorkflowD7Base { // D8: extends ConfigFieldItemBase i
    * Helper function for list.module formatter.
    *
    * Callback function for the list module formatter.
-   * @see list_allowed_values() :
+   * @see list_allowed_values
    *  "The strings are not safe for output. Keys and values of the array should
    *  "be sanitized through field_filter_xss() before being displayed.
    *

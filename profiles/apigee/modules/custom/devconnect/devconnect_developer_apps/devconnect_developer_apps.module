@@ -3,6 +3,10 @@
 module_load_include('php', 'devconnect_developer_apps', 'controllers/DeveloperAppController');
 module_load_include('php', 'devconnect_developer_apps', 'controllers/ApiProductController');
 
+#module_load_include('php', 'devconnect_developer_apps', 'entities/ArrayEntity');
+#module_load_include('php', 'devconnect_developer_apps', 'entities/DeveloperAppEntity');
+#module_load_include('php', 'devconnect_developer_apps', 'entities/ApiProductEntity');
+
 /**
  * Implements hook_menu().
  *
@@ -886,6 +890,12 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
 
   if ($form['machine_name']['#type'] == 'value') {
     // No need to validate existing machine names.
+    return;
+  }
+  if (strlen(trim($form_state['values']['machine_name'])) == 0) {
+    // If machine name was left empty, let default form validator handle it.
+    // If we don't return here, the code below will still execute and throw
+    // warnings.
     return;
   }
   $machine_name = strtolower($form_state['values']['machine_name']);

@@ -71,8 +71,11 @@ class Workflow {
    *
    */
   public static function create($name) {
-    $workflow = new Workflow();
-    $workflow->name = $name;
+    $workflow = Workflow::loadByName($name);
+    if (!$workflow) {
+      $workflow = new Workflow();
+      $workflow->name = $name;
+    }
     return $workflow;
   }
 
@@ -221,10 +224,9 @@ class Workflow {
       $is_valid = FALSE;
     }
 
-    // Also check for transitions at least out of the creation state.
-    // This always gets at least the "from" state.
-    $transitions = workflow_allowable_transitions($this->getCreationSid(), 'to');
-    if (count($transitions) < 2) {
+    // Also check for transitions, at least out of the creation state. Use 'ALL' role.
+    $transitions = $this->getTransitionsBySid($this->getCreationSid(), $roles = 'ALL');
+    if (count($transitions) < 1) {
       // That's all, so let's remind them to create some transitions.
       $message = t('Workflow %workflow has no transitions defined, so it cannot be assigned to content yet.',
         array('%workflow' => $this->getName()));
@@ -234,13 +236,13 @@ class Workflow {
       $is_valid = FALSE;
     }
 
-    // If the Workflow is mapped to a node type, check if workflow->options is set. 
+    // If the Workflow is mapped to a node type, check if workflow->options is set.
     if ($type_map = $this->getTypeMap() && !count($this->options)) {
       // That's all, so let's remind them to create some transitions.
       $message = t('Please maintain Workflow %workflow on its <a href="@url">settings</a> page.',
         array(
           '%workflow' => $this->getName(),
-          '@url' => url('admin/config/workflow/workflow/edit/' . $this->wid), 
+          '@url' => url('admin/config/workflow/workflow/edit/' . $this->wid),
         )
       );
       drupal_set_message($message, 'warning');
@@ -257,6 +259,13 @@ class Workflow {
    */
 
   /**
+   * Create a new state for this workflow.
+   */
+  public function createState($name) {
+    return WorkflowState::create($this->wid, $name);
+  }
+
+  /**
    * Gets the initial state for a newly created entity.
    */
   public function getCreationState() {
@@ -264,7 +273,7 @@ class Workflow {
       $this->creation_state = WorkflowState::load($this->creation_sid);
     }
     if (!$this->creation_state) {
-      $this->creation_state = WorkflowState::create($this->wid, '(creation)');
+      $this->creation_state = $this->createState(WORKFLOW_CREATION_STATE_NAME);
     }
     return $this->creation_state;
   }
@@ -303,7 +312,7 @@ class Workflow {
    *   Indicates to which states to return.
    *   - TRUE = all, including Creation and Inactive;
    *   - FALSE = only Active states, not Creation;
-   *   - 'CREATION' = only Active states, including Creation. 
+   *   - 'CREATION' = only Active states, including Creation.
    *
    * @return array
    *   An array of WorkflowState objects.
@@ -329,14 +338,122 @@ class Workflow {
   /**
    * Gets a state for a given workflow.
    *
-   * @param $sid
-   *   A state ID.
+   * @param $key
+   *   A state ID or state Name.
    *
    * @return WorkflowState
    *   A WorkflowState object.
    */
-  public function getState($sid) {
-    return WorkflowState::load($sid, $this->wid);
+  public function getState($key) {
+    if (is_numeric($key)) {
+      return WorkflowState::load($key, $this->wid);
+    }
+    else {
+      return WorkflowState::loadByName($key, $this->wid);
+    }
+  }
+
+  /**
+   * Creates a Transition for this workflow.
+   */
+  public function createTransition($sid, $target_sid, $values = array()) {
+    if (is_numeric($sid) && is_numeric($target_sid)) {
+      $values['sid'] = $sid;
+      $values['target_sid'] = $target_sid;
+    }
+    else {
+      $workflow = $this;
+      $state = $workflow->getState($sid);
+      $target_state = $workflow->getState($target_sid);
+      $values['sid'] = $state->sid;
+      $values['target_sid'] = $target_state->sid;
+    }
+
+    // First check if this transition already exists.
+    if ($transitions = entity_load('WorkflowConfigTransition', FALSE, $values)) {
+      $transition = reset($transitions);
+    }
+    else {
+      $values['wid'] = $this->wid;
+      $transition = new WorkflowConfigTransition($values);
+    }
+    $transition->wid = $this->wid;
+
+    return $transition;
+  }
+
+  /**
+   * Loads all allowed Transition for this workflow.
+   *
+   * @param array $tids
+   *  Array of Transitions IDs. If FALSE, show all transitions.
+   * @param array $conditions
+   *  $conditions['sid'] : if provided, a 'from' State ID.
+   *  $conditions['target_sid'] : if provided, a 'to' state ID.
+   *  $conditions['roles'] : if provided, an array of roles, or 'ALL'.
+   */
+  public function getTransitions($tids = FALSE, $conditions = array(), $reset = FALSE) {
+    $transitions = array();
+    $states = $this->getStates('CREATION'); // Get valid + creation states.
+
+    // Filter on 'from' states, 'to' states, roles.
+    $sid = isset($conditions['sid']) ? $conditions['sid'] : FALSE;
+    $target_sid = isset($conditions['target_sid']) ? $conditions['target_sid'] : FALSE;
+    $roles = isset($conditions['roles']) ? $conditions['roles'] : 'ALL';
+
+    // Get all transitions. (Even from other workflows. :-( )
+    $config_transitions = entity_load('WorkflowConfigTransition', $tids, array(), $reset);
+    foreach ($config_transitions as $transition) {
+      if (!isset($states[$transition->sid])) {
+        // Not a valid transition for this workflow.
+      }
+      elseif ($sid && $sid != $transition->sid) {
+        // Not the requested 'from' state.
+      }
+      elseif ($target_sid && $target_sid != $transition->target_sid) {
+        // Not the requested 'to' state.
+      }
+      elseif ($transition->isAllowed($roles)) {
+        // Transition is allowed, permitted. Add to list.
+        $transitions[$transition->tid] = clone $transition;
+      }
+    }
+    return $transitions;
+  }
+
+  public function getTransitionsByTid($tid, $roles = '', $reset = FALSE) {
+    $conditions = array(
+      'roles' => $roles,
+    );
+    return $this->getTransitions(array($tid), $conditions, $reset);
+  }
+
+  public function getTransitionsBySid($sid, $roles = '', $reset = FALSE) {
+    $conditions = array(
+      'sid' => $sid,
+      'roles' => $roles,
+    );
+    return $this->getTransitions(FALSE, $conditions, $reset);
+  }
+
+  public function getTransitionsByTargetSid($target_sid, $roles = '', $reset = FALSE) {
+    $conditions = array(
+      'target_sid' => $target_sid,
+      'roles' => $roles,
+    );
+    return $this->getTransitions(FALSE, $conditions, $reset);
+  }
+
+  /*
+   * Get a specific transition. Therefore, use $roles = 'ALL'.
+   */
+  public function getTransitionsBySidTargetSid($sid, $target_sid, $roles = 'ALL', $reset = FALSE) {
+    $conditions = array(
+      'sid' => $sid,
+      'target_sid' => $target_sid,
+      'roles' => $roles,
+    );
+    return $this->getTransitions(FALSE, $conditions, $reset);
   }
 
   /**
@@ -391,6 +508,33 @@ class Workflow {
     if ($item) {
       $this->item = $item;
     }
+    if (empty($this->item)) {
+      // This is for Workflow Node. Emulate a Field API interface.
+      // @todo D8: Remove, after converting workflow node to workflow field.
+      $workflow = &$this;
+
+      $field = array();
+      $field['field_name'] = '';
+      $field['id'] = 0;
+      $field['settings']['wid'] = $workflow->wid;
+      $field['settings']['widget'] = $workflow->options;
+      // Add default values.
+      $field['settings']['widget'] += array(
+        'name_as_title' => TRUE,
+        'options' => 'radios',
+        'schedule' => TRUE,
+        'schedule_timezone' => TRUE,
+        'comment_log_node' => TRUE,
+        'comment_log_tab' => TRUE,
+        'watchdog_log' => TRUE,
+        'history_tab_show' => TRUE,
+      );
+
+      $instance = array();
+
+      $this->item = new WorkflowItem($field, $instance);
+    }
+
     return $this->item;
   }
 
