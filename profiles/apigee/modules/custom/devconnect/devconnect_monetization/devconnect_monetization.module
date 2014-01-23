@@ -485,8 +485,6 @@ function devconnect_monetization_package_load($package_id) {
 function devconnect_monetization_developer_load($uid = NULL) {
   if (!user_is_logged_in()) {
     drupal_set_message("Access Denied: Please Login");
-    $destination = drupal_get_destination();
-    drupal_goto('user/login', array('query' => $destination));
   }
   static $developer;
   if (!isset($developer)) {
@@ -1125,19 +1123,27 @@ function _devconnect_monetization_get_free_quantity_text(RatePlanDetail $rate_pl
  *   Returns the developer email
  */
 function _devconnect_monetization_get_developer_id($get_company_id = FALSE) {
+
+  static $company_account_id;
   if ($get_company_id) {
-    $account = entity_load_single('user', $GLOBALS['user']->uid);
-    $company_id = isset($account->field_mint_company_id[LANGUAGE_NONE][0]['value'])
-      ? $account->field_mint_company_id[LANGUAGE_NONE][0]['value'] : '';
-    /*
-     * Instead of validating if user is Financial Admin should check if user is
-     * granted some permissions?
-     */
-    if (valid_email_address($company_id)) {
-      return $company_id;
+    if (isset($company_account_id)) {
+      return $company_account_id;
     }
     else {
-      return $GLOBALS['user']->mail;
+      $account = entity_load_single('user', $GLOBALS['user']->uid);
+      $company_id = isset($account->field_mint_company_id[LANGUAGE_NONE][0]['value'])
+        ? $account->field_mint_company_id[LANGUAGE_NONE][0]['value'] : '';
+      /*
+       * Instead of validating if user is Financial Admin should check if user is
+       * granted some permissions?
+       */
+      if (valid_email_address($company_id)) {
+        $company_account_id = $company_id;
+      }
+      else {
+        $company_account_id = $GLOBALS['user']->mail;
+      }
+      return $company_account_id;
     }
   }
   else {

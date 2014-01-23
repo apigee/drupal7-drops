@@ -51,24 +51,12 @@ function devconnect_monetization_enable() {
   // Get stored Monetization menu-link ids
   $mlids = variable_get('devconnect_monetization-menu-links', NULL);
   // Check if no Monetization menu-links have been set
-  if (empty($mlids)) {
-    // Setup navigation menu
-    devconnect_monetization_setup_navigation_menu();
+  if (!empty($mlids)) {
+    // Delete previous navigation menu-links
+    devconnect_monetization_remove_navigation_menu();
   }
-  else {
-    foreach ($mlids as $pmlid => $cmlids) {
-      $item = menu_link_load($pmlid);
-      $item['hidden'] = 0;
-      $item['has_children'] = 0;
-      menu_link_save($item);
-      foreach ($cmlids as $cmlid) {
-        $item = menu_link_load($cmlid);
-        $item['hidden'] = 0;
-        menu_link_save($item);
-      }
 
-    }
-  }
+  devconnect_monetization_setup_navigation_menu();
   // Rebuild menu so monetization menu shows up, menu_clear_cache would be invoked
   //instead but it seems to have issues and does not execute properly
   menu_rebuild();
@@ -1885,7 +1873,7 @@ function devconnect_monetization_requirements($phase) {
  * Implement hook_update_N() Update user roles and permissions
  * @return null|string
  */
-function devconnect_monetization_update_7425() {
+function devconnect_monetization_update_7426() {
   devconnect_monetization_setup_mint_roles();
   return t('Your site has been updated successfully');
 }

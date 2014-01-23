@@ -28,10 +28,8 @@ function devconnect_monetization_payment_form_commerce_checkout_form_checkout_al
   $account = $account[$user->uid];
 
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/global.js', 'file');
-  $client = devconnect_monetization_default_org_config();
-  $developer = new Developer($client);
-  $developer->load($developer_id);
 
+  $developer = devconnect_monetization_developer_load();
   $address = NULL;
   foreach ($developer->getAddresses() as $address_item) {
     if ((is_array($address_item) && $address_item['isPrimary']) || (is_object($address_item) && $address_item->isPrimary())) {
@@ -122,12 +120,8 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
             $developer_id = $order->mail;
           }
 
-          $client = devconnect_monetization_default_org_config();
-          $developer = new Developer($client);
-          $developer->load($developer_id);
-
+          $developer = devconnect_monetization_developer_load();
           $amount = $order->commerce_order_total[LANGUAGE_NONE][0];
-
           $query = new EntityFieldQuery;
           $transactions = $query
             ->entityCondition('entity_type', 'commerce_payment_transaction')
@@ -161,8 +155,8 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
             $submited_start_date = $order->data['purchase']['date'];
             $overlap = $order->data['purchase']['overlap'] == 'true' ? TRUE : FALSE;
 
-            $developer_rate_plan = new DeveloperRatePlan($developer_id, $client);
-            $rate_plan = new RatePlan($package_id, $client);
+            $developer_rate_plan = new DeveloperRatePlan($developer->getEmail(), $developer->getConfig());
+            $rate_plan = new RatePlan($package_id, $developer->getConfig());
             $rate_plan->load($rate_plan_id);
             $order->data['purchase']['plan_name'] = $rate_plan->getDisplayName();
             $order->data['purchase']['package_name'] = $rate_plan->getMonetizationPackage()->getDisplayName();

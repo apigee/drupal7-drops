@@ -15,7 +15,7 @@ class Drupal {
    * @param string $name
    * @return Drupal\Core\Config\Config
    */
-  public static function config($name) {
+  public static function &config($name) {
     static $instances = array();
     if (!array_key_exists($name, $instances)) {
       $instances[$name] = new Drupal\Core\Config\Config($name);

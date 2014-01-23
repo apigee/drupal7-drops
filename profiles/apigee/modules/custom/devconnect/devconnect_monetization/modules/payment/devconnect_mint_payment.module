@@ -217,8 +217,7 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   }
   $payload = devconnect_mint_payment_build_address_payload($address);
 
-  $developer = new Developer($config);
-  $developer->setEmail($developer_id);
+  $developer = devconnect_monetization_developer_load();
   $payment = $developer->createPayment($parameters, $payload);
   if (!$payment->getSuccess()) {
     Log::write("Could not create payment order.", Log::LOGLEVEL_CRITICAL);
@@ -262,10 +261,7 @@ function devconnect_mint_payment_form_commerce_checkout_form_checkout_alter(&$fo
   $account = entity_load('user', array($user->uid));
   $account = $account[$user->uid];
 
-  $client = devconnect_monetization_default_org_config();
-  $developer = new Developer($client);
-  $developer->load($developer_id);
-
+  $developer = devconnect_monetization_developer_load();
   $address = NULL;
   foreach ($developer->getAddresses() as $address_item) {
     if ((is_array($address_item) && $address_item['isPrimary']) || (is_object($address_item) && $address_item->isPrimary())) {
@@ -347,10 +343,10 @@ function devconnect_mint_payment_purchase_plan($order) {
 
   $config = devconnect_monetization_default_org_config();
   $package = new MonetizationPackage($config);
-  $developer = new Developer($config);
+  $developer = devconnect_monetization_developer_load();
+
 
   $package->load($order->data['purchase']['packageid']);
-  $developer->load(_devconnect_monetization_get_developer_id(TRUE));
   $form_state = array(
     '#package' => $package,
     '#developer' => $developer,

@@ -9,14 +9,6 @@ use Apigee\Mint\Exceptions\MintApiException;
 use Apigee\Mint\Organization;
 use Apigee\Mint\Developer;
 
-function devconnect_monetization_billing_prepaid_access() {
-  $args = func_get_args();
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $developer = new Developer(devconnect_monetization_default_org_config());
-  $developer->load($developer_id);
-  return $developer->getBillingType() == BillingType::PREPAID && call_user_func_array('user_access', $args);
-}
-
 /**
  * Page callback for:
  *   users/%devconnect_monetization_developer/monetization
@@ -552,9 +544,7 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
   if (!user_access('download mint revenue report')) {
     drupal_access_denied();
   }
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $dev = new Developer(devconnect_monetization_default_org_config());
-  $dev->setEmail($developer_id);
+  $dev = devconnect_monetization_developer_load();
 
   $report = new stdClass();
   $report->currencyOption = $form_state['values']['currency'];
@@ -589,7 +579,7 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
     'currency' => $form_state['values']['currency'],
   );
 
-  $user = user_load_by_mail($developer_id);
+  $user = user_load_by_mail($dev->getEmail());
   if ($user === FALSE) {
     drupal_set_message(t('Your user does not exist in this DevConnect instance.'), 'error');
     return '';

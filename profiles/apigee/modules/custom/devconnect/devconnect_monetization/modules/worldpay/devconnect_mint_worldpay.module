@@ -193,10 +193,7 @@ function devconnect_mint_worldpay_success() {
       ),
     );
 
-    $config = devconnect_monetization_default_org_config();
-    $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-    $developer = new Developer($config);
-    $developer->load($developer_id);
+    $developer = devconnect_monetization_developer_load();
 
     try {
       $developer->topUpPrepaidBalance($new_balance);
@@ -211,7 +208,7 @@ function devconnect_mint_worldpay_success() {
         $recurring_amount = $recurring['recurring_amount'];
         $replenish_amount = $recurring['replenish_amount'];
 
-        $developerBalance = new DeveloperBalance($developer_id, $config);
+        $developerBalance = new DeveloperBalance($developer->getEmail(), $developer->getConfig());
         $developerBalance->updateRecurringSetup($currency, true, $replenish_amount, $recurring_amount, devconnect_mint_worldpay_mint_provider_id());
       }
       if (isset($order->data['purchase'])) {
@@ -379,27 +376,33 @@ function devconnect_mint_worldpay_is_payment_method_enabled() {
 
     $payment_method_settings = array();
 
-    foreach ($rule->actions() as $action) {
-      if ($action->getElementName() == 'commerce_payment_enable_devconnect_mint_worldpay') {
-        if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
-          $payment_method_settings[] = $action->settings['payment_method']['settings'];
+    if (!$rule) {
+      $message_writer('Cannot check if payment method for Worlpay Corporate Gateway is enabled in 4G. This might happen in initial module setup.');
+      return TRUE;
+    }
+    else {
+      foreach ($rule->actions() as $action) {
+        if ($action->getElementName() == 'commerce_payment_enable_devconnect_mint_worldpay') {
+          if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
+            $payment_method_settings[] = $action->settings['payment_method']['settings'];
+          }
         }
       }
-    }
 
-    // Loop through available payment methods
-    foreach ($payment_method_settings as $setting) {
-      // Loop providers to find maching provider id
-      foreach ($providers as $provider) {
-        if ($provider->getId() == $setting['devconnect_mint_worldpay_provider_id']) {
-          return TRUE;
+      // Loop through available payment methods
+      foreach ($payment_method_settings as $setting) {
+        // Loop providers to find maching provider id
+        foreach ($providers as $provider) {
+          if ($provider->getId() == $setting['devconnect_mint_worldpay_provider_id']) {
+            return TRUE;
+          }
         }
       }
-    }
 
-    $message_writer('Cannot check if payment method for Worlpay Corporate Gateway is enabled in 4G. This might happen '
-        . ' when module devconnect_mint_worldpay is being enabled or payment method defined by this module  has not been '
-        . ' properly configured', 'warning');
+      $message_writer('Cannot check if payment method for Worlpay Corporate Gateway is enabled in 4G. This might happen '
+          . ' when module devconnect_mint_worldpay is being enabled or payment method defined by this module  has not been '
+          . ' properly configured', 'warning');
+    }
   }
   catch (\Apigee\Exceptions\ResponseException $re) {
     $message_writer('There was a problem comunicating with 4G back end. Please try again later.');
