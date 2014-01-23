@@ -25,7 +25,11 @@ class ManagementAPITestCase extends DrupalWebTestCase {
 
     // Now make the switch to the sandbox.
     parent::setUp();
-    $password = Crypto::decrypt($pass_encrypted);
+    try {
+      $password = Crypto::decrypt($pass_encrypted);
+    } catch (Exception $e) {
+      $password = '';
+    }
     $this->client = new Apigee\Util\OrgConfig($org, $endpoint, $username, $password);
   }
 }

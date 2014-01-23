@@ -1,0 +1,102 @@
+<?php
+/**
+ * @file
+ * Identify pages as admin so they open as modal (overlay) pages.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function admin_pages_menu() {
+  $items = array();
+
+  // Add as a tab on Util settings.
+  $items['admin/config/system/util/admin_pages'] = array(
+    'title' => 'Admin pages',
+    'description' => 'Identify pages as admin so they open as modal (overlay) pages.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('admin_pages_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    );
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths_alter().
+ * Settings to prevent search indexing.
+ */
+function admin_pages_admin_paths_alter(&$paths) {
+  $pages = variable_get('admin_pages_pages', array('user', 'user/*'));
+  return array_combine($pages, array_fill(0, count($pages), TRUE));
+}
+
+/**
+ * Form to get and show pages.
+ */
+function admin_pages_settings($form_state) {
+  $form = array();
+
+  $pages = drupal_map_assoc(variable_get('admin_pages_pages', array('user', 'user/*')));
+  $form['pages'] = array('#type' => 'value', '#value' => $pages);
+
+  $options = array();
+  foreach ($pages as $path) {
+    $options[$path] = array('page' => $path);
+  }
+
+  $form['new_page'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Add page path'),
+    '#description' => t('This is the path (the part of the URL following the site domain name) which should be displayed modally (overlay). This setting will be added to the list.'),
+    );
+
+  $form['list_wrapper'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Delete paths'),
+    '#description' => t('Any checked paths will be deleted from the list when you click "Save configuration."'),
+    );
+
+  $form['list_wrapper']['list'] = array(
+    '#type' => 'tableselect',
+    '#empty' => t('There are currently no paths flagged.'),
+    '#options' => $options,
+    '#multiple' => TRUE,
+    '#header' => array('page' => t('Flagged paths')),
+    '#attributes' => array('style' => 'width: auto;'),
+    );
+
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
+
+  return $form;
+}
+
+/**
+ * Submission handler for above form.
+ */
+function admin_pages_settings_submit($form, $form_state) {
+  $pages = $form_state['values']['pages'];
+
+  // Are there any to be deleted?
+  $deletes = array_filter($form_state['values']['list']);
+
+  if ($deletes) {
+    foreach ($deletes as $key => $value) {
+      unset($pages[$key]);
+    }
+    drupal_set_message(t('The selected paths have been deleted.'));
+  }
+
+  // If there is a new path, add it to the list.
+  if ($new = $form_state['values']['new_page']) {
+    $pages[] = $new;
+    drupal_set_message(t('The requested path has been added.'));
+  }
+
+  // Remove duplicates.
+  $pages = array_unique($pages);
+  sort($pages);
+
+  variable_set('admin_pages_pages', $pages);
+}

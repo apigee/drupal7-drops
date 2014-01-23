@@ -1,0 +1,199 @@
+<?php
+/**
+ * @file
+ * Clean up watchdog messages.
+ */
+
+define('LOG_CLEANUP_DEFAULT_INTERVAL', 259200);
+
+/**
+ * Clean up requested rows from watchdog.
+ * Default interval (259200) is 72 hours (3 days).
+ */
+function _log_cleanup_main($type, $interval = LOG_CLEANUP_DEFAULT_INTERVAL) {
+  // Delete stuff more than specified age.
+  $result = db_delete('watchdog')
+    ->condition('type', $type)
+    ->condition('timestamp', REQUEST_TIME - $interval, '<')
+    ->execute();
+  return $result;
+}
+
+/**
+ * Implementation of hook_cron().
+ * Clean up a few things from watchdog.
+ */
+function log_cleanup_cron() {
+  $cleaned = array();
+
+  $requests = variable_get('log_cleanup_intervals', array());
+
+  foreach ($requests as $type => $interval) {
+    // Interval < 0 means skip it.
+    if ($interval >= 0) {
+      $count = _log_cleanup_main($type, $interval);
+      if ($count) {
+        $cleaned[] = $type . ' ' . $count . ' (' . ($interval ? format_interval($interval) : t('always')) . ')';
+      }
+    }
+  }
+
+  if ($cleaned) {
+    watchdog('Cleanup', 'Deleted watchdog: @deletes', array('@deletes' => implode(', ', $cleaned)));
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function log_cleanup_theme() {
+  return array(
+    'log_cleanup_settings' => array(
+      'render element' => 'form',
+      ),
+    );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function log_cleanup_menu() {
+  $items = array();
+
+  $items['cleanup/clean'] = array(
+    'title' => 'Clean Up',
+    'page callback' => '_log_cleanup_manual',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+    );
+
+  $items['admin/config/system/util/cleanup'] = array(
+    'title' => 'Log Cleanup Settings',
+    'description' => 'Set log cleaning intervals.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('log_cleanup_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    );
+
+  return $items;
+}
+
+/**
+ * Code for manual invocation.
+ */
+function _log_cleanup_manual() {
+  log_cleanup_cron();
+  drupal_goto();
+}
+
+/**
+ * Module settings form.
+ */
+function log_cleanup_settings() {
+  $form = array();
+
+  $types = variable_get('log_cleanup_intervals', array());
+
+  // Previous module version defaults.
+  if (!$types) {
+    $types = array(
+      'actions' => LOG_CLEANUP_DEFAULT_INTERVAL,
+      'aggregator' => 86400,  // 1 day
+      'cleaner' => LOG_CLEANUP_DEFAULT_INTERVAL,
+      'content' => 604800,    // 1 week
+      'features' => 604800,   // 1 week
+      'php' => 86400,         // 1 day
+      'user' => 86400,        // 1 day
+      'xmlsitemap' => 43200,  // 12 hours
+      );
+  }
+
+  $result = db_query("SELECT DISTINCT type FROM {watchdog}");
+  foreach ($result as $row) {
+    if (!isset($types[$row->type])) {
+      $types[$row->type] = LOG_CLEANUP_DEFAULT_INTERVAL;
+    }
+  }
+  ksort($types);
+
+  $intervals = array(
+    0 => t('always'),
+    3600 => t('1 hour'),
+    7200 => t('2 hours'),
+    10800 => t('3 hours'),
+    21600 => t('6 hours'),
+    43200 => t('12 hours'),
+    86400 => t('1 day'),
+    172800 => t('2 days'),
+    259200 => t('3 days'),
+    345600 => t('4 days'),
+    604800 => t('1 week'),
+    1209600 => t('2 weeks'),
+    -1 => t('never'),
+    );
+
+  foreach ($types as $type => $interval) {
+    $form['intervals'][$type] = array(
+      '#type' => 'select',
+      '#options' => $intervals,
+      '#default_value' => $interval,
+      );
+  }
+
+  $form['#theme'] = 'log_cleanup_settings';
+  $form['#tree'] = TRUE;
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
+  $form['reset'] = array('#type' => 'submit', '#value' => t('Reset'));
+
+  return $form;
+}
+
+/**
+ * Theme the module settings form.
+ */
+function theme_log_cleanup_settings(&$variables) {
+  $form = $variables['form'];
+
+  $output = '';
+  $table = array();
+  $table['rows'] = array();
+  $table['header'] = array(
+    t('Message Type'),
+    t('Interval'),
+    );
+
+  // Spin through the intervals elements.
+  foreach (element_children($form['intervals']) as $key) {
+    // Build the table, using the key from the form element;
+    $table['rows'][] = array(
+      check_plain($key),
+      drupal_render($form['intervals'][$key]),
+      );
+  }
+
+  $output .= theme('table', $table);
+  $output .= drupal_render_children($form);
+
+  return $output;
+}
+
+/**
+ * Module settings form submission handler.
+ */
+function log_cleanup_settings_submit($form, &$form_state) {
+  // Check which button was pressed.
+  switch ($form_state['values']['op']) {
+    case $form_state['values']['submit']:
+      // Save the settings.
+      variable_set('log_cleanup_intervals', $form_state['values']['intervals']);
+      break;
+
+    case $form_state['values']['reset']:
+      // Erase the settings.
+      variable_set('log_cleanup_intervals', array());
+      break;
+  }
+
+  drupal_set_message(t('Configuration saved.'));
+}

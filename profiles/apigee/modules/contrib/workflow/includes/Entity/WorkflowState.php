@@ -327,13 +327,8 @@ class WorkflowState {
 
     $options = array();
 
-    if (!$entity) {
-      // No entity is given, (e.g., on a Field settings page).
-      $entity_id = 'x';
-    }
-    else {
-      $entity_id = entity_id($entity_type, $entity);
-    }
+    // Entity may not be given, (e.g., on a Field settings page).
+    $entity_id = (!$entity) ? 'x' : entity_id($entity_type, $entity);
 
     $current_sid = $this->sid;
     // Get options from page cache.

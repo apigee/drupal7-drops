@@ -39,15 +39,19 @@
 	<!-- -->
 	<target name="drush-pantheon-config" depends="init-reset">
 		<exec command="sudo composer self-update" logoutput="true" />
-		<exec command="composer create-project pantheon-systems/terminus $HOME/.drush/terminus -s dev --no-dev -n" logoutput="true"/>
+		<exec command="git clone git@github.com:pantheon-systems/terminus" dir="${user.home}/.drush" logoutput="true" />
+		<exec command="composer update"  dir="${user.home}/.drush/terminus" logoutput="true"/>
 		<drush command="cc" assume="yes">
 			<param>drush</param>
 		</drush>
-		<drush command="pantheon-auth" assume="yes">
+		<drush command="pantheon-auth" assume="yes" verbose="true">
 			<option name="password">"${pantheon-password}"</option>
 			<param>${pantheon-email}</param>
+      <option name="debug" />
 		</drush>
-		<drush command="pantheon-aliases" assume="yes" />
+		<drush command="pantheon-aliases" assume="yes" verbose="true">
+      <option name="debug" />
+    </drush>
 		<drush command="dl" assume="yes">
 			<param>registry_rebuild</param>
 		</drush>
@@ -114,22 +118,58 @@
 				<property name='apigee-restore-necessary' value="YES" />
 			</else>
 		</if>
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>${pantheon-email}</param>
-		</drush>
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>stovak@apigee.com</param>
-		</drush>
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>djohnson@apigee.com</param>
-		</drush>
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>bhasselbeck@apigee.com</param>
-		</drush>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>${pantheon-email}</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add ${pantheon-email}" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>djohnson@apigee.com</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add djohnson@apigee.com" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>stovak@apigee.com</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add stovak@apigee.com" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>bhasselbeck@apigee.com</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add bhasselbeck@apigee.com" />
+				</phingcall>
+			</catch>
+		</trycatch>
 		<exec command="drush ${site-alias} sql-connect" outputProperty="mysql-connect" logoutput="true" />
 		<phingcall target="display-step">
 			<param name="message" value="====: BEGINNING MIGRATION OF ${orgname} to ${pantheon-alias} (uuid: ${pantheon-uuid}) :====" />
@@ -174,6 +214,22 @@
 			<param value="" />
 			<param value="${inifile.sitedir}" />
 		</php>
+		<trycatch property="foo1">
+			<try>
+				<phingcall target="rsync-command">
+					<property name="source" value="${project.basedir}/apigee.drush.inc" />
+					<property name="destination" value="${remote-user}@${remote-host}:.drush" />
+				</phingcall>
+				<drush alias="${site-alias}" command="cc">
+					<param>drush</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Failed to update drush command on remote" />
+				</phingcall>
+			</catch>
+		</trycatch>
 		<if>
 			<equals arg1="${apigee-restore-necessary}" arg2="YES" />
 			<then>
@@ -190,73 +246,6 @@
 				</trycatch>
 			</then>
 		</if>
-		<!-- RSYNCS all of the necessary code -->
-		<phingcall target="display-step">
-			<param name="message" value="RSYNCING CODE" />
-		</phingcall>
-		<!-- get any files not managed by drupal. Check both clusters and fail silently if nonexistant -->
-		<exec command="s3cmd sync --recursive s3://apigee-devconnect/rea1dc001/${environment}-${orgname}/files ." dir="${archive-unpacked}/devconnect-111.8/${archive-sitedir}" passthru="true" logoutput="true" checkreturn="false" />
-		<exec command="s3cmd sync --recursive s3://apigee-devconnect/rea1dc002/${environment}-${orgname}/files ." dir="${archive-unpacked}/devconnect-111.8/${archive-sitedir}" passthru="true" logoutput="true" checkreturn="false" />
-		<!-- Delete CSS/JS Aggregation -->
-		<phingcall target="display-step">
-			<param name="message" value="DELETING AGGREGATION" />
-		</phingcall>
-		<delete quiet="true">
-			<fileset dir="${archive-unpacked}/devconnect-111.8/${files-public}">
-				<include name="js/**" />
-				<include name="css/**" />
-				<include name="cdn/**" />
-				<include name="ctools/**" />
-			</fileset>
-		</delete>
-		<trycatch property="contribdirattempt">
-			<try>
-				<mkdir dir="${remote-user}@${remote-host}:code/sites/all/modules/contrib" />
-				<phingcall target="display-step">
-					<param name="message" value="Created contrib directory" />
-				</phingcall>
-			</try>
-			<catch>
-				<phingcall target="display-step">
-					<param name="message" value="Attempt to create contrib directory failed" />
-				</phingcall>
-			</catch>
-		</trycatch>
-		<phingcall target="display-step">
-			<param name="message" value="RSYNCING FILES, MODULES, LIBRARIES, and THEMES" />
-		</phingcall>
-		<phingcall target="rsync-command">
-			<property name="source" value="${archive-unpacked}/devconnect-111.8/${files-public}" />
-			<property name="destination" value="${remote-user}@${remote-host}:~/." />
-		</phingcall>
-		<phingcall target="rsync-command">
-			<property name="source" value="${archive-unpacked}/devconnect-111.8/${archive-sitedir}/modules" />
-			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
-		</phingcall>
-		<phingcall target="rsync-command">
-			<property name="source" value="${archive-unpacked}/devconnect-111.8/${archive-sitedir}/libraries" />
-			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
-		</phingcall>
-		<phingcall target="rsync-command">
-			<property name="source" value="${archive-unpacked}/devconnect-111.8/${archive-sitedir}/themes" />
-			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
-		</phingcall>
-		<trycatch property="foo7">
-			<try>
-				<phingcall target="migration-fixes">
-					<property name="site-alias" value="${site-alias}" />
-					<property name="remote-host" value="${remote-host}" />
-					<property name="remote-user" value="${remote-user}" />
-					<property name="archive-sitedir" value="${archive-sitedir}" />
-				</phingcall>
-			</try>
-			<catch>
-				<phingcall target="display-step">
-					<param name="message" value="MIGRATION FIXES COULD NOT BE MADE" />
-				</phingcall>
-			</catch>
-		</trycatch>
-		<!-- tries to complete the mysql portion of the build -->
 		<trycatch property="foo3">
 			<try>
 				<phingcall target="display-step">
@@ -345,7 +334,26 @@
 		<phingcall target="mysql-query-string">
 			<property name="query" value="drop table if exists temp_og_users_roles;" />
 		</phingcall>
+
 		<!-- Completes the mysql portion of the build, then it takes the new code and rebuilds the registry and updates the code -->
+		<phingcall target="display-step">
+			<param name="message" value="STARTING MIGRATION SPECIFIC TASKS" />
+		</phingcall>
+		<trycatch property="foo7">
+			<try>
+				<phingcall target="migration-fixes">
+					<property name="site-alias" value="${site-alias}" />
+					<property name="remote-host" value="${remote-host}" />
+					<property name="remote-user" value="${remote-user}" />
+					<property name="archive-sitedir" value="${archive-sitedir}" />
+				</phingcall>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="MIGRATION FIXES COULD NOT BE MADE" />
+				</phingcall>
+			</catch>
+		</trycatch>
 		<phingcall target="display-step">
 			<param name="message" value="SETTING VARIABLES" />
 		</phingcall>
@@ -357,56 +365,27 @@
 			<param>migration_occurred</param>
 			<param>1</param>
 		</drush>
-		<exec command="drush ${site-alias} updb -y"/>
-		<drush alias="${site-alias}" command="rr" />
-		<trycatch property="filepath1">
-			<try>
-				<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path">
-					<param>file_public_path</param>
-				</drush>
-				<drush alias="${site-alias}" command="vset" assume="yes" >
-					<param>file_public_path</param>
-					<param>"${file_public_path}"</param>
-				</drush>
-			</try>
-			<catch>
-				<phingcall target="display-step">
-					<param name="message" value="Issue with public path" />
-				</phingcall>
-			</catch>
-		</trycatch>
-		<trycatch property="filepath2">
-			<try>
-				<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_private_path" >
-					<param>file_private_path</param>
-				</drush>
-				<drush alias="${site-alias}" command="vset" assume="yes" >
-					<param>file_private_path</param>
-					<param>"${file_private_path}"</param>
-				</drush>
-			</try>
-			<catch>
-				<phingcall target="display-step">
-					<param name="message" value="Issue with private path" />
-				</phingcall>
-			</catch>
-		</trycatch>
-		<trycatch property="filepath3">
-			<try>
-				<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_temporary_path">
-					<param>file_temporary_path</param>
-				</drush>
-				<drush alias="${site-alias}" command="vset" assume="yes" >
-					<param>file_temporary_path</param>
-					<param>"${file_temporary_path}"</param>
-				</drush>
-			</try>
-			<catch>
-				<phingcall target="display-step">
-					<param name="message" value="Issue with temporary path" />
-				</phingcall>
-			</catch>
-		</trycatch>
+		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path">
+			<param>file_public_path</param>
+		</drush>
+		<drush alias="${site-alias}" command="vset" assume="yes" >
+			<param>file_public_path</param>
+			<param>"${file_public_path}"</param>
+		</drush>
+		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_private_path" >
+			<param>file_private_path</param>
+		</drush>
+		<drush alias="${site-alias}" command="vset" assume="yes" >
+			<param>file_private_path</param>
+			<param>"${file_private_path}"</param>
+		</drush>
+		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_temporary_path">
+			<param>file_temporary_path</param>
+		</drush>
+		<drush alias="${site-alias}" command="vset" assume="yes" >
+			<param>file_temporary_path</param>
+			<param>"${file_temporary_path}"</param>
+		</drush>
 		<drush alias="${site-alias}" command="vset" assume="yes">
 			<param>preprocess_js</param>
 			<param>"0"</param>
@@ -415,6 +394,72 @@
 			<param>preprocess_css</param>
 			<param>"0"</param>
 		</drush>
+		<phingcall target="display-step">
+			<param name="message" value="RSYNCING CODE" />
+		</phingcall>
+		<!-- get any files not managed by drupal. Check both clusters and fail silently if nonexistant -->
+		<exec command="s3cmd sync --recursive s3://apigee-devconnect/rea1dc001/${environment}-${orgname}/files ." dir="${archive-unpacked}/devconnect-111.8/${archive-sitedir}" passthru="true" logoutput="true" checkreturn="false" />
+		<exec command="s3cmd sync --recursive s3://apigee-devconnect/rea1dc002/${environment}-${orgname}/files ." dir="${archive-unpacked}/devconnect-111.8/${archive-sitedir}" passthru="true" logoutput="true" checkreturn="false" />
+		<!-- Delete CSS/JS Aggregation -->
+		<phingcall target="display-step">
+			<param name="message" value="DELETING AGGREGATION" />
+		</phingcall>
+		<delete quiet="true">
+			<fileset dir="${archive-unpacked}/devconnect-111.8/${files-public}">
+				<include name="js/**" />
+				<include name="css/**" />
+				<include name="cdn/**" />
+				<include name="ctools/**" />
+			</fileset>
+		</delete>
+		<phingcall target="display-step">
+			<param name="message" value="RSYNCING FILES, MODULES, LIBRARIES, and THEMES" />
+		</phingcall>
+		<phingcall target="rsync-command">
+			<property name="source" value="${archive-unpacked}/devconnect-111.8/${files-public}" />
+			<property name="destination" value="${remote-user}@${remote-host}:~/." />
+		</phingcall>
+		<phingcall target="rsync-command">
+			<property name="source" value="${archive-unpacked}/devconnect-111.8/${archive-sitedir}/modules" />
+			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
+		</phingcall>
+		<phingcall target="rsync-command">
+			<property name="source" value="${archive-unpacked}/devconnect-111.8/${archive-sitedir}/libraries" />
+			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
+		</phingcall>
+		<phingcall target="rsync-command">
+			<property name="source" value="${archive-unpacked}/devconnect-111.8/${archive-sitedir}/themes" />
+			<property name="destination" value="${remote-user}@${remote-host}:code/sites/all" />
+		</phingcall>
+		<exec command="drush ${site-alias} updb -y"/>
+		<exec command="drush ${site-alias} rr" logoutput="true"/>
+        <trycatch>
+            <try>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_style.inc' where name = 'references_plugin_style';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_display.inc' where name = 'references_plugin_display';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_handler_argument.inc' where name = 'references_handler_argument';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_row_fields.inc' where name = 'references_plugin_row_fields';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_handler_relationship.inc' where name = 'references_handler_relationship';" />
+                </phingcall>
+                <phingcall target="display-step">
+                    <param name="message" value="UPDATED REFERENCE REGISTRY" />
+                </phingcall>
+            </try>
+            <catch>
+                <phingcall target="display-step">
+                    <param name="message" value="COULDN'T UPDATE REFERENCE REGISTRY" />
+                </phingcall>
+            </catch>
+        </trycatch>
 		<phingcall target="display-step">
 			<param name="message" value="ENABLING JIRA ISSUE COLLECTOR" />
 		</phingcall>
@@ -446,11 +491,18 @@
 			</catch>
 		</trycatch>
 		<phingcall target="display-step">
-			<param name="message" value="INITIATING MODULE TASKS" />
+			<param name="message" value="FINALIZING and ENSURING MODULE TASKS" />
+		</phingcall>
+		<phingcall target="display-step">
+			<param name="message" value="DISABLING MODULES" />
 		</phingcall>
 		<exec command="drush ${site-alias} pm-disable variable -y" logoutput="true" />
 		<exec command="drush ${site-alias} pm-disable block_class -y" logoutput="true"  />
 		<exec command="drush ${site-alias} pm-disable smtp cdn -y" logoutput="true" />
+		<!-- R24 error, need to enable new module -->
+		<phingcall target="display-step">
+			<param name="message" value="ENABLING MODULES" />
+		</phingcall>
 		<exec command="drush ${site-alias} en d8cmi -y" logoutput="true" />
 		<exec command="drush ${site-alias} en block_class -y" logoutput="true" />
 		<exec command="drush ${site-alias} en apachesolr -y" logoutput="true" />
@@ -461,7 +513,7 @@
 		<exec command="drush ${site-alias} en devconnect_migration -y" logoutput="true"/>
 		<exec command="drush ${site-alias} rr" logoutput="true" />
 		<exec command="drush ${site-alias} cc all" logoutput="true" />
-		<exec command="drush ${site-alias} updb -y"/>
+		<exec command="drush ${site-alias} updb -y" logoutput="true" />
 		<phingcall target="display-step">
 			<param name="message" value="ENTITY MIGRATION TASKS" />
 		</phingcall>
@@ -474,6 +526,23 @@
 				<drush alias="${site-alias}" command="pm-enable" assume="yes">
 					<param>entityreference_migration</param>
 				</drush>
+
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_style.inc' where name = 'references_plugin_style';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_display.inc' where name = 'references_plugin_display';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_handler_argument.inc' where name = 'references_handler_argument';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_row_fields.inc' where name = 'references_plugin_row_fields';" />
+                </phingcall>
+                <phingcall target="mysql-query-string">
+                    <property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_handler_relationship.inc' where name = 'references_handler_relationship';" />
+                </phingcall>
+
 				<drush alias="${site-alias}" command="entityreference-migrate-references" assume="yes" />
 				<drush alias="${site-alias}" command="pm-disable" assume="yes">
 					<param>entityreference_migration</param>
@@ -505,7 +574,7 @@
 				</phingcall>
 			</catch>
 		</trycatch>
-		<exec command="drush ${site-alias} cc all"/>
+		<exec command="drush ${site-alias} cc all" logoutput="true"/>
 		<phingcall target="display-step">
 			<param name="message" value="ATTEMPTING TO COMMIT CHANGES AND TURN BACK TO GIT" />
 		</phingcall>
@@ -531,9 +600,14 @@
 				</phingcall>
 			</catch>
 		</trycatch>
+		<exec command="drush ${site-alias} en devconnect_migration -y" logoutput="true"/>
 		<!-- enable themes -->
 		<exec command="drush ${site-alias} vget theme_default --format=json -y" returnProperty="theme-default" logoutput="true"/>
-		<php expression="str_replace('&#34;', '', ${theme-default})" returnProperty="theme-default-fixed" />
+		<php function="str_replace" returnProperty="theme-default-fixed">
+			<param value='"' />
+			<param value="" />
+			<param value="${theme-default}" />
+		</php>
 		<exec command="drush ${site-alias} en pm-enable ${theme-default-fixed} -y" logoutput="true"/>
 		<exec command="drush ${site-alias} en pm-enable apigee_base -y" logoutput="true"/>
 		<exec command="drush ${site-alias} en pm-enable apigee_devconnect -y" logoutput="true"/>
@@ -607,7 +681,7 @@
 	<!-- -->
 	<target name="rsync-command">
 		<phingcall target="display-step">
-			<param name="message" value="Syncing: ${source} => ${destination}" />
+			<param name="message" value="rsync -rlvz --size-only --exclude='.*' --ipv4 --progress -e 'ssh -p 2222 -oStrictHostKeyChecking=no' '${source}' '${destination}'" />
 		</phingcall>
 		<exec command="rsync -rlvz --size-only --exclude='.*' --ipv4 --progress -e 'ssh -p 2222 -oStrictHostKeyChecking=no' '${source}' '${destination}'" logoutput="true" />
 	</target>
@@ -699,13 +773,22 @@
 				<phingcall target="display-step">
 					<param name="message" value="Making the latest site archive..." />
 				</phingcall>
+				<phingcall target="display-step">
+					<param name="message" value='ssh stovak@${production-source} "cd /mnt/apigee/httpd/www/html/webapp/sites/${environment}-${orgname}; drush archive-dump --destination=/tmp/${environment}-${orgname}.tgz --overwrite' />
+				</phingcall>
 				<exec logoutput="true" command='ssh stovak@${production-source} "cd /mnt/apigee/httpd/www/html/webapp/sites/${environment}-${orgname}; drush archive-dump --destination=/tmp/${environment}-${orgname}.tgz --overwrite"'/>
 				<phingcall target="display-step">
 					<param name="message" value="Putting the site in read only mode" />
 				</phingcall>
+				<phingcall target="display-step">
+					<param name="message" value='ssh stovak@${production-source} "cd /mnt/apigee/httpd/www/html/webapp/sites/${environment}-${orgname}; drush vset read_only_mode 1"' />
+				</phingcall>
 				<exec logoutput="true" command='ssh stovak@${production-source} "cd /mnt/apigee/httpd/www/html/webapp/sites/${environment}-${orgname}; drush vset read_only_mode 1"'/>
 				<phingcall target="display-step">
 					<param name="message" value="Moving archive to the bucket" />
+				</phingcall>
+				<phingcall target="display-step">
+					<param name="message" value='ssh stovak@${production-source} "s3cmd put /tmp/${environment}-${orgname}.tgz s3://apigee-devconnect/site-archives/${environment}-${orgname}.tgz"' />
 				</phingcall>
 				<exec logoutput="true" command='ssh stovak@${production-source} "s3cmd put /tmp/${environment}-${orgname}.tgz s3://apigee-devconnect/site-archives/${environment}-${orgname}.tgz"'/>
 			</try>
@@ -745,23 +828,64 @@
 			<param>SFTP</param>
 		</drush>
 
+		<!-- Clears drush's cache -->
+		<drush command="cc">
+			<param>drush</param>
+		</drush>
+
 		<!-- Make sure all team members are added to the pantheon instance -->
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>${pantheon-email}</param>
-		</drush>
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>stovak@apigee.com</param>
-		</drush>
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>djohnson@apigee.com</param>
-		</drush>
-		<drush command="psite-team-add" assume="yes">
-			<param>${pantheon-uuid}</param>
-			<param>bhasselbeck@apigee.com</param>
-		</drush>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>${pantheon-email}</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add ${pantheon-email}" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>djohnson@apigee.com</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add djohnson@apigee.com" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>stovak@apigee.com</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add stovak@apigee.com" />
+				</phingcall>
+			</catch>
+		</trycatch>
+		<trycatch>
+			<try>
+				<drush command="psite-team-add" assume="yes">
+					<param>${pantheon-uuid}</param>
+					<param>bhasselbeck@apigee.com</param>
+				</drush>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Can't add bhasselbeck@apigee.com" />
+				</phingcall>
+			</catch>
+		</trycatch>
 
 		<!-- Get the SQL Connection details -->
 		<exec command="drush ${site-alias} sql-connect" outputProperty="mysql-connect" logoutput="true" />
@@ -781,6 +905,26 @@
 		<phingcall target="display-step">
 			<param name="message" value="User: ${remote-user}" />
 		</phingcall>
+
+		<trycatch property="apigeeDrushUpdate">
+			<try>
+				<phingcall target="rsync-command">
+					<property name="source" value="${project.basedir}/apigee.drush.inc" />
+					<property name="destination" value="${remote-user}@${remote-host}:.drush" />
+				</phingcall>
+				<drush alias="${site-alias}" command="cc">
+					<param>drush</param>
+				</drush>
+				<phingcall target="display-step">
+					<param name="message" value="Updated drush command on remote: ${project.basedir}/apigee.drush.inc" />
+				</phingcall>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="Failed to update drush command on remote" />
+				</phingcall>
+			</catch>
+		</trycatch>
 
 		<!-- Get the archive from S3 -->
 		<s3get key="${s3cfg.access_key}" secret="${s3cfg.secret_key}" bucket="apigee-devconnect" object="site-archives/${archive-filename}" target="/tmp/${archive-filename}" />
@@ -819,10 +963,6 @@
 				<include name="ctools/**" />
 			</fileset>
 		</delete>
-		<drush alias="${site-alias}" command="rr" />
-		<drush alias="${site-alias}" command="cc">
-			<param>registry</param>
-		</drush>
 
 		<!-- rsyncing most up to date files -->
 		<phingcall target="display-step">
@@ -942,7 +1082,6 @@
 		<phingcall target="mysql-query-string">
 			<property name="query" value="drop table if exists temp_og_users_roles;" />
 		</phingcall>
-		<exec command="drush ${site-alias} rr" logoutput="true" />
 		<phingcall target="display-step">
 			<param name="message" value="SETTING VARIABLES" />
 		</phingcall>
@@ -954,22 +1093,21 @@
 			<param>migration_occurred</param>
 			<param>1</param>
 		</drush>
-		<drush alias="${site-alias}" command="rr" />
-		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path">
+		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_public_path" verbose="true">
 			<param>file_public_path</param>
 		</drush>
 		<drush alias="${site-alias}" command="vset" assume="yes" >
 			<param>file_public_path</param>
 			<param>"${file_public_path}"</param>
 		</drush>
-		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_private_path" >
+		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_private_path" verbose="true">
 			<param>file_private_path</param>
 		</drush>
 		<drush alias="${site-alias}" command="vset" assume="yes" >
 			<param>file_private_path</param>
 			<param>"${file_private_path}"</param>
 		</drush>
-		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_temporary_path">
+		<drush alias="${site-alias}" command="apigee-environment" returnProperty="file_temporary_path" verbose="true">
 			<param>file_temporary_path</param>
 		</drush>
 		<drush alias="${site-alias}" command="vset" assume="yes" >
@@ -1001,9 +1139,6 @@
 				</phingcall>
 			</catch>
 		</trycatch>
-
-		<!-- Update the DB -->
-		<exec command="drush ${site-alias} updb -y"/>
 
 		<!-- Enable the JIRA issue collector -->
 		<phingcall target="display-step">
@@ -1057,8 +1192,9 @@
 		<exec command="drush ${site-alias} en pantheon_apachesolr -y" logoutput="true" />
 		<exec command="drush ${site-alias} en apigee_account  -y" logoutput="true" />
 		<exec command="drush ${site-alias} en devconnect_migration -y" logoutput="true"/>
+		<!-- Update the DB -->
+		<exec command="drush ${site-alias} updb -y"/>
 		<exec command="drush ${site-alias} rr" logoutput="true" />
-		<exec command="drush ${site-alias} cc all" logoutput="true" />
 
 		<!-- Entity Migration Fixes -->
 		<phingcall target="display-step">
@@ -1133,6 +1269,25 @@
 		</phingcall>
 		<exec command="drush ${site-alias} rr" logoutput="true"/>
 		<exec command="drush ${site-alias} cc all" logoutput="true"/>
+
+		<!-- ensure user creation to check for corrections -->
+		<php function="str_replace" returnProperty="portal-username">
+			<param value='@apigee.com' />
+			<param value="" />
+			<param value="${pantheon-email}" />
+		</php>
+		<exec command="drush ${site-alias} user-create ${portal-username} --mail='${pantheon-email}'" logoutput="true" />
+		<exec command="drush ${site-alias} user-add-role 'Drupal Administrator' ${portal-username}" logoutput="true" />
+
+		<!-- Move environments -->
+		<phingcall target="display-step">
+			<param name="message" value="Cloning from DEV environment to the TEST environment" />
+		</phingcall>
+		<drush command="psite-clone" assume="yes">
+			<param>"${pantheon-uuid}"</param>
+			<param>dev</param>
+			<param>test</param>
+		</drush>
 
 		<phingcall target="cleanup" />
 	</target>

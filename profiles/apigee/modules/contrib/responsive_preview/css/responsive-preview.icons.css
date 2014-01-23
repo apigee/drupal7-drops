@@ -13,10 +13,10 @@
   position: absolute;
   z-index: 1;
 }
-.drupal-navbar .navbar-bar .navbar-tab-responsive-preview .responsive-preview-icon:before {
+.navbar-bar .navbar-tab-responsive-preview .responsive-preview-icon:before {
   width: 13px;
 }
-.navbar-tab-responsive-preview button.responsive-preview-icon,
+#navbar-administration .navbar-tab-responsive-preview button.responsive-preview-icon,
 .responsive-preview button.responsive-preview-icon {
   background-color: transparent;
   border: 0;
@@ -24,7 +24,7 @@
 }
 
 /* navbar icon. */
-.drupal-navbar .navbar-bar .responsive-preview-icon.responsive-preview-icon-responsive-preview {
+#navbar-administration .navbar-bar .responsive-preview-icon.responsive-preview-icon-responsive-preview {
   margin-left: 0;
   margin-right: 0;
   padding-left: 0;
@@ -48,17 +48,17 @@
   left: auto;
   right: 6px;
 }
-.drupal-navbar .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.responsive-preview-icon-active {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.responsive-preview-icon-active {
   padding: 0.5em 1.3333em;
   text-indent: 0;
   -moz-transition: padding 0.25s;
   -webkit-transition: padding 0.25s;
   transition: padding 0.25s;
 }
-.drupal-navbar .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.responsive-preview-icon-active.active {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.responsive-preview-icon-active.active {
   padding-left: 2.25em; /* LTR */
 }
-[dir="rtl"] .drupal-navbar .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.responsive-preview-icon-active.active {
+[dir="rtl"] #navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.responsive-preview-icon-active.active {
   padding-left: 1.333em;
   padding-right: 2.25em;
 }

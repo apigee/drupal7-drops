@@ -1,0 +1,73 @@
+<?php
+/**
+ * @file
+ * Display what's in the Flood table.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function flood_report_menu() {
+  $items = array();
+
+  $items['admin/reports/flood_report'] = array(
+    'title' => 'Flood report',
+    'description' => 'Flood table contents',
+    'page callback' => 'flood_report_report',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+    );
+
+  $items['flood_report_clear'] = array(
+    'page callback' => 'flood_report_clear',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+    );
+
+  return $items;
+}
+
+/**
+ * Menu callback.
+ * Report on flood table contents.
+ */
+function flood_report_report() {
+  $output = '<div id="flood-report">';
+
+  $table = array(
+    'header' => array(t('Fid'), t('Event'), t('Identifier'), t('Time'), t('Expires')),
+    'attributes' => array('style' => 'width: auto;'),
+    'rows' => array(),
+    );
+  $query = "SELECT fid, event, identifier, timestamp, expiration FROM {flood} ORDER BY expiration ASC";
+  $result = db_query($query);
+
+  foreach ($result as $row) {
+    $table['rows'][] = array(
+      $row->fid,
+      check_plain($row->event),
+      check_plain($row->identifier),
+      format_date($row->timestamp, 'large'),
+      format_interval($row->expiration - REQUEST_TIME),
+      );
+  }
+
+  if (empty($table['rows'])) {
+    $table['rows'][] = array(array('data' => t('The Flood table seems to be empty.'), 'colspan' => 20));
+  }
+
+  $output .= theme('table', $table);
+  
+  $output .= '<p>' . l(t('Empty the table'), 'flood_report_clear') . '</p>';
+ 
+  return $output . '</div>';
+}
+
+/**
+ * Clear the Flood table.
+ */
+function flood_report_clear() {
+  $num = db_delete('flood')->execute();
+  drupal_set_message(t('Deleted !num rows from the Flood table.', array('!num' => $num)));
+  drupal_goto();
+}

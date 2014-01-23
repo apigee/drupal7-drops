@@ -100,6 +100,8 @@ function entityreference_field_views_data_views_data_alter(&$data, $field) {
  * Implements hook_views_plugins().
  */
 function entityreference_views_plugins() {
+  $views_info = entityreference_views_api();
+
   $plugins = array(
     'display' => array(
       'entityreference' => array(
@@ -107,10 +109,12 @@ function entityreference_views_plugins() {
         'admin' => t('Entity Reference Source'),
         'help' => 'Selects referenceable entities for an entity reference field',
         'handler' => 'entityreference_plugin_display',
+        'theme path' => $views_info['path'],
         'uses hook menu' => FALSE,
         'use ajax' => FALSE,
         'use pager' => FALSE,
         'accept attachments' => FALSE,
+        'path' => $views_info['path'],
         // Custom property, used with views_get_applicable_views() to retrieve
         // all views with a 'Entity Reference' display.
         'entityreference display' => TRUE,
@@ -121,12 +125,14 @@ function entityreference_views_plugins() {
         'title' => t('Entity Reference list'),
         'help' => 'Returns results as a PHP array of labels and rendered rows.',
         'handler' => 'entityreference_plugin_style',
+        'theme path' => $views_info['path'],
         'theme' => 'views_view_unformatted',
         'uses row plugin' => TRUE,
         'uses fields' => TRUE,
         'uses options' => TRUE,
         'type' => 'entityreference',
         'even empty' => TRUE,
+        'path' => $views_info['path'],
       ),
     ),
     'row' => array(
@@ -140,6 +146,7 @@ function entityreference_views_plugins() {
         'uses fields' => TRUE,
         'uses options' => TRUE,
         'type' => 'entityreference',
+        'path' => $views_info['path'],
       ),
     ),
   );

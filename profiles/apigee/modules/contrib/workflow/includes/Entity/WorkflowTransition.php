@@ -198,13 +198,20 @@ class WorkflowTransition {
 
     $old_sid = $this->old_sid;
     $new_sid = $this->new_sid;
+    $old_state = workflow_state_load($old_sid);
     $entity_type = $this->entity_type;
     $entity = $this->getEntity(); // Entity may not be loaded, yet.
+
+    $t_args = array(
+      '%old_sid' => $old_sid,
+      '%new_sid' => $new_sid,
+    );
 
     // Check allow-ability of state change if user is not superuser (might be cron).
     if (($user->uid != 1) && !$force) {
       // Get the WorkflowConfigTransition.
       // @todo: some day, config_transition can be a parent of entity_transition.
+      $workflow = $old_state->getWorkflow();
       $config_transitions = $workflow->getTransitionsBySidTargetSid($old_sid, $new_sid);
       $config_transition = reset($config_transitions);
       if ($config_transition) {
@@ -213,7 +220,7 @@ class WorkflowTransition {
         }
       }
       else {
-        watchdog('workflow', 'Attempt to go to nonexistent transition (from %old to %new)', $args, WATCHDOG_ERROR);
+        watchdog('workflow', 'Attempt to go to nonexistent transition (from %old_sid to %new_sid)', $t_args, WATCHDOG_ERROR);
         return $old_sid;
       }
     }
@@ -221,14 +228,10 @@ class WorkflowTransition {
     // Get all states from the Workflow, or only the valid transitions for this state.
     // WorkflowState::getOptions() will consider all permissions, etc.
     $options = array();
-    if ($old_state = WorkflowState::load($old_sid)) {
+    if ($old_state) {
       $options = $old_state->getOptions($entity_type, $entity, $force);
     }
     if (!array_key_exists($new_sid, $options)) {
-      $t_args = array(
-        '%old_sid' => $old_sid,
-        '%new_sid' => $new_sid,
-      );
       drupal_set_message(t('The transition from %old_sid to %new_sid is not allowed.', $t_args), 'error');
       return FALSE;
     }

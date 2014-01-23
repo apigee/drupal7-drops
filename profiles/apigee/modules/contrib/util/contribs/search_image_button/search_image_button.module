@@ -1,0 +1,93 @@
+<?php
+/**
+ * @file
+ * Alters the Search form to provide an image button.
+ */
+
+/**
+ * Implements hook_form_alter().
+ *
+ * 1) Alter the Search Settings form to add an image specification.
+ *
+ * 2) Alter the Search block form to use image.
+ *
+ */
+function search_image_button_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+//  drupal_set_message('search_image_button_form_alter: ' . $form_id);
+
+  switch ($form_id) {
+    // Search settings form.
+    case 'search_admin_settings':
+      $form['status']['#weight'] = -10;
+      $form['indexing_throttle']['#weight'] = -5;
+
+      $form['search_button'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Search Button'),
+        '#weight' => 0,
+        );
+
+      $form['search_button']['search_image_button_image'] = array(
+        '#title' => t('Image for the Search form button'),
+        '#type' => 'textfield',
+        '#default_value' => variable_get('search_image_button_image', ''),
+        '#description' => t('Specify the path to the image to use for the search form submit button. You may use the file system form, e.g. "public:/my_search_button.png".'),
+        );
+
+      $form['search_button']['search_image_button_label'] = array(
+        '#title' => t('Label for the Search form'),
+        '#type' => 'textfield',
+        '#default_value' => variable_get('search_image_button_label', 'Search this site'),
+        '#description' => t('Specify the text to use as the label for the search form.'),
+        );
+
+      $form['search_button']['search_image_input_size'] = array(
+        '#title' => t('Size of the text input area on the Search form'),
+        '#type' => 'textfield',
+        '#default_value' => variable_get('search_image_input_size', 15),
+        '#description' => t('This determines the width of the input area for keywords on the search form.'),
+        );
+
+        return;
+
+    // Search block.
+    case 'search_box':
+    case 'search_block_form':
+      // Get rid of the current form element.
+      unset($form[$form_id]);
+
+      // Build a new form.
+      $text = t(variable_get('search_image_button_label', 'Search this site'));
+      $form[$form_id] = array(
+        '#type' => 'textfield',
+        '#title' => $text,
+        '#title_display' => 'invisible' /*'before'*/,
+        '#size' => variable_get('search_image_input_size', 15),
+        '#attributes' => array(
+          'title' => t('Enter the terms for which you wish to search.'),
+          'onblur' => "if (this.value == '') {this.value = '$text';}",
+          'onfocus' => "if (this.value == '$text') {this.value = '';}",
+          ),
+        );
+
+        if ($image = variable_get('search_image_button_image', '')) {
+        $form['actions']['submit']['#type'] = 'image_button';
+        $form['actions']['submit']['#src'] = $image;
+      }
+
+      return;
+  }
+}
+
+function search_image_button_preprocess_search_block_form(&$vars, $hook) {
+  $form = $vars['form'];
+//  dsm(print_r($form, true));
+  $vars['form']['search_block_form']['#title_display'] = 'before';
+  unset($vars['form']['search_block_form']['#attributes']['class']);
+  $vars['form']['search_block_form']['#attributes'] = array(
+    'onblur' => "if (this.value == '') {this.value = '".$vars['form']['search_block_form']['#value']."';} this.style.color = '#888888';",
+    'onfocus' => "if (this.value == '".$vars['form']['search_block_form']['#value']."') {this.value = '';} this.style.color = '#000000';" );
+  $vars['form']['search_block_form']['#title_display'] = 'before';
+} /* */
+

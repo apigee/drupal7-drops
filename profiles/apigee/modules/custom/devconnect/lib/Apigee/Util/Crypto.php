@@ -56,7 +56,7 @@ class Crypto {
     $string_encrypted = substr($scrambled, 22);
 
     $iv = base64_decode($iv_base64);
-    if ($iv === FALSE) {
+    if ($iv === FALSE || strlen($iv) < 16) {
       throw new \Apigee\Exceptions\ParameterException('Unable to parse encrypted string.');
     }
     $decrypted = mcrypt_decrypt(MCRYPT_RIJNDAEL_128, self::$crypto_key, base64_decode($string_encrypted), MCRYPT_MODE_CBC, $iv);

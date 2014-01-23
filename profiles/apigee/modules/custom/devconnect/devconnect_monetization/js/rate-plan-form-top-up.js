@@ -1,0 +1,125 @@
+(function ($) {
+    Drupal.behaviors.devconnect_monetization_rate_plan_form_top_up = {
+        attach: function (context) {
+            $("button.btn.form-submit:visible").attr("disabled", "disabled");
+            $("input.btn.form-submit:visible").attr("disabled", "disabled");
+            var settings = Drupal.settings.devconnect_monetization_rate_plan_form;
+
+            // Retrieve form for purchase plan without insufficient balance
+            var url = settings.top_up_form_url + "/" + encodeURIComponent(settings.top_up.plan_id) + "/"
+                + encodeURI(
+                  + settings.top_up.required_balance + "|"
+                  + settings.top_up.start_date.replace(/[/]/g, '-') + "|"
+                  + settings.top_up.overlap
+                );
+            $.ajax({
+                url: url,
+                async: false,
+                dataType: "html",
+                success: function (data) {
+
+                    $("div#top-up-wrapper").append(data);
+
+                    var context = $("#topUpPurchase");
+
+                    while (true) {
+                        if (!$("#edit-amount", context).parent().is("span.topup-modal-value")) {
+                            $("#edit-amount", context).unwrap();
+                        }
+                        else {
+                            $("#edit-amount", context).unwrap();
+                            break;
+                        }
+                    }
+
+                    $("#edit-amount", context).on("focus", function(){
+                        $(this).addClass("non-editing");
+                    });
+
+                    $("#edit-amount", context).on("blur", function(){
+                        $(this).removeClass("non-editing");
+                    });
+
+                    $("#edit-amount", context).focus();
+
+                    var currency = Drupal.settings.devconnect_monetization.currencies[$("#edit-amount", context).attr("currency")];
+                    $("#edit-amount", context).maskMoney({
+                        prefix: currency.symbol + ' ',
+                        thousands: currency.thousands_separator,
+                        decimal: currency.decimal_separator,
+                        precision: currency.decimals,
+                        defaultZero: false,
+                        allowNegative: false,
+                        allowZero: false,
+                        affixesStay: false
+                    });
+                    $("#edit-amount", context).maskMoney("mask");
+                    $("#edit-amount", context).focus();
+
+                    if ($("input#edit-amount[minimum]", context).length) {
+                        $("span#span-minimum-amount").html(formatCurrencyAmount($("input#edit-amount", context).attr("minimum"), currency));
+                    }
+
+                    if ($("input#edit-amount[maximum]", context).length) {
+                        $("span#span-maximum-amount", context).html(formatCurrencyAmount($("input#edit-amount", context).attr("maximum"), currency));
+                    }
+
+                    $("input#edit-amount", context).on("keyup", function(){
+                        //var value = unmaskCurrencyAmount($(this).val(), currency) * 1.0;
+                        var value = $(this).maskMoney("unmasked")[0];
+
+                        var currentBalance = unmaskCurrencyAmount($("span#topUpCurrentBalance", context).html(), currency) * 1.0;
+                        var newBalance = formatCurrencyAmount(value + currentBalance, currency);
+                        $("span#newBalance", context).html(newBalance);
+
+                        if ($(this).attr("minimum") != undefined) {
+                            if (value < $(this).attr("minimum") * 1.0) {
+                                $("#topup_alert_minimum_required", context).show();
+                            }
+                            else {
+                                $("#topup_alert_minimum_required", context).hide();
+                            }
+                        }
+
+                        if ($(this).attr("maximum") != undefined) {
+                            if (value > $(this).attr("maximum") * 1.0) {
+                                $("#topup_alert_maximum_required", context).show();
+                            }
+                            else {
+                                $("#topup_alert_maximum_required", context).hide();
+                            }
+                        }
+
+                        // Disable submit button in any alert is visible
+                        if ($("div.alert.hide:visible", context).length) {
+                            $("#edit-submit", context).attr("disabled", "disabled");
+                            $("div#newBalanceWrapper", context).addClass("alert alert-block alert-error");
+                        }
+                        else {
+                            $("#edit-submit", context).removeAttr("disabled");
+                            $("div#newBalanceWrapper", context).removeClass("alert alert-block alert-error");
+                        }
+                    });
+
+                    context.on("hide.bs.modal", function(){
+                        var value = $("#edit-amount").maskMoney("unmasked");
+                        $("#edit-amount").maskMoney("destroy");
+                        $("#edit-amount").val(value);
+                        $("button.btn.form-submit:visible").removeAttr("disabled");
+                        $("input.btn.form-submit:visible").removeAttr("disabled");
+                    });
+
+                    context.modal({
+                        "keyboard" : true,
+                        "show" : true
+                    });
+                }
+            });
+
+            // Submit form when link is clicked
+            $("a.btn.btn-primary", "#devconnect-monetization-insufficient-top-up-form").on("click", function(e){
+                $("#devconnect-monetization-insufficient-top-up-form").submit();
+            });
+        }
+    };
+})(jQuery);

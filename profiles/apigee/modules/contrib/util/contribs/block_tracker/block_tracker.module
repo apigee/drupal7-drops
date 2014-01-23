@@ -1,0 +1,124 @@
+<?php
+/**
+ * @file
+ * Track block usage.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function block_tracker_menu() {
+  $items = array();
+
+  $items['admin/reports/block_tracker'] = array(
+    'title' => 'Block Tracker',
+    'description' => 'Block usage report',
+    'page callback' => 'block_tracker_report',
+    'access arguments' => array('administer blocks'),
+    'type' => MENU_NORMAL_ITEM,
+    );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function block_tracker_theme() {
+  return array(
+    'block_tracker_item' => array('variables' => array('item' => NULL)),
+    );
+}
+
+/**
+ * Implements hook_schema_alter().
+ * Add a last used timestamp to the blocks table.
+ */
+function block_tracker_schema_alter(&$schema) {
+  if (isset($schema['block'])) {
+    $schema['block']['fields']['lastused'] = array(
+     'description' => 'The Unix timestamp when the node was last used.',
+     'type' => 'int',
+     'not null' => TRUE,
+     'default' => 0,
+     );
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ * Update the last used timestamp in the blocks table.
+ */
+function block_tracker_preprocess_block($variables) {
+  // Update the lastused timestamp in the block.
+  db_update('block')
+    ->fields(array('lastused' => REQUEST_TIME))
+    ->condition('bid', $variables['elements']['#block']->bid)
+    ->execute();
+}
+
+/**
+ * Menu callback.
+ * Report on block usage.
+ */
+function block_tracker_report() {
+  $output = '<div id="block-tracker-report">';
+
+  $table = array(
+    'header' => array(t('Bid'), t('Module'), t('Delta'), t('Theme'), t('Status'), t('Name')),
+    'attributes' => array('style' => 'width: auto;'),
+    'rows' => array(),
+    );
+  $query = "SELECT bid, module, delta, theme, status FROM {block} WHERE lastused = 0 ORDER BY module, delta";
+  $result = db_query($query);
+
+  foreach ($result as $row) {
+    $table['rows'][] = theme('block_tracker_item', array('item' => $row)) ;
+  }
+
+  $output .= '<h3>' . t('Unused blocks') . '</h3>';
+  $output .= theme('table', $table);
+  $output .= '<p>' . t('Note: this report only lists those that have been unused since this tracker was installed.
+    Site usage usually varies, so sufficient time should be allowed before actng on this report.') . '</p>';
+
+  // Unused in a week.
+  $table['rows'] = array();
+  $query = "SELECT bid, module, delta, theme, status, lastused FROM {block} WHERE lastused > 0 AND lastused < :when ORDER BY module, delta";
+  $result = db_query($query, array(':when' => time() - 604800));
+  foreach ($result as $row) {
+    $table['rows'][] = theme('block_tracker_item', array('item' => $row)) ;
+  }
+
+  if ($table['rows']) {
+    $output .= '<h3>' . t('Blocks not used in the last week') . '</h3>';
+    $output .= theme('table', $table);
+  }
+
+  return $output . '</div>';
+}
+
+/**
+ * Theme function for report table rows.
+ */
+function theme_block_tracker_item($variables) {
+  global $theme;
+  static $titles = array();
+  $item = $variables['item'];
+
+  if (!isset($titles["$item->module-$item->delta"])) {
+    $blocks = module_invoke($item->module, 'block_info');
+    if ($title = $blocks[$item->delta]) {
+      $titles["$item->module-$item->delta"] = $blocks[$item->delta]['info'];
+    }
+  }
+
+  $row = array(
+    l($item->bid, "admin/build/block/configure/$item->module/$item->delta"),
+    $item->module,
+    $item->delta,
+    $item->theme,
+    ($item->status ? t('Enabled') : t('Disabled')),
+    (isset($titles["$item->module-$item->delta"]) ? $titles["$item->module-$item->delta"] : NULL),
+    );
+  return $row;
+}

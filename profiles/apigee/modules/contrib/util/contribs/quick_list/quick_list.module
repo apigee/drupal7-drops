@@ -27,18 +27,10 @@ function quick_list_menu() {
     'title' => 'Module Quick List',
     'type' => MENU_LOCAL_TASK,
     'page callback' => 'quick_list_page',
-    'access arguments' => array('Administer modules '),
+    'access arguments' => array('administer modules '),
     );
 
-  $items['admin/config/system/util/quick_list'] = array(
-    'title' => 'Module Quick List Settings',
-    'type' => MENU_LOCAL_TASK,
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('quick_list_settings'),
-    'access arguments' => array('Administer modules'),
-    );
-
-  return $items;
+    return $items;
 }
 
 
@@ -57,7 +49,7 @@ function quick_list_theme() {
 function quick_list_page() {
   $output = '';
   $list = array();
-  $show_core = variable_get('quick_list_show_core', FALSE);
+  $show_core = variable_get('quick_list_show_core', 0);
   $help_exists = module_exists('help');
 
   $result = db_select('system', 's')
@@ -85,7 +77,7 @@ function quick_list_page() {
 
       if ($help_exists && function_exists($row->name . '_help')) {
         $line .= ' '
-          . l('<img src="/misc/help.png" />', "admin/help#$row->name",
+          . l('<img src="/misc/help.png" />', "admin/help/$row->name",
             array('html' => TRUE, 'attributes' => array('title' => t('Help'))));
       }
 
@@ -153,26 +145,41 @@ function theme_list_table($variables) {
 }
 
 /**
- * Settings page.
+ * Implements hook_form_alter().
+ * Settings to prevent search indexing.
  */
-function quick_list_settings() {
-  $form = array();
+function quick_list_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    // Settings
+    case 'util_page':
+      // Check if they have permission to be messing with modules.
+      if (!user_access('administer modules')) {
+        return;
+      }
 
-  $form['quick_list_show_core'] = array(
-    '#type' => 'radios',
-    '#options' => array(t('No'), t('Yes')),
-    '#title' => t('Show core modules'),
-    '#default_value' => variable_get('quick_list_show_core', FALSE),
-    '#attributes' => array('class' => array('container-inline')),
-    );
+      $form['quick_list'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#title' => t('Module Quick List'),
+        '#description' => t('Provides a debugging summary of modules that are enabled.'),
+        );
 
-  $form['quick_list_columns'] = array(
-    '#type' => 'radios',
-    '#options' => array(1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5),
-    '#title' => t('Number of columns'),
-    '#default_value' => variable_get('quick_list_columns', 2),
-    '#attributes' => array('class' => array('container-inline')),
-    );
+      $form['quick_list']['quick_list_show_core'] = array(
+        '#type' => 'radios',
+        '#options' => array(t('No'), t('Yes')),
+        '#title' => t('Show core modules'),
+        '#default_value' => variable_get('quick_list_show_core', 0),
+        '#attributes' => array('class' => array('container-inline')),
+        );
 
-  return system_settings_form($form);
+      $form['quick_list']['quick_list_columns'] = array(
+        '#type' => 'radios',
+        '#options' => array(1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5),
+        '#title' => t('Number of columns'),
+        '#default_value' => variable_get('quick_list_columns', 2),
+        '#attributes' => array('class' => array('container-inline')),
+        );
+
+  }
 }

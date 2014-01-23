@@ -1850,8 +1850,9 @@ function devconnect_monetization_requirements($phase) {
   switch ($phase) {
     case 'install':
     case 'runtime':
+      require_once dirname(__FILE__) . '/devconnect_monetization.module';
       try {
-        $client = devconnect_default_api_client();
+        $client = devconnect_monetization_default_org_config();
         $organization = new Organization($client);
         $organization->load(NULL);
         $is_mint_enabled = $organization->getProperty('features.isMonetizationEnabled');
@@ -1881,9 +1882,10 @@ function devconnect_monetization_requirements($phase) {
 }
 
 /**
- * Update user roles and permissions
+ * Implement hook_update_N() Update user roles and permissions
+ * @return null|string
  */
-function devconnect_monetization_update_7424() {
+function devconnect_monetization_update_7425() {
   devconnect_monetization_setup_mint_roles();
   return t('Your site has been updated successfully');
 }

@@ -267,7 +267,7 @@ function workflow_theme() {
 function workflow_cron() {
   $clear_cache = FALSE;
   // If the time now is greater than the time to execute a transition, do it.
-  foreach (WorkflowScheduledTransition::loadBetween() as $scheduled_transition) {
+  foreach (WorkflowScheduledTransition::loadBetween(0, REQUEST_TIME) as $scheduled_transition) {
     $entity_type = $scheduled_transition->entity_type;
     $entity = $scheduled_transition->getEntity();
     $field_name = $scheduled_transition->field_name;
@@ -365,7 +365,7 @@ function workflow_state_formatter($entity_type, $entity, $field = array(), $inst
   }
   else {
     // This is a Workflow Node workflow.
-    $current_state = WorkflowState::load($current_sid);
+    $current_state = workflow_state_load($current_sid);
     $output = theme('workflow_current_state', array('state' => workflow_get_sid_label($current_sid),
                                                     'state_system_name' => $current_state->getName(),
                                                     'sid' => $current_sid));
@@ -564,7 +564,7 @@ function workflow_get_sid_label($sid) {
   if (empty($sid)) {
     $output = t('No state');
   }
-  elseif ($state = WorkflowState::load($sid)) {
+  elseif ($state = workflow_state_load($sid)) {
     $output = $state->label();
   }
   else {
@@ -580,7 +580,7 @@ function workflow_get_wid_label($wid) {
   if (empty($wid)) {
     $output = t('No workflow');
   }
-  elseif ($workflow = Workflow::load($wid)) {
+  elseif ($workflow = workflow_load($wid)) {
     $output = $workflow->label();
   }
   else {
@@ -633,7 +633,7 @@ function workflow_node_current_state($entity, $entity_type = 'node', $field_name
     // No current state. Use creation state.
     if (!$sid) {
       $field = field_info_field($field_name);
-      $workflow = Workflow::load($field['settings']['wid']);
+      $workflow = workflow_load($field['settings']['wid']);
       $sid = $workflow->getCreationSid();
     }
   }
@@ -731,7 +731,7 @@ function workflow_get_workflows_by_type($entity_bundle, $entity_type = 'node') {
     // Set the cache with a workflow object.
     $map[$entity_type][$entity_bundle] = FALSE;
     if ($wid) {
-      $workflow = Workflow::load($wid);
+      $workflow = workflow_load($wid);
 
       // Load the WorkflowItem on the Workflow, for later reference.
       $workflow->getWorkflowItem($field_item);

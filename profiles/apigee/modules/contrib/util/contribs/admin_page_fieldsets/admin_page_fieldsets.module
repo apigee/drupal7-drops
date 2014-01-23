@@ -8,8 +8,15 @@
  * Implements hook_theme_registry_alter().
  */
 function admin_page_fieldsets_theme_registry_alter(&$theme_registry) {
+  $path = drupal_get_path('module', 'admin_page_fieldsets');
   if (!empty($theme_registry['system_modules_fieldset'])) {
+//   dsm(print_r($theme_registry['system_modules_fieldset'], true));
     $theme_registry['system_modules_fieldset']['function'] = 'admin_page_fieldsets_theme_system_modules_fieldset';
+    $theme_registry['system_modules_fieldset']['theme path'] = $path;
+    $theme_registry['system_modules_fieldset']['file'] = 'admin_page_fieldsets.module';
+    // This could be better.
+    unset($theme_registry['system_modules_fieldset']['includes'][0]);
+//   dsm(print_r($theme_registry['system_modules_fieldset'], true));
   }
   if (!empty($theme_registry['user_admin_permissions'])) {
     $theme_registry['user_admin_permissions']['function'] = 'admin_page_fieldsets_theme_user_admin_permissions';
@@ -130,21 +137,31 @@ function admin_page_fieldsets_system_modules_submit($form, &$form_state) {
 function admin_page_fieldsets_theme_system_modules_fieldset($variables) {
   $display_weights = variable_get('admin_page_fieldsets_module_weight'); //***
   $form = $variables['form'];
+
+  // Individual table headers.
   $rows = array();
+  // Iterate through all the modules, which are
+  // children of this fieldset.
   foreach (element_children($form) as $key) {
+    // Stick it into $module for easier accessing.
     $module = $form[$key];
     $row = array();
+
     unset($module['enable']['#title']);
     $row[] = array('class' => array('checkbox'), 'data' => drupal_render($module['enable']));
+
     $label = '<label';
     if (isset($module['enable']['#id'])) {
       $label .= ' for="' . $module['enable']['#id'] . '"';
     }
     $row[] = $label . '><strong>' . drupal_render($module['name']) . '</strong></label>';
     $row[] = drupal_render($module['version']);
-    if ($display_weights) { //***
+
+    if ($display_weights) {
       $row[] = drupal_render($module['weight']);
     }
+
+    // Add the description, along with any modules it requires.
     $description = drupal_render($module['description']);
     if ($module['#requires']) {
       $description .= '<div class="admin-requirements">' . t('Requires: !module-list', array('!module-list' => implode(', ', $module['#requires']))) . '</div>';
@@ -153,14 +170,15 @@ function admin_page_fieldsets_theme_system_modules_fieldset($variables) {
       $description .= '<div class="admin-requirements">' . t('Required by: !module-list', array('!module-list' => implode(', ', $module['#required_by']))) . '</div>';
     }
     $row[] = array('data' => $description, 'class' => array('description'));
+    // Display links (such as help or permissions) in their own columns.
     foreach (array('help', 'permissions', 'configure') as $key) {
       $row[] = array('data' => drupal_render($module['links'][$key]), 'class' => array($key));
     }
     $rows[] = $row;
   }
+
   return theme('table', array('header' => $form['#header'], 'rows' => $rows));
 }
-
 
 /**
  * Implements hook_form_FORM_ID_alter() for user_admin_permissions().

@@ -1,0 +1,13 @@
+name = Log Cleanup
+description = Clean up watchdog messages.
+core = 7.x
+config = 'admin/config/system/util/cleanup'
+dependencies[] = dblog
+dependencies[] = util
+package = Util
+; Information added by Drupal.org packaging script on 2014-01-22
+version = "7.x-1.0-rc2"
+core = "7.x"
+project = "util"
+datestamp = "1390427606"
+

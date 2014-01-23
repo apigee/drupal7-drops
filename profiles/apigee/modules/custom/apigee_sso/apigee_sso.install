@@ -5,14 +5,14 @@
  * one more than locale's weight, so we can set locale values
  * on the registration form.
  */
-function apigee_sso_update_7424(&$sandbox) {
+function apigee_sso_update_7425(&$sandbox) {
   $locale_weight = 0;
   if (module_exists('locale')) {
     $locale_weight = db_select('system', 's')
-      ->fields('s', 'weight')
+      ->fields('s', array('weight'))
       ->condition('name', 'locale')
       ->execute()
-      ->fetchCol();
+      ->fetchField();
   }
   db_update('system')
     ->fields(array('weight' => $locale_weight + 1))

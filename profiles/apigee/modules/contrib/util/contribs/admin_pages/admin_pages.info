@@ -1,0 +1,13 @@
+name = Admin Pages
+description = "Identify pages as admin so they open as modal (overlay) pages."
+core = 7.x
+dependencies[] = util
+dependencies[] = overlay
+package = Util
+
+; Information added by Drupal.org packaging script on 2014-01-22
+version = "7.x-1.0-rc2"
+core = "7.x"
+project = "util"
+datestamp = "1390427606"
+

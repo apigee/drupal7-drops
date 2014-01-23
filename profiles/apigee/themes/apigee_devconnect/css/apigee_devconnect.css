@@ -215,10 +215,10 @@ body.html.front.no-sidebars .page-content .container .row section.span24 section
     padding-right: 4%;
 }
 
-#block-views-hot-topics-block {
+body.html.front.no-sidebars .page-content .container .row section.span24 #block-views-hot-topics-block {
     width: 20%;
 }
-#block-views-hot-topics-block .view {
+body.html.front.no-sidebars .page-content .container .row section.span24 #block-views-hot-topics-block .view {
     border-right: 0px none;
 
 }

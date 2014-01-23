@@ -9,69 +9,18 @@ use Apigee\Mint\Organization;
 use Apigee\Mint\DataStructures\DeveloperTnc;
 use Apigee\Mint\TermAndCondition;
 use Apigee\Mint\DataStructures\Address;
-use Apigee\ManagementAPI\Developer;
 use Apigee\Mint\Types\Country;
 
-function devconnet_monetization_company_profile_tabs($user, $active_tab) {
-  drupal_set_title(t('Company Profile'));
-  $me = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
-  $base_path = 'users/' . $me . '/monetization/company';
-  $tabs = array(
-    'attributes' => array(
-      array(
-        'name' => 'id',
-        'value' => 'company_settings_tabs',
-      ),
-    ),
-    'tabs' => array(
-      $base_path . '/edit' => array(
-        'text' => t('Contact Info'),
-        'access callback' => 'user_access',
-        'access args' => array('edit mint company profile'),
-        'pane' => array('class' => 'company-info'),
-        'active' => 'edit' == $active_tab,
-        'callback' => 'drupal_get_form',
-        'callback args' => array('devconnect_monetization_company_details_form'),
-      ),
-      $base_path . '/bank-details' => array(
-        'text' => t('Bank &amp; Finance'),
-        'access callback' => 'user_access',
-        'access args' => array('edit mint bank details'),
-        'active' => 'bank-details' == $active_tab,
-        'pane' => array('class' => 'bank-info'),
-        'callback' => 'drupal_get_form',
-        'callback args' => array('devconnect_monetization_company_bank_details_form'),
-      ),
-      $base_path . '/tncs' => array(
-        'text' => t('Terms &amp; Conditions'),
-        'access callback' => 'user_access',
-        'access args' => array('view mint terms and conditions'),
-        'pane' => array('class' => 'tnc'),
-        'active' => 'tncs' == $active_tab,
-        'callback' => 'devconnect_monetization_list_tncs',
-      ),
-      $base_path . '/user-roles' => array(
-        'text' => t('Manage User Roles'),
-        'access callback' => 'user_access',
-        'access args' => array('edit mint developers roles'),
-        'pane' => array('class' => 'user-roles'),
-        'active' => 'user-roles' == $active_tab,
-        'callback' => 'devconnect_monetization_company_users_forms',
-      ),
-    ),
-  );
-  if (!array_key_exists($base_path . '/' . $active_tab, $tabs['tabs'])) {
-    drupal_not_found();
-  }
-  module_load_include('inc', 'devconnect_monetization', 'devconnect_monetization.tabs');
-  $output = devconnect_monetization_theme_tabs($tabs);
-  return $output;
-}
-
-function devconnect_monetization_company_users_forms() {
+/**
+ * Page callback for users/%devconnect_monetization_developer/monetization/company/developers
+ *
+ * @param \Apigee\Mint\Developer $developer
+ * @return string
+ */
+function devconnect_monetization_company_users_forms(\Apigee\Mint\Developer $developer) {
   // Manage Users tab
-  $manage_users_form = drupal_get_form('devconnect_monetization_roles_form');
-  $associate_new_user_form = drupal_get_form('devconnect_monetization_users_add_to_company_form');
+  $manage_users_form = drupal_get_form('devconnect_monetization_roles_form', $developer);
+  $associate_new_user_form = drupal_get_form('devconnect_monetization_users_add_to_company_form', $developer);
 
   $variables = array(
     'manage_users_form' => drupal_render($manage_users_form),
@@ -81,14 +30,21 @@ function devconnect_monetization_company_users_forms() {
   return $output;
 }
 
-function devconnect_monetization_company_details_form() {
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $developer = new \Apigee\Mint\Developer(devconnect_monetization_default_org_config());
-  $developer->load($developer_id);
+/**
+ * Form builder for page callback:
+ *   users/%devconnect_monetization_developer/monetization/company
+ *   users/%devconnect_monetization_developer/monetization/company/edit
+ *
+ * @param $form
+ * @param $form_state
+ * @param \Apigee\Mint\Developer $developer
+ * @return array
+ */
+function devconnect_monetization_company_details_form($form, &$form_state, \Apigee\Mint\Developer $developer) {
 
-  $dev = new Developer(devconnect_default_api_client());
-  $dev->load($developer_id);
-
+  $dev = new \Apigee\ManagementAPI\Developer(devconnect_monetization_default_org_config());
+  $dev->load($developer->getEmail());
+  $form = array();
   $form['#attributes']['class'][] = 'form-horizontal';
 
   $form['company_details'] = array(
@@ -345,8 +301,10 @@ function devconnect_monetization_company_details_form_submit(&$form, &$form_stat
     entity_save('user', $account);
     drupal_set_message(t('Your Company Profile Info has been saved.'), 'status');
     module_invoke_all('devconnect_monetization_developer_upgraded_to_company', $account);
-    if (isset($_REQUEST['return'])) {
-      drupal_goto($_REQUEST['return']);
+    if (isset($_SESSION['return_here'])) {
+      list($url, $fragment) = explode("#", $_SESSION['return_here']);
+      $form_state['redirect'] = array($url, array('fragment' => rawurldecode($fragment)));
+      unset($_SESSION['return_here']);
     }
   } catch (\Exception $e) {
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
@@ -354,15 +312,19 @@ function devconnect_monetization_company_details_form_submit(&$form, &$form_stat
   }
 }
 
-function devconnect_monetization_company_bank_details_form() {
+/**
+ * Form builder for page callback:
+ *   users/%devconnect_monetization_developer/monetization/company/bank-details
+ *
+ * @param $form
+ * @param $form_state
+ * @param \Apigee\Mint\Developer $developer
+ * @return mixed
+ */
+function devconnect_monetization_company_bank_details_form($form, $form_state, \Apigee\Mint\Developer $developer) {
 
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
   $config = devconnect_monetization_default_org_config();
-
-  $developer = new \Apigee\Mint\Developer($config);
-  $developer->setEmail($developer_id);
   $bank_detail = $developer->getBankDetails();
-
   $organization = new Organization($config);
   $currencies = $organization->listSupportedCurrencies();
 
@@ -532,29 +494,34 @@ function devconnect_monetization_company_bank_details_form_submit(&$form, &$form
   }
 }
 
-/* Monetization Roles */
-function devconnect_monetization_roles_form() {
-
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+/**
+ * Form builder for monetization roles
+ *
+ * @param $form
+ * @param $form_state
+ * @param \Apigee\Mint\Developer $developer
+ * @return array
+ */
+function devconnect_monetization_roles_form($form, $form_state, \Apigee\Mint\Developer $developer) {
 
   $query = new EntityFieldQuery();
   $child_developers = $query
     ->entityCondition('entity_type', 'user')
     ->entityCondition('bundle', 'user')
-    ->fieldCondition('field_mint_company_id', 'value', $developer_id, '=')
+    ->fieldCondition('field_mint_company_id', 'value', $developer->getEmail(), '=')
     ->execute();
 
   $child_ids = isset($child_developers['user']) && is_array($child_developers['user']) ? array_keys($child_developers['user']) : array();
 
-  $developers = count($child_ids) > 0 ? entity_load('user', $child_ids) : array();
+  $users = count($child_ids) > 0 ? entity_load('user', $child_ids) : array();
 
-  $admin_uid = $developer_id == $GLOBALS['user']->mail ? $GLOBALS['user']->uid : user_load_by_mail($developer_id)->uid;
-  $developers = entity_load('user', array($admin_uid)) + $developers;
+  $admin_uid = $developer->getEmail() == $GLOBALS['user']->mail ? $GLOBALS['user']->uid : user_load_by_mail($developer->getEmail())->uid;
+  $users = entity_load('user', array($admin_uid)) + $users;
   $form = array();
   $dev_list = array();
-  foreach ($developers as $uid => $developer) {
-    $dev_name = isset($developer->field_first_name[LANGUAGE_NONE][0]['value']) ? $developer->field_first_name[LANGUAGE_NONE][0]['value'] : '';
-    $dev_name .= isset($developer->field_last_name[LANGUAGE_NONE][0]['value']) ? ('&nbsp;' . $developer->field_last_name[LANGUAGE_NONE][0]['value']) : '';
+  foreach ($users as $uid => $user) {
+    $dev_name = isset($user->field_first_name[LANGUAGE_NONE][0]['value']) ? $user->field_first_name[LANGUAGE_NONE][0]['value'] : '';
+    $dev_name .= isset($user->field_last_name[LANGUAGE_NONE][0]['value']) ? ('&nbsp;' . $user->field_last_name[LANGUAGE_NONE][0]['value']) : '';
     $dev_list[$uid] = array(
       'name' => array(
         '#type' => 'item',
@@ -562,15 +529,15 @@ function devconnect_monetization_roles_form() {
       ),
       "admin[$uid]" => array(
         '#type' => 'checkbox',
-        '#default_value' => in_array(MONETIZATION_ADMIN_ROLE_NAME, $developer->roles),
+        '#default_value' => in_array(MONETIZATION_ADMIN_ROLE_NAME, $user->roles),
       ),
       "finance[$uid]" => array(
         '#type' => 'checkbox',
-        '#default_value' => in_array(MONETIZATION_FINANCE_ADMIN_ROLE_NAME, $developer->roles),
+        '#default_value' => in_array(MONETIZATION_FINANCE_ADMIN_ROLE_NAME, $user->roles),
       ),
       "developer[$uid]" => array(
         '#type' => 'checkbox',
-        '#default_value' => in_array(MONETIZATION_DEVELOPER_ROLE_NAME, $developer->roles),
+        '#default_value' => in_array(MONETIZATION_DEVELOPER_ROLE_NAME, $user->roles),
       ),
       "action[$uid]" => array(
         '#markup' => l(t('Delete'), 'users/' . $GLOBALS['user']->uid . '/monetization/company/remove-developer/' . $uid, array('attributes' => array('class' => array('btn'))))
@@ -578,7 +545,7 @@ function devconnect_monetization_roles_form() {
     );
 
     // Keep company admin and self user from editing its roles
-    if ($developer->mail == $GLOBALS['user']->mail || $uid == $admin_uid) {
+    if ($user->mail == $GLOBALS['user']->mail || $uid == $admin_uid) {
       if ($uid == $admin_uid) {
         $dev_list[$uid]['name'] += array(
           '#prefix' => '<strong>',
@@ -699,8 +666,16 @@ function theme_devconnect_monetization_roles_form($variables) {
   return $output;
 }
 
-function devconnect_monetization_users_add_to_company_form() {
+/**
+ * Form builder to add users to a company
+ *
+ * @param \Apigee\Mint\Developer $developer
+ *
+ * @return array
+ */
+function devconnect_monetization_users_add_to_company_form($form, $form_state, \Apigee\Mint\Developer $developer) {
 
+  $form = array();
   $form['user_email_address'] = array(
     '#type' => 'textfield',
     '#title' => t('Enter User Email Address'),
@@ -763,8 +738,15 @@ function devconnect_monetization_users_add_to_company_form_submit($form, &$form_
   }
 }
 
-function devconnect_monetization_users_autocomplete($string) {
-  $developer = new Developer(devconnect_monetization_default_org_config());
+/**
+ * Page callback for
+ *   users/%devconnect_monetization_developer
+ *
+ * @param $string
+ * @param \Apigee\Mint\Developer $developer
+ */
+function devconnect_monetization_users_autocomplete($string, \Apigee\Mint\Developer $developer) {
+  $developer = new \Apigee\ManagementAPI\Developer(devconnect_monetization_default_org_config());
   $developers = $developer->listDevelopers();
   $emails = array();
   foreach ($developers as $developer_item) {
@@ -776,7 +758,14 @@ function devconnect_monetization_users_autocomplete($string) {
   return;
 }
 
-function devconnect_monetization_user_remove_from_company($uid) {
+/**
+ * Page callback for
+ *   users/%devconnect_monetization_developer/monetization/company/developers/%/remove
+ *
+ * @param $uid
+ * @param \Apigee\Mint\Developer $developer
+ */
+function devconnect_monetization_user_remove_from_company($uid, \Apigee\Mint\Developer $developer) {
   try {
     $child_entity = entity_load_single('user', $uid);
     $company_id = $child_entity->field_mint_company_id[LANGUAGE_NONE][0]['value'];
@@ -796,9 +785,15 @@ function devconnect_monetization_user_remove_from_company($uid) {
   }
 }
 
-function devconnect_monetization_list_tncs() {
+/**
+ * Page callback for
+ *   users/%devconnect_monetization_developer/monetization/company/tncs
+ *
+ * @param \Apigee\Mint\Developer $developer
+ * @return string
+ */
+function devconnect_monetization_list_tncs(\Apigee\Mint\Developer $developer) {
 
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
   $config = devconnect_monetization_default_org_config();
   $tnc = new TermAndCondition($config);
   $tncs = $tnc->getList(TRUE);
@@ -823,7 +818,7 @@ function devconnect_monetization_list_tncs() {
     return 0;
   });
 
-  $dev_tncs = $tnc->getAcceptedDevTermsAndConditions($developer_id);
+  $dev_tncs = $tnc->getAcceptedDevTermsAndConditions($developer->getEmail());
 
   $tncs_forms = array();
   foreach ($tncs as $tnc) {
@@ -905,8 +900,10 @@ function devconnect_monetization_accept_tnc_form_submit($form, &$form_state) {
     CacheFactory::getCacheManager(NULL)->clear('developer_accepted_tncs:' . $developer_id);
     module_invoke_all('devconnect_monetization_developer_accepted_tncs', $tnc);
     drupal_set_message(t('You have accepted terms and conditions successfully.'));
-    if (isset($_REQUEST['return'])) {
-      drupal_goto($_REQUEST['return']);
+    if (isset($_SESSION['return_here'])) {
+      list($url, $fragment) = explode("#", $_SESSION['return_here']);
+      $form_state['redirect'] = array($url, array('fragment' => rawurldecode($fragment)));
+      unset($_SESSION['return_here']);
     }
   } catch (Exception $e) {
     drupal_set_message(t('Error while trying to accept TnCs. Please try again later.'));
@@ -1005,9 +1002,9 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
               'currency',
               'replenish',
             ),
-            '#description' => t('Replenish amount must be lower.'),
+            'title' => t('Replenish amount cannot be greater than Recurring amount.'),
             'currency' => $balance->getSupportedCurrency()->name,
-            'minimum' => $balance->getSupportedCurrency()->minimumRecurringAmount,
+            'minimum' => $balance->getSupportedCurrency()->minimumRecurringAmount * 1.0,
           ),
           '#disabled' => !$balance->isRecurring(),
         )
@@ -1023,11 +1020,7 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
   );
 
   $form['#attached']['js'][] = array(
-    'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/validator.js',
-    'type' => 'file'
-  );
-  $form['#attached']['js'][] = array(
-    'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/devconnect_monetization.recurring_table.js',
+    'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/recurring-table.js',
     'type' => 'file'
   );
 
@@ -1061,7 +1054,11 @@ function devconnect_monetization_recurring_payment_form_submit($form, $form_stat
   $developerBalance = new DeveloperBalance($developer_id, $config);
   foreach ($form_state['input']['balances']['items'] as $currency => $new_setup) {
     $new_setup['provider'] = $form_state['values']['balances']['items'][$currency]['provider'];
-    $developerBalance->updateRecurringSetup($currency, $new_setup['is_recurring'], $new_setup['replenish_amount'], $new_setup['recurring_amount'], $new_setup['provider']);
+    $recurring_choice = array(
+      'isRecurring' => (bool) $new_setup['is_recurring'],
+      'chargePerUsage' => (bool) $new_setup['charge_per_usage'],
+    );
+    $developerBalance->updateRecurringSetup($currency, $recurring_choice, $new_setup['replenish_amount'], $new_setup['recurring_amount'], $new_setup['provider']);
   }
 }
 

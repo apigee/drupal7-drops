@@ -32,21 +32,21 @@ function devconnect_user_permission() {
 function devconnect_user_menu() {
   $items = array();
   $items['admin/people/sync'] = array(
-    'title' => t('DevConnect Developer Sync'),
+    'title' => t('Dev Portal Developer Sync'),
     'page callback' => 'devconnect_user_sync',
     'access arguments' => array('administer users'),
     'type' => MENU_LOCAL_TASK,
     'menu_name' => 'api_products',
   );
   $items['admin/config/people/devconnect/settings'] = array(
-    'title' => t('DevConnect User Settings'),
+    'title' => t('Dev Portal User Settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_settings_form'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items['admin/config/people/attributes'] = array(
-    'title' => t('DevConnect User Attributes'),
+    'title' => t('Dev Portal User Attributes'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_attributes_form'),
     'access arguments' => array('administer site configuration'),
@@ -86,7 +86,7 @@ function devconnect_user_settings_form($form, &$form_state) {
 }
 
 /**
- * Implements hook_form_validate
+ * Validate handler for devconnect_user_settings_form.
  */
 function devconnect_user_settings_form_validate($form, &$form_state) {
   $path = $form_state['values']['apigee_user_redirect_path'];
@@ -96,7 +96,7 @@ function devconnect_user_settings_form_validate($form, &$form_state) {
 }
 
 /**
- * Implements hook_form_submit
+ * Submit hander for devconnect_user_settings_form.
  */
 function devconnect_user_settings_form_submit($form, &$form_state) {
   variable_set('apigee_user_redirect_path', $form_state['values']['apigee_user_redirect_path']);
@@ -141,6 +141,7 @@ function devconnect_user_entity_info() {
 function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     case 'user_profile_form':
+
       // Breadcrumb navigation
       $breadcrumb[] = l(t('Home'), NULL);
       $breadcrumb[] = l($form['#user']->name, 'user');
@@ -163,19 +164,30 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
         }
       }
 
+      // Email address is now immutable, to keep it in line with
+      // KMS product requirements.
+      $form['account']['mail']['#disabled'] = TRUE;
+      $form['account']['mail']['#description'] = t('All emails from the system will be sent to this address.');
+      $form['account']['mail']['#title'] = str_replace('E-mail', 'Email', $form['account']['mail']['#title']);
+      $form['account']['current_pass']['#description'] = t('Enter your current password to change your password.')
+        . ' '
+        . l(t('Request new password'), 'user/password', array('attributes' => array('title' => t('Request new password via email.'))))
+        . '.';
+
       // Add a link to openid admin page only if the apigee_sso module is enabled
       if (module_exists('apigee_sso')) {
         $middle_arg = (module_exists('me') && $form['#user']->uid == $GLOBALS['user']->uid) ? 'me' : $form['#user']->uid;
-        $href = base_path() . 'user/' . $middle_arg . '/openid';
         $form['openid'] = array(
-          '#markup' => '<div class="control-group form-openid"><div class="control-label" style="margin-bottom: 5px;">OpenID</div><div class="controls"><a href="' . $href . '">Manage your OpenIDs</a></div></div>',
+          '#markup' => l(t('Manage your OpenIDs'), 'user/' . $middle_arg . '/openid'),
+          '#prefix' => '<div class="control-group form-openid"><div class="control-label" style="margin-bottom: 5px;">',
+          '#suffix' => '</div></div>',
           '#weight' => 2,
         );
         return $form;
       }
       break;
 
-    case "user_register_form":
+    case 'user_register_form':
       drupal_add_css(drupal_get_path('module', 'devconnect_user') . '/devconnect_user.css',
         array('group' => CSS_THEME, 'every_page' => TRUE)
       );

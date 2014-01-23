@@ -139,6 +139,7 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
           list($trans_id) = array_keys($transactions['commerce_payment_transaction']);
           $transaction = commerce_payment_transaction_load($trans_id);
 
+          //$transaction_desc = str_replace("\r\n", '', $transaction->payload[$transaction->revision_timestamp]['desc']);
           $new_balance = array(
             'amount' => commerce_currency_amount_to_decimal($amount['amount'], $amount['currency_code']),
             'providerTxId' => $transaction->remote_id,

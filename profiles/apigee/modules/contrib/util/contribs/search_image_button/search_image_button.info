@@ -1,0 +1,12 @@
+name = Search Image Button
+description = Alters the Search form to provide an image button.
+core = 7.x
+package = Util
+dependencies[] = util
+
+; Information added by Drupal.org packaging script on 2014-01-22
+version = "7.x-1.0-rc2"
+core = "7.x"
+project = "util"
+datestamp = "1390427606"
+

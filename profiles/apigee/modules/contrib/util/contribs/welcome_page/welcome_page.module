@@ -1,0 +1,137 @@
+<?php
+/**
+ * @file
+ * Allow a site to have a welcome page without allowing other content to be viewed.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function welcome_page_permission() {
+  return array('configure welcome page' => array('title' => 'Configure Welcome Page'));
+}
+
+/**
+ * Implements hook_help().
+ */
+function welcome_page_help($path, $args) {
+  switch ($path) {
+    case 'admin/help#welcome_page':
+      return '<p>'
+        . t('The Welcome Page module facilitates a site having a welcome page that can be viewed by anonymous users
+          while allowing all other content to be limited by other means.')
+        . ' '
+        . t('Such limitations may be from permissions or access control routines.')
+        . '</p>'
+        . '<p>'
+        . t('One common use is to remove the "access published content" permission from anonymous users,
+          while allowing this module to show a front page.')
+        . '</p>'
+        ;
+
+    case 'admin/config/system/welcome':
+      return '<p>' . t('You may set up a freely viewable front (welcome) page here.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function welcome_page_menu() {
+  $items = array();
+
+  // Note: the default site front page setting must point here.
+  $items['welcome'] = array(
+    'title' => variable_get('welcome_page_welcome_title', 'Welcome'),
+    'access callback' => TRUE,
+    'page callback' => 'welcome_page_welcome_page',
+    );
+
+  $items['admin/config/system/util/welcome'] = array(
+    'title' => 'Welcome Page',
+    'access arguments' => array('configure welcome page'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('welcome_page_welcome_page_form'),
+    'type' => MENU_LOCAL_TASK,
+    );
+
+  return $items;
+}
+
+/**
+ * Display the welcome page or redirect into the site.
+ */
+function welcome_page_welcome_page() {
+  global $user;
+  
+  // If the user is logged in, then just do a normal front page.
+  if ($user->uid) {
+    drupal_goto(variable_get('welcome_page_redirect', 'node'));
+  }
+
+  // Otherwise, create a render array for our stuff.
+  $build = array();
+  $build['welcome_message'] = array(
+    '#markup' => check_markup(variable_get('welcome_page_welcome_body', 'Welcome to the site!'),
+      variable_get('welcome_page_welcome_format', NULL)),
+  );
+
+  return $build;
+}
+
+/**
+ * Form for module settings.
+ */
+function welcome_page_welcome_page_form($form, $form_state) {
+  $form = array();
+
+  $form['welcome_page_welcome_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Welcome Page Title'),
+    '#description' => t('The title of your welcome page'),
+    '#default_value' => variable_get('welcome_page_welcome_title', 'Welcome'),
+    );
+
+  $form['welcome_page_welcome_body'] = array(
+    '#type' => 'text_format',
+    '#title' => t('Welcome Page Body'),
+    '#format' => variable_get('welcome_page_welcome_format', NULL),
+    '#default_value' => variable_get('welcome_page_welcome_body', 'Welcome to the Site!'),
+    );
+
+  $form['welcome_page_redirect'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Redirect to'),
+    '#format' => variable_get('welcome_page_redirect', NULL),
+    '#default_value' => variable_get('welcome_page_redirect', 'node'),
+    '#description' => t('The path to which logged in users should be redirected.'),
+    );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save configuration',
+    );
+
+  return $form;
+}
+
+/**
+ * Settings form submission handler.
+ */
+function welcome_page_welcome_page_form_submit($form, $form_state) {
+  if (isset($form_state['values']['welcome_page_welcome_title']) && $form_state['values']['welcome_page_welcome_title']) {
+    variable_set('welcome_page_welcome_title', $form_state['values']['welcome_page_welcome_title']);
+  }
+
+  if (isset($form_state['values']['welcome_page_welcome_body']['value']) && $form_state['values']['welcome_page_welcome_body']['value']) {
+    variable_set('welcome_page_welcome_body', $form_state['values']['welcome_page_welcome_body']['value']);
+  }
+
+  if (isset($form_state['values']['welcome_page_welcome_body']['format']) && $form_state['values']['welcome_page_welcome_body']['format']) {
+    variable_set('welcome_page_welcome_format', $form_state['values']['welcome_page_welcome_body']['format']);
+  }
+  
+  variable_set('welcome_page_redirect', $form_state['values']['welcome_page_redirect']);
+  drupal_set_message(t('Welcome page settings saved'));
+  menu_rebuild();
+}

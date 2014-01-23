@@ -8,7 +8,154 @@
  * Implements hook_schema().
  */
 function responsive_preview_schema() {
-  $schema['responsive_preview'] = array(
+  $schema['responsive_preview'] = _responsive_preview_get_schema();
+
+  return $schema;
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function responsive_preview_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $libraries = array(
+      'underscore' => 'Underscore',
+      'backbone' => 'Backbone',
+    );
+    foreach ($libraries as $lib => $label) {
+      $requirements['responsive_preview_' . $lib] = array(
+        'title' => t('Responsive preview: @library library', array('@library' => $label)),
+        'value' => t('The @library library is not present', array('@library' => $label)),
+        'severity' => REQUIREMENT_ERROR,
+      );
+      if (function_exists('libraries_detect')) {
+        if (($library = libraries_detect($lib)) && !empty($library['installed'])) {
+          $requirements['responsive_preview_' . $lib]['value'] = t('@version (@variant)', array(
+            '@version' => $library['version'],
+            // @todo This is problematic, because there is no way to enforce a
+            //   certain variant.
+            '@variant' => _responsive_preview_libraries_get_preferred_variant_name($library),
+          ));
+          $requirements['responsive_preview_' . $lib]['severity'] = REQUIREMENT_OK;
+        }
+        elseif (!empty($library['error'])) {
+          $requirements['responsive_preview_' . $lib]['description'] = $library['error message'];
+        }
+      }
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function responsive_preview_install() {
+  /* References:
+   * - http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
+   * - http://www.w3.org/blog/CSS/2012/06/14/unprefix-webkit-device-pixel-ratio/
+   * - http://pieroxy.net/blog/2012/10/18/media_features_of_the_most_common_devices.html
+   */
+  $devices = _responsive_preview_get_devices();
+
+  // Insert the preconfigured devices into the database.
+  $query = db_insert('responsive_preview');
+  $query->fields(array(
+    'name',
+    'label',
+    'width',
+    'height',
+    'dppx',
+    'orientation',
+    'weight',
+    'status',
+    'langcode',
+  ));
+  foreach($devices as $device) {
+    $query->values($device);
+  }
+  $transaction = db_transaction();
+  try {
+    $query->execute();
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('responsive_preview', $e);
+    throw $e;
+  }
+}
+
+/**
+ * Update configuration to the DB schema.
+ */
+function responsive_preview_update_7000() {
+  $devices = _responsive_preview_get_devices();
+  // Create the responsive_preview db table.
+  if (!db_table_exists('responsive_preview')) {
+    db_create_table('responsive_preview', _responsive_preview_get_schema());
+  }
+  // Get a list of existing devices in the DB. This might have happened if
+  // a user updated the code but didn't run update db and somehow "forced" the
+  // module to work and added some devices.
+  $existing_devices = db_query("SELECT * FROM {responsive_preview}")->fetchAllAssoc('name', PDO::FETCH_ASSOC);
+  // Insert devices.
+  $devices_old_format = variable_get('responsive_preview_devices', array());
+  foreach($devices_old_format as $name => $data) {
+    // Make sure the name of the device isn't already in the database. Skip it
+    // if it is.
+    if (array_key_exists($name, $existing_devices)) {
+      continue;
+    }
+    // Store the converted device information. Prefer this data to the default
+    // device definition because there exists the chance that a user altered
+    // the device information. They can always edit the data later.
+    $devices[$name] = array(
+      'name' => $name,
+      'label' => $data['label'],
+      'width' => (!empty($data['dimensions']['width'])) ? $data['dimensions']['width'] : 0,
+      'height' => (!empty($data['dimensions']['height'])) ? $data['dimensions']['height'] : 0,
+      'dppx' => (!empty($data['dimensions']['dppx'])) ? $data['dimensions']['dppx'] : 0,
+      'orientation' => $data['orientation'],
+      'weight' => (!empty($devices[$name]['weight'])) ? $devices[$name]['weight'] : 0,
+      'status' => (!empty($devices[$name]['status'])) ? $devices[$name]['status'] : 0,
+      'langcode' => 'en',
+    );
+  }
+  // Insert the preconfigured devices into the database.
+  $query = db_insert('responsive_preview');
+  $query->fields(array(
+    'name',
+    'label',
+    'width',
+    'height',
+    'dppx',
+    'orientation',
+    'weight',
+    'status',
+    'langcode',
+  ));
+  foreach($devices as $device) {
+    $query->values($device);
+  }
+  $transaction = db_transaction();
+  try {
+    $query->execute();
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('responsive_preview', $e);
+    throw $e;
+  }
+}
+
+/**
+ * Returns the schema defintion for the responsive_preview table.
+ */
+function _responsive_preview_get_schema() {
+  return array(
     'description' => '',
     'fields' => array(
       'name' => array(
@@ -80,21 +227,14 @@ function responsive_preview_schema() {
       'list' => array('weight', 'name'),
     ),
   );
-
-  return $schema;
 }
 
 /**
- * Implements hook_install().
+ * Returns the default devices available for preview.
  */
-function responsive_preview_install() {
-  /* References:
-   * - http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
-   * - http://www.w3.org/blog/CSS/2012/06/14/unprefix-webkit-device-pixel-ratio/
-   * - http://pieroxy.net/blog/2012/10/18/media_features_of_the_most_common_devices.html
-   */
-  $devices = array(
-    array(
+function _responsive_preview_get_devices() {
+  return array(
+    'small' => array(
       'name' => 'small',
       'label' => 'Smart phone',
       'width' => 768,
@@ -105,7 +245,7 @@ function responsive_preview_install() {
       'status' => 0,
       'langcode' => 'en',
     ),
-    array(
+    'medium' => array(
       'name' => 'medium',
       'label' => 'Tablet',
       'width' => 800,
@@ -116,7 +256,7 @@ function responsive_preview_install() {
       'status' => 0,
       'langcode' => 'en',
     ),
-    array(
+    'large' => array(
       'name' => 'large',
       'label' => 'Typical desktop',
       'width' => 1366,
@@ -127,7 +267,7 @@ function responsive_preview_install() {
       'status' => 0,
       'langcode' => 'en',
     ),
-    array(
+    'iphone5' => array(
       'name' => 'iphone5',
       'label' => 'iPhone 5',
       'width' => 640,
@@ -138,7 +278,7 @@ function responsive_preview_install() {
       'status' => 1,
       'langcode' => 'en',
     ),
-    array(
+    'iphone4' => array(
       'name' => 'iphone4',
       'label' => 'iPhone 4',
       'width' => 640,
@@ -149,7 +289,7 @@ function responsive_preview_install() {
       'status' => 1,
       'langcode' => 'en',
     ),
-    array(
+    'ipad' => array(
       'name' => 'ipad',
       'label' => 'iPad',
       'width' => 1536,
@@ -160,7 +300,7 @@ function responsive_preview_install() {
       'status' => 1,
       'langcode' => 'en',
     ),
-    array(
+    'nexus4' => array(
       'name' => 'nexus4',
       'label' => 'Nexus 4',
       'width' => 768,
@@ -171,7 +311,7 @@ function responsive_preview_install() {
       'status' => 1,
       'langcode' => 'en',
     ),
-    array(
+    'nexus7' => array(
       'name' => 'nexus7',
       'label' => 'Nexus 7',
       'width' => 800,
@@ -183,30 +323,4 @@ function responsive_preview_install() {
       'langcode' => 'en',
     ),
   );
-
-  // Insert the preconfigured devices into the database.
-  $query = db_insert('responsive_preview');
-  $query->fields(array(
-    'name',
-    'label',
-    'width',
-    'height',
-    'dppx',
-    'orientation',
-    'weight',
-    'status',
-    'langcode',
-  ));
-  foreach($devices as $device) {
-    $query->values($device);
-  }
-  $transaction = db_transaction();
-  try {
-    $query->execute();
-  }
-  catch (Exception $e) {
-    $transaction->rollback();
-    watchdog_exception('responsive_preview', $e);
-    throw $e;
-  }
 }

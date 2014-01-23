@@ -6,10 +6,10 @@
  * Time: 10:15 AM
  */
 
-use Apigee\Mint\CurrencyISO4217;
 use Apigee\Mint\Developer;
 use Apigee\Mint\DeveloperBalance;
 use Apigee\Mint\Provider;
+use Apigee\Util\Log;
 
 define('SUCCESS_RESPONSE_URL', 'devconnect/mint/payment/wp/success');
 define('PENDING_RESPONSE_URL', 'devconnect/mint/payment/wp/pending');
@@ -62,9 +62,9 @@ function devconnect_mint_worldpay_menu() {
 function devconnect_mint_worldpay_settings_form($settings = NULL) {
 
   $settings = (array) $settings + array(
-    'devconnect_mint_worldpay_provider_id' => 'fixme',
-    'devconnect_mint_worldpay_mac_secret' => 'fixme',
-    'devconnect_mint_worldpay_signature_fields' => implode('+', _devconnect_mint_worldpay_signature_fields()),
+    'devconnect_mint_worldpay_provider_id' => 'worldpay',
+    'devconnect_mint_worldpay_mac_secret' => 'Live2013',
+    'devconnect_mint_worldpay_signature_fields' => 'orderKey+paymentAmount+paymentCurrency+paymentStatus+[mac secret]',
   );
 
   $form = array();
@@ -108,7 +108,7 @@ function devconnect_mint_worldpay_commerce_payment_method_info() {
         'submit_form' => 'devconnect_mint_payment_submit_form',
         'submit_form_validate' => 'devconnect_mint_payment_submit_form_validate',
         'submit_form_submit' => 'devconnect_mint_payment_submit_form_submit',
-        'redirect_form' =>  'devconnect_mint_payment_redirect_form',
+        'redirect_form' => 'devconnect_mint_payment_redirect_form',
       ),
     ),
   );
@@ -200,6 +200,7 @@ function devconnect_mint_worldpay_success() {
 
     try {
       $developer->topUpPrepaidBalance($new_balance);
+      module_invoke_all('devconnect_monetization_developer_topped_up', $developer, $order);
     }
     catch (Exception $tue) {
       drupal_set_message(t('Error trying to process your transaction. Please contact your administrator.'), 'error');
@@ -215,15 +216,22 @@ function devconnect_mint_worldpay_success() {
       }
       if (isset($order->data['purchase'])) {
         devconnect_mint_payment_purchase_plan($order);
+        watchdog('payment_success', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
+        
+        $modules = module_implements('redirect_after_purchase_plan');
+        if (!empty($modules)) {
+          $module = reset($modules);
+          $url = module_invoke($module, 'redirect_after_purchase_plan');
+          drupal_goto($url);
+        }
       }
     }
     catch (Exception $urse) {
       watchdog('Could not update recurring setup values', array(), WATCHDOG_WARNING);
     }
-    module_invoke_all('devconnect_monetization_developer_topped_up', $developer, $order);
   }
   watchdog('payment_success', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
-  drupal_goto('checkout/' . $order->order_id . '/complete');
+  drupal_goto('checkout/' . rawurlencode($data['query.params']['orderid']) . '/complete');
 }
 
 function devconnect_mint_worldpay_pending() {
@@ -247,9 +255,14 @@ function devconnect_mint_worldpay_failure() {
     return '';
   }
   $order->status = 'pending';
-  $order->log = t('There was an error while trying to process your transaction');
+  $order->log = t('There was an error while trying to process your transaction.');
   commerce_order_save($order);
-  drupal_set_message('Error while processing your transaction', 'error');
+  if (isset($data['query.params']['paymentStatus']) && $data['query.params']['paymentStatus'] == 'REFUSED') {
+    drupal_set_message('Your transaction has been refused by Worldpay.', 'error');
+  }
+  else {
+    drupal_set_message('Error while processing your transaction. Please contact your administrator.', 'error');
+  }
   watchdog('payment_failure', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
   drupal_goto('users/me/monetization/billing/prepaid-balance');
 }
@@ -267,21 +280,6 @@ function devconnect_mint_worldpay_cancel() {
   drupal_set_message('Your transaction has been canceled', 'error');
   watchdog('payment_canceled', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
   drupal_goto('users/me/monetization/billing/prepaid-balance');
-}
-
-/**
- * Return the name of the fields that make up the signature value
- * @return array
- */
-function _devconnect_mint_worldpay_signature_fields() {
-  $fields = array(
-    'orderKey',
-    'paymentAmount',
-    'paymentCurrency',
-    'paymentStatus',
-    '[mac secret]'
-  );
-  return variable_get('devconnect_mint_worldpay_signature_fields', $fields);
 }
 
 /**
@@ -323,9 +321,7 @@ function devconnect_mint_worldpay_transaction_process($order, $payment_method, &
 
   $transaction->remote_id = $data['orderKey'];
 
-  $currencies = CurrencyISO4217::getList();
-  $currency_factor = pow(10, $currencies[strtoupper($data['paymentCurrency'])]->minorUnit);
-  $transaction->amount = floor($data['paymentAmount'] * $currency_factor);
+  $transaction->amount = commerce_currency_decimal_to_amount($data['paymentAmount'], strtoupper($data['paymentCurrency']));
 
   $transaction->currency_code = $data['paymentCurrency'];
   $transaction->payload[REQUEST_TIME] = $data;
@@ -373,20 +369,49 @@ function devconnect_mint_worldpay_mint_provider_id() {
 * @return bool
 */
 function devconnect_mint_worldpay_is_payment_method_enabled() {
-  $config = devconnect_monetization_default_org_config();
-  $providerAPIObj = new Provider($config);
-  $providers = $providerAPIObj->getList();
-  $payment_method = commerce_payment_method_instance_load('devconnect_mint_worldpay|commerce_payment_devconnect_mint_worldpay');
-  // Loop through available payment methods
-  foreach ($providers as $provider) {
-    if ($provider->getId() == $payment_method['settings']['devconnect_mint_worldpay_provider_id']) {
-      return TRUE;
+  $message_writer = drupal_is_cli() ? 'drush_log' : 'drupal_set_message';
+  try {
+    $config = devconnect_monetization_default_org_config();
+    $providerAPIObj = new Provider($config);
+    $providers = $providerAPIObj->getList();
+
+    $rule = rules_config_load('commerce_payment_devconnect_mint_worldpay');
+
+    $payment_method_settings = array();
+
+    foreach ($rule->actions() as $action) {
+      if ($action->getElementName() == 'commerce_payment_enable_devconnect_mint_worldpay') {
+        if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
+          $payment_method_settings[] = $action->settings['payment_method']['settings'];
+        }
+      }
     }
+
+    // Loop through available payment methods
+    foreach ($payment_method_settings as $setting) {
+      // Loop providers to find maching provider id
+      foreach ($providers as $provider) {
+        if ($provider->getId() == $setting['devconnect_mint_worldpay_provider_id']) {
+          return TRUE;
+        }
+      }
+    }
+
+    $message_writer('Cannot check if payment method for Worlpay Corporate Gateway is enabled in 4G. This might happen '
+        . ' when module devconnect_mint_worldpay is being enabled or payment method defined by this module  has not been '
+        . ' properly configured', 'warning');
+  }
+  catch (\Apigee\Exceptions\ResponseException $re) {
+    $message_writer('There was a problem comunicating with 4G back end. Please try again later.');
+    watchdog('devconnect_mint_worldpay', 'Error cominicating with 4G backend: ' . $re->__toString());
+  }
+  catch (Exception $e) {
+    $message_writer('Unexpected error. Please communicate with your administrator.');
+    watchdog('devconnect_mint_worldpay', 'Error cominicating with 4G backend: ' . $e->__toString());
   }
   return FALSE;
+
 }
-
-
 
 /**
  * Implement hook_mint_continue_complete_message()
@@ -400,10 +425,6 @@ function devconnect_mint_worldpay_form_commerce_checkout_form_review_alter(&$for
   if (isset($form['commerce_payment']['payment_method']['#options']['devconnect_mint_worldpay|commerce_payment_devconnect_mint_worldpay'])) {
     $form['commerce_payment']['payment_method']['#options']['devconnect_mint_worldpay|commerce_payment_devconnect_mint_worldpay'] = devconnect_mint_worldpay_payment_method_title();
     $form['#attached']['css'][] = drupal_get_path('module', 'devconnect_mint_worldpay') . '/css/devconnect_mint_worldpay.css';
-    $form['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/validator.js',
-      'type' => 'file'
-    );
   }
 }
 

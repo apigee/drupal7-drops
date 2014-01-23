@@ -50,9 +50,9 @@ function hook_devconnect_monetization_plan_removed(DeveloperRatePlan $dev_rate_p
 
 /**
  * Take actions right after a developer has accepted Organization's Terms and Conditions
- * @param TermAndCondition $tncs
+ * @param TermAndCondition $terms_n_conditions
  */
-function hook_devconnect_monetization_developer_accepted_tncs(TermAndCondition $tncs) {}
+function hook_devconnect_monetization_developer_accepted_tncs(TermAndCondition $terms_n_conditions) {}
 
 /**
  * Take actions right after a developer has topped up balance
@@ -60,3 +60,48 @@ function hook_devconnect_monetization_developer_accepted_tncs(TermAndCondition $
  * @param unknown $commerce_order
  */
 function hook_devconnect_monetization_developer_topped_up(\Apigee\Mint\Developer $developer, $commerce_order) {}
+
+/**
+ * Must return an array of renderable elements, elements are usually of markup type element with a link to a current requirement for a developer to purchase a plan. Link can be embedded
+ * in an explanation string. Returnin back to the purchase form is responsibility of the implemented requirement
+ *
+ * Only the element with the heaviest #weight will be rendered.
+ *
+ * @param \Apigee\Mint\Developer $developer
+ * @param Apigee\Mint\MonetizationPackage $package
+ *
+ * @return array()
+ */
+function hook_devconnect_monetization_purchase_plan_requirements(\Apigee\Mint\Developer $developer, \Apigee\Mint\MonetizationPackage $package) {
+  return array(
+    'my_requirement' => array(
+      '#markup' => t('This is my requirement ') . url('my/requirement'),
+      '#weight' => 0,
+      '#value'
+    ),
+  );
+}
+
+/**
+ * Alter messages defined by hook_devconnect_monetization_purchase_plan_requirement
+ * @param array $messages
+ * @param \Apigee\Mint\Developer $developer
+ * @param Apigee\Mint\MonetizationPackage $package
+ */
+function hook_devconnect_monetization_purchase_plan_requirements_alter(array $messages, \Apigee\Mint\Developer $developer, Apigee\Mint\MonetizationPackage $package) {
+  unset($messages['my_requirement']);
+}
+
+/**
+ * Must return a link to the destiny the user must be redirected when a plan is accepted
+ */
+function hook_redirect_after_purchase_plan() {
+  return url('some/path');
+}
+
+/**
+ * Must return a link to the destiny the user must be redirected when a plan ir overridden
+ */
+function hook_redirect_after_override_plan() {
+  return url('some/path');
+}

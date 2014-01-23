@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Install code for Block Tracker add-on to Util.
+ */
+
+/**
+ * Implements hook_install();
+ * Add a last used timestamp to the blocks table.
+ */
+function block_tracker_install() {
+  db_add_field('block', 'lastused', array(
+   'description' => 'The Unix timestamp when the node was last used.',
+   'type' => 'int',
+   'not null' => TRUE,
+   'default' => 0,
+   ));
+}
+
+/**
+ * Implements hook_uninstall();
+ * Remove module variables.
+ */
+function block_tracker_uninstall() {
+  db_drop_field('block', 'lastused');
+}

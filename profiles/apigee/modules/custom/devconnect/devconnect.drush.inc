@@ -152,7 +152,9 @@ function devconnect_drush_test_connection() {
   $pass_encrypted = $config->get('pass');
   $pass = FALSE;
   if ($pass_encrypted) {
-    $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
+    try {
+      $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
+    } catch (Exception $e) {}
   }
   if (!$pass) {
     $pass = 'secret';
@@ -192,7 +194,9 @@ function devconnect_drush_get_authentication() {
   $pass_encrypted = $config->get('pass');
   $pass = FALSE;
   if ($pass_encrypted) {
-    $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
+    try {
+      $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
+    } catch (Exception $e) {}
   }
   if (!$pass) {
     $pass = 'secret';

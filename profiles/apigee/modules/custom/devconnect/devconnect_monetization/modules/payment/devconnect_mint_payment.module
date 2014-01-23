@@ -1,14 +1,15 @@
 <?php
 
-use Apigee\Mint\CurrencyISO4217;
 use Apigee\Mint\Developer;
 use Apigee\Mint\DeveloperBalance;
+use Apigee\Mint\MonetizationPackage;
 use Apigee\Mint\Provider;
 use Apigee\Util\CacheFactory;
 use Apigee\Mint\RatePlan;
 use Apigee\Mint\DeveloperRatePlan;
 use Apigee\Mint\Organization as Organization;
 use Apigee\Mint\Exceptions\MintApiException as MintApiException;
+use Apigee\Util\Log;
 
 /**
  *
@@ -49,7 +50,8 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
 
   // If first top up on this currency or if is not recurring on this currency
   // then show the recurring form
-  if (isset($developerBalance) && !$developerBalance->isRecurring() && variable_get('devconnect_monetization_recurring_enabled', FALSE)) {
+  // Mint backend does not honor initial setup values in here but in company settings
+  if (FALSE /*isset($developerBalance) && !$developerBalance->isRecurring()*/ ) {
 
     $form['#attributes']['class'][] = 'form-horizontal';
 
@@ -73,7 +75,7 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
       '#title' => t('Recurring Amount'),
       '#type' => 'textfield',
       '#description' => t('Amount to be topped up recurrently'),
-      '#default_value' => devconnect_monetization_format_amount($developerBalance->getSupportedCurrency()->minimumRecurringAmount, $currencyId),
+      '#default_value' => $developerBalance->getSupportedCurrency()->minimumRecurringAmount,
       '#disabled' => TRUE,
       '#attributes' => array(
         'class' => array(
@@ -87,7 +89,7 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
     $form['recurring_payment']['replenish_amount'] = array(
       '#title' => t('Replenish Amount'),
       '#type' => 'textfield',
-      '#default_value' => devconnect_monetization_format_amount($developerBalance->getSupportedCurrency()->minimumRecurringAmount, $currencyId),
+      '#default_value' => $developerBalance->getSupportedCurrency()->minimumRecurringAmount,
       '#description' => t('Once your balance reaches this amount, another payment will be triggered'),
       '#disabled' => TRUE,
       '#attributes' => array(
@@ -98,11 +100,6 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
         'currency' => strtoupper($currencyId),
         'minimum' => 0,
       ),
-    );
-
-    $form['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js',
-      'type' => 'file',
     );
   }
 
@@ -130,7 +127,7 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
  * @return bool
  */
 function devconnect_mint_payment_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
-  $is_recurring = ($pane_form['is_recurring']['#value'] == 'isRecurring');
+  $is_recurring = isset($pane_form['is_recurring']) && ($pane_form['is_recurring']['#value'] == 'isRecurring');
   if ($is_recurring) {
     $recurring = $_POST['commerce_payment']['payment_method']['payment_details']['recurring_payment'];
     $valid = TRUE;
@@ -192,10 +189,7 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $currency_code = strtolower($order_wrapper->commerce_order_total->currency_code->value());
 
-  $currencies = CurrencyISO4217::getList();
-  $currency_factor = pow(10, $currencies[strtoupper($currency_code)]->minorUnit);
-
-  $amount = $order_wrapper->commerce_order_total->amount->value() / $currency_factor;
+  $amount = commerce_currency_amount_to_decimal($order_wrapper->commerce_order_total->amount->value(), strtoupper($currency_code));
 
   $provider = module_invoke($payment_method['module'], 'mint_provider_id');
 
@@ -226,6 +220,9 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   $developer = new Developer($config);
   $developer->setEmail($developer_id);
   $payment = $developer->createPayment($parameters, $payload);
+  if (!$payment->getSuccess()) {
+    Log::write("Could not create payment order.", Log::LOGLEVEL_CRITICAL);
+  }
   $form = module_invoke($payment_method['module'], 'mint_dispatch_redirect_form', $form, $form_state, $order, $payment_method, $payment);
   return $form;
 }
@@ -258,10 +255,6 @@ function devconnect_mint_payment_form_commerce_checkout_form_checkout_alter(&$fo
   $country_callback['prevent'] = 'click';
 
   $form['#attributes']['class'][] = 'form-horizontal';
-  $form['#attached']['js'][] = array(
-    'data' => drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js',
-    'type' => 'file',
-  ) ;
 
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
   $user = user_load_by_mail($developer_id);
@@ -332,12 +325,9 @@ function devconnect_mint_payment_review_top_up_details_pane_checkout_form(&$form
   $org->load();
 
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  $currency_code = strtolower($order_wrapper->commerce_order_total->currency_code->value());
+  $currency_code = strtoupper($order_wrapper->commerce_order_total->currency_code->value());
 
-  $currencies = CurrencyISO4217::getList();
-  $currency_factor = pow(10, $currencies[strtoupper($currency_code)]->minorUnit);
-
-  $amount = $order_wrapper->commerce_order_total->amount->value() / $currency_factor;
+  $amount = commerce_currency_amount_to_decimal($order_wrapper->commerce_order_total->amount->value(),  $currency_code);
 
   $variables = array(
     'order' => $order,
@@ -350,66 +340,46 @@ function devconnect_mint_payment_review_top_up_details_pane_checkout_form(&$form
     '#type' => 'item',
     '#markup' => theme('devconnect_mint_payment_review_pane_1', $variables),
   );
-  $form['#attached']['js'][] = array(
-    'data' => drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js',
-    'type' => 'file',
-  );
   return $form;
 }
 
 function devconnect_mint_payment_purchase_plan($order) {
 
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
   $config = devconnect_monetization_default_org_config();
-  $package_id = $order->data['purchase']['packageid'];
-  $rate_plan_id = $order->data['purchase']['planid'];
-  $submitted_start_date = $order->data['purchase']['date'];
+  $package = new MonetizationPackage($config);
+  $developer = new Developer($config);
 
-  $developer_rate_plan = new DeveloperRatePlan($developer_id, $config);
-  $rate_plan = new RatePlan($package_id, $config);
-  $rate_plan->load($rate_plan_id);
+  $package->load($order->data['purchase']['packageid']);
+  $developer->load(_devconnect_monetization_get_developer_id(TRUE));
+  $form_state = array(
+    '#package' => $package,
+    '#developer' => $developer,
+    'values' => array(
+      'start_date' => $order->data['purchase']['date'],
+    ),
+  );
+
+  module_load_include('inc', 'devconnect_monetization', 'devconnect_monetization.plan');
+
+  $rate_plan = new RatePlan($package->getId(), $config);
+  $rate_plan->load($order->data['purchase']['planid']);
+  if ($order->data['purchase']['overlap'] == 'true') {
+    $form_state['rate_plan'] = $rate_plan;
+    drupal_form_submit('devconnect_monetization_overlap_plan_confirm_form_submit', $form_state);
+  }
+  else {
+    $form_state['values'] += array(
+      'plan_options' => $order->data['purchase']['planid'],
+      'action' => 'purchase',
+    );
+    drupal_form_submit('devconnect_monetization_purchase_plan_form', $form_state);
+  }
   $order->data['purchase']['plan_name'] = $rate_plan->getDisplayName();
   $order->data['purchase']['package_name'] = $rate_plan->getMonetizationPackage()->getDisplayName();
-  $developer_rate_plan->setRatePlan($rate_plan);
-
-  $org_timezone = new DateTimeZone($rate_plan->getOrganization()->getTimezone());
-  $utc_timezone = new DateTimeZone('UTC');
-  $separator = strpos($submitted_start_date, '/') > 0 ? '/' : '-';
-  $submitted_start_date .= ' 00:00:00';
-  $start_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $submitted_start_date, $org_timezone);
-  $start_date->setTimezone($utc_timezone);
-
-  try{
-    $developer_rate_plan->setId(NULL);
-    $developer_rate_plan->setStartDate($start_date->format('Y-m-d H:i:s'));
-    // We overlap since all previous validation has been performed.
-    $developer_rate_plan->force_save();
-    $order->data['purchase']['complete'] = TRUE;
-    CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
-    $order->data['purchase']['complete'] = TRUE;
-    module_invoke_all('devconnect_monetization_plan_purchased', $developer_rate_plan);
-    $vars = array(
-      '@developer' => $developer_id,
-      '@package' => $package_id,
-      '@plan' => $rate_plan_id,
-    );
-    $message = t('Plan @plan from package @package has been purchased by @developer.', $vars);
-    Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
-
-  }
-  catch(\Exception $e) {
-    Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
-  }
+  $order->data['purchase']['complete'] = TRUE;
   commerce_order_save($order);
-
-  $vars = array(
-    '%developer' => $developer_id,
-    '%email' => $order->mail,
-    '%amount' => sprintf('%.2f', $amount['amount']/100),
-    '%currency' => $amount['currency_code'],
-    '@company_id' => $developer_id,
-  );
-  $message = t('Developer %developer with %email has topped up %amount %currency on behalf of @company_id\'s balance and updated Mint back end.', $vars);
-  Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
 }
 
+function devconnect_mint_payment_init() {
+  drupal_add_js(drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js', 'file');
+}

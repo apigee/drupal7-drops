@@ -1,0 +1,13 @@
+name = Block Tracker
+description = Records block usage.
+core = 7.x
+package = Util
+dependencies[] = util
+dependencies[] = block
+
+; Information added by Drupal.org packaging script on 2014-01-22
+version = "7.x-1.0-rc2"
+core = "7.x"
+project = "util"
+datestamp = "1390427606"
+

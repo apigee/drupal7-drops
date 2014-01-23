@@ -6,75 +6,78 @@
 /**
  * navbar tab.
  */
-.navbar-tab-responsive-preview .responsive-preview-options {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-options {
   background-color: white;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  margin: 0;
+  padding: 0.5em 0;
 }
 /* Device preview options. */
-.navbar-tab-responsive-preview .responsive-preview-options {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-options {
   box-shadow: 0 0.8em 2.5em -0.8em rgba(0, 0, 0, 0.75);
 }
 /* [dir] is needed to override Bartik's .item-list li padding */
-[dir] .navbar-tab-responsive-preview .responsive-preview-options li {
+[dir] #navbar-administration .navbar-tab-responsive-preview .responsive-preview-options li {
   margin: 0;
   padding: 0;
 }
-.navbar-tab-responsive-preview .responsive-preview-trigger {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger {
   cursor: pointer;
   line-height: 1;
   height: 3em;
+  margin: 0;
 }
-.navbar-tab-responsive-preview .responsive-preview-trigger:hover {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger:hover {
   background-image: -webkit-linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
   background-image: -moz-linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
   background-image: linear-gradient(rgba(255, 255, 255, 0.125) 20%, transparent 200%);
 }
-.navbar-tab-responsive-preview .responsive-preview-trigger.active,
-.navbar-tab-responsive-preview .responsive-preview-trigger.active:hover {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger.active,
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger.active:hover {
   background-image: -webkit-linear-gradient(top, rgb(78,159,234) 0%, rgb(69,132,221) 100%);
   background-image: -moz-linear-gradient(rgb(78,159,234) 0%,rgb(69,132,221) 100%);
   background-image: linear-gradient(rgb(78,159,234) 0%,rgb(69,132,221) 100%);
 }
-.navbar-tab-responsive-preview .responsive-preview-trigger,
-.navbar-tab-responsive-preview .responsive-preview-options .responsive-preview-device {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger,
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-options .responsive-preview-device {
   padding-bottom: 1em;
   padding-top: 1em;
 }
-.navbar-tab-responsive-preview .responsive-preview-options .responsive-preview-device {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-options .responsive-preview-device {
   background: none;
   border: none;
   cursor: pointer;
+  display: block;
   font-family: inherit;
   font-size: 1em;
   padding: 0.5em 1.3333em
 }
-.drupal-navbar .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device {
   color: #0074BD;
   text-align: left;
   width: 100%;
 }
-.drupal-navbar .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device:hover,
-.drupal-navbar .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.active {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device:hover,
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device.active {
   color: black;
 }
-.drupal-navbar .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device[disabled] {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options .responsive-preview-device[disabled] {
   color: #ccc;
   cursor: default;
 }
 /* Configuration link. */
-.navbar-tab-responsive-preview.navbar-tab .responsive-preview-configure {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-configure {
   color: #777;
+  display: block;
+  font-weight: normal;
   margin-top: 0.5em;
-  padding-bottom: 0.5em;
-  padding-top: 0.5em;
+  padding: 0.5em 0.6667em;
 }
-.navbar-tab-responsive-preview.navbar-tab .responsive-preview-configure:hover {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-configure:hover {
   color: #000;
 }
 
 /* navbar tab triangle toggle. */
-.navbar-tab-responsive-preview .responsive-preview-trigger:after {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger:after {
   border-bottom-color: transparent;
   border-left-color: transparent;
   border-right-color: transparent;
@@ -93,11 +96,11 @@
   width: 0;
   z-index: 1
 }
-[dir="rtl"] .navbar-tab-responsive-preview .responsive-preview-trigger:after {
+[dir="rtl"] #navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger:after {
   left: 1em;
   right: auto;
 }
-.navbar-tab-responsive-preview.open:before {
+#navbar-administration .navbar-tab-responsive-preview.open:before {
   background-color: white;
   bottom: 0;
   content: ' ';
@@ -108,27 +111,27 @@
   width: 2em;
   z-index: 1;
 }
-[dir="rtl"] .navbar-tab-responsive-preview.open:before {
+[dir="rtl"] #navbar-administration .navbar-tab-responsive-preview.open:before {
   left: 0;
   right: auto;
 }
-.navbar-tab-responsive-preview.open .responsive-preview-trigger:after {
+#navbar-administration .navbar-tab-responsive-preview.open .responsive-preview-trigger:after {
   border-bottom: 0.4545em solid;
   border-top-color: transparent;
   color: black;
   right: 0.7em; /* LTR */
   top: 1.25em;
 }
-[dir="rtl"] .navbar-tab-responsive-preview.open .responsive-preview-trigger:after {
+[dir="rtl"] #navbar-administration .navbar-tab-responsive-preview.open .responsive-preview-trigger:after {
   left: 0.7em;
   right: auto;
 }
-.navbar-tab-responsive-preview:hover .responsive-preview-trigger:after,
-.navbar-tab-responsive-preview .responsive-preview-trigger.active:after,
-.navbar-tab-responsive-preview:hover .responsive-preview-trigger.active:after {
+#navbar-administration .navbar-tab-responsive-preview:hover .responsive-preview-trigger:after,
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger.active:after,
+#navbar-administration .navbar-tab-responsive-preview:hover .responsive-preview-trigger.active:after {
   color: white;
 }
-.navbar-tab-responsive-preview.open:hover .responsive-preview-trigger:after {
+#navbar-administration .navbar-tab-responsive-preview.open:hover .responsive-preview-trigger:after {
   color: black;
 }
 

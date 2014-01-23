@@ -59,7 +59,7 @@ Drupal.behaviors.responsivePreview = {
       });
 
       // The navbar tab view.
-      var $tab = $(context).find('#responsive-preview-navbar-tab');
+      var $tab = $('#responsive-preview-navbar-tab').once('responsive-preview');
       if ($tab.length > 0) {
         Drupal.responsivePreview.views.tabView = new Drupal.responsivePreview.TabView({
           el: $tab.get(),
@@ -73,7 +73,7 @@ Drupal.behaviors.responsivePreview = {
         });
       }
       // The control block view.
-      var $block = $(context).find('#block-responsive-preview-controls');
+      var $block = $('#block-responsive-preview-controls').once('responsive-preview');
       if ($block.length > 0) {
         Drupal.responsivePreview.views.blockView = new Drupal.responsivePreview.BlockView({
           el: $block.get(),
@@ -292,8 +292,9 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
     /**
      * {@inheritdoc}
      */
-    initialize: function () {
-      this.envModel = this.options.envModel;
+    initialize: function (options) {
+      this.options = options;
+      this.envModel = options.envModel;
       // Listen to changes on the previewModel.
       this.model.on('change:isActive', this.render, this);
     },
@@ -350,11 +351,11 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
     /**
      * {@inheritdoc}
      */
-    initialize: function () {
-      this.gutter = this.options.gutter;
-      this.bleed = this.options.bleed;
-      this.tabModel = this.options.tabModel;
-      this.envModel = this.options.envModel;
+    initialize: function (options) {
+      this.gutter = options.gutter;
+      this.bleed = options.bleed;
+      this.tabModel = options.tabModel;
+      this.envModel = options.envModel;
       var handler;
 
       // Curry the 'this' object in order to pass it as an argument to the
@@ -417,16 +418,24 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
      * @param jQuery.Event event
      */
     toggleDeviceList: function (event) {
-      // Force the options list closed on mouseleave.
-      if (event.type === 'mouseleave') {
-        this.tabModel.set('isDeviceListOpen', false);
-      }
-      else {
-        this.tabModel.set('isDeviceListOpen', !this.tabModel.get('isDeviceListOpen'));
-      }
+      // All of this className checking is necessary because jQuery prior to
+      // version 1.6 did not support event delegation in the on and off methods
+      var targetClassName = typeof event.target.className === 'string' && event.target.className || false;
+      var currentTargetClassName = typeof event.currentTarget.className === 'string' && event.currentTarget.className || false;
+      var isTrigger = targetClassName && /responsive-preview-trigger/.test(targetClassName) || false;
+      var isNavbarTab = currentTargetClassName && /navbar-tab-responsive-preview/.test(currentTargetClassName) || false;
+      if (isTrigger || isNavbarTab) {
+        // Force the options list closed on mouseleave.
+        if (event.type === 'mouseleave') {
+          this.tabModel.set('isDeviceListOpen', false);
+        }
+        else {
+          this.tabModel.set('isDeviceListOpen', !this.tabModel.get('isDeviceListOpen'));
+        }
 
-      event.preventDefault();
-      event.stopPropagation();
+        event.stopPropagation();
+        event.preventDefault();
+      }
     },
 
     /**
@@ -438,7 +447,7 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
       var edge = (dir === 'rtl') ? 'left' : 'right';
       this.$el
         .find('.item-list')
-        .position({
+        .position_responsive_preview({
           'my': edge +' top',
           'at': edge + ' bottom',
           'of': this.$el,
@@ -455,10 +464,10 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
     /**
      * {@inheritdoc}
      */
-    initialize: function () {
-      this.gutter = this.options.gutter;
-      this.bleed = this.options.bleed;
-      this.envModel = this.options.envModel;
+    initialize: function (options) {
+      this.gutter = options.gutter;
+      this.bleed = options.bleed;
+      this.envModel = options.envModel;
       var handler;
 
       // Curry the 'this' object in order to pass it as an argument to the
@@ -546,11 +555,11 @@ Drupal.responsivePreview = Drupal.responsivePreview || {
     /**
      * {@inheritdoc}
      */
-    initialize: function () {
-      this.gutter = this.options.gutter;
-      this.bleed = this.options.bleed;
-      this.strings = this.options.strings;
-      this.envModel = this.options.envModel;
+    initialize: function (options) {
+      this.gutter = options.gutter;
+      this.bleed = options.bleed;
+      this.strings = options.strings;
+      this.envModel = options.envModel;
 
       this.model.on('change:isRotated change:isDetailsExpanded change:dimensions change:activeDevice', this.render, this);
 
@@ -979,7 +988,7 @@ function updateDeviceList (view) {
     // Set the button to disabled if the device doesn't fit in the current
     // viewport.
     // Toggle between the prop() and removeProp() methods.
-    $this.prop('disabled', !fits)
+    $this.attr('disabled', !fits)
       .attr('aria-disabled', !fits);
   });
   // Set the number of devices that fit the current viewport.
@@ -997,26 +1006,30 @@ function updateDeviceList (view) {
  * @param jQuery.Event event
  */
 function selectDevice (view, event) {
-  var $link = $(event.target);
-  var name = $link.data('responsive-preview-name');
-  // If the clicked link is already active, then shut down the preview.
-  if (view.model.get('activeDevice') === name) {
-    view.model.set('isActive', false);
-    return;
-  }
-  // Update the device dimensions.
-  view.model.set({
-    'activeDevice': name,
-    'dimensions': {
-      'width': parseInt($link.data('responsive-preview-width'), 10),
-      'height': parseInt($link.data('responsive-preview-height'), 10),
-      'dppx': parseFloat($link.data('responsive-preview-dppx'), 10)
+  if (typeof event.target.className === 'string' && /responsive-preview-device/.test(event.target.className)) {
+    var $link = $(event.target);
+    var name = $link.data('responsive-preview-name');
+    // If the clicked link is already active, then shut down the preview.
+    if (view.model.get('activeDevice') === name) {
+      view.model.set('isActive', false);
+      return;
     }
-  });
-  // Toggle the preview on.
-  view.model.set('isActive', true);
+    // Update the device dimensions.
+    view.model.set({
+      'activeDevice': name,
+      'dimensions': {
+        'width': parseInt($link.data('responsive-preview-width'), 10),
+        'height': parseInt($link.data('responsive-preview-height'), 10),
+        'dppx': parseFloat($link.data('responsive-preview-dppx'), 10)
+      }
+    });
+    // Toggle the preview on.
+    view.model.set('isActive', true);
 
-  event.preventDefault();
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }
 }
 
 /**

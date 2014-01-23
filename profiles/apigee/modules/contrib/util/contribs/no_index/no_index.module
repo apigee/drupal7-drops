@@ -49,3 +49,29 @@ function no_index_init() {
   	drupal_add_html_head($data, 'no_index_meta');
   }
 }
+
+/**
+ * Implements hook_requirements().
+ * Add note if not SE indexing.
+ */
+function no_index_requirements($phase) {
+  $requirements = array();
+  switch ($phase) {
+    case 'runtime':
+      if (variable_get('no_index_setting', 0)) {
+        $sev = REQUIREMENT_WARNING;
+        $msg = t('Search engines are being instructed to ignore this site.');
+      }
+      else {
+        $sev = REQUIREMENT_INFO;
+        $msg = t('The No_index module is enabled, but not blocking search engines.');
+      }
+      $requirements['no_index_status'] = array(
+        'title' => 'No Index',
+        'value' => $msg,
+        'severity' => $sev,
+        );
+  }
+
+  return $requirements;
+}

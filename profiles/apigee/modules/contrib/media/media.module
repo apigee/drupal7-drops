@@ -296,6 +296,7 @@ function media_permission() {
     'import media' => array(
       'title' => t('Import media files from the local filesystem'),
       'description' => t('Simple file importer'),
+      'restrict access' => TRUE,
     ),
     'view media' => array(
       'title' => t('View media'),
@@ -549,8 +550,8 @@ function media_form_wysiwyg_profile_form_alter(&$form, &$form_state) {
 /* ***************************************** */
 
 /**
-+ * URI callback for file entities.
-+ */
+ * URI callback for file entities.
+ */
 function media_entity_uri($file) {
   $uri['path'] = 'media/' . $file->fid;
   return $uri;

@@ -250,12 +250,13 @@ function media_add_upload_submit($form, &$form_state) {
   $destination = file_stream_wrapper_uri_normalize($scheme . $directory . $file->filename);
 
   // Save the uploaded file to the permanent location.
-  $file = file_move($file, $destination, FILE_EXISTS_RENAME);
+  $result = file_move($file, $destination, FILE_EXISTS_RENAME);
 
-  if ($file) {
+  if ($result) {
     drupal_set_message(t('The file @name was uploaded', array('@name' => $file->filename)));
   }
   else {
+    file_delete($file);
     drupal_set_message(t('An error occurred and no file was uploaded.'), 'error');
     return;
   }

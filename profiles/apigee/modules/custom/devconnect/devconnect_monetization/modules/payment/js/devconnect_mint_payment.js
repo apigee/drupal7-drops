@@ -4,10 +4,11 @@
 
             // Enable/Disable "Continue to next step button while making ajax calls
             $("#commerce-checkout-form-review").ajaxStart(function(){
-                $("#edit-continue").attr("disabled", true);
+                $("#edit-continue").attr("disabled", "disabled");
             });
             $('#commerce-checkout-form-review').ajaxSuccess(function(){
-                $("#edit-continue").attr("disabled", false);
+                $("#edit-continue").removeAttr("disabled");
+                $("div.addressfield-container-inline.locality-block").removeAttr("addressfield-container-inline");
             });
 
             // Enable/Disable recurring_amount and replenish_amount fields in checkout/{order_id}/review page
@@ -58,7 +59,7 @@
             // Checkout page
             $("form div#edit-review-pane-1").hide();
 
-            if (Drupal.settings.devconnect_mint_payment.country_refreshed_first_time == undefined) {
+            if (Drupal.settings.devconnect_mint_payment !== undefined && Drupal.settings.devconnect_mint_payment.country_refreshed_first_time === undefined) {
                 $("select[name='customer_profile_billing[commerce_customer_address][und][0][country]']").once(
                     "select[name='customer_profile_billing[commerce_customer_address][und][0][country]']", function(){
                     if (Drupal.settings.devconnect_mint_payment.initial_address_country != $(this).val()) {
@@ -68,6 +69,7 @@
                         $(this).trigger("change");
                     }
                 });
+                $("div.addressfield-container-inline.locality-block").removeAttr("addressfield-container-inline");
                 Drupal.settings.devconnect_mint_payment.country_refreshed_first_time = true;
             }
 
@@ -75,6 +77,7 @@
                 $("#edit-continue").attr("disabled", "disabled");
             });
             $('#commerce-checkout-form-checkout').ajaxSuccess(function(){
+                $("div.addressfield-container-inline.locality-block").removeAttr("addressfield-container-inline");
                 $("#edit-continue").removeAttr("disabled");
             });
         }

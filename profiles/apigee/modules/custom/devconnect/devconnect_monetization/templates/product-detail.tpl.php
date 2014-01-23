@@ -243,12 +243,16 @@ use Apigee\Mint\Types\Country;
       </tbody>
     </table>
   <?php elseif ($rate_plan_detail->meteringType == MeteringType::STAIR_STEP): ?>
-    <?php if (isset($rate_plan_detail->product)): ?>
-      <strong>Product: </strong><?php echo $rate_plan_detail->product->getDisplayName(); ?>
-      <br>
-      <strong>Rate Card is based on: </strong><?php echo _devconnect_monetization_get_rate_card($rate_plan_detail); ?>
-      <br>
-    <?php endif; ?>
+	<?php // Next statement and if condition commented out as per https://apigeesc.atlassian.net/browse/COMMERCE-508 ?>
+    <?php //$rate_plant_free_quantity_message = _devconnect_monetization_get_free_quantity_text_for_rate_plan_level($rate_plan); ?>
+    <?php //if ($rate_plant_free_quantity_message != NULL): ?>
+      <?php if (isset($rate_plan_detail->product)): ?>
+        <strong>Product: </strong><?php echo $rate_plan_detail->product->getDisplayName(); ?>
+        <br>
+        <strong>Rate Card is based on: </strong><?php echo _devconnect_monetization_get_rate_card($rate_plan_detail); ?>
+        <br>
+      <?php endif; ?>
+    <?php //endif; ?>
     <?php if (isset($free_quantity_message)): ?>
       <span><strong>Free Quantity:&nbsp;</strong><?php echo $free_quantity_message; ?></span><br>
     <?php endif; ?>

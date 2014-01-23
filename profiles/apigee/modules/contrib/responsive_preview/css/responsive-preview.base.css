@@ -14,33 +14,36 @@
 /**
  * navbar tab.
  */
-.navbar-tab-responsive-preview {
+#navbar-administration .navbar-tab-responsive-preview {
   display: none;
 }
 /* At narrow screen widths, float the tab to the left so it falls in line with
  * the rest of the navbar tabs. */
-.drupal-navbar .navbar-bar .navbar-tab-responsive-preview.navbar-tab {
+#navbar-administration.navbar-oriented .navbar-bar .navbar-tab-responsive-preview.navbar-tab {
   display: block;
   float: right; /* LTR */
   position: relative;
 }
-[dir="rtl"] .drupal-navbar .navbar-bar .navbar-tab-responsive-preview.navbar-tab {
+[dir="rtl"] #navbar-administration.navbar-oriented .navbar-bar .navbar-tab-responsive-preview.navbar-tab {
   float: left;
 }
-.navbar-tab-responsive-preview .responsive-preview-trigger {
+#navbar-administration .navbar-tab-responsive-preview .responsive-preview-trigger {
   display: block;
 }
 /* Device preview options. */
-.navbar-tab-responsive-preview .item-list {
+#navbar-administration .navbar-tab-responsive-preview .item-list {
   display: none;
+  min-width: 10em;
+  padding: 0;
   position: absolute;
   white-space: nowrap;
   z-index: 1;
 }
-.navbar-tab-responsive-preview.open .item-list {
+#navbar-administration .navbar-tab-responsive-preview.open .item-list {
   display: block;
 }
-.navbar-tab-responsive-preview.navbar-tab .responsive-preview-options li {
+#navbar-administration .navbar-tab-responsive-preview.navbar-tab .responsive-preview-options li {
+  display: block;
   float: none;
   position: relative;
 }

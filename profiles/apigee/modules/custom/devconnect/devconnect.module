@@ -91,7 +91,11 @@ function devconnect_admin_form($form, &$form_state) {
   $org = $config->get('org');
   $endpoint = $config->get('endpoint');
   $user = $config->get('user');
-  $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+  try {
+    $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+  } catch (Exception $e) {
+    $pass = '';
+  }
   $log_threshold = intval($config->get('log_threshold'));
   $conn_timeout = intval($config->get('connection_timeout'));
   $req_timeout = intval($config->get('request_timeout'));
@@ -502,7 +506,11 @@ function devconnect_default_api_client() {
   $username = $config->get('user');
   $pass_encrypted = $config->get('pass');
   $log_threshold = $config->get('log_threshold');
-  $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
+  try {
+    $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
+  } catch (Exception $e) {
+    $password = '';
+  }
 
   $logger = new Apigee\Drupal\WatchdogLogger();
   $logger::setLogThreshold($log_threshold);

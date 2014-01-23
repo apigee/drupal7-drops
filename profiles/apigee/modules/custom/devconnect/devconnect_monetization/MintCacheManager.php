@@ -1,5 +1,8 @@
 <?php
 
+// @TODO Find a better way to load this class
+require_once dirname(__FILE__) . '/../lib/Apigee/Util/CacheManager.php';
+
 class MintCacheManager extends Apigee\Util\CacheManager {
 
   public function __construct() {

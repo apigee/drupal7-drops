@@ -1,0 +1,12 @@
+name = Welcome Page
+description = Allow a site to have a welcome page without allowing other content to be viewed.
+configure = 'admin/config/system/welcome'
+package = Util
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2014-01-22
+version = "7.x-1.0-rc2"
+core = "7.x"
+project = "util"
+datestamp = "1390427606"
+

@@ -47,6 +47,9 @@ projects[ds][subdir]                         = "contrib"
 projects[eck][subdir]                        = "contrib"
 projects[entitycache][subdir]                = "contrib"
 projects[entityreference][subdir]            = "contrib"
+; views plugins
+; see https://drupal.org/node/2170193
+projects[entityreference][patch][2170193]    = "https://drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
 projects[entity][subdir]                     = "contrib"
 projects[environment_indicator][subdir]      = "contrib"
 projects[facetapi][subdir]                   = "contrib"
@@ -308,8 +311,10 @@ libraries[backbone][destination]             = "libraries"
 
 libraries[ckeditor][destination]             = "libraries"
 libraries[ckeditor][directory_name]          = "ckeditor"
-libraries[ckeditor][download][type]          = "get"
-libraries[ckeditor][download][url]           = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.2.1/ckeditor_4.2.1_standard.zip"
+libraries[ckeditor][download][type]          = "git"
+libraries[ckeditor][download][url]           = "https://github.com/ckeditor/ckeditor-releases.git"
+libraries[ckeditor][download][tag]           = "4.2.3/full"
+
 
 libraries[colorpicker][destination]          = "libraries"
 libraries[colorpicker][directory_name]       = "colorpicker"

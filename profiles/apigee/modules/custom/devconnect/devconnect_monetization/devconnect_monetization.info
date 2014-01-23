@@ -26,9 +26,9 @@ dependencies[] = field_group
 
 features[ctools][] = "field_group:field_group:1"
 
-files[] = devconnect_monetization.test
-files[] = devconnect_monetization.tabs.inc
 files[] = MintCacheManager.php
+files[] = devconnect_monetization.test
+files[] = devconnect_monetization.plan.inc
 
 configure = admin/config/devconnect
 

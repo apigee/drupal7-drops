@@ -44,9 +44,13 @@ function devconnect_requirements($phase) {
     $org = $config->get('org');
     $endpoint = $config->get('endpoint');
     $user = $config->get('user');
-    $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+    try {
+      $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+    } catch (Exception $e) {
+      $pass = FALSE;
+    }
 
-    if (_devconnect_test_kms_connection($org, $endpoint, "$user:$pass", TRUE)) {
+    if ($pass && _devconnect_test_kms_connection($org, $endpoint, "$user:$pass", TRUE)) {
       $requirements['devconnect_connection'] = array(
         'severity' => REQUIREMENT_OK,
         'title' => 'DevConnect Connection',

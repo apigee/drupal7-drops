@@ -16,3 +16,11 @@ div#topUp.modal {
 div#topUp.hide {
     display:block !important;
 }
+
+.numeric.currency.form-text {
+    width: 90px;
+}
+
+.numeric.currency.form-text.non-editing {
+    text-align: right;
+}

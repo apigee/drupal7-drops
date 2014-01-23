@@ -89,6 +89,7 @@ function responsive_preview_get_devices_list() {
   try {
     $devices = db_select('responsive_preview', 'rp')
       ->fields('rp')
+      ->condition('status', 1)
       ->orderBy('weight', 'ASC')
       ->execute()
       ->fetchAllAssoc('name', PDO::FETCH_ASSOC);
@@ -240,7 +241,7 @@ function responsive_preview_library() {
   $path = drupal_get_path('module', 'responsive_preview');
   $options = array(
     'scope' => 'footer',
-    'attributes' => array('defer' => TRUE),
+    'defer' => TRUE,
   );
 
   $libraries['responsive-preview'] = array(
@@ -252,17 +253,20 @@ function responsive_preview_library() {
       $path . '/css/responsive-preview.icons.css',
     ),
     'js' => array(
+      // Monkey-patch in jQuery UI 1.10 Position at $.fn.position_responsive_preview.
+      $path . '/js/jquery/ducktape.position.js' => $options,
       $path . '/js/responsive-preview.js' => $options,
     ),
     'dependencies' => array(
       array('system', 'jquery'),
       array('responsive_preview', 'debounce'),
+      array('responsive_preview', 'displace'),
+      array('responsive_preview', 'underscore'),
       array('responsive_preview', 'backbone'),
-      array('responsive_preview', 'jquery.ui.position'),
     ),
   );
 
-  // Backbone.
+  // A utility function to avoid stampeding function invocations.
   $libraries['debounce'] = array(
     'title' => 'Debounce',
     'version' => VERSION,
@@ -271,40 +275,315 @@ function responsive_preview_library() {
     ),
   );
 
-  // Backbone.
-  $libraries['backbone'] = array(
-    'title' => 'Backbone.js',
-    'website' => 'http://backbonejs.org/',
-    'version' => '0.9.2',
+  // A utility function determine viewport offset distances.
+  $libraries['displace'] = array(
+    'title' => 'Responsive preview displace',
+    'version' => VERSION,
     'js' => array(
-      $path . '/js/backbone.js' => array('group' => JS_LIBRARY, 'weight' => -19),
+      $path . '/js/displace.js' => array('group' => JS_LIBRARY),
     ),
     'dependencies' => array(
-      array('responsive_preview', 'underscore'),
+      array('system', 'jquery'),
+      array('responsive_preview', 'debounce'),
     ),
   );
 
-  // Underscore.
-  $libraries['underscore'] = array(
-    'title' => 'Underscore.js',
-    'website' => 'http://underscorejs.org/',
-    'version' => '1.4.0',
-    'js' => array(
-      $path . '/js/underscore.js' => array('group' => JS_LIBRARY, 'weight' => -20),
-    ),
-  );
+  // Underscore
+  $libraries['underscore'] = _responsive_preview_convert_libraries_to_library(libraries_detect('underscore'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -20,
+  ));
 
-  // jQuery UI Position
-  $libraries['jquery.ui.position'] = array(
-    'title' => 'jQuery UI: Position',
-    'website' => 'http://jqueryui.com/demos/position/',
-    'version' => '1.9.0-pre',
-    'js' => array(
-      $path . '/js/jquery.ui.position.js' => array(),
-    ),
-  );
+  // Backbone
+  $libraries['backbone'] = _responsive_preview_convert_libraries_to_library(libraries_detect('backbone'), array(
+    'group' => JS_LIBRARY,
+    'weight' => -19,
+  ));
 
   return $libraries;
+}
+
+/**
+ * Implements hook_library_alter().
+ *
+ * Backport a couple of things from jQuery that are required.
+ */
+function responsive_preview_library_alter(&$libraries, $module) {
+  $jquery_version = &drupal_static(__FUNCTION__, NULL);
+  if ($module == 'system') {
+    $jquery_version = $libraries['jquery']['version'];
+  }
+  if ($jquery_version && $module == 'responsive_preview') {
+    $path = drupal_get_path('module', 'responsive_preview');
+    // If the version of jQuery is old, we need to add `on` and `off`.
+    if ($jquery_version < '1.7') {
+      $libraries['responsive-preview']['js'][$path . '/js/jquery/ducktape.events.js'] = array('group' => JS_LIBRARY);
+    }
+  }
+}
+
+/**
+ * Implements hook_libraries_info().
+ *
+ * @see Libraries module.
+ */
+function responsive_preview_libraries_info() {
+  $libraries = array();
+
+  $common = array(
+    'version callback' => '_responsive_preview_libraries_get_version',
+    'variant order' => array('minified', 'source'),
+  );
+
+  $libraries['underscore'] = array(
+    'name' => 'Underscore',
+    'vendor url' => 'http://documentcloud.github.io/backbone/',
+    'download url' => 'https://github.com/jashkenas/underscore/archive/1.5.2.zip',
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'underscore.js',
+          // @todo Document an actual example version string.
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+          // In the unminified Underscore.js 1.5.2, the version is defined on
+          // line 68.
+          'lines' => 100,
+        ),
+        'minified' => array(
+          'file' => 'underscore-min.js',
+          'pattern' => '#Underscore.js\s([\d\.]+)#',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=1.5.0": matches 1.5.0, 1.5.2, etc.
+      '1.5.0' => array(
+        'variants' => array(
+          'source' => array(
+            'name' => 'Underscore',
+            'files' => array(
+              'js' => array(
+                'underscore.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_responsive_preview_libraries_variant_exists',
+            'variant arguments' => array('underscore.js'),
+          ),
+          'minified' => array(
+            'name' => 'Underscore',
+            'files' => array(
+              'js' => array(
+                'underscore-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_responsive_preview_libraries_variant_exists',
+            'variant arguments' => array('underscore-min.js'),
+          ),
+        ),
+      ),
+    ),
+  );
+  $libraries['underscore'] += $common;
+
+  $libraries['backbone'] = array(
+    'name' => 'Backbone',
+    'vendor url' => 'http://documentcloud.github.io/backbone/',
+    'download url' => 'https://github.com/jashkenas/backbone/archive/1.1.0.zip',
+    'version arguments' => array(
+      'variants' => array(
+        'source' => array(
+          'file' => 'backbone.js',
+          // @todo Document an actual example version string.
+          'pattern' => '#VERSION *\W *[\'\"]{1}(.*?)[\'\"]{1}#',
+          // In the unminified Backbone.js 1.1.0, the version is defined on line
+          // 38.
+          'lines' => 50,
+        ),
+        'minified' => array(
+          'file' => 'backbone-min.js',
+          'pattern' => '#Backbone.js\s([\d\.]+)#',
+        ),
+      ),
+    ),
+    'versions' => array(
+      // Means ">=1.0.0": matches 1.0.0, 1.1.0, etc.
+      '1.0.0' => array(
+        'variants' => array(
+          'source' => array(
+            'name' => 'Backbone',
+            'files' => array(
+              'js' => array(
+                'backbone.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_responsive_preview_libraries_variant_exists',
+            'variant arguments' => array('backbone.js'),
+            'dependencies' => array('underscore (>=1.5.0)'),
+          ),
+          'minified' => array(
+            'name' => 'Backbone',
+            'files' => array(
+              'js' => array(
+                'backbone-min.js',
+              ),
+            ),
+            // Without a variant callback, the variant is assumed to be
+            // installed.
+            'variant callback' => '_responsive_preview_libraries_variant_exists',
+            'variant arguments' => array('backbone-min.js'),
+            'dependencies' => array('underscore (>=1.5.0)'),
+          ),
+        ),
+      ),
+    ),
+  );
+  $libraries['backbone'] += $common;
+
+  return $libraries;
+}
+
+/**
+ * Determines the version of a responsive preview library.
+ *
+ * This is used in case different variants of the library are shipped separately
+ * and, thus, different variants can contain different versions.
+ *
+ * @param array $library
+ *   An associative array containing all information about the library. The
+ *   library is assumed to have the following non-standard keys:
+ *   - variant order: An array of variant names, ordered from the most preferred
+ *     variant to the least preferred.
+ * @param array $options
+ *   An associative array with the following keys:
+ *   - variants: An array of options for libraries_get_version() keyed by
+ *     variant name.
+ *
+ */
+function _responsive_preview_libraries_get_version(&$library, $options = array()) {
+  $versions = array();
+  foreach ($library['variant order'] as $variant_name) {
+    $variant = $library['version arguments']['variants'][$variant_name];
+    // Use the libraries get version function to determine the version string.
+    $versions[$variant_name] = libraries_get_version($library, $variant);
+  }
+
+  // If no versions could be found for any of the variant, there is no version
+  // to return. If different versions have been found, there is no way to
+  // determine the correct one. We cannot use the information on the preferred
+  // variants because we cannot guarantee that a less preferred variant will not
+  // be loaded. Null values are fine. Either that variant file doesn't exist
+  // or id doesn't contain version information. As long as the there is no
+  // conflicting version information, the check should pass.
+  $versions = array_filter($versions, '_responsive_preview_libraries_filter_null_values');
+  $version = array_unique($versions);
+  $vcount = count($version);
+  if ($vcount == 1) {
+    // A version number exists, so suppress any errors that any individual
+    // variant might have raised.
+    unset($library['error']);
+    unset($library['error message']);
+    return array_shift($version);
+  }
+  elseif ($vcount > 1) {
+    $output = array();
+    foreach ($versions as $name => $v) {
+      $output[] = t('@name (@v)', array(
+        '@name' => $name,
+        '@v' => $v,
+      ));
+    }
+
+    $library['error'] = 'inconsistent versions';
+    $library['error message'] = t('The library\'s variants returned inconsistent versions: @variant_info', array(
+      '@variant_info' => implode(', ', $output),
+    ));
+  }
+  // If the version count is zero, then let the error from libraries_get_version
+  // propagate through.
+}
+
+/**
+ * Determines if an item is empty or not.
+ *
+ * @param string $item
+ *   A version number string.
+ * @return boolean
+ *   Whether the $item's value is empty or not.
+ */
+function _responsive_preview_libraries_filter_null_values($item) {
+  return !empty($item);
+}
+
+/**
+ * Libraries API variant callback.
+ */
+function _responsive_preview_libraries_variant_exists($library, $variant_name, $required_file) {
+  return file_exists($library['library path'] . '/' . $required_file);;
+}
+
+/**
+ * Converts a libraries module array to a hook_library array.
+ *
+ * What is this necessary? I don't see any way from the Libraries module API
+ * to get an array that corresponds to what hook_library expects.
+ */
+function _responsive_preview_convert_libraries_to_library($library, $options = array()) {
+  // If the library wasn't installed, don't bother converting it.
+  if (!$library['installed']) {
+    return array();
+  }
+
+  $converted = array();
+  $files = array();
+
+  // Get the library files from one of the installed variants.
+  if ($name = _responsive_preview_libraries_get_preferred_variant_name($library)) {
+    $files = $library['variants'][$name]['files'];
+  }
+
+  // Define the library if files exist for it.
+  if (!empty($files)) {
+    // This is the basic structure expected by hook_library().
+    $converted = array(
+      'title' => $library['name'],
+      'website' => $library['vendor url'],
+      'version' => $library['version'],
+    );
+    foreach ($files as $type => $paths) {
+      foreach($paths as $filename => $data) {
+        $converted[$type][$library['library path'] . '/' . $filename] = $options;
+      }
+    }
+  }
+
+  return $converted;
+}
+
+/**
+ * Returns the variant that should be loaded based on order preference.
+ *
+ * @param array $library
+ *   A libraries module library definition array.
+ * @return string
+ *   The name of the variant that should be loaded.
+ */
+function _responsive_preview_libraries_get_preferred_variant_name($library) {
+  if (!empty($library['variant order'])) {
+    foreach ($library['variant order'] as $name) {
+      if ($variant = $library['variants'][$name]) {
+        if ($variant['installed']) {
+          return $name;
+        }
+      }
+    }
+  }
+  return NULL;
 }
 
 /**
