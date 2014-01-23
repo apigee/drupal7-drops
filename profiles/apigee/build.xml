@@ -127,9 +127,11 @@
         <fail />
       </then>
     </if>
-    <exec command="mv '${project.basedir}/webapp/profiles/apigee/modules/libraries' '${project.basedir}/webapp/profiles/apigee/modules/contrib' " logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/libraries'" logoutput="true" passthru="true"/>
+    <!-- remove duplicate file_entity module which media bundles for some reason. -->
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/media/file_entity'" logoutput="true" passthru="true"/>
     <phingcall target="build-info-file"/>
-    <exec command="touch ${project.basedir}/webapp/sites/default/settings.php"/>
+    <exec command="touch '${project.basedir}/webapp/sites/default/settings.php'"/>
     <exec command="git add * --all" dir="${project.basedir}/webapp" logoutput="true" />
     <exec command="git commit -m 'distro build ${VERSION}'" dir="${project.basedir}/webapp" logoutput="true" />
     <exec command="git push origin ${push-branch}" dir="${project.basedir}/webapp" />
