@@ -504,6 +504,7 @@
 			<param name="message" value="ENABLING MODULES" />
 		</phingcall>
 		<exec command="drush ${site-alias} en d8cmi -y" logoutput="true" />
+		<exec command="drush ${site-alias} en bean -y" logoutput="true" />
 		<exec command="drush ${site-alias} en block_class -y" logoutput="true" />
 		<exec command="drush ${site-alias} en apachesolr -y" logoutput="true" />
 		<exec command="drush ${site-alias} en apachesolr_search -y" logoutput="true" />
@@ -608,11 +609,11 @@
 			<param value="" />
 			<param value="${theme-default}" />
 		</php>
-		<exec command="drush ${site-alias} en pm-enable ${theme-default-fixed} -y" logoutput="true"/>
-		<exec command="drush ${site-alias} en pm-enable apigee_base -y" logoutput="true"/>
-		<exec command="drush ${site-alias} en pm-enable apigee_devconnect -y" logoutput="true"/>
-		<exec command="drush ${site-alias} en pm-enable tao -y" logoutput="true"/>
-		<exec command="drush ${site-alias} en pm-enable rubik -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-enable ${theme-default-fixed} -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-enable apigee_base -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-enable apigee_devconnect -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-enable tao -y" logoutput="true"/>
+		<exec command="drush ${site-alias} pm-enable rubik -y" logoutput="true"/>
 		<phingcall target="display-step">
 			<param name="message" value="FINAL CLEAR CACHE and CLEANING" />
 		</phingcall>

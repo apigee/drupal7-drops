@@ -53,7 +53,7 @@ class Config {
 
     $object_path = drupal_get_path($type, $object_name);
 
-    $default_config_file = $object_path . '/config/' . $filename;
+    $default_config_file = DRUPAL_ROOT . '/' . $object_path . '/config/' . $filename;
     $this->override_config_file = $config_dir . '/' . $filename;
 
     if (file_exists($default_config_file)) {

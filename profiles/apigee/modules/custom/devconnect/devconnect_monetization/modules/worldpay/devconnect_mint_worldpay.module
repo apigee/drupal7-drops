@@ -177,7 +177,7 @@ function devconnect_mint_worldpay_success() {
   if ($data['query.params']['paymentStatus'] == 'AUTHORISED') {
 
     $order_key_parts = explode('^', $data['query.params']['orderKey']);
-    $wp_oder_id = $order_key_parts[count($order_key_parts)-1];
+    $wp_oder_id = end($order_key_parts);
 
     $currency = $data['query.params']['paymentCurrency'];
 
@@ -204,6 +204,7 @@ function devconnect_mint_worldpay_success() {
     }
 
     try {
+      /* This is no honored by the backend
       if (isset($recurring) && $recurring['is_recurring'] == 'yes') {
         $recurring_amount = $recurring['recurring_amount'];
         $replenish_amount = $recurring['replenish_amount'];
@@ -211,6 +212,7 @@ function devconnect_mint_worldpay_success() {
         $developerBalance = new DeveloperBalance($developer->getEmail(), $developer->getConfig());
         $developerBalance->updateRecurringSetup($currency, true, $replenish_amount, $recurring_amount, devconnect_mint_worldpay_mint_provider_id());
       }
+      */
       if (isset($order->data['purchase'])) {
         devconnect_mint_payment_purchase_plan($order);
         watchdog('payment_success', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
@@ -331,13 +333,13 @@ function devconnect_mint_worldpay_transaction_process($order, $payment_method, &
   switch ($data['paymentStatus']) {
     case 'AUTHORISED':
       $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-      $transaction->message = t('WorldPay excepted the user\'s transaction.');
+      $transaction->message = t('WorldPay accepted user\'s transaction.');
       $order->status = 'completed';
       break;
 
     case 'REFUSED':
       $transaction->status = 'refused';
-      $transaction->message = t('WorldPay refused the user\'s transaction.');
+      $transaction->message = t('WorldPay refused user\'s transaction.');
       $order->status = 'refused';
       break;
   }
@@ -399,21 +401,20 @@ function devconnect_mint_worldpay_is_payment_method_enabled() {
         }
       }
 
-      $message_writer('Cannot check if payment method for Worlpay Corporate Gateway is enabled in 4G. This might happen '
-          . ' when module devconnect_mint_worldpay is being enabled or payment method defined by this module  has not been '
-          . ' properly configured', 'warning');
+      $message_writer('Cannot check if payment method for Worldpay Corporate Gateway is enabled in 4G. This might happen '
+          . 'when module devconnect_mint_worldpay is being enabled or payment method defined by this module has not been '
+          . 'properly configured', 'warning');
     }
   }
   catch (\Apigee\Exceptions\ResponseException $re) {
-    $message_writer('There was a problem comunicating with 4G back end. Please try again later.');
-    watchdog('devconnect_mint_worldpay', 'Error cominicating with 4G backend: ' . $re->__toString());
+    $message_writer('There was a problem communicating with 4G backend. Please try again later.');
+    watchdog('devconnect_mint_worldpay', 'Error communicating with 4G backend: ' . $re->__toString());
   }
   catch (Exception $e) {
-    $message_writer('Unexpected error. Please communicate with your administrator.');
-    watchdog('devconnect_mint_worldpay', 'Error cominicating with 4G backend: ' . $e->__toString());
+    $message_writer('Unexpected error. Please try again later.');
+    watchdog('devconnect_mint_worldpay', 'Error communicating with 4G backend: ' . $e->__toString());
   }
   return FALSE;
-
 }
 
 /**
@@ -433,18 +434,18 @@ function devconnect_mint_worldpay_form_commerce_checkout_form_review_alter(&$for
 
 function devconnect_mint_worldpay_payment_method_title() {
   $args = array(
-    '!worldpay_logo' => '<a href="http://www.worldpay.com/" target="_blank" title="Payment Processing - WorldPay - Opens in new browser window"><img src="http://www.worldpay.com/images/poweredByWorldPay.gif" border="0" alt="WorldPay Payments Processing" class="worlpay-payment-logo"></a>',
+    '!worldpay_logo' => '<a href="http://www.worldpay.com/" target="_blank" title="Payment Processing - WorldPay - Opens in new browser window"><img src="//www.worldpay.com/images/poweredByWorldPay.gif" style="border:none" alt="WorldPay Payments Processing" class="worlpay-payment-logo"></a>',
     '!refund_policy' => variable_get('devconnect_mint_worldpay_refound_policy', l('Refund Policy', 'worldpay-refund-policy')),
-    '!cards' => '<img src=http://www.worldpay.com/images/cardlogos/VISA.gif border=0 alt="Visa Credit payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/visa_debit.gif border=0 alt="Visa Debit payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/visa_electron.gif border=0 alt="Visa Electron payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/mastercard.gif border=0 alt="Mastercard payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/maestro.gif border=0 alt="Maestro payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/AMEX.gif border=0 alt="American Express payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/diners.gif border=0 alt="Diners payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/JCB.gif border=0 alt="JCB payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/laser.gif border=0 alt="Laser payments supported by WorldPay">' .
-                '<img src=http://www.worldpay.com/images/cardlogos/ELV.gif border=0 alt="ELV payments supported by WorldPay">'
+    '!cards' => '<img src="//www.worldpay.com/images/cardlogos/VISA.gif" style="border:none" alt="Visa Credit payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/visa_debit.gif" style="border:none" alt="Visa Debit payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/visa_electron.gif" style="border:none" alt="Visa Electron payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/mastercard.gif" style="border:none" alt="Mastercard payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/maestro.gif" style="border:none" alt="Maestro payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/AMEX.gif" style="border:none" alt="American Express payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/diners.gif" style="border:none" alt="Diners payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/JCB.gif" style="border:none" alt="JCB payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/laser.gif" style="border:none" alt="Laser payments supported by WorldPay">' .
+                '<img src="//www.worldpay.com/images/cardlogos/ELV.gif" style="border:none" alt="ELV payments supported by WorldPay">'
   );
   return t('<div>!worldpay_logo (!refund_policy)</div><div class="payment-worldpay-cards">!cards</div>', $args);
 }

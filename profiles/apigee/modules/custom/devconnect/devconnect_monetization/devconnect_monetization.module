@@ -483,9 +483,6 @@ function devconnect_monetization_package_load($package_id) {
  * @return \Apigee\Mint\Developer|bool
  */
 function devconnect_monetization_developer_load($uid = NULL) {
-  if (!user_is_logged_in()) {
-    drupal_set_message("Access Denied: Please Login");
-  }
   static $developer;
   if (!isset($developer)) {
     try {
@@ -496,6 +493,7 @@ function devconnect_monetization_developer_load($uid = NULL) {
       return $developer;
     }
     catch (Exception $e) {
+      Log::write('devconnect_monetization', Log::LOGLEVEL_CRITICAL, 'Could not retrieve developer object from 4G backend: ' . $e->__toString());
       if ($e->getCode() != 404) {
         drupal_set_message(t('An error has occurred. Please try again later.'), 'error');
       }

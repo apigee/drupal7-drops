@@ -44,14 +44,6 @@ function apigee_install_load_profile(&$install_state) {
       }
     }
   }
-  // Do not enable apachesolr modules for OPDK builds.
-  if (getenv('OPDK_BUILD') == 'yes') {
-    foreach (array_keys($dependencies) as $i) {
-      if (substr($dependencies[$i], 0, 10) == 'apachesolr') {
-        unset($dependencies[$i]);
-      }
-    }
-  }
 
   $install_state['profile_info']['dependencies'] = array_unique($dependencies);
   //variable_set("install_profile_modules", $install_state['profile_info']['dependencies']);
@@ -103,8 +95,7 @@ function apigee_install_configure_batch(&$install_state) {
 function _apigee_install_configure_task_finished($success, $results, $operations) {
   watchdog(__FUNCTION__, "Configure Task Finished", array(), WATCHDOG_INFO);
 
-  global $install_state;
-  $install_state['batch_configure_complete'] = install_verify_completed_task();
+  $GLOBALS['install_state']['batch_configure_complete'] = install_verify_completed_task();
 }
 
 /**
@@ -177,29 +168,15 @@ function apigee_install_configure_variables(&$context) {
 
 function apigee_install_pantheon_push_solr(&$context) {
 
-  watchdog(__FUNCTION__, "Pushing Solr", array(), WATCHDOG_INFO);
-
   if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && module_exists("pantheon_apachesolr")) {
+    watchdog(__FUNCTION__, "Pushing Solr", array(), WATCHDOG_INFO);
     module_load_include("module", "pantheon_apachesolr");
     pantheon_apachesolr_post_schema_exec("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
     $context['results'][] = "solr_push";
     $context['message'] = st('Solr config pushed to pantheon solr server.');
   }
-  elseif (getenv('OPDK_BUILD') == 'yes') {
-    // If apachesolr crept into the build tree, disable it if this is an OPDK build.
-    $to_disable = array();
-    foreach (module_list(TRUE) as $module) {
-      if (substr($module, 0, 10) == 'apachesolr') {
-        $to_disable[] = $module;
-      }
-    }
-    if (count($to_disable) > 0) {
-      module_disable($to_disable);
-      drupal_uninstall_modules($to_disable);
-    }
-  }
   else {
-    watchdog(__FUNCTION__, "SOLR NOT ENABLED!!!", array(), WATCHDOG_ERROR);
+    watchdog(__FUNCTION__, "SOLR not enabled.", array(), WATCHDOG_NOTICE);
   }
 
 }
@@ -291,8 +268,6 @@ function apigee_install_configure_users(&$context) {
 function apigee_install_configure_themes(&$context) {
   watchdog(__FUNCTION__, "Configuring themes", array(), WATCHDOG_INFO);
 
-  $default_theme = "apigee_devconnect";
-  $admin_theme = "rubik";
   // activate admin theme when editing a node
   variable_set('node_admin_theme', '1');
 
@@ -479,7 +454,7 @@ function apigee_install_create_default_content(&$context) {
     watchdog_exception(__FUNCTION__, $e, "Error generating default content: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
   }
   $context['results'][] = "content_created";
-  $context['message'] = st('Default Content Generated' . $ex . '!');
+  $context['message'] = st('Default Content Generated!');
 }
 
 
@@ -725,7 +700,7 @@ function apigee_skip_api_endpoint($form, &$form_state) {
   }
   // module_disable($disable);
 
-  $install_state['completed_task'] = install_verify_completed_task();
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
 
 /**
@@ -749,7 +724,7 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
   }
   $config->save();
 
-  $install_state['completed_task'] = install_verify_completed_task();
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
 
 function apigee_install_settings_form($form, &$form_state, &$install_state) {

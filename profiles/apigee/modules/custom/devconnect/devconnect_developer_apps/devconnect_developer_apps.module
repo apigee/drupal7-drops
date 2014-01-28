@@ -730,6 +730,9 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   $options = array();
 
   $api_products = entity_load('api_product');
+  uasort($api_products, function ($a, $b) {
+    return strcasecmp($a['displayName'], $b['displayName']);
+  });
   drupal_alter('apiproduct_list', $api_products);
   foreach ($api_products as $api_product) {
     $options['prod-' . $api_product['name']] = $api_product['displayName'];
@@ -951,7 +954,7 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
         }
       }
     }
-    else {
+    elseif (!empty($values['api_product'])) {
       $api_products[] = str_replace('prod-', '', $values['api_product']);
     }
   }
