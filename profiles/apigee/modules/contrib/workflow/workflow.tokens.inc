@@ -21,7 +21,7 @@ function workflow_tokens($type, $tokens, array $data = array(), array $options =
 
     if ($workflow = workflow_get_workflows_by_type($node->type, $entity_type)) {
       // Get a list of all possible states for returning state names.
-      $states = WorkflowState::getStates();
+      $states = workflow_state_load_multiple();
       $wid = $workflow->wid;
 
       $last_history = workflow_get_recent_node_history($node->nid);
@@ -30,11 +30,11 @@ function workflow_tokens($type, $tokens, array $data = array(), array $options =
         // so we set the token values from the workflow form fields.
         $sid = $node->workflow;
         $old_sid = isset($last_history->old_sid) ? $last_history->old_sid : $workflow->getCreationSid();
+        $uid = $node->uid;
+        $account = user_load($node->uid);
         $user_name = $node->uid ? (isset($node->name) ? $node->name
           : variable_get('anonymous', 'Anonymous'))
           : variable_get('anonymous', 'Anonymous');
-        $uid = $node->uid;
-        $account = user_load($node->uid);
         $mail = ($node->uid && isset($node->user_mail)) ? $node->user_mail : '';
         $comment = isset($node->workflow_comment) ? $node->workflow_comment : '';
       }
@@ -53,9 +53,9 @@ function workflow_tokens($type, $tokens, array $data = array(), array $options =
             $sid = $node->workflow;
             $old_sid = $workflow->getCreationSid();
           }
-          $user_name = $node->uid ? $node->name : variable_get('anonymous', 'Anonymous');
           $uid = $node->uid;
           $account = user_load($node->uid);
+          $user_name = $node->uid ? $node->name : variable_get('anonymous', 'Anonymous');
           $mail = ($node->uid && isset($node->user_mail)) ? $node->user_mail : '';
           $comment = isset($node->workflow_comment) ? $node->workflow_comment : '';
         }

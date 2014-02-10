@@ -29,18 +29,13 @@
   <taskdef name="drush" classname="tasks.drush.DrushTask"/>
   
   <target name="preflight">
+    <fail unless="repo-uri" message="You must supply a repo-uri into which this build will be checked. Optionally you may include repo-branch." />
     <delete dir="${project.basedir}/webapp" quiet="true" />
     <delete dir="${user.home}/.drush/cache" quiet="true" />
-    <fail unless="repo-uri" message="You must supply a repo-uri into which this build will be checked. Optionally you may include repo-branch." />
-	<if>
-		<available file="${user.home}/.drush/terminus" type="dir" />
-		<then>
-		    <exec command="composer update --no-dev --working-dir $HOME/.drush/terminus" logoutput="true"/>
-		</then>
-		<else>
-		    <exec command="composer create-project pantheon-systems/terminus $HOME/.drush/terminus -s dev --no-dev -n" logoutput="true"/>
-		</else>
-	</if>
+    <delete dir="${user.home}/.drush/terminus" quiet="true" />
+		<exec command="sudo composer self-update" logoutput="true" />
+		<exec command="git clone git@github.com:pantheon-systems/terminus" dir="${user.home}/.drush" logoutput="true" />
+		<exec command="composer update"  dir="${user.home}/.drush/terminus" logoutput="true"/>
     <if>
       <contains string="${repo-uri}" substring="drush.in:2222" />
       <then>

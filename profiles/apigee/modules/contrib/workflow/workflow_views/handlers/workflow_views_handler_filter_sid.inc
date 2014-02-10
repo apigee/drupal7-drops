@@ -20,14 +20,14 @@ class workflow_views_handler_filter_sid extends views_handler_filter_in_operator
       $this->value_options = array();
       $this->value_title = t('Workflow state');
 
-      $wid = isset($this->options['expose']['workflow_reduce_wid']) ? $this->options['expose']['workflow_reduce_wid'] : 0;
       $all = $this->options['expose']['workflow_include_all'];
+      $wid = isset($this->options['expose']['workflow_reduce_wid']) ? $this->options['expose']['workflow_reduce_wid'] : 0;
 
       $states = array();
       // Count the workflows to determine grouping.
       // Even if $wid is not set, we may only have 1 workflow.
       $grouped = FALSE;
-      $workflows = Workflow::getWorkflows($wid);
+      $workflows = workflow_load_multiple($wid ? array($wid) : FALSE);
       $count = count($workflows);
       if ($count > 1) {
         $states += array('' => t('No state'));
@@ -51,7 +51,7 @@ class workflow_views_handler_filter_sid extends views_handler_filter_in_operator
     parent::expose_form($form, $form_state);
 
     $workflows[''] = t('- Select a value -');
-    foreach (Workflow::getWorkflows() as $workflow) {
+    foreach (workflow_load_multiple() as $workflow) {
       $workflows[$workflow->wid] = $workflow->name;
     }
 
@@ -116,7 +116,7 @@ class workflow_views_handler_filter_sid extends views_handler_filter_in_operator
       if (count($this->value) == 0) {
         $values = t('Unknown');
       }
-      else if (count($this->value) == 1) {
+      elseif (count($this->value) == 1) {
         // If any, use the 'single' short name of the operator instead.
         if (isset($info[$this->operator]['short_single'])) {
           $operator = check_plain($info[$this->operator]['short_single']);

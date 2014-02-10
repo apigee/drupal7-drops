@@ -39,7 +39,7 @@ function workflow_admin_ui_add_form_validate($form, &$form_state) {
   $name = $form_state['values']['wf_name'];
 
   // Make sure workflow name is not a duplicate.
-  foreach (Workflow::getWorkflows() as $workflow) {
+  foreach (workflow_load_multiple() as $workflow) {
     if ($name == check_plain($workflow->getName())) {
       form_set_error('wf_name', t('A workflow with the name %name already exists. Please enter another name for your new workflow.',
         array('%name' => $name)));
@@ -56,7 +56,7 @@ function workflow_admin_ui_add_form_validate($form, &$form_state) {
 function workflow_admin_ui_add_form_submit($form, &$form_state) {
   $name = $form_state['values']['wf_name'];
 
-  $workflow = Workflow::create($name);
+  $workflow = workflow_create($name);
   $workflow->save();
 
   $args = array(
@@ -114,7 +114,7 @@ function workflow_admin_ui_delete_form($form, &$form_state, $workflow) {
  */
 function workflow_admin_ui_delete_form_submit($form, &$form_state) {
   $workflow = $form_state['values']['workflow'];
-  if ($form_state['values']['confirm'] == 1 && $workflow = Workflow::load($workflow->wid)) {
+  if ($form_state['values']['confirm'] == 1 && $workflow = workflow_load_single($workflow->wid)) {
     $name = $workflow->getName();
     $message = 'The workflow %name with all its states was deleted.';
 
@@ -140,16 +140,16 @@ function workflow_admin_ui_view_permissions_form($workflow) {
     workflow_admin_ui_breadcrumbs($workflow);
 
     $all = array();
-    $roles = workflow_admin_ui_get_roles();
+    $roles = workflow_get_roles();
     foreach ($roles as $rid => $value) {
       $all[$rid]['name'] = $value;
     }
 
     $transitions = $workflow->getTransitions();
-    foreach ($transitions as $t) {
-      foreach ($t->roles as $rid) {
-        $current_state = $workflow->getState($t->sid);
-        $target_state = $workflow->getState($t->target_sid);
+    foreach ($transitions as $transition) {
+      foreach ($transition->roles as $rid) {
+        $current_state = $workflow->getState($transition->sid);
+        $target_state = $workflow->getState($transition->target_sid);
         $all[$rid]['transitions'][] = array(check_plain(t($current_state->label())), WORKFLOW_ADMIN_UI_ARROW, check_plain(t($target_state->label())));
       }
     }
@@ -245,16 +245,17 @@ function workflow_admin_ui_edit_form($form, $form_state, $workflow = NULL) {
       '#type' => 'select',
       '#title' => t('How to show the available states'),
       '#required' => FALSE,
-      '#default_value' => $workflow->options['options'],
+      '#default_value' => isset($workflow->options['options']) ? $workflow->options['options'] : 'radios',
       // '#multiple' => TRUE / FALSE,
       '#options' => array(
         // These options are taken from options.module
         'select' => 'Select list',
         'radios' => 'Radio buttons',
-        // 'actions' => 'Action buttons', // by workflow contrib.
+        // This option does not work properly on Comment Add form.
+        'buttons' => 'Action buttons',
       ),
-      '#description' => t('The Widget shows all available states. Decide which
-        is the best way to show them.'
+      '#description' => t("The Widget shows all available states. Decide which
+        is the best way to show them. ('Action buttons' do not work on Comment form.)"
       ),
     );
     $form['basic']['name_as_title'] = array(
@@ -262,7 +263,7 @@ function workflow_admin_ui_edit_form($form, $form_state, $workflow = NULL) {
       '#options' => $noyes,
       '#attributes' => array('class' => array('container-inline')),
       '#title' => t('Use the workflow name as the title of the workflow form?'),
-      '#default_value' => $workflow->options['name_as_title'],
+      '#default_value' => isset($workflow->options['name_as_title']) ? $workflow->options['name_as_title'] : 0,
       '#description' => t('The workflow section of the editing form is in its own fieldset. Checking the box will add the workflow ' .
         'name as the title of workflow section of the editing form.'),
     );
@@ -277,7 +278,7 @@ function workflow_admin_ui_edit_form($form, $form_state, $workflow = NULL) {
       '#options' => $noyes,
       '#attributes' => array('class' => array('container-inline')),
       '#title' => t('Allow scheduling of workflow transitions?'),
-      '#default_value' => $workflow->options['schedule'],
+      '#default_value' => isset($workflow->options['schedule']) ? $workflow->options['schedule'] : 1,
       '#description' => t('Workflow transitions may be scheduled to a moment in the future. ' .
         'Soon after the desired moment, the transition is executed by Cron.'),
     );
@@ -287,7 +288,7 @@ function workflow_admin_ui_edit_form($form, $form_state, $workflow = NULL) {
       '#options' => $noyes,
       '#attributes' => array('class' => array('container-inline')),
       '#title' => t('Show a timezone when scheduling a transition?'),
-      '#default_value' => $workflow->options['schedule_timezone'],
+      '#default_value' => isset($workflow->options['schedule_timezone']) ? $workflow->options['schedule_timezone'] : 1,
     );
 
     $form['comment'] = array(
@@ -339,7 +340,7 @@ function workflow_admin_ui_edit_form($form, $form_state, $workflow = NULL) {
       '#type' => 'checkbox',
       '#title' => t('Use the workflow history, and show it on a separate tab.'),
       '#required' => FALSE,
-      '#default_value' => $workflow->options['history_tab_show'],
+      '#default_value' => isset($workflow->options['history_tab_show']) ? $workflow->options['history_tab_show'] : 1,
       '#description' => t("Every state change is recorded in table
         {workflow_node_history}. If checked and user has proper permission, a
         tab 'Workflow' is shown on the entity view page, which gives access to
@@ -347,8 +348,8 @@ function workflow_admin_ui_edit_form($form, $form_state, $workflow = NULL) {
     );
     $form['tab']['tab_roles'] = array(
       '#type' => 'checkboxes',
-      '#options' => workflow_admin_ui_get_roles(),
-      '#default_value' => explode(',', $workflow->tab_roles),
+      '#options' => workflow_get_roles(),
+      '#default_value' => array_keys($workflow->tab_roles),
       '#description' => t('Select any roles that should have access to the workflow tab on nodes that have a workflow.'),
     );
 
@@ -392,7 +393,7 @@ function workflow_admin_ui_edit_form_validate($form_id, $form_state) {
   $name = $form_state['values']['wf_name'];
 
   // Make sure workflow name is not a duplicate.
-  foreach (Workflow::getWorkflows() as $stored_workflow) {
+  foreach (workflow_load_multiple() as $stored_workflow) {
     if ($name == check_plain($stored_workflow->getName()) && $workflow->wid != $stored_workflow->wid) {
       form_set_error('wf_name', t('A workflow with the name %name already exists. Please enter another name for this workflow.',
         array('%name' => $name)));
@@ -483,7 +484,7 @@ function workflow_admin_ui_transitions_form_validate($form, $form_state) {
   $creation_sid = $creation_state->sid;
   if (isset($form_state['values']['transitions'][$creation_sid]) && is_array($form_state['values']['transitions'][$creation_sid])) {
     foreach ($form_state['values']['transitions'][$creation_sid] as $roles) {
-      if ($roles['author']) {
+      if ($roles[WORKFLOW_ROLE_AUTHOR_RID]) {
         $author_has_permission = TRUE;
         break;
       }
@@ -514,7 +515,7 @@ function theme_workflow_admin_ui_transitions_form($variables) {
 
     $states = $workflow->getStates($all = 'CREATION');
     if ($states) {
-      $roles = workflow_admin_ui_get_roles();
+      $roles = workflow_get_roles();
 
       $header = array(array('data' => t('From / To') . ' &nbsp;' . WORKFLOW_ADMIN_UI_ARROW));
       $rows = array();
@@ -581,9 +582,16 @@ function workflow_admin_ui_transitions_form_submit($form, &$form_state) {
             $roles += array($role => $role);
           }
         }
-        $transition = $workflow->createTransition($from, $to);
-        $transition->roles = $roles;
-        $transition->save();
+        if (count($roles)) {
+          $config_transition = $workflow->createTransition($from, $to);
+          $config_transition->roles = $roles;
+          $config_transition->save();
+        }
+        else {
+          foreach ($workflow->getTransitionsBySidTargetSid($from, $to, 'ALL') as $config_transition) {
+            $config_transition->delete();
+          }
+        }
       }
     }
   }
@@ -602,7 +610,7 @@ function workflow_admin_ui_transitions_form_submit($form, &$form_state) {
 function _workflow_admin_ui_transition_grid_form($workflow) {
   $form = array('#tree' => TRUE);
 
-  $roles = workflow_admin_ui_get_roles();
+  $roles = workflow_get_roles();
 
   $states = $workflow->getStates($all = 'CREATION');
   if (!$states) {
@@ -696,7 +704,7 @@ function workflow_admin_ui_states_form($form, $form_state, $workflow) {
 
   foreach ($states as $state) {
     // Allow modules to insert state operations.
-    $state_links = module_invoke_all('workflow_operations', 'state', $workflow, $state);
+    $links = module_invoke_all('workflow_operations', 'state', $workflow, $state);
 
     // Make it impossible to reassign to the same state that is disabled.
     if ($state->isCreationState() || !$state->sid || !$state->isActive()) {
@@ -747,13 +755,8 @@ function workflow_admin_ui_states_form($form, $form_state, $workflow) {
 
       'ops' => array(
         '#type' => 'markup',
-        '#markup' => theme('links', array('links' => $state_links)),
+        '#markup' => theme('links', array('links' => $links)),
        ),
-
-      'sysid' => array(
-        '#type' => 'value',
-        '#value' => $state->isCreationState(),
-      ),
     );
 
     // Don't let the creation state change weight or status or name.
@@ -791,7 +794,6 @@ function theme_workflow_admin_ui_states_form($variables) {
       t('Reassign'),
       t('Count'),
       array('data' => t('Operations'), 'class' => 'state-ops'),
-      t('Sys ID'),
     ),
     'attributes' => array('id' => $table_id, 'style' => 'width: auto;'),
   );
@@ -819,8 +821,6 @@ function theme_workflow_admin_ui_states_form($variables) {
         array('data' => $form['states'][$id]['count']['#value'], 'class' => 'state-count'),
         // Add our 'operations' column
         array('data' => drupal_render($form['states'][$id]['ops']), 'class' => 'state-ops'),
-        // Add our 'sysid' column
-        drupal_render($form['states'][$id]['sysid']),
       ),
       // To support the tabledrag behavior, we need to assign each row of the
       // table a class attribute of 'draggable'. This will add the 'draggable'
@@ -859,7 +859,7 @@ function workflow_admin_ui_states_form_validate($form, &$form_state) {
   // we can simply iterate through the submitted values.
   foreach ($form_state['values']['states'] as $sid => $item) {
     // Reload $state from db, in case the states were changed by anyone else. And it is just as fast.
-    $state = WorkflowState::load($sid);
+    $state = workflow_state_load_single($sid);
 
     // Does user want to deactivate the state (reassign current nodes)?
     if ($sid > 0 && $item['status'] == 0 && $state->isActive()) {
@@ -909,12 +909,12 @@ function workflow_admin_ui_states_form_submit($form, &$form_state) {
     }
 
     // Reload $state from db, in case the states were changed by anyone else. And it is just as fast.
-    $state = ($sid) ? WorkflowState::load($sid) : $workflow->createState('');
+    $state = ($sid) ? workflow_state_load_single($sid) : $workflow->createState('');
 
     // Does user want to deactivate the state (reassign current nodes)?
     if ($sid > 0 && $item['status'] == 0 && $state->isActive()) {
       $new_sid = $item['reassign'];
-      $new_state = WorkflowState::load($new_sid);
+      $new_state = workflow_state_load_single($new_sid);
 
       $args = array(
         '%workflow' => $workflow->getName(),

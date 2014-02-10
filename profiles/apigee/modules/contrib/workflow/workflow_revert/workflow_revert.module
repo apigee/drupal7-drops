@@ -88,7 +88,7 @@ function workflow_revert_workflow_history_alter(&$variables) {
     $id = $transition->entity_id;
     $field_name = $transition->field_name;
 
-    $old_state = WorkflowState::load($old_sid);
+    $old_state = workflow_state_load_single($old_sid);
     // Some state are not fit to revert to. In each of these cases, prohibit
     // to revert to an even older state.
     if (!$old_state || !$old_state->isActive() || $old_state->isCreationState()) {
@@ -100,8 +100,8 @@ function workflow_revert_workflow_history_alter(&$variables) {
     else {
       // Let's ask other modules if the reversion is allowed. Reversing old and new sid!
       $permitted = module_invoke_all('workflow', 'transition permitted', $transition->new_sid, $old_sid, $entity, $force = FALSE, $entity_type, $field_name);
-      // Did anybody veto this choice?
-      if ($permitted !== FALSE) {
+      // Stop if a module says so.
+      if (!in_array(FALSE, $permitted, TRUE)) {
         // If not vetoed, mark it.
         $options = array('query' => array('token' => drupal_get_token('workflow_revert ' . $old_sid)));
         $path = 'workflow_revert/' . $entity_type . '/' . $id . '/' . $field_name . '/' . $old_sid;

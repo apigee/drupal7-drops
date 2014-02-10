@@ -1,11 +1,11 @@
 name = "X Autoload"
-description = "Autoload based on pseudo PSR-0 folder structure and module prefix."
+description = "Autoload based on PSR-0, PSR-4 and a custom PHP 5.2 compatibility mode."
 core = 7.x
-php = 5.2
+php = 5.3
 
-; Information added by Drupal.org packaging script on 2013-12-28
-version = "7.x-3.5"
+; Information added by Drupal.org packaging script on 2014-02-10
+version = "7.x-4.1"
 core = "7.x"
 project = "xautoload"
-datestamp = "1388245405"
+datestamp = "1392049210"
 

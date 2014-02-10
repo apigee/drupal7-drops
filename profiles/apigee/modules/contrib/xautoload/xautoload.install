@@ -27,19 +27,10 @@ function xautoload_enable() {
     && isset($trace[3]['function'])
     && 'module_enable' === $trace[3]['function']
     && is_array($trace[3]['args'][0])
+    && !empty($trace[3]['args'][0])
   ) {
-    foreach (array_unique($trace[3]['args'][0]) as $module) {
-      $modules = array();
-      if (!empty($module)) {
-        $modules[] = $module;
-      }
-      // Register modules in autoloader.
-      $q = db_select('system', 's');
-      $q->fields('s', array('name', 'filename', 'type'));
-      $q->condition('s.name', $modules);
-      $extensions = $q->execute()->fetchAll();
-      xautoload('registrationHelper')->registerExtensions($extensions);
-    }
+    $modules = array_unique($trace[3]['args'][0]);
+    xautoload()->extensionRegistrationService->registerExtensionsByName($modules, 'module');
   }
 }
 

@@ -22,7 +22,10 @@ function uuid_features_entity_info_alter(&$entity_info) {
   // to be exported by uuid_features.
   $entity_types = array('bean', 'node', 'taxonomy_term');
   foreach ($entity_types as $type) {
-    $entity_info[$type]['uuid features'] = TRUE;
+    // Only add flag on existing entity types.
+    if (isset($entity_info[$type])) {
+      $entity_info[$type]['uuid features'] = TRUE;
+    }
   }
 }
 

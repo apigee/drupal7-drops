@@ -20,7 +20,7 @@ function workflow_tab_page($entity_type, $entity = NULL) {
   $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type);
 
   // Show the current state and the Workflow form to allow state changing.
-  // N.B. This part is replicated in hook_node_view and workflow_tab_page.
+  // N.B. This part is replicated in hook_node_view, workflow_tab_page, workflow_vbo.
   if ($workflow) {
     $workflow_item = $workflow->getWorkflowItem();
     $field = $workflow_item->getField();
@@ -47,11 +47,11 @@ function workflow_tab_page($entity_type, $entity = NULL) {
   $current_themed = FALSE;
   $current_sid = workflow_node_current_state($entity, $entity_type, $field_name);
   $limit = variable_get('workflow_states_per_page', 20);
-  foreach (WorkflowTransition::load($entity_type, $entity_id, $field_name, $limit) as $history) {
+  foreach (workflow_transition_load_multiple($entity_type, $entity_id, $field_name, $limit) as $history) {
     $old_state_name = $new_state_name = '';
 
     $label = $name = '';
-    $state = WorkflowState::load($history->new_sid);
+    $state = workflow_state_load_single($history->new_sid);
     if ($state) {
       $name = $state->getName();
       $label = $state->label();
@@ -83,7 +83,7 @@ function workflow_tab_page($entity_type, $entity = NULL) {
     }
 
     $label = $name = MARK_STATE_IS_DELETED;
-    $state = WorkflowState::load($history->old_sid);
+    $state = workflow_state_load_single($history->old_sid);
     if ($state) {
       $name = $state->getName();
       $label = $state->label();

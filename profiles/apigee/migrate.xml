@@ -67,12 +67,15 @@
 				<phingcall target="display-step">
 					<param name="message" value="Making the latest site archive..." />
 				</phingcall>
-				<exec logoutput="true" command='ssh stovak@${production-source} "cd /mnt/apigee/httpd/www/html/webapp/sites/${environment}-${orgname}; drush archive-dump --destination=/tmp/${environment}-${orgname}.tgz --overwrite"'/>
+				<exec logoutput="true" command='ssh stovak@${production-source} "cd /mnt/apigee/httpd/www/html/webapp/sites/${environment}-${orgname} -v; drush archive-dump --destination=/tmp/${environment}-${orgname}.tgz --overwrite -v"'/>
 				<phingcall target="display-step">
 					<param name="message" value="Moving archive to the bucket" />
 				</phingcall>
-				<exec logoutput="true" command='ssh stovak@${production-source} "s3cmd put /tmp/${environment}-${orgname}.tgz s3://apigee-devconnect/site-archives/${environment}-${orgname}.tgz"'/>
-			</try>
+				<exec logoutput="true" command='ssh stovak@${production-source} "s3cmd put /tmp/${environment}-${orgname}.tgz s3://apigee-devconnect/site-archives/${environment}-${orgname}.tgz -v"'/>
+                <phingcall target="display-step">
+                    <param name="message" value="Archive has been moved to the bucket" />
+                </phingcall>
+            </try>
 			<catch>
 				<fail message="Archive creation failed"/>
 			</catch>

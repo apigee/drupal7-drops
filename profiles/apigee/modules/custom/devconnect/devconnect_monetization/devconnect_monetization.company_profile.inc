@@ -987,7 +987,7 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
             ),
             'title' => t('Recurring amount must be greater than Replenish amount.'),
             'currency' => $balance->getSupportedCurrency()->name,
-            'minimum' => $balance->getSupportedCurrency()->minimumRecurringAmount,
+            'minimum' => (float) $balance->getSupportedCurrency()->minimumRecurringAmount,
           ),
           '#disabled' => !$balance->isRecurring(),
         ),
@@ -1004,7 +1004,7 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
             ),
             'title' => t('Replenish amount cannot be greater than Recurring amount.'),
             'currency' => $balance->getSupportedCurrency()->name,
-            'minimum' => $balance->getSupportedCurrency()->minimumRecurringAmount * 1.0,
+            'minimum' => (float) $balance->getSupportedCurrency()->minimumRecurringAmount,
           ),
           '#disabled' => !$balance->isRecurring(),
         )

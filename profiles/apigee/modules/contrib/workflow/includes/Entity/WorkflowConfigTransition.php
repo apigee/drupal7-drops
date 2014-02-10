@@ -13,38 +13,35 @@
  */
 class WorkflowConfigTransitionController extends EntityAPIController {
 
-  // @todo: Set $schema['fields'] ['roles']['serialize'] = TRUE to avoid
-  //        below 'roles' code, but this requires conversion of the data.
-
-  public function load($ids = array(), $conditions = array()) {
-    // Set this explicitely to FALSE, until this is fixed:
-    // Calling $workflow->getTransitions() twice, gives an empty list the second time.
-    $this->cache = FALSE;
-
-    $result = parent::load($ids, $conditions);
-    foreach ($result as &$config_transition) {
-      if(!$config_transition->roles) {
-        $config_transition->roles = array();
-      }
-      else {
-        $config_transition->roles = explode(',', $config_transition->roles);
-      }
+  /**
+   * Overrides DrupalDefaultEntityController::cacheGet()
+   * 
+   * Override default function, due to core issue #1572466.
+   */
+  protected function cacheGet($ids, $conditions = array()) {
+    // Load any available entities from the internal cache.
+    if ($ids === FALSE && !$conditions) {
+      return $this->entityCache;
     }
-    return $result;
+    return parent::cacheGet($ids, $conditions);
   }
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
-    $workflow = workflow_load($entity->wid);
-    // First check if this transition already exist.
-    $config_transitions = $workflow->getTransitionsBySidTargetSid($entity->sid, $entity->target_sid);
-    $config_transition = reset($config_transitions);
-    if ($config_transition) {
-      $entity->tid = $config_transition->tid;
+    if (empty($entity->tid)) {
+      $workflow = workflow_load_single($entity->wid);
+      // First check if this transition already exist.
+      $config_transitions = $workflow->getTransitionsBySidTargetSid($entity->sid, $entity->target_sid);
+      $config_transition = reset($config_transitions);
+      if ($config_transition) {
+        $entity->tid = $config_transition->tid;
+      }
     }
-    if (isset($entity->roles) && !empty($entity->roles)) {
-      $entity->roles = implode(',', $entity->roles);
-    }
-    return parent::save($entity, $transaction);
+    $return = parent::save($entity, $transaction);
+
+    // Reset the cache for the affected workflow.
+    workflow_reset_cache($entity->wid);
+
+    return $return;
   }
 }
 
@@ -114,7 +111,7 @@ class WorkflowConfigTransition extends Entity {
    *  Workflow object.
    */
   public function getWorkflow() {
-    return isset($this->workflow) ? $this->workflow : Workflow::load($this->wid);
+    return isset($this->workflow) ? $this->workflow : workflow_load_single($this->wid);
   }
 
   /**
@@ -138,6 +135,7 @@ class WorkflowConfigTransition extends Entity {
       }
       return array_intersect($user_roles, $this->roles) == TRUE;
     }
+    return TRUE;
   }
 
 }

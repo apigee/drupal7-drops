@@ -52,8 +52,8 @@ function workflow_access_node_access_records($node) {
 
     foreach (workflow_access_get_workflow_access_by_sid($current_sid) as $grant) {
       $grants[] = array(
-        'realm' => ($uid > 0 && $grant->rid == -1) ? 'workflow_access_owner' : 'workflow_access',
-        'gid' => ($uid > 0 && $grant->rid == -1) ? $node->uid : $grant->rid,
+        'realm' => ($uid > 0 && $grant->rid == WORKFLOW_ROLE_AUTHOR_RID) ? 'workflow_access_owner' : 'workflow_access',
+        'gid' => ($uid > 0 && $grant->rid == WORKFLOW_ROLE_AUTHOR_RID) ? $node->uid : $grant->rid,
         'grant_view' => $grant->grant_view,
         'grant_update' => $grant->grant_update,
         'grant_delete' => $grant->grant_delete,

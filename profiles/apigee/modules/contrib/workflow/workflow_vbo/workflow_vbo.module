@@ -2,7 +2,8 @@
 /**
  * @file
  * Provide workflow actions for VBO.
- * Split out from workflow_actions.
+ *
+ * @see https://drupal.org/node/2052067
  */
 
 /**
@@ -49,7 +50,7 @@ function workflow_vbo_next_state_action($node, array $context) {
   $entity_type = 'node'; // @todo: extend workflow_vbo to support Field API.
   $entity = $node;
   $current_sid = $node->workflow;
-  $current_state = WorkflowState::load($current_sid);
+  $current_state = workflow_state_load_single($current_sid);
 
   // Get the node's new state (which is the next available state).
   $new_sid = $current_sid;
@@ -69,7 +70,8 @@ function workflow_vbo_next_state_action($node, array $context) {
   $field_name = '';
   $comment = '';
   $force = FALSE;
-  $transition = new WorkflowTransition($entity_type, $entity, $field_name, $current_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
+  $transition = new WorkflowTransition();
+  $transition->setValues($entity_type, $entity, $field_name, $current_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
   workflow_execute_transition($entity_type, $entity, $field_name, $transition, $force);
 }
 
@@ -117,59 +119,53 @@ function workflow_vbo_given_state_action_form(array $context) {
   $form = array();
   $options = array();
 
-  // The following is a copy of function workflow_tab_page(), to re-use the form.
-  // This way, we can add comments, and schedule the form.
-
-  // First, create dummy data. // @todo: improve this logic, Add $workflow, $field_name.
-  $entity_type = 'node';
+  // @todo: There's a problem here: we do not know the node types of the
+  // selected items, and we do not know the field_names, so we have no clue
+  // about the allowed workflows or states.
+  $entity_type = $context['entity_type'];
   $entity = NULL;
   $entity_id = '';
-  $workflow = Workflow::create('dummy VBO');
-  // Set some workflow options, that are normally fetched from the workflow.
-  $workflow->options['comment_log_tab'] = TRUE; 
-  $workflow->options['schedule'] = TRUE;
-  $workflow->options['schedule_timezone'] = TRUE;
-  $workflow->options['watchdog_log'] = TRUE;
-  $workflow->options['options'] = 'select';
+  $entity_bundle = '';
+
+  // Figure out the $entity's bundle and id.
+  // list($entity_id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
+  // $entity_id = entity_id($entity_type, $entity);
+  // $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type);
+
+  // First, create dummy data. // @todo: improve this logic, Add $workflow, $field_name.
+  $workflow = workflow_create('dummy VBO');
 
   // Show the current state and the Workflow form to allow state changing.
-  if ($workflow_item = $workflow->getWorkflowItem()) {
-    // This is a Workflow Field workflow.
+  // N.B. This part is replicated in hook_node_view, workflow_tab_page, workflow_vbo.
+  if ($workflow) {
+    $workflow_item = $workflow->getWorkflowItem();
     $field = $workflow_item->getField();
     $instance = $workflow_item->getInstance();
+    if (!$field['id']) {
+      // This is a Workflow Node workflow. Set widget options as in v7.x-1.2
+      $field['settings']['widget']['comment'] = !empty($workflow->options['comment_log_tab']); // vs. ['comment_log_node']; 
+      $field['settings']['widget']['current_status'] = TRUE;
+      // As stated above, the options list is probably very long, so let's use select list.
+      $field['settings']['widget']['options'] = 'select';
+      // Do not show the default [Update workflow] button on the form.
+      $instance['widget']['settings']['submit_function'] = '';
+    }
   }
-  else {
-    // This is a Workflow Node workflow.
-    // Emulate a Field API interface.
-    $field = array();
-    $field['field_name'] = '';
-    $field['id'] = 0;
-    $field['settings']['wid'] = $workflow->wid;
-    $field['settings']['widget'] = $workflow->options;
-    // Careful: the following line is different from workflow_tab_page()
-    $field['settings']['widget']['comment'] = $workflow->options['comment_log_tab']; // vs. ['comment_log_node']; 
 
-    $field['settings']['widget']['current_status'] = FALSE;
-
-    $instance = array();
-    // Do not show the submit button on the VBO page.
-    $instance['widget']['settings']['submit_function'] = '';
-  }
   // Add the form/widget to the formatter, and include the nid and field_id in the form id,
   // to allow multiple forms per page (in listings, with hook_forms() ).
   // Ultimately, this is a wrapper for WorkflowDefaultWidget.
+  // $field_name = $field['field_name'];
   $field_id = $field['id'];
-  $form['workflow_current_state'] = workflow_state_formatter($entity_type, $entity, $field, $instance);
+
+  // $form['workflow_current_state'] = workflow_state_formatter($entity_type, $entity, $field, $instance);
   $form += drupal_get_form(implode('_', array('workflow_transition_form', $entity_type, $entity_id, $field_id)), $field, $instance, $entity_type, $entity);
 
   // Make adaptations for VBO-form:
-
   // Change the options widget. Get all states, only where active.
   // @todo: prevent choosing a state from an illegal Workflow.
-  $options = workflow_get_workflow_state_names(0, $grouped = ($workflow->options['options'] == 'select'), $all = FALSE);
-
+  $options = workflow_get_workflow_state_names(0, $grouped = ($field['settings']['widget']['options'] == 'select'), $all = FALSE);
   // Override the options widget.
-  $form['workflow']['workflow_sid']['#type'] = 'select';
   $form['workflow']['workflow_sid']['#title'] = t('Target state');
   $form['workflow']['workflow_sid']['#description'] = t('Please select the state that should be assigned when this action runs.');
   $form['workflow']['workflow_sid']['#default_value'] = isset($context['target_sid']) ? $context['target_sid'] : '';

@@ -199,7 +199,7 @@ function workflow_admin_ui_workflow_operations($op, $workflow = NULL, $state = N
           'attributes' => array('alt' => $alt, 'title' => $alt),
         ),
       );
-      foreach (Workflow::getWorkflows() as $workflow) {
+      foreach (workflow_load_multiple() as $workflow) {
         $name = $workflow->getName();
         $wid = $workflow->wid;
         $alt = t('Work with @wf', array('@wf' => $name));
@@ -256,22 +256,4 @@ function workflow_admin_ui_workflow_operations($op, $workflow = NULL, $state = N
 
       return $actions;
   }
-}
-
-/**
- * Get a list of roles.
- *
- * @return array
- *   Array of role names keyed by role ID, including the 'author' role.
- */
-function workflow_admin_ui_get_roles() {
-  static $roles = NULL;
-  if (!$roles) {
-    $roles = array('author' => 'author');
-    $list = user_roles(FALSE, 'participate in workflow');
-    foreach ($list as $rid => $name) {
-      $roles[$rid] = check_plain($name);
-    }
-  }
-  return $roles;
 }

@@ -1870,15 +1870,19 @@ function devconnect_monetization_requirements($phase) {
 }
 
 /**
- * Implement hook_update_N() Update user roles and permissions
- * @return null|string
+ * 1. Ensure cache table cache_mint exists
+ * 2. Update user roles and permissions
  */
-function devconnect_monetization_update_7426() {
+function devconnect_monetization_update_7425() {
+  if (!db_table_exists('cache_mint')) {
+    db_create_table('cache_mint', drupal_get_schema_unprocessed('system', 'cache'));
+  }
   devconnect_monetization_setup_mint_roles();
-  return t('Your site has been updated successfully');
+  return t('DevConnect Monetization module has been updated successfully');
 }
 
 function devconnect_monetization_setup_mint_roles() {
+  module_load_include("module", "devconnect_monetization");
   // Setup monetization administrator role
   $role = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
   if ($role == NULL) {
@@ -1887,6 +1891,7 @@ function devconnect_monetization_setup_mint_roles() {
     user_role_save($role);
     $role = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
   }
+  devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_admin_permissions() + devconnect_monetization_finance_permissions() + devconnect_monetization_developer_permissions();
   user_role_grant_permissions($role->rid, array_keys($permissions));
 
@@ -1898,6 +1903,7 @@ function devconnect_monetization_setup_mint_roles() {
     user_role_save($role);
     $role = user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME);
   }
+  devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_finance_permissions();
   user_role_grant_permissions($role->rid, array_keys($permissions));
 
@@ -1909,6 +1915,19 @@ function devconnect_monetization_setup_mint_roles() {
     user_role_save($role);
     $role = user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME);
   }
+  devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_developer_permissions();
   user_role_grant_permissions($role->rid, array_keys($permissions));
+
+  drupal_static_reset('user_access');
+  drupal_static_reset('user_role_permissions');
+}
+
+function devconnect_monetization_reset_permissions($role) {
+  db_delete('role_permission')
+    ->condition('rid', $role->rid)
+    ->execute();
+  db_delete('users_roles')
+    ->condition('rid', $role->rid)
+    ->execute();
 }

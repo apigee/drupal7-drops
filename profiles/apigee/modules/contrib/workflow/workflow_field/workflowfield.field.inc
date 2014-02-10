@@ -23,7 +23,6 @@ function workflowfield_field_info() {
 function workflowfield_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
   if ($form['#field']['type'] == 'workflow') {
     // The Workflow field must have a value, so set to required.
-    $form['instance']['required']['#type'] = 'hidden';
     $form['instance']['required']['#default_value'] = 1;
     $form['instance']['required']['#disabled'] = TRUE;
 
@@ -33,7 +32,6 @@ function workflowfield_form_field_ui_field_edit_form_alter(&$form, &$form_state,
     unset($form['instance']['default_value_widget']);
 
     // Make sure only 1 value can be entered in the Workflow field.
-    $form['field']['cardinality']['#type'] = 'hidden';
     $form['field']['cardinality']['#default_value'] = 1;
     $form['field']['cardinality']['#disabled'] = TRUE;
   }
@@ -110,7 +108,7 @@ function workflowfield_field_update($entity_type, $entity, array $field, $instan
     // Load the node again, since the passed node doesn't contain proper 'type' field.
     $referenced_entity = entity_load_single($referenced_entity_type, $referenced_entity_id);
 
-    // Execute the transition upon the node. Afterwards, $items is in form as expected by Field API. 
+    // Execute the transition upon the node. Afterwards, $items is in form as expected by Field API.
     // @todo: when changing Workflow via comment, the history is saved twice.
     // Remember, we don't know if the transition is scheduled or not.
     $widget = new WorkflowDefaultWidget($field, $instance, $referenced_entity_type, $referenced_entity);
@@ -130,10 +128,10 @@ function workflowfield_field_update($entity_type, $entity, array $field, $instan
  *
  * @todo: implement
  */
-// function workflowfield_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
-//   $workflow_field = new WorkflowItem($field, $instance, $entity_type, $entity);
-//   $workflow_field->delete($items);
-// }
+function workflowfield_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  $workflow_field = new WorkflowItem($field, $instance, $entity_type, $entity);
+  $workflow_field->delete($items);
+}
 
 /**
  * Implements hook_field_is_empty().
@@ -157,7 +155,7 @@ function workflowfield_field_is_empty($item, $field) {
 /*
  * Callback function for list.module formatter.
  *
- * Returns the array of allowed values for a list field.
+ * Returns array of allowed values when using a 'core' list formatter, not 'workflow' formatter.
  * @see list_allowed_values()
  */
 function workflowfield_allowed_values($field, $instance, $entity_type, $entity) {
@@ -175,7 +173,7 @@ function workflowfield_options_list($field, $instance, $entity_type, $entity) {
   if ($entity) {
     $field_name = $field['field_name'];
     $sid = workflow_node_current_state($entity, $entity_type, $field_name);
-    $state = workflow_state_load($sid);
+    $state = workflow_state_load_single($sid);
     $options = $state->getOptions($entity_type, $entity, $force = FALSE);
   }
   return $options;

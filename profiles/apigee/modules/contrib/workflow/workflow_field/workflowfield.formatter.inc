@@ -27,7 +27,7 @@ function workflowfield_field_formatter_view($entity_type, $entity, $field, $inst
   $field_id = isset($field['id']) ? $field['id'] : 0;
 
   $current_sid = workflow_node_current_state($entity, $entity_type, $field_name);
-  $current_state = WorkflowState::load($current_sid);
+  $current_state = workflow_state_load_single($current_sid);
 
   if ($field_name) {
     // First compose the current value with the normal formatter from list.module.

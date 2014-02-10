@@ -32,16 +32,14 @@ class Config {
    */
   public function __construct($name) {
     list($object_name) = explode('.', $name, 2);
-    $type = 'module';
-    if (!module_exists($object_name)) {
-      // Let it work with a theme's settings as well
-      $themes = list_themes();
-      if (array_key_exists($object_name, $themes)) {
-        $type = 'theme';
+    foreach (array('module', 'theme', 'profile') as $type) {
+      $object_path = drupal_get_path($type, $object_name);
+      if (!empty($object_path)) {
+        break;
       }
-      else {
-        throw new \Exception('Invalid config name ' . $name);
-      }
+    }
+    if (empty($object_path)) {
+      throw new \Exception('Invalid config name ' . $name);
     }
 
     $config_dir = 'private://config/active';
@@ -50,8 +48,6 @@ class Config {
       drupal_set_message('Private filesystem is not writable.', 'error');
     }
     $filename = "$name.yml";
-
-    $object_path = drupal_get_path($type, $object_name);
 
     $default_config_file = DRUPAL_ROOT . '/' . $object_path . '/config/' . $filename;
     $this->override_config_file = $config_dir . '/' . $filename;

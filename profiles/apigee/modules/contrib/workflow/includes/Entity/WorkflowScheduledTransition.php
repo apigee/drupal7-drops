@@ -9,16 +9,24 @@
  * Implements a scheduled transition, as shown on Workflow form.
  */
 class WorkflowScheduledTransition extends WorkflowTransition {
-  public $scheduled;
-  protected $is_scheduled = TRUE;
-  protected $is_executed = FALSE;
+  public $scheduled; // Scheduled timestamp of state change.
 
   /**
-   * Constructor
+   * Constructor.
    */
-  public function __construct($entity_type = '', $entity = NULL, $field_name = '', $old_sid = 0, $new_sid = 0, $uid = 0, $scheduled = 0, $comment = '') {
-    parent::__construct($entity_type, $entity, $field_name, $old_sid, $new_sid, $uid, $stamp = 0, $comment);
-    $this->scheduled = (!$scheduled) ? $this->scheduled : $scheduled;
+  public function __construct(array $values = array(), $entityType = 'WorkflowScheduledTransition') {
+    parent::__construct($values, $entityType);
+
+    $this->is_scheduled = TRUE;
+    $this->is_executed = FALSE;
+  }
+
+  public function setValues($entity_type, $entity, $field_name, $old_sid, $new_sid, $uid, $scheduled, $comment) {
+    // A scheduled transition does not have a timestamp, yet.
+    $stamp = 0;
+    parent::setValues($entity_type, $entity, $field_name, $old_sid, $new_sid, $uid, $stamp, $comment);
+
+    $this->scheduled = $scheduled; // Scheduled timestamp of state change.
   }
 
   /**
@@ -75,14 +83,21 @@ class WorkflowScheduledTransition extends WorkflowTransition {
   }
 
   /**
-   * Save a scheduled transition. If the transition is executed, save as logged transition.
+   * Save a scheduled transition. If the transition is executed, save in history.
    */
   public function save() {
-    // If executed, save as logged transition.
+    // If executed, save in history.
     if ($this->is_executed) {
-      $result = parent::save();
-      return $result;
+      // Be careful, we are not a WorkflowScheduleTransition anymore!
+      $this->entityType = 'WorkflowTransition';
+      $this->setUp();
+
+      return parent::save();
     }
+
+    // Since we do not have an entity_id here, we cannot use entity_delete.
+    // @todo: Add an 'entity id' to WorkflowScheduledTransition entity class.
+    // $result = parent::save();
 
     // Avoid duplicate entries.
     $clone = clone $this;
@@ -90,8 +105,8 @@ class WorkflowScheduledTransition extends WorkflowTransition {
     // Save (insert or update) a record to the database based upon the schema.
     drupal_write_record('workflow_scheduled_transition', $this);
 
-    // Get name of state.
-    if ($state = WorkflowState::load($this->new_sid)) {
+    // Create user message.
+    if ($state = workflow_state_load_single($this->new_sid)) {
       $entity = $this->getEntity();
       $message = '@entity_title scheduled for state change to %state_name on %scheduled_date';
       $args = array(
@@ -115,6 +130,12 @@ class WorkflowScheduledTransition extends WorkflowTransition {
     return $result;
   }
 
+  public static function deleteMultiple(array $conditions, $table = 'dummy') {
+    // The $table argument is to adhere to the parent::deleteMultiple interface. It must not be changeable.
+    $result = parent::deleteMultiple($conditions, $table = 'workflow_scheduled_transition');
+    return $result;
+  }
+
   /**
    * Given an Entity, delete transitions for it.
    * @todo: add support for Field.
@@ -125,12 +146,6 @@ class WorkflowScheduledTransition extends WorkflowTransition {
       'nid' => $entity_id,
     );
     $result = self::deleteMultiple($conditions);
-    return $result;
-  }
-
-  public static function deleteMultiple(array $conditions, $table = 'dummy') {
-    // The $table argument is to adhere to the parent::deleteMultiple interface. It must not be changeable.
-    $result = parent::deleteMultiple($conditions, $table = 'workflow_scheduled_transition');
     return $result;
   }
 

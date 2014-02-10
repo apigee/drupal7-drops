@@ -226,7 +226,7 @@ function devconnect_monetization_menu() {
   $items['users/%devconnect_monetization_developer/monetization/packages/accepted-product/%'] = array(
     'title' => 'Get Products Accepted By Developer',
     'page callback' => 'devconnect_monetization_accepted_products',
-    'page arguments' => array(1, 4),
+    'page arguments' => array(1, 5),
     'delivery callback' => 'drupal_json_output',
     'access arguments' => array('add mint product to application'),
     'type' => MENU_CALLBACK,
@@ -483,6 +483,9 @@ function devconnect_monetization_package_load($package_id) {
  * @return \Apigee\Mint\Developer|bool
  */
 function devconnect_monetization_developer_load($uid = NULL) {
+  if (!user_is_logged_in()) {
+    return;
+  }	
   static $developer;
   if (!isset($developer)) {
     try {
@@ -499,7 +502,6 @@ function devconnect_monetization_developer_load($uid = NULL) {
       }
       else {
         drupal_set_message('You do not have Mint enabled account. Please contact your administrator.', 'error');
-        drupal_goto('<front>');
       }
     }
   }
@@ -1609,9 +1611,12 @@ function devconnect_monetization_clear_api_cache() {
  * Implements hook_flush_caches()
  */
 function devconnect_monetization_flush_caches() {
-  return array(
-    'cache_mint'
-  );
+  if (db_table_exists('cache_mint')) {
+    return array(
+      'cache_mint'
+    );
+  }
+  return array();
 }
 
 /**

@@ -7,7 +7,6 @@
 
 define('WORKFLOW_FEATURES_AUTHOR_NAME', 'workflow_features_author_name');
 
-// @todo: This include has not been fully tested with Workflow Field and its classes.
 // Even if workflow Node is not enabled, Features may use Node API's type_maps.
 module_load_include('inc', 'workflow', 'workflow.node.type_map');
 
@@ -19,26 +18,38 @@ module_load_include('inc', 'workflow', 'workflow.node.type_map');
  * Implements hook_features_export_options().
  *
  * Generates the options to choose from.
- * Using $wid as key. Result is used by hook_featues_export().
+ * Using $wid as key. Result is used by hook_features_export().
  */
 function workflow_features_export_options() {
-  return workflow_get_workflow_names();
+  $workflows = array();
+  foreach (workflow_load_multiple() as $workflow) {
+    $name = $workflow->getName();
+    $workflows[$name] = $name;
+  }
+  return $workflows;
 }
 
 /**
  * Implements hook_features_export().
  */
 function workflow_features_export($data, &$export, $module_name = '') {
-  // fontyourface_default_fonts integration is provided by Features.
+  $pipe = array();
+
   $export['dependencies']['features'] = 'features';
   $export['dependencies']['workflow'] = 'workflow';
-  foreach ($data as $wid) {
-    if ($workflow = Workflow::load($wid)) {
-      $name = $workflow->getName(); 
-      $export['features']['workflow'][$name] = $name;
+
+  foreach ($data as $workflow_name) {
+    if ($workflow = workflow_load_by_name($workflow_name)) {
+
+      if (count($workflow->getTypeMap())) {
+        $export['dependencies']['workflownode'] = 'workflownode';
+      }
+
+      $export['features']['workflow'][$workflow_name] = $workflow_name;
     }
   }
-  return $export;
+
+  return $pipe;
 }
 
 /**
@@ -49,12 +60,12 @@ function workflow_features_export_render($module, $data) {
   $code[] = '  $workflows = array();';
   $code[] = '';
 
-  foreach ($data as $name) {
-    if ($workflow = workflow_get_workflows_full_object($name)) {
+  foreach ($data as $workflow_name) {
+    if ($workflow = workflow_get_workflows_full_object($workflow_name)) {
       unset($workflow->wid);
       $workflow_export = features_var_export($workflow, '  ');
-      $workflow_identifier = features_var_export($workflow->name);
-      $code[] = "  // Exported workflow: $name";
+      $workflow_identifier = features_var_export($workflow_name);
+      $code[] = "  // Exported workflow: " . $workflow_name;
       $code[] = "  \$workflows[{$workflow_identifier}] = {$workflow_export};";
       $code[] = "";
     }
@@ -119,30 +130,31 @@ function workflow_update_workflows_full_object($workflow_data) {
   $name = $workflow_data->name;
 
   // Then make a workflow so we can track by wid.
-  if (!$workflow = Workflow::loadByName($name)) {
-    $workflow = Workflow::create($name);
+  if (!$workflow = workflow_load_by_name($name)) {
+    $workflow = workflow_create($name);
   }
+
   unset($workflow->tab_roles);
   // Roles are exported by rolename, so need to translate to RID.
-  $workflow->tab_roles = !empty($workflow_data->tab_roles) ? _workflow_roles_to_rids($workflow_data->tab_roles) : '';
+  $workflow->tab_roles = !empty($workflow_data->tab_roles) ? _workflow_roles_to_rids($workflow_data->tab_roles) : array();
   unset($workflow->options);
   $workflow->options = $workflow_data->options;
 
-  $workflow->save(FALSE);
-  // Wid may be known only after save().
+  // For new workflows, $wid is only known after save().
+  $workflow->save();
 
   // Cancel out if workflow failed to save.
   if (!isset($workflow->wid) || empty($workflow->wid)) {
     return FALSE;
   }
 
-  // Workflow is now a fully vetted workflow object. We have NOT created a creation state with this.
+  // Workflow is now a fully vetted workflow object.
   // Then make states, marking state name to state sid.
-  $orig_states = $workflow->getStates(); // Initialize the cache for this workflow.
+  $orig_states = $workflow->getStates($all = TRUE); // Initialize the cache for this workflow.
   $active_states = array();
   foreach ($new_states as $state_data) {
     $name = $state_data['name'];
-    if (!$state = WorkflowState::loadByName($name, $workflow->wid)) {
+    if (!$state = workflow_state_load_by_name($name, $workflow->wid)) {
       $state = $workflow->createState($name);
     }
     $state->weight = $state_data['weight'];
@@ -165,7 +177,7 @@ function workflow_update_workflows_full_object($workflow_data) {
     $transition = $workflow->createTransition($new_data['state_name'], $new_data['target_state_name']);
 
     // Roles are exported by rolename, so need to translate to RID.
-    $transition->roles = !empty($new_data['roles']) ? explode(',', _workflow_roles_to_rids($new_data['roles'])) : '';
+    $transition->roles = !empty($new_data['roles']) ? _workflow_roles_to_rids($new_data['roles']) : array();
     $transition->save();
 
     $active_transitions[] = $transition->tid;
@@ -199,12 +211,12 @@ function workflow_update_workflows_full_object($workflow_data) {
 function workflow_get_workflows_full_object($name) {
   $workflow = NULL;
 
-  if ($workflow = Workflow::loadByName($name)) {
+  if ($workflow = workflow_load_by_name($name)) {
     // Clone so we can modify it independently of cached original.
     $workflow = clone $workflow;
 
     // Translate to role names so it works cross install.
-    $workflow->tab_roles = !empty($workflow->tab_roles) ? _workflow_rids_to_roles($workflow->tab_roles) : '';
+    $workflow->tab_roles = _workflow_rids_to_roles($workflow->tab_roles);
 
     // Add the active states for workflow, an array of sub-objects.
     // Add only the active ones and 'creation'.
@@ -223,7 +235,6 @@ function workflow_get_workflows_full_object($name) {
     }
 
     // Then, add the active transitions for workflow, an array of sub-objects.
-    // $options = array('status' => 1); // We only want active transitions for this export.
     foreach ($workflow->states as $sid => $state) {
       // We're going to look everything up by the start state, not state involved, to avoid dupes.
       foreach ($t = $workflow->getTransitionsBySid($sid) as $transition) {
@@ -231,14 +242,14 @@ function workflow_get_workflows_full_object($name) {
         $transition = clone $transition;
 
         // And to get the target state (by name) we need to look it up, too.
-        $target_state = WorkflowState::load($transition->target_sid);
+        $target_state = workflow_state_load_single($transition->target_sid);
         if ($target_state && $target_state->isActive() && $state->isActive()) {
           // The Transition seems an exportable entity, so we need to copy it.
           $new_transition = new stdClass();
           $new_transition->state_name = $state->getName();
           $new_transition->target_state_name = $target_state->getName();
           // Translate to role names so it works cross install.
-          $new_transition->roles = !empty($transition->roles) ? _workflow_rids_to_roles(implode(',', $transition->roles)) : '';
+          $new_transition->roles = _workflow_rids_to_roles($transition->roles);
           // Remove what we don't need to export.
           unset($transition->tid, $transition->sid, $transition->target_sid);
           $workflow->transitions[] = $new_transition;
@@ -257,54 +268,43 @@ function workflow_get_workflows_full_object($name) {
 }
 
 /**
- * Internally cache the user roles as core doesn't.
- */
-function _workflow_user_roles($reset = FALSE) {
-  $roles = &drupal_static(__FUNCTION__);
-  if ($reset || !isset($roles)) {
-    $roles = user_roles();
-  }
-  return $roles;
-}
-
-/**
  * Translates a role string to RIDs for importing.
  *
  * @param $role_string
  *   A string of roles or fake 'author' role.
  *
  * @return
- *   A string of RIDs separated by commas.
+ *   An array of RIDs.
  */
 function _workflow_roles_to_rids($role_string) {
-  $roles = _workflow_user_roles();
+  $roles = workflow_get_roles($permission = NULL);
   $rid_array = array();
   foreach (explode(',', $role_string) as $role_name) {
     if ($role_name === WORKFLOW_FEATURES_AUTHOR_NAME) {
-      $rid_array[] = 'author';
+      $rid_array[] = WORKFLOW_ROLE_AUTHOR_RID;
     }
     elseif ($role_name && in_array($role_name, $roles)) {
       $rid_array[] = array_search($role_name, $roles);
     }
   }
-  return implode(',', $rid_array);
+  return $rid_array;
 }
 
 /**
  * Translates a string of rids to role names for exporting.
  *
- * @param $rid_string
- *   A string of rids or fake 'author' role.
+ * @param $rid_array
+ *   An array of rids or fake 'author' role.
  *
  * @return
  *   A string of role names separated by commas.
  */
-function _workflow_rids_to_roles($rid_string) {
-  $roles = _workflow_user_roles();
-  $rid_array = explode(',', $rid_string);
+function _workflow_rids_to_roles($rid_array) {
+  // Get all roles, including 'author'.
+  $roles = workflow_get_roles($permission = NULL);
   // There may be a role named 'author', so make 'author' distinct.
-  $return = in_array('author', $rid_array) ? WORKFLOW_FEATURES_AUTHOR_NAME . ',' : '';
+  $roles[WORKFLOW_ROLE_AUTHOR_RID] = WORKFLOW_FEATURES_AUTHOR_NAME;
   // Translate RIDs to rolenames.
-  $return .= implode(',', array_intersect_key($roles, array_flip($rid_array)));
+  $return = implode(',', array_intersect_key($roles, array_flip($rid_array)));
   return trim($return, ',');
 }

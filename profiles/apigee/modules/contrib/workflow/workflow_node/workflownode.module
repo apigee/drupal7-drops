@@ -5,6 +5,6 @@
  */
 
 // Includes the hooks for the 'conventional' (version D5/D6/D7.1) Node API.
-module_load_include('inc', 'workflow', 'workflow.node');
+module_load_include('inc', 'workflownode', 'workflownode');
 module_load_include('inc', 'workflow', 'workflow.node.type_map');
 module_load_include('inc', 'workflow', 'workflow.deprecated');

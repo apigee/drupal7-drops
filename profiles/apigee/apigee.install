@@ -5,7 +5,6 @@ if (array_key_exists('HTTP_X_PANTHEON_SCREENSHOT', $_SERVER)) {
   exit();
 }
 
-require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Exceptions/InstallException.php");
 require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Util/Crypto.php");
 
 

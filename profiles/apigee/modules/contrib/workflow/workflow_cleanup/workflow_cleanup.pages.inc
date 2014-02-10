@@ -19,7 +19,7 @@ function workflow_cleanup_form($form, $form_state) {
   // Get all of the states, indexed by sid.
   $states = $orphans = $inactive = array();
 
-  foreach ($states = WorkflowState::getStates() as $state) {
+  foreach ($states = workflow_state_load_multiple() as $state) {
     // Does the associated workflow exist?
     if (!$state->getWorkflow()) {
       $orphans[$state->sid] = $state->getName();

@@ -25,10 +25,10 @@ class WorkflowExampleTestCase extends DrupalWebTestCase {
   // Create a simpletest_example node using the node form
   public function testWorkflow() {
 
-//    $workflows = Workflow::getWorkflows();
+//    $workflows = workflow_load_multiple();
 //    dpm($workflows, "These are the current Workflows in the system.");
     $wid = 1;
-    $workflow = Workflow::load($wid);
+    $workflow = workflow_load_single($wid);
     $this->assertEqual($workflow->wid, $wid, t('The wid of the Workflow should be the same as we decided.'));
     $workflow = new Workflow($wid);
     $this->assertEqual($workflow->wid, $wid, t('The wid of the Workflow should be the same as we decided.'));

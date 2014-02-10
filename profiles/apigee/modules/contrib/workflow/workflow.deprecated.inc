@@ -12,26 +12,26 @@
 
 /**
  * Get all workflows.
- * @deprecated: workflow_get_workflows() --> Workflow::getWorkflows($wid)
+ * @deprecated: workflow_get_workflows --> workflow_load_multiple
  */
 function workflow_get_workflows() {
-  return Workflow::getWorkflows();
+  return workflow_load_multiple();
 }
 
 /**
  * Get a specific workflow, wid is a unique ID.
- * @deprecated: workflow_get_workflows_by_wid() --> Workflow::load($wid)
+ * @deprecated: workflow_get_workflows_by_wid --> workflow_load_single
  */
 function workflow_get_workflows_by_wid($wid, $reset = FALSE) {
-  return Workflow::load($wid, $reset);
+  return workflow_load_single($wid, $reset);
 }
 
 /**
  * Get a specific workflow, name is a unique ID.
- * @deprecated: workflow_get_workflows_by_name() --> Workflow::loadByName($name)
+ * @deprecated: workflow_get_workflows_by_name --> workflow_load_by_name
  */
 function workflow_get_workflows_by_name($name) {
-  return Workflow::loadByName($name);
+  return workflow_load_by_name($name);
 }
 
 /**
@@ -43,7 +43,7 @@ function workflow_get_workflows_by_name($name) {
  */
 function workflow_get_creation_state_by_wid($wid) {
   $sid = 0;
-  if ($workflow = Workflow::load($wid)) {
+  if ($workflow = workflow_load_single($wid)) {
     $sid = $workflow->getCreationSid();
   }
   return $sid;
@@ -68,32 +68,32 @@ function workflow_get_creation_state_by_type($type) {
  *
  * @deprecated: workflow_update_workflows() --> Workflow->save()
  */
-function workflow_update_workflows(&$data, $create_creation_state = TRUE) {
-  $data = (object) $data;
-  if (isset($data->tab_roles) && is_array($data->tab_roles)) {
-    $data->tab_roles = implode(',', $data->tab_roles);
-  }
-
-  if (isset($data->wid) && Workflow::load($data->wid)) {
-    drupal_write_record('workflows', $data, 'wid');
-  }
-  else {
-    drupal_write_record('workflows', $data);
-    if ($create_creation_state) {
-      $state_data = array(
-        'wid' => $data->wid,
-        'state' => t(WORKFLOW_CREATION_STATE_NAME),
-        'sysid' => WORKFLOW_CREATION,
-        'weight' => WORKFLOW_CREATION_DEFAULT_WEIGHT,
-        );
-
-      workflow_update_workflow_states($state_data);
-      // @TODO consider adding state data to return here as part of workflow data structure.
-      // That way we could past structs and transitions around as a data object as a whole.
-      // Might make clone easier, but it might be a little hefty for our needs?
-    }
-  }
-}
+//function workflow_update_workflows(&$data, $create_creation_state = TRUE) {
+//  $data = (object) $data;
+//  if (isset($data->tab_roles) && is_array($data->tab_roles)) {
+//    $data->tab_roles = serialize($data->tab_roles);
+//  }
+//
+//  if (isset($data->wid) && workflow_load_single($data->wid)) {
+//    drupal_write_record('workflows', $data, 'wid');
+//  }
+//  else {
+//    drupal_write_record('workflows', $data);
+//    if ($create_creation_state) {
+//      $state_data = array(
+//        'wid' => $data->wid,
+//        'state' => t(WORKFLOW_CREATION_STATE_NAME),
+//        'sysid' => WORKFLOW_CREATION,
+//        'weight' => WORKFLOW_CREATION_DEFAULT_WEIGHT,
+//        );
+//
+//      workflow_update_workflow_states($state_data);
+//      // @TODO consider adding state data to return here as part of workflow data structure.
+//      // That way we could past structs and transitions around as a data object as a whole.
+//      // Might make clone easier, but it might be a little hefty for our needs?
+//    }
+//  }
+//}
 
 /**
  * Given a wid, delete the workflow and its data.
@@ -101,7 +101,7 @@ function workflow_update_workflows(&$data, $create_creation_state = TRUE) {
  * @deprecated: workflow_delete_workflows_by_wid() --> Workflow::delete().
  */
 function workflow_delete_workflows_by_wid($wid) {
-  $workflow = Workflow::load($wid);
+  $workflow = workflow_load_single($wid);
   $workflow->delete();
 }
 
@@ -163,7 +163,7 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
     // This is used in Node API.
     $workflow = workflow_get_workflow_type_map_by_type($node->type);
     $current_sid = workflow_node_current_state($node);
-    $state = WorkflowState::load($current_sid);
+    $state = workflow_state_load_single($current_sid);
   }
   return $state->getOptions('node', $node, $force);
 }
@@ -185,7 +185,7 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
  *   TRUE = a form must be shown; FALSE = no form, a formatter must be shown instead.
  */
 function workflow_show_form($sid, $workflow, array $options) {
-  $state = WorkflowState::load($sid);
+  $state = workflow_state_load_single($sid);
   return !$state->showWidget($options);
 }
 
@@ -263,7 +263,7 @@ function workflow_get_workflow_states($options = array()) {
 /**
  * Get all states in the system, with options to filter, only where a workflow exists.
  *
- * @deprecated: workflow_get_workflow_states_by_wid() --> Workflow->getOptions()
+ * @deprecated: workflow_get_workflow_states_by_wid --> Workflow->getOptions
  */
 function workflow_get_workflow_states_by_wid($wid, $options = array()) {
   $options['wid'] = $wid;
@@ -272,7 +272,7 @@ function workflow_get_workflow_states_by_wid($wid, $options = array()) {
 
 /**
  * Given a sid, return a workflow. Sids are a unique id.
- * @deprecated: workflow_get_workflow_by_sid --> WorkflowState::load()
+ * @deprecated: workflow_get_workflow_by_sid --> workflow_state_load_single
  */
 function workflow_get_workflow_by_sid($sid) {
   return db_query("SELECT w.wid, w.name, w.tab_roles, w.options FROM {workflow_states} s
@@ -282,7 +282,7 @@ function workflow_get_workflow_by_sid($sid) {
 
 /**
  * Given a sid, return a state. Sids are a unique id.
- * @deprecated: workflow_get_workflow_states_by_sid($sid) --> WorkflowState::load($sid)
+ * @deprecated: workflow_get_workflow_states_by_sid --> workflow_state_load_single
  */
 function workflow_get_workflow_states_by_sid($sid, $options = array()) {
   static $sids = array();
@@ -322,7 +322,7 @@ function workflow_get_workflow_states_by_wid_state($wid, $state) {
  * @deprecated: workflow_delete_workflow_states_by_sid($sid, $new_sid, $true_delete) --> WorkflowState->delete()
  */
 function workflow_delete_workflow_states_by_sid($sid, $new_sid = FALSE, $true_delete = FALSE) {
-  if ($state = WorkflowState::load($sid)) {
+  if ($state = workflow_state_load_single($sid)) {
     $state->delete($new_sid, $true_delete);
   }
 }
@@ -339,7 +339,7 @@ function workflow_update_workflow_states(&$data) {
   if (!isset($data->status)) {
     $data->status = 1;
   }
-  if (isset($data->sid) && WorkflowState::load($data->sid)) {
+  if (isset($data->sid) && workflow_state_load_single($data->sid)) {
     drupal_write_record('workflow_states', $data, 'sid');
   }
   else {
@@ -384,53 +384,61 @@ function workflow_get_workflow_transitions_by_tid($tid) {
 
 /**
  * Given a sid, get the transition.
+ *
+ * @deprecated: workflow_get_workflow_transitions_by_sid --> workflow_state_load_single
  */
-function workflow_get_workflow_transitions_by_sid($sid) {
-  static $transitions;
-  if (!isset($transitions[$sid])) {
-    $transitions[$sid] = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid',
-      array(':sid' => $sid))->fetchAll();
-  }
-  return $transitions[$sid];
-}
+//function workflow_get_workflow_transitions_by_sid($sid) {
+//  static $transitions;
+//  if (!isset($transitions[$sid])) {
+//    $transitions[$sid] = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid',
+//      array(':sid' => $sid))->fetchAll();
+//  }
+//  return $transitions[$sid];
+//}
 
 /**
  * Given a target_sid, get the transition.
+ *
+ * @deprecated: workflow_get_workflow_transitions_by_sid --> Workflow::getTransitionsByTargetSid
  */
-function workflow_get_workflow_transitions_by_target_sid($target_sid) {
-  static $transitions;
-  if (!isset($transitions[$target_sid])) {
-    $transitions[$target_sid] = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE target_sid = :target_sid',
-      array(':target_sid' => $target_sid))->fetchAll();
-  }
-  return $transitions[$target_sid];
-}
+//function workflow_get_workflow_transitions_by_target_sid($target_sid) {
+//  static $transitions;
+//  if (!isset($transitions[$target_sid])) {
+//    $transitions[$target_sid] = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE target_sid = :target_sid',
+//      array(':target_sid' => $target_sid))->fetchAll();
+//  }
+//  return $transitions[$target_sid];
+//}
 
 /**
  * Given a sid get any transition involved.
+ *
+ * @deprecated
  */
-function workflow_get_workflow_transitions_by_sid_involved($sid) {
-  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid OR target_sid = :sid', array(':sid' => $sid));
-  return $results->fetchAll();
-}
+//function workflow_get_workflow_transitions_by_sid_involved($sid) {
+//  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid OR target_sid = :sid', array(':sid' => $sid));
+//  return $results->fetchAll();
+//}
 
 /**
  * Given a role string get any transition involved.
+ *
+ * @deprecated
  */
-function workflow_get_workflow_transitions_by_roles($roles) {
-  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE roles LIKE :roles', array(':roles' => $roles));
-  return $results->fetchAll();
-}
+//function workflow_get_workflow_transitions_by_roles($roles) {
+//  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE roles LIKE :roles', array(':roles' => $roles));
+//  return $results->fetchAll();
+//}
 
 /**
  * Given a sid and target_sid, get the transition. This will be unique.
  *
  * @deprecated: workflow_get_workflow_transitions_by_sid_target_sid ==> $workflow->getTransitionsBySidTargetSid
  */
-function workflow_get_workflow_transitions_by_sid_target_sid($sid, $target_sid) {
-  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid AND target_sid = :target_sid', array(':sid' => $sid, ':target_sid' => $target_sid));
-  return $results->fetchObject();
-}
+//function workflow_get_workflow_transitions_by_sid_target_sid($sid, $target_sid) {
+//  $results = db_query('SELECT tid, sid, target_sid, roles FROM {workflow_transitions} WHERE sid = :sid AND target_sid = :target_sid', array(':sid' => $sid, ':target_sid' => $target_sid));
+//  return $results->fetchObject();
+//}
 
 /**
  * Given a tid, delete the transition.
@@ -459,32 +467,32 @@ function workflow_delete_workflow_transitions_by_roles($roles) {
  *
  * @deprecated: workflow_update_workflow_transitions() ==> entity_save('WorkflowConfigTransition', $transition)
  */
-function workflow_update_workflow_transitions(&$data) {
-  $data = (object) $data;
-  $transition = workflow_get_workflow_transitions_by_sid_target_sid($data->sid, $data->target_sid);
-  if ($transition) {
-    $roles = explode(',', $transition->roles);
-    foreach (explode(',', $data->roles) as $role) {
-      if (array_search($role, $roles) === FALSE) {
-        $roles[] = $role;
-      }
-    }
-    $transition->roles = implode(',', $roles);
-    drupal_write_record('workflow_transitions', $transition, 'tid');
-    $data = $transition;
-  }
-  else {
-    drupal_write_record('workflow_transitions', $data);
-  }
-}
+//function workflow_update_workflow_transitions(&$data) {
+//  $data = (object) $data;
+//  $transition = workflow_get_workflow_transitions_by_sid_target_sid($data->sid, $data->target_sid);
+//  if ($transition) {
+//    $roles = explode(',', $transition->roles);
+//    foreach (explode(',', $data->roles) as $role) {
+//      if (array_search($role, $roles) === FALSE) {
+//        $roles[] = $role;
+//      }
+//    }
+//    $transition->roles = implode(',', $roles);
+//    drupal_write_record('workflow_transitions', $transition, 'tid');
+//    $data = $transition;
+//  }
+//  else {
+//    drupal_write_record('workflow_transitions', $data);
+//  }
+//}
 
 /**
  * Given a tid and new roles, update them.
  * @todo - this should be refactored out, and the update made a full actual update.
  */
-function workflow_update_workflow_transitions_roles($tid, $roles) {
-  return db_update('workflow_transitions')->fields(array('roles' => implode(',', $roles)))->condition('tid', $tid, '=')->execute();
-}
+//function workflow_update_workflow_transitions_roles($tid, $roles) {
+//  return db_update('workflow_transitions')->fields(array('roles' => implode(',', $roles)))->condition('tid', $tid, '=')->execute();
+//}
 
 /**
  * Get allowable transitions for a given workflow state. Typical use:
@@ -512,57 +520,57 @@ function workflow_update_workflow_transitions_roles($tid, $roles) {
  *
  * @deprecated: workflow_allowable_transitions() => Workflow::getTransitionsBySid()
  */
-function workflow_allowable_transitions($sid, $dir = 'to', $roles = 'ALL') {
-  $transitions = array();
-
-  // Main query from transitions table.
-  $query = db_select('workflow_transitions', 't')
-    ->fields('t', array('tid'));
-
-  if ($dir == 'to') {
-    $query->innerJoin('workflow_states', 's', 's.sid = t.target_sid');
-    $query->addField('t', 'target_sid', 'state_id');
-    $query->condition('t.sid', $sid);
-  }
-  else {
-    $query->innerJoin('workflow_states', 's', 's.sid = t.sid');
-    $query->addField('t', 'sid', 'state_id');
-    $query->condition('t.target_sid', $sid);
-  }
-
-  $query->addField('s', 'state', 'state_name');
-  $query->addField('s', 'weight', 'state_weight');
-  $query->addField('s', 'sysid');
-  $query->condition('s.status', 1);
-
-  // Now let's get the current state.
-  $query2 = db_select('workflow_states', 's');
-  $query2->addField('s', 'sid', 'tid');
-  $query2->addField('s', 'sid', 'state_id');
-  $query2->addField('s', 'state', 'state_name');
-  $query2->addField('s', 'weight', 'state_weight');
-  $query2->addField('s', 'sysid');
-  $query2->condition('s.status', 1);
-  $query2->condition('s.sid', $sid);
-
-  $query2->orderBy('state_weight');
-  $query2->orderBy('state_id');
-
-  // Add the union of the two queries.
-  $query->union($query2, 'UNION');
-
-  $results = $query->execute();
-
-  foreach ($results as $transition) {
-    if ($roles == 'ALL'  // Superuser.
-      || $sid == $transition->state_id // Include current state for same-state transitions.
-      || workflow_transition_allowed($transition->tid, $roles)) {
-      $transitions[] = $transition;
-      // $transitions[$transition->tid] = $transition; //@todo
-    }
-  }
-  return $transitions;
-}
+//function workflow_allowable_transitions($sid, $dir = 'to', $roles = 'ALL') {
+//  $transitions = array();
+//
+//  // Main query from transitions table.
+//  $query = db_select('workflow_transitions', 't')
+//    ->fields('t', array('tid'));
+//
+//  if ($dir == 'to') {
+//    $query->innerJoin('workflow_states', 's', 's.sid = t.target_sid');
+//    $query->addField('t', 'target_sid', 'state_id');
+//    $query->condition('t.sid', $sid);
+//  }
+//  else {
+//    $query->innerJoin('workflow_states', 's', 's.sid = t.sid');
+//    $query->addField('t', 'sid', 'state_id');
+//    $query->condition('t.target_sid', $sid);
+//  }
+//
+//  $query->addField('s', 'state', 'state_name');
+//  $query->addField('s', 'weight', 'state_weight');
+//  $query->addField('s', 'sysid');
+//  $query->condition('s.status', 1);
+//
+//  // Now let's get the current state.
+//  $query2 = db_select('workflow_states', 's');
+//  $query2->addField('s', 'sid', 'tid');
+//  $query2->addField('s', 'sid', 'state_id');
+//  $query2->addField('s', 'state', 'state_name');
+//  $query2->addField('s', 'weight', 'state_weight');
+//  $query2->addField('s', 'sysid');
+//  $query2->condition('s.status', 1);
+//  $query2->condition('s.sid', $sid);
+//
+//  $query2->orderBy('state_weight');
+//  $query2->orderBy('state_id');
+//
+//  // Add the union of the two queries.
+//  $query->union($query2, 'UNION');
+//
+//  $results = $query->execute();
+//
+//  foreach ($results as $transition) {
+//    if ($roles == 'ALL'  // Superuser.
+//      || $sid == $transition->state_id // Include current state for same-state transitions.
+//      || workflow_transition_allowed($transition->tid, $roles)) {
+//      $transitions[] = $transition;
+//      // $transitions[$transition->tid] = $transition; //@todo
+//    }
+//  }
+//  return $transitions;
+//}
 
 /**
  * See if a transition is allowed for a given role.
@@ -641,7 +649,7 @@ function workflow_delete_workflow_scheduled_transition_by_nid($nid) {
  * Since this may return a lot of data, a limit is included to allow for only one result.
  */
 function workflow_get_workflow_node_history_by_nid($nid, $limit = NULL) {
-  return WorkflowTransition::load('node', $nid, $field_name= '', $limit);
+  return workflow_transition_load_multiple('node', $nid, $field_name= '', $limit);
 }
 
 /**

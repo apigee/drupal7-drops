@@ -26,11 +26,8 @@ function workflow_access_form($form, $form_state, $workflow) {
 
   $form['#wid'] = $workflow->wid;
 
-  // A list of roles available on the site and our
-  // special -1 role used to represent the node author.
-  $rids = user_roles(FALSE, 'participate in workflow');
-
-  $rids['-1'] = t('author');
+  // A list of role names keyed by role ID, including the 'author' role.
+  $roles = workflow_get_roles('participate in workflow');
 
   // Add a table for every workflow state.
   foreach ($workflow->getStates($all = TRUE) as $state) {
@@ -68,7 +65,7 @@ function workflow_access_form($form, $form_state, $workflow) {
 
     $form[$state->sid]['view'] = array(
       '#type' => 'checkboxes',
-      '#options' => $rids,
+      '#options' => $roles,
       '#default_value' => $view,
       '#title' => t('Roles who can view posts in this state'),
       '#prefix' => '<table width="100%" style="border: 0;"><tbody style="border: 0;"><tr><td>',
@@ -76,7 +73,7 @@ function workflow_access_form($form, $form_state, $workflow) {
 
     $form[$state->sid]['update'] = array(
       '#type' => 'checkboxes',
-      '#options' => $rids,
+      '#options' => $roles,
       '#default_value' => $update,
       '#title' => t('Roles who can edit posts in this state'),
       '#prefix' => "</td><td>",
@@ -84,7 +81,7 @@ function workflow_access_form($form, $form_state, $workflow) {
 
     $form[$state->sid]['delete'] = array(
       '#type' => 'checkboxes',
-      '#options' => $rids,
+      '#options' => $roles,
       '#default_value' => $delete,
       '#title' => t('Roles who can delete posts in this state'),
       '#prefix' => "</td><td>",

@@ -3,150 +3,76 @@
 /**
  * @file
  * Contains workflow\includes\Entity\Workflow.
+ * Contains workflow\includes\Entity\WorkflowController.
  */
 
-class Workflow {
-  // Since workflows do not change, it is implemented as a singleton.
-  protected static $workflows = array();
+/**
+ * Implements a controller class for Workflow.
+ */
+class WorkflowController extends EntityAPIController {
 
+  // public function create(array $values = array()) { }
+  // public function load($ids = array(), $conditions = array()) { }
+
+  /**
+   * Overrides DrupalDefaultEntityController::cacheGet()
+   * 
+   * Override default function, due to Core issue #1572466.
+   */
+  protected function cacheGet($ids, $conditions = array()) {
+    // Load any available entities from the internal cache.
+    if ($ids === FALSE && !$conditions) {
+      return $this->entityCache;
+    }
+    return parent::cacheGet($ids, $conditions);
+  }
+
+  /**
+   * Overrides DrupalDefaultEntityController::cacheSet()
+   */
+  // protected function cacheSet($entities) { }
+  //   return parent::cacheSet($entities);
+  // }
+
+  /**
+   * Overrides DrupalDefaultEntityController::resetCache().
+   *
+   * Called by workflow_reset_cache, to
+   * Reset the Workflow when States, Transitions have been changed.
+   */
+  // public function resetCache(array $ids = NULL) {
+  //   parent::resetCache($ids);
+  // }
+
+  /**
+   * Overrides DrupalDefaultEntityController::attachLoad()
+   */
+  protected function attachLoad(&$queried_entities, $revision_id = FALSE) {
+    foreach ($queried_entities as $entity) {
+      // Load the states, so they are already present on the next (cached) load.
+      $entity->states = $entity->getStates($all = TRUE);
+    }
+
+    parent::attachLoad($queried_entities, $revision_id);
+  }
+}
+ 
+class Workflow extends Entity {
   public $wid = 0;
   public $name = '';
   public $tab_roles = array();
   public $options = array();
   protected $creation_sid = 0;
-  protected $creation_state = NULL;
   // Helper for workflow_get_workflows_by_type().
   protected $item = NULL; // Helper to get/set the Item of a Workflow.
+  // Attached States.
+  public $states = NULL;
 
   /**
    * CRUD functions.
    */
 
-  /**
-   * Constructor.
-   *
-   * The query instantiates objects and saves them in a static array.
-   */
-  protected function __construct($wid = 0) {
-    if (!$wid) {
-      // Automatic constructor when casting an array or object.
-      if (!is_array($this->options)) {
-        $this->options = unserialize($this->options);
-      }
-      if ($this->wid) {
-        self::$workflows[$this->wid] = $this;
-      }
-    }
-    else {
-      if (!isset(self::$workflows[$wid])) {
-        self::$workflows[$wid] = Workflow::load($wid);
-      }
-      // Workflow may not exist.
-      if (self::$workflows[$wid]) {
-        // @todo: this copy-thing should not be necessary.
-        $this->wid = self::$workflows[$wid]->wid;
-        $this->name = self::$workflows[$wid]->name;
-        $this->tab_roles = self::$workflows[$wid]->tab_roles;
-        $this->options = self::$workflows[$wid]->options;
-        $this->creation_sid = self::$workflows[$wid]->creation_sid;
-      }
-    }
-  }
-
-  /**
-   * Functions to creates and return a new or existing Workflow object.
-   * Implements a 'Factory' pattern to get Workflow objects from the database.
-   *
-   * "New considered harmful".
-   */
-
-  /**
-   * Creates a new Workflow object.
-   *
-   * $param string $name
-   *  The name of the new Workflow
-   *
-   * $return Workflow $workflow
-   *  A new Workflow object
-   *
-   */
-  public static function create($name) {
-    $workflow = Workflow::loadByName($name);
-    if (!$workflow) {
-      $workflow = new Workflow();
-      $workflow->name = $name;
-    }
-    return $workflow;
-  }
-
-  /**
-   * Loads a Workflow object from table {workflows}.
-   *
-   * Implements a 'Factory' pattern to get Workflow objects from the database.
-   *
-   * $param string $wid
-   *  The ID of the new Workflow
-   *
-   * $return Workflow $workflow
-   *  A new Workflow object
-   */
-  public static function load($wid, $reset = FALSE) {
-    $workflows = self::getWorkflows($wid, $reset);
-    $workflow = isset($workflows[$wid]) ? $workflows[$wid] : NULL;
-    return $workflow;
-  }
-
-  /**
-   * Implements a 'Factory' pattern to get Workflow objects from the database.
-   *
-   * @deprecated: workflow_get_workflows_by_name() --> Workflow::loadByName($name)
-   */
-  public static function loadByName($name) {
-    foreach ($workflows = self::getWorkflows() as $workflow) {
-      if ($name == $workflow->getName()) {
-        return $workflow;
-      }
-    }
-    return NULL;
-  }
-
-  /**
-   * Returns an array of Workflows, reading them from table table {workflows}.
-   */
-  public static function getWorkflows($wid = 0, $reset = FALSE) {
-    if ($reset) {
-      self::$workflows = array();
-    }
-
-    if ($wid && isset(self::$workflows[$wid])) {
-      // Only 1 is requested and cached: return this one.
-      return array($wid => self::$workflows[$wid]);
-    }
-
-    // Build the query.
-    // If all are requested: read from db
-    // (@todo: cache this, but only used on Admin UI.)
-    // If requested one is not cached: read from db.
-    $query = db_select('workflows', 'w');
-    $query->leftJoin('workflow_states', 'ws', 'w.wid = ws.wid');
-    $query->fields('w');
-    $query->addField('ws', 'sid', 'creation_sid');
-    // Initially, read the Id of the creationState of the Workflow.
-    $query->condition('ws.sysid', WORKFLOW_CREATION);
-
-    $query->execute()->fetchAll(PDO::FETCH_CLASS, 'Workflow');
-
-    // Return array of objects, even if only 1 is requested.
-    // Note: self::workflows[] is populated in respective constructors.
-    if ($wid > 0) {
-      // Return 1 object.
-      $workflow = isset(self::$workflows[$wid]) ? self::$workflows[$wid] : NULL;
-      return array($wid => $workflow);
-    }
-    else {
-      return self::$workflows;
-    }
-  }
+  // public function __construct(array $values = array(), $entityType = NULL) { }
 
   /**
    * Given information, update or insert a new workflow.
@@ -154,27 +80,16 @@ class Workflow {
    * @deprecated: workflow_update_workflows() --> Workflow->save()
    */
   public function save($create_creation_state = TRUE) {
-    $wid = $this->wid;
+    $is_new = !empty($this->is_new);
 
-    if (isset($this->tab_roles) && is_array($this->tab_roles)) {
-      $this->tab_roles = implode(',', $this->tab_roles);
-    }
-    if (is_array($this->options)) {
-      $this->options = serialize($this->options);
+    $return = parent::save();
+
+    if ($is_new) {
+      $state = $this->getCreationState();
+      $return2 = $state->save();
     }
 
-    if (($wid > 0) && Workflow::load($wid)) {
-      drupal_write_record('workflows', $this, 'wid');
-    }
-    else {
-      drupal_write_record('workflows', $this);
-      if ($create_creation_state) {
-        $creation_state = $this->getCreationState();
-        $creation_state->save();
-      }
-    }
-    // Update the page cache.
-    self::$workflows[$wid] = $this;
+    return $return;
   }
 
   /**
@@ -262,26 +177,37 @@ class Workflow {
    * Create a new state for this workflow.
    */
   public function createState($name) {
-    return WorkflowState::create($this->wid, $name);
+    $state = WorkflowState::create($this->wid, $name);
+    // Properly maintain the states list.
+    $this->states[] = $state;
+    return $state;
   }
 
   /**
    * Gets the initial state for a newly created entity.
    */
   public function getCreationState() {
-    if (!isset($this->creation_state)) {
-      $this->creation_state = WorkflowState::load($this->creation_sid);
+    $sid = $this->getCreationSid();
+
+    if ($sid) {
+      return $this->getState($sid);
     }
-    if (!$this->creation_state) {
-      $this->creation_state = $this->createState(WORKFLOW_CREATION_STATE_NAME);
+    else {
+      return $this->createState(WORKFLOW_CREATION_STATE_NAME);
     }
-    return $this->creation_state;
   }
 
   /**
    * Gets the ID of the initial state for a newly created entity.
    */
   public function getCreationSid() {
+    if (!$this->creation_sid) {
+      foreach ($this->getStates($all = TRUE) as $state) {
+        if ($state->isCreationState()) {
+          $this->creation_sid = $state->sid;
+        }
+      }
+    }
     return $this->creation_sid;
   }
 
@@ -318,7 +244,11 @@ class Workflow {
    *   An array of WorkflowState objects.
    */
   public function getStates($all = FALSE) {
-    $states = WorkflowState::getStates($this->wid);
+    if ($this->states === NULL) {
+      $this->states = $this->wid ? WorkflowState::getStates($this->wid) : array();
+    }
+
+    $states = $this->states;
     if ($all !== TRUE) {
       foreach ($states as $state) {
         if (($all == FALSE) && $state->isCreationState()) {
@@ -346,10 +276,10 @@ class Workflow {
    */
   public function getState($key) {
     if (is_numeric($key)) {
-      return WorkflowState::load($key, $this->wid);
+      return workflow_state_load_single($key, $this->wid);
     }
     else {
-      return WorkflowState::loadByName($key, $this->wid);
+      return workflow_state_load_by_name($key, $this->wid);
     }
   }
 
@@ -550,5 +480,13 @@ class Workflow {
   public function value() {
     return $this->wid;
   }
+
+  protected function defaultLabel() {
+    return $this->name;
+  }
+
+//  protected function defaultUri() {
+//    return array('path' => 'admin/config/workflow/workflow/' . $this->wid);
+//  }
 
 }

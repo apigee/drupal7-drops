@@ -264,7 +264,8 @@ body.html.front.no-sidebars .page-content .container .row section.span24 section
     background: url(/profiles/apigee/themes/apigee_devconnect/images/comment-icon.png) no-repeat scroll 0 0 transparent;
     padding-left: 35px;
 }
-.view-recent-blog-posts .views-row{
+.view-recent-blog-posts .views-row,
+.view-blog-tag .views-row {
     clear: both;
     position: relative;
 }
@@ -277,7 +278,8 @@ span.blog-icon{
     top: 0;
     width: 17px;
 }
-.view-recent-blog-posts .views-field-created-1{
+.view-recent-blog-posts .views-field-created-1,
+.view-blog-tag .views-field-created{
     background: none repeat scroll 0 0 #FAFAFA;
     border: 1px solid #D6D6D6;
     border-radius: 5px 5px 5px 5px;
@@ -735,4 +737,35 @@ a.back-to-catalog{
     border-bottom: 1px solid #cacaca;
     padding-bottom: 10px;
     margin-bottom: 10px;
+}
+/* Blog */
+.node-article.node-teaser,
+.node-blog.node-teaser {
+  border-bottom: 1px solid #E8E8E8;
+  padding: 30px 0px;
+}
+.node-article.node-teaser .node-date,
+.node-blog.node-teaser .node-date {
+  background: none repeat scroll 0 0 #F9F9F9;
+  border: 1px solid #C9C9C9;
+  border-radius: 5px 5px 5px 5px;
+  color: #959595;
+  float: left;
+  font-size: 12px;
+  margin-top: 7px;
+  padding: 0 8px;
+  text-align: center;
+  width: 3%;
+}
+.node-article.node-teaser .node-body,
+.node-article.node-teaser h2,
+.node-blog.node-teaser .node-body,
+.node-blog.node-teaser h2 {
+  float: right;
+  padding-left: 17px;
+  width: 92%;
+}
+.node-article .posted,
+.node-blog .posted {
+  margin-bottom: 20px;
 }

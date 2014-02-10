@@ -384,3 +384,25 @@ Issue #2165703 by Propaganistas, johnv: Fixed strict warnings.
 Issue #2166199 by zihong0: Fixed error.
 Issue #2166047 by johnv: Fixed error when choosing 'Options' widget directly on field-add page.
 Issue #2165807 by dcanetma: Fixed scheduled transitions cron is not working on time basis.
+Issue #2019345 by johnv: Fixed messages on workflow settings edit page.
+Issue #2064449 by johnv: Changed role ID of 'workflow author' from 'author' to '-1'; 'roles' fields are now serialized.
+Issue #2168571 by rv0: Fixed Workflow field required setting is not saved.
+Issue #2102765 by johnv: Fixed documentation of hook_workflow_operations.
+Issue #2169859 by johnv: Fixed problems with Features.
+Issue #2064449 by johnv: Changed hook_update_7007.
+Issue #2171615 by Tim-Erwin, johnv: Fixed wrong parsing of hook_workflow results.
+Issue #2019345 by johnv: Added back the type_map functions to main workflow module, to preserve compatibility with third-party modules.
+Issue #2170037 by johnv: Changed default widget to 'workflow' widget, instead of 'select'.
+Issue #2171615 by Tim-Erwin, johnv: Fixed wrong parsing of hook_workflow results. -2-
+Issue #2165349 by johnv: Added logging in hook_field_delete; added comments. Moved code of hook_node_delete to WorkflowItem.php
+Issue #1559680 by johnv: Changed Transitions into Entity. Views support enabled.
+Issue #2175867 by johnv: Updated workflow_views_handler_field_username to use all Views' optons.
+Issue #2064449 by johnv: Merged hook_update_7001 with hook_update_7007 to avoid errors in 7001.
+Issue #2019345 by johnv: Moved entity_<operations> function calls to workfow.entity.inc.
+Issue #2019345 by kaare: Fixed $node->name is unset in workflow.tokens.inc.
+Issue #2184633 by johnv: Fixed caching of Workflow (BTW, which is now a true entity).
+Issue #2019345 by johnv: Moved workflow.node.inc to submodule workflow_node.
+Issue #2187151 by johnv: Added an 'Actions buttons' widget to Workflow form for permitted states.
+Issue #2187151 by johnv: Added an 'Actions buttons' widget for permitted states on Workflow_node and Entity Form.
+Issue #2187677 by johnv, boris sondagh: Removed 'Sys ID' column in Admin UI states page.
+Issue #2185859 by johnv: Fixed 'Class not found' error in hook_update_7004.

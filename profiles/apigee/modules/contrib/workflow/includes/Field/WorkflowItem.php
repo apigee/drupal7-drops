@@ -47,7 +47,7 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
             'roles' => array(),
           ),
         ),
-        'default_widget' => 'options_select',
+        'default_widget' => 'workflow',
         'default_formatter' => 'list_default',
         'property_type' => WORKFLOWFIELD_PROPERTY_TYPE, // Used for Entity API / Rules integration.
       ),
@@ -69,7 +69,7 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
     // Validate each workflow, and generate a message if not complete.
     $workflows = array();
     $workflows[''] = t('- Select a value -');
-    foreach (Workflow::getWorkflows() as $workflow) {
+    foreach (workflow_load_multiple() as $workflow) {
       if ($workflow->validate()) {
         $workflows[$workflow->wid] = $workflow->name;
       }
@@ -130,10 +130,11 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
         // These options are taken from options.module
         'select' => 'Select list',
         'radios' => 'Radio buttons',
-        // 'actions' => 'Action buttons', // by workflow contrib.
+        // This option does not work properly on Comment Add form.
+        'buttons' => 'Action buttons',
       ),
-      '#description' => t('The Widget shows all available states. Decide which
-        is the best way to show them.'
+      '#description' => t("The Widget shows all available states. Decide which
+        is the best way to show them. ('Action buttons' do not work on Comment form.)"
       ),
     );
     $element['widget']['name_as_title'] = array(
@@ -203,7 +204,7 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
     );
     $element['history']['roles'] = array(
       '#type' => 'checkboxes',
-      '#options' => workflow_admin_ui_get_roles(),
+      '#options' => workflow_get_roles(),
       '#title' => t('Workflow history permissions'),
       '#default_value' => $settings['history']['roles'],
       '#description' => t('Select any roles that should have access to the workflow tab on nodes that have a workflow.'),
@@ -247,10 +248,10 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
    */
   public function update(&$items) {// ($entity_type, $entity, $field, $instance, $langcode, &$items) {
 
-    // @todo: apparentlly, in course of time, this is not used anymore. Restore or remove.
+    // @todo: apparently, in course of time, this is not used anymore. Restore or remove.
     $field_name = $this->field['field_name'];
     $wid = $this->field['settings']['wid'];
-    $new_state = WorkflowState::load($sid = _workflow_get_sid_by_items($items), $wid);
+    $new_state = workflow_state_load_single($sid = _workflow_get_sid_by_items($items), $wid);
 
     // @todo D8: remove below lines.
     $entity = $this->entity;
@@ -306,14 +307,46 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
     }
     // A 'normal' node add page.
     // We should not be here, since we only do inserts after $entity_id is known.
-    // $current_sid = Workflow::load($wid)->getCreationSid();
+    // $current_sid = workflow_load_single($wid)->getCreationSid();
   }
 
   /**
    * Implements hook_field_delete() -> FieldItemInterface::delete()
    */
-  // public function delete() {
-  // }
+  public function delete($items) {
+   global $user;
+
+    $entity_type = $this->entity_type;
+    $entity = $this->entity;
+    $entity_id = entity_id($entity_type, $entity);
+
+    $field_name = $this->field['field_name'];
+    $old_sid = _workflow_get_sid_by_items($items);
+    $new_sid = (int) WORKFLOW_DELETION;
+    $comment = t('Entity deleted.');
+
+    if (!$field_name) {
+      // Delete the association of node to state.
+      workflow_delete_workflow_node_by_nid($entity_id);
+    }
+
+    // @see drupal.org/node/2165349, comment by Bastlynn:
+    // The reason for this history log upon delete is because Workflow module
+    // has historically been used to track node states and accountability in
+    // business environments where accountability for changes over time is
+    // *absolutely* required. Think banking and/or particularly strict
+    // retention policies for legal reasons.
+    //
+    // However, a deleted nid may be re-used under certain circumstances: 
+    // e.g., working with InnoDB or after restart the DB server.
+    // This may cause that old history is associated with a new node.
+    $transition = new WorkflowTransition();
+    $transition->setValues($entity_type, $entity, $field_name, $old_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
+    $transition->save();
+
+    // Delete any scheduled transitions for this node.
+    WorkflowScheduledTransition::deleteById($entity_type, $entity_id);
+  }
 
   /*
    * Helper functions for the Field Settings page.
@@ -333,12 +366,12 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
    */
   protected function _allowed_values_string($wid = 0) {
     $lines = array();
-    $states = WorkflowState::getStates($wid);
+    $states = workflow_state_load_multiple($wid);
     $previous_wid = -1;
 
     foreach ($states as $state) {
       // Only show enabled states.
-      if ($state->status) {
+      if ($state->isActive()) {
         // Show a Workflow name between Workflows, if more then 1 in the list.
         if (($wid == 0) && ($previous_wid <> $state->wid)) {
           $previous_wid = $state->wid;

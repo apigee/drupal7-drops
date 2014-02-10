@@ -27,7 +27,7 @@ function workflow_access_workflow($op, $id, $new_sid, $entity, $force, $entity_t
   switch ($op) {
     case 'transition post':
       // node_access functions are only for nodes.
-      if ($entity_type == 'node' && $old_state = WorkflowState::load($id)) {
+      if ($entity_type == 'node' && $old_state = workflow_state_load_single($id)) {
         if ($id != $new_sid && (empty($entity->is_new) || !$entity->is_new)) {
           node_access_acquire_grants($entity);
         }

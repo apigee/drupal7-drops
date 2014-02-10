@@ -34,37 +34,44 @@ SQL;
  *
  * Provide a list of all workflows as selectable Feature components.
  *
- * We'll make all workflow access records related to the selected workflows
- * available for export.
+ * Generates the options to choose from.
+ * Using $wid as key. Result is used by hook_features_export().
  */
 function workflow_access_features_export_options() {
   $workflows = array();
-  foreach (Workflow::getWorkflows() as $workflow) {
-    $workflows[$workflow->getName()] = t('workflow access configuration for: @label', array('@label' => $workflow->getName()));
+  foreach (workflow_load_multiple() as $workflow) {
+    $name = $workflow->getName();
+    $workflows[$name] = t('workflow access configuration for: @label', array('@label' => $name));
   }
-
   return $workflows;
 }
 
 /**
  * Implements hook_features_export().
- *
- * Inform Features about dependencies.
  */
 function workflow_access_features_export($data, &$export, $module_name = '') {
-  $roles = _workflow_access_get_affected_roles();
+  $pipe = array();
+
   $export['dependencies']['workflow_access'] = 'workflow_access';
   $export['dependencies']['workflow'] = 'workflow';
-  $pipe = array();
-  foreach ($data as $component) {
-    $export['features']['workflow_access'][$component] = $component;
 
-    // Access configuration for a workflow needs that workflow to exist.
-    $pipe['workflow'][$component] = $component;
+  $roles = _workflow_access_get_affected_roles();
 
-    // And it needs the roles to which rights are granted.
-    foreach ($roles[$component] as $rname) {
-      $pipe['user_role'][$rname] = $rname;
+  foreach ($data as $workflow_name) {
+    if ($workflow = workflow_load_by_name($workflow_name)) {
+
+      $export['features']['workflow_access'][$workflow_name] = $workflow_name;
+      $export['features']['workflow'][$workflow_name] = $workflow_name;
+
+      // Access configuration for a workflow needs that workflow to exist.
+      $pipe['workflow'][$workflow_name] = $workflow_name;
+
+      // And it needs the roles to which rights are granted.
+      if (isset($roles[$workflow_name])) {
+        foreach ($roles[$workflow_name] as $role_name) {
+          $pipe['user_role'][$role_name] = $role_name;
+        }
+      }
     }
   }
 
@@ -84,7 +91,7 @@ function workflow_access_features_export_render($module_name, $data, $export = N
   // For each selected workflow, fetch all related workflow access records
   // we want to put into code.
   foreach ($data as $workflow_name) {
-    $workflow = Workflow::loadByName($workflow_name);
+    $workflow = workflow_load_by_name($workflow_name);
     if ($workflow) {
       $states = $workflow->getStates($all = TRUE);
       if ($states) {
@@ -122,7 +129,7 @@ function workflow_access_features_rebuild($module) {
   // Retrieve the workflow IDs.
   $wids = array();
   foreach ($workflow_access_records as $workflow_name => $state) {
-    $workflow = Workflow::loadByName($workflow_name);
+    $workflow = workflow_load_by_name($workflow_name);
     $wids[$workflow_name] = $workflow->wid;
   }
 
@@ -140,11 +147,11 @@ function workflow_access_features_rebuild($module) {
   // workflow_name[state_name][role_name] => array(grant_name => 0|1, ...)
   foreach ($workflow_access_records as $workflow_name => $states) {
     foreach ($states as $state_name => $records) {
-      if ($state = WorkflowState::loadByName($state_name, $wids[$workflow_name])) {
+      if ($state = workflow_state_load_by_name($state_name, $wids[$workflow_name])) {
         foreach ($records as $rname => $record) {
           $record['sid'] = ($state) ? $state->sid : $state->sid;
           if ($rname == WORKFLOW_FEATURES_AUTHOR_NAME) {
-            $record['rid'] = -1;
+            $record['rid'] = WORKFLOW_ROLE_AUTHOR_RID;
           }
           else {
             $role = user_role_load_by_name($rname);
@@ -187,9 +194,9 @@ SELECT
 FROM {workflow_access} wa
   LEFT JOIN {role} r ON wa.rid = r.rid
 WHERE
-  wa.sid = :sid AND (wa.rid = r.rid OR wa.rid = -1)
+  wa.sid = :sid AND (wa.rid = r.rid OR wa.rid = :rid)
 SQL;
-  $results = db_query($sql, array(':sid' => $sid));
+  $results = db_query($sql, array(':sid' => $sid, ':rid' => WORKFLOW_ROLE_AUTHOR_RID));
   $records = $results->fetchAll();
   foreach ($records as $record) {
     if (empty($record->rname)) {

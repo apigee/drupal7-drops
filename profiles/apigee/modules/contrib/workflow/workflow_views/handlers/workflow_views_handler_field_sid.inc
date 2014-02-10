@@ -36,7 +36,7 @@ class workflow_views_handler_field_sid extends views_handler_field {
       return (empty($sid)) ? NULL : $sid;
     }
     elseif ($this->options['value'] == 'count') {
-      $state = WorkflowState::load($sid);
+      $state = workflow_state_load_single($sid);
       return (empty($sid)) ? 0 : $state->count();
     }
     else {

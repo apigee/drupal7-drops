@@ -142,6 +142,10 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     case 'user_profile_form':
 
+      if ($form['#user_category'] != 'account' && $form['#user_category'] != 'register') {
+        return;
+      }
+
       // Breadcrumb navigation
       $breadcrumb[] = l(t('Home'), NULL);
       $breadcrumb[] = l($form['#user']->name, 'user');

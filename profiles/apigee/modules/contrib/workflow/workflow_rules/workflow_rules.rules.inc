@@ -124,8 +124,7 @@ function _workflow_rules_workflow_check_given_state($sid, array $sids) {
  *   a RulesCondition->settings array.
  */
 function _workflow_rules_node_check_transition($node, array $old_sids, array $new_sids, array $condition) {
-  $transitions = WorkflowTransition::load('node', $node->nid, '', 1);
-  $last_transition = array_pop($transitions);
+  $last_transition = workflow_transition_load_single('node', $node->nid, '', 1);
   $old_sid = $last_transition->old_sid;
   $new_sid = $last_transition->new_sid;
 
@@ -151,8 +150,7 @@ function _workflow_rules_node_check_state($node, $sids) {
  */
 function _workflow_rules_node_check_previous_state($node, $sids) {
   // $sid = workflow_node_previous_state($node, 'node');
-  $transitions = WorkflowTransition::load('node', $node->nid, '', 1);
-  $last_transition = array_pop($transitions);
+  $last_transition = workflow_transition_load_single('node', $node->nid, '', 1);
   $sid = $last_transition->old_sid;
   return _workflow_rules_workflow_check_given_state($sid, $sids);
 }
@@ -188,7 +186,8 @@ function _workflow_rules_field_set_state($entity, $field, $sids, $comment = NULL
     $entity_id = entity_id($entity_type, $entity);
 
     $old_sid = workflow_node_current_state($entity, $entity_type, $field_name); // Todo : entity support.
-    $transition = new WorkflowTransition($entity_type, $entity, $field_name, $old_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
+    $transition = new WorkflowTransition();
+    $transition->setValues($entity_type, $entity, $field_name, $old_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
     $transition->force($force = TRUE); // "ignoring current user permission."
 
     // Execute the transition. It may bounce, due to extra checks.

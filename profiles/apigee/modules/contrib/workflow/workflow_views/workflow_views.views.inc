@@ -14,176 +14,41 @@
  */
 
 /**
- * Implements hook_views_data().
+ * Implements hook_views_data_alter().
  */
-function workflow_views_views_data() {
+function workflow_views_views_data_alter(&$data) {
+  // In version 7.x-1.2, the following groups were defined in
+  // workflow_views_views_data. Now, in 7.x-2.x the Transitions have become
+  // entities, and are already declared by EntityDefaultViewsController.
+  // So, the overrides have now moved to _alter.
+  $data['workflow_transitions']['sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['workflow_transitions']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['workflow_transitions']['target_sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['workflow_transitions']['target_sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
 
-  // A 'workflow link'.
-  $data['node']['workflow_node']['moved to'] = array('views_entity_node', 'workflow_node');
-  $data['views_entity_node']['workflow_node'] = array(
-    'field' => array(
-      'title' => t('Workflow link'),
-      'help' => t('Provide a link to the workflow history tab to change the state of the content.'),
-      'handler' => 'workflow_views_handler_field_node_link_workflow',
-    ),
-  );
-
-  // This is a basic set of subfield data. It is then replicated for each table.
-  $field_data['sid'] = array(
-    'title' => t('New state'),
-    'help' => t('The new state in a transition. (For the latest transition, this is the current state.)'),
-    'field' => array(
-      'handler' => 'workflow_views_handler_field_sid',
-      'click sortable' => TRUE,
-    ),
-    'filter' => array(
-      'handler' => 'workflow_views_handler_filter_sid',
-      'numeric' => TRUE,
-    ),
-    'argument' => array(
-      'handler' => 'views_handler_argument_numeric',
-      'click sortable' => TRUE,
-      'numeric' => TRUE,
-      'name table' => 'workflow_states',
-      'name field' => 'state',
-    ),
-  );
-
-  $field_data['old_sid'] = array(
-    'title' => t('Old state'),
-    'help' => t('The old (previous) state in a transition.'),
-    'field' => array(
-      'handler' => 'workflow_views_handler_field_sid',
-      'click sortable' => TRUE,
-    ),
-    'filter' => array(
-      'handler' => 'workflow_views_handler_filter_sid',
-      'numeric' => TRUE,
-    ),
-  );
-  $field_data['stamp'] = array(
-    'title' => t('Time'),
-    'help' => t('The time of a state change.'),
-    'field' => array(
-      'handler' => 'views_handler_field_date',
-      'click sortable' => TRUE,
-    ),
-    'filter' => array(
-      'handler' => 'views_handler_filter_date',
-      'numeric' => TRUE,
-    ),
-    'sort' => array(
-      'handler' => 'views_handler_sort_date',
-    ),
-  );
-  $field_data['comment'] = array(
-    'title' => t('Comment'),
-    'help' => t('The comment describing why the the state change was done.'),
-    'field' => array(
-      'handler' => 'views_handler_field_xss',
-      'click sortable' => TRUE,
-    ),
-    'filter' => array(
-      'handler' => 'views_handler_filter_string',
-      'numeric' => TRUE,
-    ),
-  );
-  $field_data['uid'] = array(
-    'title' => t('Previous user'),
-    'help' => t('The user that executed a state change.'),
-    'field' => array(
-      'handler' => 'workflow_views_handler_field_username',
-      'click sortable' => TRUE,
-    ),
-    'filter' => array(
-      'handler' => 'views_handler_filter_user_name',
-    ),
-    'relationship' => array(
-      'title' => t('User'),
-      'help' => t("The User ID of the state change."),
-      'base' => 'users',
-      'base field' => 'uid',
-      'handler' => 'views_handler_relationship',
-      'label' => t('user'),
-    ),
-    'argument' => array(
-      'handler' => 'views_handler_argument_numeric',
-    ),
-  );
-
-  // Workflow node.
-  // Only use when 'Workflow Node' is active. Use separate title.
-  if (module_exists('workflownode')) {
-    $data['workflow_node'] = $field_data;
-    $data['workflow_node']['table']['group'] = t('Workflow node');
-    $data['workflow_node']['table']['join'] = array(
-      'node' => array(
-        'field' => 'nid',
-        'left_table' => 'node',
-        'left_field' => 'nid',
-      ),
-    );
-    $data['workflow_node']['sid']['title'] = t('Current state');
-    $data['workflow_node']['sid']['help'] = t('The current workflow state that the node is in.');
-    // $data['workflow_node']['old_sid']['title'] = t('Previous state');
-    // $data['workflow_node']['old_sid']['help'] = t('The previous state that the node was in.');
-    unset($data['workflow_node']['old_sid']); // Workflow Node does not have this.
-
-    $data['workflow_node']['comment']['title'] = t('Scheduled comment');
-    $data['workflow_node']['comment']['help'] = t('A comment describing why the node was scheduled for state transition.');
-    $data['workflow_node']['uid']['title'] = t('Last changing user');
-    $data['workflow_node']['uid']['help'] = t('The user who performed the last state change.');
-    $data['workflow_node']['stamp']['title'] = t('Current time');
-    $data['workflow_node']['stamp']['help'] = t('The time at which the node moved to the current state.');
-
-    // The following 'uid' handlers are different between 'workflow node' and
-    // the other ones. At the moment of rewriting in 2013: I'm not what's best,
-    // and I don't want to break anything, so I'll just leave this untouched.
-    unset($data['workflow_node']['uid']['argument']);
-    unset($data['workflow_node']['uid']['filter']);
-    $data['workflow_node']['uid'] += array(
-      'argument' => array(
-        'handler' => 'views_handler_argument_user_uid',
-        'click sortable' => TRUE,
-        'name table' => 'workflow_node',
-        'name field' => 'uid',
-      ),
-      'filter' => array(
-        'handler' => 'views_handler_filter_user_name',
-        'numeric' => TRUE,
-        'name table' => 'workflow_node',
-        'name field' => 'uid',
-      ),
-    );
-  }
-
-  // Workflow scheduled transition.
-  $data['workflow_scheduled_transition'] = $field_data;
-  $data['workflow_scheduled_transition']['table']['group'] = t('Workflow schedule');
-  $data['workflow_scheduled_transition']['table']['join'] = array(
-    'node' => array(
-      'field' => 'nid',
-      'left_table' => 'node',
-      'left_field' => 'nid',
-    ),
-  );
-  $data['workflow_scheduled_transition']['sid']['title'] = t('Scheduled state');
-  $data['workflow_scheduled_transition']['sid']['help'] = t('The state, the node is scheduled for.');
-  $data['workflow_scheduled_transition']['old_sid']['title'] = t('Current state');
-  $data['workflow_scheduled_transition']['old_sid']['help'] = t('The current state that the node is in.');
-  $data['workflow_scheduled_transition']['comment']['title'] = t('Scheduled comment');
-  $data['workflow_scheduled_transition']['comment']['help'] = t('A comment describing why the node was scheduled for state transition.');
-  $data['workflow_scheduled_transition']['uid']['title'] = t('User');
-  $data['workflow_scheduled_transition']['uid']['help'] = t('The user that scheduled the state change.');
-
-  // Scheduled transitions do not have a stamp, but are scheduled.
-  $data['workflow_scheduled_transition']['scheduled'] = $data['workflow_scheduled_transition']['stamp'];
-  $data['workflow_scheduled_transition']['scheduled']['title'] = t('Scheduled time');
-  $data['workflow_scheduled_transition']['scheduled']['help'] = t('The time at which the node will change workflow states.');
-  unset($data['workflow_scheduled_transition']['stamp']);
-
-  // Workflow node history.
-  $data['workflow_node_history'] = $field_data;
+  $data['workflow_node_history']['old_sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['workflow_node_history']['old_sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['workflow_node_history']['sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['workflow_node_history']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['workflow_node_history']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
+  $data['workflow_node_history']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
+  $data['workflow_node_history']['comment']['field']['handler'] = 'views_handler_field_xss';
+  $data['workflow_node_history']['comment']['filter']['handler'] = 'views_handler_filter_string';
+  $data['workflow_node_history']['stamp']['field']['handler'] = 'views_handler_field_date';
+  $data['workflow_node_history']['stamp']['filter']['handler'] = 'views_handler_filter_date';
+  $data['workflow_node_history']['stamp']['sort']['handler'] = 'views_handler_sort_date';
+  // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.
+  $data['workflow_node_history']['old_sid']['title'] = t('The old (previous) state in a transition.');
+  $data['workflow_node_history']['old_sid']['help'] = t('The previous state, from the last state change.');
+  $data['workflow_node_history']['sid']['title'] = t('New state');
+  $data['workflow_node_history']['sid']['help'] = t('The new state in a transition. (For the latest transition, this is the current state.)');
+  $data['workflow_node_history']['uid']['title'] = t('Previous user');
+  $data['workflow_node_history']['uid']['help'] = t('The user that executed a state change.');
+  $data['workflow_node_history']['comment']['title'] = t('Comment');
+  $data['workflow_node_history']['comment']['help'] = t('The comment describing why the the state change was done.');
+  $data['workflow_node_history']['stamp']['title'] = t('Time');
+  $data['workflow_node_history']['stamp']['help'] = t('The time of the last state change.');
+  // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.
   $data['workflow_node_history']['table']['group'] = t('Workflow history');
   $data['workflow_node_history']['table']['join'] = array(
     'node' => array(
@@ -192,22 +57,8 @@ function workflow_views_views_data() {
       'left_field' => 'nid',
     ),
   );
-  $data['workflow_node_history']['sid']['title'] = t('New state');
-  $data['workflow_node_history']['sid']['help'] = t('The new state in a transition. (For the latest transition, this is the current state.)');
-  $data['workflow_node_history']['old_sid']['title'] = t('The old (previous) state in a transition.');
-  $data['workflow_node_history']['old_sid']['help'] = t('The previous state, from the last state change.');
-  $data['workflow_node_history']['comment']['title'] = t('Comment');
-  $data['workflow_node_history']['comment']['help'] = t('The comment describing why the the state change was done.');
-  $data['workflow_node_history']['uid']['title'] = t('Previous user');
-  $data['workflow_node_history']['uid']['help'] = t('The user that executed a state change.');
-  $data['workflow_node_history']['stamp']['title'] = t('Time');
-  $data['workflow_node_history']['stamp']['help'] = t('The time of the last state change.');
 
-  // Information about the last state transition.
-  // This mostly the same as 'workflow_node_history', so just copy it
-  // and change the titles.
-  // DO not use the realtionship to {workflow_node}, but directly to {node}
-  $data['workflow_node_current'] = $field_data;
+  $data['workflow_node_current'] = $data['workflow_node_history'];
   $data['workflow_node_current']['table']['group'] = t('Workflow current');
   $data['workflow_node_current']['table']['join'] = array(
     // For reference, the relationship used in Workflow versions below 7.x-2.x
@@ -239,6 +90,88 @@ function workflow_views_views_data() {
   $data['workflow_node_current']['stamp']['title'] = t('Time of last state change.');
   $data['workflow_node_current']['stamp']['help'] = t('The time of the last state change.');
 
+  // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.
+  $data['workflow_scheduled_transition']['table']['group'] = t('Workflow scheduled transition');
+  $data['workflow_scheduled_transition']['table']['join'] = array(
+    'node' => array(
+      'field' => 'nid',
+      'left_table' => 'node',
+      'left_field' => 'nid',
+    ),
+  );
+  $data['workflow_scheduled_transition']['old_sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['workflow_scheduled_transition']['old_sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['workflow_scheduled_transition']['sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['workflow_scheduled_transition']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['workflow_scheduled_transition']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
+  $data['workflow_scheduled_transition']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
+  $data['workflow_scheduled_transition']['comment']['field']['handler'] = 'views_handler_field_xss';
+  $data['workflow_scheduled_transition']['comment']['filter']['handler'] = 'views_handler_filter_string';
+  $data['workflow_scheduled_transition']['scheduled']['field']['handler'] = 'views_handler_field_date';
+  $data['workflow_scheduled_transition']['scheduled']['filter']['handler'] = 'views_handler_filter_date';
+  $data['workflow_scheduled_transition']['scheduled']['sort']['handler'] = 'views_handler_sort_date';
+  // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.
+  $data['workflow_scheduled_transition']['old_sid']['title'] = t('Current state');
+  $data['workflow_scheduled_transition']['old_sid']['help'] = t('The current state that the node is in.');
+  $data['workflow_scheduled_transition']['sid']['title'] = t('Scheduled state');
+  $data['workflow_scheduled_transition']['sid']['help'] = t('The state, the node is scheduled for.');
+  $data['workflow_scheduled_transition']['uid']['title'] = t('User');
+  $data['workflow_scheduled_transition']['uid']['help'] = t('The user that scheduled the state change.');
+  $data['workflow_scheduled_transition']['comment']['title'] = t('Scheduled comment');
+  $data['workflow_scheduled_transition']['comment']['help'] = t('A comment describing why the node was scheduled for state transition.');
+  // Scheduled transitions do not have a stamp, but are scheduled.
+  $data['workflow_scheduled_transition']['scheduled']['title'] = t('Scheduled time');
+  $data['workflow_scheduled_transition']['scheduled']['help'] = t('The time at which the node will change workflow states.');
+
+  // Workflow node.
+  // Only use when 'Workflow Node' is active. Use separate title.
+  if (module_exists('workflownode')) {
+    $data['workflow_node'] = $data['workflow_node_history'];
+    $data['workflow_node']['table']['group'] = t('Workflow node');
+    $data['workflow_node']['table']['join'] = array(
+      'node' => array(
+        'field' => 'nid',
+        'left_table' => 'node',
+        'left_field' => 'nid',
+      ),
+    );
+    // Workflow Node does not have these fields.
+    unset($data['workflow_node']['hid']);
+    unset($data['workflow_node']['entity_type']);
+    unset($data['workflow_node']['field_name']);
+    unset($data['workflow_node']['delta']);
+    unset($data['workflow_node']['language']);
+    unset($data['workflow_node']['old_sid']);
+    $data['workflow_node']['sid']['title'] = t('Current state');
+    $data['workflow_node']['sid']['help'] = t('The current workflow state that the node is in.');
+    $data['workflow_node']['comment']['title'] = t('Scheduled comment');
+    $data['workflow_node']['comment']['help'] = t('A comment describing why the node was scheduled for state transition.');
+    $data['workflow_node']['uid']['title'] = t('Last changing user');
+    $data['workflow_node']['uid']['help'] = t('The user who performed the last state change.');
+    $data['workflow_node']['stamp']['title'] = t('Current time');
+    $data['workflow_node']['stamp']['help'] = t('The time at which the node moved to the current state.');
+
+    // The following 'uid' handlers are different between 'workflow node' and
+    // the other ones. At the moment of rewriting in 2013: I'm not sure what's best,
+    // and I don't want to break anything, so I'll just leave this untouched.
+    unset($data['workflow_node']['uid']['argument']);
+    unset($data['workflow_node']['uid']['filter']);
+    $data['workflow_node']['uid'] += array(
+      'filter' => array(
+        'handler' => 'views_handler_filter_user_name',
+        'numeric' => TRUE,
+        'name table' => 'workflow_node',
+        'name field' => 'uid',
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_user_uid',
+        'click sortable' => TRUE,
+        'name table' => 'workflow_node',
+        'name field' => 'uid',
+      ),
+    );
+  }
+
   // Workflow states.
   // @todo: implement this as a proper relationship (like 'user').
   //        to support Workflow Field, do not use workflow_node
@@ -267,6 +200,51 @@ function workflow_views_views_data() {
       ),
     );
   }
+
+  $data['entity_WorkflowConfigTransition']['target_sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['entity_WorkflowConfigTransition']['target_sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['entity_WorkflowConfigTransition']['sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['entity_WorkflowConfigTransition']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+
+  $data['entity_WorkflowTransition']['old_sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['entity_WorkflowTransition']['old_sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['entity_WorkflowTransition']['sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['entity_WorkflowTransition']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['entity_WorkflowTransition']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
+  $data['entity_WorkflowTransition']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
+  $data['entity_WorkflowTransition']['comment']['field']['handler'] = 'views_handler_field_xss';
+  $data['entity_WorkflowTransition']['comment']['filter']['handler'] = 'views_handler_filter_string';
+  $data['entity_WorkflowTransition']['stamp']['field']['handler'] = 'views_handler_field_date';
+  $data['entity_WorkflowTransition']['stamp']['filter']['handler'] = 'views_handler_filter_date';
+  $data['entity_WorkflowTransition']['stamp']['sort']['handler'] = 'views_handler_sort_date';
+
+  $data['entity_WorkflowScheduledTransition']['old_sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['entity_WorkflowScheduledTransition']['old_sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['entity_WorkflowScheduledTransition']['sid']['field']['handler'] = 'workflow_views_handler_field_sid';
+  $data['entity_WorkflowScheduledTransition']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
+  $data['entity_WorkflowScheduledTransition']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
+  $data['entity_WorkflowScheduledTransition']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
+  $data['entity_WorkflowScheduledTransition']['comment']['field']['handler'] = 'views_handler_field_xss';
+  $data['entity_WorkflowScheduledTransition']['comment']['filter']['handler'] = 'views_handler_filter_string';
+  $data['entity_WorkflowScheduledTransition']['scheduled']['field']['handler'] = 'views_handler_field_date';
+  $data['entity_WorkflowScheduledTransition']['scheduled']['filter']['handler'] = 'views_handler_filter_date';
+  $data['entity_WorkflowScheduledTransition']['scheduled']['sort']['handler'] = 'views_handler_sort_date';
+}
+
+/**
+ * Implements hook_views_data().
+ */
+function workflow_views_views_data() {
+
+  // A 'workflow link'.
+  $data['node']['workflow_node']['moved to'] = array('views_entity_node', 'workflow_node');
+  $data['views_entity_node']['workflow_node'] = array(
+    'field' => array(
+      'title' => t('Workflow link'),
+      'help' => t('Provide a link to the workflow history tab to change the state of the content.'),
+      'handler' => 'workflow_views_handler_field_node_link_workflow',
+    ),
+  );
 
   return $data;
 }
