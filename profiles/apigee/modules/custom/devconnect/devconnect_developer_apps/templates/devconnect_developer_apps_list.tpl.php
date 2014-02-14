@@ -29,8 +29,6 @@ $breadcrumb[] = l('Home', '<front>');
 // Set Breadcrumbs
 drupal_set_breadcrumb($breadcrumb);
 
-$show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
-
 ?>
 <?php print l(t('Add a new app'), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
 
@@ -44,17 +42,6 @@ $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
 
 <?php
   foreach ($applications as $app) {
-    if ($show_status) {
-      if (isset($app['credential'])) {
-        $statuses = array();
-        foreach ($app['credential']['apiProducts'] as $product) {
-          $statuses[$product['displayName']] = (empty($product['status']) ? t('unknown') : t($product['status']));
-        }
-      }
-      else {
-        $statuses = NULL;
-      }
-    }
     print '<div class="app-delete">';
     if (!empty($app['delete_url'])) {
       print '<button class="btn primary action button-processed" title="' . t('Delete App') . '" data-url="' . $app['delete_url'] . '"></button>';
@@ -65,20 +52,6 @@ $show_status = variable_get('devconnect_show_apiproduct_status', FALSE);
       print '<div class="app-desc">' . check_plain($app['attributes']['Description']) . '</div>';
     }
     print '</div>';
-
-    if ($show_status && !empty($statuses)) {
-      print '<div class="app-status"><strong class="app-status-caption">' . t('Credential Status') . ':</strong> ';
-      if (count($statuses) == 1) {
-        $status = reset($statuses);
-        print '<div class="credential-api-product single-product">' . check_plain($status) . '</div>';
-      }
-      else {
-        foreach ($statuses as $apiproduct => $status) {
-          print '<div class="credential-api-product multiple-products"><span class="api-product-name"><strong>' . check_plain($apiproduct) . '</strong></span>&nbsp;-&nbsp;<span class="api-product-status">' . check_plain($status) . '</span></div>';
-        }
-      }
-      print '</div>'; // end app-status
-    }
     print '<br><hr>';
   }
 ?>

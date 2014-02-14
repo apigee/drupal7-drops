@@ -3,7 +3,7 @@
  * updating fuzzy timestamps (e.g. "4 minutes ago" or "about 1 day ago").
  *
  * @name timeago
- * @version 1.3.0
+ * @version 1.3.1
  * @requires jQuery v1.2.3+
  * @author Ryan McGeary
  * @license MIT License - http://www.opensource.org/licenses/mit-license.php
@@ -107,6 +107,7 @@
       s = s.replace(/-/,"/").replace(/-/,"/");
       s = s.replace(/T/," ").replace(/Z/," UTC");
       s = s.replace(/([\+\-]\d\d)\:?(\d\d)/," $1$2"); // -04:00 -> -0400
+      s = s.replace(/([\+\-]\d\d)$/," $100"); // +09 -> +0900
       return new Date(s);
     },
     datetime: function(elem) {
@@ -128,16 +129,24 @@
       refresh_el();
       var $s = $t.settings;
       if ($s.refreshMillis > 0) {
-        setInterval(refresh_el, $s.refreshMillis);
+        this._timeagoInterval = setInterval(refresh_el, $s.refreshMillis);
       }
     },
     update: function(time){
-      $(this).data('timeago', { datetime: $t.parse(time) });
+      var parsedTime = $t.parse(time);
+      $(this).data('timeago', { datetime: parsedTime });
+      if($t.settings.localeTitle) $(this).attr("title", parsedTime.toLocaleString());
       refresh.apply(this);
     },
     updateFromDOM: function(){
       $(this).data('timeago', { datetime: $t.parse( $t.isTime(this) ? $(this).attr("datetime") : $(this).attr("title") ) });
       refresh.apply(this);
+    },
+    dispose: function () {
+      if (this._timeagoInterval) {
+        window.clearInterval(this._timeagoInterval);
+        this._timeagoInterval = null;
+      }
     }
   };
 

@@ -1,0 +1,9 @@
+name = Devconnect Blog
+description = Blogging function for the devconnect portal
+core = 7.x
+package = Devconnect
+version = 7.x-4.25
+
+dependencies[] = views
+dependencies[] = block_class
+dependencies[] = devconnect_blog_content_types

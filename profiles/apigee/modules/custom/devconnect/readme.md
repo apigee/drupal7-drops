@@ -14,7 +14,6 @@ Summary of submodules:
 * devconnect_monetization: disabled by default. Used by some customers.
 * devconnect_ui: disabled by default.
 * devconnect_user: enabled by default.
-* devconnect_wadl: disabled by default. Forcibly disabled in devconnect.install, will be removed in R25.
 
 Available Translations:
 

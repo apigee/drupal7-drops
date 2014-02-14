@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * BugHerd module installation functions.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function bugherd_uninstall() {
+  $variables = array(
+    'bugherd_disable_on_admin',
+    'bugherd_project_key',
+  );
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+}
+
+/**
+ * Rename api key variable to project key to match BugHerd terminology.
+ */
+function bugherd_update_7001(&$sandbox) {
+  $key = variable_get('bugherd_api_key');
+  if ($key) {
+    variable_set('bugherd_project_key', $key);
+    variable_del('bugherd_api_key');
+  }
+}

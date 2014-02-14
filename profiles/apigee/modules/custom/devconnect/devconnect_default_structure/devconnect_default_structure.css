@@ -1,0 +1,7 @@
+#block-menu-blog-content-creation-menu h2 {
+	display: none;
+}
+#block-menu-blog-content-creation-menu ul li {
+	list-style: none;
+	display: inline-block;
+}

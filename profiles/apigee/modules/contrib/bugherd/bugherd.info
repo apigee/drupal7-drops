@@ -1,0 +1,11 @@
+name = "BugHerd integration"
+description = 'Adds <a href="http://www.bugherd.com/">BugHerd</a> issue reporting to your site.'
+core = 7.x
+configure = admin/config/development/bugherd
+
+; Information added by  packaging script on 2013-11-22
+version = "7.x-1.0-beta4"
+core = "7.x"
+project = "bugherd"
+datestamp = "1385115538"
+

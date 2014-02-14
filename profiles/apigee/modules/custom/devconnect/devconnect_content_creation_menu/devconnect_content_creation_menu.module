@@ -1,0 +1,143 @@
+<?php
+
+/**
+ * Implements hook_block_info().
+ *
+ * @return array
+ */
+function devconnect_content_creation_menu_block_info() {
+  $blocks = array();
+  $blocks['devconnect_content_creation_menu'] = array(
+    'info' => t('Devconnect Content Creation Menu'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_permission
+ *
+ * @return array
+ */
+function devconnect_content_creation_menu_permission() {
+  return array(
+    'view content creation menu' => array(
+      'title' => t('View content creation menu'),
+      'description' => t('View the content creation menu block.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * @param $delta
+ * @return array
+ */
+function devconnect_content_creation_menu_block_view($delta) {
+  $block = array();
+  $node = entity_get_info('node');
+  $types = $node['bundles'];
+  switch ($delta) {
+    case 'devconnect_content_creation_menu':
+      $block['subject'] = 'Devconnect Content Creation Menu Block';
+      $block['content'] = array(
+        '#markup' => theme('devconnect_content_creation_menu'),
+        '#attached' => array(
+          'css' => array(
+            drupal_get_path('module', 'devconnect_content_creation_menu') . '/devconnect_content_creation_menu.css'
+          )
+        )
+      );
+      break;
+    default:
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_block_configure().
+ *
+ * @param $delta
+ * @return array
+ */
+function devconnect_content_creation_menu_block_configure($delta) {
+  $form = array();
+  $node = entity_get_info('node');
+  $types = $node['bundles'];
+  $help = 'Enter the bootstrap glyphicon for each of the content creation buttons. Content types that do not have glyphicons will not be shown. ';
+  $form['devconnect_content_creation_menu_header_holder'] = array(
+    '#type' => 'fieldset',
+    '#title' => t($help),
+    '#weight' => 5,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  foreach ($types as $type_id => $type) {
+    $form['devconnect_content_creation_menu_header_holder']['devconnect_content_creation_menu_' . $type_id] = array(
+      '#type' => 'textfield',
+      '#title' => t('Glyphicon for ' . $type['label']),
+      '#default_value' => variable_get('devconnect_content_creation_menu_' . $type_id, ''),
+    );
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ *
+ * @param $delta
+ * @param $edit
+ */
+function devconnect_content_creation_menu_block_save($delta, $edit) {
+  foreach ($edit as $key => $value) {
+    if (substr($key, 0, 10) == 'devconnect') {
+      variable_set($key, $value);
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * @return array
+ */
+function devconnect_content_creation_menu_theme($existing, $type, $theme, $path) {
+  $theme_path = drupal_get_path('module', 'devconnect_content_creation_menu') . '/templates';
+  return array(
+    'devconnect_content_creation_menu' => array(
+      'variables' => NULL,
+      'template' => 'devconnect-content-creation-menu',
+      'path' => $theme_path,
+    )
+  );
+}
+
+/**
+ * Implements hook_preprocess_hook
+ */
+function devconnect_content_creation_menu_preprocess_devconnect_content_creation_menu(&$vars) {
+  $node = entity_get_info('node');
+  $types = $node['bundles'];
+  $vars['types'] = array();
+  $vars['visible'] = FALSE;
+  if (!user_is_anonymous()) {
+    if (user_access('view content creation menu')) {
+      $vars['visible'] = TRUE;
+    }
+  }
+  foreach ($types as $type_id => $type) {
+    $element = variable_get('devconnect_content_creation_menu_' . $type_id, '');
+    if (!empty($element) && (strpos($element, 'glyphicon') !== false)) {
+      $link = l($type['label'], 'node/add/' . str_replace('_' , '-', $type_id), array(
+          'query' => array(
+            'destination' => current_path(),
+          ),
+          'attributes' => array(
+            'style' => 'color:#ffffff;',
+          )
+        ));
+      $vars['types'][$link] = $element;
+    }
+  }
+}

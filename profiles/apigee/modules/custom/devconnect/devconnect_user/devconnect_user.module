@@ -5,10 +5,15 @@
  *  API-interfacing functionality.
  */
 
+module_load_include('php', 'devconnect_user', 'controllers/DeveloperController');
+//module_load_include('php', 'devconnect_user', 'controllers/UserRoleController');
+
+module_load_include('php', 'devconnect', 'lib/ArrayEntity');
+module_load_include('php', 'devconnect_user', 'entities/DeveloperEntity');
+//module_load_include('php', 'devconnect_user', 'entities/UserRoleEntity');
+
 use Apigee\Util\Log;
 use Apigee\Util\ErrorHandling;
-
-require_once dirname(__FILE__) . '/controllers/DeveloperController.php';
 
 /**
  * Implements hook_permission().
@@ -38,19 +43,19 @@ function devconnect_user_menu() {
     'type' => MENU_LOCAL_TASK,
     'menu_name' => 'api_products',
   );
-  $items['admin/config/people/devconnect/settings'] = array(
+  $items['admin/config/devconnect/user-settings'] = array(
     'title' => t('Dev Portal User Settings'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_settings_form'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
-  $items['admin/config/people/attributes'] = array(
+  $items['admin/config/devconnect/user-attributes'] = array(
     'title' => t('Dev Portal User Attributes'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_attributes_form'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
   return $items;
 }
@@ -279,6 +284,16 @@ function devconnect_user_attributes_form($form, &$form_state) {
     unset($fields['field_last_name']);
   }
 
+  if (count($fields) == 0) {
+    $form['notice'] = array(
+      '#type' => 'markup',
+      '#markup' => t('There are no configured user attributes that can be persisted to KMS.'),
+      '#prefix' => '<p>',
+      '#suffix' => '</p>'
+    );
+    return $form;
+  }
+
   $default_values = variable_get('devconnect_user_attributes_to_persist_in_kms', array());
 
   $form['kms_persisted_user_attribute'] = array(
@@ -396,7 +411,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     return;
   }
   // Don't try to update users in KMS if org hasn't been configured yet.
-  $config = Drupal::config('devconnect.settings');
+  $config =& Drupal::config('devconnect.settings');
   if ($config->get('org') == 'fixme') {
     return;
   }
@@ -445,10 +460,10 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
       if (strlen($field_value) === 0) {
         switch ($field_specs['empty_action']) {
           case 'null':
-            $entity['attributes'][$att_name] = NULL;
+            $att_value = NULL;
             break;
           case 'empty':
-            $entity['attributes'][$att_name] = '';
+            $att_value = '';
             break;
           case 'default':
             $field = field_info_instance('user', $field_full_name, 'user');
@@ -456,14 +471,25 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
             if ($field_specs['convert_to_boolean_string_value']) {
               $default_value = (bool)$default_value;
             }
-            $entity['attributes'][$att_name] = _devconnect_user_scrub_attribute($default_value);
+            $att_value = _devconnect_user_scrub_attribute($default_value);
             break;
           case 'avoid': //Attribute is not to be sent
+        }
+        if (is_a($entity, 'Drupal\devconnect_user\DeveloperEntity')) {
+          $entity->attributes[$att_name] = $att_value;
+        }
+        else {
+          $entity['attributes'][$att_name] = $att_value;
         }
       }
       else {
         $field_value = _devconnect_user_scrub_attribute($field_value);
-        $entity['attributes'][$att_name] = $field_value;
+        if (is_a($entity, 'Drupal\devconnect_user\DeveloperEntity')) {
+          $entity->attributes[$att_name] = $field_value;
+        }
+        else {
+          $entity['attributes'][$att_name] = $field_value;
+        }
       }
     }
   }
@@ -473,7 +499,12 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     if (substr($key, 0, 10) == 'attribute_') {
       $field = substr($key, 10);
       $field_value = _devconnect_user_scrub_attribute($field_value);
-      $entity['attributes'][$field] = $field_value;
+      if (is_a($entity, 'Drupal\devconnect_user\DeveloperEntity')) {
+        $entity->attributes[$field] = $field_value;
+      }
+      else {
+        $entity['attributes'][$field] = $field_value;
+      }
     }
   }
   
@@ -535,7 +566,7 @@ function _devconnect_user_scrub_attribute($field_value) {
  */
 function devconnect_user_user_delete($account) {
   // Don't try to delete users from KMS if org hasn't been configured yet.
-  $config = Drupal::config('devconnect.settings');
+  $config =& Drupal::config('devconnect.settings');
   if ($config->get('org') == 'fixme') {
     return;
   }
@@ -949,6 +980,10 @@ function devconnect_user_sync() {
 function devconnect_user_is_org_admin($email) {
   static $admins = array();
   if (empty($admins)) {
+    // This function is sometimes called before bootstrapping is complete.
+    if (!class_exists('Apigee\ManagementAPI\UserRole')) {
+      devconnect_init();
+    }
     $ur = new Apigee\ManagementAPI\UserRole(devconnect_default_api_client());
     try {
       $admins = array_merge(

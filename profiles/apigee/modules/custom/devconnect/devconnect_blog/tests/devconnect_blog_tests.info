@@ -1,0 +1,8 @@
+name = Devconnect Blog Tests
+description = Automated tests for devconnect_blog
+core = 7.x
+package = Devconnect
+version = 7.x-4.25
+
+dependencies[] = views
+dependencies[] = devconnect_blog

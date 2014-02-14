@@ -1,6 +1,6 @@
 <?php
 
-require_once(dirname(__FILE__) . '/modules/custom/devconnect/lib/Apigee/Util/Crypto.php');
+require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
 require_once(dirname(__FILE__) . '/modules/custom/d8cmi/lib/Drupal.php');
 require_once(dirname(__FILE__) . '/modules/custom/d8cmi/lib/Config.php');
 // Make Crypto work properly with R23
@@ -54,10 +54,9 @@ function apigee_install_load_profile(&$install_state) {
  * Create batch items for apigee install
  *
  * @param string $install_state
- * @return void
+ * @return array
  * @author Tom Stovall
  */
-
 function apigee_install_configure_batch(&$install_state) {
 
   return array(
@@ -69,9 +68,17 @@ function apigee_install_configure_batch(&$install_state) {
       array("apigee_install_configure_users", array()),
       array("apigee_install_configure_themes", array()),
       array("apigee_install_content_types", array()),
+      array("apigee_install_enable_blog_content_types", array()),
       array("apigee_install_rebuild_permissions", array()),
       array("apigee_install_create_homepage", array()),
-      array("apigee_install_create_default_content", array()),
+      array("apigee_install_base_ckeditor_settings", array()),
+      array("apigee_install_create_taxonomy_terms", array()),
+      array("apigee_install_create_tutorial_content", array()),
+      array("apigee_install_create_forum_content", array()),
+      array("apigee_install_create_page_content", array()),
+      array("apigee_install_create_audio_content", array()),
+      array("apigee_install_create_video_content", array()),
+      array("apigee_install_create_faq_content", array()),
       array("apigee_install_clear_caches_flush", array()),
       array("apigee_install_clear_caches_css", array()),
       array("apigee_install_clear_caches_js", array()),
@@ -100,7 +107,6 @@ function _apigee_install_configure_task_finished($success, $results, $operations
 /**
  * Variables batch item
  *
- * @param string $install_state
  * @param string $context
  * @return void
  * @author Tom Stovall
@@ -151,6 +157,17 @@ function apigee_install_configure_variables(&$context) {
   variable_set('user_email_verification', FALSE);
   variable_set('error_level', 0);
 
+  variable_set('devconnect_api_product_handling', 'single_required');
+  variable_set('devconnect_callback_handling', 'require');
+  variable_set('devconnect_developer_apps_apiproduct_widget', 'checkboxes');
+
+  variable_set('bootstrap_version', '3');
+  variable_set('bootstrap_modal_forms_login', '1');
+  variable_set('bootstrap_modal_forms_register', '1');
+
+  $crypt_key = drupal_random_bytes(64);
+  variable_set('apigee_crypt_key', $crypt_key);
+
   $context['results'][] = "variables";
   $context['message'] = st('Default variables set.');
 }
@@ -196,7 +213,8 @@ function apigee_install_configure_solr(&$context) {
     'user' => 'user',
     'node' => 0
   );
-
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('search content'));
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('search content'));
   variable_set('search_active_modules', $search_active_modules);
   variable_set('search_default_module', 'apachesolr_search');
   $context['results'][] = "solr_push";
@@ -230,6 +248,13 @@ function apigee_install_configure_users(&$context) {
   }
   variable_set('user_admin_role', $admin_role->rid);
   user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+
+  //Anonymous user permissions
+  $permissions = array( 'access comments', 'access content','view faq page');
+  user_role_grant_permissions(1, $permissions);
+  //Authenticated user permissions
+  $permissions[] = 'post comments';
+  user_role_grant_permissions(2, $permissions);
 
   $roles = array(3 => TRUE, 4 => TRUE);
   $user = (object) array(
@@ -275,7 +300,7 @@ function apigee_install_configure_themes(&$context) {
     ->condition('type', 'theme')
     ->execute();
   $enable = array(
-    'theme_default' => 'apigee_devconnect',
+    'theme_default' => 'apigee_responsive',
     'admin_theme' => 'rubik',
     'apigee_base'
   );
@@ -335,6 +360,11 @@ function apigee_install_content_types(&$context) {
 
 }
 
+function apigee_install_enable_blog_content_types() {
+  //Needs to be done here not in the .info file
+  module_enable(array("devconnect_blog_content_types"));
+}
+
 
 function apigee_install_create_homepage() {
   watchdog(__FUNCTION__, "Generating Homepage", array(), WATCHDOG_INFO);
@@ -358,102 +388,1013 @@ function apigee_install_create_homepage() {
   $context['message'] = st('Default Homepage Generated!');
 }
 
-function apigee_install_create_default_content(&$context) {
-  watchdog(__FUNCTION__, "Generating default content nodes", array(), WATCHDOG_INFO);
-  $gen = array();
-  $gen['values'] = array(
-    'node_types' => array(
-      'page' => 'page',
-      'blog' => 'blog',
-      'forum' => 'forum'
-    ),
-    'title_length' => 6,
-    'num_nodes' => 20,
-    'max_comments' => 0,
-    'time_range' => 604800
-  );
-  try {
-    module_load_include('inc', 'devel_generate');
-    $blog_vid = taxonomy_vocabulary_machine_name_load('blog')->vid;
-    $forums_vid = taxonomy_vocabulary_machine_name_load('forums')->vid;
-    $tax = taxonomy_vocabulary_load_multiple(array($blog_vid,$forums_vid));
-    devel_generate_term_data($tax, 2, 12, 0, NULL);
-    devel_generate_content($gen);
 
-    $posts = array(
-      array(
-        'title' => 'Portal Start Up Guide',
-        'body' => '<p>The&nbsp;<em>developer portal</em>&nbsp;is a template portal, designed as a base that you can easily' .
-          ' customize to meet your specific requirements</p>
-          <p>Your customized developer portal should educate developers about your API&mdash;what it is and how it\'s used. It' .
-          ' should also enable you to manage developer use of your API. This could include authorizing developers to use your API,' .
-          ' giving developers an easy way to create apps that use your API products, assigning developers specific roles and permissions' .
-          ' related to the API, or revoking developer access to the API as necessary. Beyond that, your developer portal can serve' .
-          ' as the focal point for community activity, where developers can contribute API-related content to social media repositories' .
-          ' such as blogs and forums.</p>' .
-          ' <p>View more information about developer portals at ' .
-          l('apigee.com','http://apigee.com/docs/developer-channel/content/what-developer-portal') . '</p>',
-        'keyword' => 'Portal',
-      ),
-      array(
-        'title' => 'Customizing your portal',
-        'body' => '<p>You can customize the appearance of the developer portal to match your company theme, to add new content areas' .
-          ' to the portal, or to change the layout of any page on the portal. Much of this configuration requires a working knowledge' .
-          ' of ' . l('Drupal','https://drupal.org') .'. However, there is documentation that describes some of the basic tasks that you might want to' .
-          ' perform to customize your portal.</p>' .
-          ' <p>View more information about customizing your developer portals at ' .
-          l('www.apigee.com','http://apigee.com/docs/developer-channel/content/customize-appearance') . '.</p>',
-        'keyword' => 'Tutorials',
-      ),
+
+/**
+ * Creates the CKEditor settings for the portal
+ *
+ * @param $context
+ */
+function apigee_install_base_ckeditor_settings(&$context) {
+  if (!module_exists("filter")) {
+    module_enable("filter");
+  }
+  module_load_include("module", "filter");
+  $filters = filter_get_filters();
+
+  if (!in_array("filtered_html", array_keys($filters))) {
+    filter_format_save((object) array(
+        'format' => 'filtered_html',
+        'name' => 'Filtered HTML',
+        'cache' => 1,
+        'status' => 1,
+        'weight' => 0,
+        'filters' => array(
+          'filter_html' => array(
+            'weight' => -10,
+            'status' => 1,
+            'settings' => array(
+              'allowed_html' => '<a> <em> <strong> <cite> <blockquote> <code> <ul> <ol> <li> <dl> <dt> <dd>',
+              'filter_html_help' => 1,
+              'filter_html_nofollow' => 0,
+            ),
+          ),
+          'ckeditor_link_filter' => array(
+            'weight' => 0,
+            'status' => 1,
+            'settings' => array(),
+          ),
+        ),
+      )
     );
+    db_insert("role_permission")->fields(array("rid" => 2, "permission" => "use text format filtered_html","module"=>"filter"))->execute();
+    db_insert("role_permission")->fields(array("rid" => 3, "permission" => "use text format filtered_html","module"=>"filter"))->execute();
+  }
 
-    $vid = taxonomy_vocabulary_machine_name_load('blog')->vid;
+  if (!in_array("full_html", array_keys($filters))) {
 
-    foreach($posts as $post) {
-      $node = new stdClass();
-      $node->type = 'blog';
-      node_object_prepare($node);
-      $node->uid = 1;
-      $node->name = 'admin';
-      $node->title = $post['title'];
-      $node->language = LANGUAGE_NONE;
-      $node->body[$node->language][0]['value'] = $post['body'];
-      $node->body[$node->language][0]['summary'] = $post['body'];
-      $node->body[$node->language][0]['format'] = 'filtered_html';
-      $node->comment = 1;
-      $node->status = 1;
-      $node->promote = 0;
-      $node->revision = 0;
-      $node->changed = time();
-      $node->created = time();
-      $term = taxonomy_get_term_by_name($post['keyword'], 'blog');
-      if (empty($term)) {
-        if ($vid) {
-          taxonomy_term_save((object) array(
-            'name' => $post['keyword'],
-            'vid' => $vid,
-          ));
-          $keyword = taxonomy_get_term_by_name($post['keyword'], 'blog');
-        }
-      } else {
-        if ($vid) {
-          $keyword = taxonomy_get_term_by_name($post['keyword'], 'blog');
-        }
-      }
-      if (isset($keyword)) {
-        foreach ($keyword as $obj) {
-          $node->field_keywords[$node->language][]['tid'] = $obj->tid;
-        }
-      }
-      node_submit($node);
-      node_save($node);
-    }
+    // Exported format: Full HTML.
+    filter_format_save((object) array(
+        'format' => 'full_html',
+        'name' => 'Full HTML',
+        'cache' => 1,
+        'status' => 1,
+        'weight' => 0,
+        'filters' => array(
+          'ckeditor_link_filter' => array(
+            'weight' => 0,
+            'status' => 1,
+            'settings' => array(),
+          ),
+          'filter_autop' => array(
+            'weight' => 0,
+            'status' => 1,
+            'settings' => array(),
+          ),
+        ),
+      )
+    );
+    db_insert("role_permission")->fields(array("rid" => 3, "permission" => "use text format full_html","module"=>"filter"))->execute();
+  }
 
-  } catch (Exception $e) {
-    watchdog_exception(__FUNCTION__, $e, "Error generating default content: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
+
+  $ckeditor_filtered = array(
+    'ss' => 2,
+    'default' => 't',
+    'show_toggle' => 't',
+    'uicolor' => 'default',
+    'uicolor_user' => 'default',
+    'toolbar' => "
+    [['Source'],
+    ['Cut','Copy','Paste','PasteText','PasteFromWord','-','SpellChecker','Scayt'],
+    ['Undo','Redo','Find','Replace','-','SelectAll','RemoveFormat'],
+    ['Media','Table','HorizontalRule','Smiley','SpecialChar','Iframe'],
+    '/',
+    ['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
+    ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote','CreateDiv'],
+    ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiLtr','BidiRtl'],
+    ['Link','Unlink','Anchor','MediaEmbed'],
+    ['DrupalBreak'],
+    '/',
+    ['Format','Font','FontSize'],
+    ['TextColor','BGColor'],
+    ['Maximize','ShowBlocks']]",
+    'expand' => "t",
+    'width' => '100%',
+    'lang' => 'en',
+    'auto_lang' => 't',
+    'language_direction' => 'default',
+    'enter_mode' => 'p',
+    'shift_enter_mode' => 'br',
+    'font_format' => 'p;div;pre;address;h1;h2;h3;h4;h5;h6',
+    'custom_formatting' => 'f',
+    'formatting' => array(
+      'custom_formatting_options' => array(
+        'indent' => 'indent',
+        'breakBeforeOpen' => 'breakBeforeOpen',
+        'breakAfterOpen' => 'breakAfterOpen',
+        'breakAfterClose' => 'breakAfterClose',
+        'breakBeforeClose' => '0',
+        'pre_indent' => '0',
+      ),
+    ),
+    'css_mode' => 'self',
+    'css_path' => '%tcss/bootstrap.min.css',
+    'css_style' => 'theme',
+    'styles_path' => '',
+    'filebrowser' => 'none',
+    'filebrowser_image' => '',
+    'filebrowser_flash' => '',
+    'UserFilesPath' => '%b%f/',
+    'UserFilesAbsolutePath' => '%d%b%f/',
+    'forcePasteAsPlainText' => 'f',
+    'html_entities' => 't',
+    'scayt_autoStartup' => 'f',
+    'theme_config_js' => 'f',
+    'js_conf' => 'config.allowedContent = true;',
+    'loadPlugins' => array(
+      'a11yhelp' => array(
+        'name' => 'a11yhelp',
+        'desc' => 'Plugin file: a11yhelp',
+        'path' => '%plugin_dir_extra%a11yhelp/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'about' => array(
+        'name' => 'about',
+        'desc' => 'Plugin file: about',
+        'path' => '%plugin_dir_extra%about/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'basicstyles' => array(
+        'name' => 'basicstyles',
+        'desc' => 'Plugin file: basicstyles',
+        'path' => '%plugin_dir_extra%basicstyles/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'blockquote' => array(
+        'name' => 'blockquote',
+        'desc' => 'Plugin file: blockquote',
+        'path' => '%plugin_dir_extra%blockquote/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'button' => array(
+        'name' => 'button',
+        'desc' => 'Plugin file: button',
+        'path' => '%plugin_dir_extra%button/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'ckeditor_link' => array(
+        'name' => 'drupal_path',
+        'desc' => 'CKEditor Link - A plugin to easily create links to Drupal internal paths',
+        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_link/plugins/link/',
+        'buttons' => '',
+      ),
+      'clipboard' => array(
+        'name' => 'clipboard',
+        'desc' => 'Plugin file: clipboard',
+        'path' => '%plugin_dir_extra%clipboard/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'contextmenu' => array(
+        'name' => 'contextmenu',
+        'desc' => 'Plugin file: contextmenu',
+        'path' => '%plugin_dir_extra%contextmenu/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'counter' => array(
+        'name' => 'contextmenu',
+        'desc' => 'Plugin file: counter',
+        'path' => '%plugin_dir_extra%counter/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'dialog' => array(
+        'name' => 'dialog',
+        'desc' => 'Plugin file: dialog',
+        'path' => '%plugin_dir_extra%dialog/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'dialogui' => array(
+        'name' => 'dialog',
+        'desc' => 'Plugin file: dialogui',
+        'path' => '%plugin_dir_extra%dialogui/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'drupalbreaks' => array(
+        'name' => 'drupalbreaks',
+        'desc' => 'Plugin for inserting Drupal teaser and page breaks.',
+        'path' => '%plugin_dir%drupalbreaks/',
+        'buttons' => array(
+          'DrupalBreak' => array(
+            'label' => 'DrupalBreak',
+            'icon' => 'images/drupalbreak.png',
+          ),
+        ),
+        'default' => 't',
+      ),
+      'elementspath' => array(
+        'name' => 'elementspath',
+        'desc' => 'Plugin file: elementspath',
+        'path' => '%plugin_dir_extra%elementspath/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'enterkey' => array(
+        'name' => 'enterkey',
+        'desc' => 'Plugin file: enterkey',
+        'path' => '%plugin_dir_extra%enterkey/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'entities' => array(
+        'name' => 'entities',
+        'desc' => 'Plugin file: entities',
+        'path' => '%plugin_dir_extra%entities/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'fakeobjects' => array(
+        'name' => 'fakeobjects',
+        'desc' => 'Plugin file: fakeobjects',
+        'path' => '%plugin_dir_extra%fakeobjects/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'filebrowser' => array(
+        'name' => 'filebrowser',
+        'desc' => 'Plugin file: filebrowser',
+        'path' => '%plugin_dir_extra%filebrowser/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'floatingspace' => array(
+        'name' => 'floatingspace',
+        'desc' => 'Plugin file: floatingspace',
+        'path' => '%plugin_dir_extra%floatingspace/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'floatpanel' => array(
+        'name' => 'floatpanel',
+        'desc' => 'Plugin file: floatpanel',
+        'path' => '%plugin_dir_extra%floatpanel/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'horizontalrule' => array(
+        'name' => 'horizontalrule',
+        'desc' => 'Plugin file: horizontalrule',
+        'path' => '%plugin_dir_extra%horizontalrule/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'htmlwriter' => array(
+        'name' => 'htmlwriter',
+        'desc' => 'Plugin file: htmlwriter',
+        'path' => '%plugin_dir_extra%htmlwriter/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'iframe' => array(
+        'name' => 'iframe',
+        'desc' => 'Plugin file: iframe',
+        'path' => '%plugin_dir_extra%iframe/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'image' => array(
+        'name' => 'image',
+        'desc' => 'Plugin file: image',
+        'path' => '%plugin_dir_extra%image/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'indent' => array(
+        'name' => 'indent',
+        'desc' => 'Plugin file: indent',
+        'path' => '%plugin_dir_extra%indent/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'indentlist' => array(
+        'name' => 'indentlist',
+        'desc' => 'Plugin file: indentlist',
+        'path' => '%plugin_dir_extra%indentlist/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'lineutils' => array(
+        'name' => 'lineutils',
+        'desc' => 'Plugin file: lineutils',
+        'path' => '%plugin_dir_extra%lineutils/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'list' => array(
+        'name' => 'list',
+        'desc' => 'Plugin file: list',
+        'path' => '%plugin_dir_extra%list/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'magicline' => array(
+        'name' => 'magicline',
+        'desc' => 'Plugin file: magicline',
+        'path' => '%plugin_dir_extra%magicline/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'media' => array(
+        'name' => 'media',
+        'desc' => 'Plugin for inserting images from Drupal media module',
+        'path' => '%plugin_dir%media/',
+        'buttons' => array(
+          'Media' => array(
+            'label' => 'Media',
+            'icon' => 'images/icon.gif',
+          ),
+        ),
+        'default' => 'f',
+      ),
+      'mediaembed' => array(
+        'name' => 'mediaembed',
+        'desc' => 'Plugin for inserting Drupal embeded media',
+        'path' => '%plugin_dir%mediaembed/',
+        'buttons' => array(
+          'MediaEmbed' => array(
+            'label' => 'MediaEmbed',
+            'icon' => 'images/icon.png',
+          )
+        ),
+        'default' => 'f',
+      ),
+      'menu' => array(
+        'name' => 'menu',
+        'desc' => 'Plugin file: menu',
+        'path' => '%plugin_dir_extra%menu/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'menubutton' => array(
+        'name' => 'menubutton',
+        'desc' => 'Plugin file: menubutton',
+        'path' => '%plugin_dir_extra%menubutton/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'panel' => array(
+        'name' => 'panel',
+        'desc' => 'Plugin file: panel',
+        'path' => '%plugin_dir_extra%panel/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'pastefromword' => array(
+        'name' => 'pastefromword',
+        'desc' => 'Plugin file: pastefromword',
+        'path' => '%plugin_dir_extra%pastefromword/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'pastetext' => array(
+        'name' => 'pastetext',
+        'desc' => 'Plugin file: pastetext',
+        'path' => '%plugin_dir_extra%pastetext/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'popup' => array(
+        'name' => 'popup',
+        'desc' => 'Plugin file: popup',
+        'path' => '%plugin_dir_extra%popup/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'removeformat' => array(
+        'name' => 'removeformat',
+        'desc' => 'Plugin file: removeformat',
+        'path' => '%plugin_dir_extra%removeformat/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'richcombo' => array(
+        'name' => 'richcombo',
+        'desc' => 'Plugin file: richcombo',
+        'path' => '%plugin_dir_extra%richcombo/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'scayt' => array(
+        'name' => 'scayt',
+        'desc' => 'Plugin file: scayt',
+        'path' => '%plugin_dir_extra%scayt/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'sharedspace' => array(
+        'name' => 'sharedspace',
+        'desc' => 'Plugin file: sharedspace',
+        'path' => '%plugin_dir_extra%sharedspace/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'sourcearea' => array(
+        'name' => 'sourcearea',
+        'desc' => 'Plugin file: sourcearea',
+        'path' => '%plugin_dir_extra%sourcearea/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'sourcedialog' => array(
+        'name' => 'sourcedialog',
+        'desc' => 'Plugin file: sourcedialog',
+        'path' => '%plugin_dir_extra%sourcedialog/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'specialchar' => array(
+        'name' => 'specialchar',
+        'desc' => 'Plugin file: specialchar',
+        'path' => '%plugin_dir_extra%specialchar/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'stylescombo' => array(
+        'name' => 'stylescombo',
+        'desc' => 'Plugin file: stylescombo',
+        'path' => '%plugin_dir_extra%stylescombo/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'tab' => array(
+        'name' => 'tab',
+        'desc' => 'Plugin file: tab',
+        'path' => '%plugin_dir_extra%tab/',
+        'buttons' => '',
+        'default' => 'f',
+      ),
+      'tableresize' => array(
+        'name' => 'tableresize',
+        'desc' => 'Plugin file: tableresize',
+        'path' => '%plugin_dir_extra%tableresize/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+      'toolbarswitch' => array(
+        'name' => 'toolbarswitch',
+        'desc' => 'Plugin file: toolbarswitch',
+        'path' => '%plugin_dir_extra%toolbarswitch/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+      'widget' => array(
+        'name' => 'widget',
+        'desc' => 'Plugin file: widget',
+        'path' => '%plugin_dir_extra%widget/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+      'wysiwygarea' => array(
+        'name' => 'wysiwygarea',
+        'desc' => 'Plugin file: wysiwygarea',
+        'path' => '%plugin_dir_extra%wysiwygarea/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+      'trifold' => array(
+        'name' => 'trifold',
+        'desc' => 'Plugin file: trifold',
+        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/trifold/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+      'featurette' => array(
+        'name' => 'featurette',
+        'desc' => 'Plugin file: featurette',
+        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/featurette/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+      'jumbotron' => array(
+        'name' => 'jumbotron',
+        'desc' => 'Plugin file: jumbotron',
+        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/jumbotron/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+      'carousel' => array(
+        'name' => 'carousel',
+        'desc' => 'Plugin file: carousel',
+        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/carousel/',
+        'buttons' => '',
+        'default' => 't',
+      ),
+    ),
+  );
+  $ckeditor_full = $ckeditor_filtered;
+  $ckeditor_full['toolbar'] = "
+    [['Source'],
+    ['Cut','Copy','Paste','PasteText','PasteFromWord','-','SpellChecker','Scayt'],
+    ['Undo','Redo','Find','Replace','-','SelectAll','RemoveFormat'],
+    ['Media','Table','HorizontalRule','Smiley','SpecialChar','Iframe'],
+    '/',
+    ['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
+    ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote','CreateDiv'],
+    ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiLtr','BidiRtl'],
+    ['Link','Unlink','Anchor','MediaEmbed'],
+    ['DrupalBreak'],
+    '/',
+    ['Format','Font','FontSize'],
+    ['TextColor','BGColor'],
+    ['Maximize','ShowBlocks'],
+    ['Carousel','Featurette','Jumbotron','Trifold']]";
+
+  $ckeditor_global_settings = array(
+    'skin' => 'apigee',
+    'ckeditor_path' => '%l/ckeditor',
+    'ckeditor_local_path' => '',
+    'ckeditor_plugins_path' => '%l/ckeditor/plugins',
+    'ckeditor_plugins_local_path' => '',
+    'ckfinder_path' => '%m/ckfinder',
+    'ckfinder_local_path' => '',
+    'ckeditor_aggregate' => 't',
+    'toolbar_wizard' => 't',
+    'loadPlugins' => array(),
+  );
+
+  db_delete('ckeditor_settings')
+    ->condition('name', 'Full')
+    ->execute();
+  db_delete('ckeditor_settings')
+    ->condition('name', 'Advanced')
+    ->execute();
+  db_delete('ckeditor_settings')
+    ->condition('name', 'CKEditor Global Profile')
+    ->execute();
+
+  db_insert('ckeditor_settings')
+    ->fields(array(
+      "name" => 'filtered',
+      "settings" => serialize($ckeditor_filtered),
+    ))
+    ->execute();
+  db_insert('ckeditor_settings')
+    ->fields(array(
+      "name" => 'full',
+      "settings" => serialize($ckeditor_full),
+    ))
+    ->execute();
+  db_insert('ckeditor_settings')
+    ->fields(array(
+      "name" => 'CKEditor Global Profile',
+      "settings" => serialize($ckeditor_global_settings),
+    ))
+    ->execute();
+
+  db_delete('ckeditor_input_format')
+    ->condition('name', 'Full')
+    ->execute();
+  db_delete('ckeditor_input_format')
+    ->condition('name', 'Advanced')
+    ->execute();
+  db_insert('ckeditor_input_format')->fields(array("name" => 'filtered', "format" => 'filtered_html'))->execute();
+  db_insert('ckeditor_input_format')->fields(array("name" => 'full', "format" => 'full_html'))->execute();
+
+  $context['results'][] = "ckeditor_settings";
+  $context['message'] = st('CKEditor Settings Built');
+}
+
+/**
+ * Creates dummy taxonomy terms
+ */
+function apigee_install_create_taxonomy_terms(&$context) {
+  for ($i = 0; $i <= 5; $i++) {
+    $term = new stdClass();
+    $term->name = _apigee_install_generate_greek(1, TRUE);
+    $term->vid = taxonomy_vocabulary_machine_name_load('forums')->vid;
+    taxonomy_term_save($term);
   }
   $context['results'][] = "content_created";
-  $context['message'] = st('Default Content Generated!');
+  $context['message'] = st('Example Taxonomy Terms Created!');
+}
+
+/**
+ * Creates example tutorial content
+ *
+ * @param $context
+ */
+function apigee_install_create_tutorial_content(&$context) {
+  $posts = array(
+    array(
+      'title' => 'Portal Start Up Guide',
+      'body' => '<p>The&nbsp;<em>developer portal</em>&nbsp;is a template portal, designed as a base that you can easily' .
+        ' customize to meet your specific requirements</p>
+        <p>Your customized developer portal should educate developers about your API&mdash;what it is and how it\'s used. It' .
+        ' should also enable you to manage developer use of your API. This could include authorizing developers to use your API,' .
+        ' giving developers an easy way to create apps that use your API products, assigning developers specific roles and permissions' .
+        ' related to the API, or revoking developer access to the API as necessary. Beyond that, your developer portal can serve' .
+        ' as the focal point for community activity, where developers can contribute API-related content to social media repositories' .
+        ' such as blogs and forums.</p>' .
+        ' <p>View more information about developer portals at ' .
+        l('apigee.com', 'http://apigee.com/docs/developer-channel/content/what-developer-portal') . '</p>',
+      'keyword' => 'Portal',
+    ),
+    array(
+      'title' => 'Customizing your portal',
+      'body' => '<p>You can customize the appearance of the developer portal to match your company theme, to add new content areas' .
+        ' to the portal, or to change the layout of any page on the portal. Much of this configuration requires a working knowledge' .
+        ' of ' . l('Drupal', 'https://drupal.org') . '. However, there is documentation that describes some of the basic tasks that you might want to' .
+        ' perform to customize your portal.</p>' .
+        ' <p>View more information about customizing your developer portals at ' .
+        l('www.apigee.com', 'http://apigee.com/docs/developer-channel/content/customize-appearance') . '.</p>',
+      'keyword' => 'Tutorials',
+    ),
+  );
+  foreach ($posts as $post) {
+    $body = array();
+    $body['post'] = $post['body'];
+    $body['title'] = $post['title'];
+    $fields = array();
+    $fields['type'] = 'tutorial';
+    $fields['keyword'] = $post['keyword'];
+    $fields['vid'] = taxonomy_vocabulary_machine_name_load('blog')->vid;
+    _apigee_install_generate_node('article', $body, $fields);
+  }
+  $context['results'][] = "content_created";
+  $context['message'] = st('Tutorial Content Generated!');
+}
+
+/**
+ * Creates default content for the install
+ * @param $context
+ */
+function apigee_install_create_forum_content(&$context) {
+  // 10 forum posts
+  for ($i = 0; $i <= 7; $i++) {
+    $body = array();
+    $body['post'] = _apigee_install_generate_greek(mt_rand(2, 300), TRUE);
+    $fields = array();
+    $fields['type'] = 'forum';
+    $fields['keyword'] = _apigee_install_generate_greek(mt_rand(2, 5), TRUE);
+    $fields['vid'] = taxonomy_vocabulary_machine_name_load('forums')->vid;
+    _apigee_install_generate_node('forum', $body, $fields);
+  }
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('create forum content', 'edit own forum content'));
+  $context['results'][] = "content_created";
+  $context['message'] = st('10 Example Forum Posts Created!');
+}
+
+/**
+ * Creates default content for the install
+ * @param $context
+ */
+function apigee_install_create_page_content(&$context) {
+  // 5 pages
+  for ($i = 0; $i <= 5; $i++) {
+    $body = array();
+    $body['post'] = _apigee_install_generate_greek(mt_rand(2, 300), TRUE);
+    _apigee_install_generate_node('page', $body);
+  }
+  $context['results'][] = "content_created";
+  $context['message'] = st('5 Example Pages Created!');
+}
+
+/**
+ * Creates default content for the install
+ * @param $context
+ */
+function apigee_install_create_audio_content(&$context) {
+  $fid = _apigee_content_types_get_fid('http://www.lullabot.com/sites/default/files/podcasts/drupalizeme_033.mp3', 'drupalizeme_033.mp3', 'audio/mpeg', 'audio');
+  $blog_tid = _apigee_get_blog_tid();
+  $t = get_t();
+  $node = (object) array(
+    'title' => $t('Drupalize.Me Podcast #33'),
+    'status' => 1,
+    'comment' => 2,
+    'promote' => 1,
+    'sticky' => 0,
+    'type' => 'blog_audio',
+    'language' => LANGUAGE_NONE,
+    'translate' => 0,
+    'field_content_tag' => array(LANGUAGE_NONE => array(array('tid' => $blog_tid))),
+    'body' => array(
+      LANGUAGE_NONE => array(
+        array(
+          'value' => '',
+          'summary' => '',
+          'format' => 'full_html'
+        )
+      )
+    ),
+    'field_audio' => array(
+      LANGUAGE_NONE => array(
+        array(
+          'fid' => $fid,
+          'display' => 1,
+        )
+      )
+    ),
+  );
+  node_save($node);
+  _apigee_content_types_set_file_usage($fid, $node->nid);
+  if (!module_exists('pathauto')) {
+    $path = array('source' => 'node/' . $node->nid, 'alias' => 'blog/drupalizeme-podcast-33');
+    path_save($path);
+  }
+
+  $context['results'][] = "content_created";
+  $context['message'] = st('Audio Content Created!');
+}
+
+/**
+ * Creates default content for the install
+ * @param $context
+ */
+function apigee_install_create_video_content(&$context) {
+  $fid = _apigee_content_types_get_fid('youtube://v/twWnGnQG_1s', 'twWnGnQG_1s', 'video/youtube', 'video');
+  $blog_tid = _apigee_get_blog_tid();
+  $t = get_t();
+  $node = (object) array(
+    'title' => $t('Your API Sucks'),
+    'status' => 1,
+    'comment' => 2,
+    'promote' => 1,
+    'sticky' => 0,
+    'type' => 'blog_video',
+    'language' => LANGUAGE_NONE,
+    'translate' => 0,
+    'body' => array(
+      LANGUAGE_NONE => array(
+        array(
+          'value' => '<p>' . $t('Marsh and Brian from Apigee help your API Program suck less!') . '</p>',
+          'summary' => '',
+          'format' => 'full_html'
+        )
+      )
+    ),
+    'field_content_tag' => array(LANGUAGE_NONE => array(array('tid' => $blog_tid))),
+    'field_video' => array(
+      LANGUAGE_NONE => array(
+        array(
+          'fid' => $fid,
+          'display' => 1,
+          'description' => ''
+        )
+      )
+    ),
+  );
+  node_save($node);
+  _apigee_content_types_set_file_usage($fid, $node->nid);
+  // Now create path alias
+  if (!module_exists('pathauto')) {
+    $path = array('source' => 'node/' . $node->nid, 'alias' => 'blog/your-api-sucks');
+    path_save($path);
+  }
+  $context['results'][] = "content_created";
+  $context['message'] = st('Video Content Created!');
+}
+
+/**
+ * Creates default content for the install
+ * @param $context
+ */
+function apigee_install_create_faq_content(&$context) {
+  $type = 'faq';
+  for ($i = 0; $i <= 3; $i++) {
+    _apigee_install_generate_node($type, $body = NULL, $fields = NULL);
+  }
+  $context['results'][] = "content_created";
+  $context['message'] = st('FAQ Example Content Created!');
+}
+
+/**
+ * Helper function that sets the file usage
+ *
+ * @param $fid
+ * @param $nid
+ */
+function _apigee_content_types_set_file_usage($fid, $nid) {
+  $fid_exists = db_select('file_usage', 'fu')
+    ->fields('fu', array('fid'))
+    ->condition('type', 'node')
+    ->condition('id', $nid)
+    ->condition('fid', $fid)
+    ->execute()
+    ->fetchField();
+  if (!$fid_exists) {
+    db_insert('file_usage')
+      ->fields(array(
+        'fid' => $fid,
+        'module' => 'file',
+        'type' => 'node',
+        'id' => $nid,
+        'count' => 1
+      ))
+      ->execute();
+  }
+}
+
+/**
+ * Helper function to find (or create) an entry in the file_managed table.
+ *
+ * @param string $uri
+ * @param string $filename
+ * @param string $filemime
+ * @param string $type
+ * @return integer
+ */
+function _apigee_content_types_get_fid($uri, $filename, $filemime, $type) {
+  $fid = db_select('file_managed', 'fm')
+    ->fields('fm', array('fid'))
+    ->condition('uri', $uri)
+    ->execute()
+    ->fetchField();
+  if (!$fid) {
+    $file = (object) array(
+      'uid' => 0,
+      'filename' => $filename,
+      'uri' => $uri,
+      'filemime' => $filemime,
+      'status' => 1,
+      'type' => $type,
+      'alt' => '',
+      'title' => ''
+    );
+    $file = file_save($file);
+    $fid = $file->fid;
+  }
+  return $fid;
+}
+
+/**
+ * @return integer|boolean
+ */
+function _apigee_get_blog_tid($blog_tid = NULL) {
+  static $tid;
+  if (isset($blog_tid)) {
+    $tid = $blog_tid;
+  }
+  if (!isset($tid)) {
+    $query = db_select('taxonomy_vocabulary', 'v');
+    $query->innerJoin('taxonomy_term_data', 't', 'v.vid = t.vid');
+    $tid = $query->condition('v.machine_name', 'content_type_tag')
+      ->condition('t.name', 'blog')
+      ->fields('t', array('tid'))
+      ->execute()
+      ->fetchField();
+  }
+  return $tid;
+}
+
+/**
+ * Generate node function
+ */
+function _apigee_install_generate_node($type, $body = NULL, $fields = NULL) {
+  $node = new stdClass();
+  $node->nid = NULL;
+  $node->type = $type;
+  $users = array();
+  $result = db_query_range("SELECT uid FROM {users}", 0, 50);
+  foreach ($result as $record) {
+    $users[] = $record->uid;
+  }
+  $users = array_merge($users, array('0'));
+  node_object_prepare($node);
+  $node->uid = $users[array_rand($users)];
+  $node->title = (isset($body['title'])) ? $body['title'] : _apigee_install_generate_greek(mt_rand(2, 7), TRUE);
+  $node->language = LANGUAGE_NONE;
+  if (isset($body['post'])) {
+    $node->body[LANGUAGE_NONE][0]['value'] = $body['post'];
+    $node->body[LANGUAGE_NONE][0]['summary'] = $body['post'];
+    $node->body[LANGUAGE_NONE][0]['format'] = 'filtered_html';
+  } else {
+    $nparas = mt_rand(1,12);
+    $output = '';
+    for ($i = 1; $i <= $nparas; $i++) {
+      $output .= "<p>" . _apigee_install_generate_greek(mt_rand(10,60)) . "</p>" ."\n\n";
+    }
+    $node->body[LANGUAGE_NONE][0]['value'] = $output;
+    $node->body[LANGUAGE_NONE][0]['summary'] = $output;
+    $node->body[LANGUAGE_NONE][0]['format'] = 'filtered_html';
+  }
+  $node->comment = 1;
+  $node->status = 1;
+  $node->created = REQUEST_TIME - mt_rand(0, 604800);
+  if (!is_null($fields)) {
+    switch($fields['type']) {
+      case 'tutorial':
+        if (isset($fields['vid'])) {
+          $vid = $fields['vid'];
+          $term = taxonomy_get_term_by_name($fields['keyword'], 'blog');
+          if (empty($term)) {
+            if ($vid) {
+              taxonomy_term_save((object) array(
+                'name' => $fields['keyword'],
+                'vid' => $vid,
+              ));
+              $keyword = taxonomy_get_term_by_name($fields['keyword'], 'blog');
+            }
+          } else {
+            if ($vid) {
+              $keyword = taxonomy_get_term_by_name($fields['keyword'], 'blog');
+            }
+          }
+          if (isset($keyword)) {
+            foreach ($keyword as $obj) {
+              $node->field_keywords[LANGUAGE_NONE][]['tid'] = $obj->tid;
+            }
+          }
+          foreach(taxonomy_get_term_by_name('blog', 'content_type_tag') as $obj){
+            $node->field_content_tag[LANGUAGE_NONE][]['tid'] = $obj->tid;
+          }
+        }
+        break;
+      case 'forum':
+        if (isset($fields['vid'])) {
+          $node->comment = 2;
+          $rand = array_rand(taxonomy_get_tree($fields['vid']));
+          $tree = taxonomy_get_tree($fields['vid']);
+          $node->taxonomy_forums[LANGUAGE_NONE][]['tid'] = $tree[$rand]->tid;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  node_save($node);
+}
+
+/**
+ * Generates filler content for generated nodes
+ * Mimics Devel's devel_creating_greeking, but makes this profile not rely on it
+ *
+ * @param $context
+ */
+function _apigee_install_generate_greek($word_count, $title = FALSE) {
+  $greek = array("abbas", "abdo", "abico", "abigo", "abluo", "accumsan",
+    "acsi", "ad", "adipiscing", "aliquam", "aliquip", "amet", "antehabeo",
+    "appellatio", "aptent", "at", "augue", "autem", "bene", "blandit",
+    "brevitas", "caecus", "camur", "capto", "causa", "cogo", "comis",
+    "commodo", "commoveo", "consectetuer", "consequat", "conventio", "cui",
+    "damnum", "decet", "defui", "diam", "dignissim", "distineo", "dolor",
+    "dolore", "dolus", "duis", "ea", "eligo", "elit", "enim", "erat",
+    "eros", "esca", "esse", "et", "eu", "euismod", "eum", "ex", "exerci",
+    "exputo", "facilisi", "facilisis", "fere", "feugiat", "gemino",
+    "genitus", "gilvus", "gravis", "haero", "hendrerit", "hos", "huic",
+    "humo", "iaceo", "ibidem", "ideo", "ille", "illum", "immitto",
+    "importunus", "imputo", "in", "incassum", "inhibeo", "interdico",
+    "iriure", "iusto", "iustum", "jugis", "jumentum", "jus", "laoreet",
+    "lenis", "letalis", "lobortis", "loquor", "lucidus", "luctus", "ludus",
+    "luptatum", "macto", "magna", "mauris", "melior", "metuo", "meus",
+    "minim", "modo", "molior", "mos", "natu", "neo", "neque", "nibh",
+    "nimis", "nisl", "nobis", "nostrud", "nulla", "nunc", "nutus", "obruo",
+    "occuro", "odio", "olim", "oppeto", "os", "pagus", "pala", "paratus",
+    "patria", "paulatim", "pecus", "persto", "pertineo", "plaga", "pneum",
+    "populus", "praemitto", "praesent", "premo", "probo", "proprius",
+    "quadrum", "quae", "qui", "quia", "quibus", "quidem", "quidne", "quis",
+    "ratis", "refero", "refoveo", "roto", "rusticus", "saepius",
+    "sagaciter", "saluto", "scisco", "secundum", "sed", "si", "similis",
+    "singularis", "sino", "sit", "sudo", "suscipere", "suscipit", "tamen",
+    "tation", "te", "tego", "tincidunt", "torqueo", "tum", "turpis",
+    "typicus", "ulciscor", "ullamcorper", "usitas", "ut", "utinam",
+    "utrum", "uxor", "valde", "valetudo", "validus", "vel", "velit",
+    "veniam", "venio", "vereor", "vero", "verto", "vicis", "vindico",
+    "virtus", "voco", "volutpat", "vulpes", "vulputate", "wisi", "ymo",
+    "zelus");
+  $greek_flipped = array_flip($greek);
+
+  $greeking = '';
+
+  if (!$title) {
+    $words_remaining = $word_count;
+    while ($words_remaining > 0) {
+      $sentence_length = mt_rand(3, 10);
+      $words = array_rand($greek_flipped, $sentence_length);
+      $sentence = implode(' ', $words);
+      $greeking .= ucfirst($sentence) . '. ';
+      $words_remaining -= $sentence_length;
+    }
+  }
+  else {
+    // Use slightly different method for titles.
+    $words = array_rand($greek_flipped, $word_count);
+    $words = is_array($words) ? implode(' ', $words) : $words;
+    $greeking = ucwords($words);
+  }
+
+  // Work around possible php garbage collection bug. Without an unset(), this
+  // function gets very expensive over many calls (php 5.2.11).
+  unset($dictionary, $dictionary_flipped);
+  return trim($greeking);
 }
 
 
@@ -471,6 +1412,8 @@ function apigee_install_rebuild_permissions(&$context) {
 function apigee_install_revert_features(&$context) {
   module_enable(array("curate"));
   features_revert(array('module' => array('curate')));
+  $context['results'][] = "features";
+  $context['message'] = st('Features reverted');
 }
 
 
@@ -550,7 +1493,7 @@ function _apigee_install_clear_cache($table, $results_label, $message_label, &$c
     cache_clear_all('*', $my_table, TRUE);
   }
   $context['results'][] = $results_label;
-  $context['message'] = st("$results_label caches cleared");
+  $context['message'] = st("$message_label caches cleared");
 }
 
 function apigee_install_clear_caches_core(&$context) {
@@ -584,9 +1527,9 @@ function apigee_install_bootstrap_status(&$context) {
 /**
  * Set the apigee endpoint configuration vars
  *
- * @param string $form
- * @param string $form_state
- * @return void
+ * @param array $form
+ * @param array $form_state
+ * @return array
  * @author Tom Stovall
  */
 
@@ -652,7 +1595,8 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => '',
     '#description' => t('Password used when authenticating with the endpoint.'),
-    '#attributes' => $attributes + array('placeholder' => 'password')
+    '#attributes' => $attributes,
+    '#post_render' => array('apigee_password_post_render')
   );
 
   $form['actions'] = array(
@@ -684,6 +1628,17 @@ function apigee_install_api_endpoint($form, &$form_state) {
 }
 
 /**
+ * Turns a text field into a password field.
+ *
+ * @param string $content
+ * @param array $element
+ * @return string
+ */
+function apigee_password_post_render($content, $element) {
+  return str_replace('type="text"', 'type="password"', $content);
+}
+
+/**
  * Custom function that skips the devconnect installation piece
  */
 function apigee_skip_api_endpoint($form, &$form_state) {
@@ -692,7 +1647,7 @@ function apigee_skip_api_endpoint($form, &$form_state) {
   $disable = array();
   foreach ($modules as $name => $module) {
     if ($name) {
-      if (strpos($name, 'devconnect') !== false) {
+      if (strpos($name, 'devconnect') !== FALSE) {
         $disable[] = $name;
       }
     }

@@ -1,0 +1,106 @@
+<?php
+
+/**
+ * @file
+ *   BugHerd module functions.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function bugherd_init() {
+
+  if (!user_access('access bugherd')) {
+    return;
+  }
+
+  $disable_on_admin = variable_get('bugherd_disable_on_admin', FALSE);
+  if ($disable_on_admin && path_is_admin($_GET['q'])) {
+    return;
+  }
+
+  $key = variable_get('bugherd_project_key');
+  if (!$key) {
+    if (user_access('administer bugherd')) {
+      $url = url('admin/config/development/bugherd');
+      drupal_set_message(t('BugHerd project key not set. <a href="@url">Configure BugHerd</a>.',  array('@url' => $url)), 'warning', FALSE);
+    }
+    return;
+  }
+
+  $key = check_plain($key);
+  $script = <<<SCRIPT
+  (function (d, t) {
+    var bh = d.createElement(t), s = d.getElementsByTagName(t)[0];
+    bh.type = 'text/javascript';
+    bh.src = '//www.bugherd.com/sidebarv2.js?apikey={$key}';
+    s.parentNode.insertBefore(bh, s);
+  })(document, 'script');
+
+SCRIPT;
+
+  drupal_add_js($script, array('type' => 'inline', 'scope' => 'footer'));
+}
+
+/**
+ * Implements hook_menu().
+ */
+function bugherd_menu() {
+  $items = array();
+
+  $items['admin/config/development/bugherd'] = array(
+    'title' => 'BugHerd',
+    'description' => 'Configure the BugHerd module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bugherd_settings'),
+    'access arguments' => array('administer bugherd'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permissions().
+ */
+function bugherd_permission() {
+  $perms = array();
+
+  $perms['administer bugherd'] = array(
+    'title' => t('Administer BugHerd module'),
+    'description' => t('Perform administration tasks for BugHerd.'),
+  );
+
+  $perms['access bugherd'] = array(
+    'title' => t('Access BugHerd'),
+    'description' => t('Log issues via the on page issue submission form.'),
+  );
+
+  return $perms;
+}
+
+/**
+ * Settings form page callback.
+ */
+function bugherd_settings($form_state) {
+  $form = array();
+
+  $link = l('http://www.bugherd.com/', 'http://www.bugherd.com/');
+  $description = t('To obtain your project key login or sign up for BugHerd at !link.', array('!link' => $link));
+  $form['bugherd_project_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('BugHerd Project key'),
+    '#default_value' => variable_get('bugherd_project_key'),
+    '#description' => $description,
+    '#size' => 60,
+    '#required' => TRUE,
+  );
+
+  $form['bugherd_disable_on_admin'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable on admin pages'),
+    '#default_value' => variable_get('bugherd_disable_on_admin', FALSE),
+    '#description' => t('Ticking the checkbox will prevent the BugHerd button being available on admin pages'),
+  );
+
+  return system_settings_form($form);
+}

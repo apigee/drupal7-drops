@@ -37,15 +37,28 @@ module_load_include('php', 'devconnect_monetization', 'MintCacheManager');
  */
 function devconnect_monetization_variable_info($options = array()) {
 
+  $role_ids = array(
+    variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL),
+    variable_get('devconnect_monetization_role_' . MONETIZATION_FINANCE_ADMIN_ROLE_NAME, NULL),
+    variable_get('devconnect_monetization_role_' . MONETIZATION_DEVELOPER_ROLE_NAME, NULL),
+  );
+
+  $roles = db_select('role', 'r')
+    ->fields('r', array('rid', 'name'))
+    ->condition('rid', $role_ids, 'IN')
+    ->orderBy('weight')
+    ->execute();
+
+  $role_options = array();
+  while ($role = $roles->fetchAssoc()) {
+    $role_options[$role['rid']] = $role['name'];
+  }
+
   $variables['devconnect_monetization_default_role'] = array(
     'type' => 'select',
     'title' => t('Default Monetization Role'),
-    'default' => variable_get('devconnect_monetization_default_role', MONETIZATION_ADMIN_ROLE_NAME),
-    'options' => array(
-      MONETIZATION_ADMIN_ROLE_NAME => MONETIZATION_ADMIN_ROLE_NAME,
-      MONETIZATION_FINANCE_ADMIN_ROLE_NAME => MONETIZATION_FINANCE_ADMIN_ROLE_NAME,
-      MONETIZATION_DEVELOPER_ROLE_NAME => MONETIZATION_DEVELOPER_ROLE_NAME,
-    ),
+    'default' => variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL),
+    'options' => $role_options,
   );
 
   $variables['devconnect_monetization_recurring_enabled'] = array(
@@ -84,15 +97,11 @@ function devconnect_monetization_variable_info($options = array()) {
  */
 function devconnect_monetization_default_org_config() {
 
-  // make drush site-install happy
-  devconnect_boot();
   // When running update.php, we might reach this code before we get to the
-  // code that enables the d8cmi module. In that case, manually force the
-  // module to load.
-  if (!module_exists('d8cmi')) {
-    module_load_include('module', 'd8cmi');
-  }
-  d8cmi_init();
+  // code that registers the autoloader. In that case, manually force devconnect
+  // module to load and register it.
+  module_load_include('module', 'devconnect');
+  devconnect_init();
 
   $config = Drupal::config('devconnect.settings');
   $org = $config->get('org');
@@ -127,6 +136,16 @@ function devconnect_monetization_default_org_config() {
 }
 
 /**
+ * Redirects the developer depending on either a POSTPAID or a PREPAID developer
+ * @param Developer $developer
+ */
+function devconnect_monetization_route_by_billing_type(\Apigee\Mint\Developer $developer) {
+  $me = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
+  $page = $developer->getBillingType() == BillingType::POSTPAID ? 'billing-document' : 'prepaid-balance';
+  drupal_goto('users/' . $me . '/monetization/billing/' . $page);
+}
+
+/**
  * Implements hook_menu()
  */
 function devconnect_monetization_menu() {
@@ -135,11 +154,9 @@ function devconnect_monetization_menu() {
 
   $items['users/%devconnect_monetization_developer/monetization'] = array(
     'title' => 'Monetization',
-    'page callback' => 'devconnect_monetization_prepaid_balance',
+    'page callback' => 'devconnect_monetization_route_by_billing_type',
     'page arguments' => array(1),
     'access arguments' => array('access mint monetization'),
-    'file' => 'devconnect_monetization.billing.inc',
-    'file path' => drupal_get_path('module', 'devconnect_monetization'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -153,9 +170,13 @@ function devconnect_monetization_menu() {
 
   $items['users/%devconnect_monetization_developer/monetization/billing/prepaid-balance'] = array(
     'title' => 'Prepaid Balance',
+    'page callback' => 'devconnect_monetization_prepaid_balance',
     'page arguments' => array(1),
-    'access arguments' => array('access mint prepaid reports'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'devconnect_monetization_user_is_prepaid',
+    'access arguments' => array('access mint prepaid reports', 1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'devconnect_monetization.billing.inc',
+    'file path' => drupal_get_path('module', 'devconnect_monetization'),
   );
 
   $items['users/%devconnect_monetization_developer/monetization/billing/billing-document'] = array(
@@ -411,6 +432,17 @@ function devconnect_monetization_menu_alter(&$items) {
 }
 
 /**
+ * Access callback to determine if a user is not POSTPAID, therefore has access to prepaid-balance
+ *
+ * @param string $permission
+ * @param Developer $developer
+ * @return bool
+ */
+function devconnect_monetization_user_is_prepaid($permission, \Apigee\Mint\Developer $developer) {
+  return $developer->getBillingType() != BillingType::POSTPAID && user_access((string) $permission);
+}
+
+/**
  * Access callback for company profile.
  *
  * @return bool
@@ -436,17 +468,6 @@ function _devconnect_monetization_access_billing() {
 }
 
 /**
- * Implements hook_boot().
- *
- * Initialize cache manager at boot time
- * @todo find out why this code is duplicated in devconnect_monetization_init().
- */
-function devconnect_monetization_boot() {
-  $cache_manager = \Apigee\Util\CacheFactory::getCacheManager('MintCacheManager');
-  CacheFactory::setDefault($cache_manager);
-}
-
-/**
  * Package menu wildcard loader.
  *
  * @param $package_id
@@ -458,6 +479,12 @@ function devconnect_monetization_package_load($package_id) {
   if (!isset($package)) {
     try {
       $config = devconnect_monetization_default_org_config();
+
+      // Make menu load happy
+      if (CacheFactory::getDefault() == NULL) {
+        $cache_manager = CacheFactory::getCacheManager('MintCacheManager');
+        CacheFactory::setDefault($cache_manager);
+      }
       $package = new MonetizationPackage($config);
       $package->load(rawurldecode($package_id));
       return $package;
@@ -541,15 +568,24 @@ function devconnect_monetization_init() {
 
   drupal_add_library('system', 'ui');
   drupal_add_js(libraries_get_path('maskmoney') . '/jquery.maskMoney.js');
+  $themes = list_themes();
 
+  if (arg(2) == 'monetization' && isset($themes['apigee_responsive'])
+    && $themes['apigee_responsive']->status == 1
+  ) {
+    drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/menu-link.js', 'file');
+  }
   drupal_add_css(drupal_get_path('module', 'devconnect_monetization') . '/css/devconnect_monetization.css');
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/behaviors.js', 'file');
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/global.js', 'file');
   drupal_add_js(array('devconnect_monetization' => array('currencies' => commerce_currencies())), 'setting');
 
   $GLOBALS['devconnect_monetization_debug_endpoint_response'] = variable_get('devconnect_monetization_debug_endpoint_response', FALSE);
-  $cache_manager = CacheFactory::getCacheManager('MintCacheManager');
-  CacheFactory::setDefault($cache_manager);
+  // Make drush happy
+  if (CacheFactory::getDefault() == NULL) {
+    $cache_manager = \Apigee\Util\CacheFactory::getCacheManager('MintCacheManager');
+    CacheFactory::setDefault($cache_manager);
+  }
   devconnect_monetization_clear_api_cache();
 }
 
@@ -1439,7 +1475,15 @@ function devconnect_monetization_developer_permissions() {
  * @param mixed $category
  */
 function devconnect_monetization_user_presave(&$edit, $account, $category) {
-  $default_role = variable_get('devconnect_monetization_default_role', MONETIZATION_ADMIN_ROLE_NAME);
+  $default_role_id = variable_get('devconnect_monetization_default_role', variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL));
+
+  $original_roles = array(
+    variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL) => MONETIZATION_ADMIN_ROLE_NAME,
+    variable_get('devconnect_monetization_role_' . MONETIZATION_FINANCE_ADMIN_ROLE_NAME, NULL) => MONETIZATION_FINANCE_ADMIN_ROLE_NAME,
+    variable_get('devconnect_monetization_role_' . MONETIZATION_DEVELOPER_ROLE_NAME, NULL) => MONETIZATION_DEVELOPER_ROLE_NAME,
+  );
+
+  $default_role_names = user_role_load($default_role_id);
 
   // If user is new, then set default field values and default monetization role name
   if ($account->is_new) {
@@ -1449,28 +1493,22 @@ function devconnect_monetization_user_presave(&$edit, $account, $category) {
     $edit['field_mint_has_self_billing'][LANGUAGE_NONE][0]['value'] = isset($edit['field_mint_has_self_billing'][LANGUAGE_NONE][0]['value']) ? $edit['field_mint_has_self_billing'][LANGUAGE_NONE][0]['value'] : 0;
     $edit['field_mint_rev_reprt_preferences'][LANGUAGE_NONE][0]['value'] = isset($edit['field_mint_rev_reprt_preferences'][LANGUAGE_NONE][0]['value']) ? $edit['field_mint_rev_reprt_preferences'][LANGUAGE_NONE][0]['value'] : json_encode(array());
     if (!isset($edit['field_mint_developer_roles'][LANGUAGE_NONE][0]['value'])) {
-      $edit['field_mint_developer_roles'][LANGUAGE_NONE][0]['value'] = json_encode(array($default_role));
+      $edit['field_mint_developer_roles'][LANGUAGE_NONE][0]['value'] = json_encode(array($original_roles[$default_role_id]));
     }
-    $role = user_role_load_by_name($default_role);
-    $edit['roles'][$role->rid] = 1;
+    $edit['roles'][$default_role_id] = 1;
   }
   // Assign selected monetization role names
   else {
-    $roles = array(
-      user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME),
-      user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME),
-      user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME),
-    );
 
     $role_ids = isset($edit['roles']) && is_array($edit['roles']) ? array_filter($edit['roles']) : array();
 
-    $monetization_roles = array();
-    foreach ($roles as $role) {
-      if (array_key_exists($role->rid, $role_ids)) {
-        $monetization_roles[] = $role->name;
+    $mint_roles = array();
+    foreach ($original_roles as $rid => $role_name) {
+      if (array_key_exists($rid, $role_ids)) {
+        $mint_roles[] = $role_name;
       }
     }
-    $edit['field_mint_developer_roles'][LANGUAGE_NONE][0]['value'] = json_encode(array($monetization_roles));
+    $edit['field_mint_developer_roles'][LANGUAGE_NONE][0]['value'] = json_encode(array($mint_roles));
   }
 }
 

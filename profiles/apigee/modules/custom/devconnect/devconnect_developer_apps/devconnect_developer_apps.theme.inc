@@ -314,7 +314,7 @@ function devconnect_developer_apps_detail_pane($variables) {
           '#suffix' => '</strong> '
         ),
         'content' => array(
-          '#type' => '#markup',
+          '#type' => 'markup',
           '#markup' => check_plain($value),
           '#prefix' => '<div>',
           '#suffix' => '</div>'

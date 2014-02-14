@@ -392,7 +392,7 @@ function devconnect_docgen_preprocess_node(&$vars) {
       if (!$vars['teaser']) {
         $templates = entity_get_controller('docgen_doc');
 
-        $config = Drupal::config('devconnect.settings');
+        $config =& Drupal::config('devconnect.settings');
         $endpoint = $config->get('endpoint');
         $url = parse_url($endpoint);
 

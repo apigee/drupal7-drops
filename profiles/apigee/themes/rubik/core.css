@@ -250,10 +250,6 @@ table.field-multiple-table td { padding: 10px; }
     position:relative;
     padding:9px;
     }
-.form-wrapper {
-  border: 1px solid #ddd;
-  margin-bottom: 10px;
-  }
 
 .media-widget.form-wrapper{
   padding-bottom:10px;
@@ -985,3 +981,43 @@ div.ctools-modal-content .color-form .form-item input {
   color:#666;
   background:#fff;
   }
+
+/**
+ * Display Suite ====================================================
+ */
+
+.field-formatter-settings-edit-form.ds-ft-processed {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 0.5em 1em 0;
+}
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group {
+  overflow: auto;
+  margin-bottom: 1em !important;
+  border-bottom: 1px solid #CCC;
+}
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group.fi {
+  border-bottom: 0;
+}
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group > .form-item {
+  margin: 0.25em 1em 0.5em 0 !important;
+}
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group > .form-item .description {
+  max-width: 120px !important;
+}
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group > .form-item.form-type-checkbox {
+  clear: both;
+  margin-right: 0 !important;
+}
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group.ow .form-type-textfield,
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group.fis .form-type-textfield,
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group.fi .form-type-textfield {
+  clear: left;
+}
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group.ow .form-type-textfield ~ .form-type-textfield,
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group.fis .form-type-textfield ~ .form-type-textfield,
+.field-formatter-settings-edit-form.ds-ft-processed .ft-group.fi .form-type-textfield ~ .form-type-textfield {
+  clear: none;
+}

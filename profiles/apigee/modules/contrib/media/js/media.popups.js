@@ -98,6 +98,8 @@ Drupal.media.popups.mediaBrowser = function (onSelect, globalOptions, pluginOpti
 
 Drupal.media.popups.mediaBrowser.mediaBrowserOnLoad = function (e) {
   var options = e.data;
+  if (this.contentWindow.Drupal.media == undefined) return;
+
   if (this.contentWindow.Drupal.media.browser.selectedMedia.length > 0) {
     var ok = (Drupal && Drupal.t) ? Drupal.t('OK') : 'OK';
     var ok_func = $(this).dialog('option', 'buttons')[ok];
@@ -147,7 +149,7 @@ Drupal.media.popups.mediaBrowser.finalizeSelection = function () {
 Drupal.media.popups.mediaStyleSelector = function (mediaFile, onSelect, options) {
   var defaults = Drupal.media.popups.mediaStyleSelector.getDefaults();
   // @todo: remove this awful hack :(
-  defaults.src = defaults.src.replace('-media_id-', mediaFile.fid);
+  defaults.src = defaults.src.replace('-media_id-', mediaFile.fid) + '&fields=' + JSON.stringify(mediaFile.fields);
   options = $.extend({}, defaults, options);
   // Create it as a modal window.
   var mediaIframe = Drupal.media.popups.getPopupIframe(options.src, 'mediaStyleSelector');
@@ -293,9 +295,9 @@ Drupal.media.popups.getDialogOptions = function () {
     modal: true,
     draggable: false,
     resizable: false,
-    minWidth: 600,
-    width: 800,
-    height: 550,
+    minWidth: 500,
+    width: 670,
+    height: 280,
     position: 'center',
     overlay: {
       backgroundColor: '#000000',
@@ -342,7 +344,7 @@ Drupal.media.popups.getPopupIframe = function (src, id, options) {
 };
 
 Drupal.media.popups.overlayDisplace = function (dialog) {
-  if (parent.window.Drupal.overlay) {
+  if (parent.window.Drupal.overlay && jQuery.isFunction(parent.window.Drupal.overlay.getDisplacement)) {
     var overlayDisplace = parent.window.Drupal.overlay.getDisplacement('top');
     if (dialog.offset().top < overlayDisplace) {
       dialog.css('top', overlayDisplace);

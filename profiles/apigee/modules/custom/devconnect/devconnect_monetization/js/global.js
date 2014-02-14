@@ -25,7 +25,11 @@ function formatCurrencyAmount(amount, currency) {
     var invertedAbsAmount = pricePieces[0].split("");
     var absAmount = "";
     for (var index = 1; invertedAbsAmount.length > 0; index++) {
-        absAmount = invertedAbsAmount.pop() + absAmount;
+        var digit = invertedAbsAmount.pop();
+        if (digit == '-' || digit == '+') {
+            continue;
+        }
+        absAmount = digit + absAmount;
         if (index % 3 == 0) {
             absAmount = currency.thousands_separator + absAmount;
         }

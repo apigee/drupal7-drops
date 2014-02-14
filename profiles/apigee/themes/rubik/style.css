@@ -257,7 +257,7 @@ div.pager {
 
 /* Secondary tabs, nested */
 .secondary-tabs {
-  min-width:100px;
+  min-width:150px;
   float:left;
   position:relative;
   margin:5px 5px 5px 0px;

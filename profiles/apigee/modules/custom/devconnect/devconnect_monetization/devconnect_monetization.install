@@ -1777,7 +1777,7 @@ function devconnect_monetization_setup_navigation_menu() {
     ),
     array(
       'link_title' => 'Billing & Reports',
-      'link_path' => 'users/me/monetization/billing/prepaid-balance',
+      'link_path' => 'users/me/monetization/billing',
       'plid' => $plid,
       'menu_name' => 'main-menu',
       'weight' => 0,
@@ -1878,6 +1878,20 @@ function devconnect_monetization_update_7425() {
     db_create_table('cache_mint', drupal_get_schema_unprocessed('system', 'cache'));
   }
   devconnect_monetization_setup_mint_roles();
+
+  // Update menu link to new path
+  $mlids = variable_get('devconnect_monetization-menu-links', array());
+  foreach ($mlids as $pmlid => $cmlids) {
+    foreach ($cmlids as $cmlid) {
+      $menu_link = menu_link_load($cmlid);
+      if ($menu_link['router_path'] == 'users/%/monetization/billing/prepaid-balance') {
+        $menu_link['link_path'] = 'users/me/monetization/billing';
+        $menu_link['router_path'] = 'users/%/monetization/billing';
+        menu_link_save($menu_link);
+      }
+    }
+  }
+
   return t('DevConnect Monetization module has been updated successfully');
 }
 
@@ -1891,6 +1905,7 @@ function devconnect_monetization_setup_mint_roles() {
     user_role_save($role);
     $role = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
   }
+  variable_set('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, $role->rid);
   devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_admin_permissions() + devconnect_monetization_finance_permissions() + devconnect_monetization_developer_permissions();
   user_role_grant_permissions($role->rid, array_keys($permissions));
@@ -1903,6 +1918,7 @@ function devconnect_monetization_setup_mint_roles() {
     user_role_save($role);
     $role = user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME);
   }
+  variable_set('devconnect_monetization_role_' . MONETIZATION_FINANCE_ADMIN_ROLE_NAME, $role->rid);
   devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_finance_permissions();
   user_role_grant_permissions($role->rid, array_keys($permissions));
@@ -1915,6 +1931,7 @@ function devconnect_monetization_setup_mint_roles() {
     user_role_save($role);
     $role = user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME);
   }
+  variable_set('devconnect_monetization_role_' . MONETIZATION_DEVELOPER_ROLE_NAME, $role->rid);
   devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_developer_permissions();
   user_role_grant_permissions($role->rid, array_keys($permissions));

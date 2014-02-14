@@ -1,0 +1,7 @@
+#block-devconnect-content-creation-menu-devconnect-content-creation-menu .nav > li > a {
+    color: black;
+}
+#block-devconnect-content-creation-menu-devconnect-content-creation-menu .nav > li > a:hover {
+    color: white;
+}
+#block-devconnect-content-creation-menu-devconnect-content-creation-menu > h2 { display:none; }

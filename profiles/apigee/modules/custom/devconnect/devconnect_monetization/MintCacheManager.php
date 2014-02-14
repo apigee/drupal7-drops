@@ -1,7 +1,7 @@
 <?php
 
-// @TODO Find a better way to load this class
-require_once dirname(__FILE__) . '/../lib/Apigee/Util/CacheManager.php';
+// @TODO Find a better way to register the autoloader
+require_once drupal_get_path('profile', 'apigee') . '/libraries/mgmt-api-php-sdk/vendor/autoload.php';
 
 class MintCacheManager extends Apigee\Util\CacheManager {
 
@@ -16,7 +16,7 @@ class MintCacheManager extends Apigee\Util\CacheManager {
   }
 
   /**
-   * Cache a value given $data and identifing it by $cid
+   * Cache a value given $data and identify it by $cid
    *
    * @param string $cid
    * @param mixed $data

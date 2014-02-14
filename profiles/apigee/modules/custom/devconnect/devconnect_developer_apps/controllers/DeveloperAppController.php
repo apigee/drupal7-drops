@@ -1,12 +1,24 @@
 <?php
 
 class DeveloperAppController implements DrupalEntityControllerInterface, EntityAPIControllerInterface {
+  /**
+   * @var array
+   */
   private $appCache;
 
-  private static $lastAppId;
+  /**
+   * @var \Drupal\devconnect_developer_apps\DeveloperAppEntity
+   */
+  private static $lastApp;
 
+  /**
+   * @var \Exception
+   */
   private static $lastException;
 
+  /**
+   * @var int
+   */
   private static $appCount = 0;
 
   /**
@@ -84,18 +96,14 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @param $entity
    */
   public function save($entity) {
+    // Make a copy so we can remove irrelevant members
     $entity = (array)$entity;
     $is_update = !empty($entity['appId']);
     $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), $entity['developer']);
-    $product_cache = NULL;
-    if (isset($entity['apiProductCache'])) {
-      $product_cache = $entity['apiProductCache'];
-      unset ($entity['apiProductCache']);
-    }
+    $product_cache = $entity['apiProductCache'];
+    unset ($entity['apiProductCache']);
     $dev_app->fromArray($entity);
-    if (!empty($product_cache)) {
-      $dev_app->setApiProductCache($product_cache);
-    }
+    $dev_app->setApiProductCache($product_cache);
     try {
       $dev_app->save($is_update);
       $this->appCache[$dev_app->getAppId()] = $dev_app;
@@ -104,13 +112,34 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       return FALSE;
     }
 
-    self::$lastAppId = $dev_app->getAppId();
+    $dev_app_array = $dev_app->toArray();
+    // Copy incoming UID to outgoing UID
+    $dev_app_array['uid'] = $entity['uid'];
+    $last_app = new \Drupal\devconnect_developer_apps\DeveloperAppEntity($dev_app_array);
+
+    self::$lastApp = $last_app;
 
     return ($is_update ? SAVED_UPDATED : SAVED_NEW);
   }
 
+  /**
+   * Fetches appId from last created app.
+   *
+   * @static
+   * @return string
+   */
   public static function getLastAppId() {
-    return self::$lastAppId;
+    return self::$lastApp->appId;
+  }
+
+  /**
+   * Fetches last created app entity.
+   *
+   * @static
+   * @return \Drupal\devconnect_developer_apps\DeveloperAppEntity
+   */
+  public static function getLastApp() {
+    return self::$lastApp;
   }
 
   /**
@@ -121,7 +150,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   public function create(array $values = array()) {
     $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), '');
     $dev_app->fromArray($values);
-    return (object)$dev_app->toArray();
+    return new Drupal\devconnect_developer_apps\DeveloperAppEntity($dev_app->toArray());
   }
 
   /**
@@ -140,7 +169,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @param string $export
    */
   public function import($export) {
-    return @json_decode($export);
+    return @json_decode($export, TRUE);
   }
 
   /**
@@ -154,7 +183,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $page = FALSE) {
     $callback = 'devconnect_developer_apps_view_' . $view_mode;
     if (function_exists($callback)) {
-      return $callback($entity, $page);
+      return $callback($entity, $page, $langcode);
     }
     return array();
   }
@@ -305,18 +334,56 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       if ($end && $app_index > $end) {
         break;
       }
-      $entities_sorted[$id] = (object)$app_entities[$id];
+      $entities_sorted[$id] = new Drupal\devconnect_developer_apps\DeveloperAppEntity($app_entities[$id]);
       $app_index++;
     }
 
     return $entities_sorted;
   }
 
+  /**
+   * Sets the key status for a given developer app.
+   *
+   * Status may be TRUE|FALSE, 1|0, or approve|revoke.
+   *
+   * @param Drupal\devconnect_developer_apps\DeveloperAppEntity $entity
+   * @param string $status
+   * @return bool
+   */
+  public static function setKeyStatus(Drupal\devconnect_developer_apps\DeveloperAppEntity $entity, $status) {
+    try {
+      $da = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), $entity->developer);
+      $da->fromArray((array)$entity);
+      $da->setKeyStatus($status);
+      return TRUE;
+    }
+    catch (Apigee\Exceptions\ParameterException $e) {
+      return FALSE;
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      return FALSE;
+    }
+  }
+
+  /**
+   * Returns the appId for a given developer app.
+   *
+   * @param \Apigee\ManagementAPI\DeveloperApp $app
+   * @return string
+   */
   private function getKey(Apigee\ManagementAPI\DeveloperApp $app) {
     return $app->getAppId();
   }
 
-  private function addListToCache(&$list, $ids = array()) {
+  /**
+   * Adds an array of Apigee\ManagementAPI\DeveloperApp objects to our internal
+   * cache. If $ids is passed in, $list is modified such that only apps with
+   * an appId in $ids are preserved (all others are unset).
+   *
+   * @param array $list
+   * @param array|bool $ids
+   */
+  private function addListToCache(array &$list, $ids = array()) {
     foreach ($list as $app) {
       $key = $this->getKey($app);
       $this->appCache[$key] = $app;
@@ -330,12 +397,18 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     }
   }
 
+  /**
+   * Returns count of apps loaded (before paging) on the last invocation of
+   * self::load().
+   *
+   * @return int
+   */
   public static function getAppCount() {
     return self::$appCount;
   }
 
   /**
-   * Returns the last exception returned from KMS
+   * Returns the last exception returned from KMS.
    *
    * @return Apigee\Exceptions\ResponseException
    */

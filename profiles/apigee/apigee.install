@@ -5,8 +5,7 @@ if (array_key_exists('HTTP_X_PANTHEON_SCREENSHOT', $_SERVER)) {
   exit();
 }
 
-require_once (dirname(__FILE__)."/modules/custom/devconnect/lib/Apigee/Util/Crypto.php");
-
+require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
 
 function apigee_install_tasks(&$install_state) {
   if (!array_key_exists("batch_configure_complete", $install_state)) {

@@ -1,9 +1,9 @@
 name = DevConnect User
-description = Extra Field for User Entity
+description = Additional developer-centric enhancements for the User object
 core = 7.x
 package = DevConnect
 php = 5.2.4
-version = 7.x-4.23
+version = 7.x-4.25
 
 files[] = tests/DeveloperEntityTestCase.test
 

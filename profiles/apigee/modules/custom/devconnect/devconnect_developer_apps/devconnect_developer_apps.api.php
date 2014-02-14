@@ -134,3 +134,24 @@ function hook_devconnect_developer_app_predelete(array &$form_state) {
 function hook_devconnect_developer_app_delete(array $results, array &$form_state) {
 
 }
+
+/**
+ * Take some action before a user-app page is generated.
+ *
+ * @param string $op
+ *   May be one of the following: list, detail, delete, edit
+ * @param mixed $arg1
+ *   If $op is 'list', 'detail' or 'edit', this is a reference to the $user object.
+ *   If $op is 'edit', this is a reference to the $u
+ *   Otherwise this is NULL
+ * @param mixed $arg2
+ *   If $op is 'edit', this is the app name (if set)
+ *   Otherwise this is NULL
+ */
+function hook_devconnect_developer_apps_prerender($op, $arg1 = NULL, $arg2 = NULL) {
+  if ($op == 'list') {
+    if (!user_access('access foobar', $arg1)) {
+      drupal_goto('<front>');
+    }
+  }
+}

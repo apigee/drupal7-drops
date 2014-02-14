@@ -16,37 +16,35 @@
 
 
         -->
-    <!-- 
+  <!-- 
     Defaults:
     -->
-  <property name="VERSION" value="pantheon-4.24.${env.BUILD_NUMBER}"/>
-  <property name="branchname" value="master" override="false" />
-  <property name="create-new-branch-for-build" value="no" />
-
+  <property name="VERSION" value="pantheon-14.02.${env.BUILD_NUMBER}"/>
+  <property name="branchname" value="master" override="false"/>
+  <property name="create-new-branch-for-build" value="no"/>
   <!-- 
   Drush Task:
   -->
   <taskdef name="drush" classname="tasks.drush.DrushTask"/>
-  
   <target name="preflight">
-    <fail unless="repo-uri" message="You must supply a repo-uri into which this build will be checked. Optionally you may include repo-branch." />
-    <delete dir="${project.basedir}/webapp" quiet="true" />
-    <delete dir="${user.home}/.drush/cache" quiet="true" />
-    <delete dir="${user.home}/.drush/terminus" quiet="true" />
-		<exec command="sudo composer self-update" logoutput="true" />
-		<exec command="git clone git@github.com:pantheon-systems/terminus" dir="${user.home}/.drush" logoutput="true" />
-		<exec command="composer update"  dir="${user.home}/.drush/terminus" logoutput="true"/>
+    <fail unless="repo-uri" message="You must supply a repo-uri into which this build will be checked. Optionally you may include repo-branch."/>
+    <delete dir="${project.basedir}/webapp" quiet="true"/>
+    <delete dir="${user.home}/.drush/cache" quiet="true"/>
+    <delete dir="${user.home}/.drush/terminus" quiet="true"/>
+    <exec command="sudo composer self-update" logoutput="true"/>
+    <exec command="git clone git@github.com:pantheon-systems/terminus" dir="${user.home}/.drush" logoutput="true"/>
+    <exec command="composer update" dir="${user.home}/.drush/terminus" logoutput="true"/>
     <if>
-      <contains string="${repo-uri}" substring="drush.in:2222" />
+      <contains string="${repo-uri}" substring="drush.in:2222"/>
       <then>
-        <fail unless="pantheon-email" message="If you are using a pantheon github repo, you must authenticate using your pantheon username/password." />
-        <fail unless="pantheon-password" message="If you are using a pantheon github repo, you must authenticate using your pantheon username/password." />
+        <fail unless="pantheon-email" message="If you are using a pantheon github repo, you must authenticate using your pantheon username/password."/>
+        <fail unless="pantheon-password" message="If you are using a pantheon github repo, you must authenticate using your pantheon username/password."/>
         <drush command="pantheon-auth" assume="yes">
           <option name="password">"${pantheon-password}"</option>
           <param>${pantheon-email}</param>
         </drush>
-        <drush command="pantheon-aliases" assume="yes" />
-        <php expression="str_replace('@codeserver', '', array_pop(array_splice(explode('.', '${repo-uri}'), 2,1)))" returnProperty="pantheon-uuid" />
+        <drush command="pantheon-aliases" assume="yes"/>
+        <php expression="str_replace('@codeserver', '', array_pop(array_splice(explode('.', '${repo-uri}'), 2,1)))" returnProperty="pantheon-uuid"/>
         <drush command="psite-cmode" assume="yes">
           <param>"${pantheon-uuid}"</param>
           <param>dev</param>
@@ -63,73 +61,77 @@
     <drush command="cc">
       <param>drush</param>
     </drush>
-    <exec command="which git" outputProperty="git-binary" />
+    <exec command="which git" outputProperty="git-binary"/>
   </target>
   <!-- 
     
     
     -->
   <target name="build-distro" depends="init">
-    <gitclone repository="${repo-uri}" targetPath="${project.basedir}/webapp" />
+    <gitclone repository="${repo-uri}" targetPath="${project.basedir}/webapp"/>
     <if>
       <not>
-        <equals arg1="${repo-branch}" arg2="master" />
+        <equals arg1="${repo-branch}" arg2="master"/>
       </not>
       <then>
-        <gitcheckout repository="${project.basedir}/webapp" branchname="${repo-branch}" />
+        <gitcheckout repository="${project.basedir}/webapp" branchname="${repo-branch}"/>
       </then>
     </if>
     <phingcall target="display-step">
-      <property name="message" value="Starting point: ${repo-uri} => ${repo-branch}" />
+      <property name="message" value="Starting point: ${repo-uri} =&gt; ${repo-branch}"/>
     </phingcall>
     <if>
-      <equals arg1="${create-new-branch-for-build}" arg2="yes" />
+      <equals arg1="${create-new-branch-for-build}" arg2="yes"/>
       <then>
-        <gitbranch repository="${project.basedir}/webapp" branchname="${VERSION}" />
-        <gitcheckout repository="${project.basedir}/webapp" branchname="${VERSION}" />
-        <property name="push-branch" value="${VERSION}" />
+        <gitbranch repository="${project.basedir}/webapp" branchname="${VERSION}"/>
+        <gitcheckout repository="${project.basedir}/webapp" branchname="${VERSION}"/>
+        <property name="push-branch" value="${VERSION}"/>
       </then>
       <else>
-        <property name="push-branch" value="${repo-branch}" />
+        <property name="push-branch" value="${repo-branch}"/>
       </else>
     </if>
     <phingcall target="display-step">
-      <property name="message" value="Checking results of build into ${repo-uri} => ${push-branch}" />
+      <property name="message" value="Checking results of build into ${repo-uri} =&gt; ${push-branch}"/>
     </phingcall>
-    <gitpull repository="${project.basedir}/webapp" 
-      source="git://github.com/pantheon-systems/drops-7.git" 
-      refspec="+refs/heads/master:+refs/remotes/origin/master" 
-      quiet="false" 
-      strategyOption="theirs" 
-      />
-    <delete dir="${project.basedir}/webapp/profiles/apigee" quiet="true" />
-    <gitclone repository="git@github.com:apigee/apigee-drupal-profile" targetPath="${project.basedir}/webapp/profiles/apigee" />
-    <!-- gitcheckout repository="${project.basedir}/webapp/profiles/apigee" branchname="7.x-4.24" /   -->
+    <gitpull repository="${project.basedir}/webapp" source="git://github.com/pantheon-systems/drops-7.git" refspec="+refs/heads/master:+refs/remotes/origin/master" quiet="false" strategyOption="theirs"/>
+    <delete dir="${project.basedir}/webapp/profiles/apigee" quiet="true"/>
+    <gitclone repository="git@github.com:apigee/apigee-drupal-profile" targetPath="${project.basedir}/webapp/profiles/apigee"/>
+    <gitcheckout repository="${project.basedir}/webapp/profiles/apigee" branchname="7.x-4.25"/>
     <delete dir="${project.basedir}/webapp/profiles/apigee/.git" quiet="true"/>
-    <exec command="drush make --no-core --no-gitinfofile --contrib-destination=. --yes --nocolor apigee.make" dir="${project.basedir}/webapp/profiles/apigee" logoutput="true" passthru="true" />
+    <exec command="drush make --no-core --no-gitinfofile --contrib-destination=. --yes --nocolor apigee.make" dir="${project.basedir}/webapp/profiles/apigee" logoutput="true" passthru="true"/>
     <if>
       <not>
         <or>
-        <available file="${project.basedir}/webapp/profiles/apigee/modules" type="dir" />
-        <available file="${project.basedir}/webapp/profiles/apigee/themes" type="dir" />
-        <available file="${project.basedir}/webapp/profiles/apigee/libraries" type="dir" />
+          <available file="${project.basedir}/webapp/profiles/apigee/modules" type="dir"/>
+          <available file="${project.basedir}/webapp/profiles/apigee/themes" type="dir"/>
+          <available file="${project.basedir}/webapp/profiles/apigee/libraries" type="dir"/>
         </or>
       </not>
       <then>
         <phingcall target="display-step">
-          <property name="message" value="Drush make command failed. Check to make sure ~/.drush/cache is getting deleted before every build and that there's enough space on the drive" />
+          <property name="message" value="Drush make command failed. Check to make sure ~/.drush/cache is getting deleted before every build and that there's enough space on the drive"/>
         </phingcall>
-        <fail />
+        <fail/>
       </then>
     </if>
-    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/libraries'" logoutput="true" passthru="true"/>
+
+		<!-- Navbar makes sites/all/libraries/modernizr directory for some reason, delete it so it'll revert to profiles/apigee/libraries -->
+		<exec command="rm -rf '${project.basedir}/webapp/sites/all/libraries/modernizr'" logoutput="true" passthru="true"/>
+		<!-- make the modernizr directory in the profile -->
+		<mkdir dir="${project.basedir}/webapp/profiles/apigee/libraries/modernizr" />
+
+		<exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/libraries'" logoutput="true" passthru="true"/>
     <!-- remove duplicate file_entity module which media bundles for some reason. -->
     <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/media/file_entity'" logoutput="true" passthru="true"/>
-    <phingcall target="build-info-file"/>
+    <exec command="cd &quot;${project.basedir}/webapp/profiles/apigee/libraries/mgmt-api-php-sdk&quot; &amp;&amp; rm .gitignore &amp;&amp; composer install --verbose --no-dev --no-progress" logoutput="true" />
+		<!-- get http://modernizr.com/downloads/modernizr-2.7.1.js and download it to the modernizr library -->
+		<exec command="cd &quot;${project.basedir}/webapp/profiles/apigee/libraries/modernizr&quot; &amp;&amp; wget -O modernizr.js http://modernizr.com/downloads/modernizr-2.7.1.js" logoutput="true"/>
+		<phingcall target="build-info-file"/>
     <exec command="touch '${project.basedir}/webapp/sites/default/settings.php'"/>
-    <exec command="git add * --all" dir="${project.basedir}/webapp" logoutput="true" />
-    <exec command="git commit -m 'distro build ${VERSION}'" dir="${project.basedir}/webapp" logoutput="true" />
-    <exec command="git push origin ${push-branch}" dir="${project.basedir}/webapp" />
+    <exec command="git add * --all" dir="${project.basedir}/webapp" logoutput="true"/>
+    <exec command="git commit -m 'distro build ${VERSION}'" dir="${project.basedir}/webapp" logoutput="true"/>
+    <exec command="git push origin ${push-branch}" dir="${project.basedir}/webapp"/>
   </target>
   <!-- 
     
@@ -142,7 +144,6 @@ Build Timestamp: ${DSTAMP}.${TSTAMP}
 SCM Revision: ${env.GIT_COMMIT}
     </echo>
   </target>
-  
   <target name="display-step">
     <echo>
 
@@ -152,5 +153,4 @@ SCM Revision: ${env.GIT_COMMIT}
     
     </echo>
   </target>
-
 </project>

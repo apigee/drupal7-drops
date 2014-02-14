@@ -13,14 +13,18 @@ function devconnect_drush_command() {
     'description' => dt('Sets the username/password for KMS authentication.'),
     'arguments' => array(
       'username' => dt('The Apigee username'),
-      'password' => dt('The password (unencrypted)')
     ),
-    'aliases' => array('dc-setauth')
+    'options' => array(
+      'password' => 'Unencrypted password',
+    ),
+    'aliases' => array('dc-setauth'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
   $items['devconnect-get-auth'] = array(
     'callback' => 'devconnect_drush_get_authentication',
     'description' => dt('Gets the username/password for KMS authentication.'),
-    'aliases' => array('dc-getauth')
+    'aliases' => array('dc-getauth'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
   $items['devconnect-set-org'] = array(
     'callback' => 'devconnect_drush_set_org',
@@ -28,18 +32,21 @@ function devconnect_drush_command() {
     'arguments' => array(
       'orgname' => dt('The organization name')
     ),
-    'aliases' => array('dc-setorg')
+    'aliases' => array('dc-setorg'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
   $items['devconnect-get-org'] = array(
     'callback' => 'devconnect_drush_get_org',
     'description' => dt('Gets the configured Apigee org name.'),
-    'aliases' => array('dc-getorg')
+    'aliases' => array('dc-getorg'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
   $items['devconnect-get-endpoint'] = array(
     'callback' => 'devconnect_drush_get_endpoint',
     'description' => dt('Gets the configured Apigee gateway management server endpoint URL.'),
-    'aliases' => array('dc-getend')
+    'aliases' => array('dc-getend'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
   $items['devconnect-set-endpoint'] = array(
     'callback' => 'devconnect_drush_set_endpoint',
@@ -48,12 +55,14 @@ function devconnect_drush_command() {
     'arguments' => array(
       'endpoint' => dt('The endpoint URL')
     ),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
   $items['devconnect-get-req-timeout'] = array(
     'callback' => 'devconnect_drush_get_request_timeout',
     'description' => dt('Gets the configured Apigee gateway request timeout in seconds.'),
-    'aliases' => array('dc-getrt')
+    'aliases' => array('dc-getrt'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
   $items['devconnect-set-req-timeout'] = array(
     'callback' => 'devconnect_drush_set_request_timeout',
@@ -62,12 +71,14 @@ function devconnect_drush_command() {
     'arguments' => array(
       'timeout' => dt('The timeout value (integer) in seconds')
     ),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
   $items['devconnect-get-con-timeout'] = array(
     'callback' => 'devconnect_drush_get_connect_timeout',
     'description' => dt('Gets the configured Apigee gateway connection timeout in seconds.'),
-    'aliases' => array('dc-getcon')
+    'aliases' => array('dc-getcon'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
   $items['devconnect-set-con-timeout'] = array(
     'callback' => 'devconnect_drush_set_connect_timeout',
@@ -76,19 +87,22 @@ function devconnect_drush_command() {
     'arguments' => array(
       'timeout' => dt('The timeout value (integer) in seconds')
     ),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
   $items['devconnect-update-settings'] = array(
     'callback' => 'devconnect_drush_update_settings',
     'description' => dt('Migrates org settings from the database to the filesystem.'),
-    'aliases' => array('dc-settings')
+    'aliases' => array('dc-settings'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
 
   $items['devconnect-test-conn'] = array(
     'callback' => 'devconnect_drush_test_connection',
     'description' => dt('Tests the configured connection parameters.'),
-    'aliases' => array('dc-test')
+    'aliases' => array('dc-test'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
 
@@ -125,46 +139,79 @@ function devconnect_drush_help($section) {
   return NULL;
 }
 
+/**
+ * Drush command callback for devconnect-set-auth
+ */
 function devconnect_drush_set_authentication() {
   $args = func_get_args();
+  $password = drush_get_option('password', NULL);
   if (count($args) == 1 && strpos($args[0], ':') !== FALSE) {
     list($username, $password) = explode(':', $args[0], 2);
   }
-  elseif (count($args) < 2) {
-    drush_set_error('Username and password arguments are required.');
+  elseif (count($args) < 1) {
+    drush_set_error('Username argument is required.');
     return;
   }
   else {
-    list($username, $password) = $args;
+    $username = $args[0];
+    if (count($args) > 1 && !isset($password)) {
+      $password = $args[1];
+    }
   }
 
-  $config = _devconnect_drush_get_config();
-  $password_encrypted = Apigee\Util\Crypto::encrypt($password);
-  $config->set('user', $username);
-  $config->set('pass', $password_encrypted);
-  $config->save();
-  drush_print(t('Username and password have been set.'));
+  if (!isset($password)) {
+    $password = drush_prompt(dt('Enter @user’s password', array('@user' => $username)), NULL, TRUE, TRUE);
+  }
+
+  $config =& Drupal::config('devconnect.settings');
+  $old_user = $config->get('user');
+  try {
+    $old_pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+  } catch (Apigee\Exceptions\ParameterException $e) {
+    $old_pass = '';
+  }
+  $changes = array();
+  if ($username != $old_user) {
+    $changes[] = "user changed from “$old_user” to “$username”";
+    $config->set('user', $username);
+  }
+  if ($old_pass != $password) {
+    $from = (empty($old_pass) ? '*empty*' : '*encrypted*');
+    $to = (empty($password) ? '*empty*' : '*encrypted*');
+    $changes[] = "password changed from $from to $to";
+    $config->set('pass', Apigee\Util\Crypto::encrypt($password));
+  }
+  if (empty($changes)) {
+    drush_print(t('Username and password remain unchanged.'));
+  }
+  else {
+    $config->save();
+    $message = 'The following authentication configuration items were changed: ' . join(',', $changes);
+    watchdog('devconnect', $message, array(), WATCHDOG_INFO);
+    drush_print(t('Username and password have been set.'));
+  }
 }
 
+/**
+ * Drush command callback for devconnect-test-conn
+ */
 function devconnect_drush_test_connection() {
-  $config = _devconnect_drush_get_config(); // Load modules
+  $config =& Drupal::config('devconnect.settings');
   $user = $config->get('user');
   $pass_encrypted = $config->get('pass');
   $pass = FALSE;
   if ($pass_encrypted) {
     try {
       $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
-    } catch (Exception $e) {}
+    }
+    catch (Apigee\Exceptions\ParameterException $e) {}
   }
-  if (!$pass) {
-    $pass = 'secret';
-  }
-  if ($user == 'fixme' || $pass == 'secret') {
+  if (empty($user) || $user == 'fixme' || empty($pass) || $pass == 'secret') {
     drush_print(dt('Username/password have not yet been set.'));
     return;
   }
   $org = $config->get('org');
-  if ($org == 'fixme') {
+  if (empty($org) || $org == 'fixme') {
     drush_print(dt('Org name has not yet been set.'));
     return;
   }
@@ -188,20 +235,21 @@ function devconnect_drush_test_connection() {
   }
 }
 
+/**
+ * Drush command callback for devconnect-get-auth
+ */
 function devconnect_drush_get_authentication() {
-  $config = _devconnect_drush_get_config();
+  $config =& Drupal::config('devconnect.settings');
   $user = $config->get('user');
   $pass_encrypted = $config->get('pass');
   $pass = FALSE;
   if ($pass_encrypted) {
     try {
       $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
-    } catch (Exception $e) {}
+    }
+    catch (Apigee\Exceptions\ParameterException $e) {}
   }
-  if (!$pass) {
-    $pass = 'secret';
-  }
-  if ($user == 'fixme' || $pass == 'secret') {
+  if (empty($user) || $user == 'fixme' || empty($pass) || $pass == 'secret') {
     drush_print(dt('Username/password have not yet been set.'));
   }
   else {
@@ -209,6 +257,9 @@ function devconnect_drush_get_authentication() {
   }
 }
 
+/**
+ * Drush command callback for devconnect-set-org
+ */
 function devconnect_drush_set_org() {
   $args = func_get_args();
   if (count($args) < 1) {
@@ -216,10 +267,12 @@ function devconnect_drush_set_org() {
     return;
   }
   list($org) = $args;
-  $config = _devconnect_drush_get_config();
-  if ($org != $config->get('org')) {
+  $config =& Drupal::config('devconnect.settings');
+  $old_org = $config->get('org');
+  if ($org != $old_org) {
     $config->set('org', $org);
     $config->save();
+    watchdog('devconnect', 'The following authentication configuration item was changed: org was changed from “%old” to “%new”.', array('%old' => $old_org, '%new' => $org), WATCHDOG_INFO);
     drush_print(dt('Orgname has been set to @org', array('@org' => $org)));
   }
   else {
@@ -227,10 +280,13 @@ function devconnect_drush_set_org() {
   }
 }
 
+/**
+ * Drush command callback for devconnect-get-org
+ */
 function devconnect_drush_get_org() {
-  $config = _devconnect_drush_get_config();
+  $config =& Drupal::config('devconnect.settings');
   $org = $config->get('org');
-  if ($org == 'fixme') {
+  if (empty($org) || $org == 'fixme') {
     drush_print(dt('Org name has not yet been set.'));
   }
   else {
@@ -238,12 +294,18 @@ function devconnect_drush_get_org() {
   }
 }
 
+/**
+ * Drush command callback for devconnect-get-endpoint
+ */
 function devconnect_drush_get_endpoint() {
-  $config = _devconnect_drush_get_config();
+  $config =& Drupal::config('devconnect.settings');
   $endpoint = $config->get('endpoint');
   drush_print(dt('Endpoint is @endpoint', array('@endpoint' => $endpoint)));
 }
 
+/**
+ * Drush command callback for devconnect-set-endpoint
+ */
 function devconnect_drush_set_endpoint() {
   $args = func_get_args();
   if (count($args) < 1) {
@@ -251,10 +313,12 @@ function devconnect_drush_set_endpoint() {
     return;
   }
   list($endpoint) = $args;
-  $config = _devconnect_drush_get_config();
-  if ($endpoint != $config->get('endpoint')) {
-    $config->set('endpoint', $endpoint);
+  $config =& Drupal::config('devconnect.settings');
+  $old_endpoint = $config->get('endpoint');
+  if ($endpoint != $old_endpoint) {
+    $config->set('org', $endpoint);
     $config->save();
+    watchdog('devconnect', 'The following authentication configuration item was changed: endpoint was changed from “%old” to “%new”.', array('%old' => $old_endpoint, '%new' => $endpoint), WATCHDOG_INFO);
     drush_print(dt('Endpoint has been set to @endpoint', array('@endpoint' => $endpoint)));
   }
   else {
@@ -262,26 +326,27 @@ function devconnect_drush_set_endpoint() {
   }
 }
 
-
+/**
+ * Drush command callback for devconnect-update-settings
+ */
 function devconnect_drush_update_settings() {
   module_load_install('devconnect');
   devconnect_port_settings_to_d8cmi();
   drush_print(dt('Settings have been moved to the filesystem.'));
 }
 
-function _devconnect_drush_get_config() {
-  drupal_load('module', 'devconnect');
-  drupal_load('module', 'd8cmi');
-  devconnect_boot();
-  d8cmi_init();
-  return Drupal::config('devconnect.settings');
-}
-
+/**
+ * Drush command callback for devconnect-get-req-timeout
+ */
 function devconnect_drush_get_request_timeout() {
-  $config = _devconnect_drush_get_config();
+  $config =& Drupal::config('devconnect.settings');
   $timeout = $config->get('request_timeout');
   drush_print(dt('Request timeout is @sec seconds', array('@sec' => $timeout)));
 }
+
+/**
+ * Drush command callback for devconnect-set-req-timeout
+ */
 function devconnect_drush_set_request_timeout() {
   $args = func_get_args();
   if (count($args) < 1) {
@@ -289,7 +354,7 @@ function devconnect_drush_set_request_timeout() {
     return;
   }
   list($timeout) = $args;
-  $config = _devconnect_drush_get_config();
+  $config =& Drupal::config('devconnect.settings');
   if ($timeout != $config->get('request_timeout')) {
     $config->set('request_timeout', $timeout);
     $config->save();
@@ -301,11 +366,18 @@ function devconnect_drush_set_request_timeout() {
   }
 }
 
+/**
+ * Drush command callback for devconnect-get-con-timeout
+ */
 function devconnect_drush_get_connect_timeout() {
-  $config = _devconnect_drush_get_config();
+  $config =& Drupal::config('devconnect.settings');
   $timeout = $config->get('connection_timeout');
   drush_print(dt('Connection timeout is @sec seconds', array('@sec' => $timeout)));
 }
+
+/**
+ * Drush command callback for devconnect-set-con-timeout
+ */
 function devconnect_drush_set_connect_timeout() {
   $args = func_get_args();
   if (count($args) < 1) {
@@ -313,12 +385,11 @@ function devconnect_drush_set_connect_timeout() {
     return;
   }
   list($timeout) = $args;
-  $config = _devconnect_drush_get_config();
+  $config =& Drupal::config('devconnect.settings');
   if ($timeout != $config->get('connection_timeout')) {
     $config->set('connection_timeout', $timeout);
     $config->save();
     drush_print(dt('Connection timeout has been set to @sec seconds', array('@sec' => $timeout)));
-
   }
   else {
     drush_print(dt('Connection timeout @sec remains unchanged.', array('@sec' => $timeout)));

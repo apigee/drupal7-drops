@@ -1,0 +1,229 @@
+<?php
+
+/**
+ * @file
+ * Module that adds the Bootstrap Modal HTML to Drupal Forms.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function bootstrap_modal_forms_init() {
+  if (user_is_anonymous()) {
+    //Add the user login and registration form to the bootstrap modal window.
+    if ((bool) variable_get('bootstrap_modal_forms_login', 0) && current_path()!= 'user/login') {
+      $form = drupal_get_form('user_login');
+      $path = implode('/', arg());
+      $form['#bootstrap_form_title'] = t('Log in');
+      $form['#action'] = url('user/login', array('query' => array('destination' => $path)));
+      bootstrap_modal_forms_add_form('login', 'user/login', $form);
+    }
+    if ((bool) variable_get('bootstrap_modal_forms_register', 0) && current_path()!= 'user/register') {
+      $form = drupal_get_form('user_register_form');
+      $path = implode('/', arg());
+      $form['#bootstrap_form_title'] = t('Register a new user');
+      $form['#action'] = url('user/register', array('query' => array('destination' => $path)));
+      bootstrap_modal_forms_add_form('register', 'user/register', $form);
+    }
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function bootstrap_modal_forms_menu() {
+  $items = array();
+  $items['admin/config/user-interface/bootstrap_modal_forms'] = array(
+    'title' => 'Boostrap Modal forms',
+    'description' => 'Administrative tasks with bootstrap modal forms. (Requires bootstrap 3.0 or higher)',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bootstrap_model_forms_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'bootstrap_modal_forms.admin.inc',
+  );
+  $items['bootstrap_modal_forms/load'] = array(
+    'page callback' => 'bootstrap_modal_forms_return_form',
+    'access callback' => TRUE,
+    'theme callback' => 'bootstrap_modal_forms_theme_callback',
+  );
+  $items['bootstrap_modal_forms/close_reload_parent'] = array(
+    'page callback' => 'bootstrap_modal_forms_close_reload_parent',
+    'access callback' => TRUE,
+    'theme callback' => 'bootstrap_modal_forms_theme_callback',
+  );
+  return $items;
+}
+/**
+ * Theme callback to determine what theme should be used for the current page
+ */
+function bootstrap_modal_forms_theme_callback(){
+  $path = implode('/', func_get_args());
+  if (user_access('view the administration theme') && path_is_admin($path)) {
+    return variable_get('admin_theme');
+  }
+}
+/**
+ * Page callback function to return the form which is requested by the bootstrap_modal_forms/load url
+ */
+function bootstrap_modal_forms_return_form() {
+  if (module_exists('navbar')){
+    navbar_suppress();
+  }
+  if (module_exists('admin_menu')){
+    admin_menu_suppress();
+  }
+  $path = &drupal_static(__FUNCTION__, '');
+  $path = implode('/', func_get_args());
+  $form = menu_execute_active_handler($path, FALSE);
+  return $form;
+}
+/**
+ * Page callback function for bootstrap_modal_forms/close_reload_parent
+ */
+function bootstrap_modal_forms_close_reload_parent() {
+  drupal_add_js(drupal_get_path('module', 'bootstrap_modal_forms') . '/js/bootstrap_modal_forms.close_modal_reload_parent.js');
+  return 'Please close this modal window and reload the parent page';
+}
+
+/**
+ * Implements hook_help().
+ */
+function bootstrap_modal_forms_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/user-interface/bootstrap_modal_forms':
+      return '<p>Once enabled (and the bootstrap library is being used as your active theme,
+      all you\'ll have to do is add a link to the drupal form, and it will render into a modal.</p>';
+    default:
+      return '';
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function bootstrap_modal_forms_theme($existing, $type, $theme, $path) {
+  $module_path = drupal_get_path('module', 'bootstrap_modal_forms') . '/modals';
+  return array(
+    'bootstrap_modal_forms' => array(
+      'variables' => array(
+        'header' => 'Default Header',
+        'identifier' => '',
+        'modal_form' => NULL,
+        'version' =>  NULL,
+        'tpl_suffix' => '',
+        'modal_style' => ''
+      ),
+      'template' => 'bootstrap-modal-forms',
+      'path' => $module_path,
+      'pattern' => 'bootstrap_modal_forms__',
+    ),
+    //Sample implementations
+    /*
+    'bootstrap_modal_forms__login' => array(
+      'template' => 'bootstrap-modal-forms--login',
+      'path' => $module_path,
+    ),
+    'bootstrap_modal_forms__register' => array(
+      'template' => 'bootstrap-modal-forms--register',
+      'path' => $module_path,
+    ),
+   */
+    'html__bootstrap_modal_forms' => array(
+      'template' => 'html--bootstrap-modal-forms',
+      'path' => $module_path,
+    ),
+    'page__bootstrap_modal_forms' => array(
+      'template' => 'page--bootstrap-modal-forms',
+      'path' => $module_path,
+    ),
+  );
+}
+
+/**
+ * Implements hook_process_bootstrap_modal_forms
+ */
+function bootstrap_modal_forms_process_bootstrap_modal_forms(&$vars) {
+  $vars['version'] = variable_get('bootstrap_version', '2');
+  if (!empty($vars['tpl_suffix'])) {
+    $vars['theme_hook_suggestions'][] = 'bootstrap_modal_forms__'. $vars['tpl_suffix'];
+  }
+}
+
+/**
+ * Implements hook_preprocess_html
+ */
+function bootstrap_modal_forms_preprocess_html(&$vars){
+  //Do not process the modal forms in maintenance mode
+  if (defined('MAINTENANCE_MODE')) {
+    return;
+  }
+  $info = bootstrap_modal_forms_add_form();
+  if (!empty($info)) {
+    if(!isset($vars['page']['page_bottom'])) {
+        $vars['page']['page_bottom'] = array();
+    }
+    foreach ($info as $key=>&$values) {
+      $vars['page']['page_bottom']['bootstrap_modal_forms-'. $key]['#markup'] = $values['form_html'];
+      unset($values['form_html']);
+    }
+    drupal_add_js(array('bootstrap_modal_forms' => $info, 'bootstrap_modal_forms_current_path' => implode('/', arg())), 'setting');
+    drupal_add_js(drupal_get_path('module', 'bootstrap_modal_forms') . '/js/bootstrap_modal_forms.forms.js');
+  }
+}
+
+/**
+ * Function used to register a modal with the bootstrap
+ * identifier - this is the ID of the modal form. Also used to load any alternative bootstrap_modal_forms__<identifier> tpls
+ * url - URL to load in the bootstrap modal
+ * form - If specified the will be added to the page as static html at the end of the page. (expects a drupal renderable array)
+ *     If you choose to pass in html with the bootstrap wrapper that will work too.
+ * open_onload - If you want to bootstrap window to be open by default
+ */
+function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form = NULL, $open_onload = FALSE) {
+  //If the current_path is the same as the $url passed in we do not process the bootstrap modal form
+  if ($url == current_path()) {
+    return;
+  }
+  $info = &drupal_static(__FUNCTION__, array());
+  if ($identifier != NULL) {
+    $modal_style = '';
+    if ($form == NULL && $url != NULL) {
+      //If form is NULL we will just load the url in an iframe
+      $form = array(
+        '#type' => 'html_tag' ,
+        '#tag' => 'iframe',
+        '#value' => '',
+        '#attributes' => array(
+          'data-src' => url('bootstrap_modal_forms/load/'. $url, array('query' => array('destination' => 'bootstrap_modal_forms/close_reload_parent'))),
+          'width' => '100%',
+        )
+      );
+      $modal_style = 'width:98%;';
+    }
+    $form_html = is_array($form) ?
+      theme('bootstrap_modal_forms',
+        array(
+          'modal_form' => $form,
+          'identifier' => $identifier,
+          'modal_style' => $modal_style,
+          'tpl_suffix' => $identifier,
+          'header' => isset($form['#bootstrap_form_title']) ? $form['#bootstrap_form_title']: 'Default Header',
+        )
+      ) : $form;
+    if(!isset($info[$identifier])) {
+      $info[$identifier] = array('identifier' => $identifier, 'url' => $url, 'form_html' => $form_html, 'open_onload' => $open_onload);
+    }
+    else {
+      if($url!= NULL) {
+        $info[$identifier]['url'] = $url;
+      }
+      if($form_html!= NULL) {
+        $info[$identifier]['form_html'] = $form_html;
+      }
+      if($open_onload) {
+        $info[$identifier]['open_onload'] = $open_onload;
+      }
+    }
+  }
+  return $info;
+}

@@ -149,7 +149,13 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
     '#description' => t('If this box is checked, the attribute will be displayed on the user’s app listing page.')
   );
 
-  $widget = isset($attribute) ? $attribute['widget'] : 'textfield';
+  $widget = 'textfield';
+  if (isset($attribute) && (!array_key_exists('values', $form_state) || !isset($form_state['values']['widget']))) {
+    $widget = $attribute['widget'];
+  }
+  elseif (array_key_exists('values', $form_state) && isset($form_state['values']['widget'])) {
+    $widget = $form_state['values']['widget'];
+  }
 
   $form['widget'] = array(
     '#title' => t('Widget'),

@@ -103,7 +103,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       }
       $array = $dev->toArray();
       $array['uid'] = (isset($this->emailCache[$array['email']]) ? $this->emailCache[$array['email']] : NULL);
-      $return[$array['email']] = $array;
+      $return[$array['email']] = new Drupal\devconnect_user\DeveloperEntity($array);
     }
     return $return;
   }
@@ -169,9 +169,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @param array $values
    */
   public function create(array $values = array()) {
-    $dev_app = new Apigee\ManagementAPI\Developer(devconnect_default_api_client());
-    $dev_app->fromArray($values);
-    return $dev_app->toArray();
+    return new Drupal\devconnect_user\DeveloperEntity($values);
   }
 
   /**

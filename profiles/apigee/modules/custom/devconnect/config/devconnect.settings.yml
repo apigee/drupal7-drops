@@ -1,7 +1,7 @@
-org: fixme
-user: fixme
+org: ""
+user: ""
 endpoint: https://api.enterprise.apigee.com/v1
-pass: fnt996QUJucOlMGEkYOp5wGwcwNGdfcOX3dZutRJCfDQ==
+pass: ""
 log_threshold: 4
 connection_timeout: 4
 request_timeout: 4

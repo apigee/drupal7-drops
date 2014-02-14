@@ -1,0 +1,529 @@
+<?php
+/**
+ * @file
+ * Code for the Devconnect Default Content Structure feature.
+ */
+
+function devconnect_default_structure_block_info() {
+  $blocks = array();
+
+  $blocks['footer'] = array(
+    'info' => t('Site-wide Default Footer'),
+    'status' => FALSE,
+    'region' => 'footer',
+    'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+    'pages' => 'admin/*'
+  );
+
+  $blocks['develop-with-these'] = array(
+    'info' => t('Develop With These'),
+    'status' => FALSE,
+    'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+    'pages' => 'admin/*'
+  );
+
+  return $blocks;
+}
+
+/**
+ * Provides content back for the footer block
+ */
+function _devconnect_default_structure_footer_content() {
+  $content = '';
+  $theme_path = base_path() . drupal_get_path('theme', 'apigee_base');
+  $html = '<div class="navbar">
+            <div class="navbar-inner">
+              <div class="container">
+                <ul class="social-media-links nav span3">
+                  <li class="first"><a href="https://twitter.com/apigee" target="_blank"><img src="' . $theme_path . '/images/twiiter-icon.png" alt="Twitter" /></a></li>
+                  <li><a href="http://www.facebook.com/apigee" target="_blank"><img src="' . $theme_path . '/images/facebook-icon.png" alt="Facebook" /></a></li>
+                  <li class="last"><a href="http://www.linkedin.com/company/apigee" target="_blank"><img src="' . $theme_path . '/images/linkedin-icon.png" alt="LinkedIn" /></a></li>
+                </ul>
+                <ul class="footer-links nav span10">
+                  <li class="first">' . l('Privacy Policy', 'privacy-policy') . '</li>
+                  <li class="divider-vertical"></li>
+                  <li>' . l('Terms & Use', 'terms-use') . '</li>
+                  <li class="divider-vertical"></li>
+                  <li class="last">' . l('Contact', 'contact-us') . '</li>
+                </ul>
+                <!--<div class="footer-logo span2 pull-right">
+                  <a href="http://apigee.com/"><img src="' . $theme_path . '/images/footer-logo.png" /></a>
+               </div>-->
+              </div>
+            </div>
+          </div>';
+
+  $content_raw = variable_get('apigee_config_footer_content', '');
+
+  $content = !empty($content_raw['value']) ?
+    array('#markup' => $content_raw['value']) : $html;
+
+  return $content;
+}
+
+
+/**
+ * Implements hook_block_configure().
+ *
+ */
+function devconnect_default_structure_block_configure($delta = '') {
+  $form = array();
+  if ($delta == 'footer') {
+    $theme_path = base_path() . drupal_get_path('theme', 'apigee_base');
+    $html = '<div class="navbar">
+            <div class="navbar-inner">
+              <div class="container">
+                <ul class="social-media-links nav span3">
+                  <li class="first"><a href="https://twitter.com/apigee" target="_blank"><img src="' . $theme_path . '/images/twiiter-icon.png" alt="Twitter" /></a></li>
+                  <li><a href="http://www.facebook.com/apigee" target="_blank"><img src="' . $theme_path . '/images/facebook-icon.png" alt="Facebook" /></a></li>
+                  <li class="last"><a href="http://www.linkedin.com/company/apigee" target="_blank"><img src="' . $theme_path . '/images/linkedin-icon.png" alt="LinkedIn" /></a></li>
+                </ul>
+                <ul class="footer-links nav span10">
+                  <li class="first"><a href="privacy-policy">Privacy Policy</a></li>
+                  <li class="divider-vertical"></li>
+                  <li><a href="terms-use">Terms &amp; Use</a></li>
+                  <li class="divider-vertical"></li>
+                  <li class="last"><a href="contact-us">Contact</a></li>
+                </ul>
+                <!--<div class="footer-logo span2 pull-right">
+                  <a href="http://apigee.com/"><img src="' . $theme_path . '/images/footer-logo.png" /></a>
+               </div>-->
+              </div>
+            </div>
+          </div>';
+    $supplied_value = variable_get('apigee_config_footer_content', '');
+    if (is_array($supplied_value) && array_key_exists('value', $supplied_value)) {
+      $default_value = $supplied_value['value'];
+    }
+    else {
+      $default_value = $html;
+    }
+    $form['apigee_config_footer_content_markup'] = array(
+      '#type' => 'text_format',
+      '#title' => t('Custom content'),
+      '#description' => t('This content will appear in the block. Leave it blank to hide the block.'),
+      '#default_value' => $default_value,
+    );
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ *
+ */
+function devconnect_default_structure_block_save($delta = '', $edit = array()) {
+  if ($delta == 'footer') {
+    variable_set('apigee_config_footer_content', $edit['apigee_config_footer_content_markup']);
+  }
+  return;
+}
+
+function devconnect_default_structure_block_view($delta = '') {
+  switch ($delta) {
+    case 'footer':
+      return array(
+        'subject' => '',
+        'content' => _devconnect_default_structure_footer_content()
+      );
+      break;
+    case 'apis':
+      return array(
+        'subject' => t('Develop with these APIs'),
+        'content' => '<div class="starter api">
+                        <h3><a href="/documentation">Starter API</a></h3>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sed mi turpis. Maecenas viverra consequat ipsum.</p>
+                        </div>
+                        <div class="provider api">
+                        <h3><a href="/documentation">Provider API</a></h3>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse sed mi turpis. Maecenas viverra consequat ipsum.</p>
+                        </div>'
+      );
+      break;
+
+    default:
+      return array();
+  }
+}
+
+
+/**
+ * Default vocabularies in the devconnect system
+ */
+function _devconnect_default_structure_taxonomy_vocabularies() {
+  return array(
+    'blog' => array(
+      'name' => 'Blog',
+      'machine_name' => 'blog',
+      'description' => '',
+      'hierarchy' => '0',
+      'module' => 'taxonomy',
+      'weight' => '0',
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
+    ),
+    'tags' => array(
+      'name' => 'Tags',
+      'machine_name' => 'tags',
+      'description' => 'Use tags to group articles on similar topics into categories.',
+      'hierarchy' => 0,
+      'module' => 'taxonomy',
+      'weight' => 0,
+      'rdf_mapping' => array(
+        'rdftype' => array(
+          0 => 'skos:ConceptScheme',
+        ),
+        'name' => array(
+          'predicates' => array(
+            0 => 'dc:title',
+          ),
+        ),
+        'description' => array(
+          'predicates' => array(
+            0 => 'rdfs:comment',
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Default Terms to create
+ */
+function _devconnect_default_structure_taxonomy_terms() {
+  $return = array();
+  // Check to see if content_type_tag blog term exists.
+  $query = db_select('taxonomy_vocabulary', 'v');
+  $query->innerJoin('taxonomy_term_data', 't', 'v.vid = t.vid');
+  $has_term = $query->fields('t', array('tid'))
+    ->condition('v.machine_name', 'content_type_tag')
+    ->condition('t.name', 'blog')
+    ->execute()
+    ->fetchField();
+  if (!$has_term) {
+    $return['content_type_tag'] = array('blog');
+  }
+  return $return;
+}
+
+/**
+ * Default field bases
+ */
+function _devconnect_default_structure_field_bases() {
+  $field_bases = array();
+
+  // Exported field_base: 'field_keywords'
+  $field_bases['field_keywords'] = array(
+    'active' => 1,
+    'cardinality' => -1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_keywords',
+    'foreign keys' => array(
+      'tid' => array(
+        'columns' => array(
+          'tid' => 'tid',
+        ),
+        'table' => 'taxonomy_term_data',
+      ),
+    ),
+    'indexes' => array(
+      'tid' => array(
+        0 => 'tid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'taxonomy',
+    'settings' => array(
+      'allowed_values' => array(
+        0 => array(
+          'vocabulary' => 'blog',
+          'parent' => 0,
+        ),
+      ),
+    ),
+    'translatable' => 0,
+    'type' => 'taxonomy_term_reference',
+  );
+
+  // Exported field_base: 'field_content_tag'
+  $field_bases['field_content_tag'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_content_tag',
+    'foreign keys' => array(
+      'tid' => array(
+        'columns' => array(
+          'tid' => 'tid',
+        ),
+        'table' => 'taxonomy_term_data',
+      ),
+    ),
+    'indexes' => array(
+      'tid' => array(
+        0 => 'tid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'taxonomy',
+    'settings' => array(
+      'allowed_values' => array(
+        0 => array(
+          'vocabulary' => 'content_type_tag',
+          'parent' => 0,
+        ),
+      ),
+    ),
+    'translatable' => 0,
+    'type' => 'taxonomy_term_reference',
+  );
+
+  return $field_bases;
+}
+
+/**
+ * Default field instances
+ */
+function _devconnect_default_structure_field_instances() {
+  $field_instances = array();
+
+  // Exported field_instance: 'node-blog-field_keywords'
+  $field_instances['node-blog-field_keywords'] = array(
+    'bundle' => 'blog',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'taxonomy',
+        'settings' => array(),
+        'type' => 'taxonomy_term_reference_link',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_keywords',
+    'label' => 'keywords',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'autocomplete_path' => 'taxonomy/autocomplete',
+        'size' => 60,
+      ),
+      'type' => 'taxonomy_autocomplete',
+      'weight' => 31,
+    ),
+  );
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Keywords');
+
+  // Exported field_instance: 'node-article-field_keywords'
+  $field_instances['node-article-field_keywords'] = array(
+    'bundle' => 'article',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'taxonomy',
+        'settings' => array(),
+        'type' => 'taxonomy_term_reference_link',
+        'weight' => 3,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_keywords',
+    'label' => 'Keywords',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'autocomplete_path' => 'taxonomy/autocomplete',
+        'size' => 60,
+      ),
+      'type' => 'taxonomy_autocomplete',
+      'weight' => 5,
+    ),
+  );
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Keywords');
+  $blog_term = taxonomy_get_term_by_name('blog', 'content_type_tag');
+  $blog_term = (array) array_pop($blog_term);
+  // Exported field_instance: 'node-article-field_content_tag'
+  $field_instances['node-article-field_content_tag'] = array(
+    'bundle' => 'article',
+    'default_value' => array($blog_term),
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_content_tag',
+    'label' => 'Content Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'autocomplete_path' => 'taxonomy/autocomplete',
+        'size' => 60,
+      ),
+      'type' => 'taxonomy_autocomplete',
+      'weight' => 33,
+    ),
+  );
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Content Tag');
+
+  // Exported field_instance: 'node-blog-field_content_tag'
+  $field_instances['node-blog-field_content_tag'] = array(
+    'bundle' => 'blog',
+    'default_value' => $blog_term,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_content_tag',
+    'label' => 'Content Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'autocomplete_path' => 'taxonomy/autocomplete',
+        'size' => 60,
+      ),
+      'type' => 'taxonomy_autocomplete',
+      'weight' => 32,
+    ),
+  );
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Content Tag');
+
+
+  return $field_instances;
+}
+
+
+function devconnect_default_structure_form_node_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['field_content_tag'])) {
+    $language = $form['field_content_tag']['#language'];
+    $form['field_content_tag'][$language]['#type'] = 'hidden';
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function devconnect_default_structure_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  global $user;
+
+  // Add action link to 'node/add/blog' on 'blog' page.
+  if ($root_path == 'blog' && module_exists('blog')) {
+    foreach ($data['actions']['output'] as $key => $item) {
+      if ($item['#link']['path'] == 'node/add/blog') {
+        unset($data['actions']['output'][$key]);
+      }
+    }
+  }
+}
+
+/*
+ * hook_preprocess_menu_link for blog_content_creation_menu 
+ */
+function devconnect_default_structure_preprocess_menu_link(&$variables) {
+  $element = & $variables['element'];
+  if ($element['#original_link']['menu_name'] != 'blog-content-creation-menu') {
+    return;
+  }
+  static $css_included;
+  if (!isset($css_included)) {
+    $css_included = TRUE;
+    drupal_add_css(drupal_get_path('module', 'devconnect_default_structure') . '/devconnect_default_structure.css');
+  }
+  $element['#localized_options']['attributes']['class'][] = 'btn';
+  $element['#localized_options']['attributes']['class'][] = 'btn-primary';
+  if (!isset($element['#localized_options']['query']['destination'])) {
+    $element['#localized_options']['query']['destination'] = current_path();
+  }
+  $identifier = 'bootstrap_modal_form-' . str_replace("/", "_", $element['#href']);
+  bootstrap_modal_forms_add_form($identifier, $element['#href']);
+}

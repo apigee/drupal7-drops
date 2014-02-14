@@ -17,7 +17,8 @@ class MintTest extends DrupalWebTestCase{
     $username = $config->get('user');
     try {
       $password = \Apigee\Util\Crypto::decrypt($config->get('pass'));
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
       $password = '';
     }
     $curl_auth = "$username:$password";

@@ -1,23 +1,21 @@
 <?php
 
-// These constants are deprecated and will be removed in R25.
-define('DEVCONNECT_APIGEE_DEFAULT_USER', 'fixme');
-define('DEVCONNECT_APIGEE_DEFAULT_PASSWORD', 'fnt996QUJucOlMGEkYOp5wGwcwNGdfcOX3dZutRJCfDQ=='); // "secret" encrypted
-define('DEVCONNECT_APIGEE_DEFAULT_ENDPOINT', 'https://api.enterprise.apigee.com/v1');
-define('DEVCONNECT_APIGEE_DEFAULT_ORG', 'fixme');
-
 /**
- * Implements hook_boot().
+ * Implements hook_init().
  *
  * Registers our custom autoloader.
  */
-function devconnect_boot() {
+function devconnect_init() {
   static $already_booted = FALSE;
   if (!$already_booted) {
-    // Cannot use drupal_get_path because we are too early in the boot process.
-    require_once __DIR__ . '/lib/vendor/autoload.php';
+    $lib_dir = libraries_get_path('mgmt-api-php-sdk');
+    require_once $lib_dir . '/vendor/autoload.php';
     $already_booted = TRUE;
-    Apigee\Util\Crypto::setKey(hash('SHA256', 'w3-Love_ap|s', TRUE));
+    $key = variable_get('apigee_crypt_key', NULL);
+    if (empty($key)) {
+      $key = hash('SHA256', 'w3-Love_ap|s', TRUE);
+    }
+    Apigee\Util\Crypto::setKey($key);
   }
 }
 
@@ -86,14 +84,15 @@ function devconnect_variable_group_info() {
 
 function devconnect_admin_form($form, &$form_state) {
 
-  $config = Drupal::config('devconnect.settings');
+  $config =& Drupal::config('devconnect.settings');
 
   $org = $config->get('org');
   $endpoint = $config->get('endpoint');
   $user = $config->get('user');
   try {
     $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
-  } catch (Exception $e) {
+  }
+  catch (Apigee\Exceptions\ParameterException $e) {
     $pass = '';
   }
   $log_threshold = intval($config->get('log_threshold'));
@@ -131,7 +130,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Endpoint Authenticated User'),
     '#required' => TRUE,
-    '#default_value' => $user,
+    '#default_value' => ($user == 'fixme' ? '' : $user),
     '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
     '#weight' => -4
   );
@@ -140,7 +139,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Authenticated User’s Password'),
     '#required' => TRUE,
-    '#default_value' => $pass,
+    '#default_value' => ($pass == 'secret' ? '' : $pass),
     '#description' => t('Password used when authenticating with the endpoint.'),
     '#weight' => -3,
     '#post_render' => array('devconnect_password_post_render')
@@ -312,15 +311,49 @@ function devconnect_admin_form($form, &$form_state) {
 }
 
 function devconnect_admin_form_submit($form, &$form_state) {
-  $config = Drupal::config('devconnect.settings');
+  $config =& Drupal::config('devconnect.settings');
+  $changes = array();
+
   foreach (array('org', 'endpoint', 'user', 'pass', 'log_threshold', 'connection_timeout', 'request_timeout') as $key) {
     $value = $form_state['values'][$key];
+    switch ($key) {
+      case 'org':
+      case 'endpoint':
+      case 'user':
+      case 'pass':
+        $old_value = $config->get($key);
+        if ($key == 'pass') {
+          try {
+            $old_value = Apigee\Util\Crypto::decrypt($old_value);
+          } catch (Apigee\Exceptions\ParameterException $e) {
+            $old_value = '';
+          }
+          if ($old_value != $value) {
+            $from = (empty($old_value) ? '*empty*' : '*encrypted*');
+            $changes[$key] = array($from, '*encrypted*');
+          }
+        }
+        elseif ($old_value != $value) {
+          $changes[$key] = array($old_value, $value);
+        }
+        break;
+    }
     if ($key == 'pass') {
       $value = Apigee\Util\Crypto::encrypt($value);
     }
+
     $config->set($key, $value);
   }
   $config->save();
+
+  if (!empty($changes)) {
+    $change_items = array();
+    foreach ($changes as $key => $values) {
+      $change_items[] = "$key was changed from “" . $values[0] . '” to “' . $values[1] . '”';
+    }
+    $message = 'The following authentication configuration items were changed: ' . join(',', $change_items);
+    watchdog('devconnect', $message, array(), WATCHDOG_INFO);
+  }
 }
 
 function devconnect_password_post_render($content, $element) {
@@ -491,7 +524,7 @@ function devconnect_theme() {
  */
 function devconnect_default_api_client() {
   // make drush site-install happy
-  devconnect_boot();
+  devconnect_init();
   // When running update.php, we might reach this code before we get to the
   // code that enables the d8cmi module. In that case, manually force the
   // module to load.
@@ -500,7 +533,7 @@ function devconnect_default_api_client() {
   }
   d8cmi_init();
 
-  $config = Drupal::config('devconnect.settings');
+  $config =& Drupal::config('devconnect.settings');
   $org = $config->get('org');
   $endpoint = $config->get('endpoint');
   $username = $config->get('user');
@@ -508,7 +541,8 @@ function devconnect_default_api_client() {
   $log_threshold = $config->get('log_threshold');
   try {
     $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
-  } catch (Exception $e) {
+  }
+  catch (Apigee\Exceptions\ParameterException $e) {
     $password = '';
   }
 
@@ -516,9 +550,14 @@ function devconnect_default_api_client() {
   $logger::setLogThreshold($log_threshold);
   $user_mail = user_is_logged_in() ? $GLOBALS['user']->mail : NULL;
 
+  $adapter = new \Guzzle\Log\PsrLogAdapter($logger);
+  $message = '<pre>' . \Guzzle\Log\MessageFormatter::DEBUG_FORMAT . '</pre>';
+  $guzzle_log_plugin = new \Guzzle\Plugin\Log\LogPlugin($adapter, $message);
+
   $options = array(
     'logger' => $logger,
     'user_mail' => $user_mail,
+    'subscribers' => array($guzzle_log_plugin),
     'http_options' => array(
       'connection_timeout' => intval($config->get('connection_timeout')),
       'timeout' => intval($config->get('request_timeout'))

@@ -1,43 +1,49 @@
 table.api-credentials-list { font: normal .8em/.9em "Arial Narrow", "Tahoma", sans-serif }
 
 /* Add/Edit App */
-.selectlist-list{
-  position: relative;
+.selectlist-list {
+    margin: 0;
+    padding: 0;
+    position: relative;
 }
-.selectlist-item{
-  background: transparent;
-  border: none;
-  border-bottom: 1px dashed #e8e8e7;
-  cursor: default;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
+
+.selectlist-item {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed #e8e8e7;
+    cursor: default;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    list-style-type:none;
+    line-height:40px;
 }
-span.delete{
-  background-color: transparent;
-  background-repeat: no-repeat;
-  cursor: pointer;
-  position: relative;
-  float: right;
-  width: 24px;
-  height: 16px;
-  top: 0px;
+span.delete {
+    background-color: transparent;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    position: relative;
+    float: right;
+    width: 24px;
+    height: 16px;
+    top: 0px;
 }
 
 div#analytics-highchart {
-  min-width:400px;
-  height: 300px;
-  margin: 0 auto;
+    min-width:400px;
+    height: 300px;
+    margin: 0 auto;
 }
 
 .credential-api-product.single-product {
-  display: inline;
+    display: inline;
 }
 
 .tab-content.app-details .key-status-pending .key-value, .tab-content.app-details .key-status-revoked .key-value {
-  color: #999999;
-  text-decoration: line-through;
+    color: #999999;
+    text-decoration: line-through;
 }
 
-#devconnect-developer-apps-edit-form label.option.radio {
-  font-weight: normal;
+#devconnect-developer-apps-edit-form div.form-type-radio label,
+#devconnect-developer-apps-edit-form div.form-checkboxes div.form-type-checkbox label {
+    font-weight: normal;
 }

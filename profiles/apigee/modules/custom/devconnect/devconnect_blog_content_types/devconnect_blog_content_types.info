@@ -1,0 +1,8 @@
+name = devconnect blog content types
+core = 7.x
+package = Devconnect
+version = 7.x-4.25
+
+dependencies[] = remote_stream_wrapper
+dependencies[] = field
+dependencies[] = media_youtube

@@ -1,0 +1,862 @@
+<?php
+
+/**
+ * Implements hook_enable(),
+ */
+function devconnect_blog_content_types_enable() {
+
+  watchdog(__FUNCTION__, "Creating default content types", array(), WATCHDOG_INFO);
+  $types = array(
+    'blog_audio' => array(
+      'name' => t('Audio'),
+      'type' => 'blog_audio',
+      'base' => 'node_content',
+      'description' => '',
+      'has_title' => '1',
+      'title_label' => t('Title'),
+      'help' => '',
+    ),
+    'blog_image' => array(
+      'name' => t('Image'),
+      'base' => 'node_content',
+      'type' => 'blog_image',
+      'description' => '',
+      'has_title' => '1',
+      'title_label' => t('Title'),
+      'help' => '',
+    ),
+    'blog_video' => array(
+      'name' => t('Video'),
+      'base' => 'node_content',
+      'type' => 'blog_video',
+      'description' => '',
+      'has_title' => '1',
+      'title_label' => t('Title'),
+      'help' => '',
+    ),
+  );
+  $node_info = entity_get_info("node");
+  $bundles = $node_info['bundles'];
+  foreach ($types as $type_id => $type) {
+    if (!array_key_exists($type_id, $bundles)) {
+      $type = node_type_set_defaults($type);
+      node_type_save($type);
+      node_add_body_field($type);
+    }
+  }
+
+  _devconnect_blog_content_types_create_taxonomy();
+
+  $existing = field_info_fields();
+  $myFields = _devconnect_blog_content_types_field_bases();
+  foreach ($myFields as $field_id => $field) {
+    if (!array_key_exists($field_id, $existing)) {
+      field_create_field($field);
+    }
+  }
+  $field_instances = _devconnect_blog_content_types_field_instances();
+  foreach ($field_instances as $instance_id => $instance) {
+    $existing_instance = field_info_instance("node", $instance['field_name'], $instance['bundle']);
+    if ($existing_instance == NULL) {
+      field_create_instance($instance);
+    }
+    else {
+      watchdog("devconnect_blog_content_types", "field instance %instance_id cannot be created because an instance of this field already exists on this node type.",
+        array("%instance_id" => $instance_id));
+    }
+  }
+  variable_set("pathauto_node_blog_blog_audio_pattern", "blog/[node:title]");
+  variable_set("pathauto_node_blog_blog_video_pattern", "blog/[node:title]");
+  variable_set("pathauto_node_blog_blog_image_pattern", "blog/[node:title]");
+  variable_set("devconnect_content_creation_menu_blog_image", "glyphicon-picture");
+  variable_set("devconnect_content_creation_menu_blog_audio", "glyphicon-bullhorn");
+  variable_set("devconnect_content_creation_menu_blog_video", "glyphicon-film");
+  watchdog('devconnect_blog_content_types', 'Imported default content');
+}
+
+/**
+ * Returns content type blog tid
+ *
+ * @return integer|boolean
+ */
+function _devconnect_blog_content_type_get_blog_tid($blog_tid = NULL) {
+  static $tid;
+  if (isset($blog_tid)) {
+    $tid = $blog_tid;
+  }
+  if (!isset($tid)) {
+    $query = db_select('taxonomy_vocabulary', 'v');
+    $query->innerJoin('taxonomy_term_data', 't', 'v.vid = t.vid');
+    $tid = $query->condition('v.machine_name', 'content_type_tag')
+      ->condition('t.name', 'blog')
+      ->fields('t', array('tid'))
+      ->execute()
+      ->fetchField();
+  }
+  return $tid;
+}
+
+/**
+ * Creates blog content type taxonomy().
+ *
+ * @return bool
+ * @throws Exception
+ */
+function _devconnect_blog_content_types_create_taxonomy() {
+  watchdog(__FUNCTION__, "Creating taxonomy", array(), WATCHDOG_INFO);
+  $vocab = _devconnect_blog_content_type_get_vocab();
+  if ($vocab === FALSE) {
+    module_load_include("module", "taxonomy");
+    $vocab = (object) array(
+      "name" => t("Content Grouping Tag"),
+      "machine_name" => "content_type_tag",
+      "description" => "Used to group pieces of content, specifically blog entries"
+    );
+    taxonomy_vocabulary_save($vocab);
+  }
+
+  $vocab = _devconnect_blog_content_type_get_vocab();
+  if ($vocab === FALSE) {
+    throw new Exception("Unable to obtain Vocabulary Object");
+  }
+  $tid = _devconnect_blog_content_type_get_blog_tid();
+  if (!$tid) {
+    $term = (object)array('vid' => $vocab->vid, 'name' => 'blog');
+    taxonomy_term_save($term);
+    // Reset our cached tid for future use
+    _devconnect_blog_content_type_get_blog_tid($term->tid);
+  }
+  return TRUE;
+}
+
+/**
+ * Gets blog content type vocab
+ *
+ * @return bool
+ */
+function _devconnect_blog_content_type_get_vocab() {
+  $allVocab = taxonomy_vocabulary_get_names();
+  if (in_array("content_type_tag", array_keys($allVocab))) {
+    return $allVocab['content_type_tag'];
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Helper function to find (or create) an entry in the file_managed table.
+ *
+ * @param string $uri
+ * @param string $filename
+ * @param string $filemime
+ * @param string $type
+ * @return integer
+ */
+function _devconnect_blog_content_types_get_fid($uri, $filename, $filemime, $type) {
+  $fid = db_select('file_managed', 'fm')
+    ->fields('fm', array('fid'))
+    ->condition('uri', $uri)
+    ->execute()
+    ->fetchField();
+  if (!$fid) {
+    $file = (object) array(
+      'uid' => 0,
+      'filename' => $filename,
+      'uri' => $uri,
+      'filemime' => $filemime,
+      'status' => 1,
+      'type' => $type,
+      'alt' => '',
+      'title' => ''
+    );
+    $file = file_save($file);
+    $fid = $file->fid;
+  }
+  return $fid;
+}
+
+
+/**
+ * Implements hook_field_default_field_bases().
+ */
+function _devconnect_blog_content_types_field_bases() {
+  watchdog(__FUNCTION__, "Installing Field Bases", array(), WATCHDOG_INFO);
+
+  $field_bases = array();
+
+
+  // Exported field_base: 'field_audio'
+  $field_bases['field_audio'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_audio',
+    'foreign keys' => array(
+      'fid' => array(
+        'columns' => array(
+          'fid' => 'fid',
+        ),
+        'table' => 'file_managed',
+      ),
+    ),
+    'indexes' => array(
+      'fid' => array(
+        0 => 'fid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'file',
+    'settings' => array(
+      'display_default' => 0,
+      'display_field' => 0,
+      'uri_scheme' => 'public',
+    ),
+    'translatable' => 0,
+    'type' => 'file',
+  );
+
+  // Exported field_base: 'field_content_tag'
+  $field_bases['field_content_tag'] = array(
+    'active' => 1,
+    'cardinality' => -1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_content_tag',
+    'foreign keys' => array(
+      'tid' => array(
+        'columns' => array(
+          'tid' => 'tid',
+        ),
+        'table' => 'taxonomy_term_data',
+      ),
+    ),
+    'indexes' => array(
+      'tid' => array(
+        0 => 'tid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'taxonomy',
+    'settings' => array(
+      'allowed_values' => array(
+        0 => array(
+          'vocabulary' => 'content_type_tag',
+          'parent' => 0,
+        ),
+      ),
+    ),
+    'translatable' => 0,
+    'type' => 'taxonomy_term_reference',
+  );
+
+  // Exported field_base: 'field_file_image_alt_text'
+  $field_bases['field_file_image_alt_text'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_file_image_alt_text',
+    'foreign keys' => array(
+      'format' => array(
+        'columns' => array(
+          'format' => 'format',
+        ),
+        'table' => 'filter_format',
+      ),
+    ),
+    'indexes' => array(
+      'format' => array(
+        0 => 'format',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'text',
+    'settings' => array(
+      'max_length' => 255,
+    ),
+    'translatable' => 0,
+    'type' => 'text',
+  );
+
+  // Exported field_base: 'field_file_image_title_text'
+  $field_bases['field_file_image_title_text'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_file_image_title_text',
+    'foreign keys' => array(
+      'format' => array(
+        'columns' => array(
+          'format' => 'format',
+        ),
+        'table' => 'filter_format',
+      ),
+    ),
+    'indexes' => array(
+      'format' => array(
+        0 => 'format',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'text',
+    'settings' => array(
+      'max_length' => 255,
+    ),
+    'translatable' => 0,
+    'type' => 'text',
+  );
+
+  // Exported field_base: 'field_image'
+  $field_bases['field_image'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_image',
+    'foreign keys' => array(
+      'fid' => array(
+        'columns' => array(
+          'fid' => 'fid',
+        ),
+        'table' => 'file_managed',
+      ),
+    ),
+    'indexes' => array(
+      'fid' => array(
+        0 => 'fid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'file',
+    'settings' => array(
+      'display_default' => 1,
+      'display_field' => 1,
+      'uri_scheme' => 'public',
+    ),
+    'translatable' => 0,
+    'type' => 'file',
+  );
+
+  // Exported field_base: 'field_video'
+  $field_bases['field_video'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'field_video',
+    'foreign keys' => array(
+      'fid' => array(
+        'columns' => array(
+          'fid' => 'fid',
+        ),
+        'table' => 'file_managed',
+      ),
+    ),
+    'indexes' => array(
+      'fid' => array(
+        0 => 'fid',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'file',
+    'settings' => array(
+      'display_default' => 0,
+      'display_field' => 0,
+      'uri_scheme' => 'public',
+    ),
+    'translatable' => 0,
+    'type' => 'file',
+  );
+
+  return $field_bases;
+}
+
+/**
+ * Implements hook_field_default_field_instances().
+ */
+function _devconnect_blog_content_types_field_instances() {
+  watchdog(__FUNCTION__, "Installing Field Instances", array(), WATCHDOG_INFO);
+
+  $field_instances = array();
+
+  // Exported field_instance: 'node-audio-field_audio'
+  $field_instances['node-audio-field_audio'] = array(
+    'bundle' => 'blog_audio',
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'file_entity',
+        'settings' => array(
+          'file_view_mode' => 'default',
+        ),
+        'type' => 'file_rendered',
+        'weight' => 0,
+      ),
+      'teaser' => array(
+        'label' => 'hidden',
+        'module' => 'file_entity',
+        'settings' => array(
+          'file_view_mode' => 'default',
+        ),
+        'type' => 'file_rendered',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_audio',
+    'label' => 'Audio',
+    'required' => 0,
+    'settings' => array(
+      'description_field' => 0,
+      'file_directory' => '',
+      'file_extensions' => 'wav mp3 mp4',
+      'max_filesize' => '10 MB',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'media',
+      'settings' => array(
+        'allowed_schemes' => array(
+          'feed' => 'feed',
+          'http' => 'http',
+          'https' => 'https',
+          'private' => 'private',
+          'public' => 'public',
+          'youtube' => 'youtube',
+        ),
+        'allowed_types' => array(
+          'audio' => 'audio',
+          'document' => 0,
+          'image' => 0,
+          'video' => 0,
+        ),
+        'browser_plugins' => array(
+          'media_default--media_browser_1' => 'media_default--media_browser_1',
+          'media_default--media_browser_my_files' => 'media_default--media_browser_my_files',
+          'media_internet' => 'media_internet',
+          'remote_file' => 'remote_file',
+          'upload' => 'upload',
+          'youtube' => 'youtube',
+        ),
+        'progress_indicator' => 'throbber',
+      ),
+      'type' => 'media_generic',
+      'weight' => 3,
+    ),
+  );
+
+  // Exported field_instance: 'node-audio-field_content_tag'
+  $field_instances['node-audio-field_content_tag'] = array(
+    'bundle' => 'blog_audio',
+    'default_value' => array(
+      0 => array(
+        'tid' => 2,
+        'vid' => 4,
+        'name' => 'blog',
+        'description' => NULL,
+        'format' => NULL,
+        'weight' => 0,
+        'uuid' => '3ca42855-b930-4cfa-a8f9-58e2e110fd46',
+        'vocabulary_machine_name' => 'content_type_tag',
+        'metatags' => array(),
+        'rdf_mapping' => array(
+          'description' => array(
+            'predicates' => array(
+              0 => 'skos:definition',
+            ),
+          ),
+          'name' => array(
+            'predicates' => array(
+              0 => 'rdfs:label',
+              1 => 'skos:prefLabel',
+            ),
+          ),
+          'parent' => array(
+            'predicates' => array(
+              0 => 'skos:broader',
+            ),
+            'type' => 'rel',
+          ),
+          'rdftype' => array(
+            0 => 'skos:Concept',
+          ),
+          'vid' => array(
+            'predicates' => array(
+              0 => 'skos:inScheme',
+            ),
+            'type' => 'rel',
+          ),
+        ),
+      ),
+    ),
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_content_tag',
+    'label' => 'Content Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'autocomplete_path' => 'taxonomy/autocomplete',
+        'size' => 60,
+      ),
+      'type' => 'taxonomy_autocomplete',
+      'weight' => 6,
+    ),
+  );
+
+
+  // Exported field_instance: 'node-image-field_content_tag'
+  $field_instances['node-image-field_content_tag'] = array(
+    'bundle' => 'blog_image',
+    'default_value' => array(
+      0 => array(
+        'tid' => 2,
+        'vid' => 4,
+        'name' => 'blog',
+        'description' => NULL,
+        'format' => NULL,
+        'weight' => 0,
+        'uuid' => '3ca42855-b930-4cfa-a8f9-58e2e110fd46',
+        'vocabulary_machine_name' => 'content_type_tag',
+        'metatags' => array(),
+        'rdf_mapping' => array(
+          'description' => array(
+            'predicates' => array(
+              0 => 'skos:definition',
+            ),
+          ),
+          'name' => array(
+            'predicates' => array(
+              0 => 'rdfs:label',
+              1 => 'skos:prefLabel',
+            ),
+          ),
+          'parent' => array(
+            'predicates' => array(
+              0 => 'skos:broader',
+            ),
+            'type' => 'rel',
+          ),
+          'rdftype' => array(
+            0 => 'skos:Concept',
+          ),
+          'vid' => array(
+            'predicates' => array(
+              0 => 'skos:inScheme',
+            ),
+            'type' => 'rel',
+          ),
+        ),
+      ),
+    ),
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_content_tag',
+    'label' => 'Content Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'autocomplete_path' => 'taxonomy/autocomplete',
+        'size' => 60,
+      ),
+      'type' => 'taxonomy_autocomplete',
+      'weight' => 6,
+    ),
+  );
+
+  // Exported field_instance: 'node-image-field_image'
+  $field_instances['node-image-field_image'] = array(
+    'bundle' => 'blog_image',
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'file_entity',
+        'settings' => array(
+          'file_view_mode' => 'default',
+        ),
+        'type' => 'file_rendered',
+        'weight' => 0,
+      ),
+      'teaser' => array(
+        'label' => 'hidden',
+        'module' => 'file_entity',
+        'settings' => array(
+          'file_view_mode' => 'default',
+        ),
+        'type' => 'file_rendered',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_image',
+    'label' => 'Image',
+    'required' => 0,
+    'settings' => array(
+      'description_field' => 0,
+      'file_directory' => '',
+      'file_extensions' => 'jpg jpeg png gif',
+      'max_filesize' => '5 MB',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'media',
+      'settings' => array(
+        'allowed_schemes' => array(
+          'feed' => 'feed',
+          'http' => 'http',
+          'https' => 'https',
+          'private' => 'private',
+          'public' => 'public',
+          'youtube' => 'youtube',
+        ),
+        'allowed_types' => array(
+          'audio' => 0,
+          'document' => 0,
+          'image' => "image",
+          'video' => 0,
+        ),
+        'browser_plugins' => array(
+          'media_default--media_browser_1' => 'media_default--media_browser_1',
+          'media_default--media_browser_my_files' => 'media_default--media_browser_my_files',
+          'media_internet' => 'media_internet',
+          'remote_file' => 'remote_file',
+          'upload' => 'upload',
+          'youtube' => 'youtube',
+        ),
+        'progress_indicator' => 'throbber',
+      ),
+      'type' => 'media_generic',
+      'weight' => 3,
+    ),
+  );
+
+
+  // Exported field_instance: 'node-video-field_content_tag'
+  $field_instances['node-video-field_content_tag'] = array(
+    'bundle' => 'blog_video',
+    'default_value' => array(
+      0 => array(
+        'tid' => 2,
+        'vid' => 4,
+        'name' => 'blog',
+        'description' => NULL,
+        'format' => NULL,
+        'weight' => 0,
+        'uuid' => '3ca42855-b930-4cfa-a8f9-58e2e110fd46',
+        'vocabulary_machine_name' => 'content_type_tag',
+        'metatags' => array(),
+        'rdf_mapping' => array(
+          'description' => array(
+            'predicates' => array(
+              0 => 'skos:definition',
+            ),
+          ),
+          'name' => array(
+            'predicates' => array(
+              0 => 'rdfs:label',
+              1 => 'skos:prefLabel',
+            ),
+          ),
+          'parent' => array(
+            'predicates' => array(
+              0 => 'skos:broader',
+            ),
+            'type' => 'rel',
+          ),
+          'rdftype' => array(
+            0 => 'skos:Concept',
+          ),
+          'vid' => array(
+            'predicates' => array(
+              0 => 'skos:inScheme',
+            ),
+            'type' => 'rel',
+          ),
+        ),
+      ),
+    ),
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+      'teaser' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_content_tag',
+    'label' => 'Content Tag',
+    'required' => 0,
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'autocomplete_path' => 'taxonomy/autocomplete',
+        'size' => 60,
+      ),
+      'type' => 'taxonomy_autocomplete',
+      'weight' => 6,
+    ),
+  );
+
+  // Exported field_instance: 'node-video-field_video'
+  $field_instances['node-video-field_video'] = array(
+    'bundle' => 'blog_video',
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'file_entity',
+        'settings' => array(
+          'file_view_mode' => 'default',
+        ),
+        'type' => 'file_rendered',
+        'weight' => 0,
+      ),
+      'teaser' => array(
+        'label' => 'hidden',
+        'module' => 'file_entity',
+        'settings' => array(
+          'file_view_mode' => 'default',
+        ),
+        'type' => 'file_rendered',
+        'weight' => 0,
+      ),
+    ),
+    'entity_type' => 'node',
+    'field_name' => 'field_video',
+    'label' => 'Video',
+    'required' => 0,
+    'settings' => array(
+      'description_field' => 0,
+      'file_directory' => '',
+      'file_extensions' => 'txt',
+      'max_filesize' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'media',
+      'settings' => array(
+        'allowed_schemes' => array(
+          'feed' => 'feed',
+          'http' => 'http',
+          'https' => 'https',
+          'private' => 'private',
+          'public' => 'public',
+          'youtube' => 'youtube',
+        ),
+        'allowed_types' => array(
+          'audio' => 0,
+          'document' => 0,
+          'image' => 0,
+          'video' => 'video',
+        ),
+        'browser_plugins' => array(
+          'media_default--media_browser_1' => 'media_default--media_browser_1',
+          'media_default--media_browser_my_files' => 'media_default--media_browser_my_files',
+          'media_internet' => 'media_internet',
+          'remote_file' => 'remote_file',
+          'upload' => 'upload',
+          'youtube' => 'youtube',
+        ),
+        'progress_indicator' => 'throbber',
+      ),
+      'type' => 'media_generic',
+      'weight' => 3,
+    ),
+  );
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Alt Text');
+  t('Alternative text is used by screen readers, search engines, and when the image cannot be loaded. By adding alt text you improve accessibility and search engine optimization.');
+  t('Audio');
+  t('Content Tag');
+  t('Image');
+  t('Title Text');
+  t('Title text is used in the tool tip when a user hovers their mouse over the image. Adding title text makes it easier to understand the context of an image and improves usability.');
+  t('Video');
+
+  return $field_instances;
+}
+
+/**
+ * Implements hook_file_default_displays().
+ */
+function _devconnect_blog_content_types_displays() {
+  $export = array();
+
+  $file_display = new stdClass();
+  $file_display->api_version = 1;
+  $file_display->name = 'image__full__file_image';
+  $file_display->weight = 5;
+  $file_display->status = TRUE;
+  $file_display->settings = array(
+    'image_style' => 'large',
+  );
+  $export['image__full__file_image'] = $file_display;
+
+  return $export;
+}

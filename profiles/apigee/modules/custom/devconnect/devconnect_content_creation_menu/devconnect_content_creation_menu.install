@@ -1,0 +1,11 @@
+<?php
+
+
+function devconnect_content_creation_menu_enable() {
+  
+  variable_set("devconnect_content_creation_menu_blog_image", "glyphicon-picture");
+  variable_set("devconnect_content_creation_menu_blog_audio", "glyphicon-bullhorn");
+  variable_set("devconnect_content_creation_menu_blog_video", "glyphicon-film");
+  variable_set("devconnect_content_creation_menu_article", "glyphicon-pencil");
+  
+}

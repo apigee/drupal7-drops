@@ -9,6 +9,7 @@ use Apigee\Mint\Organization;
 use Apigee\Mint\DataStructures\DeveloperTnc;
 use Apigee\Mint\TermAndCondition;
 use Apigee\Mint\DataStructures\Address;
+use Apigee\Mint\Types\BillingType;
 use Apigee\Mint\Types\Country;
 
 /**
@@ -517,7 +518,36 @@ function devconnect_monetization_roles_form($form, $form_state, \Apigee\Mint\Dev
 
   $admin_uid = $developer->getEmail() == $GLOBALS['user']->mail ? $GLOBALS['user']->uid : user_load_by_mail($developer->getEmail())->uid;
   $users = entity_load('user', array($admin_uid)) + $users;
+
+  $original_roles = array(
+    MONETIZATION_ADMIN_ROLE_NAME => variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL),
+    MONETIZATION_FINANCE_ADMIN_ROLE_NAME => variable_get('devconnect_monetization_role_' . MONETIZATION_FINANCE_ADMIN_ROLE_NAME, NULL),
+    MONETIZATION_DEVELOPER_ROLE_NAME => variable_get('devconnect_monetization_role_' . MONETIZATION_DEVELOPER_ROLE_NAME, NULL),
+  );
+
+  $roles = db_select('role', 'r')
+    ->fields('r', array('rid', 'name', 'weight'))
+    ->condition('rid', array_values($original_roles), 'IN')
+    ->orderBy('weight')
+    ->execute();
+
   $form = array();
+
+  $role_values = array();
+  while ($role = $roles->fetchAssoc()) {
+    $role_values[$role['rid']] = $role['name'];
+    $form['#roles'][$role['rid']] = (object) $role;
+  }
+
+
+  $form['#original_roles'] = $original_roles;
+  $form['#table_headers'] = array(
+    t('Username'),
+    $role_values[$original_roles[MONETIZATION_ADMIN_ROLE_NAME]],
+    $role_values[$original_roles[MONETIZATION_FINANCE_ADMIN_ROLE_NAME]],
+    $role_values[$original_roles[MONETIZATION_DEVELOPER_ROLE_NAME]],
+    t('Actions'),
+  );
   $dev_list = array();
   foreach ($users as $uid => $user) {
     $dev_name = isset($user->field_first_name[LANGUAGE_NONE][0]['value']) ? $user->field_first_name[LANGUAGE_NONE][0]['value'] : '';
@@ -529,18 +559,18 @@ function devconnect_monetization_roles_form($form, $form_state, \Apigee\Mint\Dev
       ),
       "admin[$uid]" => array(
         '#type' => 'checkbox',
-        '#default_value' => in_array(MONETIZATION_ADMIN_ROLE_NAME, $user->roles),
+        '#default_value' => in_array($role_values[$original_roles[MONETIZATION_ADMIN_ROLE_NAME]], $user->roles),
       ),
       "finance[$uid]" => array(
         '#type' => 'checkbox',
-        '#default_value' => in_array(MONETIZATION_FINANCE_ADMIN_ROLE_NAME, $user->roles),
+        '#default_value' => in_array($role_values[$original_roles[MONETIZATION_FINANCE_ADMIN_ROLE_NAME]], $user->roles),
       ),
       "developer[$uid]" => array(
         '#type' => 'checkbox',
-        '#default_value' => in_array(MONETIZATION_DEVELOPER_ROLE_NAME, $user->roles),
+        '#default_value' => in_array($role_values[$original_roles[MONETIZATION_DEVELOPER_ROLE_NAME]], $user->roles),
       ),
       "action[$uid]" => array(
-        '#markup' => l(t('Delete'), 'users/' . $GLOBALS['user']->uid . '/monetization/company/remove-developer/' . $uid, array('attributes' => array('class' => array('btn'))))
+        '#markup' => l(t('Delete'), 'users/' . $GLOBALS['user']->uid . '/monetization/company/developers/' . rawurlencode($uid) . '/remove', array('attributes' => array('class' => array('btn'))))
       ),
     );
 
@@ -593,9 +623,9 @@ function devconnect_monetization_roles_form_submit($form, &$form_state) {
     $developers = !empty($child_ids) ? entity_load('user', $child_ids) : array();
 
     $pseudo_monetization_roles = array(
-      'admin' => user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME),
-      'finance' => user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME),
-      'developer' => user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME),
+      'admin' => $form['#roles'][$form['#original_roles'][MONETIZATION_ADMIN_ROLE_NAME]],
+      'finance' => $form['#roles'][$form['#original_roles'][MONETIZATION_FINANCE_ADMIN_ROLE_NAME]],
+      'developer' => $form['#roles'][$form['#original_roles'][MONETIZATION_DEVELOPER_ROLE_NAME]],
     );
 
     $monetization_roles = array();
@@ -636,13 +666,6 @@ function devconnect_monetization_roles_form_submit($form, &$form_state) {
 
 function theme_devconnect_monetization_roles_form($variables) {
   $form = $variables['form'];
-  $header = array(
-    t('Username'),
-    t('Admin'),
-    t('Finance'),
-    t('Developer'),
-    t('Actions'),
-  );
 
   $rows = array();
 
@@ -655,7 +678,7 @@ function theme_devconnect_monetization_roles_form($variables) {
   }
 
   $output = theme_table(array(
-      'header' => $header,
+      'header' => $form['#table_headers'],
       'rows' => $rows,
       'attributes' => array(),
       'caption' => '',
@@ -774,7 +797,7 @@ function devconnect_monetization_user_remove_from_company($uid, \Apigee\Mint\Dev
     drupal_set_message(t('Developer @developer removed from your company.', array('@developer' => $child_entity->mail)));
     module_invoke_all('devconnect_monetization_developer_removed_from_company', $child_entity, $company_id);
     $me = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
-    drupal_goto("users/$me/monetization/company/user-roles");
+    drupal_goto("users/$me/monetization/company/developers");
   } catch (Exception $e) {
     drupal_set_message($e->getMessage(), 'error');
     if (!isset($child_entity)) {
@@ -913,7 +936,9 @@ function devconnect_monetization_accept_tnc_form_submit($form, &$form_state) {
 
 function devconnect_monetization_form_devconnect_monetization_company_details_form_alter(&$form, &$form_alter) {
 
-  if (!variable_get('devconnect_monetization_recurring_enabled', FALSE)) {
+  if (!variable_get('devconnect_monetization_recurring_enabled', FALSE) 
+    || devconnect_monetization_developer_load()->getBillingType() == BillingType::POSTPAID
+  ) {
     return;
   }
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);

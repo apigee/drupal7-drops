@@ -80,7 +80,7 @@ class ApiProductController implements DrupalEntityControllerInterface {
     $return = array();
     foreach ($list as $api_product) {
       if ($api_product->isPublic() || $conditions['show_private']) {
-        $return[$api_product->getName()] = $api_product->toArray();
+        $return[$api_product->getName()] = new Drupal\devconnect_developer_apps\ApiProductEntity($api_product->toArray());
       }
     }
     return $return;

@@ -1,5 +1,0 @@
-name = Devconnect WADL documentation parser
-description = Parses WADL JSON files and generates documentation.
-core = 7.x
-package = DevConnect
-version = "7.x-4.19"

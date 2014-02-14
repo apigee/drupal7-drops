@@ -1,0 +1,7 @@
+name = Devconnect Context
+description = Default context used in Dev Portal
+core = 7.x
+package = Devconnect
+version = 7.x-4.24
+
+dependencies[] = context_condition_theme

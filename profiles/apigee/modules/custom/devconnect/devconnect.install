@@ -28,7 +28,7 @@ function devconnect_requirements($phase) {
         'description' => 'PHP must have the cURL library for DevConnect to work.',
         'severity' => REQUIREMENT_ERROR,
         'value' => $t('Please install the PHP cURL extension.'),
-        'title' => $t('Missing library'),
+        'title' => $t('Missing PHP extension'),
       );
     }
   }
@@ -37,32 +37,33 @@ function devconnect_requirements($phase) {
     module_load_include('module', 'devconnect');
     module_load_include('module', 'd8cmi');
     // Make sure all autoloaders are registered
-    devconnect_boot();
+    devconnect_init();
     d8cmi_init();
 
-    $config = Drupal::config('devconnect.settings');
+    $config =& Drupal::config('devconnect.settings');
     $org = $config->get('org');
     $endpoint = $config->get('endpoint');
     $user = $config->get('user');
     try {
       $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
-    } catch (Exception $e) {
+    }
+    catch (Apigee\Exceptions\ParameterException $e) {
       $pass = FALSE;
     }
 
     if ($pass && _devconnect_test_kms_connection($org, $endpoint, "$user:$pass", TRUE)) {
       $requirements['devconnect_connection'] = array(
         'severity' => REQUIREMENT_OK,
-        'title' => 'DevConnect Connection',
-        'value' => $t('DevConnect is connected to the management server.'),
+        'title' => 'Dev Portal Connection',
+        'value' => $t('Dev Portal is connected to the management server.'),
       );
     }
     else {
       $requirements['devconnect_connection'] = array(
         'severity' => REQUIREMENT_ERROR,
-        'title' => 'DevConnect Connection',
-        'value' => $t('DevConnect is not connected to the management server.'),
-        'description' => $t('To configure these settings, please go to @url.' , array('@url' => base_path() . 'admin/config/devconnect')),
+        'title' => 'Dev Portal Connection',
+        'value' => $t('Dev Portal is not connected to the management server.'),
+        'description' => $t('To configure these settings, please go to the !url.' , array('!url' => l($t('Dev Portal configuration page'), 'admin/config/devconnect'))),
       );
     }
   }
@@ -87,6 +88,8 @@ function devconnect_install() {
   if ($role) {
     user_role_grant_permissions($role->rid, array('administer organization settings'));
   }
+
+  devconnect_update_7425();
 }
 
 /**
@@ -95,7 +98,7 @@ function devconnect_install() {
 function devconnect_update_7423(&$sandbox) {
   // Make sure Apigee autoloader has been run
   drupal_load('module', 'devconnect');
-  devconnect_boot();
+  devconnect_init();
 
   $list = db_select('system', 's')
     ->condition('type', 'module')
@@ -183,11 +186,15 @@ function devconnect_update_7424(&$sandbox) {
   }
 }
 
+/**
+ * Moves devconnect KMS authentication settings out of the variable table and
+ * into YAML in the filesystem.
+ */
 function devconnect_port_settings_to_d8cmi() {
   module_load_include('module', 'devconnect');
   module_load_include('module', 'd8cmi');
   // Make sure all autoloaders are registered
-  devconnect_boot();
+  devconnect_init();
   d8cmi_init();
 
   $config = Drupal::config('devconnect.settings');
@@ -214,4 +221,32 @@ function devconnect_port_settings_to_d8cmi() {
   variable_del('devconnect_endpoint');
   variable_del('devconnect_curlauth');
   variable_del('apigee_log_threshold');
+}
+
+/**
+ * Enable additional required modules. Also set devconnect to be one
+ * weight-unit lighter than d8cmi, so that the YAML autoloader will run in the
+ * correct sequence. Finally, disable/remove xautoload module.
+ */
+function devconnect_update_7425() {
+  module_enable(array('admin_views', 'contextual'));
+
+  $d8cmi_weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('type', 'module')
+    ->condition('name', 'd8cmi')
+    ->execute()
+    ->fetchField();
+  db_update('system')
+    ->fields(array('weight' => $d8cmi_weight - 1))
+    ->condition('type', 'module')
+    ->condition('name', 'devconnect')
+    ->execute();
+
+  db_delete('system')
+    ->condition('name', 'xautoload')
+    ->condition('type', 'module')
+    ->execute();
+
+  cache_clear_all(NULL, 'cache_bootstrap');
 }
