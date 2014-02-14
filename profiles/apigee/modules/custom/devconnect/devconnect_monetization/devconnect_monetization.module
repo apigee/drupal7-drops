@@ -103,6 +103,11 @@ function devconnect_monetization_default_org_config() {
   module_load_include('module', 'devconnect');
   devconnect_init();
 
+  if (!module_exists('d8cmi')) {
+    module_load_include('module', 'd8cmi');
+  }
+  d8cmi_init();
+
   $config = Drupal::config('devconnect.settings');
   $org = $config->get('org');
   $endpoint = $config->get('endpoint');
