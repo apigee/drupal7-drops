@@ -278,14 +278,10 @@ function devconnect_developer_apps_entity_uri($dev_app) {
 }
 
 function _devconnect_developer_apps_get_default_value($name, $default, $form_state) {
-  //drupal_set_message($name);
-  //dsm($form_state);
   if (!empty($form_state['input'])) {
-    //drupal_set_message('input');
     return $form_state['input'][$name];
   }
-  if (isset($form_state['values']['devconnect_show_analytics'])) {
-    //drupal_set_message('values');
+  if (isset($form_state['values'][$name])) {
     return $form_state['values'][$name];
   }
   return variable_get($name, $default);
@@ -409,8 +405,15 @@ function devconnect_developer_apps_config($form, &$form_state) {
   $form['callback']['devconnect_validate_callback_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Regex to Validate App Callback URL'),
-    '#default' => _devconnect_developer_apps_get_default_value('devconnect_validate_callback_url', '', $form_state),
+    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_validate_callback_url', '', $form_state),
     '#description' => t('When not empty, Callback URL is validated against this Regex.'),
+  );
+
+  $form['callback']['devconnect_tooltip_callback_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Callback URL Field Tooltip'),
+    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_tooltip_callback_url', '', $form_state),
+    '#description' => t('If Callback URL Regex is not empty, this should contain a human-readable high-level description of the valid pattern, to be shown in the browser when the user enters an invalid pattern..'),
   );
 
   $form['analytics'] = array(
@@ -751,6 +754,15 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
       '#required' => (variable_get('devconnect_callback_handling', 'require') == 'require'),
       '#size' => 145,
     );
+    $regex = variable_get('devconnect_validate_callback_url', NULL);
+    if (!empty($regex)) {
+      $form['callback_url']['#attributes']['pattern'] = $regex;
+      $form['callback_url']['#element_validate'] = array('devconnect_developer_apps_pattern_validate');
+    }
+    $tooltip = variable_get('devconnect_tooltip_callback_url', NULL);
+    if (!empty($tooltip)) {
+      $form['callback_url']['#attributes']['title'] = $tooltip;
+    }
   }
   else {
     $form['callback_url'] = array(
@@ -978,30 +990,6 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
 }
 
 /**
- * Ajax Callback for Select list and/or API Product Selection
- */
-function _devconnect_developer_apps_apiproduct_delete_submit($form, &$form_state) {
-  $product = $form_state['clicked_button']['#data_product'];
-  unset($form_state['storage']['selected_api_products'][$product]);
-  $form_state['rebuild'] = TRUE;
-}
-
-/**
- * Ajax Callback for Select list and/or API Product Selection
- */
-function _devconnect_developer_apps_apiproduct_delete_callback($form, $form_state) {
-  return $form['api_product_select_ajax_container'];
-}
-
-
-/**
- * Ajax Callback for Select list and/or API Product Selection
- */
-function _devconnect_developer_apps_apiproduct_ajax_callback($form, $form_state) {
-  return $form['api_product_select_ajax_container'];
-}
-
-/**
  * Validates (on server-side) any custom element that has a pattern defined.
  *
  * This is a belt-and-suspenders fallback for when HTML5 pattern validation is
@@ -1012,6 +1000,9 @@ function _devconnect_developer_apps_apiproduct_ajax_callback($form, $form_state)
  * @param array $form
  */
 function devconnect_developer_apps_pattern_validate(array $element, array &$form_state, array $form) {
+  if (!$element['#required'] && empty(trim($element['#value']))) {
+    return;
+  }
   $pattern = '!' . str_replace('!', '\\!', $element['#attributes']['pattern']) . '!';
   if (!preg_match($pattern, $element['#value'])) {
     form_error($element, t('The @title element does not conform to the indicated pattern.', array('@title' => $element['#title'])));
@@ -1026,21 +1017,6 @@ function devconnect_developer_apps_pattern_validate(array $element, array &$form
  * @param array $form_state
  */
 function devconnect_developer_apps_edit_form_validate(array $form, array &$form_state) {
-
-  $callback_regex = variable_get('devconnect_validate_callback_url', '');
-  if (strlen($callback_regex)) {
-    $matched = preg_match($callback_regex, $form_state['values']['callback_url']);
-    if ($matched === 0) {
-      form_error($form['callback_url'], 'Invalid Callback URL');
-    }
-    // Error validating Callback URL, regex might not be a valid patterns and needs immediate addressing.
-    else {
-      if ($matched === FALSE) {
-        $detail = 'Could not validate Callback URL against Regular Expression: ' . $callback_regex . ' Error reported: ' . preg_last_error();
-        devconnect_default_api_client()->logger->critical($detail);
-      }
-    }
-  }
 
   if ($form['machine_name']['#type'] == 'value') {
     // No need to validate existing machine names.
@@ -1152,7 +1128,7 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
       $response = @json_decode($e->getResponse());
       $action = rtrim(strtolower($action_taken), 'd');
       $uri = $e->getUri();
-      if ($response && property_exists('code', $response) && $response->code == 'keymanagement.service.app_invalid_name') {
+      if ($response && property_exists($response, 'code') && $response->code == 'keymanagement.service.app_invalid_name') {
         $summary = $response->message;
       }
       else {
@@ -1164,14 +1140,14 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
         $params['message'] = $response->message;
       }
       $exception_class = get_class($e);
-      $exception_class = 'a' . (preg_match('!^[AEIOUaeiou]!', $class) ? 'n' : '') . ' ' . $class;
+      $exception_class = 'a' . (preg_match('!^[AEIOUaeiou]!', $exception_class) ? 'n' : '') . ' ' . $exception_class;
       $args = array(
         '@app_name' => $values['machine_name'],
         '@user_name' => $user->name,
         '@ex' => $exception_class,
         '@status' => $code,
         '@uri' => $uri,
-        '@params' => print_r($e->getParams(), TRUE)
+        '@params' => print_r($params, TRUE)
       );
       $detail = t($message, $args);
     }

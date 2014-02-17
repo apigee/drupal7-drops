@@ -22,10 +22,13 @@
  * @param $info
  *   Array of keyed elements:
  *     - 'download_type': either 'http' or 'torrent'.
+ *     - 'https': either TRUE or FALSE.
  *     - 'torrent': (boolean) Causes use of an authenticated URL (time limited)
  *     - 'presigned_url_timeout': (boolean) Time in seconds before an authenticated URL will time out.
  *     - 'response': array of additional options as described at
  *       http://docs.amazonwebservices.com/AWSSDKforPHP/latest/index.html#m=AmazonS3/get_object_url
+ *       If you return anything other than an empty arrayhere, CloudFront
+ *       support for these URLs will be disabled.
  * @return
  *   The modified array of configuration items.
  */
@@ -34,6 +37,31 @@ function hook_amazons3_url_info($local_path, $info) {
     $info['presigned_url'] = TRUE;
     $info['presigned_url_timeout'] = 10;
   }
+  
+  $cache_time = 60 * 60 * 5;
+  $info['response'] = array(
+    'Cache-Control' => 'max-age=' . $cache_time . ', must-revalidate',
+    'Expires' => gmdate('D, d M Y H:i:s', time() + $cache_time) . ' GMT',
+  );
+  
   return $info;
 }
 
+/**
+ * Allows other modules to change the headers/metadata used when saving an
+ * object to S3. See the headers array in the create_object documentation.
+ * http://docs.aws.amazon.com/AWSSDKforPHP/latest/#m=AmazonS3/create_object
+ * @param $local_path
+ *   The local filesystem path.
+ * @param $headers
+ *   Array of keyed header elements.
+ * @return The modified array of configuration items.
+ */
+function hook_amazons3_save_headers($local_path, $headers) {
+  $cache_time = 60 * 60 * 5;
+  $headers = array(
+    'content-disposition' => 'attachment; filename=' . basename($local_path),
+  );
+
+ return $headers;
+}

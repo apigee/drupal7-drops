@@ -5,9 +5,10 @@ the workflow-specific 'transition post' event.
 
 WORKFLOW FIELD
 ==============
-As of Workflow 7.x-2.0, the module Workflow Rules supports Workflow Field API.
-This is used when you add a new 'Workflow' field to an entity.
-When using the new 'Workflow Field API', Rules should be triggered upon
-the general 'content updated' event.
-This is because the workflow-specific code is now called DURING an update,
-and is not used after the commit has ben executed.
+As of Workflow 7.x-2.0, alternative 'Workflow Field API' is available. There
+is no need to enable this module if you use Workflow Field.
+You can add a Rule using:
+- After saving a new workflow scheduled transition
+- After updating an existing Entity
+The 'transition post' hook is not called for Workflow Field, since at that
+moment in the update proces, the data is not saved yet.

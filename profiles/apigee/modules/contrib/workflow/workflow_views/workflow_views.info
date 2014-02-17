@@ -13,9 +13,9 @@ files[] = handlers/workflow_views_handler_field_username.inc
 files[] = handlers/workflow_views_handler_field_node_link_workflow.inc
 files[] = handlers/workflow_views_handler_argument_state.inc
 
-; Information added by Drupal.org packaging script on 2014-02-08
-version = "7.x-2.0-beta11"
+; Information added by Drupal.org packaging script on 2014-02-14
+version = "7.x-2.0-beta12"
 core = "7.x"
 project = "workflow"
-datestamp = "1391863112"
+datestamp = "1392361114"
 

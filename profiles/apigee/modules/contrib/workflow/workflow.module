@@ -476,26 +476,30 @@ function _workflow_transition_form_element_validate_time($element, &$form_state,
  * Submit callback function for the Workflow Form / DefaultWidget.
  *
  * When using action buttons in Workflow form, sets the new state to proper
- * element and sets a submit function if needed.
+ * element and sets a submit function if needed, making sure the action is
+ * executed, influencing function core/includes/form.inc/form_execute_handlers().
+ * (While constructing the Workflow form, we were not yet aware of the submit
+ * buttons of the complete form. We try to correct this here, without adding
+ * another hook_form_alter. We guess the first button is the Save button.
  */
 function _workflow_transition_form_validate_buttons($form, &$form_state) {
-  // Make sure the action is executed, influencing function core/includes/form.inc/form_execute_handlers().
-  // In the workflow form, we were not aware yet of the submit buttons
-  // of the complete form. We try to correct this here,
-  // without adding another hook_form_alter.
+  $field_name = $form_state['triggering_element']['#workflow_field_name'];
+  $new_sid = $form_state['triggering_element']['#workflow_sid'];
 
   if (count($form_state['triggering_element']['#submit'])) {
-    // We are on a View page or History tab.
-    // Move the State ID of the clicked button to the proper form element.
-    $form_state['input']['workflow_sid'] = $form_state['triggering_element']['#workflow_sid'];
+    // We are on a View page or History tab. Try to fix the form_state.
+    $form_state['input']['workflow_sid'] = $new_sid;
 
     // Nothing more to do: the correct submit button is already added.
   }
   elseif (!empty($form_state['buttons'][0]['#submit'])) {
-    // We are on a Node form/Edit page. Try to fix the form_state.
-
-    // Move the State ID of the clicked button to the proper form element.
-    $form_state['values']['workflow_sid'] = $form_state['triggering_element']['#workflow_sid'];
+    // We are on a Node form. Try to fix the form_state.
+    if ($field_name) {
+      $form_state['values'][$field_name]['und'][0]['value'] = $new_sid;
+    }
+    else {
+      $form_state['values']['workflow_sid'] = $new_sid;
+    }
 
     // Add the submit handler of the first button (hopefully the Save button).
     // Perhaps a better way is to search the button where ['#value'] == ['values']['submit'].
@@ -504,18 +508,16 @@ function _workflow_transition_form_validate_buttons($form, &$form_state) {
     }
   }
   else {
-    // We are on a Comment form. We don't know how to fix the form state.
+    // (Let's hope) We are on a Comment form. Try to fix the form_state.
     // Somehow, the Save button does not have a submit callback (the Preview button has).
-    // Don't know how to handle this. Should not be used, since this is a 'edit' page, too.
-
-    // So, this doesn't work... Setting the value does not make sense.
-    // Move the State ID of the clicked button to the proper form element.
-    // $form_state['values']['workflow_sid'] = $form_state['triggering_element']['#workflow_sid'];
-
-    drupal_set_message(t('Workflow Action buttons are not supported on this form 
-                          (form_id). Contact your site administrator.',
-                          array(@form_id => $form_state['build_info']['form_id'])),
-                       'warning');	
+    if ($field_name) {
+      $form_state['values'][$field_name]['und'][0]['workflow']['workflow_sid'] = $new_sid;
+      $form_state['submit_handlers'] += array('comment_form_submit');
+    }
+    else {
+      $form_state['values']['workflow_sid'] = $new_sid;
+      $form_state['submit_handlers'] += array('comment_form_submit');
+    }
   }
 }
 

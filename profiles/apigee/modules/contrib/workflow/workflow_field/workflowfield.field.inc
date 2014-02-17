@@ -108,14 +108,26 @@ function workflowfield_field_update($entity_type, $entity, array $field, $instan
     // Load the node again, since the passed node doesn't contain proper 'type' field.
     $referenced_entity = entity_load_single($referenced_entity_type, $referenced_entity_id);
 
-    // Execute the transition upon the node. Afterwards, $items is in form as expected by Field API.
-    // @todo: when changing Workflow via comment, the history is saved twice.
-    // Remember, we don't know if the transition is scheduled or not.
-    $widget = new WorkflowDefaultWidget($field, $instance, $referenced_entity_type, $referenced_entity);
-    $widget->submit($form, $form_state, $items); // $items is a proprietary D7 parameter.
+    if ($field_name) {
+      // Execute the transition upon the node. Afterwards, $items is in form as expected by Field API.
+      // Remember, we don't know if the transition is scheduled or not.
+      // @todo: saving scheduled transition with Workflow Field doesn't work yet, Workflow Node does.
+//      $referenced_entity->{$field_name}['und'] = $items;
+      $widget = new WorkflowDefaultWidget($field, $instance, $referenced_entity_type, $referenced_entity);
+      $widget->submit($form, $form_state, $items); // $items is a proprietary D7 parameter.
 
-    // Since we are saving the comment only, we must save the node separately.
-    entity_save($referenced_entity_type, $referenced_entity);
+      // Since we are saving the comment only, we must save the node separately.
+      entity_save($referenced_entity_type, $referenced_entity);
+    }
+    else {
+      // Execute the transition upon the node. Afterwards, $items is in form as expected by Field API.
+      // Remember, we don't know if the transition is scheduled or not.
+      $widget = new WorkflowDefaultWidget($field, $instance, $referenced_entity_type, $referenced_entity);
+      $widget->submit($form, $form_state, $items); // $items is a proprietary D7 parameter.
+
+      // Since we are saving the comment only, we must save the node separately.
+      entity_save($referenced_entity_type, $referenced_entity);
+    }
   }
   else {
     $widget = new WorkflowDefaultWidget($field, $instance, $entity_type, $entity);

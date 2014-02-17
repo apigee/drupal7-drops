@@ -9,6 +9,11 @@ function devconnect_init() {
   static $already_booted = FALSE;
   if (!$already_booted) {
     $lib_dir = libraries_get_path('mgmt-api-php-sdk');
+    // During migrations, we might get an empty lib dir due to bad cached
+    // install_profile value.
+    if (empty($lib_dir)) {
+      $lib_dir = 'profiles/apigee/libraries/mgmt-api-php-sdk';
+    }
     require_once $lib_dir . '/vendor/autoload.php';
     $already_booted = TRUE;
     $key = variable_get('apigee_crypt_key', NULL);

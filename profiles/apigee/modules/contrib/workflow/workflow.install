@@ -6,10 +6,19 @@
  */
 
 /**
- * Implements hook_install().
+ * Implements hook_enable().
  */
-// function workflow_install() {
-// }
+function workflow_enable() {
+  $message = t('Thanks for using Workflow. To maintain workflows, enable the
+    <a href="!url_ui">Workflow UI module</a>. To add a Workflow Field to your
+    entity, enable the <a href="!url">Workflow Field module</a>.',
+    array(
+      '!url_ui' => url('admin/config/modules'),
+      '!url_field' => url('admin/config/modules'),
+    )
+  );
+  drupal_set_message($message);
+}
 
 /**
  * Implements hook_uninstall().
@@ -38,7 +47,7 @@ function workflow_requirements($phase) {
       break;
 
     case 'runtime':
-      // Show info on admin/reports/status
+      // Show info on admin/reports/status.
       $types = db_query('SELECT wid, type FROM {workflow_type_map} WHERE wid <> 0 ORDER BY type')->fetchAllKeyed();
       // If there are no types, then just bail.
       if (count($types) == 0) {

@@ -9,6 +9,9 @@
  * depends on 'property_info' in hook_field_info().
  */
 function workflow_rules_rules_data_info() {
+  // No custom support for Workflow Field: use Entity functionality.
+  return array();
+
   return array(
     'workflow' => array(
       'label' => t('workflow'),
@@ -28,6 +31,10 @@ function workflow_rules_rules_data_info() {
  */
 function _workflow_rules_rules_field_condition_info() {
   $conditions = array();
+
+  // No custom support for Workflow Field: use Entity functionality.
+  return conditions;
+
   $conditions['workflow_rules_field_check_state'] = array(
     'group' => t('Workflow'),
     'label' => t('Workflow Field state comparison'),
@@ -60,6 +67,10 @@ function _workflow_rules_rules_field_condition_info() {
  */
 function _workflow_rules_rules_field_action_info() {
   $actions = array();
+
+  // No custom support for Workflow Field: use Entity functionality.
+  return $actions;
+
   $actions['workflow_rules_field_set_state'] = array(
     'group' => t('Workflow'),
     'label' => t('Set a Workflow Field state'),

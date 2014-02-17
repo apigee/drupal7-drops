@@ -21,7 +21,8 @@
 function workflow_rules_workflow($op, $old_sid, $new_sid, $entity, $force = FALSE, $entity_type = '', $field_name = '') {
   switch ($op) {
     case 'transition post':
-      // Rules are updated only after the transition.
+      // Rules are updated only after the transition of a Workflow Node status.
+      // When using Workflow Field, this hook is not called. Use default Rules data instead.
       if ($old_sid == $new_sid) {
         rules_invoke_event('workflow_comment_added', $entity, $entity_type, $old_sid, $new_sid);
       }

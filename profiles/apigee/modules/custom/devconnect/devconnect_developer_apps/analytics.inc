@@ -144,7 +144,7 @@ function devconnect_developer_apps_analytics_form_submit($form, &$form_state) {
   $args = array('from' => $from, 'to' => $to, 'metric' => $metric);
 
   $url = join('/', arg());
-  drupal_goto($url, array('query' => $args, 'fragment' => 'performance'));
+  $form_state['redirect'] = url($url, array('query' => $args, 'fragment' => 'performance'));
 }
 
 function devconnect_developer_apps_analytics_performance($user, $app_name) {

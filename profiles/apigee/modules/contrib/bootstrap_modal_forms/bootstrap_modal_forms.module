@@ -9,6 +9,14 @@
  * Implements hook_init().
  */
 function bootstrap_modal_forms_init() {
+  if(_is_bootstrap_modal_request()) {
+    if (module_exists('navbar')){
+        navbar_suppress();
+    }
+    if (module_exists('admin_menu')){
+        admin_menu_suppress();
+    }
+  }
   if (user_is_anonymous()) {
     //Add the user login and registration form to the bootstrap modal window.
     if ((bool) variable_get('bootstrap_modal_forms_login', 0) && current_path()!= 'user/login') {
@@ -41,48 +49,7 @@ function bootstrap_modal_forms_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'bootstrap_modal_forms.admin.inc',
   );
-  $items['bootstrap_modal_forms/load'] = array(
-    'page callback' => 'bootstrap_modal_forms_return_form',
-    'access callback' => TRUE,
-    'theme callback' => 'bootstrap_modal_forms_theme_callback',
-  );
-  $items['bootstrap_modal_forms/close_reload_parent'] = array(
-    'page callback' => 'bootstrap_modal_forms_close_reload_parent',
-    'access callback' => TRUE,
-    'theme callback' => 'bootstrap_modal_forms_theme_callback',
-  );
   return $items;
-}
-/**
- * Theme callback to determine what theme should be used for the current page
- */
-function bootstrap_modal_forms_theme_callback(){
-  $path = implode('/', func_get_args());
-  if (user_access('view the administration theme') && path_is_admin($path)) {
-    return variable_get('admin_theme');
-  }
-}
-/**
- * Page callback function to return the form which is requested by the bootstrap_modal_forms/load url
- */
-function bootstrap_modal_forms_return_form() {
-  if (module_exists('navbar')){
-    navbar_suppress();
-  }
-  if (module_exists('admin_menu')){
-    admin_menu_suppress();
-  }
-  $path = &drupal_static(__FUNCTION__, '');
-  $path = implode('/', func_get_args());
-  $form = menu_execute_active_handler($path, FALSE);
-  return $form;
-}
-/**
- * Page callback function for bootstrap_modal_forms/close_reload_parent
- */
-function bootstrap_modal_forms_close_reload_parent() {
-  drupal_add_js(drupal_get_path('module', 'bootstrap_modal_forms') . '/js/bootstrap_modal_forms.close_modal_reload_parent.js');
-  return 'Please close this modal window and reload the parent page';
 }
 
 /**
@@ -157,6 +124,10 @@ function bootstrap_modal_forms_preprocess_html(&$vars){
   if (defined('MAINTENANCE_MODE')) {
     return;
   }
+
+  if(_is_bootstrap_modal_request()) {
+    $vars['theme_hook_suggestions'][] = 'html__bootstrap_modal_forms';
+  }
   $info = bootstrap_modal_forms_add_form();
   if (!empty($info)) {
     if(!isset($vars['page']['page_bottom'])) {
@@ -171,6 +142,17 @@ function bootstrap_modal_forms_preprocess_html(&$vars){
   }
 }
 
+/**
+ * Check if the page needs to be displayed in the bootstrap modal.
+ * Returns
+ */
+function _is_bootstrap_modal_request(){
+    $bool = &drupal_static(__FUNCTION__, NULL);
+    if(!isset($bool)) {
+      $bool = (isset($_REQUEST['bootstrap_modal_forms']) && $_REQUEST['bootstrap_modal_forms'] == '1');
+    }
+    return $bool;
+}
 /**
  * Function used to register a modal with the bootstrap
  * identifier - this is the ID of the modal form. Also used to load any alternative bootstrap_modal_forms__<identifier> tpls
@@ -188,13 +170,14 @@ function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form =
   if ($identifier != NULL) {
     $modal_style = '';
     if ($form == NULL && $url != NULL) {
+      $close_and_reload_page = drupal_get_path('module', 'bootstrap_modal_forms') . '/modals/closeAndReloadPage.html';
       //If form is NULL we will just load the url in an iframe
       $form = array(
         '#type' => 'html_tag' ,
         '#tag' => 'iframe',
         '#value' => '',
         '#attributes' => array(
-          'data-src' => url('bootstrap_modal_forms/load/'. $url, array('query' => array('destination' => 'bootstrap_modal_forms/close_reload_parent'))),
+          'data-src' => url(urldecode($url), array('query' => array('destination' => $close_and_reload_page, 'bootstrap_modal_forms' => '1'))),
           'width' => '100%',
         )
       );
@@ -226,4 +209,13 @@ function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form =
     }
   }
   return $info;
+}
+
+/**
+ * Implements hook_preprocess_page
+ */
+function bootstrap_modal_forms_preprocess_page(&$vars){
+    if(_is_bootstrap_modal_request()) {
+      $vars['theme_hook_suggestions'][] = 'page__bootstrap_modal_forms';
+    }
 }

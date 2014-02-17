@@ -1,5 +1,5 @@
 name = Workflow Field
-description = Defines a Workflow field, widget and formatter. (Only use together with Worflow Node for conversion to Workflow Field.)
+description = Defines a Workflow field, widget and formatter. (Do not enable Workflow Field and Workflow Node together.)
 package = Workflow
 core = 7.x
 
@@ -8,9 +8,9 @@ dependencies[] = field
 dependencies[] = options
 dependencies[] = workflow
 
-; Information added by Drupal.org packaging script on 2014-02-08
-version = "7.x-2.0-beta11"
+; Information added by Drupal.org packaging script on 2014-02-14
+version = "7.x-2.0-beta12"
 core = "7.x"
 project = "workflow"
-datestamp = "1391863112"
+datestamp = "1392361114"
 

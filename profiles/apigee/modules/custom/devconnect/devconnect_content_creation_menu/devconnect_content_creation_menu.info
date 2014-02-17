@@ -1,6 +1,6 @@
 name = Devconnect Content Creation Menu
 description = Menu to simplify content creation
 core = 7.x
-package = Devconnect
+package = DevConnect
 version = 7.x-4.25
 

@@ -1,7 +1,7 @@
 name = Devconnect Blog
 description = Blogging function for the devconnect portal
 core = 7.x
-package = Devconnect
+package = DevConnect
 version = 7.x-4.25
 
 dependencies[] = views

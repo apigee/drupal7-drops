@@ -143,7 +143,6 @@ function workflow_access_insert_workflow_access_by_sid(&$data) {
 /**
  * Implements hook_form_alter().
  *
- * Tell the Features module that we intend to provide one exportable component.
  * @todo: align the location of this setting better with the other settings.
  * @todo: this setting is on a page that is not accessible for Workflow Field.
  */

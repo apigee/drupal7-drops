@@ -1,6 +1,6 @@
 name = Devconnect Testing
 description = Provides Unit testing for Devconnect Modules
-package = Shiva
+package = DevConnect
 core = 7.x
 dependencies[] = devconnect
 dependencies[] = devconnect_user

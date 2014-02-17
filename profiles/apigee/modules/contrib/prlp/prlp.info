@@ -1,11 +1,12 @@
-name=Password Reset Landing Page (PRLP)
-description=Enhances the password reset landing page by letting user change their password there (and potentially username and email address).
-core=7.x
+name = Password Reset Landing Page (PRLP)
+description = Enhances the password reset landing page by letting user change their password there (and potentially username and email address).
+core = 7.x
 package = Administration
 configure = admin/config/people/accounts/prlp
-; Information added by drupal.org packaging script on 2013-09-16
-version = "7.x-1.0-beta2"
+
+; Information added by Drupal.org packaging script on 2014-02-17
+version = "7.x-1.0"
 core = "7.x"
 project = "prlp"
-datestamp = "1379346720"
+datestamp = "1392652705"
 

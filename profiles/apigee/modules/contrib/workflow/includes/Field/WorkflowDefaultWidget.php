@@ -264,7 +264,9 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
           '#validate' => array('_workflow_transition_form_validate_buttons'), // ($form, &$form_state)
           // Add the submit function only if one provided. @todo: On node edit form, we have not the proper function. 
           '#submit' => (empty($instance['widget']['settings']['submit_function'])) ? array() : array($instance['widget']['settings']['submit_function']),
+          // Add target State ID and Field name, to set correct value in validate_buttons callback.
           '#workflow_sid' => $sid,
+          '#workflow_field_name' => $field_name,
           // Put current state first.
           '#weight' => ($sid != $current_sid),
         );

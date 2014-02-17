@@ -406,3 +406,9 @@ Issue #2187151 by johnv: Added an 'Actions buttons' widget to Workflow form for 
 Issue #2187151 by johnv: Added an 'Actions buttons' widget for permitted states on Workflow_node and Entity Form.
 Issue #2187677 by johnv, boris sondagh: Removed 'Sys ID' column in Admin UI states page.
 Issue #2185859 by johnv: Fixed 'Class not found' error in hook_update_7004.
+Issue #2192815 by johnv: Renamed, reordered private functions in workflow.features.inc
+Issue #2192815 by johnv: Fixed broken features export since Workflow is an entity.
+Issue #2189761 by johnv, zengenuity, naptown: Add Rules support for Workflow Field using 'EntityDefaultRulesController', removing custom code.
+Issue #2019345 by johnv: Fixed workflow history is saved twice when adding transition via comment.
+Issue #2187151 by johnv: Added an 'Actions buttons' widget to Workflow form on Comments and Entity form for Workflow Field .
+Issue #2019345 by johnv: Added workflow_enable() and cleared texts.

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Password Reset Landing Page module.
+ */
+
+/**
  * Implements hook_menu().
  */
 function prlp_menu() {
@@ -18,42 +23,45 @@ function prlp_menu() {
 }
 
 /**
- * Alters the user password reset landing page so that user can enter new
- * password directly on the landing page, and the submit handler can save it.
+ * Alters the user password reset landing page.
+ *
+ * Lets the user enter a new password directly on the landing page
+ * and adds a submit handler to save it.
  */
 function prlp_form_user_pass_reset_alter(&$form, &$form_state) {
   @list($uid, $timestamp, $hashed_pass, $action) = $form_state['build_info']['args'];
-  if($uid) {
+  if ($uid) {
     $form['#user'] = user_load($uid);
-    // Do this only if the URI didn't have an 'action' component
-    if(empty($action)) {
+    // Do this only if the URI didn't have an 'action' component.
+    if (empty($action)) {
       // Inject the username/password change form into the current form.
       user_account_form($form, $form_state);
       // ???
       $form['#user_category'] = 'account';
-      // Hide certain fields in $form
-      foreach($form as $key => &$element) {
-        if(in_array($key, prlp_get_hidden_fields())) {
+      // Hide certain fields in $form.
+      foreach ($form as $key => &$element) {
+        if (in_array($key, prlp_get_hidden_fields())) {
           $element['#access'] = FALSE;
         }
       }
       // Hide certain fields in $form['account']
-      foreach($form['account'] as $key => &$element) {
-        if(in_array($key, prlp_get_hidden_account_fields())) {
+      foreach ($form['account'] as $key => &$element) {
+        if (in_array($key, prlp_get_hidden_account_fields())) {
           $element['#access'] = FALSE;
         }
       }
       // Unset $form['#action'] so that the form doesn't get submitted to the
       // user profile edit page. Instead it gets submitted to self.
       unset($form['#action']);
-      // Remove the part of the message that talks about changing password later, since they are changing it right here.
-      if(!empty($form['message']['#markup'])) {
+      // Remove the part of the message that talks about changing password
+      // later, since they are changing it right here.
+      if (!empty($form['message']['#markup'])) {
         $form['message']['#markup'] = str_replace('<p>Click on this button to log in to the site and change your password.</p>', '', $form['message']['#markup']);
       }
-      if(is_array($form['account']['pass']) && variable_get('prlp_password_required', 1)) {
+      if (is_array($form['account']['pass']) && variable_get('prlp_password_required', 1)) {
         $form['account']['pass']['#required'] = TRUE;
       }
-      // before sending the user to user profile edit form.
+      // Before sending the user to user profile edit form.
       $form['#submit'][] = 'prlp_user_pass_reset_submit';
     }
   }
@@ -63,11 +71,12 @@ function prlp_form_user_pass_reset_alter(&$form, &$form_state) {
  * Default value of the 'prlp_destination' config varible.
  */
 define('PRLP_DESTINATION_DEFAULT', 'user/%uid/edit');
+
 /**
- * This function is almost a direct copy of 'user_pass_reset' function, with a
- * couple of significant changes. It saves the password or username changes.
- * 
- * Also, Unlike that function, this one is a form submit handler.
+ * A copy of 'user_pass_reset' function, with a couple of significant changes.
+ *
+ * It saves the password or username changes. Also, Unlike that function,
+ * this one is a form submit handler.
  */
 function prlp_user_pass_reset_submit($form, &$form_state) {
   global $user;
@@ -85,8 +94,12 @@ function prlp_user_pass_reset_submit($form, &$form_state) {
       $reset_link_account = user_load($uid);
       if (!empty($reset_link_account)) {
         drupal_set_message(t('Another user (%other_user) is already logged into the site on this computer, but you tried to use a one-time link for user %resetting_user. Please <a href="!logout">logout</a> and try using the link again.',
-          array('%other_user' => $user->name, '%resetting_user' => $reset_link_account->name, '!logout' => url('user/logout'))));
-      } else {
+          array(
+            '%other_user' => $user->name,
+            '%resetting_user' => $reset_link_account->name,
+            '!logout' => url('user/logout'))));
+      }
+      else {
         // Invalid one-time link specifies an unknown user.
         drupal_set_message(t('The one-time login link you clicked is invalid.'));
       }
@@ -99,7 +112,7 @@ function prlp_user_pass_reset_submit($form, &$form_state) {
     $timeout = variable_get('user_password_reset_timeout', 86400);
     $current = REQUEST_TIME;
     // Run $form_state['values']['roles'] through array filter to remove
-    // roles that a user doesn't actually have
+    // roles that a user doesn't actually have.
     $form_state['values']['roles'] = array_filter($form_state['values']['roles']);
     // Some redundant checks for extra security ?
     $users = user_load_multiple(array($uid), array('status' => '1'));
@@ -114,18 +127,19 @@ function prlp_user_pass_reset_submit($form, &$form_state) {
          * BEGIN: CHANGED from user_pass_reset.
          */
         $form_state['user'] = $account;
-        // If I don't do this, I get a notice from line 324 in DRUPAL_ROOT/modules/user/user.pages.inc
-        if(!isset($_SESSION)) {
+        // Prevent a notice from line 324 in /modules/user/user.pages.inc.
+        if (!isset($_SESSION)) {
           $_SESSION = array();
         }
         user_profile_form_submit($form, $form_state);
         /*
          * END: CHANGED from user_pass_reset.
          */
-        // First stage is a confirmation form, then login
+        // First stage is a confirmation form, then login.
         watchdog('user', 'User %name used one-time login link at time %timestamp.', array('%name' => $account->name, '%timestamp' => $timestamp));
         // Set the new user.
-        $user = $account;
+        // Reload the user instead of using $account because the plain text password is in $account->pass at this point.
+        $user = user_load($account->uid);
         // user_login_finalize() also updates the login timestamp of the
         // user, which invalidates further use of the one-time login link.
         user_login_finalize();
@@ -134,13 +148,14 @@ function prlp_user_pass_reset_submit($form, &$form_state) {
         // Let the user's password be changed without the current password check.
         $token = drupal_hash_base64(drupal_random_bytes(55));
         $_SESSION['pass_reset_' . $user->uid] = $token;
-        $dest = variable_get('prlp_destination', PRLP_DESTINATION_DEFAULT);
-        if(empty($dest) || $dest == PRLP_DESTINATION_DEFAULT) {
+        // If necessary, replace '%uid' token with uid of the current user.
+        $destination = variable_get('prlp_destination', PRLP_DESTINATION_DEFAULT);
+        if (empty($destination) || $destination == PRLP_DESTINATION_DEFAULT) {
           $form_state['redirect'] = array('user/' . $user->uid . '/edit', array('query' => array('pass-reset-token' => $token)));
-        } else {
-          // replace '%uid' token with uid of the current user
-          $dest = str_replace('%uid', $user->uid, $dest);
-          $form_state['redirect'] = $dest;
+        }
+        else {
+          $destination = str_replace('%uid', $user->uid, $destination);
+          $form_state['redirect'] = $destination;
         }
       }
       else {
@@ -163,8 +178,8 @@ define('PRLP_HIDDEN_FIELDS_DEFAULT', "signature_settings\npicture");
  */
 function prlp_get_hidden_fields() {
   $fields = &drupal_static(__FUNCTION__);
-  if(!isset($fields)) {
-    // break the variable value by newline separator
+  if (!isset($fields)) {
+    // Break the variable value by newline separator.
     $fields = explode("\n", variable_get('prlp_hidden_fields', PRLP_HIDDEN_FIELDS_DEFAULT));
     foreach ($fields as &$field) {
       $field = trim($field);
@@ -177,12 +192,12 @@ function prlp_get_hidden_fields() {
 define('PRLP_HIDDEN_ACCOUNT_FIELDS_DEFAULT', "mail");
 
 /**
- * Returns an array of fields under $form['account'] that should be hidden in PRLP form.
+ * Returns an array of fields on $form['account'] that should be hidden by PRLP.
  */
 function prlp_get_hidden_account_fields() {
   $fields = &drupal_static(__FUNCTION__);
-  if(!isset($fields)) {
-    // break the variable value by newline separator
+  if (!isset($fields)) {
+    // Break the variable value by newline separator.
     $fields = explode("\n", variable_get('prlp_hidden_account_fields', PRLP_HIDDEN_ACCOUNT_FIELDS_DEFAULT));
   }
   return $fields;

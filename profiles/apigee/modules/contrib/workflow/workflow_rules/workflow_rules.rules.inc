@@ -46,9 +46,9 @@ function workflow_rules_rules_condition_info() {
   if (module_exists('workflownode')) {
     $conditions += _workflow_rules_rules_node_condition_info();
   }
-  if (module_exists('workflowfield')) {
-    $conditions += _workflow_rules_rules_field_condition_info();
-  }
+//  if (module_exists('workflowfield')) {
+//    $conditions += _workflow_rules_rules_field_condition_info();
+//  }
   return $conditions;
 }
 
@@ -60,9 +60,9 @@ function workflow_rules_rules_action_info() {
   if (module_exists('workflownode')) {
     $actions += _workflow_rules_rules_node_action_info();
   }
-  if (module_exists('workflowfield')) {
-    $actions += _workflow_rules_rules_field_action_info();
-  }
+//  if (module_exists('workflowfield')) {
+//    $actions += _workflow_rules_rules_field_action_info();
+//  }
   return $actions;
 }
 
@@ -182,7 +182,7 @@ function _workflow_rules_field_set_state($entity, $field, $sids, $comment = NULL
   $field_name = _workflow_rules_token_replace($token);
   $instance = array();
   if ($field_name && isset($entity->{$field_name})) {
-    $entity_type = 'node'; // @todo: add Entity support in workflow_rules.
+    $entity_type = 'node'; // Other entity types are supported using 'EntityDefaultRulesController'.
     $entity_id = entity_id($entity_type, $entity);
 
     $old_sid = workflow_node_current_state($entity, $entity_type, $field_name); // Todo : entity support.

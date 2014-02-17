@@ -59,6 +59,7 @@ function workflow_entity_info() {
     'label callback' => 'entity_class_label',
     'module' => 'workflow',
     'views controller class' => 'EntityDefaultViewsController',
+    'rules controller class' => 'EntityDefaultRulesController',
   );
 
   $entities['WorkflowScheduledTransition'] = array(
@@ -72,6 +73,7 @@ function workflow_entity_info() {
     'label callback' => 'entity_class_label',
     'module' => 'workflow',
     'views controller class' => 'EntityDefaultViewsController',
+    'rules controller class' => 'EntityDefaultRulesController',
   );
 
   return $entities;

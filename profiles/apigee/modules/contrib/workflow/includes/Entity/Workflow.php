@@ -89,6 +89,8 @@ class Workflow extends Entity {
       $return2 = $state->save();
     }
 
+    workflow_reset_cache($this->wid);
+
     return $return;
   }
 

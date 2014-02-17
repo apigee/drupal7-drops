@@ -716,7 +716,7 @@ function devconnect_docgen_add_content_submit($form, &$form_state) {
     _devconnect_docgen_render_operation_template($payload['model_name']);
     drupal_set_message(t('The API Model %title has been created', array('%title' => $form_state['values']['model_name'])), 'status');
     menu_rebuild();
-    drupal_goto('admin/content/docgen');
+    $form_state['redirect'] = 'admin/content/docgen';
   } catch (Exception $e) {
     drupal_set_message(t('There was an error when trying to create the model.'), 'error');
   }
@@ -840,7 +840,7 @@ function devconnect_docgen_import_content_submit($form, &$form_state) {
         array(
           '%model' => $form_state['values']['model'])), 'status'
     );
-    drupal_goto('admin/content/docgen/list/' . $form_state['values']['model'] .'/detail');
+    $form_state['redirect'] = 'admin/content/docgen/list/' . $form_state['values']['model'] .'/detail';
   } catch (Exception $e) {
     drupal_set_message('There was an error importing the WADL XML.', 'error');
   }

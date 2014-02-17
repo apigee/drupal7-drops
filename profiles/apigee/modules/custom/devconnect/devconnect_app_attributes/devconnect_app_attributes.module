@@ -781,7 +781,7 @@ function devconnect_app_attributes_import_submit($form, &$form_state) {
   else {
     drupal_set_message(t('Your app attributes have been successfully imported.'));
   }
-  drupal_goto(APP_ATTRIBUTES_ADMIN_PATH);
+  $form_state['redirect'] = APP_ATTRIBUTES_ADMIN_PATH;
 }
 
 function devconnect_app_attributes_export() {

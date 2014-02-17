@@ -5,9 +5,9 @@
  * Suppress the environment indicator on the bootstrap_modal_forms pages
  */
 function bootstrap_modal_forms_enable(){
-    $environment_indicator_suppress_pages = variable_get('environment_indicator_suppress_pages', '');
-    if(strpos($environment_indicator_suppress_pages, '/bootstrap_modal_forms/load/*') === FALSE){
-      $environment_indicator_suppress_pages .= (empty($environment_indicator_suppress_pages) ? "" : "\n" )."bootstrap_modal_forms/load/*";
-    }
-    variable_set('environment_indicator_suppress_pages', $environment_indicator_suppress_pages);
+    db_update('system')
+      ->fields(array('weight' => '9999'))
+      ->condition('name','bootstrap_modal_forms')
+      ->condition('type', 'module')
+      ->execute();
 }
