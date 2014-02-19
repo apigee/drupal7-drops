@@ -1000,7 +1000,7 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
  * @param array $form
  */
 function devconnect_developer_apps_pattern_validate(array $element, array &$form_state, array $form) {
-  if (!$element['#required'] && empty(trim($element['#value']))) {
+  if (!$element['#required'] && (strlen(trim($element['#value'])) == 0)) {
     return;
   }
   $pattern = '!' . str_replace('!', '\\!', $element['#attributes']['pattern']) . '!';
