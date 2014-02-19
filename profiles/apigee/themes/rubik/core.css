@@ -1021,3 +1021,27 @@ div.ctools-modal-content .color-form .form-item input {
 .field-formatter-settings-edit-form.ds-ft-processed .ft-group.fi .form-type-textfield ~ .form-type-textfield {
   clear: none;
 }
+
+/**
+ * Search API ====================================================
+ */
+
+#facetapi-facet-display-form .fieldset-content > .form-item {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  float: left;
+  width: 50% !important;
+}
+
+#facetapi-facet-display-form .fieldset-content .facetapi-sort-table {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  box-sizing: border-box;
+  margin-top: 0 !important;
+  position: static !important;
+  width: 50% !important;
+  z-index: 1 !important;
+}
