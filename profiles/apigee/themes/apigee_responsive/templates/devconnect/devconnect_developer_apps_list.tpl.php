@@ -106,7 +106,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-          <h4 class="modal-title" id="<?php print $app['edit_id']; ?>">Edit <?php print $app['app_name']; ?></h4>
+          <h4 class="modal-title" id="<?php print $app['edit_url_id']; ?>">Edit <?php print $app['app_name']; ?></h4>
         </div>
         <div class="modal-body"></div>
         <div class="modal-footer">

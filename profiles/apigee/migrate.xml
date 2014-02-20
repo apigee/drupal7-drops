@@ -436,6 +436,33 @@
 		</phingcall>
 		<exec command="drush ${site-alias} updb -y"/>
 		<exec command="drush ${site-alias} rr" logoutput="true"/>
+		<trycatch>
+			<try>
+				<phingcall target="mysql-query-string">
+					<property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_style.inc' where name = 'references_plugin_style';" />
+				</phingcall>
+				<phingcall target="mysql-query-string">
+					<property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_display.inc' where name = 'references_plugin_display';" />
+				</phingcall>
+				<phingcall target="mysql-query-string">
+					<property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_handler_argument.inc' where name = 'references_handler_argument';" />
+				</phingcall>
+				<phingcall target="mysql-query-string">
+					<property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_plugin_row_fields.inc' where name = 'references_plugin_row_fields';" />
+				</phingcall>
+				<phingcall target="mysql-query-string">
+					<property name="query" value="update registry set filename='sites/all/modules/contrib/references/views/references_handler_relationship.inc' where name = 'references_handler_relationship';" />
+				</phingcall>
+				<phingcall target="display-step">
+					<param name="message" value="UPDATED REFERENCE REGISTRY" />
+				</phingcall>
+			</try>
+			<catch>
+				<phingcall target="display-step">
+					<param name="message" value="COULDN'T UPDATE REFERENCE REGISTRY" />
+				</phingcall>
+			</catch>
+		</trycatch>
 		<phingcall target="display-step">
 			<param name="message" value="ENABLING JIRA ISSUE COLLECTOR" />
 		</phingcall>

@@ -903,6 +903,22 @@ a.author-pane-link:visited {
     height: 100%;
 }
 
+.label-GET {
+    background-color: #428BCA;
+}
+
+.label-POST {
+    background-color: #5CB85C;
+}
+
+.label-PUT {
+    background-color: #F0AD4E;
+}
+
+.label-DELETE {
+    background-color: #D9534F;
+}
+
 
 /* Responsiveness */
 /**
