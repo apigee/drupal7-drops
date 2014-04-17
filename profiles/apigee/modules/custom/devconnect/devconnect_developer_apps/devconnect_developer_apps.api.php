@@ -95,33 +95,50 @@ function hook_devconnect_developer_app_details_alter(array &$tabs, array &$panes
 /**
  * Alter, augment or take other action right before a dev app is saved.
  *
+ * If you do something to the developer_app entity in an implementation of this
+ * hook such as deleting it, you should return FALSE here.
+ *
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form
+ * @return bool
+ *   If any value other than FALSE is returned (including NULL or no value at
+ *   all), further processing in saving the developer app is aborted.
  */
 function hook_devconnect_developer_app_presave(array &$form_state) {
   $form_state['values']['attribute_drupal_uid'] = $form_state['values']['uid'];
+  return TRUE;
 }
 
 /**
  * Take some action right after a developer app is saved.
  *
+ * If you do something to the developer_app entity in an implementation of this
+ * hook such as deleting it, you should return FALSE here.
+ *
  * @param $results (associative array returned from KMS)
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form.
- *   $form_state['storage']['entity'] holds the developer_app entity
- *   array.
+ *   $form_state['storage']['entity'] holds the developer_app entity.
+ * @return bool
+ *   If any value other than FALSE is returned (including NULL or no value at
+ *   all), further processing in saving the developer app is aborted.
  */
 function hook_devconnect_developer_app_save(array $results, array &$form_state) {
   $form_state['redirect'] = '<front>';
+  return TRUE;
 }
 
 /**
  * Take some action right before a developer app is deleted.
  *
  * @param $form_state
+ * @return bool
+ *   If any value other than FALSE is returned (including NULL or no value at
+ *   all), further processing in deleting the developer app is aborted.
  */
 function hook_devconnect_developer_app_predelete(array &$form_state) {
-
+  drupal_set_message('Deleting app!');
+  return TRUE;
 }
 
 /**
@@ -130,9 +147,13 @@ function hook_devconnect_developer_app_predelete(array &$form_state) {
  * @param $results (associative array returned from KMS)
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form
+ * @return bool
+ *   If any value other than FALSE is returned (including NULL or no value at
+ *   all), further processing in deleting the developer app is aborted.
  */
 function hook_devconnect_developer_app_delete(array $results, array &$form_state) {
-
+  drupal_set_message('App deleted!');
+  return TRUE;
 }
 
 /**
@@ -153,5 +174,17 @@ function hook_devconnect_developer_apps_prerender($op, $arg1 = NULL, $arg2 = NUL
     if (!user_access('access foobar', $arg1)) {
       drupal_goto('<front>');
     }
+  }
+}
+
+/**
+ * Alter the list of available API Products.
+ *
+ * @param array $api_products
+ * @param stdClass|null $account
+ */
+function hook_apiproduct_list_alter(array &$api_products, $account = NULL) {
+  if ($account->uid == 1) {
+    unset($api_products['worlds_greatest_api']);
   }
 }

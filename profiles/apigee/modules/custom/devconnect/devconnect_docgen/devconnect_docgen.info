@@ -1,8 +1,8 @@
-name = DevConnect Document Generation
+name = SmartDocs (beta)
 description = "Provides integration to Apigee Modeling API"
 package = "DevConnect"
 core = 7.x
-version = "7.x-4.23"
+version = "7.x-14.03.24-beta"
 
 dependencies[] = devconnect
 dependencies[] = entity
@@ -14,7 +14,7 @@ dependencies[] = pathauto
 files[] = includes/devconnect_docgen.batch_import.inc
 files[] = includes/templates/views/default_view.template.inc
 files[] = controllers/ModelController.php
-files[] = controllers/OperationController.php
+files[] = controllers/MethodController.php
 files[] = controllers/ResourceController.php
 files[] = controllers/RevisionController.php
 files[] = controllers/TemplateController.php

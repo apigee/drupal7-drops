@@ -63,7 +63,7 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
     $settings += $field_info['workflow']['settings'];
     $settings['widget'] += $field_info['workflow']['settings']['widget'];
 
-    $wid = $this->field['settings']['wid'];
+    $wid = $settings['wid'];
 
     // Create list of all Workflow types. Include an initial empty value.
     // Validate each workflow, and generate a message if not complete.

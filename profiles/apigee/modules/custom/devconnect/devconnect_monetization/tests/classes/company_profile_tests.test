@@ -1,0 +1,192 @@
+<?php
+use Apigee\ManagementAPI\Developer;
+
+class CompanySettingsTestCases extends BaseMintTest {
+
+  private $tmp_developer;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Company Settings Tests',
+      'description' => 'Ensure that a company settings work correctly.',
+      'group' => 'DevConnect Mint',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp(array(
+      'access mint monetization',
+      'edit mint company profile',
+      'edit mint bank details',
+    ));
+  }
+
+  public function testSaveCompanyInfo() {
+    $test_url = 'users/me/monetization/company/edit';
+    $group = t('Company Profile');
+
+    $edit = array(
+      'legal_company_name' => 'TestCompanySave ' . $this->randomName(16),
+      'street_address_1' => 'Test ' . $this->randomName(16),
+      'country' => 'US',
+      'city' => 'TestCity' . $this->randomName(10),
+      'state_province' => 'CA',
+      'city' => 'SJCA',
+      'zip_code' => 12345,
+    );
+
+    $this->drupalPost($test_url, $edit, t('Save Changes'));
+    $expected_message = t('Your Company Profile Info has been saved.');
+    $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
+    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has new value'), $group);
+  }
+
+  public function testEditCompanyInfo() {
+    $test_url = 'users/me/monetization/company/edit';
+    $group = t('Company Profile');
+
+    $edit = array(
+      'legal_company_name' => 'TestCompanySave ' . $this->randomName(16),
+      'street_address_1' => 'Test ' . $this->randomName(16),
+      'country' => 'US',
+      'city' => 'TestCity' . $this->randomName(10),
+      'state_province' => 'CA',
+      'city' => 'SJCA',
+      'zip_code' => 12345,
+    );
+
+    $this->drupalPost($test_url, $edit, t('Save Changes'));
+    $expected_message = t('Your Company Profile Info has been saved.');
+    $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
+    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has new value'), $group);
+    $edit['legal_company_name'] = 'TestCompanyEdit ' . $this->randomName(16);
+    $this->drupalPost($test_url, $edit, t('Save Changes'));
+    $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
+    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has been changed'), $group);
+  }
+
+  public function testSaveBankDetail() {
+    $test_url = 'users/me/monetization/company/bank-details';
+    $group = 'Bank Detail';
+
+    $this->drupalGet($test_url);
+    $this->parse();
+    $this->assertField('name', t('Verify Bank Detail page has field name'), $group);
+
+    list($country) = $this->elements->xpath('//select[@id="edit-country"]');
+    $country = end($this->getAllOptions($country))->attributes();
+
+    list($currency) = $this->elements->xpath('//select[@id="edit-account-currency"]');
+    $currency = end($this->getAllOptions($currency))->attributes();
+
+    $edit = array();
+    $edit['name'] = 'Bank Test ' . $this->randomName(16);
+    $edit['account_name'] = 'Account ' . $this->randomName(10);
+    $edit['account_number'] = 12345678;
+    $edit['account_currency'] = (string) $currency['value'];
+    $edit['country'] = (string) $country['value'];
+
+    $this->drupalPost($test_url, $edit, t('Save Changes'));
+    $expected_message = t('Your Bank Details have been saved.');
+    $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
+    $this->assertFieldByName('name', $edit['name'], t('Verify bank´s name has new value.'), $group);
+  }
+
+  public function testEditBankDetail() {
+    $test_url = 'users/me/monetization/company/bank-details';
+    $group = 'Bank Detail';
+
+    $this->drupalGet($test_url);
+    $this->assertField('name', t('Verify Bank Detail page has field name'), $group);
+
+    list($country) = $this->elements->xpath('//select[@id="edit-country"]');
+    $country = end($this->getAllOptions($country))->attributes();
+
+    list($currency) = $this->elements->xpath('//select[@id="edit-account-currency"]');
+    $currency = end($this->getAllOptions($currency))->attributes();
+
+    $edit = array();
+    $edit['name'] = 'Bank Test ' . $this->randomName(16);
+    $edit['account_name'] = 'Account ' . $this->randomName(10);
+    $edit['account_number'] = 12345678;
+    $edit['account_currency'] = (string) $currency['value'];
+    $edit['country'] = (string) $country['value'];
+    $this->drupalPost($test_url, $edit, t('Save Changes'));
+    $expected_message = t('Your Bank Details have been saved.');
+    $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
+    $this->assertFieldByName('name', $edit['name'], t('Verify bank´s name has been changed.'));
+
+    $edit['name'] = 'Bank Test ' . $this->randomName(16);
+    $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
+    $this->assertFieldByName('name', $edit['name'], t('Verify bank´s name has been edited.'));
+  }
+
+  public function testAddUserToCompany() {
+    $test_url = 'users/me/monetization/company/developers';
+    $group = 'Monetization - Manage User Roles';
+
+    $this->tmp_developer = $this->drupalCreateUser(array('edit mint company profile'));
+    $this->tmp_developer2 = $this->drupalCreateUser(array('edit mint company profile'));
+
+    $edit = array();
+    $edit['user_email_address'] = $this->privileged_user->mail;
+
+    $this->drupalPost($test_url, $edit, t('Add User'));
+    $this->assertText(t('You cannot add your own user to your company.'), t('Cannot add same developer to same company passed.'), $group);
+
+    $edit['user_email_address']  = 'non.exitent.email@test.com';
+    $this->drupalPost($test_url, $edit, t('Add User'));
+    $this->assertText(t('User with email @mail does not exist.', array('@mail' => $edit['user_email_address'])), t('Cannot add non existent developer to a company passed.'), $group);
+
+    $edit['user_email_address'] = $this->tmp_developer->mail;
+    $this->drupalPost($test_url, $edit, t('Add User'));
+    $this->assertText(t('Developer @developer added to your company.', array('@developer' => $edit['user_email_address'])), t('Developer added successfully passed.'), $group);
+
+    $edit_roles = array();
+    $this->drupalPost($test_url, $edit_roles, t('Save'));
+    $this->assertText(t('Operation completed successfully.'), t('Reset developer profiles passed.'), $group);
+
+    $checkboxes = $this->xpath('//form[@id="devconnect-monetization-roles-form"]//input[@type="checkbox"][not(@disabled)]');
+    foreach ($checkboxes as $checkbox) {
+      $edit_roles[(string) $checkbox['name']] = 1;
+    }
+    $this->drupalPost($test_url, $edit_roles, t('Save'));
+    $this->assertText(t('Operation completed successfully.'), t('Add developer roles to developer.'), $group);
+    $checkboxes = $this->xpath('//form[@id="devconnect-monetization-roles-form"]//input[@type="checkbox"][not(@disabled)]');
+    foreach ($checkboxes as $checkbox) {
+      $this->assertFieldChecked((string) $checkbox['id'], t('Verify developer role has actually been assinged.'), $group);
+    }
+    $this->drupalLogout();
+
+    $this->drupalLogin($this->tmp_developer2);
+    $this->drupalPost($test_url, $edit, t('Add User'));
+    $this->assertText(t('You can not add this developer since it is already assigned.'), t('Cannot add a developer when developer is already assinged to another company.'), $group);
+    $this->drupalLogout();
+
+    $this->drupalLogin($this->privileged_user);
+    $this->drupalGet($test_url);
+    $this->clickLink(t('Delete'));
+    $this->assertText(t('Developer @developer removed from your company.', array('@developer' => $this->tmp_developer->mail)), $group);
+    $this->drupalLogout();
+
+  }
+
+  function testTnCsAccept() {
+    $test_url = 'users/me/monetization/company/tncs';
+    $group = 'Monetization Terms and Conditions';
+    $this->drupalGet('users/me/monetization/company/tncs');
+    list($tcn_input) = $this->xpath('//input[@name="tnc_id"]');
+    if (is_a($tcn_input, 'SimpleXMLElement')) {
+
+      $edit = array(
+        'tnc_id' => (string) $tcn_input['value'],
+      );
+      $this->drupalPost($test_url, $edit, t('Accept Terms & Conditions'));
+      $this->assertText(t('You have accepted terms and conditions successfully.'), t('Terms and Conditions accepted success message.'), $group);
+      $this->assertNoFieldByXPath('//input[@name="tnc_id"]', $edit['tnc_id'], t('Terms and Coditions are displayed as date of acceptance.'), $group);
+    }
+    else {
+      $this->fail('Could not test Terms & Conditions since there is no TnCs defined in Mint.', $group);
+    }
+  }
+}

@@ -4,23 +4,28 @@ div#topUpPurchase.modal {
     left:50%;
     right:50%;
 }
+
+div#topUpBalanceContainer.hide
 div#topUpPurchase.hide {
     display:block !important;
 }
 
-div#topUp.modal {
-    bottom:auto;
-    left:50%;
-    right:50%;
-}
-div#topUp.hide {
-    display:block !important;
-}
-
 .numeric.currency.form-text {
-    width: 90px;
+    width: 140px;
 }
 
 .numeric.currency.form-text.non-editing {
     text-align: right;
+}
+
+.spacer {
+    margin-top: 40px; /* define margin as you see fit */
+}
+
+div.addressfield-container-inline.locality-block div {
+    width: 100%;
+}
+
+del {
+    text-decoration: line-through;
 }

@@ -1,0 +1,10 @@
+name = DevConnect Debug
+description = Allows debug logging of all Edge calls
+core = 7.x
+package = DevConnect
+php = 5.3
+version = 7.x-4.26
+hidden = TRUE
+
+dependencies[] = devconnect
+dependencies[] = devel

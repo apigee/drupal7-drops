@@ -1,12 +1,12 @@
 <?php
 namespace Apigee\Mint\Types;
 
-final class StatusType extends Type {
+final class StatusType extends Type
+{
+    const ACTIVE = 'ACTIVE';
+    const INACTIVE = 'INACTIVE';
 
-  const ACTIVE = 'ACTIVE';
-  const INACTIVE = 'INACTIVE';
-
-  private function __construct() {
-  }
-
+    private function __construct()
+    {
+    }
 }

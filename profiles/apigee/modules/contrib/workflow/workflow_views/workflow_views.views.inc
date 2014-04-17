@@ -32,11 +32,18 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_node_history']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
   $data['workflow_node_history']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
   $data['workflow_node_history']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
+  $data['workflow_node_history']['uid']['relationship'] =  array(
+    'handler' => 'views_handler_relationship',
+    'base' => 'users',
+    'base field' => 'uid',
+    'label' => t('User'),
+  );
   $data['workflow_node_history']['comment']['field']['handler'] = 'views_handler_field_xss';
   $data['workflow_node_history']['comment']['filter']['handler'] = 'views_handler_filter_string';
   $data['workflow_node_history']['stamp']['field']['handler'] = 'views_handler_field_date';
   $data['workflow_node_history']['stamp']['filter']['handler'] = 'views_handler_filter_date';
   $data['workflow_node_history']['stamp']['sort']['handler'] = 'views_handler_sort_date';
+  $data['workflow_node_history']['hid']['filter']['numeric'] = TRUE;
   // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.
   $data['workflow_node_history']['old_sid']['title'] = t('The old (previous) state in a transition.');
   $data['workflow_node_history']['old_sid']['help'] = t('The previous state, from the last state change.');
@@ -55,6 +62,14 @@ function workflow_views_views_data_alter(&$data) {
       'field' => 'nid',
       'left_table' => 'node',
       'left_field' => 'nid',
+    ),
+  );
+  // This Edit comment handler is copied from workflow_extensions.
+  $data['workflow_node_history']['edit_comment'] = array(
+    'title' => t('Edit comment'),
+    'help' => t('Provide a link to edit the workflow log comment.'),
+    'field' => array(
+      'handler' => 'workflow_views_handler_field_comment_link_edit',
     ),
   );
 
@@ -91,7 +106,7 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_node_current']['stamp']['help'] = t('The time of the last state change.');
 
   // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.
-  $data['workflow_scheduled_transition']['table']['group'] = t('Workflow scheduled transition');
+  $data['workflow_scheduled_transition']['table']['group'] = t('Workflow scheduled');
   $data['workflow_scheduled_transition']['table']['join'] = array(
     'node' => array(
       'field' => 'nid',
@@ -105,6 +120,12 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_scheduled_transition']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
   $data['workflow_scheduled_transition']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
   $data['workflow_scheduled_transition']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
+  $data['workflow_scheduled_transition']['uid']['relationship'] =  array(
+    'handler' => 'views_handler_relationship',
+    'base' => 'users',
+    'base field' => 'uid',
+    'label' => t('Scheduling user'),
+  );
   $data['workflow_scheduled_transition']['comment']['field']['handler'] = 'views_handler_field_xss';
   $data['workflow_scheduled_transition']['comment']['filter']['handler'] = 'views_handler_filter_string';
   $data['workflow_scheduled_transition']['scheduled']['field']['handler'] = 'views_handler_field_date';
@@ -115,7 +136,7 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_scheduled_transition']['old_sid']['help'] = t('The current state that the node is in.');
   $data['workflow_scheduled_transition']['sid']['title'] = t('Scheduled state');
   $data['workflow_scheduled_transition']['sid']['help'] = t('The state, the node is scheduled for.');
-  $data['workflow_scheduled_transition']['uid']['title'] = t('User');
+  $data['workflow_scheduled_transition']['uid']['title'] = t('Scheduling user');
   $data['workflow_scheduled_transition']['uid']['help'] = t('The user that scheduled the state change.');
   $data['workflow_scheduled_transition']['comment']['title'] = t('Scheduled comment');
   $data['workflow_scheduled_transition']['comment']['help'] = t('A comment describing why the node was scheduled for state transition.');

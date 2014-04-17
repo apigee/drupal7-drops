@@ -11,6 +11,12 @@ class UserRoleController implements DrupalEntityControllerInterface, EntityAPICo
    */
   public function __construct($entity_type) {
     $this->roleCache = array();
+    if (!class_exists('Apigee\ManagementAPI\UserRole')) {
+      module_load_include('module', 'libraries');
+      module_load_include('module', 'devconnect');
+      devconnect_init();
+    }
+
   }
 
   /**

@@ -4,10 +4,10 @@ namespace Apigee\Mint;
 
 use Apigee\Util\CacheFactory;
 
-use Apigee\Exceptions\ParameterException as ParameterException;
-{ // class is inclosed in curly bracets due to an overlapping issue in namespaces. Need to figure out how to avoid it
+use Apigee\Exceptions\ParameterException;
 
-  class RatePlan extends Base\BaseObject {
+class RatePlan extends Base\BaseObject
+{
 
     /**
      * Advance
@@ -227,177 +227,182 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $m_package_id Monetization Package id
      * @param \Apigee\Util\OrgConfig $config
      */
-    public function __construct($m_package_id, \Apigee\Util\OrgConfig $config) {
-      $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/monetization-packages/' . rawurlencode($m_package_id) . '/rate-plans';
-      $this->init($config, $base_url);
-      $this->mPackageId = $m_package_id;
+    public function __construct($m_package_id, \Apigee\Util\OrgConfig $config)
+    {
+        $base_url = '/mint/organizations/' . rawurlencode($config->orgName) . '/monetization-packages/' . rawurlencode($m_package_id) . '/rate-plans';
+        $this->init($config, $base_url);
+        $this->mPackageId = $m_package_id;
 
-      $this->wrapperTag = 'ratePlan';
-      $this->idField = 'id';
+        $this->wrapperTag = 'ratePlan';
+        $this->idField = 'id';
 
-      $this->initValues();
+        $this->initValues();
     }
 
     // Override of BaseObject methods
 
-    public function getList($page_num = NULL, $page_size = 20, $current = true, $all_available = true) {
-      if (!isset($this->developer)) {
-        return parent::getList();
-      }
+    public function getList($page_num = null, $page_size = 20, $current = true, $all_available = true)
+    {
+        if (!isset($this->developer)) {
+            return parent::getList();
+        }
 
-      $options = array(
-        'query' => array(
-          'current' =>  $current ? 'true' : 'false',
-          'allAvailable' => $all_available ? 'true' : 'false',
-        ),
-      );
+        $options = array(
+            'query' => array(
+                'current' => $current ? 'true' : 'false',
+                'allAvailable' => $all_available ? 'true' : 'false',
+            ),
+        );
+        $url = '/mint/organizations/' . rawurlencode($this->config->orgName) . '/monetization-packages/' . rawurlencode($this->mPackageId) . '/developers/' . rawurlencode($this->developer->getEmail()) . '/rate-plans';
+        $this->setBaseUrl($url);
+        $this->get(null, 'application/json; charset=utf-8', array(), $options);
+        $this->restoreBaseUrl();
+        $response = $this->responseObj;
 
-      $url = '/mint/organizations/' . rawurlencode($this->config->orgName) . '/monetization-packages/' . rawurlencode($this->mPackageId) . '/developers/' . rawurlencode($this->developer->getEmail()) . '/rate-plans';
-      $this->setBaseUrl($url);
-      $this->get(NULL, 'application/json; charset=utf-8', array(), $options);
-      $this->restoreBaseUrl();
-      $response = $this->responseObj;
+        $return_objects = array();
 
-      $return_objects = array();
-
-      foreach ($response[$this->wrapperTag] as $response_data) {
-        $obj = $this->instantiateNew();
-        $obj->loadFromRawData($response_data);
-        $return_objects[] = $obj;
-      }
-      return $return_objects;
+        foreach ($response[$this->wrapperTag] as $response_data) {
+            $obj = $this->instantiateNew();
+            $obj->loadFromRawData($response_data);
+            $return_objects[] = $obj;
+        }
+        return $return_objects;
     }
 
     // Implementation of BaseObject abstract methods
 
-    public function instantiateNew() {
-      return new RatePlan($this->mPackageId, $this->config);
+    public function instantiateNew()
+    {
+        return new RatePlan($this->mPackageId, $this->config);
     }
 
-    public function loadFromRawData($data, $reset = FALSE) {
+    public function loadFromRawData($data, $reset = false)
+    {
 
-      if ($reset) {
-        $this->initValues();
-      }
-
-      $excluded_properties = array(
-        'org',
-        'mPackageId',
-        'organization',
-        'monetizationPackage',
-        'currency',
-        'parentRatePlan',
-        'developer',
-        'developerCategory',
-        'developers',
-        'applicationCategory',
-        'exchangeOrganization',
-        'ratePlanDetails'
-      );
-
-      foreach (array_keys($data) as $property) {
-        if (in_array($property, $excluded_properties)) {
-          continue;
+        if ($reset) {
+            $this->initValues();
         }
 
-        // form the setter method name to invoke setXxxx
-        $setter_method = 'set' . ucfirst($property);
-        if (method_exists($this, $setter_method)) {
-          $this->$setter_method($data[$property]);
+        $excluded_properties = array(
+            'org',
+            'mPackageId',
+            'organization',
+            'monetizationPackage',
+            'currency',
+            'parentRatePlan',
+            'developer',
+            'developerCategory',
+            'developers',
+            'applicationCategory',
+            'exchangeOrganization',
+            'ratePlanDetails'
+        );
+
+        foreach (array_keys($data) as $property) {
+            if (in_array($property, $excluded_properties)) {
+                continue;
+            }
+
+            // form the setter method name to invoke setXxxx
+            $setter_method = 'set' . ucfirst($property);
+            if (method_exists($this, $setter_method)) {
+                $this->$setter_method($data[$property]);
+            }
+            else {
+                self::$logger->notice('No setter method was found for property "' . $property . '"');
+            }
         }
-        else {
-          self::$logger->notice('No setter method was found for property "' . $property . '"');
+
+        // Set objects
+
+        if (isset($data['organization'])) {
+            $organization = new Organization($this->config);
+            $organization->loadFromRawData($data['organization']);
+            $this->organization = $organization;
         }
-      }
 
-      // Set objects
-
-      if (isset($data['organization'])) {
-        $organization = new Organization($this->config);
-        $organization->loadFromRawData($data['organization']);
-        $this->organization = $organization;
-      }
-
-      if (isset($data['monetizationPackage'])) {
-        $monetizationPackage = new MonetizationPackage($this->config);
-        $monetizationPackage->loadFromRawData($data['monetizationPackage']);
-        $this->monetizationPackage = $monetizationPackage;
-      }
-
-      if (isset($data['currency'])) {
-        $this->currency = new DataStructures\SupportedCurrency($data['currency']);
-      }
-
-      if (isset($data['parentRatePlan'])) {
-        $rate_plan = new RatePlan($this->mPackageId, $this->config);
-        $rate_plan->loadFromRawData($data['parentRatePlan']);
-        $this->setParentRatePlan($rate_plan);
-      }
-
-      if (isset($data['developer'])) {
-        $dev = new Developer($this->config);
-        $dev->loadFromRawData($data['developer']);
-        $this->developer = $dev;
-      }
-
-      //@TODO Implement load of developerCategory
-
-      //@TODO Implement load of developers
-
-      //@TODO Implement load of applicationCategory
-
-      if (isset($data['exchangeOrganization'])) {
-        $organization = new Organization($this->config);
-        $organization->loadFromRawData($data['exchangeOrganization']);
-        $this->exchangeOrganization = $organization;
-      }
-
-      if (isset($data['ratePlanDetails'])) {
-        foreach ($data['ratePlanDetails'] as $ratePlanDetail) {
-          $this->ratePlanDetails[] = new DataStructures\RatePlanDetail($ratePlanDetail, $this->config);
+        if (isset($data['monetizationPackage'])) {
+            $monetizationPackage = new MonetizationPackage($this->config);
+            $monetizationPackage->loadFromRawData($data['monetizationPackage']);
+            $this->monetizationPackage = $monetizationPackage;
         }
-      }
+
+        if (isset($data['currency'])) {
+            $this->currency = new DataStructures\SupportedCurrency($data['currency']);
+        }
+
+        if (isset($data['parentRatePlan'])) {
+            $rate_plan = new RatePlan($this->mPackageId, $this->config);
+            $rate_plan->loadFromRawData($data['parentRatePlan']);
+            $this->setParentRatePlan($rate_plan);
+        }
+
+        if (isset($data['developer'])) {
+            $dev = new Developer($this->config);
+            $dev->loadFromRawData($data['developer']);
+            $this->developer = $dev;
+        }
+
+        //@TODO Implement load of developerCategory
+
+        //@TODO Implement load of developers
+
+        //@TODO Implement load of applicationCategory
+
+        if (isset($data['exchangeOrganization'])) {
+            $organization = new Organization($this->config);
+            $organization->loadFromRawData($data['exchangeOrganization']);
+            $this->exchangeOrganization = $organization;
+        }
+
+        if (isset($data['ratePlanDetails'])) {
+            foreach ($data['ratePlanDetails'] as $ratePlanDetail) {
+                $this->ratePlanDetails[] = new DataStructures\RatePlanDetail($ratePlanDetail, $this->config);
+            }
+        }
     }
 
-    protected function initValues() {
-      $this->advance = FALSE;
-      $this->organization = NULL;
-      $this->monetizationPackage = NULL;
-      $this->currency = NULL;
-      $this->childRatePlan = NULL;
-      $this->parentRatePlan = NULL;
-      $this->developer = NULL;
-      $this->developerCategory = NULL;
-      $this->developers = array();
-      $this->applicationCategory = NULL;
-      $this->exchangeOrganization = NULL;
-      $this->type = '';
-      $this->name = '';
-      $this->displayName = '';
-      $this->description = '';
-      $this->setUpFee = 0;
-      $this->recurringFee = 0;
-      $this->frequencyDuration = 0;
-      $this->frequencyDurationType = '';
-      $this->recurringType = '';
-      $this->recurringStartUnit = 0;
-      $this->prorate = FALSE;
-      $this->earlyTerminationFee = 0;
-      $this->startDate = '';
-      $this->endDate = '';
-      $this->freemiumDuration = 0;
-      $this->freemiumUnit = 0;
-      $this->freemiumDurationType = '';
-      $this->published = FALSE;
-      $this->contractDuration = 0;
-      $this->contractDurationType = '';
-      $this->keepOriginalStartDate = FALSE;
-      $this->ratePlanDetails = array();
+    protected function initValues()
+    {
+        $this->advance = false;
+        $this->organization = null;
+        $this->monetizationPackage = null;
+        $this->currency = null;
+        $this->childRatePlan = null;
+        $this->parentRatePlan = null;
+        $this->developer = null;
+        $this->developerCategory = null;
+        $this->developers = array();
+        $this->applicationCategory = null;
+        $this->exchangeOrganization = null;
+        $this->type = '';
+        $this->name = '';
+        $this->displayName = '';
+        $this->description = '';
+        $this->setUpFee = 0;
+        $this->recurringFee = 0;
+        $this->frequencyDuration = 0;
+        $this->frequencyDurationType = '';
+        $this->recurringType = '';
+        $this->recurringStartUnit = 0;
+        $this->prorate = false;
+        $this->earlyTerminationFee = 0;
+        $this->startDate = '';
+        $this->endDate = '';
+        $this->freemiumDuration = 0;
+        $this->freemiumUnit = 0;
+        $this->freemiumDurationType = '';
+        $this->published = false;
+        $this->contractDuration = 0;
+        $this->contractDurationType = '';
+        $this->keepOriginalStartDate = false;
+        $this->ratePlanDetails = array();
     }
 
-    public function __toString() {
-      // @TODO Make right implementation
-      return json_encode($this);
+    public function __toString()
+    {
+        // @TODO Make right implementation
+        return json_encode($this);
     }
 
     // getters
@@ -406,380 +411,427 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * Is Advance?
      * @return boolean
      */
-    public function isAdvance() {
-      return $this->advance;
+    public function isAdvance()
+    {
+        return $this->advance;
     }
 
     /**
      * Get com.apigee.mint.model.Organization
      * @return \Apigee\Mint\Organization
      */
-    public function getOrganization() {
-      return $this->organization;
+    public function getOrganization()
+    {
+        return $this->organization;
     }
 
     /**
      * Get MonetizationPackage
      * @return \Apigee\Mint\MonetizationPackage
      */
-    public function getMonetizationPackage() {
-      return $this->monetizationPackage;
+    public function getMonetizationPackage()
+    {
+        return $this->monetizationPackage;
     }
 
     /**
      * Get Rate Plan currency
      * @return \Apigee\Mint\DataStructures\SupportedCurrency
      */
-    public function getCurrency() {
-      return $this->currency;
+    public function getCurrency()
+    {
+        return $this->currency;
     }
 
     /**
      * Get Parent Rate Plan
      * @return \Apigee\Mint\RatePlan
      */
-    public function getParentRatePlan() {
-      return $this->parentRatePlan;
+    public function getParentRatePlan()
+    {
+        return $this->parentRatePlan;
     }
 
-    public function getPaymentDueDays() {
-      return $this->paymentDueDays;
+    public function getPaymentDueDays()
+    {
+        return $this->paymentDueDays;
     }
 
-    public function getChildRatePlan() {
-      return $this->childRatePlan;
+    public function getChildRatePlan()
+    {
+        return $this->childRatePlan;
     }
 
     /**
      * Get com.apigee.mint.model.Developer
      * @return \Apigee\Mint\Developer
      */
-    public function getDeveloper() {
-      return $this->developer;
+    public function getDeveloper()
+    {
+        return $this->developer;
     }
 
     /**
      * Get com.apigee.mint.model.DeveloperCategory
      * @return \Apigee\Mint\DeveloperCategory
      */
-    public function getDeveloperCategory() {
-      return $this->developerCategory;
+    public function getDeveloperCategory()
+    {
+        return $this->developerCategory;
     }
 
     /**
      * Get an array of DeveloperRatePlan
      * @return \Apigee\Mint\DeveloperRatePlan
      */
-    public function getDeveloperRatePlans() {
-      return $this->developers;
+    public function getDeveloperRatePlans()
+    {
+        return $this->developers;
     }
 
     /**
      * Get com.apigee.mint.model.ApplicationCategory
      * @return \Apigee\Mint\ApplicationCategory
      */
-    public function getApplicationCategory() {
-      return $this->applicationCategory;
+    public function getApplicationCategory()
+    {
+        return $this->applicationCategory;
     }
 
     /**
      * Get Exchange Organization
      * @return \Apigee\Mint\Organization
      */
-    public function getExchangeOrganization() {
-      return $this->exchangeOrganization;
+    public function getExchangeOrganization()
+    {
+        return $this->exchangeOrganization;
     }
 
     /**
      * Get Rate plan type.
      * @return string
      */
-    public function getType() {
-      return $this->type;
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**
      * Get Name
      * @return string
      */
-    public function getName() {
-      return $this->name;
+    public function getName()
+    {
+        return $this->name;
     }
 
     /**
      * Get Display Name
      * @return string
      */
-    public function getDisplayName() {
-      return $this->displayName;
+    public function getDisplayName()
+    {
+        return $this->displayName;
     }
 
     /**
      * Get Description
      * @return string
      */
-    public function getDescription() {
-      return $this->description;
+    public function getDescription()
+    {
+        return $this->description;
     }
 
     /**
      * Get One time set up fee
      * @return double
      */
-    public function getSetUpFee() {
-      return $this->setUpFee;
+    public function getSetUpFee()
+    {
+        return $this->setUpFee;
     }
 
     /**
      * Get Recurring time set up fee
      * @return double
      */
-    public function getRecurringFee() {
-      return $this->recurringFee;
+    public function getRecurringFee()
+    {
+        return $this->recurringFee;
     }
 
     /**
      * Get Frecuency Duration
      * @return int
      */
-    public function getFrequencyDuration() {
-      return $this->frequencyDuration;
+    public function getFrequencyDuration()
+    {
+        return $this->frequencyDuration;
     }
 
     /**
      * Get Frecuency Duration Type.
      * @return string
      */
-    public function getFrequencyDurationType() {
-      return $this->frequencyDurationType;
+    public function getFrequencyDurationType()
+    {
+        return $this->frequencyDurationType;
     }
 
     /**
      * Get Recurring Type Used to define if scheduler needs to be run based on Calendar or Custom (plan start date)
      * @return string
      */
-    public function getRecurringType() {
-      return $this->recurringType;
+    public function getRecurringType()
+    {
+        return $this->recurringType;
     }
 
     /**
      * Get Recurring start unit this is only used if the recurringType is CALENDAR
      * @return int
      */
-    public function getRecurringStartUnit() {
-      return $this->recurringStartUnit;
+    public function getRecurringStartUnit()
+    {
+        return $this->recurringStartUnit;
     }
 
     /**
      * Is this package to be prorated
      * @return boolean
      */
-    public function isProrate() {
-      return $this->prorate;
+    public function isProrate()
+    {
+        return $this->prorate;
     }
 
     /**
      * Get Early termination fee
      * @return double
      */
-    public function getEarlyTerminationFee() {
-      return $this->earlyTerminationFee;
+    public function getEarlyTerminationFee()
+    {
+        return $this->earlyTerminationFee;
     }
 
     /**
      * Get Effective Start date
      * @return string
      */
-    public function getStartDate() {
-      return $this->startDate;
+    public function getStartDate()
+    {
+        return $this->startDate;
     }
 
     /**
      * Get Effective End date
      * @return string
      */
-    public function getEndDate() {
-      return $this->endDate;
+    public function getEndDate()
+    {
+        return $this->endDate;
     }
 
     /**
      * Get Freemium duration
      * @return int
      */
-    public function getFreemiumDuration() {
-      return $this->freemiumDuration;
+    public function getFreemiumDuration()
+    {
+        return $this->freemiumDuration;
     }
 
     /**
      * Get Freemium number of units
      * @return int
      */
-    public function getFreemiumUnit() {
-      return $this->freemiumUnit;
+    public function getFreemiumUnit()
+    {
+        return $this->freemiumUnit;
     }
 
     /**
      * Get Freemium Duration Type
      * @return string
      */
-    public function getFreemiumDurationType() {
-      return $this->freemiumDurationType;
+    public function getFreemiumDurationType()
+    {
+        return $this->freemiumDurationType;
     }
 
     /**
      * Is published?
      * @return boolean
      */
-    public function isPublished() {
-      return $this->published;
+    public function isPublished()
+    {
+        return $this->published;
     }
 
     /**
      * Get Contract duration
      * @return int
      */
-    public function getContractDuration() {
-      return $this->contractDuration;
+    public function getContractDuration()
+    {
+        return $this->contractDuration;
     }
 
     /**
      * Get Contract Duration Type .
      * @return string
      */
-    public function getContractDurationType() {
-      return $this->contractDurationType;
+    public function getContractDurationType()
+    {
+        return $this->contractDurationType;
     }
 
     /**
      * Keep developer original start date (used for rate plan revisions)
      * @return boolean
      */
-    public function getKeepOriginalStartDate() {
-      return $this->keepOriginalStartDate;
+    public function getKeepOriginalStartDate()
+    {
+        return $this->keepOriginalStartDate;
     }
 
     /**
      * Get Rate plan details
      * @return array Array must elements must be instances of Apigee\Mint\DataStructures\RatePlanRate
      */
-    public function getRatePlanDetails() {
-      return $this->ratePlanDetails;
+    public function getRatePlanDetails()
+    {
+        return $this->ratePlanDetails;
     }
 
-    public function getRatePlanDetailsByProduct(Product $product = NULL) {
-      if ($product == NULL) {
-        return $this->ratePlanDetails;
-      }
-      else {
-        $rate_plan_details = array();
-        foreach ($this->ratePlanDetails as &$rate_plan_detail) {
-          if (isset($rate_plan_detail->product) && $rate_plan_detail->product->getId() == $product->getId()) {
-            $rate_plan_details[] = $rate_plan_detail;
-          }
+    public function getRatePlanDetailsByProduct(Product $product = null)
+    {
+        if ($product == null) {
+            return $this->ratePlanDetails;
+        } else {
+            $rate_plan_details = array();
+            foreach ($this->ratePlanDetails as &$rate_plan_detail) {
+                if (isset($rate_plan_detail->product) && $rate_plan_detail->product->getId() == $product->getId()) {
+                    $rate_plan_details[] = $rate_plan_detail;
+                }
+            }
+            return $rate_plan_details;
         }
-        return $rate_plan_details;
-      }
     }
     //setters
 
     /**
-    * Set Advance
-    * @param boolean $advance
-    */
-    public function  setAdvance($advance) {
-      $this->advance = $advance;
+     * Set Advance
+     * @param boolean $advance
+     */
+    public function  setAdvance($advance)
+    {
+        $this->advance = $advance;
     }
 
     /**
      * Set com.apigee.mint.model.Organization
      * @param \Apigee\Mint\Organization $organization
      */
-    public function setOrganization(Organization $organization) {
-      $this->organization = $organization;
+    public function setOrganization(Organization $organization)
+    {
+        $this->organization = $organization;
     }
 
     /**
      * Set MonetizationPackage
      * @param \Apigee\Mint\MonetizationPackage $monetization_package
      */
-    public function setMonetizationPackage(MonetizationPackage $monetization_package) {
-      $this->monetizationPackage = $monetization_package;
+    public function setMonetizationPackage(MonetizationPackage $monetization_package)
+    {
+        $this->monetizationPackage = $monetization_package;
     }
 
     /**
      * Set Rate Plan currency
      * @param \Apigee\Mint\DataStructures\SupportedCurrency $currency
      */
-    public function setCurrency(DataStructures\SupportedCurrency $currency) {
-      $this->currency = $currency;
+    public function setCurrency(DataStructures\SupportedCurrency $currency)
+    {
+        $this->currency = $currency;
     }
 
     /**
      * Set Parent Rate Plan
      * @param \Apigee\Mint\RatePlan $parent_rate_plan
      */
-    public function setParentRatePlan(RatePlan $parent_rate_plan) {
-      $parent_rate_plan->setChildRatePlan($this);
-      $this->parentRatePlan = $parent_rate_plan;
+    public function setParentRatePlan(RatePlan $parent_rate_plan)
+    {
+        $parent_rate_plan->setChildRatePlan($this);
+        $this->parentRatePlan = $parent_rate_plan;
     }
 
-    public function setPaymentDueDays($payment_due_days) {
-      $this->paymentDueDays = $payment_due_days;
+    public function setPaymentDueDays($payment_due_days)
+    {
+        $this->paymentDueDays = $payment_due_days;
     }
 
     /**
      * Only for internal logic
      * @param RatePlan $rate_plan
      */
-    public function setChildRatePlan(RatePlan $rate_plan) {
-      $this->childRatePlan = $rate_plan;
+    public function setChildRatePlan(RatePlan $rate_plan)
+    {
+        $this->childRatePlan = $rate_plan;
     }
 
     /**
      * Set com.apigee.mint.model.Developer
      * @param \Apigee\Mint\Developer $developer
      */
-    public function setDeveloper(Developer $developer) {
-      $this->developer = $developer;
+    public function setDeveloper(Developer $developer)
+    {
+        $this->developer = $developer;
     }
 
     /**
      * Set com.apigee.mint.model.DeveloperCategory
      * @param \Apigee\Mint\DeveloperCategory $developer_category
      */
-    public function setDeveloperCategory(DeveloperCategory $developer_category) {
-      $this->developerCategory = $developer_category;
+    public function setDeveloperCategory(DeveloperCategory $developer_category)
+    {
+        $this->developerCategory = $developer_category;
     }
 
     /**
      * Add a of DeveloperRatePlan
      * @param \Apigee\Mint\DeveloperRatePlan $developer_rate_plan
      */
-    public function addDeveloperRatePlan(DeveloperRatePlan $developer_rate_plan) {
-      $this->developers[] = $developer_rate_plan;
+    public function addDeveloperRatePlan(DeveloperRatePlan $developer_rate_plan)
+    {
+        $this->developers[] = $developer_rate_plan;
     }
 
     /**
      * Remove all DeveloperRatePlans from this RatePlan
      */
-    public function clearDeveloperRatePlan() {
-      $this->developers = array();
+    public function clearDeveloperRatePlan()
+    {
+        $this->developers = array();
     }
 
     /**
      * Set com.apigee.mint.model.ApplicationCategory
      * @param \Apigee\Mint\ApplicationCategory $application_category
      */
-    public function setApplicationCategory($application_category) {
-      $this->applicationCategory = $application_category;
+    public function setApplicationCategory($application_category)
+    {
+        $this->applicationCategory = $application_category;
     }
 
     /**
      * Set Exchange Organization
      * @param \Apigee\Mint\Organization $exchange_organization
      */
-    public function setExchangeOrganization($exchange_organization) {
-      $this->exchangeOrganization = $exchange_organization;
+    public function setExchangeOrganization($exchange_organization)
+    {
+        $this->exchangeOrganization = $exchange_organization;
     }
 
     /**
@@ -787,67 +839,74 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $type Possible values: STANDARD|DEVELOPER_CATEGORY|DEVELOPER|APPLICATION_CATEGORY|EXCHANGE_ORGANIZATION
      * @throws \Apigee\Exceptions\ParameterException
      */
-    public function setType($type) {
-      $type = strtoupper($type);
-      if (!in_array($type, array(
-        'STANDARD',
-        'DEVELOPER_CATEGORY',
-        'DEVELOPER',
-        'APPLICATION_CATEGORY',
-        'EXCHANGE_ORGANIZATION'
-      ))
-      ) {
-        throw new ParameterException('Invalid type of RatePlan: ' . $type);
-      }
-      $this->type = $type;
+    public function setType($type)
+    {
+        $type = strtoupper($type);
+        if (!in_array($type, array(
+            'STANDARD',
+            'DEVELOPER_CATEGORY',
+            'DEVELOPER',
+            'APPLICATION_CATEGORY',
+            'EXCHANGE_ORGANIZATION'
+        ))
+        ) {
+            throw new ParameterException('Invalid type of RatePlan: ' . $type);
+        }
+        $this->type = $type;
     }
 
     /**
      * Set Name
      * @param string
      */
-    public function setName($name) {
-      $this->name = $name;
+    public function setName($name)
+    {
+        $this->name = $name;
     }
 
     /**
      * Set Display Name
      * @param string $display_name
      */
-    public function setDisplayName($display_name) {
-      $this->displayName = $display_name;
+    public function setDisplayName($display_name)
+    {
+        $this->displayName = $display_name;
     }
 
     /**
      * Set Description
      * @param string $description
      */
-    public function setDescription($description) {
-      $this->description = $description;
+    public function setDescription($description)
+    {
+        $this->description = $description;
     }
 
     /**
      * Set One time set up fee
      * @param double $set_up_fee
      */
-    public function setSetUpFee($set_up_fee) {
-      $this->setUpFee = $set_up_fee;
+    public function setSetUpFee($set_up_fee)
+    {
+        $this->setUpFee = $set_up_fee;
     }
 
     /**
      * Set Recurring time set up fee
      * @param double $recurring_fee
      */
-    public function setRecurringFee($recurring_fee) {
-      $this->recurringFee = $recurring_fee;
+    public function setRecurringFee($recurring_fee)
+    {
+        $this->recurringFee = $recurring_fee;
     }
 
     /**
      * Set Frequency Duration
      * @param int $frequency_duration
      */
-    public function setFrequencyDuration($frequency_duration) {
-      $this->frequencyDuration = $frequency_duration;
+    public function setFrequencyDuration($frequency_duration)
+    {
+        $this->frequencyDuration = $frequency_duration;
     }
 
     /**
@@ -855,81 +914,90 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $frequency_duration_type Possible values: DAY|WEEK|MONTH|QUARTER|YEAR
      * @throws \Apigee\Exceptions\ParameterException
      */
-    public function setFrequencyDurationType($frequency_duration_type) {
-      $frequency_duration_type = strtoupper($frequency_duration_type);
-      if (!in_array($frequency_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
-        throw new ParameterException('Invalid frequency duration type: ' . $frequency_duration_type);
-      }
-      $this->frequencyDurationType = $frequency_duration_type;
+    public function setFrequencyDurationType($frequency_duration_type)
+    {
+        $frequency_duration_type = strtoupper($frequency_duration_type);
+        if (!in_array($frequency_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
+            throw new ParameterException('Invalid frequency duration type: ' . $frequency_duration_type);
+        }
+        $this->frequencyDurationType = $frequency_duration_type;
     }
 
     /**
      * Set Recurring Type Used to define if scheduler needs to be run based on Calendar or Custom (plan start date)
-     * @param string $recurring_type. Possible values: CALENDAR|CUSTOM
+     * @param string $recurring_type . Possible values: CALENDAR|CUSTOM
      * @throws \Apigee\Exceptions\ParameterException
      */
-    public function setRecurringType($recurring_type) {
-      $recurring_type = strtoupper($recurring_type);
-      if (!in_array($recurring_type, array('CALENDAR', 'CUSTOM'))) {
-        throw new ParameterException('Invalid recurring type: ' . $recurring_type);
-      }
-      $this->recurringType = $recurring_type;
+    public function setRecurringType($recurring_type)
+    {
+        $recurring_type = strtoupper($recurring_type);
+        if (!in_array($recurring_type, array('CALENDAR', 'CUSTOM'))) {
+            throw new ParameterException('Invalid recurring type: ' . $recurring_type);
+        }
+        $this->recurringType = $recurring_type;
     }
 
     /**
      * Set Recurring start unit this is only used if the recurringType is CALENDAR
      * @param int $recurring_start_unit
      */
-    public function setRecurringStartUnit($recurring_start_unit) {
-      $this->recurringStartUnit = $recurring_start_unit;
+    public function setRecurringStartUnit($recurring_start_unit)
+    {
+        $this->recurringStartUnit = $recurring_start_unit;
     }
 
     /**
      * Set if this package is to be prorated
      * @param boolean $prorate
      */
-    public function setProrate($prorate) {
-      $this->prorate = $prorate;
+    public function setProrate($prorate)
+    {
+        $this->prorate = $prorate;
     }
 
     /**
      * Set Early termination fee
      * @param double $early_termination_fee
      */
-    public function setEarlyTerminationFee($early_termination_fee) {
-      $this->earlyTerminationFee = $early_termination_fee;
+    public function setEarlyTerminationFee($early_termination_fee)
+    {
+        $this->earlyTerminationFee = $early_termination_fee;
     }
 
     /**
      * Set Effective Start date
      * @param string $start_date
      */
-    public function setStartDate($start_date) {
-      $this->startDate = $start_date;
+    public function setStartDate($start_date)
+    {
+        $this->startDate = $start_date;
     }
 
     /**
      * Set Effective End date
      * @param string $end_date
      */
-    public function setEndDate($end_date) {
-      $this->endDate = $end_date;
+    public function setEndDate($end_date)
+    {
+        $this->endDate = $end_date;
     }
 
     /**
      * Set Freemium duration
      * @param int $freemium_duration
      */
-    public function setFreemiumDuration($freemium_duration) {
-      $this->freemiumDuration = $freemium_duration;
+    public function setFreemiumDuration($freemium_duration)
+    {
+        $this->freemiumDuration = $freemium_duration;
     }
 
     /**
      * Set Freemium number of units
      * @param int $freemium_unit
      */
-    public function setFreemiumUnit($freemium_unit) {
-      $this->freemiumUnit = $freemium_unit;
+    public function setFreemiumUnit($freemium_unit)
+    {
+        $this->freemiumUnit = $freemium_unit;
     }
 
     /**
@@ -937,28 +1005,31 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $freemium_duration_type
      * @throws \Apigee\Exceptions\ParameterException
      */
-    public function setFreemiumDurationType($freemium_duration_type) {
-      $freemium_duration_type = strtoupper($freemium_duration_type);
-      if (!in_array($freemium_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
-        throw new ParameterException('Invalid freemium duration type: ' . $freemium_duration_type);
-      }
-      $this->freemiumDurationType = $freemium_duration_type;
+    public function setFreemiumDurationType($freemium_duration_type)
+    {
+        $freemium_duration_type = strtoupper($freemium_duration_type);
+        if (!in_array($freemium_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
+            throw new ParameterException('Invalid freemium duration type: ' . $freemium_duration_type);
+        }
+        $this->freemiumDurationType = $freemium_duration_type;
     }
 
     /**
      * Set published
      * @param boolean $published
      */
-    public function setPublished($published) {
-      $this->published = $published;
+    public function setPublished($published)
+    {
+        $this->published = $published;
     }
 
     /**
      * Set Contract duration
      * @param int $contract_duration
      */
-    public function setContractDuration($contract_duration) {
-      $this->contractDuration = $contract_duration;
+    public function setContractDuration($contract_duration)
+    {
+        $this->contractDuration = $contract_duration;
     }
 
     /**
@@ -966,78 +1037,85 @@ use Apigee\Exceptions\ParameterException as ParameterException;
      * @param string $contract_duration_type
      * @throws \Apigee\Exceptions\ParameterException
      */
-    public function setContractDurationType($contract_duration_type) {
-      $contract_duration_type = strtoupper($contract_duration_type);
-      if (!in_array($contract_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
-        throw new ParameterException('Invalid contract duration type: ' . $contract_duration_type);
-      }
-      $this->contractDurationType = $contract_duration_type;
+    public function setContractDurationType($contract_duration_type)
+    {
+        $contract_duration_type = strtoupper($contract_duration_type);
+        if (!in_array($contract_duration_type, array('DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'))) {
+            throw new ParameterException('Invalid contract duration type: ' . $contract_duration_type);
+        }
+        $this->contractDurationType = $contract_duration_type;
     }
 
     /**
      * Keep developer original start date (used for rate plan revisions)
      * @param boolean $keep_original_start_date
      */
-    public function setKeepOriginalStartDate($keep_original_start_date) {
-      $this->keepOriginalStartDate = (bool)$keep_original_start_date;
+    public function setKeepOriginalStartDate($keep_original_start_date)
+    {
+        $this->keepOriginalStartDate = (bool)$keep_original_start_date;
     }
 
     /**
      * Add Rate plan details
      * @param \Apigee\Mint\DataStructures\RatePlanRate $rate_plan_detail
      */
-    public function addRatePlanDetails(DataStructures\RatePlanRate $rate_plan_detail) {
-      $this->ratePlanDetails[] = $rate_plan_detail;
+    public function addRatePlanDetails(DataStructures\RatePlanRate $rate_plan_detail)
+    {
+        $this->ratePlanDetails[] = $rate_plan_detail;
     }
 
     /**
      * Remove all RatePlanDetail from this RatePlan
      */
-    public function clearRatePlanDetails() {
-      $this->ratePlanDetails = array();
+    public function clearRatePlanDetails()
+    {
+        $this->ratePlanDetails = array();
     }
 
-    public function getId() {
-      return $this->id;
+    public function getId()
+    {
+        return $this->id;
     }
 
     // Used in data load invoked by $this->loadFromRawData()
-    private function setId($id) {
-      $this->id = $id;
+    private function setId($id)
+    {
+        $this->id = $id;
     }
 
-    public function isGroupPlan() {
-      $is_group_plan = TRUE;
-      foreach ($this->ratePlanDetails as $ratePlanDetails) {
-        if ($ratePlanDetails->getOrganization()->getParent() == NULL) {
-          $is_group_plan = FALSE;
-          break;
+    public function isGroupPlan()
+    {
+        $is_group_plan = true;
+        foreach ($this->ratePlanDetails as $ratePlanDetails) {
+            if ($ratePlanDetails->getOrganization()->getParent() == null) {
+                $is_group_plan = false;
+                break;
+            } else if ($ratePlanDetails->getOrganization()->getParent()->getId() != $this->organization->getId()) {
+                $is_group_plan = false;
+                break;
+            }
         }
-        else if ($ratePlanDetails->getOrganization()->getParent()->getId() != $this->organization->getId()) {
-          $is_group_plan = FALSE;
-          break;
-        }
-      }
-      return $is_group_plan;
+        return $is_group_plan;
     }
 
-    public function load($id = NULL) {
-      if (!isset($id)) {
-        $id = $this->{$this->idField};
-      }
-      if (!isset($id)) {
-        throw new ParameterException('No object identifier was specified.');
-      }
-      $cache_manager = CacheFactory::getCacheManager(NULL);
-      $data = $cache_manager->get('rate_plan:' . $id, NULL);
-      if (!isset($data)) {
-        $url = rawurlencode($id);
-        $this->get($url);
-        $data = $this->responseObj;
-        $cache_manager->set('rate_plan:' . $id, $data);
-      }
-      $this->initValues();
-      $this->loadFromRawData($data);
+    public function load($id = null)
+    {
+        if (!isset($id)) {
+            $id = $this->{$this->idField};
+        }
+        if (!isset($id)) {
+            throw new ParameterException('No object identifier was specified.');
+        }
+        $cache_manager = CacheFactory::getCacheManager(null);
+        $data = $cache_manager->get('rate_plan:' . $id, null);
+        if (!isset($data)) {
+            $url = rawurlencode($id);
+            $this->get($url);
+            $data = $this->responseObj;
+            $cache_manager->set('rate_plan:' . $id, $data);
+        }
+        $this->initValues();
+        $this->loadFromRawData($data);
     }
-  }
 }
+

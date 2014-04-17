@@ -1,4 +1,4 @@
-Drupal.behaviors.views_accordion =  {
+Drupal.behaviors.views_accordion = {
   attach: function(context) {
     if(Drupal.settings.views_accordion){
       (function ($) {
@@ -9,18 +9,19 @@ Drupal.behaviors.views_accordion =  {
           var display = this.display;
 
           /* the selectors we have to play with */
-          var displaySelector = '.view-id-'+ viewname +'.view-display-id-'+ display +' .view-content';
+          var displaySelector = '.view-id-' + viewname + '.view-display-id-' + display + ' > .view-content';
           var headerSelector = this.header;
 
           /* Prepare our markup for jquery ui accordion */
-          $(displaySelector +' '+ headerSelector +':not(.ui-accordion-header)').each(function(i){
-            var hash = "#"+ viewname +"-"+ display +"-"+ i; // hash to use for accordion navigation option
+          $(displaySelector + ' ' + headerSelector + ':not(.ui-accordion-header)').each(function(i){
+        	// Hash to use for accordion navigation option.
+            var hash = "#" + viewname + "-" + display + "-" + i;
             var $this = $(this);
             var $link = $this.find('a');
             // if the header is not already using an anchor tag, add one
             if($link.length == 0){
               // setup anchor tag for navigation
-              $this.wrapInner('<a href="'+hash+'"></a>');
+              $this.wrapInner('<a href="' + hash + '"></a>');
             }
             // if there are already, they wont be clickable with js enabled, we'll use them for accordion navigation
             else{
@@ -37,7 +38,7 @@ Drupal.behaviors.views_accordion =  {
           });
 
           /* jQuery UI accordion call */
-          $(displaySelector +':not(.ui-accordion)').accordion({
+          $(displaySelector + ':not(.ui-accordion)').accordion({
               header: headerSelector,
               animated: this.animated,
               active: this.rowstartopen,

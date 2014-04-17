@@ -325,15 +325,26 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
     // Extract the data from $items, depending on the type of widget.
     // @todo D8: use MassageFormValues($values, $form, $form_state).
     $old_sid = workflow_node_previous_state($entity, $entity_type, $field_name);
+    if (!$old_sid) {
+      // At this moment, $old_sid should have a value. If the content does not
+      // have a state yet, old_sid contains '(creation)' state. But if the
+      // content is not associated to a workflow, old_sid is now 0. This may
+      // happen in workflow_vbo, if you assign a state to non-relevant nodes.
+      $entity_id = entity_id($entity_type, $entity);
+      drupal_set_message(t('Error: content !id has no workflow attached. The data is not saved.', array('!id' => $entity_id)), 'error');
+      // The new state is still the previous state.
+      $new_sid = $old_sid;
+      return $new_sid;
+    }
+
     $transition = $this->getTransition($old_sid, $items);
 
     $force = $force || $transition->isForced();
 
     // Try to execute the transition. Return $old_sid when error.
-    $new_sid = $transition->new_sid;
     if (!$transition) {
       // This should only happen when testing/developing.
-      drupal_set_message(t('Error: the transition from %old_sid to %new_sid could not be generated.', $t_args), 'error');
+      drupal_set_message(t('Error: the transition from %old_sid to %new_sid could not be generated.'), 'error');
       // The current value is still the previous state.
       $new_sid = $old_sid;
     }

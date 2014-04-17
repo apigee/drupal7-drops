@@ -193,4 +193,5 @@ function theme_permissions_grid_admin_node_permissions_form($variables) {
 function permissions_grid_admin_node_permissions_form_submit($form, &$form_state) {
   $role = $form['#role'];
   user_role_change_permissions($role->rid, $form_state['values']['permission']);
+  drupal_set_message(t('The changes have been saved.'));
 }

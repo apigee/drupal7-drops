@@ -17,6 +17,8 @@ function workflow_tab_page($entity_type, $entity = NULL) {
   // Figure out the $entity's bundle and id.
   list($entity_id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
   $entity_id = entity_id($entity_type, $entity);
+
+  // @todo: workflow_tab_page(): what to do with multiple workflow_fields per bundle? Use Views instead!
   $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type);
 
   // Show the current state and the Workflow form to allow state changing.
@@ -47,7 +49,7 @@ function workflow_tab_page($entity_type, $entity = NULL) {
   $current_themed = FALSE;
   $current_sid = workflow_node_current_state($entity, $entity_type, $field_name);
   $limit = variable_get('workflow_states_per_page', 20);
-  foreach (workflow_transition_load_multiple($entity_type, $entity_id, $field_name, $limit) as $history) {
+  foreach (workflow_transition_load_multiple($entity_type, array($entity_id), $field_name, $limit) as $history) {
     $old_state_name = $new_state_name = '';
 
     $label = $name = '';

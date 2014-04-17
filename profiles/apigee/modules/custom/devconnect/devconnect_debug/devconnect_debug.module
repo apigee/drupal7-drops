@@ -1,0 +1,27 @@
+<?php
+
+function devconnect_debug_boot() {
+  register_shutdown_function('devconnect_debug_dump');
+}
+
+function devconnect_debug_dump() {
+  _devconnect_debug_process();
+}
+
+function devconnect_debug_register(array $debug) {
+  _devconnect_debug_process($debug);
+}
+
+function _devconnect_debug_process($debug = FALSE) {
+  static $debug_items = array();
+  if (is_array($debug)) {
+    $debug_items[] = $debug;
+    return;
+  }
+  if (user_access('access devel information') && !empty($debug_items)) {
+    print '<h3>Edge Calls</h3>';
+    kpr($debug_items);
+    // ensure that this gets bumped ABOVE the fixed-position footer
+    print '<br><br><br><br><br>';
+  }
+}

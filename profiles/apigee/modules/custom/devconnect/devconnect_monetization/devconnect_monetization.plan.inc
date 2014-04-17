@@ -6,18 +6,17 @@
  * Time: 8:53 AM
  * To change this template use File | Settings | File Templates.
  */
-use Apigee\Mint\Developer as Developer;
-use Apigee\Mint\DeveloperRatePlan as DeveloperRatePlan;
+use Apigee\Mint\Developer;
+use Apigee\Mint\DeveloperRatePlan;
 use Apigee\Mint\Exceptions\MintApiException;
-use Apigee\Mint\Limit as Limit;
-use Apigee\Mint\MonetizationPackage as MonetizationPackage;
-use Apigee\Mint\Organization as Organization;
-use Apigee\Mint\RatePlan as RatePlan;
+use Apigee\Mint\Limit;
+use Apigee\Mint\MonetizationPackage;
+use Apigee\Mint\Organization;
+use Apigee\Mint\RatePlan;
 use Apigee\Mint\SuborgProduct;
-use Apigee\Mint\TermAndCondition as TermAndCondition;
 use Apigee\Mint\Types\QuotaType;
 use Apigee\Util\OrgConfig;
-use Apigee\Util\CacheFactory as CacheFactory;
+use Apigee\Util\CacheFactory;
 
 /**
  * @param array               $form
@@ -111,7 +110,6 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
   drupal_alter('purchase_plan_requirements', $cannot_purchase_messages, $developer, $package);
   $cannot_purchase_message = end($cannot_purchase_messages);
 
-
   // Get products that this monetization package includes.
   foreach ($package->getProducts() as $product) {
     $form['package']['#product_list'][] = $product->getDisplayName();
@@ -142,6 +140,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     ),
     '#attributes' => array(
       'class' => array('element-hidden'),
+      'style' => array('display:none'),
     )
   );
 
@@ -175,7 +174,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
       );
   }
 
-  if (!isset($form['keep_from_purchase'])) {
+  if ($cannot_purchase_message === FALSE) {
     foreach ($plans['plan_dates']['can_purchase'] as $id => $plan_date) {
       $js_settings['date_limits'][$id] = devconnect_monetization_build_js_date_widget_construct_param($plan_date, $org_timezone, $id);
     }
@@ -192,6 +191,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     '#options' => array(),
     '#attributes' => array(
       'class' => array('element-hidden'),
+      'style' => array('display:none'),
     )
   );
 
@@ -233,7 +233,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     '#suffix' => '</div>',
   );
 
-  if (is_array($cannot_purchase_message)) {
+  if ($cannot_purchase_message !== FALSE) {
     $cannot_purchase_message += array(
       '#prefix' => '<div class="purchase-plan well">',
       '#suffix' => '</div>',
@@ -356,16 +356,16 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
         if ($ce->getMintCode() == MintApiException::INSUFFICIENT_FUNDS
           || $ce->getMintCode() == MintApiException::PREPAID_DEVELOPER_HAS_NO_BALANCE
         ) {
-          if ($rate_plan->getCurrency()->name != 'POINTS') {
+          if ($rate_plan->getCurrency()->getName() != 'POINTS') {
             $message = $ce->getMintMessage(TRUE);
             $amount_starts_at = strpos($message, '[') + 1;
             $required = str_replace(',', '', substr($message, $amount_starts_at, strlen($message) - $amount_starts_at - 1));
             $currencies = commerce_currencies();
-            $required = devconnect_monetization_round_up_amount($required, $currencies[$rate_plan->getCurrency()->name]['decimals']);
+            $required = devconnect_monetization_round_up_amount($required, $currencies[$rate_plan->getCurrency()->getName()]['decimals']);
             $form_state['top_up'] = array(
               'not_enough_balance' => TRUE,
               'required_balance' => $required,
-              'required_currency' => $rate_plan->getCurrency()->name,
+              'required_currency' => $rate_plan->getCurrency()->getName(),
               'package_id' => $form_state['#package']->getId(),
               'plan_id' => $plan_id,
               'plan_name' => $rate_plan->getDisplayName(),
@@ -488,21 +488,49 @@ function devconnect_monetization_overlap_plan_confirm_form($form, &$form_state) 
     $products[$product->getId()] = $product;
   }
 
+  $plan_items = array();
   $overlapping = array();
   foreach ($overlaps as $plan_id => $overlapping_products) {
-    $overlapping[$plan_id] = array(
-      'will-include' => array_diff_key($products, $overlapping_products),
-      'will-exclude' => array_diff_key($overlapping_products, $products),
-      'conflicting' => array_intersect_key($products, $overlapping_products),
+    list($id, $name) = explode('|', $plan_id);
+    $plan_item = array(
+      'data' => $name,
+      'children' => array(),
     );
+    $overlapping = array(
+      t('Additional products:') => array_diff_key($products, $overlapping_products),
+      t('Excluded products:') => array_diff_key($overlapping_products, $products),
+      t('Conflicting products:') => array_intersect_key($products, $overlapping_products),
+    );
+    foreach ($overlapping as $situation => $situation_products) {
+      if (!empty($situation_products)) {
+        $product_items = array(
+          'data' => $situation,
+          'children' => array(),
+        );
+        foreach ($situation_products as $situation_product) {
+          $product_name = is_object($situation_product) ? $situation_product->getDisplayName() : $situation_product;
+          if (!in_array($product_name, $product_items['children'])) {
+            $product_items['children'][] = $product_name;
+          }
+        }
+        $plan_item['children'][] = $product_items;
+      }
+    }
+    $plan_items[] = $plan_item;
   }
 
-  $form['confirm_message'] = array(
-    '#markup' => t('The plans below share some common products with the plan you are trying to purchase. However if you continue to purchase then these plans will be replaced by the plan you are about to purchase.<br />'),
+  $form['message'] = array(
+    '#markup' => t('The plans below share some common products with the plan you are trying to purchase. However if you continue to purchase then these plans will be replaced by the plan you are about to purchase'),
   );
 
   $form['conflicting'] = array(
-    '#markup' => theme('devconnect_monetization_conflicting_products_theme', array('overlapping' => $overlapping)),
+    '#type' => 'item',
+    '#markup' => theme('devconnect_monetization_conflicting_products', array(
+      'items' => $plan_items,
+      'title' => t('Conflicts:'),
+      'type' => 'ol',
+      'attributes' => array(),
+    ))
   );
 
   $form['package_id'] = array(
@@ -527,6 +555,19 @@ function devconnect_monetization_overlap_plan_confirm_form($form, &$form_state) 
     t('Cancel'));
 }
 
+/**
+ * Theme callback for devconnect_monetization_conflicting_products
+ *
+ * Decorator of theme_item_list, we just wrap theme_item_list within
+ * out own theme function thus allowing other modules to alter
+ * this theme instead of theme_item_list
+ *
+ * @param $products
+ * @return string
+ */
+function theme_devconnect_monetization_conflicting_products($products) {
+  return theme('item_list', $products);
+}
 
 function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_state) {
 
@@ -583,16 +624,16 @@ function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_
       if ($ce->getMintCode() == MintApiException::INSUFFICIENT_FUNDS
         || $ce->getMintCode() == MintApiException::PREPAID_DEVELOPER_HAS_NO_BALANCE
       ) {
-        if ($rate_plan->getCurrency()->name != 'POINTS') {
+        if ($rate_plan->getCurrency()->getName() != 'POINTS') {
           $message = $ce->getMintMessage(TRUE);
           $amount_starts_at = strpos($message, '[') + 1;
           $required = str_replace(',', '', substr($message, $amount_starts_at, strlen($message) - $amount_starts_at - 1));
           $currencies = commerce_currencies();
-          $required = devconnect_monetization_round_up_amount($required, $currencies[$rate_plan->getCurrency()->name]['decimals']);
+          $required = devconnect_monetization_round_up_amount($required, $currencies[$rate_plan->getCurrency()->getName()]['decimals']);
           $form_state['top_up'] = array(
             'not_enough_balance' => TRUE,
             'required_balance' => $required,
-            'required_currency' => $rate_plan->getCurrency()->name,
+            'required_currency' => $rate_plan->getCurrency()->getName(),
             'package_id' => $form_state['#package']->getId(),
             'plan_id' => $rate_plan->getId(),
             'plan_name' => $rate_plan->getDisplayName(),
@@ -630,7 +671,7 @@ function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_
  *
  * Excludes limits with developer specified as ALL
  * Excludes product limits that do not have a corresponding product in the package.
- * Excludes limits with quotaType = QuotaType::Balance or quotaType = QuotaType::Credit
+ * Excludes limits with quotaType = QuotaType::BALANCE or quotaType = QuotaType::CREDIT
  *
  * @param Developer           $developer
  * @param MonetizationPackage $package
@@ -663,9 +704,8 @@ function devconnect_monetization_get_developer_limits(Apigee\Mint\Developer $dev
   $product_limits = array();
   $package_limits = array();
   foreach ($dev_limits as $limit) {
-    //drupal_set_message('<pre>' . print_r($limit, TRUE) . '</pre>');
     /* Exclude limits with QuotaType equals to either Balance or CreditLimit */
-    if ($limit->getQuotaType() != QuotaType::Balance && $limit->getQuotaType() != QuotaType::CreditLimit) {
+    if ($limit->getQuotaType() != QuotaType::BALANCE && $limit->getQuotaType() != QuotaType::CREDIT_LIMIT) {
       /* Is limit a product level limit? */
       if ($limit->isPublished() && array_key_exists($limit->getProduct(), $included_products)) {
         $product_limits[$included_products[$limit->getProduct()]][] = _devconnect_monetization_build_limit_text($limit, NULL);
@@ -964,7 +1004,7 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
   $current_balance = 0;
   $balances = $developer->getPrepaidBalance();
   foreach ($balances as $balance) {
-    if ($balance->getSupportedCurrency()->name == $form_state['values']['currency']) {
+    if ($balance->getSupportedCurrency()->getName() == $form_state['values']['currency']) {
       $current_balance = $balance->getCurrentBalance();
       break;
     }
@@ -1052,7 +1092,7 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
     '#value' => t('Proceed to next step'),
   );
 
-  $form['#theme'] = 'devconnect_monetization_insufficient_top_up_form_theme';
+  $form['#theme'] = 'devconnect_monetization_insuffient_funds_top_up_balance';
   $form['#submit'][] = 'devconnect_monetization_insufficient_top_up_form_submit';
   return $form;
 }
@@ -1087,7 +1127,7 @@ function devconnect_monetization_ajax_insufficient_top_up_form(\Apigee\Mint\Deve
       'package_id' => $package->getId(),
       'plan_id' => $plan->getId(),
       'plan_name' => $plan->getDisplayName(),
-      'currency' => $plan->getCurrency()->name,
+      'currency' => $plan->getCurrency()->getName(),
       'required_balance' => rawurldecode($required_balance),
       'start_date' => str_replace('-', '/', rawurldecode($start_date)),
       'overlap' => rawurldecode($overlap),

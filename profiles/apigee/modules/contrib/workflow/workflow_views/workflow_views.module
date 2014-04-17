@@ -9,6 +9,22 @@
 
 
 /**
+ * Implements hook_menu().
+ */
+function workflow_views_menu() {
+  $items = array();
+  $items['workflow-comment/%workflow_transition/edit'] = array(// maps to function workflow_state_transition_record_load()
+    'title' => 'Edit workflow log comment',
+    'description' => 'Edit workflow state transition comment.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('workflow_views_comment_edit_form', 1),
+    'access arguments' => array('edit workflow log'),
+    'file' => 'workflow_views.comment_edit_page.inc',
+  );
+  return $items;
+}
+
+/**
  * Implements hook_permission().
  */
 function workflow_views_permission() {
@@ -33,3 +49,4 @@ function workflow_views_views_api() {
     // 'path' => drupal_get_path('module', 'workflow_views'),
   );
 }
+

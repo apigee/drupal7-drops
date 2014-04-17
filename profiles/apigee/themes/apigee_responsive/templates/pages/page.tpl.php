@@ -163,17 +163,15 @@ global $user;
   <?php if (drupal_is_front_page()) { ?>
     <section class="page-header">
       <div class="container">
-        <div class="row">
-          <div class="title">
-            <?php if (theme_get_setting('welcome_message')): ?>
-              <h1><?php print theme_get_setting('welcome_message'); ?></h1>
-            <?php else: ?>
-              <h1><span class="welcome">Welcome</span><br />to the <span><?php print $site_name ?></span></h1>
-            <?php endif; ?>
-          </div>
-          <div class="page-header-content">
-            <?php print render($page['homepage_header']); ?>
-          </div>
+        <div class="title">
+          <?php if (theme_get_setting('welcome_message')): ?>
+            <h1><?php print theme_get_setting('welcome_message'); ?></h1>
+          <?php else: ?>
+            <h1><span class="welcome">Welcome</span><br />to the <span><?php print $site_name ?></span></h1>
+          <?php endif; ?>
+        </div>
+        <div class="page-header-content">
+          <?php print render($page['homepage_header']); ?>
         </div>
       </div>
     </section>
@@ -207,10 +205,6 @@ global $user;
     <div class="main-container container">
 
       <header role="banner" id="page-header">
-        <?php if (!empty($site_slogan)): ?>
-          <p class="lead"><?php print $site_slogan; ?></p>
-        <?php endif; ?>
-
         <?php print render($page['header']); ?>
       </header> <!-- /#page-header -->
 
@@ -252,6 +246,27 @@ global $user;
         <?php endif; ?>
 
       </div>
+      <?php if (drupal_is_front_page()) { ?>
+        <?php if (!empty($page['frontpage_panel_left']) || !empty($page['frontpage_panel_center']) || !empty($page['frontpage_panel_right'])) { ?>
+          <div class="row">
+            <div class="col-sm-4">
+              <?php if (!empty($page['frontpage_panel_left'])): ?>
+                <?php print render($page['frontpage_panel_left']); ?>
+              <?php endif; ?>
+            </div>
+            <div class="col-sm-4">
+              <?php if (!empty($page['frontpage_panel_center'])): ?>
+                <?php print render($page['frontpage_panel_center']); ?>
+              <?php endif; ?>
+            </div>
+            <div class="col-sm-4">
+              <?php if (!empty($page['frontpage_panel_right'])): ?>
+                <?php print render($page['frontpage_panel_right']); ?>
+              <?php endif; ?>
+            </div>
+          </div>
+        <?php } ?>
+      <?php } ?>
     </div>
   </div>
   <div id="push"></div>

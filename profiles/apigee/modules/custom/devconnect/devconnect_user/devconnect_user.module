@@ -412,7 +412,8 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   }
   // Don't try to update users in KMS if org hasn't been configured yet.
   $config =& Drupal::config('devconnect.settings');
-  if ($config->get('org') == 'fixme') {
+  $org = $config->get('org');
+  if (empty($org) || $org == 'fixme') {
     return;
   }
 
@@ -422,18 +423,18 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   $name = (isset($edit['name']) ? $edit['name'] : $account->name);
   $orig_mail = (empty($account->mail) ? $edit['mail'] : $account->mail);
 
-  $action = 'create';
-  try {
-    $entity = entity_load_single('developer', $orig_mail);
+  $entity = entity_load_single('developer', $orig_mail);
+  if ($entity) {
     $action = 'update';
   }
-  catch (Exception $e) {
+  else {
     $entity = entity_create('developer', array());
+    $action = 'create';
   }
-  $entity['email'] = $mail;
-  $entity['userName'] = $name;
-  $entity['firstName'] = $first_name;
-  $entity['lastName'] = $last_name;
+  $entity->email = $mail;
+  $entity->userName = $name;
+  $entity->firstName = $first_name;
+  $entity->lastName = $last_name;
 
   $fields = variable_get('devconnect_user_attributes_to_persist_in_kms', array());
   foreach ($fields as $field_name => $field_specs) {
@@ -475,21 +476,10 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
             break;
           case 'avoid': //Attribute is not to be sent
         }
-        if (is_a($entity, 'Drupal\devconnect_user\DeveloperEntity')) {
-          $entity->attributes[$att_name] = $att_value;
-        }
-        else {
-          $entity['attributes'][$att_name] = $att_value;
-        }
+        $entity->attributes[$att_name] = $att_value;
       }
       else {
-        $field_value = _devconnect_user_scrub_attribute($field_value);
-        if (is_a($entity, 'Drupal\devconnect_user\DeveloperEntity')) {
-          $entity->attributes[$att_name] = $field_value;
-        }
-        else {
-          $entity['attributes'][$att_name] = $field_value;
-        }
+        $entity->attributes[$att_name] = _devconnect_user_scrub_attribute($field_value);
       }
     }
   }
@@ -497,14 +487,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   // Bring in any attributes that were defined by other hook_user_presave() implementations
   foreach ($edit as $key => $field_value) {
     if (substr($key, 0, 10) == 'attribute_') {
-      $field = substr($key, 10);
-      $field_value = _devconnect_user_scrub_attribute($field_value);
-      if (is_a($entity, 'Drupal\devconnect_user\DeveloperEntity')) {
-        $entity->attributes[$field] = $field_value;
-      }
-      else {
-        $entity['attributes'][$field] = $field_value;
-      }
+      $entity->attributes[substr($key, 10)] = _devconnect_user_scrub_attribute($field_value);
     }
   }
   
@@ -517,7 +500,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   else {
     $status = FALSE;
   }
-  $entity['status'] = $status ? 'active' : 'inactive';
+  $entity->status = $status ? 'active' : 'inactive';
 
   $saved = entity_save('developer', $entity);
   $results = devconnect_get_debug_data();
@@ -861,13 +844,16 @@ function _devconnect_user_save_entity($user) {
  * likewise makes sure that all KMS users (other than those created by
  * simpletest) have Drupal accounts.
  *
- * If called as a page callback, returns a string. If called from drush,
- * returns an array of status messages.
+ * It creates batch processes to avoid php timeouts
  *
- * @return array|string
+ * Batch process have two callbacks _devconnect_user_sync_to_kms and
+ * _devconnect_user_sync_from_kms, one pushes missing developer in KMS
+ * from Dev Portal and the other from kms to Dev Portal respectively.
+ *
+ * Each batch process works with 10 developers per iteration.
+ *
  */
 function devconnect_user_sync() {
-  $list_items = array();
 
   // Fetch list of developers on KMS
   $kms_developers_orig = entity_load('developer');
@@ -887,18 +873,66 @@ function devconnect_user_sync() {
   }
 
   // Get a case-insensitive diff of developer emails
-  $not_in_kms = array_diff_key($drupal_users, $kms_developers);
+  $not_in_kms = array();
+  foreach ($drupal_users as $key => $value) {
+    if (!array_key_exists($key, $kms_developers)) {
+      $not_in_kms[$key] = $value;
+    }
+  }
   $not_in_drupal = array_diff_key($kms_developers, $drupal_users);
 
-  // For each user in Drupal that is not in KMS, create developer in KMS.
-  foreach ($not_in_kms as $drupal_user) {
-    $list_items[] = _devconnect_user_save_entity($drupal_user);
+  $offset = 10;
+  $operations = array();
+  for ($i = 0, $len = count($not_in_drupal); $i < $len; $i += $offset) {
+    $operations[] = array('_devconnect_user_sync_from_kms', array(array_slice($not_in_drupal, $i, $offset, TRUE), array('total' => $len, 'offset' => $offset)));
+  }
+
+  for ($i = 0, $len = count($not_in_kms); $i < $len; $i += $offset) {
+    $operations[] = array('_devconnect_user_sync_to_kms', array(array_slice($not_in_kms, $i, $offset, TRUE), array('total' => $len, 'offset' => $offset)));
+  }
+
+  $devconnect_user_sync_batch = array(
+    'operations' => $operations,
+    'finished' => '_devconnect_user_sync_finished',
+    'title' => t('Synchronizing Dev Portal Developers'),
+    'init_message' => t('Initiating Synchronization'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('Synchronization of Dev Portal Developers has encountered an error.'),
+  );
+  batch_set($devconnect_user_sync_batch);
+
+  // Check if not run by drush
+  if (!drupal_is_cli()) {
+    batch_process('admin/people');
+  }
+  else {
+    $batch =& batch_get();
+    $batch['progressive'] = FALSE;
+    drush_backend_batch_process();
+  }
+}
+
+/**
+ * Batch callback to save developer from KMS to Dev Portal
+ */
+function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_developer'] = 0;
+    $context['sandbox']['max'] = $counters['total'];
+    $context['results'][] = array(
+      'message' => t('from KMS to Dev Portal.'),
+      'processed_dc' => 0,
+      'simpletest_dc' => 0
+    );
   }
 
   // For each developer in KMS that is not in Drupal, create user in Drupal.
-  foreach ($not_in_drupal as $developer) {
+  foreach ($developers  as $email => $developer) {
     // Skip any cruft users left over from failed simpletests
     if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $developer['email'])) {
+      $context['results'][0]['simpletest_dc']++;
+      $context['sandbox']['progress']++;
       continue;
     }
     $kms_user_name = $developer['userName'];
@@ -942,7 +976,8 @@ function devconnect_user_sync() {
     $drupal_user = user_save($account, $edit);
     if ($drupal_user) {
       $is_admin = devconnect_user_is_org_admin($drupal_user->mail);
-      $list_items[] = t('@type Drupal user @name (@mail) created with uid @uid', array('@type' => ($is_admin ? t('Administrative') : t('Ordinary')), '@name' => $drupal_user->name, '@mail' => $drupal_user->mail, '@uid' => $drupal_user->uid));
+      $context['results'][] = t('@type Drupal user @name (@mail) created with uid @uid', array('@type' => ($is_admin ? t('Administrative') : t('Ordinary')), '@name' => $drupal_user->name, '@mail' => $drupal_user->mail, '@uid' => $drupal_user->uid));
+      $context['results'][0]['processed_dc']++;
       if ($is_admin) {
         // Assign all administrator roles to this user
         $admin_rids = devconnect_user_get_admin_rids();
@@ -956,25 +991,81 @@ function devconnect_user_sync() {
       }
     }
     else {
-      $list_items[] = t('Drupal user @name not created.', array('@name' => $drupal_name));
+      $context['results'][] = t('Drupal user @name not created.', array('@name' => $drupal_name));
     }
+    $context['sandbox']['progress']++;
+    $context['sandbox']['current_developer'] = $email;
   }
+  $context['message'] = t('%completed developers out of %total synced to Dev Portal', array(
+    '%completed' => $context['results'][0]['processed_dc'],
+    '%total' => $context['sandbox']['max'],
+  ));
+  $context['finished'] = 1;
+}
 
-  if (function_exists('drush_print')) {
-    return $list_items;
+/**
+ * Batch callback to save developer from Dev Portal to KMS
+ */
+function _devconnect_user_sync_to_kms($developers, $counters, &$context) {
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_developer'] = 0;
+    $context['sandbox']['max'] = $counters['total'];
+    $context['results'][] = array(
+      'message' => t('from Dev Portal to KMS.'),
+      'processed_kms' => 0,
+      'simpletest_kms' => 0
+    );
   }
-
-  if (count($list_items) == 0) {
-    return '<p>' . t('All developers are in sync.') . '</p>';
+  foreach ($developers as $email => $developer) {
+    if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $email)) {
+      $context['results'][0]['simpletest_kms']++;
+      $context['sandbox']['progress']++;
+      continue;
+    }
+    $result = _devconnect_user_save_entity($developer);
+    $context['results'][] = $result;
+    $context['results'][0]['processed_kms'] += strpos($result, 'not') ? 0 : 1;
+    $context['sandbox']['progress']++;
+    $context['sandbox']['current_developer'] = $email;
   }
-  $list_params = array(
-    'items' => $list_items,
-    'title' => NULL,
-    'type' => 'ul',
-    'attributes' => array()
-  );
+  $context['message'] = t('%completed developers processed out of %total synced to KMS', array(
+    '%completed' => $context['results'][0]['processed_kms'],
+    '%total' => $context['sandbox']['max'],
+  ));
+  $context['finished'] = 1;
+}
 
-  return theme('item_list', $list_params);
+/**
+ * Finish batch callback to sync developers
+ */
+function _devconnect_user_sync_finished($success, $results, $operations) {
+  if ($success) {
+    if (function_exists('drush_print')) {
+      array_shift($results);
+      $results = array_filter($results, function($item) { return !is_array($item) && trim($item) != ''; });
+      return $results;
+    }
+    $message = $results[0]['processed_kms'] . ' created in KMS<br>'
+               . $results[0]['processed_dc'] . ' created in Dev Portal<br>'
+               . ($results[0]['simpletest_kms'] + $results[0]['simpletest_dc']) . ' Simpletest accounts not created<br>' ;
+
+    array_shift($results);
+    $results = array_filter($results, function($item) { return !is_array($item) && trim($item) != ''; });
+    foreach (array_keys($results) as $key) {
+      $results[$key] = array(
+        'id' => 'Item' . $key,
+        'data' => $results[$key]
+      );
+    }
+    $message .= theme_item_list(array('items' => $results, 'title' => t('Synced Developers'), 'type' => 'ul', 'attributes' => array()));
+    drupal_set_message($message);
+  }
+  else {
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+    drupal_set_message($message, 'error');
+  }
 }
 
 function devconnect_user_is_org_admin($email) {
@@ -1010,4 +1101,145 @@ function devconnect_user_get_admin_rids() {
     }
   }
   return $rids;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function devconnect_user_views_api() {
+  return array(
+    'api' => '3.0',
+    'path' => drupal_get_path('module', 'devconnect_user'),
+  );
+}
+
+
+/**
+ * Deletes references to a specific developer_app or api_product entity from
+ * our internal cache.
+ *
+ * @param $entity
+ */
+function devconnect_user_delete_from_cache(Drupal\devconnect_user\DeveloperEntity $entity) {
+  db_delete('dc_dev_attributes')->condition('developer_id', $entity->developerId)->execute();
+  db_delete('dc_dev')->condition('developer_id', $entity->developerId)->execute();
+}
+
+/**
+ * Writes a developer_app or api_product entity to our internal cache.
+ *
+ * By default we delete any references to this entity from our cache before
+ * writing, but when $ensure_clean is set to FALSE we can skip this step.
+ * In real life this occurs when the table has been freshly truncated.
+ *
+ * @param $entity
+ * @param bool $ensure_clean
+ */
+function devconnect_user_write_to_cache(Drupal\devconnect_user\DeveloperEntity $entity, $ensure_clean = TRUE) {
+  if ($ensure_clean) {
+    devconnect_user_delete_from_cache($entity);
+  }
+  $fields = array(
+    'developer_id' => $entity->developerId,
+    'uid' => intval($entity->uid),
+    'status' => intval($entity->status == 'active')
+  );
+  db_insert('dc_dev')->fields($fields)->execute();
+  foreach ($entity->attributes as $name => $value) {
+    // @TODO: Decide either to accept NULL values or skip them
+    // Temporary fix for NULL values not being accepted in DB 
+    if (!isset($value)) {
+      continue;
+    }
+    db_insert('dc_dev_attributes')
+      ->fields(array(
+        'developer_id' => $entity->developerId,
+        'name' => $name,
+        'value' => $value
+      ))
+      ->execute();
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ *
+ * Refreshes our developer caches.
+ *
+ * @return array
+ */
+function devconnect_user_flush_caches() {
+
+  static $already_ran = FALSE;
+
+  // Prevent this from running twice (drush cron may do this)
+  if ($already_ran) {
+    return array();
+  }
+  $already_ran = TRUE;
+  // Do not try to rebuild caches if we're not yet configured.
+  $org_config = devconnect_default_api_client();
+  if (empty($org_config->orgName)) {
+    return array();
+  }
+
+  $devs = entity_load('developer');
+
+  if (empty($devs)) {
+    if (function_exists('drush_print')) {
+      drush_print('No devs in org ' . $org_config->orgName);
+    }
+    return array();
+  }
+
+  module_load_install('devconnect_user');
+  $tables = array_keys(devconnect_user_schema());
+  db_transaction();
+  foreach ($tables as $table) {
+    db_truncate($table)->execute();
+  }
+  foreach ($devs as $dev) {
+    devconnect_user_write_to_cache($dev, FALSE);
+  }
+
+  // hook_flush_caches requires an array as return type
+  return array();
+}
+
+/**
+ * Implements hook_cron().
+ */
+function devconnect_user_cron() {
+  devconnect_user_flush_caches();
+}
+
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * Removes the OpenID identities tab
+ *
+ * @param array $data
+ * @param $router_item
+ * @param $root_path
+ */
+function devconnect_user_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if (arg(0) == 'user') {
+    foreach ($data['tabs'] as $i => $menu_item) {
+      if (array_key_exists('output', $menu_item) && is_array($menu_item['output'])) {
+        foreach ($menu_item['output'] as $j => $sub_item) {
+          switch ($sub_item['#link']['path']) {
+            case 'user/%/view':
+            case 'user/%/openid':
+              unset($data['tabs'][$i]['output'][$j]);
+              $data['tabs'][$i]['count']--;
+              break;
+            case 'user/%/edit':
+              $data['tabs'][$i]['output'][$j]['#link']['title'] = 'Edit User Profile';
+              break;
+          }
+        }
+      }
+    }
+  }
 }

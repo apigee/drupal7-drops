@@ -64,6 +64,13 @@ class DeveloperEntity extends ArrayEntity {
    * Read-only
    */
   public $modifiedBy;
-  
+  /**
+   * @var int
+   * Read-only
+   */
+  public $uid;
+  /**
+   * @var array
+   */
   public $debugData;
 }

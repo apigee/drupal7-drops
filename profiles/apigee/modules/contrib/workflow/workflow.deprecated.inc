@@ -57,7 +57,7 @@ function workflow_get_creation_state_by_wid($wid) {
  */
 function workflow_get_creation_state_by_type($type) {
   $sid = FALSE;
-  if ($workflow = workflow_get_workflows_by_type($type)) {
+  if ($workflow = workflow_get_workflows_by_type($type, 'node')) {
     $sid = $workflow->getCreationSid();
   }
   return $sid;
@@ -162,7 +162,7 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
   else {
     // This is used in Node API.
     $workflow = workflow_get_workflow_type_map_by_type($node->type);
-    $current_sid = workflow_node_current_state($node);
+    $current_sid = workflow_node_current_state($node, 'node', '');
     $state = workflow_state_load_single($current_sid);
   }
   return $state->getOptions('node', $node, $force);
@@ -644,12 +644,23 @@ function workflow_delete_workflow_scheduled_transition_by_nid($nid) {
  */
 
 /**
+ * Get most recent transition for a node.
+ *
+ * @deprecated: workflow_get_recent_node_history() --> workflow_transition_load_single()
+ */
+function workflow_get_recent_node_history($nid) {
+  $field_name = '';
+  return workflow_transition_load_single('node', $nid, $field_name);
+}
+
+/**
  * Get all recorded history for a node id.
  *
  * Since this may return a lot of data, a limit is included to allow for only one result.
  */
 function workflow_get_workflow_node_history_by_nid($nid, $limit = NULL) {
-  return workflow_transition_load_multiple('node', $nid, $field_name= '', $limit);
+  $field_name = '';
+  return workflow_transition_load_multiple('node', array($nid), $field_name, $limit);
 }
 
 /**

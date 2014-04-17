@@ -87,6 +87,7 @@ projects[job_scheduler][subdir]                                = "contrib"
 projects[jquerymobile][subdir]                                 = "contrib"
 projects[jquery_colorpicker][subdir]                           = "contrib"
 projects[jquery_update][subdir]                                = "contrib"
+projects[jquery_update][version]                               = "2.3"
 projects[l10n_update][subdir]                                  = "contrib"
 projects[layout][subdir]                                       = "contrib"
 projects[ldap][subdir]                                         = "contrib"
@@ -103,6 +104,9 @@ projects[mass_contact][subdir]                                 = "contrib"
 projects[mediaelement][subdir]                                 = "contrib"
 projects[media][subdir]                                        = "contrib"
 projects[media][version]                                       = "2.0-alpha3"
+; don't break views_view.tpl.php
+; see https://drupal.org/node/2232703
+projects[media][patch][2232703] = "https://drupal.org/files/issues/media-views-2232703-5.patch"
 projects[media_youtube][subdir]                                = "contrib"
 projects[menu_attributes][subdir]                              = "contrib"
 projects[menu_trail_by_path][subdir]                           = "contrib"
@@ -138,6 +142,7 @@ projects[rules][subdir]                                        = "contrib"
 projects[rules_forms][subdir]                                  = "contrib"
 projects[rules_conditional][subdir]                            = "contrib"
 projects[services][subdir]                                     = "contrib"
+projects[securepages][subdir]                                  = "contrib"
 projects[services_views][subdir]                               = "contrib"
 projects[smtp][subdir]                                         = "contrib"
 projects[special_menu_items][subdir]                           = "contrib"
@@ -164,6 +169,8 @@ projects[workbench][subdir]                                    = "contrib"
 projects[workbench_moderation][subdir]                         = "contrib"
 projects[workbench_moderation_notes][subdir]                   = "contrib"
 projects[workflow][subdir]                                     = "contrib"
+; xautoload is required by sps
+projects[xautoload][subdir]                                    = "contrib"
 projects[XHProf][subdir]                                       = "contrib"
 
 projects[commerce_worldpay_business_gateway][subdir]           = "contrib"
@@ -286,10 +293,7 @@ projects[apigee_responsive][directory_name]                    = apigee_responsi
 projects[tao][type]                                            = "theme"
 
 projects[rubik][type]                                          = "theme"
-projects[rubik][download][type]                                = "git"
-projects[rubik][download][url]                                 = "http://git.drupal.org/project/rubik.git"
-projects[rubik][download][branch]                              = "7.x-4.x"
-projects[rubik][patch][2155277]                                = "https://drupal.org/files/issues/rubik-eliminateformmargintoo-2155277-5.patch"
+projects[rubik][version]                                       = "4.x-dev"
 
 projects[bootstrap][type]                                      = "theme"
 
@@ -309,7 +313,7 @@ projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
-projects[devconnect][download][branch]                         = "7.x-4.25"
+projects[devconnect][download][branch]                         = "7.x-14.03"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module

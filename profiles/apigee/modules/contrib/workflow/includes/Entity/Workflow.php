@@ -398,10 +398,8 @@ class Workflow extends Entity {
    *   An array of typemaps.
    */
   public function getTypeMap() {
-    if (module_exists('workflownode')) {
-      return workflow_get_workflow_type_map_by_wid($this->wid);
-    }
-    return array();
+    $type_map = module_exists('workflownode') ? workflow_get_workflow_type_map_by_wid($this->wid) : array(); 
+    return $type_map;
   }
 
   /**
@@ -436,7 +434,7 @@ class Workflow extends Entity {
    * @todo 1: this is not robust: 1 Item has 1 Workflow; 1 Workflow may have N Items (fields)
    * @todo 2: find other solution.
    */
-  public function getWorkflowItem(WorkflowItem $item = NULL) {
+  public function getWorkflowItem(WorkflowItem $item = NULL, $entity_type = '', $entity_bundle = '', $field_name = '') {
     if ($item) {
       $this->item = $item;
     }
@@ -445,23 +443,9 @@ class Workflow extends Entity {
       // @todo D8: Remove, after converting workflow node to workflow field.
       $workflow = &$this;
 
-      $field = array();
-      $field['field_name'] = '';
-      $field['id'] = 0;
-      $field['settings']['wid'] = $workflow->wid;
-      $field['settings']['widget'] = $workflow->options;
-      // Add default values.
-      $field['settings']['widget'] += array(
-        'name_as_title' => TRUE,
-        'options' => 'radios',
-        'schedule' => TRUE,
-        'schedule_timezone' => TRUE,
-        'comment_log_node' => TRUE,
-        'comment_log_tab' => TRUE,
-        'watchdog_log' => TRUE,
-        'history_tab_show' => TRUE,
-      );
-
+      // Call field_info_field().
+      // Generates pseudo data for workflow_node to re-use Field API.
+      $field = _workflow_info_field($field_name, $workflow);
       $instance = array();
 
       $this->item = new WorkflowItem($field, $instance);

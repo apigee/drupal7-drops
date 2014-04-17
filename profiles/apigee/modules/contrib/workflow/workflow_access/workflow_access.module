@@ -44,21 +44,29 @@ function workflow_access_node_grants($account, $op) {
 function workflow_access_node_access_records($node) {
   $grants = array();
 
-  if ($current_sid = workflow_node_current_state($node)) {
-    // Get 'author' of this entity.
-    // - Some entities (e.g, taxonomy_term) do not have a uid.
-    // Anonymous ($uid == 0) author is not allowed for role 'author' (== -1).
-    $uid = isset($node->uid) ? $node->uid : 0;
+  // Only relevant for content with Workflow.
+  if (!isset($node->workflow_transitions)) {
+    return $grants;
+  }
 
-    foreach (workflow_access_get_workflow_access_by_sid($current_sid) as $grant) {
-      $grants[] = array(
-        'realm' => ($uid > 0 && $grant->rid == WORKFLOW_ROLE_AUTHOR_RID) ? 'workflow_access_owner' : 'workflow_access',
-        'gid' => ($uid > 0 && $grant->rid == WORKFLOW_ROLE_AUTHOR_RID) ? $node->uid : $grant->rid,
-        'grant_view' => $grant->grant_view,
-        'grant_update' => $grant->grant_update,
-        'grant_delete' => $grant->grant_delete,
-        'priority' => variable_get('workflow_access_priority', 0),
-      );
+  // Get 'author' of this entity.
+  // - Some entities (e.g., taxonomy_term) do not have a uid.
+  // Anonymous ($uid == 0) author is not allowed for role 'author' (== -1).
+  $uid = isset($node->uid) ? $node->uid : 0;
+
+  foreach ($node->workflow_transitions as $transition) {
+    $field_name = $transition->field_name;
+    if ($current_sid = workflow_node_current_state($node, 'node', $field_name)) {
+      foreach (workflow_access_get_workflow_access_by_sid($current_sid) as $grant) {
+        $grants[] = array(
+          'realm' => ($uid > 0 && $grant->rid == WORKFLOW_ROLE_AUTHOR_RID) ? 'workflow_access_owner' : 'workflow_access',
+          'gid' => ($uid > 0 && $grant->rid == WORKFLOW_ROLE_AUTHOR_RID) ? $uid : $grant->rid,
+          'grant_view' => $grant->grant_view,
+          'grant_update' => $grant->grant_update,
+          'grant_delete' => $grant->grant_delete,
+          'priority' => variable_get('workflow_access_priority', 0),
+        );
+      }
     }
   }
   return $grants;

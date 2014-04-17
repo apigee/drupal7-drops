@@ -15,7 +15,6 @@ class WorkflowState {
   protected $sysid = 0;
   protected $state = ''; // @todo D8: remove $state, use $label/$name. (requires conversion of Views displays.)
   public $status = 1;
-  protected $workflow = NULL;
 
   /**
    * CRUD functions.
@@ -229,7 +228,7 @@ class WorkflowState {
         $transition = new WorkflowTransition();
         $transition->setValues($entity_type, $entity, $field_name, $current_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
         $transition->force($force); 
-        // Excute Transition, invoke 'pre' and 'post' events, save new state in workflow_node, save also in workflow_node_history.
+        // Execute Transition, invoke 'pre' and 'post' events, save new state in workflow_node, save also in workflow_node_history.
         // For Workflow Node, only {workflow_node} and {workflow_node_history} are updated. For Field, also the Entity itself.
         $new_sid = workflow_execute_transition($entity_type, $entity, $field_name, $transition, $force);
       }
@@ -268,7 +267,7 @@ class WorkflowState {
    *  Workflow object.
    */
   public function getWorkflow() {
-    return isset($this->workflow) ? $this->workflow : workflow_load_single($this->wid);
+    return workflow_load_single($this->wid);
   }
 
   /**

@@ -2,13 +2,13 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta name="generator" content="ApiGen 3.0dev" />
+	<meta name="generator" content="ApiGen 2.8.0" />
 
-	<title>Class Apigee\Mint\PricePoint</title>
+	<title>Class Apigee\Mint\PricePoint | API Reference for the Apigee Edge PHP Management SDK</title>
 
-	<script type="text/javascript" src="resources/combined.js?3569753172"></script>
-	<script type="text/javascript" src="elementlist.js?2533977299"></script>
-	<link rel="stylesheet" type="text/css" media="all" href="resources/style.css?4214719069" />
+	<script type="text/javascript" src="resources/combined.js?1630807870"></script>
+	<script type="text/javascript" src="elementlist.js?1451456074"></script>
+	<link rel="stylesheet" type="text/css" media="all" href="resources/style.css?3505392360" />
 
 </head>
 
@@ -23,11 +23,6 @@
 			<ul>
 				<li class="active"><a href="namespace-Apigee.html">Apigee<span></span></a>
 						<ul>
-				<li><a href="namespace-Apigee.Commerce.html">Commerce<span></span></a>
-						<ul>
-				<li><a href="namespace-Apigee.Commerce.DataStructures.html">DataStructures</a>
-						</li>
-							</ul></li>
 				<li><a href="namespace-Apigee.DocGen.html">DocGen</a>
 						</li>
 				<li><a href="namespace-Apigee.Drupal.html">Drupal</a>
@@ -66,7 +61,6 @@
 				<li><a href="class-Apigee.Mint.BankDetail.html">BankDetail</a></li>
 				<li><a href="class-Apigee.Mint.BillingAdjustment.html">BillingAdjustment</a></li>
 				<li><a href="class-Apigee.Mint.BillingDocument.html">BillingDocument</a></li>
-				<li><a href="class-Apigee.Mint.CurrencyISO4217.html">CurrencyISO4217</a></li>
 				<li><a href="class-Apigee.Mint.Developer.html">Developer</a></li>
 				<li><a href="class-Apigee.Mint.DeveloperBalance.html">DeveloperBalance</a></li>
 				<li><a href="class-Apigee.Mint.DeveloperCategory.html">DeveloperCategory</a></li>
@@ -122,6 +116,9 @@
 			<li>
 				<a href="tree.html" title="Tree view of classes, interfaces, traits and exceptions"><span>Tree</span></a>
 			</li>
+			<li>
+				<a href="deprecated.html" title="List of deprecated elements"><span>Deprecated</span></a>
+			</li>
 		</ul>
 		<ul>
 		</ul>
@@ -175,12 +172,12 @@ their constructor.</p>
 		<b>Namespace:</b> <a href="namespace-Apigee.html">Apigee</a>\<a href="namespace-Apigee.Mint.html">Mint</a><br />
 		<b>Package:</b> Apigee\Mint\Base<br />
 
-		<b>Located at</b> <a href="source-class-Apigee.Mint.PricePoint.html#7-341" title="Go to source code">Mint/PricePoint.php</a><br />
+		<b>Located at</b> <a href="source-class-Apigee.Mint.PricePoint.html#7-365" title="Go to source code">Mint/PricePoint.php</a><br />
 	</div>
 
 
 
-	<table class="summary methods" id="methods">
+	<table class="summary" id="methods">
 	<caption>Methods summary</caption>
 	<tr data-order="__construct" id="___construct">
 
@@ -193,7 +190,7 @@ their constructor.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#___construct">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#69-83" title="Go to source code">__construct</a>( <span>string <var>$product_id</var></span>, <span><code><a href="class-Apigee.Util.OrgConfig.html">Apigee\Util\OrgConfig</a></code> <var>$config</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#70-85" title="Go to source code">__construct</a>( <span>string <var>$product_id</var></span>, <span><code><a href="class-Apigee.Util.OrgConfig.html">Apigee\Util\OrgConfig</a></code> <var>$config</var></span> )</code>
 
 		<div class="description short">
 			
@@ -210,9 +207,9 @@ their constructor.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$product_id</var></dt>
-					<dd>Product Id this PricePoint is in</dd>
+					<dd><code>string</code><br>$product_id Product Id this PricePoint is in</dd>
 					<dt><var>$config</var></dt>
-					<dd></dd>
+					<dd><code><code><a href="class-Apigee.Util.OrgConfig.html">Apigee\Util\OrgConfig</a></code></code><br>$config</dd>
 				</dl></div>
 
 
@@ -233,7 +230,7 @@ their constructor.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_save">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#87-97" title="Go to source code">save</a>( <span>string <var>$save_method</var> = <span class="php-quote">'auto'</span></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#89-100" title="Go to source code">save</a>( <span>string <var>$save_method</var> = <span class="php-quote">'auto'</span></span> )</code>
 
 		<div class="description short">
 			
@@ -246,13 +243,13 @@ their constructor.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$save_method</var></dt>
-					<dd>Allowed values: update</dd>
+					<dd><code>string</code><br>$save_method Allowed values: update</dd>
 				</dl></div>
 
 
 				<h4>Throws</h4>
 				<div class="list">
-					<code>Apigee\Exceptions\ParameterException;</code><br>\Apigee\Exceptions\ParameterException;<br />
+					<code>Apigee\Exceptions\ParameterException;</code><br />
 				</div>
 
 				<h4>See</h4>
@@ -277,7 +274,7 @@ their constructor.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_instantiateNew">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#101-103" title="Go to source code">instantiateNew</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#104-107" title="Go to source code">instantiateNew</a>( )</code>
 
 		<div class="description short">
 			
@@ -296,7 +293,7 @@ the class that is doing the instantiation.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code><code><a href="class-Apigee.Mint.Base.BaseObject.html">Apigee\Mint\Base\BaseObject</a></code></code><br>\Apigee\Mint\Base\BaseObject<br />
+					<code><code><a href="class-Apigee.Mint.Base.BaseObject.html">Apigee\Mint\Base\BaseObject</a></code></code><br />
 				</div>
 
 
@@ -316,7 +313,7 @@ the class that is doing the instantiation.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_loadFromRawData">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#105-132" title="Go to source code">loadFromRawData</a>( <span>array <var>$data</var></span>, <span>boolean <var>$reset</var> = <span class="php-keyword1">FALSE</span></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#109-136" title="Go to source code">loadFromRawData</a>( <span>array <var>$data</var></span>, <span>boolean <var>$reset</var> = <span class="php-keyword1">false</span></span> )</code>
 
 		<div class="description short">
 			
@@ -335,9 +332,9 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$data</var></dt>
-					<dd></dd>
+					<dd><code>array</code><br>$data</dd>
 					<dt><var>$reset</var></dt>
-					<dd></dd>
+					<dd><code>boolean</code><br>$reset</dd>
 				</dl></div>
 
 
@@ -351,14 +348,14 @@ with that data.</p>
 
 		<td class="attributes"><code>
 			 public 
-			mixed
+			
 			
 			</code>
 		</td>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_initValues">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#134-144" title="Go to source code">initValues</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#138-149" title="Go to source code">initValues</a>( )</code>
 
 		<div class="description short">
 			
@@ -373,10 +370,6 @@ with that data.</p>
 
 
 
-				<h4>Returns</h4>
-				<div class="list">
-					<code>mixed</code><br>mixed<br />
-				</div>
 
 
 
@@ -388,14 +381,14 @@ with that data.</p>
 
 		<td class="attributes"><code>
 			 public 
-			mixed
+			string
 			
 			</code>
 		</td>
 
 		<td class="name"><div>
 		<a class="anchor" href="#___toString">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#146-166" title="Go to source code">__toString</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#151-171" title="Go to source code">__toString</a>( )</code>
 
 		<div class="description short">
 			
@@ -412,7 +405,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>mixed</code><br>mixed<br />
+					<code>string</code><br />
 				</div>
 
 
@@ -432,7 +425,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getId">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#170-176" title="Go to source code">getId</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#175-182" title="Go to source code">getId</a>( )</code>
 
 		<div class="description short">
 			
@@ -449,7 +442,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>string</code><br>string<br />
+					<code>string</code><br />
 				</div>
 
 
@@ -469,7 +462,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setId">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#178-185" title="Go to source code">setId</a>( <span>string <var>$id</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#184-192" title="Go to source code">setId</a>( <span>string <var>$id</var></span> )</code>
 
 		<div class="description short">
 			
@@ -486,7 +479,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$id</var></dt>
-					<dd></dd>
+					<dd><code>string</code><br>$id</dd>
 				</dl></div>
 
 
@@ -507,7 +500,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getNetStartPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#187-193" title="Go to source code">getNetStartPrice</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#194-201" title="Go to source code">getNetStartPrice</a>( )</code>
 
 		<div class="description short">
 			
@@ -524,7 +517,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>float</code><br>double<br />
+					<code>float</code><br />
 				</div>
 
 
@@ -544,7 +537,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setNetStartPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#195-202" title="Go to source code">setNetStartPrice</a>( <span>float <var>$net_start_price</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#203-211" title="Go to source code">setNetStartPrice</a>( <span>float <var>$net_start_price</var></span> )</code>
 
 		<div class="description short">
 			
@@ -561,7 +554,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$net_start_price</var></dt>
-					<dd></dd>
+					<dd><code>float</code><br>$net_start_price</dd>
 				</dl></div>
 
 
@@ -582,7 +575,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getNetEndPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#204-210" title="Go to source code">getNetEndPrice</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#213-220" title="Go to source code">getNetEndPrice</a>( )</code>
 
 		<div class="description short">
 			
@@ -599,7 +592,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>float</code><br>double<br />
+					<code>float</code><br />
 				</div>
 
 
@@ -619,7 +612,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setNetEndPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#212-219" title="Go to source code">setNetEndPrice</a>( <span>float <var>$net_end_price</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#222-230" title="Go to source code">setNetEndPrice</a>( <span>float <var>$net_end_price</var></span> )</code>
 
 		<div class="description short">
 			
@@ -636,7 +629,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$net_end_price</var></dt>
-					<dd></dd>
+					<dd><code>float</code><br>$net_end_price</dd>
 				</dl></div>
 
 
@@ -657,7 +650,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getGrossStartPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#221-227" title="Go to source code">getGrossStartPrice</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#232-239" title="Go to source code">getGrossStartPrice</a>( )</code>
 
 		<div class="description short">
 			
@@ -674,7 +667,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>float</code><br>double<br />
+					<code>float</code><br />
 				</div>
 
 
@@ -694,7 +687,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setGrossStartPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#229-236" title="Go to source code">setGrossStartPrice</a>( <span>float <var>$gross_start_price</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#241-249" title="Go to source code">setGrossStartPrice</a>( <span>float <var>$gross_start_price</var></span> )</code>
 
 		<div class="description short">
 			
@@ -711,7 +704,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$gross_start_price</var></dt>
-					<dd></dd>
+					<dd><code>float</code><br>$gross_start_price</dd>
 				</dl></div>
 
 
@@ -732,7 +725,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getGrossEndPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#238-244" title="Go to source code">getGrossEndPrice</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#251-258" title="Go to source code">getGrossEndPrice</a>( )</code>
 
 		<div class="description short">
 			
@@ -749,7 +742,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>float</code><br>double<br />
+					<code>float</code><br />
 				</div>
 
 
@@ -769,7 +762,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setGrossEndPrice">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#246-253" title="Go to source code">setGrossEndPrice</a>( <span>float <var>$gross_end_price</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#260-268" title="Go to source code">setGrossEndPrice</a>( <span>float <var>$gross_end_price</var></span> )</code>
 
 		<div class="description short">
 			
@@ -786,7 +779,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$gross_end_price</var></dt>
-					<dd></dd>
+					<dd><code>float</code><br>$gross_end_price</dd>
 				</dl></div>
 
 
@@ -807,7 +800,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_isPublished">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#255-261" title="Go to source code">isPublished</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#270-277" title="Go to source code">isPublished</a>( )</code>
 
 		<div class="description short">
 			
@@ -824,7 +817,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>boolean</code><br>bool<br />
+					<code>boolean</code><br />
 				</div>
 
 
@@ -844,7 +837,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setPublished">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#263-270" title="Go to source code">setPublished</a>( <span>boolean <var>$published</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#279-287" title="Go to source code">setPublished</a>( <span>boolean <var>$published</var></span> )</code>
 
 		<div class="description short">
 			
@@ -861,7 +854,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$published</var></dt>
-					<dd></dd>
+					<dd><code>boolean</code><br>$published</dd>
 				</dl></div>
 
 
@@ -882,7 +875,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getStartDate">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#272-278" title="Go to source code">getStartDate</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#289-296" title="Go to source code">getStartDate</a>( )</code>
 
 		<div class="description short">
 			
@@ -899,7 +892,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>string</code><br>string<br />
+					<code>string</code><br />
 				</div>
 
 
@@ -919,7 +912,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setStartDate">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#280-287" title="Go to source code">setStartDate</a>( <span>string <var>$start_date</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#298-306" title="Go to source code">setStartDate</a>( <span>string <var>$start_date</var></span> )</code>
 
 		<div class="description short">
 			
@@ -936,7 +929,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$start_date</var></dt>
-					<dd></dd>
+					<dd><code>string</code><br>$start_date</dd>
 				</dl></div>
 
 
@@ -957,7 +950,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getEndDate">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#289-295" title="Go to source code">getEndDate</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#308-315" title="Go to source code">getEndDate</a>( )</code>
 
 		<div class="description short">
 			
@@ -974,7 +967,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>string</code><br>string<br />
+					<code>string</code><br />
 				</div>
 
 
@@ -994,7 +987,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setEndDate">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#297-304" title="Go to source code">setEndDate</a>( <span>string <var>$end_date</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#317-325" title="Go to source code">setEndDate</a>( <span>string <var>$end_date</var></span> )</code>
 
 		<div class="description short">
 			
@@ -1011,7 +1004,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$end_date</var></dt>
-					<dd></dd>
+					<dd><code>string</code><br>$end_date</dd>
 				</dl></div>
 
 
@@ -1032,7 +1025,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getOrganization">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#306-312" title="Go to source code">getOrganization</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#327-334" title="Go to source code">getOrganization</a>( )</code>
 
 		<div class="description short">
 			
@@ -1049,7 +1042,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code></code><br>\Apigee\Mint\Organization<br />
+					<code><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code></code><br />
 				</div>
 
 
@@ -1069,7 +1062,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setOrganization">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#314-321" title="Go to source code">setOrganization</a>( <span><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code> <var>$organization</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#336-344" title="Go to source code">setOrganization</a>( <span><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code> <var>$organization</var></span> )</code>
 
 		<div class="description short">
 			
@@ -1086,7 +1079,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$organization</var></dt>
-					<dd></dd>
+					<dd><code><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code></code><br>$organization</dd>
 				</dl></div>
 
 
@@ -1107,7 +1100,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getList">#</a>
-		<code><a href="source-class-Apigee.Mint.PricePoint.html#323-340" title="Go to source code">getList</a>( <span>null|integer <var>$page_num</var> = <span class="php-keyword1">NULL</span></span>, <span>integer <var>$page_size</var> = <span class="php-num">20</span></span> )</code>
+		<code><a href="source-class-Apigee.Mint.PricePoint.html#346-364" title="Go to source code">getList</a>( <span>null|integer <var>$page_num</var> = <span class="php-keyword1">null</span></span>, <span>integer <var>$page_size</var> = <span class="php-num">20</span></span> )</code>
 
 		<div class="description short">
 			
@@ -1124,14 +1117,14 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$page_num</var></dt>
-					<dd></dd>
+					<dd><code>null|integer</code><br>$page_num</dd>
 					<dt><var>$page_size</var></dt>
-					<dd></dd>
+					<dd><code>integer</code><br>$page_size</dd>
 				</dl></div>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>array</code><br>array<br />
+					<code>array</code><br />
 				</div>
 
 
@@ -1158,8 +1151,6 @@ with that data.</p>
 	<caption>Methods inherited from <a href="class-Apigee.Util.APIObject.html#methods">Apigee\Util\APIObject</a></caption>
 	<tr>
 		<td><code>
-			<a href="class-Apigee.Util.APIObject.html#___call">__call()</a>, 
-			<a href="class-Apigee.Util.APIObject.html#___callstatic">__callstatic()</a>, 
 			<a href="class-Apigee.Util.APIObject.html#_get">get()</a>, 
 			<a href="class-Apigee.Util.APIObject.html#_getConfig">getConfig()</a>, 
 			<a href="class-Apigee.Util.APIObject.html#_head">head()</a>, 
@@ -1219,7 +1210,7 @@ with that data.</p>
 </div>
 
 	<div id="footer">
-		 API documentation generated by <a href="http://apigen.org">ApiGen 3.0dev</a>
+		API Reference for the Apigee Edge PHP Management SDK API documentation generated by <a href="http://apigen.org">ApiGen 2.8.0</a>
 	</div>
 </div>
 </div>

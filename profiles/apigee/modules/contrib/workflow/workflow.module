@@ -172,6 +172,7 @@ function workflow_tab_access($entity_type, $entity) {
     return $access[$user->uid][$entity_type][$entity_id];
   }
 
+  // @todo: workflow_tab_access(): what to do with multiple workflow_fields per bundle? Use Views instead!
   if ($workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
     // Get the role IDs of the user. Workflow only stores Ids, not role names. 
     $roles = array_keys($user->roles);
@@ -188,7 +189,20 @@ function workflow_tab_access($entity_type, $entity) {
       $roles = array_merge(array(WORKFLOW_ROLE_AUTHOR_RID), $roles);
     }
 
-    if (user_access('administer nodes') || array_intersect($roles, $workflow->tab_roles)) {
+    // Get the permissions from the workflow settings.
+    // @todo: what to do with tab page when multiple workflow_fields per entity_bundle?
+    $fields = _workflow_get_workflow_field_info($entity, $entity_type);
+    $tab_roles = array();
+    $history_tab_show = FALSE;
+    foreach ($fields as $field) {
+      $tab_roles += $field['settings']['history']['roles'];
+      $history_tab_show |= $field['settings']['history']['history_tab_show'];
+    }
+
+    if ($history_tab_show == FALSE) {
+      $access[$user->uid][$entity_type][$entity_id] = FALSE;
+    }
+    elseif (user_access('administer nodes') || array_intersect($roles, $tab_roles)) {
       $access[$user->uid][$entity_type][$entity_id] = TRUE;
     }
     else {
@@ -372,22 +386,15 @@ function workflow_state_formatter($entity_type, $entity, $field = array(), $inst
   else {
     // This is a Workflow Node workflow.
     $current_state = workflow_state_load_single($current_sid);
-    if ($current_state) {
-      $output = theme('workflow_current_state', array('state' => workflow_get_sid_label($current_sid),
-                                                      'state_system_name' => $current_state->getName(),
-                                                      'sid' => $current_sid));
-    }
-    else {
-      // Should not happen in a production site:
-      // For some reason, state doesn't exist anymore.
-      $output = theme('workflow_current_state', array('state' => 'unknown state',
-                                                      'state_system_name' => 'unknown state',
-                                                      'sid' => $current_sid));
-    }
+    $args = array(
+      'state' => $current_state ? workflow_get_sid_label($current_sid) : 'unknown state',
+      'state_system_name' => $current_state ? $current_state->getName() : 'unknown state',
+      'sid' => $current_sid,
+    );
     $list_element =  array(
       '#type' => 'item',
       // '#title' => t('Current state'),
-      '#markup' => $output,
+      '#markup' => theme('workflow_current_state', $args),
     );
   }
   return $list_element;
@@ -424,14 +431,10 @@ function workflow_transition_form_submit($form, &$form_state) {
   $instance = $form_state['values']['workflow_instance'];
   $entity_type = $form_state['values']['workflow_entity_type'];
   $entity = $form_state['values']['workflow_entity'];
-
   $field_name = $field['field_name'];
 
-  $old_sid = workflow_node_current_state($entity, $entity_type, $field_name);
-  $items[0]['workflow'] = $form_state['input'];
-
-  // Determine is the transition is forced.
-  // This can be set by VBO in an additional form element.
+  // Determine if the transition is forced.
+  // This can be set by a 'workflow_vbo action' in an additional form element.
   $force = isset($form_state['input']['workflow_force']) ? $form_state['input']['workflow_force'] : FALSE;
 
   if ($field_name) {
@@ -439,7 +442,10 @@ function workflow_transition_form_submit($form, &$form_state) {
     // Perhaps there is a better way, but for now we use 'changed' property.
     // Caveat: Some entities do not have 'changed' property set.
     if ((isset($entity->changed)) && $entity->changed == REQUEST_TIME) {
-      // We were in edit mode. No need to save the entity explicitly.
+      // We are in edit mode. No need to save the entity explicitly.
+
+      // Add the $form_state to the $items, so we can do a getTransition() later on.
+      $items[0]['workflow'] = $form_state['input'];
       // Create a Transition. The Widget knows if it is scheduled.
       $widget = new WorkflowDefaultWidget($field, $instance, $entity_type, $entity);
       $new_sid = $widget->submit($form, $form_state, $items, $force);
@@ -455,6 +461,9 @@ function workflow_transition_form_submit($form, &$form_state) {
     // For a Node API form, only contrib fields need to be filled.
     // No updating of the node itself.
     // (unless we need to record the stamp.)
+
+    // Add the $form_state to the $items, so we can do a getTransition() later on.
+    $items[0]['workflow'] = $form_state['input'];
     // Create a Transition. The Widget knows if it is scheduled.
     $widget = new WorkflowDefaultWidget($field, $instance, $entity_type, $entity);
     $new_sid = $widget->submit($form, $form_state, $items, $force);
@@ -533,9 +542,12 @@ function _workflow_transition_form_validate_buttons($form, &$form_state) {
  * @param string $field_name
  *   A field name, used when changing a Workflow Field
  * @param object $transition
- *   A WorkflowTransition of WorkflowScheudledTransition
+ *   A WorkflowTransition of WorkflowScheduledTransition
  * @param $force
  *   If set to TRUE, workflow permissions will be ignored.
+ *
+ * @return
+ *   The new state ID.
  *
  * The first 3 parameters could be extracted from $transition...
  */
@@ -545,7 +557,6 @@ function workflow_execute_transition($entity_type, $entity, $field_name, $transi
   }
 
   if ($field_name) {
-    $new_sid = $transition->new_sid;
     // Do a separate update to update the field (Workflow Field API)
     // This will call hook_field_update() and WorkflowFieldDefaultWidget::submit().
     $entity->{$field_name}['und'][0]['transition'] = $transition;
@@ -553,10 +564,11 @@ function workflow_execute_transition($entity_type, $entity, $field_name, $transi
     // @todo: if transition is scheduled or new_sid == old_sid and no comment, proceed as if no $field_name.
     entity_save($entity_type, $entity);
     // field_attach_update($entity_type, $entity);
+
+    $new_sid = workflow_node_current_state($entity, $entity_type, $field_name);
   }
   else {
-    // For Node API, the node does not need to be saved, since all fields are custom.
-    // OTOH, we may need to refresh the cache, which is done by core on entity_save.
+    // For Node API, the node is not saved, since all fields are custom.
     $new_sid = $transition->execute($force = TRUE);
   }
 
@@ -680,23 +692,36 @@ function workflow_get_wid_label($wid) {
  *   The entity_type of the entity to check.
  * @param string $field_name
  *   The name of the field of the entity to check.
+ *   If NULL, the field_name is determined on the spot.
+ *   If '', we have a workflow_node mode.
  *
  * @return mixed $sid
  *   The ID of the current state.
  *
  * There is no need to use a page cache.
- * The performance is OK, and the cache gives prolems when using Rules.
+ * The performance is OK, and the cache gives problems when using Rules.
  */
-function workflow_node_current_state($entity, $entity_type = 'node', $field_name = '') {
+function workflow_node_current_state($entity, $entity_type = 'node', $field_name = NULL) {
   $sid = FALSE;
+
   static $sids = array();
 
-  $entity_id = entity_id($entity_type, $entity);
-
   if (!$entity) {
-    $sid = FALSE;
+    return $sid;
   }
-  elseif ($field_name) {
+
+  // If $field_name is not known, yet, determine it.
+  // If $entity->workflow is set, avoid this expensive operation.
+  // @todo: what to do with multiple workflow_fields per bundle?
+  if ($field_name === NULL && !isset($entity->workflow)) {
+    $fields = _workflow_get_workflow_field_info($entity, $entity_type);
+    if (count($fields)) {
+      $field = reset($fields);
+      $field_name = $field['field_name'];
+    }
+  }
+
+  if ($field_name) {
     // Field API: Get current/previous state.
     if (isset($entity->is_new) && $entity->is_new == TRUE) {
       // A new node has no sid. Fetch it later.
@@ -712,12 +737,6 @@ function workflow_node_current_state($entity, $entity_type = 'node', $field_name
       $items = isset($entity->{$field_name}['und']) ? $entity->{$field_name}['und'] : NULL;
       $sid = ($items) ? _workflow_get_sid_by_items($items) : FALSE;
     }
-    // No current state. Use creation state.
-    if (!$sid) {
-      $field = field_info_field($field_name);
-      $workflow = workflow_load_single($field['settings']['wid']);
-      $sid = $workflow->getCreationSid();
-    }
   }
   else {
     // Node API: Get current/previous state.
@@ -725,18 +744,29 @@ function workflow_node_current_state($entity, $entity_type = 'node', $field_name
     if (isset($entity->workflow)) {
       $sid = $entity->workflow;
     }
-    elseif ($workflow = workflow_get_workflows_by_type($entity->type, $entity_type)) {
-      $sid = $workflow->getCreationSid();
-    }
+  }
+
+  // No current state. Use creation state.
+  if (!$sid) {
+    $sid = _workflow_get_workflow_creation_sid($entity_type, $entity, $field_name);
   }
 
   return $sid;
 }
 
-function workflow_node_previous_state($entity, $entity_type = 'node', $field_name = '') {
+function workflow_node_previous_state($entity, $entity_type = 'node', $field_name) {
   $sid = FALSE;
-  // Get Id. Is empty when creating a node.
-  $entity_id = entity_id($entity_type, $entity);
+
+  // If $field_name is not known, yet, determine it.
+  // If $entity->workflow is set, avoid this expensive operation.
+  // @todo: what to do with multiple workflow_fields per bundle?
+  if ($field_name === NULL && !isset($entity->workflow)) {
+    $fields = _workflow_get_workflow_field_info($entity, $entity_type);
+    if (count($fields)) {
+      $field = reset($fields);
+      $field_name = $field['field_name'];
+    }
+  }
 
   if ($field_name && isset($entity->original)) {
     // A changed node.
@@ -744,21 +774,25 @@ function workflow_node_previous_state($entity, $entity_type = 'node', $field_nam
     $sid = ($items) ? _workflow_get_sid_by_items($items) : FALSE;
   }
 
-  if (!$sid && $last_transition = workflow_transition_load_single($entity_type, $entity_id, $field_name, 1)) {
-    $sid = $last_transition->new_sid;
+  if (!$sid && isset($entity->is_new) && $entity->is_new == TRUE) {
+    // A new Node. $is_new is not set when saving terms, etc.
+    $sid = _workflow_get_workflow_creation_sid($entity_type, $entity, $field_name);
+  }
+
+  // Get Id. Is empty when creating a node.
+  $entity_id = 0;
+  if (!sid) {
+    $entity_id = entity_id($entity_type, $entity);
+  }
+  if (!$sid && $entity_id) {
+    // Read the history. 
+    if ($last_transition = workflow_transition_load_single($entity_type, $entity_id, $field_name, 1)) {
+      $sid = $last_transition->new_sid;
+    }
   }
   if (!$sid) {
-    // Figure out the $entity's bundle and Id. Id is empty on node create.
-    if (!empty($entity->type)) {
-      $entity_bundle = $entity->type;
-    }
-    else {
-      list($entity_id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
-    }
-    // No current state. Use creation state.
-    if ($workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
-      $sid = $workflow->getCreationSid();
-    }
+    // No history found on an existing entity.
+    $sid = _workflow_get_workflow_creation_sid($entity_type, $entity, $field_name);
   }
   return $sid;
 }
@@ -791,8 +825,7 @@ function workflow_get_workflows_by_type($entity_bundle, $entity_type = 'node') {
 
   if (!isset($map[$entity_type][$entity_bundle])) {
     // Check the Node API first: Get $wid.
-    $type_map = function_exists('workflow_get_workflow_type_map_by_type') ? workflow_get_workflow_type_map_by_type($entity_bundle) : NULL;
-    if ($type_map) {
+    if (module_exists('workflownode') && $type_map = workflow_get_workflow_type_map_by_type($entity_bundle)) {
       // Get the workflow by wid.
       $wid = $type_map->wid;
     }
@@ -830,13 +863,6 @@ function workflow_get_workflows_by_type($entity_bundle, $entity_type = 'node') {
  */
 
 /**
- * Get most recent history for a node.
- */
-function workflow_get_recent_node_history($nid) {
-  return workflow_transition_load_single('node', $nid, $field_name = '');
-}
-
-/**
  * Given a user id, re-assign history to the new user account. Called by user_delete().
  */
 function workflow_update_workflow_node_history_uid($uid, $new_value) {
@@ -849,18 +875,29 @@ function workflow_update_workflow_node_history_uid($uid, $new_value) {
 
 /**
  * Given a node id, find out what it's current state is. Unique (for now).
+ *
+ * @param mixed $nid.
+ *   A Node ID or an array of node ID's.
  */
 function workflow_get_workflow_node_by_nid($nid) {
-  $results = db_query('SELECT nid, sid, uid, stamp FROM {workflow_node} WHERE nid = :nid', array(':nid' => $nid));
-  return $results->fetchObject();
+  $query = db_select('workflow_node', 'wn')->fields('wn')->condition('wn.nid', $nid)->execute();
+  if (is_array($nid)) {
+    $result = array();
+    foreach($query->fetchAll() as $workflow_node) {
+      $result[$workflow_node->nid] = $workflow_node;
+    }
+  }
+  else {
+    $result = $query->fetchObject();
+  }
+  return $result;
 }
 
 /**
  * Given a sid, find out the nodes associated.
  */
 function workflow_get_workflow_node_by_sid($sid) {
-  $results = db_query('SELECT nid, sid, uid, stamp FROM {workflow_node} WHERE sid = :sid', array(':sid' => $sid));
-  return $results->fetchAll();
+  return db_select('workflow_node', 'wn')->fields('wn')->condition('wn.sid', $sid)->execute()->fetchAll();
 }
 
 /**
@@ -922,4 +959,107 @@ function _workflow_get_sid_by_items($items) {
   // On a workflow form widget:
   $sid = isset($items[0]['workflow']['workflow_sid']) ? $items[0]['workflow']['workflow_sid'] : $sid;
   return $sid;
+}
+
+/**
+ * Gets the workflow field names, if not known already.
+ *
+ * @param array $items
+ *   Array with values, as passed in the hook_field_<op> functions.
+ *   Although we are parsing an array,
+ *   the Workflow Field settings ensure that the cardinality is set to 1.
+ *
+ * @return array $fields
+ *   An array of field_info strcutures.
+ */
+function _workflow_get_workflow_field_info($entity, $entity_type) {
+  $fields = array();
+
+  if (isset($entity->workflow)) {
+    $field_name = '';
+
+    $workflow = NULL;
+    if ($state = workflow_state_load($entity->workflow)) {
+      $workflow = workflow_load($state->wid);
+    }
+    // Call field_info_field()
+    // Generates pseudo data for workflow_node to re-use Field API.
+    $field = _workflow_info_field($field_name, $workflow);
+    $instance = array();
+
+    $fields[$field_name] = $field;
+  }
+  else {
+    list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+    $field_instances = field_info_instances($entity_type, $bundle);
+    foreach ($field_instances as $field_name => $instance) {
+      $field = field_info_field($field_name);
+      if($field['type'] == 'workflow') {
+        $fields[$field_name] = $field;
+      }
+    }
+  }
+
+  return $fields;
+}
+
+/**
+ * Gets the creation sid for a given $entity and $field_name.
+ */
+function _workflow_get_workflow_creation_sid($entity_type, $entity, $field_name) {
+  $sid = 0;
+  if ($field_name) {
+    // A new Node with Workflow Field.
+    $field = field_info_field($field_name);
+    $wid = $field['settings']['wid'];
+    $workflow = workflow_load_single($wid);
+  }
+  else {
+    // A new Node with Workflow Node.
+    list(, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
+    $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type);
+  }
+  if ($workflow) {
+    $sid = $workflow->getCreationSid();
+  }
+  return $sid;
+}
+
+/*
+ * A wrapper around field_info_field.
+ *
+ * This is to hide implementation details of workflow_node.
+ *
+ * @return array
+ *   field info structure. Pseudo data for workflow_node.
+ */
+function _workflow_info_field($field_name, $workflow = NULL) {
+  // @todo D8: remove this function when we only use workflow_field.
+  $field = array();
+  if ($field_name) {
+    $field = field_info_field($field_name);
+  }
+  else {
+    $field['field_name'] = '';
+    $field['id'] = 0;
+    $field['settings']['widget'] = array();
+    if ($workflow) {
+      $field['settings']['wid'] = $workflow->wid;
+      $field['settings']['widget'] = $workflow->options;
+      $field['settings']['history']['roles'] = $workflow->tab_roles;
+      $field['settings']['history']['history_tab_show'] = TRUE; // @todo: add a setting for this in workflow_node
+    }
+    // Add default values.
+    $field['settings']['widget'] += array(
+      'name_as_title' => TRUE,
+      'options' => 'radios',
+      'schedule' => TRUE,
+      'schedule_timezone' => TRUE,
+      'comment_log_node' => TRUE,
+      'comment_log_tab' => TRUE,
+      'watchdog_log' => TRUE,
+      'history_tab_show' => TRUE,
+    );
+  }
+  return $field;
 }

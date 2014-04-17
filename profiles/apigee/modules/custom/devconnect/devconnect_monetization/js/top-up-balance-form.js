@@ -9,6 +9,14 @@
             $("label.control-label", container).addClass("topup-modal-label");
             $("div.control-group.form-type-item div.controls", container).addClass("topup-modal-value");
 
+            if (!$("div#edit-current-balance", container).contents().last().is("div.controls")) {
+                $("div#edit-current-balance", container).contents().last().wrap("<div class=\"controls topup-modal-value\"></div>");
+            }
+
+            if (!$("div#edit-new-balance", container).contents().last().is("div.controls")) {
+                $("div#edit-new-balance", container).contents().last().wrap("<div class=\"controls topup-modal-value\"></div>");
+            }
+
             $("a.top-up.trigger").on("click", function(){
 
                 $("input#edit-top-up-amount", container).val("0");
@@ -34,7 +42,7 @@
                     if ($("select#edit-currency-id", container).val() != -1) {
                         $("#edit-amount").maskMoney("destroy");
                     }
-                    $("div#edit-new-balance", container).removeClass("alert alert-block alert-error");
+                    $("div#edit-new-balance", container).removeClass("alert alert-block alert-error error");
                     $("#topup_alert_minimum_required", container).hide();
                     $("#topup_alert_maximum_required", container).hide();
                 });
@@ -44,7 +52,7 @@
                 });
             });
 
-            $("div#edit-new-balance", container).removeClass("alert alert-block alert-error");
+            $("div#edit-new-balance", container).removeClass("alert alert-block alert-error error");
 
             $("select#edit-currency-id", container).change(function(){
                 var selectedCurrency = $(this).val();
@@ -79,11 +87,11 @@
 
                     if (newBalance > currentBalance) {
                         $("#edit-submit.btn.btn-primary.form-submit", container).removeAttr("disabled");
-                        $("div#edit-new-balance", container).removeClass("alert alert-block alert-error");
+                        $("div#edit-new-balance", container).removeClass("alert alert-block alert-error error");
                     }
                     else {
                         $("#edit-submit.btn.btn-primary.form-submit", container).attr("disabled", "disabled");
-                        $("div#edit-new-balance", container).addClass("alert alert-block alert-error");
+                        $("div#edit-new-balance", container).addClass("alert alert-block alert-error error");
                     }
                 }
             });
@@ -100,37 +108,41 @@
                 if ($(this).attr("minimum") != undefined) {
                     if (value < $(this).attr("minimum") * 1.0) {
                         $("#topup_alert_minimum_required", container).show();
+                        $("#topup_alert_minimum_required", container).removeClass("hide");
                     }
                     else {
                         $("#topup_alert_minimum_required", container).hide();
+                        $("#topup_alert_minimum_required", container).addClass("hide");
                     }
                 }
 
                 if ($(this).attr("maximum") != undefined) {
                     if (value > $(this).attr("maximum") * 1.0) {
                         $("#topup_alert_maximum_required", container).show();
+                        $("#topup_alert_maximum_required", container).removeClass("hide");
                     }
                     else {
                         $("#topup_alert_maximum_required", container).hide();
+                        $("#topup_alert_maximum_required", container).addClass("hide");
                     }
                 }
 
                 // Disable submit button in any alert is visible
                 if ($("div.alert.hide:visible", container).length) {
                     $("#edit-submit.btn.btn-primary.form-submit", container).attr("disabled", "disabled");
-                    $("div#edit-new-balance", container).addClass("alert alert-block alert-error");
+                    $("div#edit-new-balance", container).addClass("alert alert-block alert-error error");
                 }
                 else {
                     $("#edit-submit.btn.btn-primary.form-submit", container).removeAttr("disabled");
-                    $("div#edit-new-balance", container).removeClass("alert alert-block alert-error");
+                    $("div#edit-new-balance", container).removeClass("alert alert-block alert-error error");
                 }
                 if (newBalance > currentBalance) {
                     $("#edit-submit.btn.btn-primary.form-submit", container).removeAttr("disabled");
-                    $("div#edit-new-balance", container).removeClass("alert alert-block alert-error");
+                    $("div#edit-new-balance", container).removeClass("alert alert-block alert-error error");
                 }
                 else {
                     $("#edit-submit.btn.btn-primary.form-submit", container).attr("disabled", "disabled");
-                    $("div#edit-new-balance", container).addClass("alert alert-block alert-error");
+                    $("div#edit-new-balance", container).addClass("alert alert-block alert-error error");
                 }
             });
 
@@ -138,7 +150,6 @@
                 var currency = Drupal.settings.devconnect_monetization.currencies[$("select#edit-currency-id", container).val()];
                 $("select#edit-currency-id").removeAttr("disabled");
                 $("input#edit-top-up-amount", container).val(unmaskCurrencyAmount($("input#edit-top-up-amount", container).val(), currency));
-                //$("form#devconnect-monetization-top-up-balance-form").submit();
             });
         }
     };

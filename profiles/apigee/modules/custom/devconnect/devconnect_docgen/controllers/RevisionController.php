@@ -1,16 +1,6 @@
 <?php
 
-interface DocGenRevisionControllerInterface
-  extends DrupalEntityControllerInterface {
-  public function create();
-  public function loadVerbose($apiId, $revId);
-  public function save($entity);
-  public function delete($entity);
-}
-
-class DocGenRevisionController
-  extends DrupalDefaultEntityController
-  implements DocGenRevisionControllerInterface {
+class DocGenRevisionController extends DrupalDefaultEntityController {
 
   private $docGenRevision;
 
@@ -27,12 +17,33 @@ class DocGenRevisionController
 
   }
 
+  public function getAllRevisions($apiId) {
+    try {
+      $ret = $this->docGenRevision->getAllRevisions($apiId);
+      return $ret;
+    } catch (Exception $e) {
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+      return '';
+    }
+  }
+
+  public function oAuthEnable($apiId, $rev, $auth) {
+    try {
+      $auth = drupal_json_encode($auth);
+      $ret = $this->docGenRevision->oAuthEnable($apiId, $rev, $auth);
+      return $ret;
+    } catch (Exception $e) {
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+      return '';
+    }
+  }
+
   public function loadVerbose($apiId, $revId) {
     try {
       $ret = $this->docGenRevision->loadVerbose($apiId, $revId);
       return $ret;
     } catch (Exception $e) {
-      drupal_set_message($e->getCode() . ' ' . $e->getMessage());
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
       return '';
     }
   }

@@ -1,6 +1,184 @@
 <?php
 
 /**
+ * Provides authentication with Apigee when trying to access the API.  User must a valid org admin user.
+ *
+ * @param $user
+ * @param $pass
+ * @param int $timeout
+ * @return bool
+ */
+function _devconnect_docgen_validate_credentials($user, $pass, $timeout = 4) {
+  $config =& Drupal::config('devconnect.settings');
+  $org = $config->get('org');
+  $endpoint = $config->get('endpoint');
+  $timeout = intval(min($timeout, 8));
+  if ($timeout < 1) {
+    $timeout = 4;
+  }
+  $options = array(
+    'http_options' => array(
+      'connection_timeout' => $timeout,
+      'follow_location' => FALSE,
+    )
+  );
+  $config = new Apigee\Util\OrgConfig($org, $endpoint, $user, $pass, $options);
+  $org = new Apigee\ManagementAPI\Organization($config);
+  try {
+    $org->load();
+    return true;
+  }
+  catch (Exception $e) {
+    return false;
+  }
+}
+
+/**
+ * Provides an API for updating Drupal nodes after editMode submissions
+ *
+ * @param $method
+ */
+function devconnect_docgen_api_update($method) {
+  if (isset($_SERVER["PHP_AUTH_USER"]) && isset($_SERVER["PHP_AUTH_PW"])) {
+    $user = $_SERVER["PHP_AUTH_USER"];
+    $pass = $_SERVER["PHP_AUTH_PW"];
+    if (_devconnect_docgen_validate_credentials($user, $pass)) {
+      $postdata = file_get_contents("php://input");
+      $query = db_select('smartdocs', 's');
+      $query->condition('s.method', $method);
+      $query->fields('s', array('sid', 'nid', 'revision', 'resource', 'method', 'model'));
+      $result = $query->execute();
+      $data = new stdClass();
+      foreach ($result as $record) {
+        $data = $record;
+      }
+      if ($data->method == $method) {
+        if (smartdocs_is_json($postdata)) {
+          $updates = drupal_json_decode($postdata);
+          $nid = $data->nid;
+          $mid = $data->model;
+          $node = node_load($nid);
+          if (is_array($updates)) {
+            foreach ($updates as $title => $update) {
+              switch($title) {
+                case 'title':
+                  if (isset($updates['title'])) {
+                    $node->title = $updates['title'];
+                  }
+                  break;
+                case 'description':
+                  if (isset($updates['description'])) {
+                    $node->body[LANGUAGE_NONE][0]['value'] = $updates['description'];
+                    $node->body[LANGUAGE_NONE][0]['summary'] = $updates['description'];
+                    $node->body[LANGUAGE_NONE][0]['format'] = 'full_html';
+                  }
+                  break;
+                case 'path':
+                  if (isset($updates['path'])) {
+                    $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_path';
+                    $field =& $node->$field_name;
+                    $field[LANGUAGE_NONE][0]['value'] = $updates['path'];
+                    $field[LANGUAGE_NONE][0]['safe_value'] = $updates['path'];
+                  }
+                  break;
+                case 'types':
+                  if (isset($updates['types']) && is_array($updates['types'])) {
+                    $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_types';
+                    $field =& $node->$field_name;
+                    $i = 0;
+                    foreach ($updates['types'] as $type) {
+                      $term = taxonomy_get_term_by_name($type, _devconnect_docgen_model_name($mid) . '_types');
+                      if (isset($term->tid)) {
+                        $field[$i]->set(intval($term->tid));
+                      }
+                      $i++;
+                    }
+                  }
+                  break;
+                case 'verbs':
+                  if (isset($updates['verbs']) && is_array($updates['verbs'])) {
+                    $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_verb';
+                    $field =& $node->$field_name;
+                    $i = 0;
+                    foreach ($updates['verbs'] as $verb) {
+                      $term = taxonomy_get_term_by_name(strtoupper($verb), _devconnect_docgen_model_name($mid) . '_methods');
+                      if (isset($term->tid)) {
+                        $field[$i]->set(intval($term->tid));
+                      }
+                      $i++;
+                    }
+                  }
+                  break;
+                case 'auths':
+                  if (isset($updates['auth']) && is_array($updates['auths'])) {
+                    $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_authschemes';
+                    $field =& $node->$field_name;
+                    $i = 0;
+                    foreach ($updates['auths'] as $auth) {
+                      $term = taxonomy_get_term_by_name(strtoupper($auth), _devconnect_docgen_model_name($mid) . '_auth_schemes');
+                      if (isset($term->tid)) {
+                        $field[$i]->set(intval($term->tid));
+                      }
+                      $i++;
+                    }
+                  }
+                  break;
+                case 'tags':
+                  if (isset($updates['tags']) && is_array($updates['tag'])) {
+                    $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_tags';
+                    $field =& $node->$field_name;
+                    $i = 0;
+                    foreach ($updates['tags'] as $tag) {
+                      $term = taxonomy_get_term_by_name(strtoupper($tag), _devconnect_docgen_model_name($mid) . '_auth_schemes');
+                      if (isset($term->tid)) {
+                        $field[$i]->set(intval($term->tid));
+                      }
+                      $i++;
+                    }
+                  }
+                  break;
+                default:
+                  break;
+              }
+            }
+          }
+          node_save($node);
+          drupal_add_http_header('status', 200);
+          $data = array(
+            'code' => 200,
+            'message' => 'Linked node has been saved successfully',
+          );
+        } else {
+          drupal_add_http_header('status', 500);
+          $data = array(
+            'error' => (json_last_error() == 4) ? 'malformed JSON request' : json_last_error(),
+          );
+        }
+      } else {
+        drupal_add_http_header('status', 500);
+        $data = array(
+          'code' => 500,
+          'message' => 'Method doesn\'t exist on the Drupal installation.'
+        );
+      }
+    } else {
+      drupal_add_http_header('status', 401);
+      $data = array(
+        'code' => 401,
+        'message' => 'Authentication Failed'
+      );
+    }
+  } else {
+    drupal_add_http_header('status', 500);
+    $data = array(
+      'code' => 500,
+      'message' => 'Credentials are missing'
+    );
+  }
+  drupal_json_output($data);
+}
+
+/**
  * Implements hook_form_alter()
  *
  * @param $form
@@ -8,224 +186,121 @@
  * @param $form_id
  * @param array $parameters
  */
-function devconnect_docgen_form_alter(&$form, &$form_state, $form_id, $parameters = array()) {
-
+function devconnect_docgen_form_alter(&$form, &$form_state, $form_id) {
   $models = variable_get('devconnect_docgen_content_types', array());
-
   if (isset($form['#node']) && in_array($form['#node']->type, array_keys($models))) {
-    $type = $form['#node']->type;
-    $mid = $type;
-    $header = array();
-    if (isset($form['field_' . $mid . '_model_requestjson'])) {
-      $form['field_' . $mid . '_model_requestjson']['#type'] = 'hidden';
+    $field = variable_get($form['#node']->type . '_field_type');
+    // disable revision to avoid sync mismatch
+    $form['field_' . $field . '_model_revisions']['#disabled'] = TRUE;
+    $form['field_' . $field . '_model_path']['#disabled'] = TRUE;
+    $form['actions']['submit']['#submit'][] = '_devconnect_docgen_flush_node_redirect';
+    $form['#validate'][] = '_devconnect_docgen_smartdoc_update';
+  }
+}
 
-      $form['parameter_container'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Query Parameters'),
-        '#prefix' => '<div id="parameters-container">',
-        '#suffix' => '</div><br/>',
-        '#weight' => 50,
-      );
-      $form['parameter_container']['parameters'] = array(
-        '#prefix' => '<div id="api-parameters">',
-        '#suffix' => '</div>',
-        '#tree' => TRUE,
-        '#theme' => 'devconnect_docgen_param_table',
-        '#header' => array(),
-      );
 
-      $form['apigee_content_container'] = array(
-        // '#type' => 'fieldset', will remain commented out until we figure out what to do with the Apigee Content
-        '#title' => t('Apigee Content'),
-        '#prefix' => '<div id="apigee-content-container">',
-        '#suffix' => '</div><br/>',
-        '#weight' => 50,
-      );
-      $form['apigee_content_container']['parameters'] = array(
-        '#type' => 'hidden',
-        '#multiple' => TRUE,
-        '#default_value' => '',
-      );
-      if (empty($form['field_' . $mid . '_model_requestjson'][LANGUAGE_NONE][0]['value']['#default_value'])) {
-        $default = array();
-        $default['params'][] = array(
-          'name' => '',
-          'required' => '',
-          'type' => '',
-          'style' => '',
-          'description' => '',
-        );
-        $form['field_' . $mid . '_model_requestjson'][LANGUAGE_NONE][0]['value']['#default_value'] = drupal_json_encode($default);
-      }
-      if (!empty($form['field_' . $mid . '_model_requestjson'][LANGUAGE_NONE][0]['value']['#default_value'])) {
-        $parameters = drupal_json_decode($form['field_' . $mid . '_model_requestjson'][LANGUAGE_NONE][0]['value']['#default_value']);
-
-        if (isset($form_state['storage']['ajaxed'])) {
-          foreach ($parameters['params'] as $key => $params) {
-            foreach($params as $title => $param) {
-              $header[$title] = '';
-            }
-          }
-          if (empty($header)) {
-            $header = array(
-              'name' => '',
-              'required' => '',
-              'type' => '',
-              'style' => '',
-              'description' => '',
-            );
-          }
-          $count = $form_state['storage']['num_parameters'];
-          for ($i = count($parameters['params']); $i <= $count; $i++) {
-            foreach ($header as $title => $value) {
-              if (empty($parameters['params'][$i][$title])) {
-                $parameters['params'][$i][$title] = $value;
-              }
-            }
-          }
-          if (isset($form_state['storage']['remove'])) {
-            unset($parameters['params'][$form_state['storage']['remove']]);
-          }
-        }
-
-        if (!empty($parameters['params'])) {
-          _devconnect_docgen_make_params($parameters['params'], $form, $header, $form_state);
-        } else {
-          _devconnect_docgen_make_params($parameters, $form, $header, $form_state, TRUE);
-        }
-      } else {
-        _devconnect_docgen_make_params($parameters, $form, $header, $form_state, TRUE);
-      }
-      if (isset($form['parameter_container'])) {
-        $form['parameter_container']['parameters']['#header'] = $header;
-
-        $form['parameter_container']['add_parameter'] = array(
-          '#type' => 'submit',
-          '#value' => t('Add Parameter'),
-          '#submit' => array('devconnect_docgen_add_parameter_node_add_one'),
-          '#ajax' => array(
-            'callback' => 'devconnect_docgen_add_parameter_node_callback',
-            'wrapper' => 'api-parameters',
-            'progress' => array(
-              'type' => 'none'
-            )
-          ),
-          '#limit_validation_errors' => array(array('title')),
-          '#attributes' => array(
-            'class' => array(
-              'add-parameter'
-            )
-          ),
-        );
-        $form['parameter_container']['remove_parameter'] = array(
-          '#type' => 'submit',
-          '#value' => t('Remove Parameter'),
-          '#submit' => array('devconnect_docgen_remove_parameter_node_remove_one'),
-          '#ajax' => array(
-            'callback' => 'devconnect_docgen_remove_parameter_node_callback',
-            'wrapper' => 'api-parameters',
-            'progress' => array(
-              'type' => 'none'
-            )
-          ),
-          '#limit_validation_errors' => array(array('title')),
-          '#attributes' => array(
-            'class' => array(
-              'add-parameter'
-            )
-          ),
-        );
+/**
+ * Custom validate function for all smartdocs node edit forms
+ */
+function _devconnect_docgen_smartdoc_update($form, $form_state) {
+  if (strtolower($form_state['triggering_element']['#value']) == t('delete')) {
+    return;
+  }
+  $node = (object)$form_state['values'];
+  $model = variable_get($node->type, $node->type);
+  $field = variable_get($model . '_field_type');
+  if ($field) {
+    $element = array();
+    $revisions = 'field_' . $field . '_model_revisions';
+    $rev =& $node->$revisions;
+    $types = 'field_' . $field . '_model_types';
+    $ty =& $node->$types;
+    $path = 'field_' . $field . '_model_path';
+    $pa =& $node->$path;
+    $verbs = 'field_' . $field . '_model_verb';
+    $ve =& $node->$verbs;
+    $auth = 'field_' . $field . '_model_authschemes';
+    $au =& $node->$auth;
+    $tags = 'field_' . $field . '_model_tags';
+    $ta =& $node->$tags;
+    if (!empty($rev[LANGUAGE_NONE])) {
+      foreach($rev[LANGUAGE_NONE] as $key => $revision) {
+        $element['revision'] = taxonomy_term_load($rev[LANGUAGE_NONE][$key]['tid'])->name;
       }
     }
-    if (!empty($form['field_' . $mid . 'payload'][LANGUAGE_NONE][0]['value']['#default_value'])) {
-      $header_params = drupal_json_decode($form['field_' . $mid . 'payload'][LANGUAGE_NONE][0]['value']['#default_value']);
-      foreach($header_params['representation'] as $hparams) {
-        if (isset($hparams['payload'])) {
-          $form['apigee_content_container']['parameters']['#default_value'] = trim($hparams['payload']['content']);
+    if (!empty($ty[LANGUAGE_NONE])) {
+      foreach($ty[LANGUAGE_NONE] as $key => $type) {
+        $element['type'][] = taxonomy_term_load($ty[LANGUAGE_NONE][$key]['tid'])->name;
+      }
+    }
+    $element['path'] = $pa[LANGUAGE_NONE][0]['value'];
+    if (!empty($ve[LANGUAGE_NONE])) {
+      foreach($ve[LANGUAGE_NONE] as $key => $verb) {
+        $element['verb'] = taxonomy_term_load($ve[LANGUAGE_NONE][$key]['tid'])->name;
+      }
+    }
+    if (!empty($au[LANGUAGE_NONE])) {
+      foreach($au[LANGUAGE_NONE] as $key => $auth) {
+        $element['auth'][] = taxonomy_term_load($au[LANGUAGE_NONE][$key]['tid'])->name;
+      }
+    }
+    if (!empty($ta[LANGUAGE_NONE])) {
+      foreach($ta[LANGUAGE_NONE] as $key => $tag) {
+        $element['tags'][] = taxonomy_term_load($ta[LANGUAGE_NONE][$key]['tid'])->name;
+      }
+    }
+    $mid = _devconnect_docgen_model_name($node->type);
+    $revision = entity_get_controller('docgen_revision')->loadVerbose($mid, $element['revision']);
+    $nodes = array_flip(variable_get($mid . '_nodes', array()));
+    $id = $nodes[$node->nid];
+    foreach ($revision['resources'] as $resource) {
+      if (isset($resource['methods'])) {
+        foreach($resource['methods'] as $method) {
+          if ($method['id'] == $id) {
+            $element['rid'] = $resource['id'];
+            $element['method_id'] = $method['id'];
+            $element['method_full'] = $method;
+          }
         }
       }
     }
+    $element['title'] = $node->title;
+    $element['body'] = $node->body[LANGUAGE_NONE][0]['value'];
+    entity_get_controller('docgen_operation')->updateMethod($mid, $element);
   }
 }
 
 /**
- * Makes parameters array
+ * Custom submit callback for smartdocs nodes, ensures cache is flushed
  */
-function _devconnect_docgen_make_params(&$parameters, &$form, &$header, &$form_state, $empty = FALSE) {
-  if ($empty) {
-    $parameters = array(
+function _devconnect_docgen_flush_node_redirect($form, &$form_state) {
+  if (strtolower($form_state['triggering_element']['#value']) == 'delete') {
+    $form_state['redirect'] = array(
+      'admin/content/smartdocs',
+    );
+    $node = $form['#node'];
+    try {
+      node_delete($node->nid);
+      $mid = _devconnect_docgen_model_name($node->type);
+      $nodes = array_flip(variable_get($mid . '_nodes', array()));
+      $id = $nodes[$node->nid];
+      _devconnect_docgen_sync_nodes($node->nid, $id, $mid, 'delete');
+      $text = t('%t has been deleted', array('%t' => $node->title));
+      drupal_set_message($text, 'success');
+    } catch (Exception $e) {
+      $text = t('%t could not be been deleted.', array('%t' => $node->title));
+      drupal_set_message($text, 'error');
+    }
+  } else {
+    $form_state['redirect'] = array(
+      'node/' . $form['#node']->nid,
       array(
-        'name' => '',
-        'required' => '',
-        'type' => '',
-        'style' => '',
-        'description' => '',
-      )
+        'query' => array(
+          'flush' => '1',
+        ),
+      ),
     );
   }
-  foreach ($parameters as $key => $params) {
-    foreach($params as $title => $param) {
-      $header[$title] = t($title);
-      $form['parameter_container']['parameters'][$key][$title] = array(
-        '#type' => 'textarea',
-        '#default_value' => $param,
-        '#size' => 30,
-        '#rows' => 5,
-      );
-    }
-  }
-}
-
-/*
- * AJAX Callback for remove_parameter
- */
-function devconnect_docgen_remove_parameter_node_callback($form, &$form_state) {
-  return $form['parameter_container']['parameters'];
-}
-
-/**
- * Submit Callback for remove_parameter
- *
- * @param $form
- * @param $form_state
- * @return mixed
- */
-function devconnect_docgen_remove_parameter_node_remove_one($form, &$form_state) {
-  $form_state['storage']['ajaxed'] = TRUE;
-  foreach($form['parameter_container']['parameters'] as $key => $value) {
-    if (is_numeric($key)) {
-      $form_state['storage']['remove']++;
-    }
-  }
-  $form_state['storage']['num_parameters']--;
-  $form_state['storage']['remove'] = $form_state['storage']['remove'] - 1;
-  if ($form_state['storage']['remove'] == 0) {
-    unset($form_state['storage']['remove']);
-  }
-  $form_state['rebuild'] = TRUE;
-}
-
-/**
- * Ajax Callback for add_parameter
- *
- * @param $form
- * @param $form_state
- * @return mixed
- */
-function devconnect_docgen_add_parameter_node_callback($form, $form_state) {
-  return $form['parameter_container']['parameters'];
-}
-
-/*
- * Submit Callback for add_parameter
- */
-function devconnect_docgen_add_parameter_node_add_one($form, &$form_state) {
-  $form_state['storage']['ajaxed'] = TRUE;
-  $form_state['storage']['num_parameters']++;
-  if (isset($form_state['storage']['remove'])) {
-    unset($form_state['storage']['remove']);
-  }
-  $form_state['rebuild'] = TRUE;
 }
 
 /**
@@ -251,41 +326,63 @@ function theme_devconnect_docgen_param_table($vars) {
 }
 
 /**
- * Implements hook_node_validate()
- */
-function devconnect_docgen_node_validate($node, $form, &$form_state) {
-  $models = variable_get('devconnect_docgen_content_types', array());
-  if (in_array($node->type, array_keys($models))) {
-    $json = array(
-      'params' => $form_state['values']['parameters'],
-    );
-    foreach($form_state['values']['parameters'] as $key => $parameter) {
-      if (empty($parameter['name'])) {
-        unset($form_state['values']['parameters'][$key]);
-      }
-    }
-    if (empty($form_state['values']['parameters'])) {
-      $form_state['values']['field_' . $node->type . '_model_requestjson']['und'][0]['value'] = '';
-    } else {
-      $form_state['values']['field_' . $node->type . '_model_requestjson']['und'][0]['value'] = drupal_json_encode($json);
-    }
-  }
-}
-
-/**
  * Implements preprocess_page()
  *
  * @param $vars
  */
 function devconnect_docgen_preprocess_page(&$vars) {
+  $term = menu_get_object('taxonomy_term', 2);
+  if ($term) {
+    $show_crumb = FALSE;
+    $types = node_type_get_types();
+    foreach ($types as $type) {
+      if ($term->vocabulary_machine_name == $type->type . '_methods') {
+        $show_crumb = TRUE;
+        $node_type = $type->type;
+        $node_name = $type->name;
+      }
+    }
+    if ($show_crumb && isset($node_type) && isset($node_name)) {
+      $breadcrumb = array();
+      $breadcrumb[] = l('Home', '<front>');
+      $breadcrumb[] = l($node_name . ' Documentation', variable_get($node_type) . '/apis');
+      drupal_set_breadcrumb($breadcrumb);
+    }
+  }
   $models = variable_get('devconnect_docgen_content_types', array());
   if (isset($vars['node']) && in_array($vars['node']->type, array_keys($models))) {
+    global $base_url;
+    if (isset($vars['tabs']['#primary']) && !user_is_anonymous()) {
+      $edit = array();
+      foreach($vars['tabs']['#primary'] as $key => $tab) {
+        if (strtolower($tab['#link']['title']) == 'view' || strtolower($tab['#link']['title']) == 'view published') {
+          $edit_mode = (isset($_GET['editMode'])) ? $_GET['editMode'] : 0;
+          if ($edit_mode == '1') {
+            $edit = $tab;
+            $edit['#active'] = TRUE;
+            $vars['tabs']['#primary'][$key]['#active'] = FALSE;
+          } else {
+            $edit = $tab;
+            $edit['#active'] = FALSE;
+          }
+        }
+        if (strtolower($tab['#link']['title']) == 'edit') {
+          $vars['tabs']['#primary'][$key]['#link']['title'] = 'Edit Drupal Node';
+        }
+      }
+      $edit['#link']['title'] = 'Edit SmartDoc';
+      $edit['#link']['href'] = url($base_url . '/' . drupal_get_path_alias(current_path()), array('query' => array('editMode' => '1')));
+      $vars['tabs']['#primary'][] = $edit;
+    }
     $vars['dna'] = TRUE;
-
     $breadcrumb = array();
     $breadcrumb[] = l('Home', '<front>');
-    $breadcrumb[] = l($models[$vars['node']->type] . ' Documentation', $vars['node']->type . '/apis');
-
+    $breadcrumb[] = l($models[$vars['node']->type] . ' Documentation', variable_get($vars['node']->type) . '/apis');
+    $field_name = 'field_' . _devconnect_docgen_model_field_name($vars['node']->type) . '_model_verb';
+    $verb =& $vars['node']->$field_name;
+    if (isset($verb[LANGUAGE_NONE][0]['taxonomy_term'])) {
+      $breadcrumb[] = l($verb[LANGUAGE_NONE][0]['taxonomy_term']->name, 'taxonomy/term/' . $verb[LANGUAGE_NONE][0]['taxonomy_term']->tid);
+    }
     drupal_set_breadcrumb($breadcrumb);
   }
 }
@@ -297,52 +394,15 @@ function devconnect_docgen_preprocess_page(&$vars) {
  * @param $vars
  */
 function devconnect_docgen_preprocess_node(&$vars) {
-
+  global $base_url;
   $models = variable_get('devconnect_docgen_content_types', array());
   if (in_array($vars['type'], array_keys($models))) {
-    $mid = $vars['type'];
-    if (isset($vars['field_' . $mid . '_model_requestjson'])) {
-      if (!$vars['teaser']) {
-        $parameters = drupal_json_decode('[]');
-        if (isset($vars['field_' . $mid . '_model_requestjson'][0])) {
-          if (!is_array($vars['field_' . $mid . '_model_requestjson'][0]['value'])) {
-            $parameters = drupal_json_decode($vars['field_' . $mid . '_model_requestjson'][0]['value']);
-          }
-        }
-        if (!empty($parameters)) {
-          $header = array();
-          $rows = array();
-          $data = array();
-          if (isset($parameters['params'])) {
-            foreach($parameters['params'] as $params) {
-              foreach($params as $type => $param) {
-                $header[$type] = $type;
-                $data[$type] = $param;
-              }
-              $rows[] = $data;
-            }
-            $header = array_keys($header);
-            $vars['content']['field_' . $mid . '_model_requestjson'][0]['#markup'] = theme(
-              'table', array(
-                'header' => $header,
-                'rows'=> $rows
-              )
-            );
-          } else {
-            $vars['content']['field_' . $mid . '_model_requestjson'][0]['#markup'] = '';
-          }
-        } else {
-          $vars['content']['field_' . $mid . '_model_requestjson'][0]['#markup'] = '';
-        }
-      }
-    }
-    $vars['display_submitted'] = FALSE;
     $model = variable_get('use_docgen_templates', 1);
     if (!(bool)$model) {
       // make schemes a pretty var
       $schemes = array();
-      if (isset($vars['field_' . $vars['type'] . '_model_authschemes']) && !empty($vars['field_' . $vars['type'] . '_model_authschemes'])) {
-        foreach ($vars['field_' . $vars['type'] . '_model_authschemes'] as $scheme) {
+      if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_authschemes']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_authschemes'])) {
+        foreach ($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_authschemes'] as $scheme) {
           $schemes[] = $scheme['taxonomy_term']->name;
         }
       }
@@ -351,68 +411,103 @@ function devconnect_docgen_preprocess_node(&$vars) {
       }
       // make types a pretty var
       $types = array();
-      if (isset($vars['field_' . $vars['type'] . '_model_types']) && !empty($vars['field_' . $vars['type'] . '_model_types'])) {
-        foreach ($vars['field_' . $vars['type'] . '_model_types'] as $type) {
+      if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_types']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_types'])) {
+        foreach ($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_types'] as $type) {
           $types[] = $type['taxonomy_term']->name;
         }
       }
       if (!empty($types)) {
         $vars['types'] = implode(', ', $types);
       }
-
       // make tags a pretty var
       $tags = array();
-      if (isset($vars['field_' . $vars['type'] . '_model_tags']) && !empty($vars['field_' . $vars['type'] . '_model_tags'])) {
-        foreach ($vars['field_' . $vars['type'] . '_model_tags'] as $tag) {
+      if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_tags']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_tags'])) {
+        foreach ($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_tags'] as $tag) {
           $tags[] = $tag['taxonomy_term']->name;
         }
       }
       if (!empty($tags)) {
         $vars['terms'] = implode(', ', $tags);
       }
-
       // Friendly Date
       $vars['date'] = date('j F, Y', $vars['node']->created);
-
       // Verb
-      if (isset($vars['field_' . $vars['type'] . '_model_verb']) && !empty($vars['field_' . $vars['type'] . '_model_verb'])) {
-        $vars['verb'] = $vars['field_' . $vars['type'] . '_model_verb'][0]['taxonomy_term']->name;
+      if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_verb']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_verb'])) {
+        $vars['verb'] = $vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_verb'][0]['taxonomy_term']->name;
       }
-
       // Description
       $vars['description'] = (isset($vars['body'][0]['value']) && !empty($vars['body'][0]['value'])) ? $vars['body'][0]['value'] : '';
-
       // Path
-      if (isset($vars['field_' . $vars['type'] . '_model_path']) && !empty($vars['field_' . $vars['type'] . '_model_path'][0]['value'])) {
-        $vars['path'] = $vars['field_' . $vars['type'] . '_model_path'][0]['value'];
+      if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_path']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_path'][0]['value'])) {
+        $vars['path'] = $vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_path'][0]['value'];
       }
 
       $vars['content']['#markup'] = theme('operation_template', $vars);
     } else {
       if (!$vars['teaser']) {
         $templates = entity_get_controller('docgen_doc');
-
         $config =& Drupal::config('devconnect.settings');
-        $endpoint = $config->get('endpoint');
-        $url = parse_url($endpoint);
 
         drupal_add_js(
           array(
             'devconnect_docgen' => array(
               'isDrupal' => TRUE,
-              'apiModelBaseUrl' => $url['scheme'] . '://' . $url['host'],
+              'apiModelBaseUrl' => str_replace('/v1', '', $config->get('endpoint')),
+              'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
             )
           ), 'setting');
 
-        $cache = cache_get($vars['type'] . '_' . $vars['node']->nid, 'cache_docgen');
-        $data = drupal_json_decode($cache->data);
+        $query = db_select('smartdocs', 's');
+        $query->condition('s.nid', $vars['node']->nid);
+        $query->fields('s', array('nid', 'revision', 'resource', 'method', 'model'));
 
-        $data = $templates->loadOperation($data, $vars['type']);
+        $results = $query->execute();
+        $data = array();
+        foreach($results as $result) {
+          $data = array(
+            'nid' => $result->nid,
+            'revision' => $result->revision,
+            'resource' => $result->resource,
+            'operation' => $result->method,
+          );
+          $model = $result->model;
+        }
 
+        $ver = variable_get(_devconnect_docgen_model_name($model) . '_bootstrap_ver', '0');
+
+        switch($ver) {
+          case '2':
+            $def_js = SMARTDOCS_JS_B2;
+            $def_css = SMARTDOCS_CSS_B2;
+            break;
+          case '3':
+            $def_js = SMARTDOCS_JS_B3;
+            $def_css = SMARTDOCS_CSS_B3;
+            break;
+          default:
+            $def_js = SMARTDOCS_JS_B2;
+            $def_css = SMARTDOCS_CSS_B2;
+            break;
+        }
+
+        $js = preg_split("/\\r\\n|\\r|\\n/", variable_get(_devconnect_docgen_model_name($model) . '_js', $def_js));
+        $css = preg_split("/\\r\\n|\\r|\\n/", variable_get(_devconnect_docgen_model_name($model) . '_css', $def_css));
+
+        foreach($js as $file) {
+          drupal_add_js($file);
+        }
+        foreach($css as $file) {
+          drupal_add_css($file);
+        }
+
+        $data = $templates->loadOperation((array)$data, $model, 'drupal-cms');
         $vars['content'] = array();
         $vars['content']['#markup'] = $data;
       } else {
-        $vars['content']['#markup'] = theme('operation_template', $vars);
+        $vars['content']['#markup'] = '<div class="col-sm-12">' . theme('operation_template', $vars) . '</div>';
+        if (isset($vars['content']['links'])) {
+          unset($vars['content']['links']);
+        }
       }
     }
     if ($vars['teaser']) {

@@ -5,8 +5,6 @@
  * template.php
  */
 
-require_once drupal_get_path('theme', 'apigee_responsive') . '/templates/monetization/function.php';
-
 /**
  * Implements hook_preprocess_html().
  */
@@ -30,9 +28,35 @@ function apigee_responsive_preprocess_html(&$vars) {
     drupal_add_css(drupal_get_path('theme', 'apigee_responsive') . '/css/bootstrap.min.css', array('group' => CSS_SYSTEM));
     drupal_add_js(drupal_get_path('theme', 'apigee_responsive') . '/js/bootstrap.min.js', array('group' => CSS_SYSTEM));
   }
+  if (module_exists('devconnect_monetization')) {
+    require_once drupal_get_path('theme', 'apigee_responsive') . '/templates/monetization/template.php';
+    drupal_add_css(drupal_get_path('theme', 'apigee_responsive') . '/templates/monetization/css/monetization.css');
+  }
 
+  drupal_add_css(".faq .collapsed {display:block !important}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar {background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body header.navbar {border-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body header.navbar {border-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-toggle {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-collapse {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-collapse:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-collapse:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-toggle:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-toggle:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-nav > .open > a {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-toggle:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-toggle:active {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-toggle:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-collapse {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-collapse:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-collapse:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-nav > .open > a {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-default .navbar-nav > .open > a:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body header.navbar.navbar-nav > .open > a {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body header.navbar.navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body header.navbar.navbar-nav > .open > a:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar .nav > li > a {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar .nav > li > a:hover, body ul.menu li.active-trail a {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar-inverse .navbar-collapse, .navbar-inverse .navbar-form, .navbar-inverse .navbar-toggle,
@@ -65,14 +89,6 @@ function apigee_responsive_preprocess_html(&$vars) {
           'group' => CSS_THEME,
           'type' => 'inline')
       );
-      drupal_add_css("@media(max-width:767px) { .logo > img { width:150px; } }", array(
-        'group' => CSS_THEME,
-        'type' => 'inline'
-      ));
-      drupal_add_css("@media(min-width:768px) { .logo > img { width:175px; } }", array(
-        'group' => CSS_THEME,
-        'type' => 'inline'
-      ));
       drupal_add_css("@media(min-width:992px) { .logo > img { width:100%; } }", array(
         'group' => CSS_THEME,
         'type' => 'inline'
@@ -91,14 +107,6 @@ function apigee_responsive_preprocess_html(&$vars) {
           'group' => CSS_THEME,
           'type' => 'inline')
       );
-      drupal_add_css("@media(max-width:767px) { .logo > img { width:150px; } }", array(
-        'group' => CSS_THEME,
-        'type' => 'inline'
-      ));
-      drupal_add_css("@media(min-width:768px) { .logo > img { width:175px; } }", array(
-        'group' => CSS_THEME,
-        'type' => 'inline'
-      ));
       drupal_add_css("@media(min-width:992px) { .logo > img { width:100%; } }", array(
         'group' => CSS_THEME,
         'type' => 'inline'
@@ -244,21 +252,21 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
  */
 function apigee_responsive_preprocess_bootstrap_modal_forms(&$vars) {
   switch($vars['identifier']){
-  	case 'login':
-	    if (module_exists('openid')) {
-	      $vars['modal_form']['openid_identifier']['#prefix'] = '<div class="apigee-responsive-openidhide" style="display:none">';
-	      $vars['modal_form']['openid_identifier']['#suffix'] = '</div>';
-	    }
-	    $vars['sso'] = $vars['modal_form']['sso_buttons'];
-	    unset($vars['modal_form']['sso_buttons']);
-		break;
-	case 'register':
-		$vars['sso'] = '';
- 		if (isset($vars['modal_form']['sign_in_with_google_apps'])) {
-			$vars['sso'] = $vars['modal_form']['sign_in_with_google_apps']['#markup'];
-		    unset($vars['modal_form']['sign_in_with_google_apps']);
-  		}
-		break;
+    case 'login':
+      if (module_exists('openid')) {
+        $vars['modal_form']['openid_identifier']['#prefix'] = '<div class="apigee-responsive-openidhide" style="display:none">';
+        $vars['modal_form']['openid_identifier']['#suffix'] = '</div>';
+      }
+      $vars['sso'] = $vars['modal_form']['sso_buttons'];
+      unset($vars['modal_form']['sso_buttons']);
+      break;
+    case 'register':
+      $vars['sso'] = '';
+      if (isset($vars['modal_form']['sign_in_with_google_apps'])) {
+        $vars['sso'] = $vars['modal_form']['sign_in_with_google_apps']['#markup'];
+        unset($vars['modal_form']['sign_in_with_google_apps']);
+      }
+      break;
   }
 }
 
@@ -290,6 +298,15 @@ function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
         }
       }
       break;
+    case 'devconnect_developer_app_list':
+      if (module_exists('devconnect_monetization')) {
+        $settings = array(
+          'verify_accepted_url' => MONETIZATION_PRODUCT_VERIFY_ACCEPTED_URL,
+        );
+        drupal_add_js(array('devconnect_monetization_developer_apps_form' => $settings), 'setting');
+        drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/api-products.js', 'file');
+        drupal_add_js('jQuery( document ).ajaxComplete(function() { Drupal.attachBehaviors(jQuery("body")); });', 'inline');
+      }
     default:
       break;
   }

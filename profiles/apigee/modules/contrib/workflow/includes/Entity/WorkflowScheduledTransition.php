@@ -160,34 +160,4 @@ class WorkflowScheduledTransition extends WorkflowTransition {
     $this->comment = t('Scheduled by user @uid.', array('@uid' => $this->uid));
   }
 
-  /**
-   * Get the Transition's $field_info.
-   *
-   * This is called in hook_cron, to get the $field_info.
-   * @todo: read $field_name directly from table.
-   */
-  public function getWorkflowItem() {
-    $workflow_item = NULL;
-
-    if (!empty($this->field_name)) {
-      // @todo: read $field_name directly from table.
-    }
-	
-    $entity_type = $this->entity_type;
-    $entity = $this->getEntity();
-    $entity_bundle = $this->getEntity()->type;
-
-    foreach (field_info_instances($entity_type, $entity_bundle) as $field_name => $field_instance) {
-      $field_info = field_info_field($field_instance['field_name']);
-      $field_type = $field_info['type'];
-      if ($field_type == 'workflow') {
-        // Set cache.
-        $this->field_name = $field_name;
-        // Prepare return value.
-        $workflow_item = new WorkflowItem($field_info, $field_instance, $entity_type, $this->getEntity());
-      }
-    }
-    return $workflow_item;
-  }
-
 }

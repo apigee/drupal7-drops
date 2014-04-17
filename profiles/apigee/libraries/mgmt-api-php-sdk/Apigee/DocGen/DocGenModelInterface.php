@@ -1,7 +1,8 @@
 <?php
 namespace Apigee\DocGen;
 
-interface DocGenModelInterface {
+interface DocGenModelInterface
+{
   /**
    * Returns the descriptions of all APIs in the organization.
    *
@@ -29,6 +30,15 @@ interface DocGenModelInterface {
   public function importWADL($apiId, $xml);
 
   /**
+   * Gets information from a Swagger URL, and transforms it to a given model, returns JSON representation of the model
+   *
+   * @param string $apiId
+   * @param string $url
+   * @return array
+   */
+  public function importSwagger($apiId, $url);
+
+  /**
    * Returns the details of an API, such as its name, description, list of revisions and metadata.
    *
    * @param string $apiId
@@ -43,7 +53,7 @@ interface DocGenModelInterface {
    * @param $update
    * @return array
    */
-  public function updateModel($apiId, $update);
+  public function updateModel($apiId, $update, $headers);
 
   /**
    * Deletes an API resource and all its associated data.

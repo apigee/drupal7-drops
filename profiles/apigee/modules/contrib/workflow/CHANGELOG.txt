@@ -412,3 +412,35 @@ Issue #2189761 by johnv, zengenuity, naptown: Add Rules support for Workflow Fie
 Issue #2019345 by johnv: Fixed workflow history is saved twice when adding transition via comment.
 Issue #2187151 by johnv: Added an 'Actions buttons' widget to Workflow form on Comments and Entity form for Workflow Field .
 Issue #2019345 by johnv: Added workflow_enable() and cleared texts.
+Issue #2202405 by johnv: Added Rules action 'Set a workflow field state' to workflow_rules submodule.
+Issue #2196587 by johnv: Fixed earlier introduced error in workflow.tokens.inc.
+Issue #2196587 by johnv: Fixed Notice: Undefined property: stdClass::$workflow in workflow_tokens().
+Issue #2200089 by johnv: Fixed PDOException: SQLSTATE[42S22] upon 'transition delete' when workflow_actions enabled.
+Issue #2200089 by johnv: Fixed backwards compatiblity with workflow_actions.
+Issue #2205707 by johnv: Moved some views handlers from workflow_extensions to workflow_views.
+Issue #2205707 by johnv: Moved workflow_comment_edit_link field handler from workflow_extensions to workflow_views.
+Issue #2208675 by johnv: Fixed Unnecessary db-calls upon node_load in workflow_node.
+Issue #2208675 by johnv: Shorter code in workflow_state_formatter().
+Issue #2019345 by johnv: Use api in workflow_search_api.
+Issue #2168197 by johnv: Added VBO support for workflow_field, preventing assigning a state of an illegal Workflow.
+Issue #2206923 by Uccio: Fixed Uninstall of workflow_actions doesn't remove actions.
+Issue #2208971 by johnv: Fixed refresh entity_cache upon saving new workflow_node state in WorkflowTransition->execute().
+Issue #2209359 by 2pha, johnv: Fixed workflow_access and other workflow_submodules when $field_name is not known.
+Issue #2207423 by johnv: Removed double lock on workflow_actions for workflow_field.
+Issue #2210787 by johnv: Fixed avoid calling 'transition post' twice when workflow_actions is enabled.
+Issue #2207423 by johnv: Fixed hook_workflow('transition post') is now called also for workflow_field on the correct moment.
+Issue #0843568 by johnv: Added 'revision_id' to {workflow_node_history} when saving a transition.
+Issue #2207423 by johnv: Fixed hook_workflow('transition post') is now called only in workflow_actions, avoiding extra hook in other cases.
+Issue #2212197 by johnv: Fixed access to workflow history tab per role.
+Issue #2102409 by johnv: Fixed multiple workflow_fields per bundle, when saving a new entity.
+Issue #2207423 by johnv: Fixed workflow_actions' hook_workflow('transition post') also for non-node entities.
+Issue #2102409 by johnv: Fixed multiple workflow_fields per bundle, in workflow_access.
+Issue #2216641 by johnv: Fixed notices by workflow_access when saving a node without workflow.
+Issue #2216685 by Bastlynn: Fixed WSOD.
+Issue #2216685 by Bastlynn: Fixed WSOD, part 2.
+Issue #2216685 by johnv: Further cleanup and unification of workflow_node and workflow_field.
+Issue #2116179 by johnv: Some more isolation of type_map functions.
+Issue #2216685 by johnv: Further cleanup for workflow_vbo.
+Issue #2168197 by johnv: Separated workflow_vbo actions into own files, for less footprint and better maintainability.
+Issue #2218303 by johnv: Fixed error if you try to assign a state to a non-relevant node type (e.g. in workflow_vbo action).
+

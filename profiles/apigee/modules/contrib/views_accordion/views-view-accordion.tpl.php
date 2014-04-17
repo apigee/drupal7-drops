@@ -16,8 +16,8 @@
  * enough for most cases:
  *     "views-accordion-item"
  *      and a unique per row class like item-0
- *
  */
+
 ?>
 <?php if (!empty($title)): ?>
   <h3 class="<?php print $view_accordion_id; ?>">

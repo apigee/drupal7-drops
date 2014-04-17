@@ -2,79 +2,221 @@
 
 namespace Apigee\Mint\DataStructures;
 
-class SupportedCurrency {
+class SupportedCurrency extends DataStructure
+{
+
+    /**
+     * Organization
+     * @var \Apigee\Mint\Organization
+     */
+    private $organization;
+
+    /**
+     * Currency id
+     * @var string
+     */
+    private $id;
+
+    /**
+     * Supported Currency Name
+     * @var string
+     */
+    private $name;
+
+    /**
+     * Display Name
+     * @var string
+     */
+    private $displayName;
+
+    /**
+     * Description
+     * @var string
+     */
+    private $description;
+
+    /**
+     * Virtual currency
+     * @var boolean
+     */
+    private $virtualCurrency;
+
+    /**
+     * Status.
+     * @var string Allowed values [CREATED|INACTIVE|ACTIVE]
+     */
+    private $status;
+
+    /**
+     * Credit Limit for Postpaid developers. This can be overridden for each developer in developer balance.
+     * @var double
+     */
+    private $creditLimit;
+
+    /**
+     * @var float Minimum amount a developer can set a recurring amount
+     */
+    private $minimumRecurringAmount = 0;
 
   /**
-   * Organization
-   * @var \Apigee\Mint\Organization
+   * @param float $creditLimit
    */
-  public $organization;
+  public function setCreditLimit($creditLimit) {
+    $this->creditLimit = $creditLimit;
+  }
 
   /**
-   * Currency id
-   * @var string
+   * @return float
    */
-  public $id;
+  public function getCreditLimit() {
+    return $this->creditLimit;
+  }
 
   /**
-   * Supported Currency Name
-   * @var string
+   * @param string $description
    */
-  public $name;
+  public function setDescription($description) {
+    $this->description = $description;
+  }
 
   /**
-   * Display Name
-   * @var string
+   * @return string
    */
-  public $displayName;
+  public function getDescription() {
+    return $this->description;
+  }
 
   /**
-   * Description
-   * @var string
+   * @param string $displayName
    */
-  public $description;
+  public function setDisplayName($displayName) {
+    $this->displayName = $displayName;
+  }
 
   /**
-   * Virtual currency
-   * @var boolean
+   * @return string
    */
-  public $virtualCurrency;
+  public function getDisplayName() {
+    return $this->displayName;
+  }
 
   /**
-   * Status.
-   * @var string Allowed values [CREATED|INACTIVE|ACTIVE]
+   * @param string $id
    */
-  public $status;
+  public function setId($id) {
+    $this->id = $id;
+  }
 
   /**
-   * Credit Limit for Postpaid developers. This can be overridden for each developer in developer balance.
-   * @var double
+   * @return string
    */
-  public $creditLimit;
+  public function getId() {
+    return $this->id;
+  }
 
   /**
-   * @var float Minimum amount a developer can set a recurring amount
+   * @param float $minimumRecurringAmount
    */
-  public $minimumRecurringAmount = 0;
-
-
+  public function setMinimumRecurringAmount($minimumRecurringAmount) {
+    $this->minimumRecurringAmount = $minimumRecurringAmount;
+  }
 
   /**
-   * Constructor
-   * @param array $data
+   * @return float
    */
-  public function __construct($data = NULL) {
-    if (is_array($data)) {
-      foreach (array_keys(get_object_vars($this)) as $var) {
-        if (isset($data[$var])) {
-          $this->$var = $data[$var];
+  public function getMinimumRecurringAmount() {
+    return $this->minimumRecurringAmount;
+  }
+
+  /**
+   * @param string $name
+   */
+  public function setName($name) {
+    $this->name = $name;
+  }
+
+  /**
+   * @return string
+   */
+  public function getName() {
+    return $this->name;
+  }
+
+  /**
+   * @param \Apigee\Mint\Organization $organization
+   */
+  public function setOrganization($organization) {
+    $this->organization = $organization;
+  }
+
+  /**
+   * @return \Apigee\Mint\Organization
+   */
+  public function getOrganization() {
+    return $this->organization;
+  }
+
+  /**
+   * @param string $status
+   */
+  public function setStatus($status) {
+    $this->status = $status;
+  }
+
+  /**
+   * @return string
+   */
+  public function getStatus() {
+    return $this->status;
+  }
+
+  /**
+   * @param mixed $var
+   */
+  public function setVar($var) {
+    $this->var = $var;
+  }
+
+  /**
+   * @return mixed
+   */
+  public function getVar() {
+    return $this->var;
+  }
+
+  /**
+   * @param boolean $virtualCurrency
+   */
+  public function setVirtualCurrency($virtualCurrency) {
+    $this->virtualCurrency = $virtualCurrency;
+  }
+
+  /**
+   * @return boolean
+   */
+  public function isVirtualCurrency() {
+    return $this->virtualCurrency;
+  }
+
+
+    /**
+     * Constructor
+     * @param array $data
+     */
+    public function __construct($data = null)
+    {
+        if (is_array($data)) {
+            foreach (array_keys(get_object_vars($this)) as $var) {
+                if (isset($data[$var])) {
+                    $this->$var = $data[$var];
+                }
+            }
         }
-      }
     }
-  }
 
-  public function __toString() {
-    return json_encode($this);
-  }
+    public function __toString()
+    {
+        return json_encode($this);
+    }
 
 }

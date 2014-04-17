@@ -1,17 +1,6 @@
 <?php
 
-interface DocGenModelControllerInterface
-  extends DrupalEntityControllerInterface {
-  public function create($entity);
-  public function loadSingle($mid);
-  public function import($entity);
-  public function save($entity);
-  public function delete($entity);
-}
-
-class DocGenModelController
-  extends DrupalDefaultEntityController
-  implements DocGenModelControllerInterface {
+class DocGenModelController extends DrupalDefaultEntityController {
 
   private $docGenModel;
 
@@ -29,7 +18,7 @@ class DocGenModelController
       $ret = $this->docGenModel->getModel($mid);
       return $ret;
     } catch (Exception $e) {
-      drupal_set_message($e->getCode() . ' ' . $e->getMessage());
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
       return '';
     }
   }
@@ -39,7 +28,7 @@ class DocGenModelController
       $ret = $this->docGenModel->getModels();
       return $ret;
     } catch (Exception $e) {
-      drupal_set_message($e->getCode() . ' ' . $e->getMessage());
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
       return '';
     }
   }
@@ -54,7 +43,7 @@ class DocGenModelController
       $ret = $this->docGenModel->createModel($payload);
       return $ret;
     } catch (Exception $e) {
-      drupal_set_message($e->getCode() . ' ' . $e->getMessage());
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
       return '';
     }
   }
@@ -63,13 +52,24 @@ class DocGenModelController
 
   }
 
-  public function import($entity) {
+  public function import($entity, $format) {
     try {
-      $ret = $this->docGenModel->importWADL($entity['apiId'], $entity['xml']);
-      return $ret;
-    } catch (Exception $e) {
-      drupal_set_message($e->getCode() . ' ' . $e->getMessage());
+      switch ($format) {
+        case 'swagger':
+          $ret = $this->docGenModel->importSwagger($entity['apiId'], $entity['url']);
+          return $ret;
+          break;
+        case 'wadl':
+          $ret = $this->docGenModel->importWADL($entity['apiId'], $entity['xml']);
+          return $ret;
+          break;
+        default:
+          drupal_set_message('Unsupported format, needs to be either swagger or wadl.', 'error');
+      }
       return '';
+    } catch (Exception $e) {
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+      return array('code' => $e->getCode(), 'message' => $e->getMessage());
     }
   }
 
@@ -78,7 +78,7 @@ class DocGenModelController
       $ret = $this->docGenModel->deleteModel($entity);
       return $ret;
     } catch (Exception $e) {
-      drupal_set_message($e->getCode() . ' ' . $e->getMessage());
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
       return '';
     }
   }

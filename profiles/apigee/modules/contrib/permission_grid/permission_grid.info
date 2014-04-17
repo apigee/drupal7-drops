@@ -2,9 +2,9 @@ name = Permissions grid
 description = Provides an administrative page showing related permissions in grid format.
 core = 7.x
 
-; Information added by drupal.org packaging script on 2012-10-20
-version = "7.x-1.2"
+; Information added by Drupal.org packaging script on 2014-04-02
+version = "7.x-1.3"
 core = "7.x"
 project = "permission_grid"
-datestamp = "1350757929"
+datestamp = "1396462146"
 

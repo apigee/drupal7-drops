@@ -5,13 +5,13 @@
  */
 
 /**
-  * Implementation of views_plugin_style().
-  */
+ * Implements views_plugin_style().
+ */
 class views_accordion_style_plugin extends views_plugin_style {
   /**
-   * Set default options
+   * Set default options.
    */
-  function option_definition() {
+  public function option_definition() {
     $options = parent::option_definition();
     $options['use-grouping-header'] = array('default' => 0);
     $options['collapsible'] = array('default' => 0);
@@ -37,20 +37,24 @@ class views_accordion_style_plugin extends views_plugin_style {
     return $options;
   }
 
-  function options_form(&$form, &$form_state) {
+  /**
+   * {@inheritdoc}
+   */
+  public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
-    $form['grouping']['#prefix'] = '<div class="form-item">'. t('<strong>IMPORTANT:</strong> The <em>first field</em> in order of appearance <em>will</em> be the one used as the "header" or "trigger" of the accordion action.') .'</div>';
-     // available valid options for grouping (used for use-grouping-header #dependency)
+    $form['grouping']['#prefix'] = '<div class="form-item">' . t('<strong>IMPORTANT:</strong> The <em>first field</em> in order of appearance <em>will</em> be the one used as the "header" or "trigger" of the accordion action.') . '</div>';
+    // Available valid options for grouping (used for use-grouping-header #dependency).
     foreach ($this->display->handler->get_handlers('field') as $field => $handler) {
       $options[] = $field;
     }
-    // Find out how many items the display is currently configured to show (row-start-open)
+    // Find out how many items the display is currently configured to show (row-start-open).
     $maxitems = $this->display->handler->get_option('items_per_page');
-    $maxitems = ($maxitems == 0) ? 10 : $maxitems;  // if items_per_page is set to unlimitted (0), 10 rows will be what the user gets to choose from.
+    // If items_per_page is set to unlimitted (0), 10 rows will be what the user gets to choose from.
+    $maxitems = ($maxitems == 0) ? 10 : $maxitems;
 
-    // Setup our array of options for choosing which row should start opened (row-start-open)
+    // Setup our array of options for choosing which row should start opened (row-start-open).
     $rsopen_options = array();
-    for ($i = 1; $i <= $maxitems; $i++){
+    for ($i = 1; $i <= $maxitems; $i++) {
       $rsopen_options[] = t('Row ') . $i;
     }
     $rsopen_options['none'] = t('None');
@@ -101,7 +105,7 @@ class views_accordion_style_plugin extends views_plugin_style {
       '#type' => 'checkbox',
       '#title' => t('Use the group header as the Accordion header'),
       '#default_value' => $this->options['use-grouping-header'],
-      '#description' => t('If checked, the Group\'s header will be used to open/close the accordion.'),
+      '#description' => t("If checked, the Group's header will be used to open/close the accordion."),
       '#dependency' => array('edit-style-options-grouping' => $options),
     );
     $form['row-start-open'] = array(
@@ -124,7 +128,7 @@ class views_accordion_style_plugin extends views_plugin_style {
       '#description' => t('Choose what animation effect you would like to see, or "None" to disable it.'),
       '#options' => $animated_options,
     );
-     $form['autoheight'] = array(
+    $form['autoheight'] = array(
       '#type' => 'checkbox',
       '#title' => t('Autoheight'),
       '#default_value' => $this->options['autoheight'],
@@ -166,38 +170,38 @@ class views_accordion_style_plugin extends views_plugin_style {
     );
   }
 
-    /*
-   * pre_render() necesary to prevent markup mayhem
+  /**
+   * pre_render() necesary to prevent markup mayhem.
    */
-  function pre_render($result) {
+  public function pre_render($result) {
     drupal_add_library('system', 'ui.accordion');
-    drupal_add_js(drupal_get_path('module', 'views_accordion') .'/views-accordion.js');
+    drupal_add_js(drupal_get_path('module', 'views_accordion') . '/views-accordion.js');
 
-    // no need do anything if we are using the grouped field as the header
-    if ($this->options['use-grouping-header']){
+    // No need do anything if we are using the grouped field as the header.
+    if ($this->options['use-grouping-header']) {
       return;
     }
-    // Find out about the header field options
+    // Find out about the header field options.
     $fields = array_values($this->display->handler->get_option('fields'));
     $header_class = 'views-accordion-header';
-    // Add header class to first not-excluded field
+    // Add header class to first not-excluded field.
     foreach ($fields as $field) {
       if (!isset($field['exclude']) || ($field['exclude'] == 0)) {
-        // setup our wrapper class
-        // if the user configured its own class, set that up with our own class
-        if(!empty($field['element_wrapper_class'])) {
-          $header_wrapper_class = $field['element_wrapper_class'] .' '. $header_class;
+        // Setup our wrapper class.
+        // If the user configured its own class, set that up with our own class.
+        if (!empty($field['element_wrapper_class'])) {
+          $header_wrapper_class = $field['element_wrapper_class'] . ' ' . $header_class;
         }
-        // otherwise use our own class only
+        // Otherwise use our own class only.
         else {
           $header_wrapper_class = $header_class;
         }
-        // setup the view to use our processed wrapper class
+        // Setup the view to use our processed wrapper class.
         $this->view->field[$field['id']]->options['element_wrapper_class'] = $header_wrapper_class;
 
-        // make sure we are using a div for markup at least
+        // Make sure we are using a div for markup at least.
         if (empty($field['element_wrapper_type'])) {
-            $this->view->field[$field['id']]->options['element_wrapper_type'] = 'div';
+          $this->view->field[$field['id']]->options['element_wrapper_type'] = 'div';
         }
         break;
       }
@@ -207,11 +211,11 @@ class views_accordion_style_plugin extends views_plugin_style {
   /**
    * Render the display in this style.
    */
-  function render() {
+  public function render() {
     $output = '';
-    // Prevent errors if users select content instead of fields as row style
-    // This forces them to use field as row style, no other way that I can think of
-    if(parent::uses_fields()){
+    // Prevent errors if users select content instead of fields as row style.
+    // This forces them to use field as row style, no other way that I can think of.
+    if (parent::uses_fields()) {
       $output = parent::render();
     }
     else {
@@ -219,32 +223,34 @@ class views_accordion_style_plugin extends views_plugin_style {
     }
 
     if ($this->options['disableifone'] == '1') {
-      if(count($this->rendered_fields) < 2) {
+      if (count($this->rendered_fields) < 2) {
         return $output;
       }
     }
 
     // dpm($this->display->handler->get_option('fields')); // for dev-troubleshooting
 
-    // Add the appropiate effect library if necessary
+    // Add the appropiate effect library if necessary.
     $effect = $this->options['animated'];
-    if(($effect !== 'none') && ($effect !== 'slide')){
-      // for now we only use ui core effects library, which provides the easing effects.
-      // this switch is left here in case we actualy need to load any other libraries
-      switch($effect) {
+    if (($effect !== 'none') && ($effect !== 'slide')) {
+      // For now we only use ui core effects library, which provides the easing effects.
+      // This switch is left here in case we actualy need to load any other libraries.
+      switch ($effect) {
           default:
             $library = 'effects';
             break;
       }
-      if(isset($library)){
+      if (isset($library)) {
         drupal_add_library('system', 'effects');
       }
     }
 
     // Preparing the js variables and adding the js to our display
-    // we do it here so we dont have it run once every group
+    // we do it here so we dont have it run once every group.
     $view_settings['collapsible'] = $this->options['collapsible'];
-    $view_settings['rowstartopen'] = ($this->options['row-start-open'] == 'none') ? FALSE : $this->options['row-start-open'] + 0; // forces it to add it as an integrer instead of a string - ugly hack?
+
+    // The +0 forces it to add it as an integrer instead of a string - ugly hack?
+    $view_settings['rowstartopen'] = ($this->options['row-start-open'] == 'none') ? FALSE : $this->options['row-start-open'] + 0;
     $view_settings['animated'] = ($this->options['animated'] == 'none') ? FALSE : $this->options['animated'];
     $view_settings['autoheight'] = $this->options['autoheight'];
     $view_settings['event'] = $this->options['event'];
@@ -252,19 +258,19 @@ class views_accordion_style_plugin extends views_plugin_style {
     $view_settings['navigation'] = $this->options['navigation'];
     $view_settings['clearstyle'] = $this->options['clearstyle'];
 
-    $view_settings['grouping'] =  $this->options['grouping'] ? 1 : 0;
+    $view_settings['grouping'] = $this->options['grouping'] ? 1 : 0;
 
-    $view_settings['display'] =  $this->view->current_display;
+    $view_settings['display'] = $this->view->current_display;
     $view_settings['viewname'] = $this->view->name;
     $view_settings['usegroupheader'] = $view_settings['grouping'] ? $this->options['use-grouping-header'] : 0;
 
-    $accordion_id = 'views-accordion-'. $this->view->name .'-'. $this->view->current_display;
+    $accordion_id = 'views-accordion-' . $this->view->name .'-' . $this->view->current_display;
 
     if ($view_settings['usegroupheader'] == 1) {
-      $view_settings['header'] = 'h3.'. $accordion_id .'-header';
+      $view_settings['header'] = 'h3.' . $accordion_id . '-header';
     }
 
-    // Used to get the first field to be used as the accordion header
+    // Used to get the first field to be used as the accordion header.
     if ($view_settings['usegroupheader'] == 0) {
       $view_settings['header'] = '.views-accordion-header';
     }

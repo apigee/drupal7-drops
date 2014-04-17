@@ -10,6 +10,11 @@ class ApiProductController implements DrupalEntityControllerInterface {
    */
   public function __construct($entity_type) {
     $this->productCache = array();
+    if (!class_exists('Apigee\ManagementAPI\APIProduct')) {
+      module_load_include('module', 'libraries');
+      module_load_include('module', 'devconnect');
+      devconnect_init();
+    }
   }
 
   /**

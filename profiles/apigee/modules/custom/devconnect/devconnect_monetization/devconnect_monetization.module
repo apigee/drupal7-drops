@@ -4,6 +4,8 @@ define('MONETIZATION_ADMIN_ROLE_NAME', 'Monetization Administrator');
 define('MONETIZATION_FINANCE_ADMIN_ROLE_NAME', 'Finance Administrator');
 define('MONETIZATION_DEVELOPER_ROLE_NAME', 'Developer');
 
+define('MONETIZATION_PRODUCT_VERIFY_ACCEPTED_URL', '/users/me/monetization/packages/accepted-product/');
+
 use Apigee\Exceptions\ResponseException;
 use Apigee\ManagementAPI\DeveloperApp;
 use Apigee\Mint\Exceptions\MintApiException;
@@ -137,6 +139,9 @@ function devconnect_monetization_default_org_config() {
       'timeout' => intval($config->get('request_timeout'))
     )
   );
+  if (function_exists('devconnect_debug_register')) {
+    $options['debug_callbacks'] = array('devconnect_debug_register');
+  }
   return new Apigee\Util\OrgConfig($org, $endpoint, $username, $password, $options);
 }
 
@@ -156,6 +161,14 @@ function devconnect_monetization_route_by_billing_type(\Apigee\Mint\Developer $d
 function devconnect_monetization_menu() {
 
   $items = array();
+
+  $items['admin/people/sync-from-4g-to-mint'] = array(
+    'title' => t('Dev Portal Developer Sync From 4G to Mint'),
+    'page callback' => 'devconnect_monetization_user_sync_from_4g_to_mint',
+    'access arguments' => array('administer users'),
+    'type' => MENU_LOCAL_TASK,
+    'menu_name' => 'api_products',
+  );
 
   $items['users/%devconnect_monetization_developer/monetization'] = array(
     'title' => 'Monetization',
@@ -444,7 +457,7 @@ function devconnect_monetization_menu_alter(&$items) {
  * @return bool
  */
 function devconnect_monetization_user_is_prepaid($permission, \Apigee\Mint\Developer $developer) {
-  return $developer->getBillingType() != BillingType::POSTPAID && user_access((string) $permission);
+  return is_object($developer) && $developer->getBillingType() != BillingType::POSTPAID && user_access((string) $permission);
 }
 
 /**
@@ -572,9 +585,15 @@ function devconnect_monetization_plan_load($plan_id, $package_id = NULL) {
 function devconnect_monetization_init() {
 
   drupal_add_library('system', 'ui');
-  drupal_add_js(libraries_get_path('maskmoney') . '/jquery.maskMoney.js');
-  $themes = list_themes();
 
+  if (arg(2) == 'monetization') {
+    drupal_add_js(libraries_get_path('maskmoney') . '/jquery.maskMoney.js');
+    $currencies = commerce_currencies();
+    array_walk($currencies, function(&$item){ unset($item['format_callback'], $item['conversion_callback'], $item['conversion_rate'], $item['numeric_code'], $item['rounding_step']);});
+    drupal_add_js(array('devconnect_monetization' => array('currencies' => $currencies)), 'setting');
+  }
+
+  $themes = list_themes();
   if (arg(2) == 'monetization' && isset($themes['apigee_responsive'])
     && $themes['apigee_responsive']->status == 1
   ) {
@@ -583,7 +602,6 @@ function devconnect_monetization_init() {
   drupal_add_css(drupal_get_path('module', 'devconnect_monetization') . '/css/devconnect_monetization.css');
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/behaviors.js', 'file');
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/global.js', 'file');
-  drupal_add_js(array('devconnect_monetization' => array('currencies' => commerce_currencies())), 'setting');
 
   $GLOBALS['devconnect_monetization_debug_endpoint_response'] = variable_get('devconnect_monetization_debug_endpoint_response', FALSE);
   // Make drush happy
@@ -794,23 +812,23 @@ function devconnect_monetization_theme($existing, $type, $theme, $path) {
   $items = array();
   $template_path = drupal_get_path('module', 'devconnect_monetization') . '/templates';
   $items['devconnect_monetization_catalogs_and_plans_list'] = array(
-    'template' => 'catalog-and-plans',
+    'template' => 'devconnect-monetization-catalogs-and-plans-list',
     'arguments' => array(),
     'path' => $template_path,
   );
   $items['devconnect_monetization_accepted_plans'] = array(
-    'template' => 'accepted-plans',
+    'template' => 'devconnect-monetization-accepted-plans',
     'arguments' => array(),
     'path' => $template_path,
   );
 
   $items['devconnect_monetization_billing_docs'] = array(
-    'template' => 'billing-billing-documents',
+    'template' => 'devconnect-monetization-billing-docs',
     'arguments' => array('docs' => array(), 'billing_documents_form' => ''),
     'path' => $template_path,
   );
-  $items['billing_prepaid_balance'] = array(
-    'template' => 'billing-prepaid-balance',
+  $items['devconnect_monetization_billing_prepaid_balance'] = array(
+    'template' => 'devconnect-monetization-billing-prepaid-balance',
     'arguments' => array(
       'top_up_balance_perm' => FALSE,
       'has_balances' => FALSE,
@@ -822,37 +840,28 @@ function devconnect_monetization_theme($existing, $type, $theme, $path) {
     'path' => $template_path,
   );
   $items['devconnect_monetization_top_up_balance'] = array(
-    'template' => 'top-up-balance-form',
+    'template' => 'devconnect-monetization-top-up-balance',
     'render element' => 'form',
     'path' => $template_path,
   );
 
   $items['devconnect_monetization_company_users'] = array(
-    'template' => 'company-users',
+    'template' => 'devconnect-monetization-company-users',
     'arguments' => array(),
     'path' => $template_path,
   );
   $items['devconnect_monetization_company_tncs'] = array(
-    'template' => 'company-tncs',
+    'template' => 'devconnect-monetization-company-tncs',
     'arguments' => array('tncs_forms' => array()),
     'path' => $template_path,
   );
   $items['devconnect_monetization_product_detail'] = array(
-    'template' => 'product-detail',
+    'template' => 'devconnect-monetization-product-detail',
     'arguments' => array('rate_plan' => NULL, 'rate_plan_detail' => NULL, 'product_list' => array()),
     'path' => $template_path,
   );
-  $items['insuffient_funds_top_up_balance'] = array(
-    'template' => 'insuffient_funds_top_up_balance',
-    'arguments' => array(
-      'top_up_balance_perm' => FALSE,
-      'can_top_up_another_currency' => FALSE,
-      'top_up_balance_form' => array(),
-    ),
-    'path' => $template_path,
-  );
   $items['devconnect_monetization_developer_report_form'] = array(
-    'template' => 'developer-report-form',
+    'template' => 'devconnect-monetization-developer-report-form',
     'render element' => 'form',
     'path' => $template_path,
   );
@@ -865,28 +874,28 @@ function devconnect_monetization_theme($existing, $type, $theme, $path) {
   );
 
   $items['devconnect_monetization_rate_plan_form'] = array(
-    'template' => 'rate-plan-form',
+    'template' => 'devconnect-monetization-rate-plan-form',
     'render element' => 'form',
     'path' => $template_path . '/rate-plan-form',
   );
   $items['devconnect_monetization_rate_plan_form_limits'] = array(
-    'template' => 'limits',
+    'template' => 'devconnect-monetization-rate-plan-form-limits',
     'path' => $template_path . '/rate-plan-form',
   );
   $items['devconnect_monetization_rate_plan_form_product'] = array(
-    'template' => 'products',
+    'template' => 'devconnect-monetization-rate-plan-form-product',
     'path' => $template_path . '/rate-plan-form',
   );
   $items['devconnect_monetization_rate_plan_form_price_points'] = array(
-    'template' => 'price-points',
+    'template' => 'devconnect-monetization-rate-plan-form-price-points',
     'path' => $template_path . '/rate-plan-form',
   );
   $items['devconnect_monetization_rate_plan_form_product_specific_package'] = array(
-    'template' => 'product-specific-package',
+    'template' => 'devconnect-monetization-rate-plan-form-product-specific-package',
     'path' => $template_path . '/rate-plan-form',
   );
   $items['devconnect_monetization_plan_detail_comparison'] = array(
-    'template' => 'plan-detail-comparison',
+    'template' => 'devconnect-monetization-plan-detail-comparison',
     'arguments' => array(
       'active_plan_name'    => NULL,
       'active_plan_id'      => NULL,
@@ -899,19 +908,51 @@ function devconnect_monetization_theme($existing, $type, $theme, $path) {
     ),
     'path' => $template_path . '/rate-plan-form',
   );
-  $items['devconnect_monetization_insufficient_top_up_form_theme'] = array(
-    'template' => 'top-up-required',
+
+  $items['devconnect_monetization_insuffient_funds_top_up_balance'] = array(
+    'template' => 'devconnect-monetization-insuffient-funds-top-up-balance',
     'arguments' => array('form' => NULL),
     'render element' => 'form',
     'path' => $template_path . '/rate-plan-form',
   );
-  $items['devconnect_monetization_conflicting_products_theme'] = array(
-    'template' => 'conflicting-products',
-    'arguments' => array('overlappings' => array()),
+
+  $items['devconnect_monetization_conflicting_products'] = array(
+    'arguments' => array(
+      'products' => NULL,
+    ),
+    'file' => 'devconnect_monetization.plan.inc',
+    'path' => drupal_get_path('module', 'devconnect_monetization'),
+  );
+  $items['devconnect_monetization_product_restriction'] = array(
+    'template' => 'devconnect-monetization-product-restriction',
+    'arguments' => array(),
     'path' => $template_path,
   );
 
+  // Add backwards compatible themes
+  _devconnect_monetization_old_themes($items);
+
   return $items;
+}
+
+/**
+ * Provides support for old themes.
+ * @param $items
+ */
+function _devconnect_monetization_old_themes(&$items) {
+  $template_path = drupal_get_path('module', 'devconnect_monetization') . '/templates';
+  $items['billing_prepaid_balance'] = $items['devconnect_monetization_billing_prepaid_balance'];
+  $items['insuffient_funds_top_up_balance'] = array(
+    'template' => 'insuffient_funds_top_up_balance',
+    'arguments' => array(
+      'top_up_balance_perm' => FALSE,
+      'can_top_up_another_currency' => FALSE,
+      'top_up_balance_form' => array(),
+    ),
+    'path' => $template_path,
+  );
+  $items['devconnect_monetization_insufficient_top_up_form_theme'] = $items['devconnect_monetization_insuffient_funds_top_up_balance'];
+  $items['devconnect_monetization_conflicting_products_theme'] = $items['devconnect_monetization_conflicting_products'];
 }
 
 /**
@@ -924,27 +965,23 @@ function devconnect_monetization_theme($existing, $type, $theme, $path) {
 function _devconnect_monetization_build_limit_text(Limit $product_limit, $pricing_type = '') {
   static $sub_orgs;
   $limit_text = $product_limit->getQuotaLimit();
-  if ($product_limit->getQuotaType() == QuotaType::SpendLimit && strlen($pricing_type) > 0) {
+  if ($product_limit->getQuotaType() == QuotaType::SPEND_LIMIT && strlen($pricing_type) > 0) {
     $limit_text .= ' (' . strtolower($pricing_type) . ') ';
   }
   switch ($product_limit->getQuotaType()) {
-    case QuotaType::CreditLimit:
+    case QuotaType::CREDIT_LIMIT:
       $limit_text .= ' credit limit ';
       break;
-    case QuotaType::SpendLimit:
+    case QuotaType::SPEND_LIMIT:
       $limit_text .= ' spend limit ';
       break;
-    case QuotaType::FeeExposure:
+    case QuotaType::FEE_EXPOSURE:
       $limit_text .= ' total charge ';
       break;
-    case QuotaType::Transactions :
+    case QuotaType::TRANSACTIONS:
       $limit_text .= ' transactions ';
       break;
-    // todo fixme SpendLimit is already handled above!
-    case QuotaType::SpendLimit :
-      $limit_text .= ' payment ';
-      break;
-    case QuotaType::Balance :
+    case QuotaType::BALANCE:
       $limit_text .= ' balance ';
       break;
   }
@@ -991,11 +1028,11 @@ function _devconnect_monetization_build_limit_text(Limit $product_limit, $pricin
   if ($product_limit->getUserId() == 'ANY') {
     $limit_text .= t(' per user');
   }
-  if ($product_limit->getQuotaType() == QuotaType::SpendLimit) {
+  if ($product_limit->getQuotaType() == QuotaType::SPEND_LIMIT) {
     $limit_text = $product_limit->getCurrency() . ' ' . $limit_text;
   }
   else {
-    if ($product_limit->getQuotaType() == QuotaType::FeeExposure) {
+    if ($product_limit->getQuotaType() == QuotaType::FEE_EXPOSURE) {
       $limit_text = $product_limit->getCurrency() . ' ' . $limit_text;
     }
   }
@@ -1017,13 +1054,13 @@ function _devconnect_monetization_sort_rate_plan_rates($rate_plan_rates, $merge 
   $rate_types = array();
   foreach ($rate_plan_rates as $rate_plan_rate) {
     if ($merge) {
-      $rate_values[$rate_plan_rate->type][$rate_plan_rate->startUnit] = $rate_plan_rate;
-      if (!in_array($rate_plan_rate->type, $rate_types)) {
-        $rate_types[] = $rate_plan_rate->type;
+      $rate_values[$rate_plan_rate->getType()][$rate_plan_rate->getStartUnit()] = $rate_plan_rate;
+      if (!in_array($rate_plan_rate->getType(), $rate_types)) {
+        $rate_types[] = $rate_plan_rate->getType();
       }
     }
     else {
-      $rate_values[$rate_plan_rate->startUnit] = $rate_plan_rate;
+      $rate_values[$rate_plan_rate->getStartUnit()] = $rate_plan_rate;
     }
   }
   if ($merge) {
@@ -1044,9 +1081,9 @@ function _devconnect_monetization_sort_rate_plan_rates($rate_plan_rates, $merge 
  * @return string
  */
 function _devconnect_monetization_get_rate_card($rate_plan_detail) {
-  if (in_array($rate_plan_detail->ratingParameter, array(MeteringType::VOLUME, 'user'))) {
+  if (in_array($rate_plan_detail->getRatingParameter(), array(MeteringType::VOLUME, 'user'))) {
     $rate_card = NULL;
-    switch ($rate_plan_detail->meteringType) {
+    switch ($rate_plan_detail->getMeteringType()) {
       case MeteringType::UNIT:
         $rate_card = t(' per transaction');
         break;
@@ -1059,7 +1096,7 @@ function _devconnect_monetization_get_rate_card($rate_plan_detail) {
     }
   }
   else {
-    $rate_card = $rate_plan_detail->ratingParameter . t(' in ') . $rate_plan_detail->ratingParameterUnit;
+    $rate_card = $rate_plan_detail->getRatingParameter() . t(' in ') . $rate_plan_detail->getRatingParameterUnit();
   }
   return $rate_card;
 }
@@ -1072,7 +1109,7 @@ function _devconnect_monetization_get_rate_card($rate_plan_detail) {
  */
 function _devconnect_monetization_get_frequency_fee_text(RatePlan $rate_plan) {
   if ($rate_plan->getRecurringFee() > 0) {
-    $text = $rate_plan->getCurrency()->name . '&nbsp;' . $rate_plan->getRecurringFee();
+    $text = $rate_plan->getCurrency()->getName() . '&nbsp;' . $rate_plan->getRecurringFee();
     if ($rate_plan->getFrequencyDuration() > 1) {
       $text .= t(' every ') . $rate_plan->getFrequencyDuration() . ' ' . strtolower($rate_plan->getFrequencyDurationType()) . t('s');
     }
@@ -1117,7 +1154,7 @@ function _devconnect_monetization_get_free_quantity_text_for_rate_plan_level(Rat
 }
 
 /**
- * Generates text to be shown in catalog-package.tpl.php and product-detail.tpl.php
+ * Generates text to be shown in devconnect-monetization-catalog-and-plan-list.tpl.php and devconnect-monetization-devconnect-monetization-devconnect-monetization-product-detail.tpl.php
  * (not used anywhere else)
  *
  * @param Apigee\Mint\DataStructures\RatePlanDetail $rate_plan_detail
@@ -1125,23 +1162,23 @@ function _devconnect_monetization_get_free_quantity_text_for_rate_plan_level(Rat
  * @return string
  */
 function _devconnect_monetization_get_free_quantity_text(RatePlanDetail $rate_plan_detail, RatePlan $rate_plan) {
-  if ($rate_plan_detail->freemiumUnit == 0 && $rate_plan_detail->freemiumDuration == 0) {
+  if ($rate_plan_detail->getFreemiumUnit() == 0 && $rate_plan_detail->getFreemiumDuration() == 0) {
     return NULL;
   }
-  if ($rate_plan_detail->freemiumUnit > 0) {
-    $unit_type = in_array($rate_plan_detail->ratingParameter, array(
+  if ($rate_plan_detail->getFreemiumUnit() > 0) {
+    $unit_type = in_array($rate_plan_detail->getRatingParameter(), array(
       MeteringType::VOLUME,
       'user'
-    )) ? ' transactions ' : $rate_plan_detail->ratingParameterUnit;
-    $text = t('up to ') . $rate_plan_detail->freemiumUnit . ' ' . $unit_type;
+    )) ? t(' transactions ') : $rate_plan_detail->getRatingParameterUnit();
+    $text = t('up to ') . $rate_plan_detail->getFreemiumUnit() . ' ' . $unit_type;
   }
   else {
     $text = t('Unlimited ');
   }
-  if ($rate_plan_detail->freemiumDuration > 0) {
+  if ($rate_plan_detail->getFreemiumDuration() > 0) {
     $text .= strlen($text) > 0 ? t(' for the first ') : t(' first ');
-    $time_type = strtolower($rate_plan_detail->freemiumDurationType);
-    $text .= $rate_plan_detail->freemiumDuration > 1 ? $rate_plan_detail->freemiumDuration . ' ' . strtolower($time_type) . t('s') : $time_type;
+    $time_type = strtolower($rate_plan_detail->getFreemiumDurationType());
+    $text .= $rate_plan_detail->getFreemiumDuration() > 1 ? $rate_plan_detail->getFreemiumDuration() . ' ' . strtolower($time_type) . t('s') : $time_type;
   }
   if (strlen($text) && $rate_plan->isGroupPlan()) {
     $organization = new ManagementAPIOrganization(devconnect_monetization_default_org_config());
@@ -1197,10 +1234,14 @@ function _devconnect_monetization_get_developer_id($get_company_id = FALSE) {
  */
 function devconnect_monetization_form_devconnect_developer_apps_edit_form_alter(&$form, &$form_state) {
   $form['non-accepted-product'] = array(
-    '#markup' => t('<div id="dialog-modal" title="Purchase plan first" style="display:none;"><p></p></div>'),
+    '#markup' => theme('devconnect_monetization_product_restriction'),
   );
 
-  drupal_add_js(array('devconnect_monetization_developer_apps_form' => array('verify_accepted_url' => '/users/me/monetization/packages/accepted-product/')), 'setting');
+  $settings = array(
+    'verify_accepted_url' => MONETIZATION_PRODUCT_VERIFY_ACCEPTED_URL,
+  );
+
+  drupal_add_js(array('devconnect_monetization_developer_apps_form' => $settings), 'setting');
   $form['#attached']['js'][] = array(
     'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/api-products.js',
     'type' => 'file',
@@ -1301,8 +1342,8 @@ function devconnect_monetization_allowed_product($product_id, \Apigee\Mint\Devel
 }
 
 /**
- * json call to validate if a developer can add a product to an application, if and only if
- * he has purchased a plan that cotains this product.
+ * json callback to validate if a developer can add a product to an application, if and only if
+ * he has purchased a plan that contains such product.
  *
  * @param \Apigee\Mint\Developer $developer
  * @param $product_id
@@ -1693,20 +1734,20 @@ function devconnect_monetization_build_rate_plan_details_output(\Apigee\Mint\Rat
   $output = '';
   $processed_products = array();
   foreach ($rate_plan->getRatePlanDetails() as $rate_plan_detail) {
-    if ($rate_plan->isGroupPlan() || !isset($rate_plan_detail->product)) {
-      if (!isset($rate_plan_detail->product) || !in_array($rate_plan_detail->product->getId(), $processed_products)) {
+    if ($rate_plan->isGroupPlan() || $rate_plan_detail->getProduct() == NULL) {
+      if ($rate_plan_detail->getProduct() == NULL || !in_array($rate_plan_detail->getProduct()->getId(), $processed_products)) {
         $output .= theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list));
-        if (isset($rate_plan_detail->product)) {
-          $processed_products[] = $rate_plan_detail->product->getId();
+        if ($rate_plan_detail->getProduct() != NULL) {
+          $processed_products[] = $rate_plan_detail->getProduct()->getId();
         }
         else {
           break;
         }
       }
     }
-    elseif (!in_array($rate_plan_detail->product->getId(), $processed_products)) {
+    elseif (!in_array($rate_plan_detail->getProduct()->getId(), $processed_products)) {
       $output .= theme('devconnect_monetization_product_detail', array('rate_plan' => $rate_plan, 'rate_plan_detail' => $rate_plan_detail, 'product_list' => $product_list));
-      $processed_products[] = $rate_plan_detail->product->getId();
+      $processed_products[] = $rate_plan_detail->getProduct()->getId();
     }
   }
   return $output;
@@ -1766,4 +1807,38 @@ function devconnect_monetization_purchase_plan_requirements(Apigee\Mint\Develope
   }
 
   return $messages;
+}
+
+/**
+ * Menu callback to sync developers from 4G to Mint
+ *
+ * @return string
+ *
+ */
+function devconnect_monetization_user_sync_from_4g_to_mint() {
+  $config = devconnect_monetization_default_org_config();
+  $org = new Organization($config);
+  try {
+    $response = $org->syncAllFrom4g();
+    drupal_set_message(t('Sync completed.'));
+    return '<pre>' . $response . '</pre>';
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('Syncing developers has encountered an error.'));
+    Log::write('devconnect_monetization', Log::LOGLEVEL_ERROR, $e->getMessage());
+  }
+}
+
+/**
+ * Implement hook_help
+ */
+function devconnect_monetization_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#devconnect_monetization':
+      return '<p>' .
+                '<div>' . l('How  DevConnect Monetization works?', 'http://apigee.com/docs/monetization/content/basics-monetization') . '</div>' .
+                '<div>' . l('Need help configuring  DevConnect Monetization?', 'http://apigee.com/docs/content/configure-monetization-developer-portal') . '</div>' .
+        '</p>';
+      break;
+  }
 }

@@ -1,0 +1,6 @@
+name = Dev Portal Updates
+description = Notify OPDK sites when new Dev Portal versions are available.
+package = Apigee
+core = "7.x"
+version = "7.x-1.0"
+

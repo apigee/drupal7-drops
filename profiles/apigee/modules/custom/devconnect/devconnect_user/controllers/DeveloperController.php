@@ -5,13 +5,18 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   private $emailCache;
 
   /**
-   * Implements DrupalEntityControllerInterface::__construct().
+   * Initializes internal variables.
    *
    * @param $entity_type
    */
   public function __construct($entity_type) {
     $this->devCache = array();
     $this->emailCache = array();
+    if (!class_exists('Apigee\ManagementAPI\Developer')) {
+      module_load_include('module', 'libraries');
+      module_load_include('module', 'devconnect');
+      devconnect_init();
+    }
   }
 
   /**
@@ -35,7 +40,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   /**
    * Implements DrupalEntityControllerInterface::load().
    *
-   * @param array $names
+   * @param array $ids
    * @param array $conditions
    *
    * @throws Apigee\Exceptions\ResponseException
@@ -102,8 +107,34 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
         continue;
       }
       $array = $dev->toArray();
-      $array['uid'] = (isset($this->emailCache[$array['email']]) ? $this->emailCache[$array['email']] : NULL);
-      $return[$array['email']] = new Drupal\devconnect_user\DeveloperEntity($array);
+      $email = $array['email'];
+      $array['uid'] = (isset($this->emailCache[$email]) ? $this->emailCache[$email] : NULL);
+      $return[$email] = new Drupal\devconnect_user\DeveloperEntity($array);
+    }
+    // Correct for first/last name
+    // TODO: verify that this is really necessary
+    if (!empty($return) && db_table_exists('field_data_field_first_name') && db_table_exists('field_data_field_last_name')) {
+      $query = db_select('users', 'u');
+      $query->innerJoin('field_data_field_first_name', 'fn', 'u.uid = fn.entity_id AND fn.entity_type = \'user\'');
+      $query->innerJoin('field_data_field_last_name', 'ln', 'u.uid = ln.entity_id AND ln.entity_type = \'user\'');
+      $result = $query->fields('u', array('mail'))
+        ->fields('fn', array('field_first_name_value'))
+        ->fields('ln', array('field_last_name_value'))
+        ->condition('u.mail', array_keys($return))
+        ->execute();
+      while ($row = $result->fetchAssoc()) {
+        $email = $row['mail'];
+        if (!array_key_exists($email, $return)) {
+          // Case mismatch. Can't do anything about this...
+          continue;
+        }
+        if (!empty($row['field_first_name_value'])) {
+          $return[$email]->firstName = $row['field_first_name_value'];
+        }
+        if (!empty($row['field_last_name_value'])) {
+          $return[$email]->lastName = $row['field_last_name_value'];
+        }
+      }
     }
     return $return;
   }
@@ -126,6 +157,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       if (isset($this->devCache[$id])) {
         unset ($this->devCache[$id]);
       }
+      $entity = new Drupal\devconnect_user\DeveloperEntity(array('developerId' => $id));
+      devconnect_user_delete_from_cache($entity);
     }
   }
 
@@ -155,6 +188,18 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     $dev->fromArray($entity);
     try {
       $dev->save($is_update);
+      $entity = new Drupal\devconnect_user\DeveloperEntity($dev->toArray());
+      if ($entity->email) {
+        $uid = db_select('users', 'u')
+          ->fields('u', array('uid'))
+          ->condition('mail', $entity->email)
+          ->execute()
+          ->fetchField();
+        if ($uid > 1) {
+          $entity->uid = $uid;
+          devconnect_user_write_to_cache($entity);
+        }
+      }
     } catch (Apigee\Exceptions\ResponseException $e) {
       return FALSE;
     }

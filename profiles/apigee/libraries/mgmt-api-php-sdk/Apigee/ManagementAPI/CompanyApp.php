@@ -50,7 +50,7 @@ class CompanyApp extends AbstractApp
     /**
      * {@inheritDoc}
      */
-    public function getListDetail($company_name = NULL)
+    public function getListDetail($company_name = null)
     {
         $company_name = $company_name ? : $this->companyName;
 
@@ -92,5 +92,12 @@ class CompanyApp extends AbstractApp
     protected function alterAttributes(array &$payload)
     {
         $this->attributes['Company'] = $this->companyName;
+    }
+
+    public static function getAppProperties()
+    {
+        $properties = parent::getAppProperties();
+        $properties[] = 'companyName';
+        return $properties;
     }
 }

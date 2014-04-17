@@ -21,8 +21,8 @@
                     $("div#top-up-wrapper").append(data);
 
                     var context = $("#topUpPurchase");
-
-                    while (true) {
+                    var elementPresent = $("#edit-amount", context).length > 0;
+                    while (elementPresent) {
                         if (!$("#edit-amount", context).parent().is("span.topup-modal-value")) {
                             $("#edit-amount", context).unwrap();
                         }
@@ -75,29 +75,35 @@
                         if ($(this).attr("minimum") != undefined) {
                             if (value < $(this).attr("minimum") * 1.0) {
                                 $("#topup_alert_minimum_required", context).show();
+                                $("#topup_alert_minimum_required", context).removeClass("hide");
                             }
                             else {
                                 $("#topup_alert_minimum_required", context).hide();
+                                $("#topup_alert_minimum_required", context).addClass("hide");
                             }
                         }
 
                         if ($(this).attr("maximum") != undefined) {
                             if (value > $(this).attr("maximum") * 1.0) {
                                 $("#topup_alert_maximum_required", context).show();
+                                $("#topup_alert_maximum_required", context).removeClass("hide");
                             }
                             else {
                                 $("#topup_alert_maximum_required", context).hide();
+                                $("#topup_alert_maximum_required", context).addClass("hide");
                             }
                         }
 
                         // Disable submit button in any alert is visible
-                        if ($("div.alert.hide:visible", context).length) {
+                        if ($("#topup_alert_minimum_required", context).is(":visible")
+                            || $("#topup_alert_maximum_required", context).is(":visible")
+                        ) {
                             $("#edit-submit", context).attr("disabled", "disabled");
-                            $("div#newBalanceWrapper", context).addClass("alert alert-block alert-error");
+                            $("div#newBalanceWrapper", context).addClass("alert alert-block alert-error error");
                         }
                         else {
                             $("#edit-submit", context).removeAttr("disabled");
-                            $("div#newBalanceWrapper", context).removeClass("alert alert-block alert-error");
+                            $("div#newBalanceWrapper", context).removeClass("alert alert-block alert-error error");
                         }
                     });
 
@@ -113,12 +119,14 @@
                         "keyboard" : true,
                         "show" : true
                     });
-                }
-            });
 
-            // Submit form when link is clicked
-            $("a.btn.btn-primary", "#devconnect-monetization-insufficient-top-up-form").on("click", function(e){
-                $("#devconnect-monetization-insufficient-top-up-form").submit();
+                    context.removeClass('hide');
+
+                    $("#edit-submit", "#devconnect-monetization-insufficient-top-up-form").on("click", function(e){
+                        $("input#edit-amount", context).val(unmaskCurrencyAmount($("input#edit-amount", context).val(), currency));
+                        $("#devconnect-monetization-insufficient-top-up-form").submit();
+                    });
+                }
             });
         }
     };

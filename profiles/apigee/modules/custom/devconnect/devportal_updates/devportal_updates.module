@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * @file
+ * Display updates of Dev Portal versions on status page.
+ */
+
+/**
+ * URL to check for updates
+ */
+define('DEVPORTAL_UPDATES_DEFAULT_URL', 'https://devportal-updates.apigee.com/devportal_update_status');
+
+/**
+ * Project's status cannot be checked.
+ */
+define('DEVPORTAL_UPDATE_STATUS_UNKNOWN', 'Unknown');
+
+
+/**
+ * Severity -- Informational message only, minor enhancements.
+ */
+define('DEVPORTAL_UPDATE_SEVERITY_INFO', -1);
+
+/**
+ * Severity -- Up to date, all is good.
+ */
+define('DEVPORTAL_UPDATE_SEVERITY_OK', 0);
+
+/**
+ * Severity -- Warning condition; software should be updated when time permits
+ * due to bug fixes.
+ */
+define('DEVPORTAL_UPDATE_SEVERITY_WARNING', 1);
+
+/**
+ * Severity -- Critical condition; security update or critical bug fixes.
+ */
+define('DEVPORTAL_UPDATE_SEVERITY_ERROR', 2);
+
+
+/**
+ * Implements hook_menu().
+ */
+function devportal_updates_menu() {
+  $items = array();
+  $items['admin/config/devconnect/devportal_updates'] = array(
+    'title' => t('Dev Portal updates'),
+    'description' => 'Administer Dev Portal Updates.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devportal_updates_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'devportal_updates.admin.inc',
+  );
+
+  $items['admin/config/devconnect/devportal_updates/check'] = array(
+    'title' => t('Check for Dev Portal updates'),
+    'description' => 'Manually check for Dev Portal updates.',
+    'page callback' => 'devportal_updates_force_check',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'devportal_updates.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function devportal_updates_cron() {
+
+  if ($frequency = variable_get('devportal_updates_check_frequency', 1)) {
+    // Convert devportal_updates_check_frequency (days) into seconds.
+    $interval = 60 * 60 * 24 * $frequency;
+    if ((REQUEST_TIME - variable_get('devportal_updates_last_check', 0)) > $interval) {
+      // If the configured update interval has elapsed, check for updates again.
+      module_load_include('inc', 'devportal_updates', 'devportal_updates.manager');
+      devportal_updates_manager_get_status(TRUE);
+    }
+  }
+}
+
+/**
+ * Get Dev Portal version number.
+ *
+ * Open up the buildInfo file and parse out the version number, that is where
+ * it is kept.
+ *
+ * @TODO: Change file to php.ini format and we can parse it using
+ * parse_ini_string() function.
+ */
+function devportal_updates_get_devportal_version() {
+  static $version;
+  if (!isset($version)) {
+    $version = FALSE;
+    $default_config_file = DRUPAL_ROOT . '/' . 'buildInfo';
+
+    $handle = fopen($default_config_file,'r');
+    if($handle == NULL) {
+      return FALSE;
+    }
+    while ( ($data = fgetcsv($handle, 100, ":")) !== FALSE ) {
+      if($data[0] == 'Version') {
+        $version = trim($data[1]);
+        break;
+      }
+    }
+  }
+  return $version;
+}
+

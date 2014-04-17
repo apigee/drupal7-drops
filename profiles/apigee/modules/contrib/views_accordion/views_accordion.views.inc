@@ -5,8 +5,8 @@
  */
 
 /**
-  * Implementation of hook_views_plugin().
-  */
+ * Implements hook_views_plugin().
+ */
 function views_accordion_views_plugins() {
   return array(
     'style' => array(
@@ -24,4 +24,3 @@ function views_accordion_views_plugins() {
     ),
   );
 }
-

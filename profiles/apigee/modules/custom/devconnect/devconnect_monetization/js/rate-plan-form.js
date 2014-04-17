@@ -35,6 +35,9 @@
                 $("#edit-" + action + ".btn.form-submit").show();
                 $("#edit-" + oppositeAction + ".btn.form-submit").hide();
 
+                if (settings.date_limits == undefined) {
+                    return;
+                }
                 // Set the minimum date for purchase/cancel to be performed
                 var date_limit = settings.date_limits[selected_plan_id].min_date;
                 $("input.date").datepicker("option", "minDate", new Date(date_limit.year, date_limit.month - 1, date_limit.day));
@@ -102,6 +105,9 @@
 
                 var tab_id_selector = $(this).attr("href");
 
+                if (settings.date_limits == undefined) {
+                    return;
+                }
                 // Set the minimum date for purchase/cancel to be performed
                 var date_limit = settings.date_limits[selected_plan_id].min_date;
                 $("input.date").datepicker("option", "minDate", new Date(date_limit.year, date_limit.month - 1, date_limit.day));

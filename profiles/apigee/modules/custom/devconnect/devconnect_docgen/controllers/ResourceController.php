@@ -1,16 +1,6 @@
 <?php
 
-interface DocGenResourceControllerInterface
-  extends DrupalEntityControllerInterface {
-  public function create();
-  public function loadResources($mid, $revision);
-  public function save($entity);
-  public function delete($entity);
-}
-
-class DocGenResourceController
-  extends DrupalDefaultEntityController
-  implements DocGenResourceControllerInterface {
+class DocGenResourceController extends DrupalDefaultEntityController {
 
   private $docGenResource;
 
@@ -32,7 +22,7 @@ class DocGenResourceController
       $ret = $this->docGenResource->loadResources($mid, $revision);
       return $ret;
     } catch (Exception $e) {
-      drupal_set_message($e->getCode() . ' ' . $e->getMessage());
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
       return '';
     }
   }

@@ -12,27 +12,55 @@ function devconnect_requirements($phase) {
   $requirements = array();
   $t = get_t();
 
-  if ($phase == 'install') {
+  $has_mcrypt = TRUE;
+  if (!defined('MCRYPT_RIJNDAEL_128')) {
+    $requirements['mcrypt'] = array(
+      'description' => 'PHP must have the mcrypt library for DevConnect to work.',
+      'severity' => REQUIREMENT_ERROR,
+      'value' => $t('Please install the PHP mcrypt extension.'),
+      'title' => $t('Missing library'),
+    );
+    $has_mcrypt = FALSE;
+  }
 
-    if (!defined('MCRYPT_RIJNDAEL_128')) {
-      $requirements['mcrypt'] = array(
-        'description' => 'PHP must have the mcrypt library for DevConnect to work.',
-        'severity' => REQUIREMENT_ERROR,
-        'value' => $t('Please install the PHP mcrypt extension.'),
-        'title' => $t('Missing library'),
-      );
-    }
+  module_load_include('module', 'libraries');
+  $lib_dir = libraries_get_path('mgmt-api-php-sdk');
+  // During migrations, we might get an empty lib dir due to bad cached
+  // install_profile value.
+  if (empty($lib_dir)) {
+    $lib_dir = 'profiles/apigee/libraries/mgmt-api-php-sdk';
+  }
 
-    if (!defined('CURLE_OK')) {
-      $requirements['cURL'] = array(
-        'description' => 'PHP must have the cURL library for DevConnect to work.',
+  $sdk_ok = TRUE;
+  if (!is_dir($lib_dir)) {
+    $requirements['mgmt-api-php-sdk'] = array(
+      'description' => 'The Edge SDK must be installed in ' . $lib_dir . '. It can be downloaded from ' . l('https://packagist.org/packages/apigee/edge', 'https://packagist.org/packages/apigee/edge') . '.',
+      'severity' => REQUIREMENT_ERROR,
+      'value' => $t('Please install the Edge SDK library.'),
+      'title' => $t('Missing library'),
+    );
+    $sdk_ok = FALSE;
+  }
+
+  if ($sdk_ok) {
+    if (!is_file($lib_dir . '/vendor/autoload.php')) {
+      $requirements['mgmt-api-php-sdk_autoload'] = array(
+        'description' => 'The Edge SDK’s dependencies must be installed. Please cd to <code>' . $lib_dir . '</code> and run composer install.',
         'severity' => REQUIREMENT_ERROR,
-        'value' => $t('Please install the PHP cURL extension.'),
-        'title' => $t('Missing PHP extension'),
+        'value' => $t('Please install the Edge SDK library’s dependencies.'),
+        'title' => $t('Missing libraries'),
       );
+      $sdk_ok = FALSE;
     }
   }
-  if ($phase == 'runtime') {
+
+  if ($phase == 'runtime' && $sdk_ok) {
+
+    $requirements['mgmt-api-php-sdk'] = array(
+      'severity' => REQUIREMENT_OK,
+      'value' => $t('Edge SDK library is installed correctly.'),
+      'title' => 'Edge SDK'
+    );
 
     module_load_include('module', 'devconnect');
     module_load_include('module', 'd8cmi');
@@ -40,15 +68,16 @@ function devconnect_requirements($phase) {
     devconnect_init();
     d8cmi_init();
 
-    $config =& Drupal::config('devconnect.settings');
+    $config = Drupal::config('devconnect.settings');
     $org = $config->get('org');
     $endpoint = $config->get('endpoint');
     $user = $config->get('user');
-    try {
-      $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
-    }
-    catch (Apigee\Exceptions\ParameterException $e) {
-      $pass = FALSE;
+    $pass = FALSE;
+    if ($has_mcrypt) {
+      try {
+        $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+      }
+      catch (Apigee\Exceptions\ParameterException $e) {}
     }
 
     if ($pass && _devconnect_test_kms_connection($org, $endpoint, "$user:$pass", TRUE)) {

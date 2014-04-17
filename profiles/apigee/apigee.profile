@@ -26,6 +26,8 @@ function apigee_install_load_profile(&$install_state) {
   install_load_profile($install_state);
 
   if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+    $install_state['profile_info']['dependencies'][] = "apachesolr";
+    $install_state['profile_info']['dependencies'][] = "apachesolr_search";
     $install_state['profile_info']['dependencies'][] = "pantheon_api";
     $install_state['profile_info']['dependencies'][] = "pantheon_apachesolr";
     $install_state['profile_info']['dependencies'][] = "environment_indicator";
@@ -208,17 +210,27 @@ function apigee_install_pantheon_push_solr(&$context) {
 
 function apigee_install_configure_solr(&$context) {
   watchdog(__FUNCTION__, "Configuring Solr", array(), WATCHDOG_INFO);
-  $search_active_modules = array(
-    'apachesolr_search' => 'apachesolr_search',
-    'user' => 'user',
-    'node' => 0
-  );
+    $search_default_module = 'apachesolr_search';
+    if(module_exists('apachesolr')) {
+        $search_active_modules = array(
+            'apachesolr_search' => 'apachesolr_search',
+            'user' => 'user',
+            'node' => 0,
+        );
+    } else {
+        $search_active_modules = array(
+            'apachesolr_search' => 0,
+            'user' => 'user',
+            'node' => 'node',
+        );
+        $search_default_module = 'node';
+    }
   user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('search content'));
   user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('search content'));
   variable_set('search_active_modules', $search_active_modules);
-  variable_set('search_default_module', 'apachesolr_search');
+  variable_set('search_default_module', $search_default_module);
   $context['results'][] = "solr_push";
-  $context['message'] = st('Solr Configured.');
+  $context['message'] = st('Search Configured.');
 
 }
 
@@ -1124,7 +1136,7 @@ function apigee_install_create_video_content(&$context) {
   $blog_tid = _apigee_get_blog_tid();
   $t = get_t();
   $node = (object) array(
-    'title' => $t('Your API Sucks'),
+    'title' => $t('Your API Made Better'),
     'status' => 1,
     'comment' => 2,
     'promote' => 1,
@@ -1135,7 +1147,7 @@ function apigee_install_create_video_content(&$context) {
     'body' => array(
       LANGUAGE_NONE => array(
         array(
-          'value' => '<p>' . $t('Marsh and Brian from Apigee help your API Program suck less!') . '</p>',
+          'value' => '<p>' . $t('Marsh and Brian from Apigee help your API Program take it to the next level!') . '</p>',
           'summary' => '',
           'format' => 'full_html'
         )
@@ -1623,10 +1635,24 @@ function apigee_install_api_endpoint($form, &$form_state) {
 
   );
   $form['#submit'][] = "apigee_install_api_endpoint_submit";
+  $form['#validate'][] = "apigee_install_api_endpoint_validate";
 
   return $form;
 }
 
+/**
+ * Validate if the connection is successful
+ */
+function apigee_install_api_endpoint_validate($form, &$form_state){
+  $org = $form_state['values']['org'];
+  $endpoint = $form_state['values']['endpoint'];
+  $user = $form_state['values']['user'];
+  $pass = $form_state['values']['pass'];
+  $return = _devconnect_test_kms_connection($org, $endpoint, $user, $pass);
+  if (strpos($return, t('Connection Successful')) === FALSE) { //If connection is not successful
+    form_set_error('form', $return);
+  }
+}
 /**
  * Turns a text field into a password field.
  *
@@ -1653,7 +1679,7 @@ function apigee_skip_api_endpoint($form, &$form_state) {
     }
   }
   // module_disable($disable);
-
+  $GLOBALS['apigee_api_endpoint_configured'] = FALSE;
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
 
@@ -1677,7 +1703,7 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
     $config->set($key, $value);
   }
   $config->save();
-
+  $GLOBALS['apigee_api_endpoint_configured'] = TRUE;
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
 
@@ -1703,3 +1729,193 @@ function apigee_install_settings_form_submit($form, &$form_state, &$install_stat
 
 }
 
+function apigee_generate_make_smartdocs_model() {
+  if ($GLOBALS['apigee_api_endpoint_configured']!==TRUE) {
+     return;
+  }
+  $css = 'https://smartdocs.apigee.com/static/css/main_cms.css
+https://smartdocs.apigee.com/static/css/codemirror.css
+https://smartdocs.apigee.com/static/css/prism.css';
+
+  $js = 'https://smartdocs.apigee.com/static/js/codemirror.js
+https://smartdocs.apigee.com/static/js/codemirror_javascript.js
+https://smartdocs.apigee.com/static/js/codemirror_xml.js
+https://smartdocs.apigee.com/static/js/prism.js
+https://smartdocs.apigee.com/static/js/base64_min.js
+https://smartdocs.apigee.com/static/js/model_cms.js
+https://smartdocs.apigee.com/static/js/controller_cms.js';
+
+  $model_name = 'weather';
+  $payload = array(
+    'model_name' => $model_name,
+    'display_name' => 'Weather Model',
+    'model_description' => 'Weather Model (Apigee sample)',
+  );
+  $model = entity_get_controller('docgen_model')->loadSingle($payload['model_name']);
+  if (empty($model)) {
+    if (entity_get_controller('docgen_model')->create($payload)) {
+      variable_set(_devconnect_docgen_model_name($payload['model_name']), $payload['model_name']);
+      _devconnect_docgen_render_operation_template($payload['model_name'], '3');
+    }
+  }
+  variable_set(_devconnect_docgen_model_name($model_name) . '_bootstrap_ver', '3');
+  variable_set(_devconnect_docgen_model_name($model_name) . '_css', $css);
+  variable_set(_devconnect_docgen_model_name($model_name) . '_js', $js);
+}
+
+function apigee_generate_import_smartdocs_model() {
+  if ($GLOBALS['apigee_api_endpoint_configured']!==TRUE) {
+      return;
+  }
+  $model_name = 'weather';
+  $entity = array();
+  $entity['apiId'] = $model_name;
+  $entity['xml'] = file_get_contents(drupal_get_path('profile', 'apigee') . "/samples/smartdocs/weather.xml");
+  $test = entity_get_controller('docgen_model')->import($entity, 'wadl');
+  if (is_array($test)) {
+    drupal_set_message($test['message'], 'error');
+  } else {
+    drupal_set_message('The WADL XML has been imported into the model.', 'status');
+  }
+}
+
+function apigee_generate_smartdocs_content() {
+  if ($GLOBALS['apigee_api_endpoint_configured']!==TRUE) {
+      return;
+  }
+  $model_name = 'weather';
+  $payload = array(
+    'model_name' => $model_name,
+    'display_name' => 'Weather Model',
+    'model_description' => 'Weather Model (Apigee sample)',
+  );
+  $model = entity_get_controller('docgen_model')->loadSingle($model_name);
+  $entity = entity_get_controller('docgen_revision')->loadVerbose($model_name, $model['latestRevisionNumber']);
+  $selected = array();
+  foreach($entity['resources'] as $revision){
+    foreach($revision['methods'] as $method)
+      $selected[$method['id']] = $method['id'];
+  }
+  $entity['displayName'] = $payload['display_name'];
+  $entity['name'] = $payload['model_name'];
+  $verbose = $entity;
+  //Publish the Nodes
+  require drupal_get_path('module', 'devconnect_docgen') .'/includes/devconnect_docgen.batch_import.inc';
+  $batch = _devconnect_docgen_import_nodes($model_name, $verbose, $selected, array('publish'=>'publish'), '3');
+  unset($batch['finished']);
+  return $batch;
+}
+
+
+/**
+ * Create a Drupal Admin User
+ *
+ * @param array $form
+ * @param array $form_state
+ * @return array
+ * @author Cesar Galindo
+ */
+
+function apigee_install_create_admin_user($form, &$form_state) {
+
+  $attributes = array(
+    "autocomplete" => "off",
+    "autocorrect" => "off",
+    "autocapitalize" => "off",
+    "spellcheck" => "false"
+  );
+  $form = array();
+
+  $form['username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Developer Portal Username'),
+    '#required' => TRUE,
+    '#default_value' => '',
+    '#description' => t('An admin username used when logging into the Developer Portal.'),
+    '#attributes' => $attributes
+  );
+
+  $form['pass'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Developer Portal Password'),
+    '#required' => TRUE,
+    '#default_value' => '',
+    '#description' => t('An admin password used when logging into the Developer Portal.'),
+    '#attributes' => $attributes,
+    '#post_render' => array('apigee_password_post_render')
+  );
+
+  $form['emailaddress'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Developer Portal Email'),
+    '#required' => TRUE,
+    '#default_value' => '',
+    '#description' => t('Email address to associate with this account.'),
+    '#attributes' => $attributes
+  );
+
+  $form['actions'] = array(
+    '#weight' => 100,
+    '#attributes' => array(
+      'class' => array('container-inline'),
+    ),
+  );
+  $form['actions']['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+  );
+  $form['actions']['skip'] = array(
+    '#type' => 'submit',
+    '#limit_validation_errors' => array(),
+    '#value' => t('Skip this config'),
+    '#submit' => array('apigee_skip_create_admin_user'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+
+  );
+  $form['#submit'][] = "apigee_install_create_admin_user_submit";
+
+  return $form;
+}
+
+/**
+ * Custom function that skips the create admin user installation piece
+ */
+function apigee_skip_create_admin_user($form, &$form_state) {
+  // skips the config, nothing left to do
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+/**
+ * hook submit for create admin user form
+ *
+ * @param string $form
+ * @param string $form_state
+ * @return void
+ * @author Cesar Galindo
+ */
+
+function apigee_install_create_admin_user_submit($form, &$form_state) {
+
+  require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+
+  $account = new StdClass();
+  $account->is_new = TRUE;
+  $account->status = TRUE;
+  $account->name = $form_state['values']['username'];
+  $account->pass = user_hash_password($form_state['values']['pass']);
+  $account->mail = $form_state['values']['emailaddress'];
+  $account->init = $form_state['values']['emailaddress'];
+  $role = user_role_load_by_name('administrator');
+  $rid = $role->rid;
+  $account->roles[$rid] = 'administrator';
+  $account->field_first_name[LANGUAGE_NONE][0]['value'] = 'FirstName';
+  $account->field_last_name[LANGUAGE_NONE][0]['value'] = 'LastName';
+  user_save($account);
+
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}

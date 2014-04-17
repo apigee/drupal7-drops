@@ -49,6 +49,32 @@ Drupal.behaviors.rubik.attach = function(context) {
   $('.secondary-tabs li a, .secondary-tabs', context).bind('focus blur', function(){
     $(this).parents('.secondary-tabs').toggleClass('focused');
   });
+
+  // Sticky sidebar
+  if ($('#content .column-side .column-wrapper').length !== 0) {
+    var rubikColumn = $('#content .column-side .column-wrapper', context);
+    if(rubikColumn && rubikColumn.offset()){
+        var rubikStickySidebar = rubikColumn.offset().top;
+        $(window).scroll(function(){
+          if( $(window).scrollTop() > rubikStickySidebar ) {
+            rubikColumn.each(function() {
+              $(this).addClass("fixed");
+              $(this).width($(this).parent().width());
+            });
+          } else {
+            rubikColumn.each(function() {
+              $(this).removeClass("fixed");
+              $(this).width($(this).parent().width());
+            });
+          }
+        });
+    }
+
+    // Move fields to sidebar.
+    $(".rubik_sidebar_field").each(function() {
+      $('.column-side .column-wrapper').append($(this));
+    });
+  }
   
 };
 })(jQuery);

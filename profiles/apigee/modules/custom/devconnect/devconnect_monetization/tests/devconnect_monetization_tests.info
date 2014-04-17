@@ -7,12 +7,15 @@ version = 7.x-4.22
 project = devconnect
 
 dependencies[] = devconnect_monetization
+dependencies[] = devconnect_monetization_payment
 dependencies[] = simpletest
 
-files[] = OrganizationTestCase.test
+files[] = classes/BaseMintTest.test
+files[] = classes/company_profile_tests.test
+files[] = classes/billing_tests.test
 
 ; Information added by drush on 2013-09-16
-version = "7.x-4.23-dev"
+version = "7.x-4.25-dev"
 core = "7.x"
 project = "devconnect"
 datestamp = "1379375171"

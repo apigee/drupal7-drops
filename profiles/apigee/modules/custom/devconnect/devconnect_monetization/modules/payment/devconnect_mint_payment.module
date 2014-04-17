@@ -45,13 +45,13 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $currencyId = strtolower($order_wrapper->commerce_order_total->currency_code->value());
 
-  $developerBalanceAPIObj = new DeveloperBalance($developer_id, $config);
-  $developerBalance = $developerBalanceAPIObj->getByCurrencyId($currencyId);
-
   // If first top up on this currency or if is not recurring on this currency
   // then show the recurring form
   // Mint backend does not honor initial setup values in here but in company settings
-  if (FALSE /*isset($developerBalance) && !$developerBalance->isRecurring()*/ ) {
+  /*
+  $developerBalanceAPIObj = new DeveloperBalance($developer_id, $config);
+  $developerBalance = $developerBalanceAPIObj->getByCurrencyId($currencyId);
+  if (isset($developerBalance) && !$developerBalance->isRecurring()) {
 
     $form['#attributes']['class'][] = 'form-horizontal';
 
@@ -75,7 +75,7 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
       '#title' => t('Recurring Amount'),
       '#type' => 'textfield',
       '#description' => t('Amount to be topped up recurrently'),
-      '#default_value' => $developerBalance->getSupportedCurrency()->minimumRecurringAmount,
+      '#default_value' => $developerBalance->getSupportedCurrency()->getMinimumRecurringAmount(),
       '#disabled' => TRUE,
       '#attributes' => array(
         'class' => array(
@@ -83,13 +83,13 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
           'currency',
         ),
         'currency' => strtoupper($currencyId),
-        'minimum' => $developerBalance->getSupportedCurrency()->minimumRecurringAmount,
+        'minimum' => $developerBalance->getSupportedCurrency()->getMinimumRecurringAmount(),
       ),
     );
     $form['recurring_payment']['replenish_amount'] = array(
       '#title' => t('Replenish Amount'),
       '#type' => 'textfield',
-      '#default_value' => $developerBalance->getSupportedCurrency()->minimumRecurringAmount,
+      '#default_value' => $developerBalance->getSupportedCurrency()->getMinimumRecurringAmount(),
       '#description' => t('Once your balance reaches this amount, another payment will be triggered'),
       '#disabled' => TRUE,
       '#attributes' => array(
@@ -101,7 +101,7 @@ function devconnect_mint_payment_submit_form($payment_method, $pane_values, $che
         'minimum' => 0,
       ),
     );
-  }
+  }*/
 
   $message = t('(Continue with checkout to complete payment.)');
   if (module_hook($payment_method['module'], 'mint_continue_complete_message')) {
@@ -220,7 +220,9 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   $developer = devconnect_monetization_developer_load();
   $payment = $developer->createPayment($parameters, $payload);
   if (!$payment->getSuccess()) {
-    Log::write("Could not create payment order.", Log::LOGLEVEL_CRITICAL);
+    drupal_set_message('Could not create payment order. If problem persists please contact your administrator.', 'warning');
+    watchdog('devconnect_mint_payment', "Could not create payment order: @message", array('@message' => '<pre>' . print_r($payment, TRUE) . '</pre>'), WATCHDOG_WARNING);
+    drupal_goto('<front>');
   }
   $form = module_invoke($payment_method['module'], 'mint_dispatch_redirect_form', $form, $form_state, $order, $payment_method, $payment);
   return $form;

@@ -31,3 +31,222 @@ function _devconnect_developer_apps_assign_perms() {
     }
   }
 }
+
+function devconnect_developer_apps_schema() {
+  $schema['dc_dev_app'] = array(
+    'description'     => 'Caches developer apps.',
+    'fields'          => array(
+      'app_id'        => array(
+        'description' => 'Primary key: unique App ID.',
+        'type'        => 'char',
+        'length'      => 36, // UUID including hyphens
+        'not null'    => TRUE,
+      ),
+      'uid'           => array(
+        'description' => 'User ID of the developer owning the app',
+        'type'        => 'int',
+        'not null'    => TRUE,
+      ),
+      'name'          => array(
+        'description' => 'App name',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
+      'display_name'  => array(
+        'description' => 'App display name',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
+      'description'   => array(
+        'description' => 'App description',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
+      'consumer_key'  => array(
+        'description' => 'Consumer key',
+        'type'        => 'char',
+        'length'      => 32,
+        'not null'    => TRUE,
+      ),
+      'consumer_secret' => array(
+        'description' => 'Consumer secret',
+        'type'        => 'char',
+        'length'      => 16,
+        'not null'    => TRUE,
+      ),
+      'overall_status' => array(
+        'description' => 'Overall status: -1 = revoked, 0 = pending, 1 = approved',
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'not null'    => TRUE,
+      ),
+      'app_status' => array(
+        'description' => 'App status: -1 = revoked, 0 = pending, 1 = approved',
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'not null'    => TRUE,
+      ),
+      'credential_status' => array(
+        'description' => 'Credential status: -1 = revoked, 0 = pending, 1 = approved',
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'not null'    => TRUE,
+      ),
+      'callback_url'  => array(
+        'description' => 'Callback URL',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE
+      ),
+      'created_at'    => array(
+        'description' => 'Unix timestamp of app creation date',
+        'type'        => 'int',
+        'not null'    => TRUE,
+      ),
+      'modified_at'   => array(
+        'description' => 'Unix timestamp of app modification date',
+        'type'        => 'int',
+        'not null'    => TRUE,
+      ),
+      'access_type'   => array(
+        'description' => 'Access type: read, write or both',
+        'type'        => 'char',
+        'length'      => 5,
+        'not null'    => TRUE,
+      ),
+      'app_family'    => array(
+        'description' => 'App Family',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE
+      )
+    ),
+    'primary key' => array('app_id'),
+    'unique keys' => array(
+      'user_app' => array('uid', 'name')
+    ),
+    'foreign keys' => array(
+      'app_owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid')
+      )
+    )
+  );
+
+  $schema['dc_api_product'] = array(
+    'description' => 'Caches API Product info',
+    'fields' => array(
+      'name' => array(
+        'description' => 'Primary Key: machine name of the API Product',
+        'type' => 'char',
+        'length' => 64,
+        'not null' => TRUE
+      ),
+      'display_name' => array(
+        'description' => 'Display name of the API Product',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE
+      ),
+      'approval_type' => array(
+        'description' => 'Key approval type: 0 = auto, 1 = manual',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE
+      ),
+      'description' => array(
+        'description' => 'API Product description',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE
+      )
+    ),
+    'primary key' => array('name')
+  );
+
+  $schema['dc_dev_app_api_products'] = array(
+    'description'     => 'Caches API Product references in developer apps.',
+    'fields' => array(
+      'app_id' => array(
+        'description' => 'Unique App ID (UUID)',
+        'type'        => 'char',
+        'length'      => 36, // UUID including hyphens
+        'not null'    => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Machine name of the API Product',
+        'type' => 'char',
+        'length' => 64,
+        'not null' => TRUE
+      ),
+      'status' => array(
+        'description' => 'Credential API Product status: -1 = revoked, 0 = pending, 1 = approved',
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'not null'    => TRUE,
+      ),
+    ),
+    'primary key' => array('app_id', 'name')
+  );
+
+  $schema['dc_dev_app_attributes'] = array(
+    'description' => 'Caches attributes of Developer Apps',
+    'fields' => array(
+      'app_id' => array(
+        'description' => 'Unique App ID (UUID)',
+        'type'        => 'char',
+        'length'      => 36, // UUID including hyphens
+        'not null'    => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Attribute Name',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => 'Attribute Value',
+        'type' => 'varchar',
+        'length' => 1024,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('app_id', 'name')
+  );
+
+  $schema += _devconnect_developer_apps_previous_status_schema();
+
+  return $schema;
+}
+
+function _devconnect_developer_apps_previous_status_schema() {
+  $schema['dc_dev_app_previous_status'] = array(
+    'description' => 'Stores previous app status',
+    'fields' => array(
+      'app_id'        => array(
+        'description' => 'Primary key: unique App ID.',
+        'type'        => 'char',
+        'length'      => 36, // UUID including hyphens
+        'not null'    => TRUE,
+      ),
+      'status' => array(
+        'description' => 'Overall status: -1 = revoked, 0 = pending, 1 = approved',
+        'type'        => 'int',
+        'size'        => 'tiny',
+        'not null'    => TRUE,
+      )
+    ),
+    'primary key' => array('app_id')
+  );
+  return $schema;
+}
+
+/**
+ * Install developer-apps and api-products cache tables
+ */
+function devconnect_developer_apps_update_7426() {
+  drupal_install_schema('devconnect_developer_apps');
+}

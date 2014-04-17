@@ -5,11 +5,15 @@
  */
 function _devconnect_docgen_generate_default_view($mid, $display) {
 
+  $actual = $mid;
+  $long = _devconnect_docgen_model_name($mid);
+  $mid = _devconnect_docgen_model_field_name($mid);
+
   return '<?php
 
   $view = new view();
-$view->name = "' . $mid . '_listing";
-$view->description = "' . $mid . ' Listing Description";
+$view->name = "' . $long . '_listing";
+$view->description = "' . $long . ' Listing Description";
 $view->tag = "default";
 $view->base_table = "node";
 $view->human_name = "' . $display . ' Model Overview";
@@ -132,13 +136,81 @@ $handler->display->display_options["filters"]["type"]["id"] = "type";
 $handler->display->display_options["filters"]["type"]["table"] = "node";
 $handler->display->display_options["filters"]["type"]["field"] = "type";
 $handler->display->display_options["filters"]["type"]["value"] = array(
-  "' . $mid . '" => "' . $mid . '",
+  "' . $long . '" => "' . $long . '",
 );
 
 /* Display: Page */
 $handler = $view->new_display("page", "Page", "page");
-$handler->display->display_options["path"] = "' . $mid . '/apis";
+$handler->display->display_options["path"] = "' . $actual . '/apis";
 
+
+/* Display: Block */
+$handler = $view->new_display("block", "Block", "block_1");
+$handler->display->display_options["defaults"]["title"] = FALSE;
+$handler->display->display_options["title"] = "APIs";
+$handler->display->display_options["defaults"]["fields"] = FALSE;
+/* Field: Content: Title */
+$handler->display->display_options["fields"]["title"]["id"] = "title";
+$handler->display->display_options["fields"]["title"]["table"] = "node";
+$handler->display->display_options["fields"]["title"]["field"] = "title";
+$handler->display->display_options["fields"]["title"]["label"] = "";
+$handler->display->display_options["fields"]["title"]["exclude"] = TRUE;
+$handler->display->display_options["fields"]["title"]["alter"]["word_boundary"] = FALSE;
+$handler->display->display_options["fields"]["title"]["alter"]["ellipsis"] = FALSE;
+$handler->display->display_options["fields"]["title"]["element_label_colon"] = FALSE;
+/* Field: Content: authschemes */
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["id"] = "field_' . $mid . '_model_authschemes";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["table"] = "field_data_field_' . $mid . '_model_authschemes";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["field"] = "field_' . $mid . '_model_authschemes";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["label"] = "";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["exclude"] = TRUE;
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["alter"]["alter_text"] = TRUE;
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["alter"]["text"] = "<span title=\"This method needs authentication.\" class=\"icon_lock\"></span>";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["element_label_colon"] = FALSE;
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["type"] = "taxonomy_term_reference_plain";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_authschemes"]["delta_offset"] = "0";
+/* Field: Content: Body */
+$handler->display->display_options["fields"]["body"]["id"] = "body";
+$handler->display->display_options["fields"]["body"]["table"] = "field_data_body";
+$handler->display->display_options["fields"]["body"]["field"] = "body";
+$handler->display->display_options["fields"]["body"]["label"] = "";
+$handler->display->display_options["fields"]["body"]["exclude"] = TRUE;
+$handler->display->display_options["fields"]["body"]["element_label_colon"] = FALSE;
+$handler->display->display_options["fields"]["body"]["type"] = "text_plain";
+/* Field: Content: Path */
+$handler->display->display_options["fields"]["field_' . $mid . '_model_path"]["id"] = "field_' . $mid . '_model_path";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_path"]["table"] = "field_data_field_' . $mid . '_model_path";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_path"]["field"] = "field_' . $mid . '_model_path";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_path"]["label"] = "";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_path"]["exclude"] = TRUE;
+$handler->display->display_options["fields"]["field_' . $mid . '_model_path"]["element_label_colon"] = FALSE;
+/* Field: Content: verb */
+$handler->display->display_options["fields"]["field_' . $mid . '_model_verb"]["id"] = "field_' . $mid . '_model_verb";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_verb"]["table"] = "field_data_field_' . $mid . '_model_verb";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_verb"]["field"] = "field_' . $mid . '_model_verb";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_verb"]["label"] = "";
+$handler->display->display_options["fields"]["field_' . $mid . '_model_verb"]["exclude"] = TRUE;
+$handler->display->display_options["fields"]["field_' . $mid . '_model_verb"]["element_label_colon"] = FALSE;
+$handler->display->display_options["fields"]["field_' . $mid . '_model_verb"]["type"] = "taxonomy_term_reference_plain";
+/* Field: Global: Custom text */
+$handler->display->display_options["fields"]["nothing"]["id"] = "nothing";
+$handler->display->display_options["fields"]["nothing"]["table"] = "views";
+$handler->display->display_options["fields"]["nothing"]["field"] = "nothing";
+$handler->display->display_options["fields"]["nothing"]["label"] = "";
+$handler->display->display_options["fields"]["nothing"]["alter"]["text"] = "<div class=\"method_details clearfix\">
+                                <div class=\"method_data title\">
+<div class=\"verb-auth\">
+                                    <p data-role=\"verb\" class=\"[field_' . $mid . '_model_verb]\">[field_' . $mid . '_model_verb]</p>
+[field_' . $mid . '_model_authschemes]
+</div>
+<div class=\"title-description\">
+                                    [title]
+<p title=\"[field_' . $mid . '_model_path]\" class=\"resource_path\" data-role=\"resource_path\">[field_' . $mid . '_model_path]</p>
+</div>
+                                </div>
+
+                            </div>";
+$handler->display->display_options["fields"]["nothing"]["element_label_colon"] = FALSE;
 
 
   ?>';

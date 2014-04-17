@@ -333,6 +333,15 @@ function workflow_schema() {
         'default' => 0,
         'disp-width' => '10',
       ),
+      'revision_id' => array(
+        'description' => 'The current version identifier.',
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
       'field_name' => array(
         'description' => 'The name of the field the transition relates to.',
         'type' => 'varchar',
@@ -647,5 +656,25 @@ function workflow_update_7007() {
       $config_transition->roles = empty($roles) ? array() : explode(',', $roles);
       $config_transition->save();
     }
+  }
+}
+
+/**
+ * Add Revision to workflow history table.
+ *
+ * There is no update for current states.
+ */
+function workflow_update_7008() {
+  $field = array(
+    'description' => 'The current version identifier.',
+    'description' => '',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'length' => 10,
+    'not null' => FALSE,
+    'default' => NULL,
+  );
+  if (!db_field_exists('workflow_node_history', 'revision_id')) {
+    db_add_field('workflow_node_history', 'revision_id', $field);
   }
 }

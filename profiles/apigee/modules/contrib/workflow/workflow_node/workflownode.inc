@@ -22,36 +22,36 @@ function theme_workflow_current_state($variables) {
  */
 function workflow_node_load($nodes, $types) {
   // Get which types have workflows associated with them.
-  $workflow_types = array_filter(workflow_get_workflow_type_map());
+  $workflow_types = workflow_get_workflow_type_map();
 
-  foreach ($nodes as $node) {
+  // Leave early if nodes do not have workflow.
+  if (!$workflow_types || !array_intersect_key($workflow_types, array_flip($types))) {
+    return;
+  }
+
+  // Read the current state for all nodes.
+  $states = workflow_get_workflow_node_by_nid(array_keys($nodes));
+
+  foreach ($nodes as $nid => $node) {
     // If it's not a workflow type, quit immediately.
     if (!array_key_exists($node->type, $workflow_types)) {
       continue;
     }
 
-    $workflow = workflow_get_workflows_by_type($node->type);
-
-    // ALERT: With the upgrade to Drupal 7, values stored on the node as _workflow_x
-    // have been standardized to workflow_x, dropping the initial underscore.
-    // Module maintainers integrating with workflow should keep that in mind.
-    // As of workflow 7.x-2.x, the scheduled transition is not loaded. See issue #2138591. 
-    $last_history = workflow_get_recent_node_history($node->nid);
-
-    // Nodes that existed before the workflow don't have any history.
-    if (!$last_history) {
-      $sid = $workflow->getCreationSid();
-      $node->workflow = $sid;
+    // Nodes that existed before the workflow was defined may not have a state.
+    $workflow_node = isset($states[$nid]) ? $states[$nid] : NULL; 
+    if (!$workflow_node) {
+      $workflow = workflow_get_workflows_by_type($node->type, 'node');
+      $node->workflow = $workflow->getCreationSid();
       $node->workflow_stamp = $node->created;
     }
     else {
-      $sid = $last_history->new_sid;
-      $state = $workflow->getState($sid);
-      $node->workflow = $sid;
-      $node->workflow_stamp = $last_history->stamp;
-      $node->workflow_state_name = workflow_get_sid_label($sid);
+      $node->workflow = $workflow_node->sid;
+      $node->workflow_stamp = $workflow_node->stamp;
     }
   }
+
+  // As of workflow 7.x-2.x, the scheduled transition is not loaded. See issue #2138591. 
 }
 
 /**
@@ -69,7 +69,7 @@ function workflow_node_view($node, $view_mode, $langcode) {
     return;
   }
 
-  $current_sid = workflow_node_current_state($node);
+  $current_sid = workflow_node_current_state($node, 'node', '');
   $current_state = workflow_state_load_single($current_sid);
 
   // Show current state at the top of the node display.
@@ -144,9 +144,9 @@ function workflow_node_update($node) {
  */
 function workflow_node_delete($node) {
   if (!empty($node->workflow)) {
-    // Re-use functionality of Field API.
-    $field = array();
-    $field['field_name'] = '';
+    // Call field_info_field().
+    // Generates pseudo data for workflow_node to re-use Field API.
+    $field = _workflow_info_field($field_name, $workflow);
     $instance = array();
 
     $workflow_field = new WorkflowItem($field, $instance, 'node', $node);
@@ -267,7 +267,7 @@ function _workflow_form_alter(&$form, &$form_state, $form_id) {
   if (!workflow_get_workflow_type_map_by_type($bundle)) {
     return;
   }
-  if ($workflow = workflow_get_workflows_by_type($bundle)) {
+  if ($workflow = workflow_get_workflows_by_type($bundle, 'node')) {
     $workflow_entities = variable_get('workflow_' . $bundle, array());
     // Abort if the entity type of the form is not in the list that the user
     // wants to display the workflow form on.

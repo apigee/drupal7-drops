@@ -416,7 +416,8 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
 
   $options = array(
     'http_options' => array(
-      'connection_timeout' => $timeout
+      'connection_timeout' => $timeout,
+      'follow_location' => FALSE,
     )
   );
 
@@ -428,6 +429,13 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
     return '<span style="color:green">' . t('Connection Successful') . '</span>';
   }
   catch (Exception $e) {
+    if ($e->getCode() == 302 && strpos($org, 'https') == 0) {
+      return '<span style="color:orange">'
+              . t('DevPortal Endpoint seems to be SSL enabled. Try <strong style="color:green"><em>@endpoint</em></strong> instead.',
+                  array(
+                      '@endpoint' => str_replace('http', 'https', $endpoint)
+                )) . '</span>';
+    }
     return '<span style="color:red">' . t('Connection Unsuccessful: ' . $e->getCode()) . '</span>';
   }
 }
@@ -538,7 +546,7 @@ function devconnect_default_api_client() {
   }
   d8cmi_init();
 
-  $config =& Drupal::config('devconnect.settings');
+  $config = Drupal::config('devconnect.settings');
   $org = $config->get('org');
   $endpoint = $config->get('endpoint');
   $username = $config->get('user');
@@ -568,7 +576,9 @@ function devconnect_default_api_client() {
       'timeout' => intval($config->get('request_timeout'))
     )
   );
-
+  if (function_exists('devconnect_debug_register')) {
+    $options['debug_callbacks'] = array('devconnect_debug_register');
+  }
   return new Apigee\Util\OrgConfig($org, $endpoint, $username, $password, $options);
 }
 

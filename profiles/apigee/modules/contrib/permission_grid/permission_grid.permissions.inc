@@ -43,6 +43,11 @@ function node_permission_grid_info() {
  */
 function taxonomy_permission_grid_info() {
   $vocabularies = taxonomy_get_vocabularies();
+
+  if (empty($vocabularies)) {
+    return array();
+  }
+
   $return = array(
     'vocabulary' => array(
       'label' => t('Taxonomy'),
@@ -70,6 +75,8 @@ function taxonomy_permission_grid_info() {
 }
 
 /**
+ * Implements callback_permission_grid_info_object_process().
+ *
  * Object process callback for taxonomy vocabularies.
  *
  * This handles the weirdness with taxonomy permissions using vocabulary ids
@@ -128,7 +135,7 @@ function profile2_permission_grid_info() {
  */
 function commerce_permission_grid_info() {
   $info = array();
-  
+
   // @todo: other commerce entity types.
   foreach (array('commerce_product') as $entity_type) {
     $entity_info = entity_get_info($entity_type);
@@ -185,6 +192,38 @@ function flag_permission_grid_info() {
 
   foreach (flag_get_flags() as $flag) {
     $return['flag']['objects'][$flag->name] = $flag->title;
+  }
+
+  return $return;
+}
+
+/**
+ * Implements hook_permission_grid_info() on behalf of eck module.
+ */
+function eck_permission_grid_info() {
+  module_load_include('inc', 'eck', 'eck.entity_type');
+  module_load_include('inc', 'eck', 'eck.bundle');
+
+  foreach (EntityType::loadAll() as $entity_type) {
+    $return[$entity_type->name] = array(
+      'label' => $entity_type->label,
+      'verb_groups' => array(
+        'eck' => array(
+          'pattern' => "eck %verb $entity_type->name %object entities",
+          'verbs' => array(
+            'add'      => t('Add'),
+            'edit'    => t('Edit'),
+            'delete'  => t('Delete'),
+            'list'    => t('View list of'),
+            'view'    => t('View'),
+          ),
+        ),
+      ),
+    );
+
+    foreach (Bundle::loadByEntityType($entity_type) as $bundle) {
+      $return[$entity_type->name]['objects'][$bundle->name] = $bundle->label;
+    }
   }
 
   return $return;

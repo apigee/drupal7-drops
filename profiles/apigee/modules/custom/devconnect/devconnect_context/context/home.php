@@ -15,12 +15,6 @@ $context->conditions = array(
 $context->reactions = array(
   'block' => array(
     'blocks' => array(
-      'devconnect_homepage-homepage_header' => array(
-        'module' => 'devconnect_homepage',
-        'delta' => 'homepage_header',
-        'region' => 'homepage_header',
-        'weight' => '-10',
-      ),
       'views-devconnect_blog-block_1' => array(
         'module' => 'views',
         'delta' => 'devconnect_blog-block_1',
@@ -33,11 +27,17 @@ $context->reactions = array(
         'region' => 'content',
         'weight' => '-9',
       ),
-      'views-hot_topics-block' => array(
+      'views-weather_listing-block_1' => array(
         'module' => 'views',
-        'delta' => 'hot_topics-block',
+        'delta' => 'weather_listing-block_1',
         'region' => 'content',
-        'weight' => '-8',
+        'weight' => '-7',
+      ),
+      'devconnect_homepage-homepage_header' => array(
+        'module' => 'devconnect_homepage',
+        'delta' => 'homepage_header',
+        'region' => 'homepage_header',
+        'weight' => '-10',
       ),
     ),
   ),

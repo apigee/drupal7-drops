@@ -140,25 +140,43 @@ function workflow_state_load_multiple($wid = 0, $reset = FALSE) {
 }
 
 /**
- * Loads a WorkflowTransition.
+ * Load WorkflowTransitions, most recent first.
+ *
+ * @param $field_name
+ *   Optional. Can be NULL, if you want to load any field.
+ *
+ * @deprecated: workflow_get_workflow_node_history_by_nid() --> workflow_transition_load_single()
+ * @deprecated: workflow_get_recent_node_history() --> workflow_transition_load_single()
  */
 
 function workflow_state_load_by_name($name, $wid) {
   return WorkflowState::loadByName($name, $wid);
 }
 
-function workflow_transition_load_multiple($entity_type, $entity_id, $field_name = '', $limit = NULL) {
-  return WorkflowTransition::loadMultiple($entity_type, $entity_id, $field_name, $limit);
+function workflow_transition_load_multiple($entity_type, array $entity_ids, $field_name = '', $limit = NULL) {
+  return WorkflowTransition::loadMultiple($entity_type, $entity_ids, $field_name, $limit);
 }
 
 function workflow_transition_load_single($entity_type, $entity_id, $field_name = '') {
   $limit = 1;
-  if ($transitions = workflow_transition_load_multiple($entity_type, $entity_id, $field_name, $limit)) {
+  if ($transitions = workflow_transition_load_multiple($entity_type, array($entity_id), $field_name, $limit)) {
     return reset($transitions);
   }
   return NULL;
 }
 
+/**
+ * Load function belonging to the menu option 'workflow-comment/%'.
+ * Maps to this function just like 'node/%node' maps to node_load().
+ *
+ * @param $hid
+ *   The ID of the workflow state transition record to load.
+ * @return
+ *   object representing one row from the {workflow_node_history} table
+ */
+function workflow_transition_load($hid) {
+  return entity_load_single('WorkflowTransition', $hid);
+}
 
 /*
  * Test functions.

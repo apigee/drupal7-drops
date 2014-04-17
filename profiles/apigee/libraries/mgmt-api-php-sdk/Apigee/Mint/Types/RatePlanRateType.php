@@ -2,12 +2,12 @@
 
 namespace Apigee\Mint\Types;
 
-final class RatePlanRateType extends Type {
+final class RatePlanRateType extends Type
+{
+    const REVSHARE = 'REVSHARE';
+    const RATECARD = 'RATECARD';
 
-  const REVSHARE = 'REVSHARE';
-  const RATECARD = 'RATECARD';
-
-  private function __construct() {
-  }
-
+    private function __construct()
+    {
+    }
 }

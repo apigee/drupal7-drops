@@ -32,6 +32,22 @@ function devconnect_developer_apps_rules_event_info() {
     )
   );
 
+  $statuses = array('revoked', 'pending', 'approved');
+  foreach ($statuses as $from) {
+    foreach ($statuses as $to) {
+      if ($to == $from) {
+        continue;
+      }
+      $items['devconnect_developer_app_status_' . $from . '_' . $to] = array(
+        'label' => t("Upon change of a developer app’s overall status from $from to $to"),
+        'group' => 'Devconnect',
+        'variables' => array(
+          'app' => array('type' => 'developer_app', 'label' => t('updated app')),
+        )
+      );
+    }
+  }
+
   return $items;
 }
 

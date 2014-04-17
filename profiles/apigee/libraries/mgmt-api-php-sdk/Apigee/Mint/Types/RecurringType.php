@@ -2,12 +2,12 @@
 
 namespace Apigee\Mint\Types;
 
-final class RecurringType extends Type {
+final class RecurringType extends Type
+{
+    const CALENDAR = 'CALENDAR';
+    const CUSTOM = 'CUSTOM';
 
-  const CALENDAR = 'CALENDAR';
-  const CUSTOM = 'CUSTOM';
-
-  private function __construct() {
-  }
-
+    private function __construct()
+    {
+    }
 }

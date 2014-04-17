@@ -2,13 +2,13 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta name="generator" content="ApiGen 3.0dev" />
+	<meta name="generator" content="ApiGen 2.8.0" />
 
-	<title>Class Apigee\Mint\SuborgProduct</title>
+	<title>Class Apigee\Mint\SuborgProduct | API Reference for the Apigee Edge PHP Management SDK</title>
 
-	<script type="text/javascript" src="resources/combined.js?3569753172"></script>
-	<script type="text/javascript" src="elementlist.js?2533977299"></script>
-	<link rel="stylesheet" type="text/css" media="all" href="resources/style.css?4214719069" />
+	<script type="text/javascript" src="resources/combined.js?1630807870"></script>
+	<script type="text/javascript" src="elementlist.js?1451456074"></script>
+	<link rel="stylesheet" type="text/css" media="all" href="resources/style.css?3505392360" />
 
 </head>
 
@@ -23,11 +23,6 @@
 			<ul>
 				<li class="active"><a href="namespace-Apigee.html">Apigee<span></span></a>
 						<ul>
-				<li><a href="namespace-Apigee.Commerce.html">Commerce<span></span></a>
-						<ul>
-				<li><a href="namespace-Apigee.Commerce.DataStructures.html">DataStructures</a>
-						</li>
-							</ul></li>
 				<li><a href="namespace-Apigee.DocGen.html">DocGen</a>
 						</li>
 				<li><a href="namespace-Apigee.Drupal.html">Drupal</a>
@@ -66,7 +61,6 @@
 				<li><a href="class-Apigee.Mint.BankDetail.html">BankDetail</a></li>
 				<li><a href="class-Apigee.Mint.BillingAdjustment.html">BillingAdjustment</a></li>
 				<li><a href="class-Apigee.Mint.BillingDocument.html">BillingDocument</a></li>
-				<li><a href="class-Apigee.Mint.CurrencyISO4217.html">CurrencyISO4217</a></li>
 				<li><a href="class-Apigee.Mint.Developer.html">Developer</a></li>
 				<li><a href="class-Apigee.Mint.DeveloperBalance.html">DeveloperBalance</a></li>
 				<li><a href="class-Apigee.Mint.DeveloperCategory.html">DeveloperCategory</a></li>
@@ -122,6 +116,9 @@
 			<li>
 				<a href="tree.html" title="Tree view of classes, interfaces, traits and exceptions"><span>Tree</span></a>
 			</li>
+			<li>
+				<a href="deprecated.html" title="List of deprecated elements"><span>Deprecated</span></a>
+			</li>
 		</ul>
 		<ul>
 		</ul>
@@ -175,12 +172,12 @@ their constructor.</p>
 		<b>Namespace:</b> <a href="namespace-Apigee.html">Apigee</a>\<a href="namespace-Apigee.Mint.html">Mint</a><br />
 		<b>Package:</b> Apigee\Mint\Base<br />
 
-		<b>Located at</b> <a href="source-class-Apigee.Mint.SuborgProduct.html#8-189" title="Go to source code">Mint/SuborgProduct.php</a><br />
+		<b>Located at</b> <a href="source-class-Apigee.Mint.SuborgProduct.html#8-202" title="Go to source code">Mint/SuborgProduct.php</a><br />
 	</div>
 
 
 
-	<table class="summary methods" id="methods">
+	<table class="summary" id="methods">
 	<caption>Methods summary</caption>
 	<tr data-order="__construct" id="___construct">
 
@@ -193,7 +190,7 @@ their constructor.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#___construct">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#34-46" title="Go to source code">__construct</a>( <span>string <var>$product_id</var></span>, <span><code><a href="class-Apigee.Util.OrgConfig.html">Apigee\Util\OrgConfig</a></code> <var>$config</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#35-48" title="Go to source code">__construct</a>( <span>string <var>$product_id</var></span>, <span><code><a href="class-Apigee.Util.OrgConfig.html">Apigee\Util\OrgConfig</a></code> <var>$config</var></span> )</code>
 
 		<div class="description short">
 			
@@ -210,9 +207,9 @@ their constructor.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$product_id</var></dt>
-					<dd>Product id</dd>
+					<dd><code>string</code><br>$product_id Product id</dd>
 					<dt><var>$config</var></dt>
-					<dd></dd>
+					<dd><code><code><a href="class-Apigee.Util.OrgConfig.html">Apigee\Util\OrgConfig</a></code></code><br>$config</dd>
 				</dl></div>
 
 
@@ -233,7 +230,7 @@ their constructor.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_save">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#50-60" title="Go to source code">save</a>( <span>string <var>$save_method</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#52-63" title="Go to source code">save</a>( <span>string <var>$save_method</var></span> )</code>
 
 		<div class="description short">
 			
@@ -246,13 +243,13 @@ their constructor.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$save_method</var></dt>
-					<dd>Allowed values: update</dd>
+					<dd><code>string</code><br>$save_method Allowed values: update</dd>
 				</dl></div>
 
 
 				<h4>Throws</h4>
 				<div class="list">
-					<code>Apigee\Exceptions\ParameterException;</code><br>\Apigee\Exceptions\ParameterException;<br />
+					<code>Apigee\Exceptions\ParameterException;</code><br />
 				</div>
 
 				<h4>See</h4>
@@ -277,7 +274,7 @@ their constructor.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_instantiateNew">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#64-66" title="Go to source code">instantiateNew</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#67-70" title="Go to source code">instantiateNew</a>( )</code>
 
 		<div class="description short">
 			
@@ -296,7 +293,7 @@ the class that is doing the instantiation.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code><code><a href="class-Apigee.Mint.Base.BaseObject.html">Apigee\Mint\Base\BaseObject</a></code></code><br>\Apigee\Mint\Base\BaseObject<br />
+					<code><code><a href="class-Apigee.Mint.Base.BaseObject.html">Apigee\Mint\Base\BaseObject</a></code></code><br />
 				</div>
 
 
@@ -316,7 +313,7 @@ the class that is doing the instantiation.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_loadFromRawData">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#68-86" title="Go to source code">loadFromRawData</a>( <span>array <var>$data</var></span>, <span>boolean <var>$reset</var> = <span class="php-keyword1">FALSE</span></span> )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#72-91" title="Go to source code">loadFromRawData</a>( <span>array <var>$data</var></span>, <span>boolean <var>$reset</var> = <span class="php-keyword1">false</span></span> )</code>
 
 		<div class="description short">
 			
@@ -335,9 +332,9 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$data</var></dt>
-					<dd></dd>
+					<dd><code>array</code><br>$data</dd>
 					<dt><var>$reset</var></dt>
-					<dd></dd>
+					<dd><code>boolean</code><br>$reset</dd>
 				</dl></div>
 
 
@@ -351,14 +348,14 @@ with that data.</p>
 
 		<td class="attributes"><code>
 			 public 
-			mixed
+			
 			
 			</code>
 		</td>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_initValues">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#88-92" title="Go to source code">initValues</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#93-98" title="Go to source code">initValues</a>( )</code>
 
 		<div class="description short">
 			
@@ -373,10 +370,6 @@ with that data.</p>
 
 
 
-				<h4>Returns</h4>
-				<div class="list">
-					<code>mixed</code><br>mixed<br />
-				</div>
 
 
 
@@ -388,14 +381,14 @@ with that data.</p>
 
 		<td class="attributes"><code>
 			 public 
-			mixed
+			string
 			
 			</code>
 		</td>
 
 		<td class="name"><div>
 		<a class="anchor" href="#___toString">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#94-114" title="Go to source code">__toString</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#100-120" title="Go to source code">__toString</a>( )</code>
 
 		<div class="description short">
 			
@@ -412,7 +405,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>mixed</code><br>mixed<br />
+					<code>string</code><br />
 				</div>
 
 
@@ -432,7 +425,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getOrganization">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#118-124" title="Go to source code">getOrganization</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#124-131" title="Go to source code">getOrganization</a>( )</code>
 
 		<div class="description short">
 			
@@ -449,7 +442,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code></code><br>\Apigee\Mint\Organization<br />
+					<code><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code></code><br />
 				</div>
 
 
@@ -469,7 +462,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getProduct">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#126-132" title="Go to source code">getProduct</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#133-140" title="Go to source code">getProduct</a>( )</code>
 
 		<div class="description short">
 			
@@ -486,7 +479,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code><code><a href="class-Apigee.Mint.Product.html">Apigee\Mint\Product</a></code></code><br>\Apigee\Mint\Product<br />
+					<code><code><a href="class-Apigee.Mint.Product.html">Apigee\Mint\Product</a></code></code><br />
 				</div>
 
 
@@ -506,7 +499,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getStatus">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#134-140" title="Go to source code">getStatus</a>( )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#142-149" title="Go to source code">getStatus</a>( )</code>
 
 		<div class="description short">
 			
@@ -523,7 +516,7 @@ with that data.</p>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>string</code><br>string<br />
+					<code>string</code><br />
 				</div>
 
 
@@ -543,7 +536,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setOrganization">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#142-148" title="Go to source code">setOrganization</a>( <span><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code> <var>$organization</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#151-158" title="Go to source code">setOrganization</a>( <span><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code> <var>$organization</var></span> )</code>
 
 		<div class="description short">
 			
@@ -560,7 +553,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$organization</var></dt>
-					<dd></dd>
+					<dd><code><code><a href="class-Apigee.Mint.Organization.html">Apigee\Mint\Organization</a></code></code><br>$organization</dd>
 				</dl></div>
 
 
@@ -581,7 +574,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setProduct">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#150-156" title="Go to source code">setProduct</a>( <span><code><a href="class-Apigee.Mint.Product.html">Apigee\Mint\Product</a></code> <var>$product</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#160-167" title="Go to source code">setProduct</a>( <span><code><a href="class-Apigee.Mint.Product.html">Apigee\Mint\Product</a></code> <var>$product</var></span> )</code>
 
 		<div class="description short">
 			
@@ -598,7 +591,7 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$product</var></dt>
-					<dd></dd>
+					<dd><code><code><a href="class-Apigee.Mint.Product.html">Apigee\Mint\Product</a></code></code><br>$product</dd>
 				</dl></div>
 
 
@@ -619,7 +612,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_setStatus">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#158-168" title="Go to source code">setStatus</a>( <span>string <var>$status</var></span> )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#169-180" title="Go to source code">setStatus</a>( <span>string <var>$status</var></span> )</code>
 
 		<div class="description short">
 			
@@ -636,13 +629,13 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$status</var></dt>
-					<dd>Possible values CREATED|INACTIVE|ACTIVE</dd>
+					<dd><code>string</code><br>$status Possible values CREATED|INACTIVE|ACTIVE</dd>
 				</dl></div>
 
 
 				<h4>Throws</h4>
 				<div class="list">
-					<code><code><a href="class-Apigee.Exceptions.ParameterException.html">Apigee\Exceptions\ParameterException</a></code></code><br>\Apigee\Exceptions\ParameterException<br />
+					<code><code><a href="class-Apigee.Exceptions.ParameterException.html">Apigee\Exceptions\ParameterException</a></code></code><br />
 				</div>
 
 
@@ -661,7 +654,7 @@ with that data.</p>
 
 		<td class="name"><div>
 		<a class="anchor" href="#_getList">#</a>
-		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#170-188" title="Go to source code">getList</a>( <span>null|integer <var>$page_num</var> = <span class="php-keyword1">NULL</span></span>, <span>integer <var>$page_size</var> = <span class="php-num">20</span></span> )</code>
+		<code><a href="source-class-Apigee.Mint.SuborgProduct.html#182-201" title="Go to source code">getList</a>( <span>null|integer <var>$page_num</var> = <span class="php-keyword1">null</span></span>, <span>integer <var>$page_size</var> = <span class="php-num">20</span></span> )</code>
 
 		<div class="description short">
 			
@@ -678,14 +671,14 @@ with that data.</p>
 				<h4>Parameters</h4>
 				<div class="list"><dl>
 					<dt><var>$page_num</var></dt>
-					<dd></dd>
+					<dd><code>null|integer</code><br>$page_num</dd>
 					<dt><var>$page_size</var></dt>
-					<dd></dd>
+					<dd><code>integer</code><br>$page_size</dd>
 				</dl></div>
 
 				<h4>Returns</h4>
 				<div class="list">
-					<code>array</code><br>array<br />
+					<code>array</code><br />
 				</div>
 
 
@@ -712,8 +705,6 @@ with that data.</p>
 	<caption>Methods inherited from <a href="class-Apigee.Util.APIObject.html#methods">Apigee\Util\APIObject</a></caption>
 	<tr>
 		<td><code>
-			<a href="class-Apigee.Util.APIObject.html#___call">__call()</a>, 
-			<a href="class-Apigee.Util.APIObject.html#___callstatic">__callstatic()</a>, 
 			<a href="class-Apigee.Util.APIObject.html#_get">get()</a>, 
 			<a href="class-Apigee.Util.APIObject.html#_getConfig">getConfig()</a>, 
 			<a href="class-Apigee.Util.APIObject.html#_head">head()</a>, 
@@ -773,7 +764,7 @@ with that data.</p>
 </div>
 
 	<div id="footer">
-		 API documentation generated by <a href="http://apigen.org">ApiGen 3.0dev</a>
+		API Reference for the Apigee Edge PHP Management SDK API documentation generated by <a href="http://apigen.org">ApiGen 2.8.0</a>
 	</div>
 </div>
 </div>

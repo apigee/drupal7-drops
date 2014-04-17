@@ -10,8 +10,8 @@ core = "7.x"
 ; Dependencies
 ; ----------
 dependencies[] = acl
-dependencies[] = apachesolr
-dependencies[] = apachesolr_search
+dependencies[] = admin_menu
+dependencies[] = admin_menu_toolbar
 dependencies[] = apigee_sso
 dependencies[] = bean
 dependencies[] = block
@@ -37,6 +37,7 @@ dependencies[] = devconnect_homepage
 dependencies[] = devconnect_app_attributes
 dependencies[] = devconnect_content_creation_menu
 dependencies[] = devconnect_default_structure
+dependencies[] = devconnect_docgen
 dependencies[] = devel
 dependencies[] = devel_generate
 dependencies[] = diff
@@ -71,7 +72,6 @@ dependencies[] = menu
 dependencies[] = menu_attributes
 dependencies[] = metatag
 dependencies[] = module_filter
-dependencies[] = navbar
 dependencies[] = node
 dependencies[] = node_export
 dependencies[] = node_export_features

@@ -2,9 +2,16 @@ name = DevConnect Developer Apps
 description = CRUD Apps with REST interface to Apigee 4
 package = "DevConnect"
 core = 7.x
-version = "7.x-4.25"
+version = "7.x-4.26"
 php = 5.3
 
 dependencies[] = devconnect
 dependencies[] = devconnect_user
 dependencies[] = entity
+dependencies[] = views
+
+files[] = handlers/dda_handler_field_approval_type.inc
+files[] = handlers/dda_handler_field_status.inc
+files[] = handlers/dda_handler_filter_approval_type.inc
+files[] = handlers/dda_handler_filter_attribute.inc
+files[] = handlers/dda_handler_filter_status.inc

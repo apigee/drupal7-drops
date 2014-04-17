@@ -1,0 +1,82 @@
+div.topUpBalanceContainer.modal,
+div#topUpPurchase.modal {
+    bottom:auto;
+    left:0% !important;
+    right:0% !important;
+}
+
+div#topUpPurchase label,
+div#topUpBalanceContainer label {
+    white-space: nowrap;
+}
+
+a.back-to-catalog {
+    float: right;
+}
+
+div#topUpBalanceContainer div#edit-current-balance div.controls.topup-modal-value,
+div#topUpBalanceContainer div#edit-new-balance div.controls.topup-modal-value {
+    margin-left: 151px;
+    margin-top: 7px;
+    width: 100%;
+}
+
+input#edit-search-billing-doc,
+select#edit-billing-month {
+    width: 20%;
+}
+
+div.form-type-select.form-item-billing-month.form-item.form-group > label[for="edit-billing-month"] {
+    margin-left: 15px;
+}
+
+input#edit-search-billing-doc {
+    float: right;
+    margin-top: -49px;
+    margin-right: 78px;
+}
+button#edit-search {
+    float: right;
+    margin-right: 17px;
+    margin-top: -65px;
+}
+
+span.active-plan {
+    float: right;
+}
+
+div#edit-registered-for-tax-vat {
+    display: -moz-inline-box;
+}
+
+.plan-details-comparison li.active .future-plan {
+    background-color: #FFFFFF;
+    color: #0098D6;
+}
+.plan-details-comparison li .future-plan {
+    background-color: #0098D6;
+    border-radius: 5px;
+    color: #FFFFFF;
+    font-size: 11px;
+    margin-left: 1px;
+    padding: 1px 3px;
+    position: relative;
+    top: -2px;
+}
+
+div.addressfield-container-inline > div.form-item {
+    float: none;
+}
+
+div.addressfield-container-inline div.form-item,
+div.form-item-customer-profile-billing-commerce-customer-address-und-0-premise.form-item.form-group,
+div.form-item-customer-profile-billing-commerce-customer-address-und-0-thoroughfare.form-item.form-group,
+div.form-item-customer-profile-billing-commerce-customer-address-und-0-country.form-item.form-group {
+    margin-right: 15px;
+    margin-left: 15px;
+}
+
+input#edit-top-up-amount,
+input#edit-amount {
+    width: 100%;
+}

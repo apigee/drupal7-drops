@@ -30,7 +30,7 @@
  *    - 'label': The human-readable label of the object type.
  *    - 'objects': An array of the different objects of this type that have
  *      their own permissions, for example, node types, which each provide
- *      permissions such as 'create foo node types'. These will form the rows 
+ *      permissions such as 'create foo node types'. These will form the rows
  *      of the permissions grid. The keys are the substrings of the permission
  *      strings, and the values are human-readable labels.
  *    - 'verb_groups': An array of one or more verb groups. Each verb group
@@ -48,9 +48,10 @@
  *          verbs array in this verb group.
  *        - '%object': The object of the permission. This takes all the keys in
  *          the objects array.
- *      - 'object_process_callback' (optional) A function to process the object
- *        name before replacing it into the pattern. (This is just a hack for
- *        taxonomy to work.) 
+ *      - 'object_process_callback' (optional) The name of an implementation of
+ *        callback_permission_grid_info_object_process(). This callback allows
+ *        processing of the object name before replacing it into the pattern.
+ *        (This is just a hack for taxonomy to work.)
  */
 function hook_permission_grid_info() {
   $return = array(
@@ -78,7 +79,7 @@ function hook_permission_grid_info() {
     $return['node']['objects'][$type] = $node_types[$type]->name;
   }
 
-  return $return;  
+  return $return;
 }
 
 /**
@@ -88,3 +89,31 @@ function hook_permission_grid_info_alter(&$info) {
   // Add a 'publish own node' verb.
   $info['node']['verb_groups']['node']['verbs']['publish own'] = t('Publish own');
 }
+
+/**
+ * @} End of "addtogroup hooks".
+ */
+
+/**
+ * @addtogroup callbacks
+ * @{
+ */
+
+/**
+ * Process an object name to use in a constructed permission string.
+ *
+ * @param $object_name
+ *  The machine name of an object, as
+ *
+ * @return
+ *  The string to use in the constructed permission machine string for the
+ *  given object.
+ */
+function callback_permission_grid_info_object_process($object_name) {
+  $vocabulary_names = taxonomy_vocabulary_get_names();
+  return $vocabulary_names[$object_name]->vid;
+}
+
+/**
+ * @} End of "addtogroup callbacks".
+ */

@@ -62,7 +62,6 @@ class WorkflowConfigTransition extends Entity {
 
   // Extra fields.
   public $wid = 0;
-  // protected $workflow = NULL;
   // protected $is_scheduled = FALSE;
   // protected $is_executed = FALSE;
   // protected $force = NULL;
@@ -111,7 +110,7 @@ class WorkflowConfigTransition extends Entity {
    *  Workflow object.
    */
   public function getWorkflow() {
-    return isset($this->workflow) ? $this->workflow : workflow_load_single($this->wid);
+    return workflow_load_single($this->wid);
   }
 
   /**

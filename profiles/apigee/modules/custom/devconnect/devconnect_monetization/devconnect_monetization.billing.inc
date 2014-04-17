@@ -8,6 +8,7 @@ use Apigee\Util\Debugger;
 use Apigee\Mint\Exceptions\MintApiException;
 use Apigee\Mint\Organization;
 use Apigee\Mint\Developer;
+use Apigee\Mint\DeveloperBalance;
 
 /**
  * Page callback for:
@@ -31,11 +32,12 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
     $organization = new Organization($config);
     $currencies = $organization->listSupportedCurrencies();
     $previous_prepaid_statements_form = drupal_get_form('devconnect_monetization_download_prepaid_report_form');
-    $balances = $developer->getPrepaidBalance();
+    $devBalance = new DeveloperBalance($developer->getEmail(), $config);
+    $balances = $devBalance->getList();
     $topped_up_currencies = 0;
     foreach ($balances as $balance) {
       foreach ($currencies as $currency) {
-        if ($balance->getSupportedCurrency()->id == $currency->id) {
+        if ($balance->getSupportedCurrency()->getId() == $currency->getId()) {
           $topped_up_currencies++;
           break;
         }
@@ -60,7 +62,7 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
     'download_prepaid_report_perm' => $download_prepaid_report_perm,
   );
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/global.js', 'file');
-  return theme('billing_prepaid_balance', $variables);
+  return theme('devconnect_monetization_billing_prepaid_balance', $variables);
 }
 
 /**
@@ -124,7 +126,10 @@ function devconnect_monetization_top_up_balance_form($form, $form_state) {
 
   $currency_options = array();
   foreach ($currencies as $currency) {
-    $currency_options[$currency->name] = $currency->name . ' ('. $currency->displayName . ')';
+    if ($currency->isVirtualCurrency()) {
+      continue;
+    }
+    $currency_options[$currency->getName()] = $currency->getName() . ' ('. $currency->getDisplayName() . ')';
   }
 
   $form = array();
@@ -298,7 +303,7 @@ function devconnect_monetization_download_prepaid_report_form($form, $form_state
   rsort($years);
   $accounts = array();
   foreach ($currencies as $currency) {
-    $accounts[$currency->name] = "{$currency->name} ({$currency->displayName})";
+    $accounts[$currency->getName()] = "{$currency->getName()} ({$currency->getDisplayName()})";
   }
 
   $years = array_combine($years, $years);
@@ -401,13 +406,13 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
   $show_local_currency_option = FALSE;
   $count_default = 0;
   foreach ($currencies as $currency) {
-    if (!in_array($currency->name, array('GBP', 'EUR', 'USD'))) {
+    if (!in_array($currency->getName(), array('GBP', 'EUR', 'USD'))) {
       $show_local_currency_option = TRUE;
     }
     else {
-      $currency_options[$currency->name] = "({$currency->name}) {$currency->displayName}";
+      $currency_options[$currency->getName()] = "({$currency->getName()}) {$currency->getDisplayName()}";
     }
-    if (in_array($currency->name, array('GBP', 'EUR', 'USD'))) {
+    if (in_array($currency->getName(), array('GBP', 'EUR', 'USD'))) {
       $count_default++;
     }
   }
@@ -474,19 +479,10 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
     );
   }
 
-  $form['report_name'] = array(
-    '#type' => 'textfield',
-  );
-  $form['report_desc'] = array(
-    '#type' => 'textfield',
-    '#attributes' => array('placeholder' => t('Enter a description...')),
-  );
   $form['#base_inputs'] = array(
     'date_range',
     'reporting_level',
     'currency',
-    'report_name',
-    'report_desc',
   );
 
   $form['download_report'] = array(
@@ -610,7 +606,7 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
     exit();
   } catch (Exception $e) {
     if ($e->getCode() == 404) {
-      drupal_set_message(t('There is no data within this date range. Please try another date range'), 'warning');
+      drupal_set_message(t('There is no data within this date range. Please try another date range.'), 'warning');
     }
     else {
       drupal_set_message(t('There was an error trying to download your report. Please try again, if the problem persists please contact your administrator.'), 'error');
@@ -633,7 +629,7 @@ function devconnect_monetization_billing_document_form($form, &$form_state, \Api
 
   $months = array();
   foreach ($billing_months as $billing_month) {
-    // Build the key as float made of Y as interger part and month as decimal part pad with 0 e.g. January 2013 = 2013.01
+    // Build the key as float made out of Y as interger part and month as decimal part pad with 0 e.g. January 2013 = 2013.01
     // This way we can sort them descending
     $months[(float) $billing_month->getYear() . '.' . str_pad($billing_month->getMonth(), 2, '0', STR_PAD_LEFT)] = $billing_month;
   }
@@ -652,7 +648,6 @@ function devconnect_monetization_billing_document_form($form, &$form_state, \Api
     '#title' => t('Billing Month'),
     '#type' => 'select',
     '#options' => $opts,
-    '#attributes' => array('onchange' => 'javascript: jQuery("#edit-search-billing-doc").val(""); jQuery("#devconnect-monetization-billing-document-form").submit();'),
   );
 
 
@@ -663,7 +658,6 @@ function devconnect_monetization_billing_document_form($form, &$form_state, \Api
       'class' => array('input-large', 'search-query'),
       'placeholder' => t('Search Billing Documents'),
     ),
-    '#prefix' => '<div style="float:right;margin-top:-46px;display:none;">',
   );
 
   $form['search'] = array(
@@ -672,7 +666,6 @@ function devconnect_monetization_billing_document_form($form, &$form_state, \Api
     '#attributes' => array(
       'class' => array('btn'),
     ),
-    '#suffix' => '</div>',
   );
 
   $form['list'] = array(
@@ -792,7 +785,7 @@ function devconnect_monetization_start_payment_order($user, $values) {
 
   $deposit->commerce_price['und'][0]['currency_code'] = $currency;
 
-  $deposit->title = t('Deposit @amount', array('@amount' => commerce_currency_format($values['amount'] * 100, $currency)));
+  $deposit->title = t('Deposit @amount', array('@amount' => commerce_currency_decimal_to_amount($values['amount'], $currency)));
 
   commerce_product_save($deposit);
 

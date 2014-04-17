@@ -72,6 +72,7 @@ class WorkflowTransition extends Entity {
   public $language = LANGUAGE_NONE;
   public $delta = 0;
   // Entity data.
+  public $revision_id;
   public $entity_id;
   public $nid; // @todo D8: remove $nid, use $entity_id. (requires conversion of Views displays.)
   protected $entity; // This is dynamically loaded. Use WorkflowTransition->getEntity() to fetch this.
@@ -131,14 +132,11 @@ class WorkflowTransition extends Entity {
     // If constructor is called with new() and arguments.
     // Load the supplied entity.
     if ($entity && !$entity_type) {
-      // Not all paramaters are passed programmatically.
+      // Not all parameters are passed programmatically.
       drupal_set_message('Wrong call to new Workflow*Transition()', 'error');
     }
     elseif ($entity) {
-      // When supplying the $entity, the $entity_type must be known, too.
-      $this->entity = $entity;
-      $this->entity_id = entity_id($entity_type, $entity);
-      $this->nid = $this->entity_id;
+      $this->setEntity($entity_type, $entity);
     }
 
     if (!$entity && !$old_sid && !$new_sid) {
@@ -155,7 +153,7 @@ class WorkflowTransition extends Entity {
       $this->comment = $comment;
     }
     elseif (!$old_sid) {
-      // Not all paramaters are passed programmatically.
+      // Not all parameters are passed programmatically.
       drupal_set_message(
         t('Wrong call to constructor Workflow*Transition(@old_sid to @new_sid)', array('@old_sid' => $old_sid, '@new_sid' => $new_sid)),
         'error');
@@ -194,22 +192,22 @@ class WorkflowTransition extends Entity {
    * @param $entity_type
    * @param $entity_id
    * @param $field_name
-   *   Optional.
+   *   Optional. Can be NULL, if you want to load any field.
    *
    * @return array
    *   An array of WorkflowTransitions.
-   *
-   * @deprecate: workflow_get_workflow_node_history_by_nid() --> workflow_transition_load_single()
-   * @deprecate: workflow_get_recent_node_history() --> workflow_transition_load_multiple()
    */
-  public static function loadMultiple($entity_type, $entity_id, $field_name = '', $limit = NULL) {
-    if (!$entity_id) {
-      return array();
-    }
+  public static function loadMultiple($entity_type, array $entity_ids, $field_name = '', $limit = NULL) {
     $query = db_select('workflow_node_history', 'h');
     $query->condition('h.entity_type', $entity_type);
-    $query->condition('h.nid', $entity_id);
-    $query->condition('h.field_name', $field_name);
+    if ($entity_ids) {
+      $query->condition('h.nid', $entity_ids);
+    }
+    if ($field_name !== NULL) {
+      // If we do not know/care for the field_name, fetch all history.
+      // E.g., in workflow.tokens.
+      $query->condition('h.field_name', $field_name);
+    }
     $query->fields('h');
     // The timestamp is only granular to the second; on a busy site, we need the id.
     // $query->orderBy('h.stamp', 'DESC');
@@ -241,7 +239,7 @@ class WorkflowTransition extends Entity {
   /**
    * Given an Entity, delete transitions for it.
    *
-   * @todo: With Field API, having 2 fields, both are deleted :-( .
+   * @todo: With Field API, having multiple workflow_fields, both are deleted :-( .
    */
   public static function deleteById($entity_type, $entity_id) {
     $conditions = array(
@@ -331,6 +329,11 @@ class WorkflowTransition extends Entity {
     $entity = $this->getEntity(); // Entity may not be loaded, yet.
     $field_name = $this->field_name;
 
+    // Store the transition, so it can be easily fetched later on.
+    // Store in an array, to prepare for multiple workflow_fields per entity.
+    // This is a.o. used in hook_entity_update to trigger 'transition post'.
+    $entity->workflow_transitions[$field_name] = $this;
+
     $args = array(
       '%user' => isset($user->name) ? $user->name : '',
       '%old' => $old_sid,
@@ -386,9 +389,13 @@ class WorkflowTransition extends Entity {
         return $old_sid;
       }
     }
+    elseif ($this->comment) {
+      // No need to ask permission for adding comments.
+      // Since you should not add actions to a 'transition pre' event, there is
+      // no need to invoke the event.
+    }
 
     // Log the new state in {workflow_node}.
-    // @todo D8: remove; this is only for Node API.
     if (!$field_name) {
       if ($state_changed) {
         // If the node does not have an existing 'workflow' property,
@@ -435,27 +442,54 @@ class WorkflowTransition extends Entity {
       }
     }
 
-    // Notify modules that transition has occurred.
-    // Action triggers should take place in response to this callback, not the 'transaction pre'.
-    if (!$field_name) { // @todo D8: remove; this is only for Node API.
-      unset($entity->workflow_comment);
-      module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
-    }
-    else {
-      // @todo: we have a problem here, when using Rules, etc: The entity
-      // is not saved here, but only after this call. Alternatives:
-      // 1. Save the field here explicitely, using field_attach_save;
-      // 2. Move the invoke to another place (but there is no entity_postsave());
-      // 3. rely on the entity hooks. This is what we do.
-      // module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
-    }
-
-    // Clear any references in the scheduled listing.
+    // Remove any scheduled state transitions.
     foreach (WorkflowScheduledTransition::load($entity_type, $entity_id, $field_name) as $scheduled_transition) {
       $scheduled_transition->delete();
     }
 
+    // Notify modules that transition has occurred.
+    // Action triggers should take place in response to this callback, not the 'transaction pre'.
+    if ($state_changed || $this->comment) {
+      if (!$field_name) {
+        // Now that workflow data is saved, reset stuff to avoid problems
+        // when Rules etc want to resave the data.
+        // Remember, this is only for nodes, and node_save() is not necessarily performed.
+        unset($entity->workflow_comment);
+        module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+        entity_get_controller('node')->resetCache(array($entity->nid)); // from entity_load(), node_save();
+      }
+      else {
+        // module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+        // We have a problem here with Rules, Trigger, etc. when invoking
+        // 'transition post': the entity has not been saved, yet. we are still
+        // IN the transition, not AFTER. Alternatives:
+        // 1. Save the field here explicitely, using field_attach_save;
+        // 2. Move the invoke to another place: hook_entity_insert(), hook_entity_update();
+        // 3. Rely on the entity hooks. This works for Rules, not for Trigger.
+        // --> We choose option 2.
+        //  - first, $entity->workflow_fields[] is set for easy re-fetching.
+        //  - then, post_execute() is invoked via workflowfield_entity_insert(), _update().
+      }
+    }
+
     return $new_sid;
+  }
+
+  /**
+   * Invokes 'transition post''.
+   */
+  public function post_execute($force = FALSE) {
+    $old_sid = $this->old_sid;
+    $new_sid = $this->new_sid;
+    $entity_type = $this->entity_type;
+    $entity_id = $this->entity_id;
+    $entity = $this->getEntity(); // Entity may not be loaded, yet.
+    $field_name = $this->field_name;
+
+    $state_changed = ($old_sid != $new_sid);
+    if ($state_changed || $this->comment) {
+      module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+    }
   }
 
   /**
@@ -493,8 +527,9 @@ class WorkflowTransition extends Entity {
     }
     $this->entity = $entity;
     $this->entity_type = $entity_type;
-    $this->entity_id = entity_id($entity_type, $entity);
-    $this->nid = $this->entity_id;
+    list($this->entity_id, $this->revision_id, ) = entity_extract_ids($entity_type, $entity);
+
+    $this->nid = $this->entity_id; // backwards compatibility.
 
     return $this->entity;
   }

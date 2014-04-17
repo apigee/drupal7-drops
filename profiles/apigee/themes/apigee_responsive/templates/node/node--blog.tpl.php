@@ -62,12 +62,11 @@
     hide($content['field_tags']);
     print render($content);
     ?>
-    <hr/>
     <?php if (!empty($content['field_tags']) || !empty($content['links'])): ?>
       <footer>
         <?php print render($content['field_tags']); ?>
         <?php print render($content['links']); ?>
-        <?php if (!empty($content['comments'])) { ?>
+        <?php if (empty($content['comments'])) { ?>
           <hr>
         <?php } ?>
       </footer>

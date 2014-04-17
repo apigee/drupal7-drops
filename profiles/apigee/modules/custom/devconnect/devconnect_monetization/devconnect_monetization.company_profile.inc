@@ -409,7 +409,7 @@ function devconnect_monetization_company_bank_details_form($form, $form_state, \
 
   $currency_opts = array();
   foreach ($currencies as &$currency) {
-    $currency_opts[$currency->id] = "{$currency->displayName} ({$currency->name})";
+    $currency_opts[$currency->getId()] = "{$currency->getDisplayName()} ({$currency->getName()})";
   }
   $form['account_info']['account_currency'] = array(
     '#type' => 'select',
@@ -599,7 +599,7 @@ function devconnect_monetization_roles_form($form, $form_state, \Apigee\Mint\Dev
 
   $form['submit'][] = array(
     '#type' => 'submit',
-    '#value' => 'Save',
+    '#value' => t('Save'),
   );
   $form['#theme'] = 'devconnect_monetization_roles_form';
   $form['#submit'][] = 'devconnect_monetization_roles_form_submit';
@@ -977,10 +977,10 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
 
   foreach ($developerBalance->getList() as $balance) {
     if ($balance->getProviderId() != NULL) {
-      $form['balances']['items'][$balance->getSupportedCurrency()->id] = array(
+      $form['balances']['items'][$balance->getSupportedCurrency()->getId()] = array(
         '#provider' => $provider_names[$balance->getProviderId()],
-        '#currency' => $balance->getSupportedCurrency()->name,
-        '#minimum_recurring_amount' => $balance->getSupportedCurrency()->minimumRecurringAmount,
+        '#currency' => $balance->getSupportedCurrency()->getName(),
+        '#minimum_recurring_amount' => $balance->getSupportedCurrency()->getMinimumRecurringAmount(),
         'provider' => array(
           '#type' => 'value',
           '#value' => $balance->getProviderId(),
@@ -1011,8 +1011,8 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
               'recurring',
             ),
             'title' => t('Recurring amount must be greater than Replenish amount.'),
-            'currency' => $balance->getSupportedCurrency()->name,
-            'minimum' => (float) $balance->getSupportedCurrency()->minimumRecurringAmount,
+            'currency' => $balance->getSupportedCurrency()->getName(),
+            'minimum' => (float) $balance->getSupportedCurrency()->getMinimumRecurringAmount(),
           ),
           '#disabled' => !$balance->isRecurring(),
         ),
@@ -1028,8 +1028,8 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
               'replenish',
             ),
             'title' => t('Replenish amount cannot be greater than Recurring amount.'),
-            'currency' => $balance->getSupportedCurrency()->name,
-            'minimum' => (float) $balance->getSupportedCurrency()->minimumRecurringAmount,
+            'currency' => $balance->getSupportedCurrency()->getName(),
+            'minimum' => (float) $balance->getSupportedCurrency()->getMinimumRecurringAmount(),
           ),
           '#disabled' => !$balance->isRecurring(),
         )

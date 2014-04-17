@@ -1873,7 +1873,10 @@ function devconnect_monetization_requirements($phase) {
  * 1. Ensure cache table cache_mint exists
  * 2. Update user roles and permissions
  */
-function devconnect_monetization_update_7425() {
+function devconnect_monetization_update_7426() {
+  if (!module_exists('commerce_product_reference')) {
+    module_enable(array('commerce_product_reference'), TRUE);
+  }
   if (!db_table_exists('cache_mint')) {
     db_create_table('cache_mint', drupal_get_schema_unprocessed('system', 'cache'));
   }
@@ -1895,6 +1898,15 @@ function devconnect_monetization_update_7425() {
   return t('DevConnect Monetization module has been updated successfully');
 }
 
+/**
+ * Invalidate previous update
+ *
+ * @return int
+ */
+function devconnect_monetization_update_last_removed() {
+  return 7425;
+}
+
 function devconnect_monetization_setup_mint_roles() {
   module_load_include("module", "devconnect_monetization");
   // Setup monetization administrator role
@@ -1905,10 +1917,11 @@ function devconnect_monetization_setup_mint_roles() {
     user_role_save($role);
     $role = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
   }
+  variable_set('devconnect_monetization_default_role', $role->rid);
   variable_set('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, $role->rid);
   devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_admin_permissions() + devconnect_monetization_finance_permissions() + devconnect_monetization_developer_permissions();
-  user_role_grant_permissions($role->rid, array_keys($permissions));
+  _devconnect_monetization_merge_permissions($role, array_keys($permissions));
 
   // Setup monetization finance administrator role
   $role = user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME);
@@ -1921,7 +1934,7 @@ function devconnect_monetization_setup_mint_roles() {
   variable_set('devconnect_monetization_role_' . MONETIZATION_FINANCE_ADMIN_ROLE_NAME, $role->rid);
   devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_finance_permissions();
-  user_role_grant_permissions($role->rid, array_keys($permissions));
+  _devconnect_monetization_merge_permissions($role, array_keys($permissions));
 
   // Setup monetization developer role
   $role = user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME);
@@ -1934,10 +1947,24 @@ function devconnect_monetization_setup_mint_roles() {
   variable_set('devconnect_monetization_role_' . MONETIZATION_DEVELOPER_ROLE_NAME, $role->rid);
   devconnect_monetization_reset_permissions($role);
   $permissions = devconnect_monetization_developer_permissions();
-  user_role_grant_permissions($role->rid, array_keys($permissions));
+  _devconnect_monetization_merge_permissions($role, array_keys($permissions));
 
   drupal_static_reset('user_access');
   drupal_static_reset('user_role_permissions');
+}
+
+function _devconnect_monetization_merge_permissions($role, $permissions) {
+  foreach ($permissions as $name) {
+    db_merge('role_permission')
+      ->key(array(
+        'rid' => $role->rid,
+        'permission' => $name,
+      ))
+      ->fields(array(
+        'module' => 'devconnect_monetization',
+      ))
+      ->execute();
+  }
 }
 
 function devconnect_monetization_reset_permissions($role) {

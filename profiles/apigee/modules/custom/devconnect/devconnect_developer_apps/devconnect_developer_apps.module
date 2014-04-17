@@ -7,6 +7,8 @@ module_load_include('php', 'devconnect', 'lib/ArrayEntity');
 module_load_include('php', 'devconnect_developer_apps', 'entities/DeveloperAppEntity');
 module_load_include('php', 'devconnect_developer_apps', 'entities/ApiProductEntity');
 
+define('DEVCONNECT_DEVELOPER_APPS_LOCK', 'developer_apps_cache_clear');
+
 /**
  * Implements hook_menu().
  *
@@ -176,12 +178,12 @@ function devconnect_developer_apps_entity_property_info() {
     }
     $dev_app_properties[$raw_property] = array(
       'label' => t(_devconnect_developer_apps_humanify_name($raw_property)),
-      'type' => $type
+      'type' => $type,
     );
   }
   $dev_app_properties['uid'] = array(
     'label' => t('Drupal User ID'),
-    'type' => 'integer'
+    'type' => 'integer',
   );
 
   $raw_properties = Apigee\ManagementAPI\APIProduct::getAPIProductProperties();
@@ -206,7 +208,6 @@ function devconnect_developer_apps_entity_property_info() {
     'developer_app' => array('properties' => $dev_app_properties),
     'api_product' => array('properties' => $api_product_properties)
   );
-
   return $info;
 }
 
@@ -235,6 +236,8 @@ function _devconnect_developer_apps_humanify_name($name) {
       return 'API Key';
     case 'consumerSecret':
       return 'Secret';
+    case 'developer':
+      return 'Developer Email';
   }
 
   $human_readable_name = '';
@@ -413,7 +416,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Callback URL Field Tooltip'),
     '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_tooltip_callback_url', '', $form_state),
-    '#description' => t('If Callback URL Regex is not empty, this should contain a human-readable high-level description of the valid pattern, to be shown in the browser when the user enters an invalid pattern..'),
+    '#description' => t('If Callback URL Regex is not empty, this should contain a human-readable high-level description of the valid pattern, to be shown in the browser when the user enters an invalid pattern.'),
   );
 
   $form['analytics'] = array(
@@ -737,14 +740,6 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
       )
     );
   }
-  // $form['access_type'] = array(
-  //   '#title' => t('Access'),
-  //   '#type' => 'select',
-  //   '#id' => 'new_access_type',
-  //   '#options' => array('none' => 'none', 'read' => 'read', 'write' => 'write', 'both' => 'both'),
-  //   '#required' => TRUE,
-  //   '#default_value' => (isset($app_details) ? $app_details['accessType'] : NULL),
-  // );
   if (variable_get('devconnect_callback_handling', 'require') != 'none') {
     $form['callback_url'] = array(
       '#title' => t('Callback URL'),
@@ -836,7 +831,7 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   $options = array();
 
   $api_products = entity_load('api_product');
-  drupal_alter('apiproduct_list', $api_products);
+  drupal_alter('apiproduct_list', $api_products, $account);
 
   $preexisting_api_products = array();
   $api_product_default = array();
@@ -1000,7 +995,7 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
  * @param array $form
  */
 function devconnect_developer_apps_pattern_validate(array $element, array &$form_state, array $form) {
-  if (!$element['#required'] && (strlen(trim($element['#value'])) == 0)) {
+  if (!$element['#required'] && strlen(trim($element['#value'])) == 0) {
     return;
   }
   $pattern = '!' . str_replace('!', '\\!', $element['#attributes']['pattern']) . '!';
@@ -1017,7 +1012,6 @@ function devconnect_developer_apps_pattern_validate(array $element, array &$form
  * @param array $form_state
  */
 function devconnect_developer_apps_edit_form_validate(array $form, array &$form_state) {
-
   if ($form['machine_name']['#type'] == 'value') {
     // No need to validate existing machine names.
     return;
@@ -1053,7 +1047,12 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
  * @param array $form_state
  */
 function devconnect_developer_apps_edit_form_submit(array $form, array &$form_state) {
-  devconnect_developer_apps_hook('presave', $form_state);
+  // Invoke hook_devconnect_developer_app_presave on all implementing modules.
+  // If any module returns FALSE, abort.
+  $continue = devconnect_developer_apps_hook('presave', $form_state);
+  if (!$continue) {
+    return;
+  }
   $values = $form_state['values'];
   $entity = $form_state['storage']['entity'];
   $user = $form['user']['#value'];
@@ -1103,7 +1102,7 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
     if (substr($key, 0, 10) == 'attribute_') {
       // unmangle attribute name in cases containing non-machine-legal chars
       $attribute_name = rawurldecode(substr($key, 10));
-      $entity->attributes[$attribute_name] = $value;
+      $entity->attributes[$attribute_name] = check_plain($value);
     }
   }
 
@@ -1169,8 +1168,12 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
     $results['data']['appId'] = $entity->appId;
   }
 
-  // Invoke hook_devconnect_developer_app_save on all implementing modules
-  devconnect_developer_apps_hook('save', $form_state, $results);
+  // Invoke hook_devconnect_developer_app_save on all implementing modules.
+  // If any module returns FALSE, abort.
+  $continue = devconnect_developer_apps_hook('save', $form_state, $results);
+  if (!$continue) {
+    return;
+  }
 
   if (module_exists('rules')) {
     $event = ($action_taken == 'Updated' ? 'devconnect_developer_app_update' : 'devconnect_developer_app_create');
@@ -1256,6 +1259,13 @@ function devconnect_developer_app_delete_form($form, &$form_state) {
  * @param $form_state
  */
 function devconnect_developer_app_delete_form_submit(&$form, &$form_state) {
+  // Invoke hook_devconnect_developer_app_predelete on all implementing modules.
+  // If any module returns FALSE, abort.
+  $continue = devconnect_developer_apps_hook('predelete', $form_state);
+  if (!$continue) {
+    return;
+  }
+
   $values = $form_state['values'];
 
   $uid_arg = $values['uid'];
@@ -1269,15 +1279,10 @@ function devconnect_developer_app_delete_form_submit(&$form, &$form_state) {
     $values['user'] = user_load($uid_arg);
   }
 
-  // Invoke hook_devconnect_developer_app_predelete on all implementing modules.
-  devconnect_developer_apps_hook('predelete', $form_state);
   entity_delete('developer_app', $form['#entity']->appId);
   $result = devconnect_get_debug_data();
   if ($result['code_class'] == 2) {
     drupal_set_message(t('App Deleted!'), 'status');
-    if (module_exists('rules')) {
-      rules_invoke_event('devconnect_developer_app_delete', $form['#entity']);
-    }
   }
   else {
     $code = Apigee\Util\ErrorHandling::CODE_APP_CANNOT_BE_DELETED;
@@ -1291,20 +1296,11 @@ function devconnect_developer_app_delete_form_submit(&$form, &$form_state) {
   $form_state['redirect'] = "user/$uid_arg/apps";
   if ($result['code_class'] == 2) {
     // Invoke hook_devconnect_developer_app_delete on all implementing modules.
-    devconnect_developer_apps_hook('delete', $form_state, $result);
-  }
-}
+    $continue = devconnect_developer_apps_hook('delete', $form_state, $result);
 
-/**
- * Implements hook_menu_local_tasks_alter().
- *
- * @param array $data
- * @param $router_item
- * @param $root_path
- */
-function devconnect_developer_apps_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-  if (arg(0) == 'user') {
-    unset($data['tabs']);
+    if ($continue && module_exists('rules')) {
+      rules_invoke_event('devconnect_developer_app_delete', $form['#entity']);
+    }
   }
 }
 
@@ -1526,12 +1522,16 @@ function devconnect_developer_apps_hook($hook, &$values, $kms_result = NULL) {
     $function = $module . '_' . $hook;
     if (isset($kms_result)) {
       // Note that for backwards compatibility, $kms_result must be first arg
-      $function($kms_result, $values);
+      $return_val = @$function($kms_result, $values);
     }
     else {
-      $function($values);
+      $return_val = @$function($values);
+    }
+    if ($return_val === FALSE) {
+      return FALSE;
     }
   }
+  return TRUE;
 }
 
 /**
@@ -1670,26 +1670,10 @@ function devconnect_developer_apps_token_info() {
     'description' => t('Tokens related to developer apps'),
     'needs-data' => 'developer_app'
   );
-  /*
-  $app['accessType'] = array(
-    'name' => t('Access Type'),
-    'description' => t('Tells whether the app reads API data, writes it, or both.')
-  );
-  */
   $app['apiProducts'] = array(
     'name' => t('API Products'),
     'description' => t('List of all API Products used by the app.')
   );
-  /*
-  $app['appFamily'] = array(
-    'name' => t('App Family'),
-    'description' => t('Describes the app family, if any.')
-  );
-  $app['appId'] = array(
-    'name' => t('App ID'),
-    'description' => t('Unique UUID of this app.')
-  );
-  */
   $app['attributes'] = array(
     'name' => t('Attributes'),
     'description' => t('List of custom attributes for this app.')
@@ -1702,37 +1686,14 @@ function devconnect_developer_apps_token_info() {
     'name' => t('Created At'),
     'description' => t('Timestamp at which the app was created.')
   );
-  /*
-  $app['createdBy'] = array(
-    'name' => t('Created By'),
-    'description' => t('Email of the user that created this app. NOTE: This is not the owning developer, but rather the administrative user configured for the Dev Portal.')
-  );
-  */
   $app['modifiedAt'] = array(
     'name' => t('Modified At'),
     'description' => t('Timestamp at which the app was last modified.')
   );
-  /*
-  $app['modifiedBy'] = array(
-    'name' => t('Modified By'),
-    'description' => t('Email of the user that last modified this app. NOTE: This is not the owning developer, but rather the administrative user configured for the Dev Portal.')
-  );
-  */
-  /*
-  $app['developerId'] = array(
-    'name' => t('Developer ID'),
-    'description' => t('Unique ID of the developer who owns this app.')
-  );
-  */
   $app['name'] = array(
     'name' => t('App Name'),
     'description' => t('The machine-readable name of the app.')
   );
-  /*
-  $app['scopes'] = array(
-    // TODO fill this in
-  );
-  */
   $app['status'] = array(
     'name' => t('App Status'),
     'description' => t('The active status of this app.')
@@ -1741,12 +1702,6 @@ function devconnect_developer_apps_token_info() {
     'name' => t('Description'),
     'description' => t('Description of the app, if present.')
   );
-  /*
-  $app['credentialApiProducts'] = array(
-    'name' => t('API Products for the Credential'),
-    'description' => t('List of API Product names configured for the authentication credentials.')
-  );
-  */
   $app['consumerKey'] = array(
     'name' => t('Consumer Key'),
     'description' => t('The Consumer Key (public key or API Key) for this app.')
@@ -1755,11 +1710,6 @@ function devconnect_developer_apps_token_info() {
     'name' => t('Consumer Secret'),
     'description' => t('The Consumer Secret (private key) for this app.')
   );
-  /*
-  $app['credentialScopes'] = array(
-    // TODO fill this in
-  );
-  */
   $app['credentialStatus'] = array(
     'name' => t('Credential Status'),
     'description' => t('Status of the Consumer Key/Secret credential.')
@@ -1784,3 +1734,192 @@ function devconnect_developer_apps_token_info() {
   );
 }
 
+/**
+ * Deletes references to a specific developer_app or api_product entity from
+ * our internal cache.
+ *
+ * @param $entity
+ */
+function devconnect_developer_apps_delete_from_cache($entity) {
+  if ($entity instanceof Drupal\devconnect_developer_apps\DeveloperAppEntity) {
+    db_delete('dc_dev_app_api_products')->condition('app_id', $entity->appId)->execute();
+    db_delete('dc_dev_app_attributes')->condition('app_id', $entity->appId)->execute();
+    db_delete('dc_dev_app')->condition('app_id', $entity->appId)->execute();
+    db_delete('dc_dev_app_previous_status')->condition('app_id', $entity->appId)->execute();
+  }
+  elseif ($entity instanceof Drupal\devconnect_developer_apps\ApiProductEntity) {
+    db_delete('dc_api_product')->condition($entity->name)->execute();
+  }
+}
+
+/**
+ * Writes a developer_app or api_product entity to our internal cache.
+ *
+ * By default we delete any references to this entity from our cache before
+ * writing, but when $ensure_clean is set to FALSE we can skip this step.
+ * In real life this occurs when the table has been freshly truncated.
+ *
+ * @param $entity
+ * @param bool $ensure_clean
+ */
+function devconnect_developer_apps_write_to_cache($entity, $ensure_clean = TRUE) {
+  if ($ensure_clean) {
+    devconnect_developer_apps_delete_from_cache($entity);
+  }
+  if ($entity instanceof Drupal\devconnect_developer_apps\DeveloperAppEntity) {
+    if (!$entity->uid) {
+      return;
+    }
+    switch ($entity->overallStatus) {
+      case 'revoked':
+        $overall_status = -1; break;
+      case 'approved':
+        $overall_status = 1; break;
+      default:
+        $overall_status = 0; break;
+    }
+    switch ($entity->status) {
+      case 'revoked':
+        $app_status = -1; break;
+      case 'approved':
+        $app_status = 1; break;
+      default:
+        $app_status = 0; break;
+    }
+    switch ($entity->credentialStatus) {
+      case 'revoked':
+        $cred_status = -1; break;
+      case 'approved':
+        $cred_status = 1; break;
+      default:
+        $cred_status = 0; break;
+    }
+
+    $fields = array(
+      'app_id' => $entity->appId,
+      'uid' => intval($entity->uid),
+      'name' => $entity->name,
+      'display_name' => (array_key_exists('DisplayName', $entity->attributes) ? $entity->attributes['DisplayName'] : ''),
+      'description' => (string)$entity->description,
+      'consumer_key' => (string)$entity->consumerKey,
+      'consumer_secret' => (string)$entity->consumerSecret,
+      'overall_status' => $overall_status,
+      'app_status' => $app_status,
+      'credential_status' => $cred_status,
+      'callback_url' => (string)$entity->callbackUrl,
+      'created_at' => round($entity->createdAt / 1000),
+      'modified_at' => round($entity->modifiedAt / 1000),
+      'access_type' => (string)$entity->accessType,
+      'app_family' => (string)$entity->appFamily
+    );
+
+    db_insert('dc_dev_app')->fields($fields)->execute();
+    foreach ($entity->attributes as $name => $value) {
+      db_insert('dc_dev_app_attributes')
+        ->fields(array(
+          'app_id' => $entity->appId,
+          'name' => $name,
+          'value' => $value
+        ))
+        ->execute();
+    }
+    foreach ($entity->credentialApiProducts as $product) {
+      switch ($product['status']) {
+        case 'revoked':
+          $cred_apiproduct_status = -1; break;
+        case 'approved':
+          $cred_apiproduct_status = 1; break;
+        default:
+          $cred_apiproduct_status = 0; break;
+      }
+
+      db_insert('dc_dev_app_api_products')
+        ->fields(array(
+          'app_id' => $entity->appId,
+          'name' => $product['apiproduct'],
+          'status' => $cred_apiproduct_status
+        ))
+        ->execute();
+    }
+
+    $old_status = db_select('dc_dev_app_previous_status', 's')->fields('s', array('status'))->condition('app_id', $entity->appId)->execute()->fetchField();
+    if ($old_status === FALSE) {
+      db_insert('dc_dev_app_previous_status')->fields(array('app_id' => $entity->appId, 'status' => $overall_status))->execute();
+    }
+    elseif ($old_status != $overall_status) {
+      if (module_exists('rules')) {
+        $event = NULL;
+        switch ($old_status) {
+          case -1: $event = 'devconnect_developer_app_status_revoked_'; break;
+          case 0: $event = 'devconnect_developer_app_status_pending_'; break;
+          case 1: $event = 'devconnect_developer_app_status_approved_'; break;
+        }
+        switch ($overall_status) {
+          case -1: $event .= 'revoked'; break;
+          case 0: $event .= 'pending'; break;
+          case 1: $event .= 'approved'; break;
+        }
+
+        if ($event && strlen($event) > 10) {
+          rules_invoke_event($event, $entity);
+        }
+      }
+
+      db_update('dc_dev_app_previous_status')->fields(array('status' => $overall_status))->condition('app_id', $entity->appId)->execute();
+    }
+
+  }
+  elseif ($entity instanceof Drupal\devconnect_developer_apps\ApiProductEntity) {
+    db_insert('dc_api_product')
+      ->fields(array(
+        'name' => $entity->name,
+        'display_name' => $entity->displayName,
+        'approval_type' => ($entity->approvalType == 'auto' ? 0 : 1),
+        'description' => $entity->description
+      ))
+      ->execute();
+  }
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * Refreshes our developer_app and api_product caches.
+ */
+function devconnect_developer_apps_cron() {
+  static $already_ran = FALSE;
+
+  // Prevent this from running twice (drush cron may do this)
+  if ($already_ran) {
+    return array();
+  }
+  $already_ran = TRUE;
+  // Do not try to rebuild caches if we're not yet configured.
+  $org_config = devconnect_default_api_client();
+  if (empty($org_config->orgName)) {
+    return array();
+  }
+
+  $api_products = entity_load('api_product');
+  $apps = entity_load('developer_app');
+
+  if (empty($api_products) || empty($apps)) {
+    if (function_exists('drush_print')) {
+      drush_print('Count of API Products: ' . count($api_products) . '; count of apps: ' . count($apps));
+    }
+    return array();
+  }
+
+  module_load_install('devconnect_developer_apps');
+  $tables = array_keys(devconnect_developer_apps_schema());
+  db_transaction();
+  foreach ($tables as $table) {
+    db_truncate($table)->execute();
+  }
+  foreach ($api_products as $product) {
+    devconnect_developer_apps_write_to_cache($product, FALSE);
+  }
+  foreach ($apps as $app) {
+    devconnect_developer_apps_write_to_cache($app, FALSE);
+  }
+}

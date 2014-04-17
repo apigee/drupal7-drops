@@ -204,7 +204,6 @@ function devconnect_mint_worldpay_success() {
     }
 
     try {
-      // @TODO Implement nonetheless
       /* This is no honored by the backend
       if (isset($recurring) && $recurring['is_recurring'] == 'yes') {
         $recurring_amount = $recurring['recurring_amount'];

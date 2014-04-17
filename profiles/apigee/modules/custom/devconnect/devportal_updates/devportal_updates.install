@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the devportal_updates module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function devportal_updates_uninstall() {
+  variable_del('devportal_updates_check_frequency');
+  variable_del('devportal_updates_last_check');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function devportal_updates_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    $devportal_version = devportal_updates_get_devportal_version();
+
+    if(!$devportal_version) {
+      $requirements['devportal_version']['title'] = t('Dev Portal version');
+      $requirements['devportal_version']['value'] = t('Unknown');
+      $requirements['devportal_version']['severity'] = REQUIREMENT_ERROR;
+      $requirements['devportal_version']['description'] = t('The Dev Portal version could not be determined, does the <a href="@url">buildInfo file exist </a>?', array('@url' => url('buildInfo')));
+    }
+    else {
+      $requirements['devportal_version']['title'] = t('Dev Portal version');
+      $requirements['devportal_version']['value'] = $devportal_version;
+      $requirements['devportal_version']['severity'] = REQUIREMENT_INFO;
+    }
+
+    // Get status update.
+    module_load_include('inc', 'devportal_updates', 'devportal_updates.manager');
+    $status = devportal_updates_manager_get_status();
+
+    $requirements['devportal_updates']['title'] = t('Dev Portal update status');
+      $requirements['devportal_updates']['value'] = $status['status'];
+    $requirements['devportal_updates']['severity'] = $status['severity'];
+    $requirements['devportal_updates']['description'] = $status['message'];
+
+    // Get last time we checked the server.
+    $last_check_time = variable_get('devportal_updates_last_check', 0);
+    if ($last_check_time != 0) {
+      $last_check_text = t('@interval ago.', array('@interval' => format_interval(REQUEST_TIME - $last_check_time)));
+    } else {
+      $last_check_text = t('never');
+    }
+    $requirements['devportal_updates_last_check']['title'] = t('Dev Portal update status  last check');
+    $requirements['devportal_updates_last_check']['value'] = $last_check_text . ' ' . t('(<a href="@url">check again</a>)', array('@url' => url('admin/config/devconnect/devportal_updates/check')));
+    $requirements['devportal_updates_last_check']['severity'] = REQUIREMENT_INFO;
+
+  }
+  return $requirements;
+}
