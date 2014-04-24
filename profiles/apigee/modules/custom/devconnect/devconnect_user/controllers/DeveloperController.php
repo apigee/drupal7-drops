@@ -179,7 +179,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @param $entity
    */
   public function save($entity) {
-    $is_update = !empty($entity['developerId']);
+    $is_update = !empty($entity->developerId);
     if (!$is_update) {
       // Force Developer object to figure out if it's an update or insert.
       $is_update = NULL;

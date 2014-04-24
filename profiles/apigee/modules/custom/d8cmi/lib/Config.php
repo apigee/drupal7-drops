@@ -28,7 +28,7 @@ class Config {
   /**
    * Reads config YAML files (if available).
    *
-   * @param $name
+   * @param string $name
    */
   public function __construct($name) {
     list($object_name) = explode('.', $name, 2);
@@ -54,12 +54,20 @@ class Config {
 
     if (file_exists($default_config_file)) {
       $defaults = Yaml::parse($default_config_file);
+      // if the file was empty, $defaults may be NULL.
+      if (!isset($defaults)) {
+        $defaults = array();
+      }
     }
     else {
       $defaults = array();
     }
     if (file_exists($this->override_config_file)) {
       $overrides = Yaml::parse($this->override_config_file);
+      // if the file was empty, $overrides may be NULL.
+      if (!isset($overrides)) {
+        $overrides = array();
+      }
     }
     else {
       $overrides = array();
