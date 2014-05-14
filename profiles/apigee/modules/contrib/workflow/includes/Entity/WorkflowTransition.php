@@ -3,61 +3,9 @@
 /**
  * @file
  * Contains workflow\includes\Entity\WorkflowTransition.
- * Contains workflow\includes\Entity\WorkflowTransitionController.
  *
  * Implements (scheduled/executed) state transitions on entities.
  */
-
-/**
- * Implements a controller class for WorkflowTransition.
- *
- * The 'true' controller class is 'Workflow'.
- */
-class WorkflowTransitionController extends EntityAPIController {
-
-  /**
-   * Overrides DrupalDefaultEntityController::cacheGet()
-   * 
-   * Override default function, due to core issue #1572466.
-   */
-  protected function cacheGet($ids, $conditions = array()) {
-    // Load any available entities from the internal cache.
-    if ($ids === FALSE && !$conditions) {
-      return $this->entityCache;
-    }
-    return parent::cacheGet($ids, $conditions);
-  }
-
-  /**
-   * Insert (no update) a transition.
-   *
-   * @deprecated workflow_insert_workflow_node_history() --> WorkflowTransition::save()
-   */
-  public function save($entity, DatabaseTransaction $transaction = NULL) {
-    // Check for no transition.
-    if ($entity->old_sid == $entity->new_sid) {
-      if (!$entity->comment) {
-        // Write comment into history though.
-        return;
-      }
-    }
-
-    // Make sure we haven't already inserted history for this update.
-    $last_history = workflow_transition_load_single($entity->entity_type, $entity->entity_id, $entity->field_name, $limit = 1);
-    if ($last_history &&
-        $last_history->stamp == REQUEST_TIME &&
-        $last_history->new_sid == $entity->new_sid) {
-      return;
-    }
-
-    unset($entity->hid);
-    $entity->stamp = REQUEST_TIME;
-
-    return parent::save($entity, $transaction);
-  }
-
-}
-
 
 /**
  * Implements an actual Transition.
@@ -164,14 +112,6 @@ class WorkflowTransition extends Entity {
     $this->new_sid = $this->sid;
   }
 
-  /**
-   * Permanently deletes the entity.
-   */
-//  public function delete() {
-//    return parent::delete();
-//  }
-
-
   protected function defaultLabel() {
     return ''; // $this->title;
   }
@@ -221,35 +161,6 @@ class WorkflowTransition extends Entity {
   }
 
   /**
-   * Given a Condition, delete transitions for it.
-   * @todo: find a way to make $table automatically set for this class and its subclasses,
-   *  so we do not need to override it.
-   */
-  public static function deleteMultiple(array $conditions, $table = 'workflow_node_history') {
-    if (count($conditions) == 0) {
-      return 0;
-    }
-    $query = db_delete($table);
-    foreach ($conditions as $field_name => $value) {
-      $query->condition($field_name, $value);
-    }
-    return $query->execute();
-  }
-
-  /**
-   * Given an Entity, delete transitions for it.
-   *
-   * @todo: With Field API, having multiple workflow_fields, both are deleted :-( .
-   */
-  public static function deleteById($entity_type, $entity_id) {
-    $conditions = array(
-      'entity_type' => $entity_type,
-      'nid' => $entity_id,
-    );
-    return self::deleteMultiple($conditions);
-  }
-
-  /**
    * Property functions.
    */
 
@@ -269,12 +180,15 @@ class WorkflowTransition extends Entity {
     $old_sid = $this->old_sid;
     $new_sid = $this->new_sid;
     $old_state = workflow_state_load_single($old_sid);
+    $new_state = workflow_state_load_single($new_sid);
     $entity_type = $this->entity_type;
     $entity = $this->getEntity(); // Entity may not be loaded, yet.
 
     $t_args = array(
       '%old_sid' => $old_sid,
+      '%old_sid_label' => ($old_state) ? $old_state->label() : $old_sid,
       '%new_sid' => $new_sid,
+      '%new_sid_label' => ($new_state) ? $new_state->label() : $new_sid,
     );
 
     // Check allow-ability of state change if user is not superuser (might be cron).
@@ -302,7 +216,7 @@ class WorkflowTransition extends Entity {
       $options = $old_state->getOptions($entity_type, $entity, $force);
     }
     if (!array_key_exists($new_sid, $options)) {
-      drupal_set_message(t('The transition from %old_sid to %new_sid is not allowed.', $t_args), 'error');
+      drupal_set_message(t('The transition from %old_sid_label to %new_sid_label is not allowed.', $t_args), 'error');
       return FALSE;
     }
 
@@ -329,6 +243,9 @@ class WorkflowTransition extends Entity {
     $entity = $this->getEntity(); // Entity may not be loaded, yet.
     $field_name = $this->field_name;
 
+    // Make sure this is set in the transition, too.
+    $this->force = $force;
+
     // Store the transition, so it can be easily fetched later on.
     // Store in an array, to prepare for multiple workflow_fields per entity.
     // This is a.o. used in hook_entity_update to trigger 'transition post'.
@@ -341,7 +258,15 @@ class WorkflowTransition extends Entity {
     );
 
     $old_state = workflow_state_load_single($old_sid);
-    $workflow = $old_state->getWorkflow();
+    if (!$old_state) {
+      drupal_set_message($message = t('You tried to set a Workflow State, but
+        the entity is not relevant. Please contact your system administrator.'),
+                         $type = 'error');
+      $message = 'Setting a non-relevant Entity from state %old to %new';
+      $uri = entity_uri($entity_type, $entity);
+      watchdog('workflow', $message, $args, WATCHDOG_ERROR, l('view', $uri['path']));
+      return $old_sid;
+    }
 
     // Check if the state has changed. If not, we only record the comment.
     $state_changed = ($old_sid != $new_sid);
@@ -358,6 +283,7 @@ class WorkflowTransition extends Entity {
 
       if (!$force) {
         // Make sure this transition is allowed.
+        // @todo D8: remove, or replace by 'transition pre'. See WorkflowState::getOptions().
         $permitted = module_invoke_all('workflow', 'transition permitted', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
         // Stop if a module says so.
         if (in_array(FALSE, $permitted, TRUE)) {
@@ -382,7 +308,7 @@ class WorkflowTransition extends Entity {
     if ($state_changed) {
       // Invoke a callback indicating a transition is about to occur.
       // Modules may veto the transition by returning FALSE.
-      $permitted = module_invoke_all('workflow', 'transition pre', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+      $permitted = module_invoke_all('workflow', 'transition pre', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name, $this);
       // Stop if a module says so.
       if (in_array(FALSE, $permitted, TRUE)) {
         watchdog('workflow', 'Transition vetoed by module.');
@@ -423,43 +349,45 @@ class WorkflowTransition extends Entity {
       }
     }
 
-    // Log the transition in {workflow_node_history}.
     $this->is_executed = TRUE;
-    $this->save();
 
-    // Register state change with watchdog.
-    if ($state_changed && $state = workflow_state_load_single($new_sid)) {
-      if (!empty($workflow->options['watchdog_log'])) {
-        $entity_type_info = entity_get_info($entity_type);
-        $message = ($this->isScheduled()) ? 'Scheduled state change of @type %label to %state_name executed' : 'State of @type %label set to %state_name';
-        $args = array(
-          '@type' => $entity_type_info['label'],
-          '%label' => entity_label($entity_type, $entity),
-          '%state_name' => $state->label(),
-        );
-        $uri = entity_uri($entity_type, $entity);
-        watchdog('workflow', $message, $args, WATCHDOG_NOTICE, l('view', $uri['path']));
-      }
-    }
-
-    // Remove any scheduled state transitions.
-    foreach (WorkflowScheduledTransition::load($entity_type, $entity_id, $field_name) as $scheduled_transition) {
-      $scheduled_transition->delete();
-    }
-
-    // Notify modules that transition has occurred.
-    // Action triggers should take place in response to this callback, not the 'transaction pre'.
     if ($state_changed || $this->comment) {
+      // Log the transition in {workflow_node_history}.
+      $this->save();
+
+      // Register state change with watchdog.
+      if ($state_changed) {
+        $workflow = $old_state->getWorkflow();
+        if (($state = workflow_state_load_single($new_sid)) && !empty($workflow->options['watchdog_log'])) {
+          $entity_type_info = entity_get_info($entity_type);
+          $message = ($this->isScheduled()) ? 'Scheduled state change of @type %label to %state_name executed' : 'State of @type %label set to %state_name';
+          $args = array(
+            '@type' => $entity_type_info['label'],
+            '%label' => entity_label($entity_type, $entity),
+            '%state_name' => $state->label(),
+          );
+          $uri = entity_uri($entity_type, $entity);
+          watchdog('workflow', $message, $args, WATCHDOG_NOTICE, l('view', $uri['path']));
+        }
+      }
+
+      // Remove any scheduled state transitions.
+      foreach (WorkflowScheduledTransition::load($entity_type, $entity_id, $field_name) as $scheduled_transition) {
+        $scheduled_transition->delete();
+      }
+
+      // Notify modules that transition has occurred.
+      // Action triggers should take place in response to this callback, not the 'transaction pre'.
       if (!$field_name) {
         // Now that workflow data is saved, reset stuff to avoid problems
         // when Rules etc want to resave the data.
         // Remember, this is only for nodes, and node_save() is not necessarily performed.
         unset($entity->workflow_comment);
-        module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+        module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name, $this);
         entity_get_controller('node')->resetCache(array($entity->nid)); // from entity_load(), node_save();
       }
       else {
-        // module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+        // module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name, $this);
         // We have a problem here with Rules, Trigger, etc. when invoking
         // 'transition post': the entity has not been saved, yet. we are still
         // IN the transition, not AFTER. Alternatives:
@@ -467,7 +395,7 @@ class WorkflowTransition extends Entity {
         // 2. Move the invoke to another place: hook_entity_insert(), hook_entity_update();
         // 3. Rely on the entity hooks. This works for Rules, not for Trigger.
         // --> We choose option 2.
-        //  - first, $entity->workflow_fields[] is set for easy re-fetching.
+        //  - first, $entity->workflow_transitions[] is set for easy re-fetching.
         //  - then, post_execute() is invoked via workflowfield_entity_insert(), _update().
       }
     }
@@ -476,7 +404,9 @@ class WorkflowTransition extends Entity {
   }
 
   /**
-   * Invokes 'transition post''.
+   * Invokes 'transition post'.
+   *
+   * Add the possibility to invoke the hook from elsewhere.
    */
   public function post_execute($force = FALSE) {
     $old_sid = $this->old_sid;
@@ -488,8 +418,21 @@ class WorkflowTransition extends Entity {
 
     $state_changed = ($old_sid != $new_sid);
     if ($state_changed || $this->comment) {
-      module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name);
+      module_invoke_all('workflow', 'transition post', $old_sid, $new_sid, $entity, $force, $entity_type, $field_name, $this);
     }
+  }
+
+
+  /**
+   * Get the Transitions $workflow.
+   *
+   * @return object
+   *   The workflow for this Transition.
+   */
+  public function getWorkflow() {
+    $state = workflow_state_load($this->new_sid);
+    $workflow = workflow_load($state->wid);
+    return $workflow;
   }
 
   /**

@@ -8,29 +8,33 @@ if (array_key_exists('HTTP_X_PANTHEON_SCREENSHOT', $_SERVER)) {
 require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
 
 function apigee_install_tasks(&$install_state) {
-  if (!array_key_exists("batch_configure_complete", $install_state)) {
-    $install_state["batch_configure_complete"] = false;
+  if (!array_key_exists('batch_configure_complete', $install_state)) {
+    $install_state['batch_configure_complete'] = false;
   }
   drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css', array('weight' => 9999));
   return array(
-    "apigee_install_api_endpoint" => array(
+    'apigee_install_api_endpoint' => array(
       'display_name' => t('Configure the Apigee Endpoint'),
       'type' => 'form',
       ),
-    "apigee_generate_make_smartdocs_model" => array(
+    'apigee_generate_make_smartdocs_model' => array(
       'display_name' => t('Generate a sample model for SmartDocs.'),
     ),
-    "apigee_generate_import_smartdocs_model" => array(
+    'apigee_generate_import_smartdocs_model' => array(
       'display_name' => t('Import a sample WADL into the SmartDocs model.'),
     ),
-    "apigee_generate_smartdocs_content" => array(
+    'apigee_generate_smartdocs_content' => array(
       'display_name' => t('Render Content for the SmartDocs model.'),
       'type' => 'batch',
     ),
-    "apigee_install_create_admin_user" => array(
-      'display_name' => t('Create an admin user'),
+    'apigee_install_smtp_credentials' => array(
+      'display_name' => t('Define your organization\'s SMTP credentials'),
       'type' => 'form',
     ),
+    'apigee_install_create_admin_user' => array(
+      'display_name' => t('Create an admin user'),
+      'type' => 'form',
+    )
   );
 }
 
@@ -46,9 +50,10 @@ function apigee_install_tasks_alter(&$tasks, &$install_state) {
   $tasks['install_load_profile']['function'] = 'apigee_install_load_profile';
   $tasks['install_settings_form']['function'] = 'apigee_install_settings_form';
   $tasks['install_configure_form'] = array(
-    "function" => "apigee_install_configure_batch",
+    'function' => 'apigee_install_configure_batch',
+    'display_name' => t('Configure Dev Portal settings'),
     'run' => $install_state['batch_configure_complete'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
-    "type" => "batch"
+    'type' => 'batch'
   );
 
 }

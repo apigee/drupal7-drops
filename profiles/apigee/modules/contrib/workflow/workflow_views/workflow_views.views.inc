@@ -45,7 +45,7 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_node_history']['stamp']['sort']['handler'] = 'views_handler_sort_date';
   $data['workflow_node_history']['hid']['filter']['numeric'] = TRUE;
   // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.
-  $data['workflow_node_history']['old_sid']['title'] = t('The old (previous) state in a transition.');
+  $data['workflow_node_history']['old_sid']['title'] = t('Old state');
   $data['workflow_node_history']['old_sid']['help'] = t('The previous state, from the last state change.');
   $data['workflow_node_history']['sid']['title'] = t('New state');
   $data['workflow_node_history']['sid']['help'] = t('The new state in a transition. (For the latest transition, this is the current state.)');
@@ -102,7 +102,7 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_node_current']['comment']['help'] = t('The comment describing why the the state change was done.');
   $data['workflow_node_current']['uid']['title'] = t('Current user');
   $data['workflow_node_current']['uid']['help'] = t('The user that executed a state change.');
-  $data['workflow_node_current']['stamp']['title'] = t('Time of last state change.');
+  $data['workflow_node_current']['stamp']['title'] = t('Time');
   $data['workflow_node_current']['stamp']['help'] = t('The time of the last state change.');
 
   // This group's help and title are moved from hook_views_data to _alter(), to avoid Notices.

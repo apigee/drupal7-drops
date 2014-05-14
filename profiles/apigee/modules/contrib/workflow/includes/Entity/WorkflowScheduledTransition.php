@@ -51,6 +51,9 @@ class WorkflowScheduledTransition extends WorkflowTransition {
     $query->fields('wst');
     $query->condition('entity_type', $entity_type, '=');
     $query->condition('nid', $entity_id, '=');
+    if ($field_name !== NULL) {
+      $query->condition('field_name', $field_name, '=');
+    }
     $query->orderBy('scheduled', 'ASC');
     $query->addTag('workflow_scheduled_transition');
     if ($limit) {
@@ -92,7 +95,7 @@ class WorkflowScheduledTransition extends WorkflowTransition {
       $this->entityType = 'WorkflowTransition';
       $this->setUp();
 
-      return parent::save();
+      return parent::save(); // <--- exit !!
     }
 
     // Since we do not have an entity_id here, we cannot use entity_delete.
@@ -126,27 +129,11 @@ class WorkflowScheduledTransition extends WorkflowTransition {
    * @deprecated: workflow_delete_workflow_scheduled_transition_by_nid() --> WorkflowScheduledTransition::delete()
    */
   public function delete() {
-    $result = $this->deleteById($this->entity_type, $this->entity_id);
-    return $result;
-  }
-
-  public static function deleteMultiple(array $conditions, $table = 'dummy') {
-    // The $table argument is to adhere to the parent::deleteMultiple interface. It must not be changeable.
-    $result = parent::deleteMultiple($conditions, $table = 'workflow_scheduled_transition');
-    return $result;
-  }
-
-  /**
-   * Given an Entity, delete transitions for it.
-   * @todo: add support for Field.
-   */
-  public static function deleteById($entity_type, $entity_id) {
-    $conditions = array(
-      'entity_type' => $entity_type,
-      'nid' => $entity_id,
-    );
-    $result = self::deleteMultiple($conditions);
-    return $result;
+    db_delete($this->entityInfo['base table'])
+        ->condition('entity_type', $this->entity_type)
+        ->condition('nid', $this->entity_id)
+        ->condition('field_name', $this->field_name)
+        ->execute();
   }
 
   /**

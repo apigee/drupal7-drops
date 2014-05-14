@@ -1,8 +1,10 @@
 <?php
-/*
-* Implementation of Language property behavior, which represents the language of an entity.
-*
-*/
+/**
+ * @file
+ * Implementation of Language property behavior, which represents the language 
+ * of an entity.
+ */
+
 $plugin = array(
   'label' => "Language",
   'entity_info' => 'eck_language_property_entity_info',
@@ -14,13 +16,19 @@ $plugin = array(
   'unique' => TRUE,
 );
 
-function eck_language_property_entity_info($property, $var){
+/**
+ * Letting the system know what property is the language key of the entity.
+ */
+function eck_language_property_entity_info($property, $var) {
   $info = $var;
-  // Nodes also put its language into entity keys, so we do the same
+  // Nodes also put its language into entity keys, so we do the same.
   $info['entity keys']['language'] = $property;
   return $info;
 }
 
+/**
+ * When saving the property, only one language can be set, and only once.
+ */
 function eck_language_property_entity_save($property, $vars) {
   $entity = $vars['entity'];
   if (module_exists('locale')) {
@@ -28,11 +36,15 @@ function eck_language_property_entity_save($property, $vars) {
       $default = language_default();
       $entity->{$property} = $default->language;
     }
-  } else {
+  }
+  else {
     $entity->{$property} = LANGUAGE_NONE;
   }
 }
 
+/**
+ * Extending property's info default information.
+ */
 function eck_language_property_property_info($property, $vars) {
   $vars['properties'][$property] += array(
     'type' => 'token',
@@ -42,6 +54,11 @@ function eck_language_property_property_info($property, $vars) {
   return $vars;
 }
 
+/**
+ * Language widget.
+ * 
+ * Select one of the enabled languages.
+ */
 function eck_language_property_widget($property, $vars) {
   if (module_exists('locale')) {
     $entity = $vars['entity'];
@@ -53,7 +70,8 @@ function eck_language_property_widget($property, $vars) {
         '#default_value' => $language,
         '#options' => array(LANGUAGE_NONE => t('Language neutral')) + locale_language_list('name'),
       );
-    } else {
+    }
+    else {
       $default = language_default();
       return array(
         '#type' => 'value',
@@ -63,13 +81,19 @@ function eck_language_property_widget($property, $vars) {
   }
 }
 
+/**
+ * What?.
+ */
 function eck_language_bundle_multilingual($entity) {
-  if ($bundle = Bundle::loadByMachineName($entity->entityType() . '_' . $entity->type)) {
+  if ($bundle = Bundle::loadByMachineName($entity->entityType() . '_' . $entity->bundle())) {
     return isset($bundle->config['multilingual']) && $bundle->config['multilingual'];
   }
   return FALSE;
 }
 
+/**
+ * Informing views that this property contains language information.
+ */
 function eck_language_property_views_data_alter($property, $vars) {
   $entity_type = $vars['entity_type'];
   if (module_exists('locale')) {
@@ -91,12 +115,18 @@ function eck_language_property_views_data_alter($property, $vars) {
         'handler' => 'views_handler_sort',
       ),
     );
-  } else {
+  }
+  else {
     unset($vars['data']["eck_{$entity_type->name}"][$property]);
   }
   return $vars;
 }
 
+/**
+ * Setting multilingual options in bundle form.
+ * 
+ * @todo Why is the behavior setting things in the bundle form?
+ */
 function eck_language_property_bundle_form($property, $vars) {
   if (module_exists('locale')) {
     $entity_type = $vars['form']['entity_type']['#value'];

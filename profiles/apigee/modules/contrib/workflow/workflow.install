@@ -92,11 +92,34 @@ function workflow_schema() {
         'not null' => TRUE,
       ),
       'name' => array(
-        'description' => 'The name of the workflow (used as machine name for features integration).',
+        'description' => 'The machine-readable name of this workflow.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
         'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this workflow.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'translatable' => TRUE,
+      ),
+      'status' => array(
+        'type' => 'int', 
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point. 
+        'default' => 0x01, 
+        'size' => 'tiny', 
+        'description' => 'The exportable status of the entity.',
+      ), 
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.', 
+        'type' => 'varchar', 
+        'length' => 255, 
+        'not null' => FALSE,
       ),
       'tab_roles' => array(
         'description' => 'The role IDs that can access the workflow tabs on node pages.',
@@ -145,6 +168,21 @@ function workflow_schema() {
         'description' => 'The primary identifier for a workflow transition.',
         'type' => 'serial',
         'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The machine-readable name of this transition.',
+        'type' => 'varchar',
+        'length' => '32',
+        // 'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this transition.',
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => TRUE,
+        'default' => '',
+        'translatable' => TRUE,
       ),
       'sid' => array(
         'description' => 'The {workflow_states}.sid start state.',
@@ -677,4 +715,42 @@ function workflow_update_7008() {
   if (!db_field_exists('workflow_node_history', 'revision_id')) {
     db_add_field('workflow_node_history', 'revision_id', $field);
   }
+}
+
+/**
+ * Add database fields to make Workflow exportable.
+ *
+ * Ignore the 'User warning'.
+ */
+function workflow_update_7011() {
+  $schema = workflow_schema();
+
+  // Update the Workflow table.
+  $table = 'workflows';
+  $fields = $schema[$table]['fields'];
+  if (!db_field_exists($table, 'label')) {
+    db_add_field($table, 'label', $fields['label']);
+  }
+  if (!db_field_exists($table, 'status')) {
+    db_add_field($table, 'status', $fields['status']);
+  }
+  if (!db_field_exists($table, 'module')) {
+    db_add_field($table, 'module', $fields['module']);
+  }
+  // Load&save workflows, to populate the label.
+  foreach (workflow_load_multiple() as $workflow) {
+    $workflow->save();
+  }
+
+  // Update the ConfigTransition table.
+  $table = 'workflow_transitions';
+  $fields = $schema[$table]['fields'];
+  if (!db_field_exists($table, 'label')) {
+    db_add_field($table, 'label', $fields['label']);
+  }
+  if (!db_field_exists($table, 'name')) {
+    db_add_field($table, 'name', $fields['name']);
+  }
+
+
 }

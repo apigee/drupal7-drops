@@ -690,6 +690,13 @@ function apigee_install_base_ckeditor_settings(&$context) {
         'buttons' => '',
         'default' => 'f',
       ),
+      'insertpre' => array(
+        'name' => 'insertpre',
+        'desc' => 'Plugin file: insertpre',
+        'path' => '%plugin_dir_extra%insertpre/',
+        'buttons' => '',
+        'default' => 'f'
+      ),
       'indent' => array(
         'name' => 'indent',
         'desc' => 'Plugin file: indent',
@@ -928,7 +935,7 @@ function apigee_install_base_ckeditor_settings(&$context) {
     ['Format','Font','FontSize'],
     ['TextColor','BGColor'],
     ['Maximize','ShowBlocks'],
-    ['Carousel','Featurette','Jumbotron','Trifold']]";
+    ['Carousel','Featurette','Jumbotron','Trifold','InsertPre']]";
 
   $ckeditor_global_settings = array(
     'skin' => 'apigee',
@@ -1694,7 +1701,11 @@ function apigee_skip_api_endpoint($form, &$form_state) {
 
 function apigee_install_api_endpoint_submit($form, &$form_state) {
 
-  $config = Drupal::config('devconnect.settings');
+  try {
+    $config = Drupal::config('devconnect.settings');
+  } catch (Exception $e) {
+    return;
+  }
   foreach (array('org', 'endpoint', 'user', 'pass') as $key) {
     $value = $form_state['values'][$key];
     if ($key == 'pass') {
@@ -1826,6 +1837,24 @@ function apigee_install_create_admin_user($form, &$form_state) {
   );
   $form = array();
 
+  $form['firstname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Developer First Name'),
+    '#required' => TRUE,
+    '#default_value' => '',
+    '#description' => t('The first name of the administrator.'),
+    '#attributes' => $attributes
+  );
+
+  $form['lastname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Developer Last Name'),
+    '#required' => TRUE,
+    '#default_value' => '',
+    '#description' => t('The last name of the administrator.'),
+    '#attributes' => $attributes
+  );
+
   $form['username'] = array(
     '#type' => 'textfield',
     '#title' => t('Developer Portal Username'),
@@ -1883,11 +1912,194 @@ function apigee_install_create_admin_user($form, &$form_state) {
 }
 
 /**
+ * Defines the SMTP credentials for the ORG
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ */
+function apigee_install_smtp_credentials($form, &$form_state) {
+  $attributes = array(
+    "autocomplete" => "off",
+    "autocorrect" => "off",
+    "autocapitalize" => "off",
+    "spellcheck" => "false"
+  );
+
+  $form['server'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('SMTP server settings'),
+  );
+  $form['server']['smtp_host'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('SMTP server'),
+    '#default_value' => variable_get('smtp_host', ''),
+    '#description'   => t('The address of your outgoing SMTP server.'),
+    '#attributes'    => $attributes
+  );
+  $form['server']['smtp_hostbackup'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('SMTP backup server'),
+    '#default_value' => variable_get('smtp_hostbackup', ''),
+    '#description'   => t('The address of your outgoing SMTP backup server. If the primary server can\'t be found this one will be tried. This is optional.'),
+    '#attributes'    => $attributes
+  );
+  $form['server']['smtp_port'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('SMTP port'),
+    '#size'          => 6,
+    '#maxlength'     => 6,
+    '#default_value' => variable_get('smtp_port', '25'),
+    '#description'   => t('The default SMTP port is 25, if that is being blocked try 80. Gmail uses 465. See !url for more information on configuring for use with Gmail.', array('!url' => l(t('this page'), 'http://gmail.google.com/support/bin/answer.py?answer=13287'))),
+    '#attributes'    => $attributes
+  );
+  // Only display the option if openssl is installed.
+  if (function_exists('openssl_open')) {
+    $encryption_options = array(
+      'standard' => t('No'),
+      'ssl'      => t('Use SSL'),
+      'tls'      => t('Use TLS'),
+    );
+    $encryption_description = t('This allows connection to an SMTP server that requires SSL encryption such as Gmail.');
+  }
+  // If openssl is not installed, use normal protocol.
+  else {
+    variable_set('smtp_protocol', 'standard');
+    $encryption_options = array('standard' => t('No'));
+    $encryption_description = t('Your PHP installation does not have SSL enabled. See the !url page on php.net for more information. Gmail requires SSL.', array('!url' => l(t('OpenSSL Functions'), 'http://php.net/openssl')));
+  }
+  $form['server']['smtp_protocol'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Use encrypted protocol'),
+    '#default_value' => variable_get('smtp_protocol', 'standard'),
+    '#options'       => $encryption_options,
+    '#description'   => $encryption_description,
+  );
+
+  $form['auth'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('SMTP Authentication'),
+    '#description' => t('Leave blank if your SMTP server does not require authentication.'),
+  );
+  $form['auth']['smtp_username'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Username'),
+    '#default_value' => variable_get('smtp_username', ''),
+    '#description'   => t('SMTP Username.'),
+    '#attributes'    => $attributes
+  );
+  $form['auth']['smtp_password'] = array(
+    '#type'          => 'password',
+    '#title'         => t('Password'),
+    '#default_value' => variable_get('smtp_password', ''),
+    '#description'   => t('SMTP password. If you have already entered your password before, you should leave this field blank, unless you want to change the stored password.'),
+    '#attributes'    => $attributes
+  );
+
+  $form['email_options'] = array(
+    '#type'  => 'fieldset',
+    '#title' => t('E-mail options'),
+  );
+  $form['email_options']['smtp_from'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('E-mail from address'),
+    '#default_value' => variable_get('smtp_from', ''),
+    '#description'   => t('The e-mail address that all e-mails will be from.'),
+    '#attributes'    => $attributes
+  );
+  $form['email_options']['smtp_fromname'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('E-mail from name'),
+    '#default_value' => variable_get('smtp_fromname', ''),
+    '#description'   => t('The name that all e-mails will be from. If left blank will use the site name of:') . ' ' . variable_get('site_name', 'Drupal powered site'),
+  );
+  $form['email_options']['smtp_allowhtml'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Allow to send e-mails formated as Html'),
+    '#default_value' => variable_get('smtp_allowhtml', 0),
+    '#description'   => t('Checking this box will allow Html formated e-mails to be sent with the SMTP protocol.'),
+  );
+  $form['actions']['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+  );
+  $form['actions']['skip'] = array(
+    '#type' => 'submit',
+    '#limit_validation_errors' => array(),
+    '#value' => t('Skip this config'),
+    '#submit' => array('apigee_skip_smtp_details'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+  );
+  return $form;
+}
+
+/**
+ * Submit for SMTP credentials
+ *
+ * @param $form
+ * @param $form_state
+ */
+function apigee_install_smtp_credentials_submit($form, &$form_state) {
+  if (!module_exists('smtp')) {
+    $smtp = array(
+      'smtp'
+    );
+    module_enable($smtp, TRUE);
+  }
+  $values = $form_state['values'];
+  // Make the site use SMTP
+  variable_set('smtp_on', 1);
+  // SMTP credentials vars
+  variable_set('smtp_host', $values['smtp_host']);
+  variable_set('smtp_hostbackup', $values['smtp_hostbackup']);
+  variable_set('smtp_port', $values['smtp_port']);
+  variable_set('smtp_protocol', $values['smtp_protocol']);
+  // SMTP authentication vars
+  variable_set('smtp_username', $values['smtp_username']);
+  variable_set('smtp_password', $values['smtp_password']);
+  // SMTP email settings vars
+  variable_set('smtp_from', $values['smtp_from']);
+  variable_set('smtp_fromname', $values['smtp_fromname']);
+  variable_set('smtp_allowhtml', $values['smtp_allowhtml']);
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+/**
+ * Skips SMTP piece
+ */
+function apigee_skip_smtp_details($form, &$form_state) {
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+/**
  * Custom function that skips the create admin user installation piece
  */
 function apigee_skip_create_admin_user($form, &$form_state) {
   // skips the config, nothing left to do
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+/**
+ * hook validate for create admin user form
+ *
+ * @param string $form
+ * @param string $form_state
+ * @return void
+ * @author Cesar Galindo
+ */
+
+function apigee_install_create_admin_user_validate($form, &$form_state) {
+  if ($form_state['values']['username'] == 'admin') {
+    form_set_error('username', 'Please select a different username.');
+  }
+  if (!valid_email_address($form_state['values']['emailaddress'])) {
+    form_set_error('emailaddress', 'Please select a valid email address.');
+  }
 }
 
 /**
@@ -1913,8 +2125,8 @@ function apigee_install_create_admin_user_submit($form, &$form_state) {
   $role = user_role_load_by_name('administrator');
   $rid = $role->rid;
   $account->roles[$rid] = 'administrator';
-  $account->field_first_name[LANGUAGE_NONE][0]['value'] = 'FirstName';
-  $account->field_last_name[LANGUAGE_NONE][0]['value'] = 'LastName';
+  $account->field_first_name[LANGUAGE_NONE][0]['value'] = $form_state['values']['firstname'];
+  $account->field_last_name[LANGUAGE_NONE][0]['value'] = $form_state['values']['lastname'];
   user_save($account);
 
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();

@@ -42,6 +42,17 @@ function devconnect_docgen_schema() {
         'length' => '256',
         'not null' => FALSE,
       ),
+      'synced' => array(
+        'description' => 'Sync Drupal node with SmartDocs',
+        'type' => 'int',
+        'default' => 1,
+      ),
+      'mpid' => array(
+        'description' => 'add a SmartDocs Method ID based on full method URL path',
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE,
+      ),
     ),
     'primary key' => array('sid'),
   );
@@ -156,3 +167,26 @@ function devconnect_docgen_update_7001() {
     }
   }
 }
+
+/**
+ * Implementation of hook_update_N()
+ * Add a synced token column and method path ID to smartdocs table.
+ */
+function devconnect_docgen_update_7002() {
+  $spec = array(
+    'type' => 'int',
+    'description' => "Sync Drupal node with SmartDocs",
+    'default' => 1,
+  );
+  db_add_field('smartdocs', 'synced', $spec);
+
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 256,
+    'not null' => TRUE,
+    'description' => "add a SmartDocs Method ID based on full method URL path",
+  );
+  db_add_field('smartdocs', 'mpid', $spec);
+}
+
+

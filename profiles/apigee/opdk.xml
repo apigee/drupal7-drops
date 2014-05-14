@@ -7,7 +7,7 @@
   <property name="DEVTOOLS_IS_INSTALLED" value="false" override="false"/>
   <property name="DISTRO_SOURCE" value="git@github.com:apigee/drupal7-drops" override="false"/>
   <property prefix="s3cfg" file="${user.home}/.s3cfg"/>
-  <property name="VERSION" value="14.03.${env.BUILD_NUMBER}"/>
+  <property name="VERSION" value="14.04.${env.BUILD_NUMBER}"/>
   <!-- 
     
     

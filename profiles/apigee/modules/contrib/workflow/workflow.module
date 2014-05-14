@@ -6,10 +6,14 @@
 
 define('WORKFLOW_CREATION', 1);
 define('WORKFLOW_CREATION_DEFAULT_WEIGHT', -50);
-define('WORKFLOW_CREATION_STATE_NAME', '(creation)');
 define('WORKFLOW_DELETION', 0);
+// Couldn't find a more elegant way to preserve translation.
+define('WORKFLOW_CREATION_STATE_NAME', '(' . t('creation') . ')');
+define('WORKFLOW_ROLE_AUTHOR_NAME', '(' . t('author') . ')');
 define('WORKFLOW_ROLE_AUTHOR_RID', '-1');
-define('WORKFLOW_ROLE_AUTHOR_NAME', 'author');
+
+// The definition of the Field_info property type. Shared between 'workflow_field' and 'workflow_rules'.
+define('WORKFLOWFIELD_PROPERTY_TYPE', 'text'); // 'list', 'text' or 'workflow'?
 
 // Add entity support file.
 module_load_include('inc', 'workflow', 'workflow.entity');
@@ -30,6 +34,10 @@ function workflow_permission() {
     'show workflow state form' => array(
       'title' => t('Show workflow state change on node view'),
       'description' => t('Show workflow state change form on node viewing.'),
+    ),
+    'participate in workflow' => array(
+      'title' => t('Participate in workflows'),
+      'description' => t('Role is enabled for transitions on the workflow admin pages.'),
     ),
   );
 }
@@ -84,19 +92,19 @@ function workflow_menu_alter(&$items) {
     'module' => 'workflow',
   );
 
-  // Get a cross-bundle map of all fields so we can add the workflow tab to all
-  // entities with a workflow field.
-  foreach (field_info_field_map() as $info) {
-    if ($info['type'] == 'workflow') {
+  // Get a cross-bundle map of all workflow fields so we can add the workflow
+  // tab to all entities with a workflow field.
+  foreach (_workflow_info_fields(NULL) as $field_info) {
+    if (TRUE) {
       // Loop over the entity types that have this field.
-      foreach ($info['bundles'] as $type => $bundles) {
-        $info = entity_get_info($type);
+      foreach ($field_info['bundles'] as $type => $bundles) {
+        $entity_info = entity_get_info($type);
 
         // Add the workflow tab in the Entity Admin UI.
-        if (!empty($info['admin ui']['path'])) {
-          $entity_position = substr_count($info['admin ui']['path'], '/') + 2;
-          $wildcard = (isset($info['admin ui']['menu wildcard']) ? $info['admin ui']['menu wildcard'] : '%entity_object');
-          $items[$info['admin ui']['path'] . '/manage/' . $wildcard . '/workflow'] = $menu_item + array(
+        if (!empty($entity_info['admin ui']['path'])) {
+          $entity_position = substr_count($entity_info['admin ui']['path'], '/') + 2;
+          $wildcard = (isset($entity_info['admin ui']['menu wildcard']) ? $entity_info['admin ui']['menu wildcard'] : '%entity_object');
+          $items[$entity_info['admin ui']['path'] . '/manage/' . $wildcard . '/workflow'] = $menu_item + array(
               'page arguments' => array($type, $entity_position),
               'access arguments' => array($type, $entity_position),
               'load arguments' => array($type),
@@ -104,18 +112,18 @@ function workflow_menu_alter(&$items) {
         }
 
         // We can only continue if the entity relies on a ENTITY_TYPE_load() load hook.
-        if ($info['load hook'] == $type . '_load') {
+        if ($entity_info['load hook'] == $type . '_load') {
           try {
             foreach ($bundles as $bundle) {
               // Get the default entity values.
-              $values = array($info['entity keys']['id'] => '%' . $type);
-              if ($info['entity keys']['bundle']) {
-                $values[$info['entity keys']['bundle']] = $bundle;
+              $values = array($entity_info['entity keys']['id'] => '%' . $type);
+              if ($entity_info['entity keys']['bundle']) {
+                $values[$entity_info['entity keys']['bundle']] = $bundle;
               }
 
               // Create a dummy entity and get the URI.
               $entity = @entity_create($type, $values);
-              $uri = @$info['uri callback']($entity);
+              $uri = @$entity_info['uri callback']($entity);
               if (isset($uri['path'])) {
                 $uri = $uri['path'];
 
@@ -146,20 +154,23 @@ function workflow_menu_alter(&$items) {
  * Implements hook_admin_paths_alter().
  *
  * If node edits are done in admin mode, then workflow history tab will be too.
- * @todo: add support for every $entity_type.
+ * @todo: make this work (#443094); add support for every $entity_type.
  */
 function workflow_admin_paths_alter(&$paths) {
-  if (isset($path['node/*/edit'])) {
-    $path['node/*/workflow'] = $path['node/*/edit'];
+  if (isset($paths['node/*/edit'])) {
+    $paths['node/*/workflow'] = $paths['node/*/edit'];
   }
-  if (isset($path['user/*/edit'])) {
-    $path['user/*/workflow'] = $path['user/*/edit'];
+  if (isset($paths['user/*/edit'])) {
+    $paths['user/*/workflow'] = $paths['user/*/edit'];
   }
 }
 
 /**
  * Menu access control callback. Determine access to Workflow tab.
  *
+ * The History tab should not be used with multiple workflows per node.
+ * Use the dedicated view for this use case.
+ * @todo D8: remove this in favour of View 'Workflow history per entity'.
  */
 function workflow_tab_access($entity_type, $entity) {
   global $user;
@@ -172,7 +183,8 @@ function workflow_tab_access($entity_type, $entity) {
     return $access[$user->uid][$entity_type][$entity_id];
   }
 
-  // @todo: workflow_tab_access(): what to do with multiple workflow_fields per bundle? Use Views instead!
+  // When having multiple workflows per bundle, use Views display
+  // 'Workflow history per entity' instead!
   if ($workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
     // Get the role IDs of the user. Workflow only stores Ids, not role names. 
     $roles = array_keys($user->roles);
@@ -190,10 +202,10 @@ function workflow_tab_access($entity_type, $entity) {
     }
 
     // Get the permissions from the workflow settings.
-    // @todo: what to do with tab page when multiple workflow_fields per entity_bundle?
-    $fields = _workflow_get_workflow_field_info($entity, $entity_type);
+    // @todo: workflow_tab_access(): what to do with multiple workflow_fields per bundle? Use Views instead!
     $tab_roles = array();
     $history_tab_show = FALSE;
+    $fields = _workflow_info_fields($entity, $entity_type);
     foreach ($fields as $field) {
       $tab_roles += $field['settings']['history']['roles'];
       $history_tab_show |= $field['settings']['history']['history_tab_show'];
@@ -335,6 +347,15 @@ function workflow_user_delete($account) {
   // ALERT: This may cause previously non-anon posts to suddenly be accessible to anon.
   workflow_update_workflow_node_uid($account->uid, 0);
   workflow_update_workflow_node_history_uid($account->uid, 0);
+}
+
+/**
+ * Implements hook_user_role_insert().
+ *
+ * Make sure new roles are allowed to participate in workflows by default.
+ */
+function workflow_user_role_insert($role) {
+  user_role_change_permissions($role->rid, array('participate in workflow' => 1));
 }
 
 /**
@@ -611,7 +632,7 @@ function workflow_get_roles($permission = 'participate in workflow') {
  *   Indicates to return all (TRUE) or active (FALSE) states of a workflow.
  *
  * @return array $options
- *   An array of $sid => state->label(), grouped per Workfllow.
+ *   An array of $sid => state->label(), grouped per Workflow.
  */
 function workflow_get_workflow_state_names($wid = 0, $grouped = FALSE, $all = FALSE) {
   $options = array();
@@ -714,7 +735,7 @@ function workflow_node_current_state($entity, $entity_type = 'node', $field_name
   // If $entity->workflow is set, avoid this expensive operation.
   // @todo: what to do with multiple workflow_fields per bundle?
   if ($field_name === NULL && !isset($entity->workflow)) {
-    $fields = _workflow_get_workflow_field_info($entity, $entity_type);
+    $fields = _workflow_info_fields($entity, $entity_type);
     if (count($fields)) {
       $field = reset($fields);
       $field_name = $field['field_name'];
@@ -761,7 +782,7 @@ function workflow_node_previous_state($entity, $entity_type = 'node', $field_nam
   // If $entity->workflow is set, avoid this expensive operation.
   // @todo: what to do with multiple workflow_fields per bundle?
   if ($field_name === NULL && !isset($entity->workflow)) {
-    $fields = _workflow_get_workflow_field_info($entity, $entity_type);
+    $fields = _workflow_info_fields($entity, $entity_type);
     if (count($fields)) {
       $field = reset($fields);
       $field_name = $field['field_name'];
@@ -781,7 +802,7 @@ function workflow_node_previous_state($entity, $entity_type = 'node', $field_nam
 
   // Get Id. Is empty when creating a node.
   $entity_id = 0;
-  if (!sid) {
+  if (!$sid) {
     $entity_id = entity_id($entity_type, $entity);
   }
   if (!$sid && $entity_id) {
@@ -817,11 +838,13 @@ function workflow_node_previous_state($entity, $entity_type = 'node', $field_nam
  *
  * @return
  *  A Workflow object, or FALSE if no workflow is retrieved.
+ *
+ * Caveat: gives undefined results with multiple workflows per entity.
+ * @todo: support multiple workflows per entity.
  */
 function workflow_get_workflows_by_type($entity_bundle, $entity_type = 'node') {
   static $map = array();
   $wid = 0;
-  $field_item = NULL;
 
   if (!isset($map[$entity_type][$entity_bundle])) {
     // Check the Node API first: Get $wid.
@@ -832,13 +855,8 @@ function workflow_get_workflows_by_type($entity_bundle, $entity_type = 'node') {
 
     // If $entity_type is set, we must check Field API. Data is already cached by core.
     if (!$wid && isset($entity_type)) {
-      foreach (field_info_instances($entity_type, $entity_bundle) as $field_name => $instance) {
-        $field = field_info_field($instance['field_name']);
-        if ($field['type'] == 'workflow') {
-          $wid = $field['settings']['wid'];
-          // @todo: $entity_bundle should be part of the WorkflowItem constructor, too.
-          $field_item = new WorkflowItem($field, $instance);
-        }
+      foreach (_workflow_info_fields(NULL, $entity_type) as $field_name => $field_info) {
+        $wid = $field_info['settings']['wid'];
       }
     }
 
@@ -846,13 +864,8 @@ function workflow_get_workflows_by_type($entity_bundle, $entity_type = 'node') {
     $map[$entity_type][$entity_bundle] = FALSE;
     if ($wid) {
       $workflow = workflow_load_single($wid);
-
-      // Load the WorkflowItem on the Workflow, for later reference.
-      $workflow->getWorkflowItem($field_item);
-
       $map[$entity_type][$entity_bundle] = $workflow;
     }
-
   }
 
   return $map[$entity_type][$entity_bundle];
@@ -962,48 +975,6 @@ function _workflow_get_sid_by_items($items) {
 }
 
 /**
- * Gets the workflow field names, if not known already.
- *
- * @param array $items
- *   Array with values, as passed in the hook_field_<op> functions.
- *   Although we are parsing an array,
- *   the Workflow Field settings ensure that the cardinality is set to 1.
- *
- * @return array $fields
- *   An array of field_info strcutures.
- */
-function _workflow_get_workflow_field_info($entity, $entity_type) {
-  $fields = array();
-
-  if (isset($entity->workflow)) {
-    $field_name = '';
-
-    $workflow = NULL;
-    if ($state = workflow_state_load($entity->workflow)) {
-      $workflow = workflow_load($state->wid);
-    }
-    // Call field_info_field()
-    // Generates pseudo data for workflow_node to re-use Field API.
-    $field = _workflow_info_field($field_name, $workflow);
-    $instance = array();
-
-    $fields[$field_name] = $field;
-  }
-  else {
-    list(, , $bundle) = entity_extract_ids($entity_type, $entity);
-    $field_instances = field_info_instances($entity_type, $bundle);
-    foreach ($field_instances as $field_name => $instance) {
-      $field = field_info_field($field_name);
-      if($field['type'] == 'workflow') {
-        $fields[$field_name] = $field;
-      }
-    }
-  }
-
-  return $fields;
-}
-
-/**
  * Gets the creation sid for a given $entity and $field_name.
  */
 function _workflow_get_workflow_creation_sid($entity_type, $entity, $field_name) {
@@ -1022,28 +993,95 @@ function _workflow_get_workflow_creation_sid($entity_type, $entity, $field_name)
   if ($workflow) {
     $sid = $workflow->getCreationSid();
   }
+  else {
+    drupal_set_message(t('Workflow !wid cannot be loaded. Contact your system administrator.', array('!wid' => $wid)), $type = 'error');
+  }
   return $sid;
 }
+
+/**
+ * Gets the workflow field names, if not known already.
+ *
+ * @param array $items
+ *   Array with values, as passed in the hook_field_<op> functions.
+ *   Although we are parsing an array,
+ *   the Workflow Field settings ensure that the cardinality is set to 1.
+ *
+ * @return array $fields
+ *   An array of field_info strcutures.
+ */
+function _workflow_info_fields($entity = NULL, $entity_type = '') {
+  $field_info = array();
+
+  if (isset($entity->workflow)) {
+    $field_name = '';
+
+    $workflow = NULL;
+    if ($state = workflow_state_load($entity->workflow)) {
+      $workflow = workflow_load($state->wid);
+    }
+    // Call field_info_field()
+    // Generates pseudo data for workflow_node to re-use Field API.
+    $field = _workflow_info_field($field_name, $workflow);
+    $instance = array();
+
+    $field_info[$field_name] = $field;
+  }
+  else {
+    // In Drupal 7.22 the field_info_field_map() function was added, which is more
+    // memory-efficient in certain cases than field_info_fields().
+    // @see https://drupal.org/node/1915646
+    $field_map_available = version_compare(VERSION, '7.22', '>=');
+    $field_list = $field_map_available ? field_info_field_map() : field_info_fields();
+
+    if ($entity) {
+      list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+    }
+    else {
+      // E.g., on menu_build.
+      $bundle = '';
+    }
+
+    foreach ($field_list as $field_name => $data) {
+      // if (in_array($data['type'], array('workflow'))
+      if (($data['type'] == 'workflow')
+          && (!$entity_type || array_key_exists($entity_type, $data['bundles']))
+          && (!$bundle || in_array($bundle, $data['bundles'][$entity_type])) ) {
+        $field_info[$field_name] = $field_map_available ? field_info_field($field_name) : $data;
+      }
+    }
+  }
+
+  return $field_info;
+}
+
 
 /*
  * A wrapper around field_info_field.
  *
  * This is to hide implementation details of workflow_node.
  *
+ * @param $workflow
+ *   Workflow object. Can be NULL.
+ *   For a workflow_field, no $workflow is needed, since info is in field itself.
+ *   For a workflow_node, $workflow provides additional data in return.
+ *
  * @return array
  *   field info structure. Pseudo data for workflow_node.
  */
-function _workflow_info_field($field_name, $workflow = NULL) {
+function _workflow_info_field($field_name, $workflow) {
   // @todo D8: remove this function when we only use workflow_field.
   $field = array();
+
   if ($field_name) {
     $field = field_info_field($field_name);
   }
   else {
     $field['field_name'] = '';
     $field['id'] = 0;
+    $field['settings']['wid'] = 0;
     $field['settings']['widget'] = array();
-    if ($workflow) {
+    if ($workflow != NULL) {
       $field['settings']['wid'] = $workflow->wid;
       $field['settings']['widget'] = $workflow->options;
       $field['settings']['history']['roles'] = $workflow->tab_roles;
@@ -1061,5 +1099,6 @@ function _workflow_info_field($field_name, $workflow = NULL) {
       'history_tab_show' => TRUE,
     );
   }
+
   return $field;
 }

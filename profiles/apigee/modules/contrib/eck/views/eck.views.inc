@@ -3,11 +3,11 @@
  * @file
  * Provide additional Views fields for entity content.
  */
- 
+
 /**
  * Implements hook_views_data_alter().
- */ 
- function eck_views_data_alter(&$data) {
+ */
+function eck_views_data_alter(&$data) {
   foreach (EntityType::loadAll() as $entity_type) {
     $data["eck_{$entity_type->name}"]['view_link'] = array(
       'field' => array(
@@ -15,7 +15,7 @@
         'help' => t('Provide a simple link to the %entity_label content.', array('%entity_label' => $entity_type->label)),
         'handler' => 'eck_views_handler_field_link',
       ),
-    );  
+    );
     $data["eck_{$entity_type->name}"]['edit_link'] = array(
       'field' => array(
         'title' => t('Edit link'),

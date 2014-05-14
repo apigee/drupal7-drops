@@ -55,13 +55,14 @@ function workflow_get_creation_state_by_wid($wid) {
  * @param string $type
  *   The type of the content.
  */
-function workflow_get_creation_state_by_type($type) {
-  $sid = FALSE;
-  if ($workflow = workflow_get_workflows_by_type($type, 'node')) {
-    $sid = $workflow->getCreationSid();
-  }
-  return $sid;
-}
+//function workflow_get_creation_state_by_type($type) {
+//  $sid = FALSE;
+//
+//  if ($workflow = workflow_get_workflows_by_type($type, 'node')) {
+//    $sid = $workflow->getCreationSid();
+//  }
+//  return $sid;
+//}
 
 /**
  * Given information, update or insert a new workflow. Returns data by ref. (like node_save).
@@ -184,10 +185,10 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
  * @return bool $show_widget
  *   TRUE = a form must be shown; FALSE = no form, a formatter must be shown instead.
  */
-function workflow_show_form($sid, $workflow, array $options) {
-  $state = workflow_state_load_single($sid);
-  return !$state->showWidget($options);
-}
+// function workflow_show_form($sid, $workflow, array $options) {
+//   $state = workflow_state_load_single($sid);
+//   return !$state->showWidget($options);
+// }
 
 /**
  * Validate target state and either execute a transition immediately or schedule
@@ -635,9 +636,9 @@ function workflow_insert_workflow_scheduled_transition($data) {
  * @deprecated: workflow_delete_workflow_scheduled_transition_by_nid() --> WorkflowScheduledTransition::delete()
  *        It is still used in workflow_execute_transition().
  */
-function workflow_delete_workflow_scheduled_transition_by_nid($nid) {
-  return WorkflowScheduledTransition::deleteById('node', $nid);
-}
+// function workflow_delete_workflow_scheduled_transition_by_nid($nid) {
+//   return WorkflowScheduledTransition::deleteById('node', $nid);
+// }
 
 /**
  * Deprecated functions related to table {workflow_node_history}.

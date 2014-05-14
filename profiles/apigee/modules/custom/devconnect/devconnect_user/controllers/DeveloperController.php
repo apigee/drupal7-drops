@@ -262,4 +262,36 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   public function view($entities, $view_mode = 'full', $langcode = NULL, $page = FALSE) {
     return array();
   }
+
+  /**
+   * Updates the email address associated with a developer.
+   *
+   * By default, we do not support changing the developer's email address on
+   * the user-profile form -- we disable the element. However, customer-
+   * specific code may do so, hence this function.
+   *
+   * Returns TRUE on success or FALSE on failure.
+   *
+   * @param \Drupal\devconnect_user\DeveloperEntity $entity
+   * @param string $new_email
+   * @return bool
+   */
+  public function updateEmail(Drupal\devconnect_user\DeveloperEntity $entity, $new_email) {
+    try {
+      $dev = new Apigee\ManagementAPI\Developer(devconnect_default_api_client());
+      $dev->load($entity->email);
+      $dev->setEmail($new_email);
+      $dev->save(TRUE, $entity->email);
+
+      $this->devCache[$new_email] = $this->devCache[$entity->email];
+      unset($this->devCache[$entity->email]);
+      $entity->email = $new_email;
+
+      devconnect_user_write_to_cache($entity);
+    }
+    catch (Exception $e) {
+      return FALSE;
+    }
+    return TRUE;
+  }
 }

@@ -7,10 +7,46 @@
 /**
  * Implements hook_form().
  *
+ * Add a form to set the weight fo the access module.
+ */
+function workflow_access_priority_form($form, $form_state) {
+  $form['workflow_access'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Workflow Access Settings'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['workflow_access']['#tree'] = TRUE;
+  $form['workflow_access']['workflow_access_priority'] = array(
+    '#type' => 'weight',
+    '#delta' => 10,
+    '#title' => t('Workflow Access Priority'),
+    '#default_value' => variable_get('workflow_access_priority', 0),
+    '#description' => t('This sets the node access priority. Changing this
+      setting can be dangerous. If there is any doubt, leave it at 0. 
+      <a href="@url">Read the manual.</a>', array('@url' => url('https://api.drupal.org/api/drupal/modules!node!node.api.php/function/hook_node_access_records/7'))),
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
+
+  return $form;
+}
+
+/**
+ * Submit handler.
+ */
+function workflow_access_priority_form_submit($form, &$form_state) {
+  variable_set('workflow_access_priority', $form_state['values']['workflow_access']['workflow_access_priority']);
+  $form_state['redirect'] = 'admin/config/workflow/workflow';
+}
+
+
+/**
+ * Implements hook_form().
+ *
  * Add a "three dimensional" (state, role, permission type) configuration
  * interface to the workflow edit form.
  */
-function workflow_access_form($form, $form_state, $workflow) {
+function workflow_access_form($form, $form_state, $workflow, $op) {
   if (!$workflow) {
     // Leave this page immediately.
     drupal_set_message(t('Unknown workflow'));
@@ -18,9 +54,6 @@ function workflow_access_form($form, $form_state, $workflow) {
   }
 
   drupal_set_title(t('@name Access', array('@name' => $workflow->getName())));
-
-  // Let's add some breadcrumbs.
-  workflow_admin_ui_breadcrumbs($workflow);
 
   $form = array('#tree' => TRUE);
 
@@ -89,16 +122,6 @@ function workflow_access_form($form, $form_state, $workflow) {
     );
   }
 
-  $form['warning'] = array(
-    '#type' => 'markup',
-    '#markup' => '<p><strong>'
-      . t('WARNING:')
-      . '</strong> '
-      . t('Use of the "Edit any," "Edit own," and even "View published content" permissions
-        for the content type may override these access settings.')
-      . '</p>',
-      );
-
   $form['submit'] = array('#type' => 'submit', '#value' => t('Save configuration'));
 
   return $form;
@@ -128,13 +151,8 @@ function workflow_access_form_submit($form, &$form_state) {
     }
 
     // Update all nodes having same workflow state to reflect new settings.
-    foreach (workflow_get_workflow_node_by_sid($sid) as $data) {
-      // Instead of trying to construct what the grants should be per node as we save.
-      // Let's fall back on existing node grant systems that will find it for us.
-      $entity_type = 'node'; // @todo: add support for other entity types in workflow_access_form_submit()
-      $node = node_load($data->nid);
-      node_access_acquire_grants($node);
-    }
+    // just set a flag, which is working for both Workflow Field ánd Workflow Node.
+    node_access_needs_rebuild(TRUE);
   }
 
   drupal_set_message(t('Workflow access permissions updated.'));

@@ -65,7 +65,18 @@ class DocGenModel extends APIObject implements DocGenModelInterface
    */
   public function importSwagger($apiId, $url)
   {
-    $this->post(rawurlencode($apiId) . '/revisions?action=import&format=swagger', 'URL=' . $url, 'application/xml; charset=utf-8');
+    $this->post(rawurlencode($apiId) . '/revisions?action=import&format=swagger', 'URL=' . $url, 'text/plain; charset=utf-8');
+    return $this->responseObj;
+  }
+
+  /**
+   * Imports an Apigee Internal JSON to a given model, returns JSON representation of the model
+   *
+   * {@inheritDoc}
+   */
+  public function importApigeeJSON($apiId, $json)
+  {
+    $this->post(rawurlencode($apiId) . '/revisions?action=import&format=apimodel', $json, 'application/json; charset=utf-8');
     return $this->responseObj;
   }
 
@@ -103,6 +114,23 @@ class DocGenModel extends APIObject implements DocGenModelInterface
   {
     $this->http_delete(rawurlencode($apiId));
     return $this->responseObj;
+  }
+
+  /**
+   * Exports SmartDocs model
+   *
+   * {@inheritDoc}
+   */
+  public function exportModel($apiId, $format)
+  {
+    if (empty($format)) {
+      $this->get(rawurlencode($apiId) . '/revisions/latest?expand=yes');
+      return  $this->responseText;
+    }
+    else {
+      $this->get(rawurlencode($apiId) . '/revisions/latest?format='.$format, 'text/xml');
+      return  $this->responseText;
+    }
   }
 
 }

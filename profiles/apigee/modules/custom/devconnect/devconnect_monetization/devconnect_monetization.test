@@ -10,6 +10,7 @@ class MintTest extends DrupalWebTestCase{
 
   public function setUp($args) {
 
+    // The following could conceivably throw an exception
     $config = Drupal::config('devconnect.settings');
 
     $org = $config->get('org');

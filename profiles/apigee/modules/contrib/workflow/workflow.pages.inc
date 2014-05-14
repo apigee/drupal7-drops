@@ -2,6 +2,8 @@
 /**
  * @file
  * Provide user interface for changing workflow state.
+ *
+ * @todo D8: remove this in favour of View 'Workflow history per entity'.
  */
 
 define('MARK_STATE_IS_DELETED', '*');
@@ -18,18 +20,24 @@ function workflow_tab_page($entity_type, $entity = NULL) {
   list($entity_id, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
   $entity_id = entity_id($entity_type, $entity);
 
-  // @todo: workflow_tab_page(): what to do with multiple workflow_fields per bundle? Use Views instead!
+  // When having multiple workflows per bundle, use Views display
+  // 'Workflow history per entity' instead!
   $workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type);
 
   // Show the current state and the Workflow form to allow state changing.
   // N.B. This part is replicated in hook_node_view, workflow_tab_page, workflow_vbo.
+  // @todo: support multiple workflows per entity.
+  // For workflow_tab_page with multiple workflows, use a separate view. See [#2217291].
   if ($workflow) {
-    $workflow_item = $workflow->getWorkflowItem();
-    $field = $workflow_item->getField();
-    $instance = $workflow_item->getInstance();
+    // $field = _workflow_info_field($field_name, $workflow);
+    $field_info = _workflow_info_fields($entity, $entity_type);
+    $field = reset($field_info);
+    $field_name = $field['field_name'];
+    $field_id = $field['id'];
+    $instance = field_info_instance($entity_type, $field_name, $entity_bundle);
     if (!$field['id']) {
       // This is a Workflow Node workflow. Set widget options as in v7.x-1.2
-      $field['settings']['widget']['comment'] = !empty($workflow->options['comment_log_tab']); // vs. ['comment_log_node']; 
+      $field['settings']['widget']['comment'] = isset($workflow->options['comment_log_tab']) ? $workflow->options['comment_log_tab'] : 1; // vs. ['comment_log_node']; 
       $field['settings']['widget']['current_status'] = TRUE;
     }
   }
@@ -37,9 +45,6 @@ function workflow_tab_page($entity_type, $entity = NULL) {
   // Add the form/widget to the formatter, and include the nid and field_id in the form id,
   // to allow multiple forms per page (in listings, with hook_forms() ).
   // Ultimately, this is a wrapper for WorkflowDefaultWidget.
-  $field_name = $field['field_name'];
-  $field_id = $field['id'];
-
   $form['workflow_current_state'] = workflow_state_formatter($entity_type, $entity, $field, $instance);
   $form += drupal_get_form(implode('_', array('workflow_transition_form', $entity_type, $entity_id, $field_id)), $field, $instance, $entity_type, $entity);
   $output = drupal_render($form);

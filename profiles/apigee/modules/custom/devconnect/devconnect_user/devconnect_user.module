@@ -393,6 +393,52 @@ function devconnect_user_attributes_form_validate($form, &$form_state) {
   $form_state['values']['devconnect_user_attributes_to_persist_in_kms'] = $default_values;
 }
 
+function _devconnect_user_get_field_value($field, array $edit, stdClass $account, $default = '') {
+
+  $edit_value = $default;
+  if (array_key_exists($field, $edit)) {
+    if (is_scalar($edit[$field])) {
+      $edit_value = $edit[$field];
+    }
+    elseif (is_array($edit[$field]) && array_key_exists(LANGUAGE_NONE, $edit[$field]) && !empty($edit[$field][LANGUAGE_NONE])) {
+      if (is_scalar($edit[$field][LANGUAGE_NONE])) {
+        $edit_value = $edit[$field][LANGUAGE_NONE];
+      }
+      else {
+        $temp_value = reset($edit[$field][LANGUAGE_NONE]);
+        if (is_scalar($temp_value)) {
+          $edit_value = $temp_value;
+        }
+        elseif (array_key_exists('value', $temp_value)) {
+          $edit_value = $temp_value['value'];
+        }
+      }
+    }
+  }
+  $account_value = $default;
+  if (property_exists($account, $field)) {
+    $account_field = $account->$field;
+    if (is_scalar($account_field)) {
+      $account_value = $account_field;
+    }
+    elseif (is_array($account_field) && array_key_exists(LANGUAGE_NONE, $account_field) && !empty($account_field[LANGUAGE_NONE])) {
+      if (is_scalar($account_field[LANGUAGE_NONE])) {
+        $account_value = $account_field[LANGUAGE_NONE];
+      }
+      else {
+        $temp_value = reset($account_field[LANGUAGE_NONE]);
+        if (is_scalar($temp_value)) {
+          $account_value = $temp_value;
+        }
+        elseif (array_key_exists('value', $temp_value)) {
+          $account_value = $temp_value['value'];
+        }
+      }
+    }
+  }
+  return $edit_value == $default ? $account_value : $edit_value;
+}
+
 /**
  * Implements hook_user_presave().
  *
@@ -411,16 +457,20 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     return;
   }
   // Don't try to update users in KMS if org hasn't been configured yet.
-  $config =& Drupal::config('devconnect.settings');
+  try {
+    $config =& Drupal::config('devconnect.settings');
+  } catch (Exception $e) {
+    return;
+  }
   $org = $config->get('org');
   if (empty($org) || $org == 'fixme') {
     return;
   }
 
-  $first_name = (isset($edit['field_first_name'][LANGUAGE_NONE][0]['value']) ? $edit['field_first_name'][LANGUAGE_NONE][0]['value'] : $account->field_first_name[LANGUAGE_NONE][0]['value']);
-  $last_name = (isset($edit['field_last_name'][LANGUAGE_NONE][0]['value']) ? $edit['field_last_name'][LANGUAGE_NONE][0]['value'] : $account->field_last_name[LANGUAGE_NONE][0]['value']);
-  $mail = (isset($edit['mail']) ? $edit['mail'] : $account->mail);
-  $name = (isset($edit['name']) ? $edit['name'] : $account->name);
+  $first_name = _devconnect_user_get_field_value('field_first_name', $edit, $account);
+  $last_name = _devconnect_user_get_field_value('field_last_name', $edit, $account);
+  $mail = _devconnect_user_get_field_value('mail', $edit, $account);
+  $name = _devconnect_user_get_field_value('name', $edit, $account);
   $orig_mail = (empty($account->mail) ? $edit['mail'] : $account->mail);
 
   $entity = entity_load_single('developer', $orig_mail);
@@ -441,24 +491,11 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     $field_full_name = 'field_' . $field_name;
     if ($field_specs['selected']) {
       $att_name = $field_specs['kms_internal_attribute_name'];
-      // If value was in edit form, grab it
-      if (array_key_exists($field_full_name, $edit)) {
-        $field_obj = $edit[$field_full_name];
-        $field_value = (isset($field_obj[LANGUAGE_NONE][0]['value']) ? $field_obj[LANGUAGE_NONE][0]['value'] : '');
-      }
-      // If not in edit form, get it from user object if it is set
-      else {
-        if (is_array($account->$field_full_name) && count($account->$field_full_name) > 0) {
-          $field_obj = $account->$field_full_name;
-          $field_value = $field_obj[LANGUAGE_NONE][0]['value'];
-        }
-        // Neither in form nor in user object, set it to null and let logic below deal with it
-        else {
-          $field_value = NULL;
-        }
-      }
+
+      $field_value = _devconnect_user_get_field_value($field_full_name, $edit, $account, NULL);
 
       if (strlen($field_value) === 0) {
+        $set_value = TRUE;
         switch ($field_specs['empty_action']) {
           case 'null':
             $att_value = NULL;
@@ -475,8 +512,13 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
             $att_value = _devconnect_user_scrub_attribute($default_value);
             break;
           case 'avoid': //Attribute is not to be sent
+          default:
+            $set_value = FALSE;
+            break;
         }
-        $entity->attributes[$att_name] = $att_value;
+        if ($set_value) {
+          $entity->attributes[$att_name] = $att_value;
+        }
       }
       else {
         $entity->attributes[$att_name] = _devconnect_user_scrub_attribute($field_value);
@@ -840,8 +882,8 @@ function _devconnect_user_save_entity($user) {
 /**
  * Page callback for DevConnect Developer Sync.
  *
- * Makes sure that all local users have a corresponding account in KMS;
- * likewise makes sure that all KMS users (other than those created by
+ * Makes sure that all local users have a corresponding account in Edge;
+ * likewise makes sure that all Edge users (other than those created by
  * simpletest) have Drupal accounts.
  *
  * It creates batch processes to avoid php timeouts
@@ -1224,19 +1266,21 @@ function devconnect_user_cron() {
  * @param $root_path
  */
 function devconnect_user_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-  if (arg(0) == 'user') {
-    foreach ($data['tabs'] as $i => $menu_item) {
-      if (array_key_exists('output', $menu_item) && is_array($menu_item['output'])) {
-        foreach ($menu_item['output'] as $j => $sub_item) {
-          switch ($sub_item['#link']['path']) {
-            case 'user/%/view':
-            case 'user/%/openid':
-              unset($data['tabs'][$i]['output'][$j]);
-              $data['tabs'][$i]['count']--;
-              break;
-            case 'user/%/edit':
-              $data['tabs'][$i]['output'][$j]['#link']['title'] = 'Edit User Profile';
-              break;
+  if (arg(0) == 'user' && array_key_exists('tabs', $data) && is_array($data['tabs'])) {
+    if (isset($data['tabs'])) {
+      foreach ($data['tabs'] as $i => $menu_item) {
+        if (array_key_exists('output', $menu_item) && is_array($menu_item['output'])) {
+          foreach ($menu_item['output'] as $j => $sub_item) {
+            switch ($sub_item['#link']['path']) {
+              case 'user/%/view':
+              case 'user/%/openid':
+                unset($data['tabs'][$i]['output'][$j]);
+                $data['tabs'][$i]['count']--;
+                break;
+              case 'user/%/edit':
+                $data['tabs'][$i]['output'][$j]['#link']['title'] = 'Edit User Profile';
+                break;
+            }
           }
         }
       }

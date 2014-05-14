@@ -42,7 +42,7 @@ class WorkflowExampleTestCase extends DrupalWebTestCase {
   function testWorkflowState($sid = 2, $wid = 1) {
     $this->testId = '2';
 
-    $wf_state = new WorkflowState($sid, $wid);
+    $wf_state =  $workflow->createState('State 2');
 dpm($wf_state, 'This is state ' . $sid . ' of workflow ' . $wid);
     $workflow = $wf_state->getWorkflow();
 dpm($workflow, 'This is the workflow of sid ' . $sid);

@@ -159,7 +159,11 @@ function apigee_responsive_preprocess_page(&$vars) {
   $vars['current_path'] = implode("/", arg());
 
   $user_url = 'user/' . $user->uid;
-  $vars['myappslink'] = l('<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp; My Apps', $user_url . '/apps', array('html' => TRUE));
+  if ((bool)variable_get('myapis')) {
+    $vars['myappslink'] = l('<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp; My APIs', $user_url . '/apps', array('html' => TRUE));
+  } else {
+    $vars['myappslink'] = l('<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp; My Apps', $user_url . '/apps', array('html' => TRUE));
+  }
   $vars['profilelink'] = l('<span class="glyphicon glyphicon-user"></span>&nbsp;&nbsp; Edit Profile', $user_url . '/edit', array('html' => TRUE));
   $vars['logoutlink'] = l('<span class="glyphicon glyphicon-off"></span>&nbsp;&nbsp; Logout','user/logout',array('html' => TRUE));
 
@@ -200,10 +204,18 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
   global $user;
   // Set Title.
   if ($user->uid == $GLOBALS['user']->uid) {
-    $title = t('My Apps');
+    if ((bool)variable_get('myapis')) {
+      $title = t('My APIs');
+    } else {
+      $title = t('My Apps');
+    }
   }
   else {
-    $title = t('@name’s Apps', array('@name' => $user->name));
+    if ((bool)variable_get('myapis')) {
+      $title = t('@name’s APIs', array('@name' => $user->name));
+    } else {
+      $title = t('@name’s Apps', array('@name' => $user->name));
+    }
   }
   drupal_set_title($title);
 
@@ -214,13 +226,23 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
   drupal_set_breadcrumb($breadcrumb);
 
   $vars['show_status'] = variable_get('devconnect_show_apiproduct_status', FALSE);
-  $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new app'), 'user/' . $user->uid . '/apps/add', array(
-      'html' => TRUE,
-      'attributes' => array('class' => array(
-        'add-app')
+  if ((bool)variable_get('myapis')) {
+    $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new API'), 'user/' . $user->uid . '/apps/add', array(
+        'html' => TRUE,
+        'attributes' => array('class' => array(
+          'add-app')
+        )
       )
-    )
-  );
+    );
+  } else {
+    $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new app'), 'user/' . $user->uid . '/apps/add', array(
+        'html' => TRUE,
+        'attributes' => array('class' => array(
+          'add-app')
+        )
+      )
+    );
+  }
 
   $vars['i'] = 0;
 

@@ -42,6 +42,11 @@ class Config {
       throw new \Exception('Invalid config name ' . $name);
     }
 
+    $wrappers = stream_get_wrappers();
+    if (!in_array('private', $wrappers)) {
+      throw new \Exception('Private stream wrapper is not registered.');
+    }
+
     $config_dir = 'private://config/active';
     $is_prepared = file_prepare_directory($config_dir, FILE_CREATE_DIRECTORY);
     if (!$is_prepared) {
@@ -110,5 +115,32 @@ class Config {
   public function save() {
     return file_unmanaged_save_data(Yaml::dump($this->values, 5), $this->override_config_file, FILE_EXISTS_REPLACE);
   }
+
+  /**
+   * Returns all configuration items as either YAML string or arrays.
+   *
+   * @param bool $as_yaml
+   * @return string|array
+   */
+  public function export($as_yaml = FALSE) {
+    if ($as_yaml) {
+      return Yaml::dump($this->values);
+    }
+    return $this->values;
+  }
+
+  /**
+   * Takes YAML string or array of values and saves it as configuration item.
+   *
+   * @param mixed $values
+   * @return bool|null|string
+   */
+  public function import($values) {
+    if (!is_scalar($values)) {
+      $values = Yaml::dump($values, 5);
+    }
+    return file_unmanaged_save_data($values, $this->override_config_file, FILE_EXISTS_REPLACE);
+  }
+
 
 }

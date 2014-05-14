@@ -30,6 +30,10 @@
         var $switcher = $('#toolbar .environment-switcher-container').parent().clone();
         $('#toolbar .environment-switcher-container').parent().remove();
         $('#toolbar').prepend($switcher);
+        // Add a margin if the Shortcut module toggle button is present.
+        if ($('#toolbar div.toolbar-menu a.toggle').length > 0) {
+          $('#toolbar div.toolbar-menu').css('padding-right', 40);
+        }
       };
     }
   };
@@ -66,12 +70,12 @@
   Drupal.behaviors.environment_indicatorSwitcher = {
     attach: function (context, settings) {
       // Check that the links actually point to the current path, if not, fix them
-      $('.environment-switcher a', context).live('click', function (e) {
+      $('.environment-switcher a', context).click(function (e) {
         e.preventDefault();
         var current_location = window.location;
         window.location.href = current_location.protocol + '//' + e.currentTarget.hostname + current_location.pathname + current_location.search + current_location.hash;
       });
-      $('#environment-indicator .environment-indicator-name, #toolbar .environment-indicator-name-wrapper', context).live('click', function () {
+      $('#environment-indicator .environment-indicator-name, #toolbar .environment-indicator-name-wrapper', context).click(function () {
         $('#environment-indicator .item-list, #toolbar .item-list', context).slideToggle('fast');
       });
       $('#environment-indicator.position-top.fixed-yes').once(function () {

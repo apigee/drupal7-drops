@@ -327,22 +327,12 @@ if (!function_exists('apigee_drush_command')) {
   }
 
   /**
-   * Creates a password containing any printable non-space low-ASCII character
-   * other than a single or double quote.
+   * Creates a randomized password.
    * 
    * @return string
    */
   function _apigee_create_password() {
-    $pass = '';
-    for ($i = 0; $i < 20; $i++) {
-      $ord = mt_rand(33, 125);
-      // Avoid use of single or double quotes
-      if ($ord == 34 || $ord == 39) {
-        $ord = 126;
-      }
-      $pass .= chr($ord);
-    }
-    return $pass;
+    return base64_encode(drupal_random_bytes(15));
   }
 
   /**
@@ -373,7 +363,7 @@ if (!function_exists('apigee_drush_command')) {
     if (empty($org_pass)) {
       $portal_pass = _apigee_create_password();
     }
-    $portal_user = 'dc_devconnect+' . $orgname . '@apigee.com';
+    $portal_user = 'dc_devportal+' . $orgname . '@apigee.com';
 
     return array(
       'orgadmin_user' => $user,

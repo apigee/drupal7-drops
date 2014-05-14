@@ -63,6 +63,71 @@ function environment_indicator_schema() {
 }
 
 /**
+ * Implements hook_uninstall().
+ */
+function environment_indicator_uninstall() {
+  variable_del('environment_indicator_suppress_pages');
+  variable_del('environment_indicator_integration');
+  variable_del('environment_indicator_git_support');
+  // Delete environment_indicator_remote_release.*
+  $query = "SELECT name FROM {variable} WHERE name LIKE 'environment_indicator_remote_release.%'";
+  $results = db_query($query);
+  foreach ($results as $row) {
+    // Use variable_del to allow appropriate hooks to run.
+    variable_del($row->name);
+  }
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function environment_indicator_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break at install time
+  $t = get_t();
+
+  // Report Drupal version
+  if ($phase == 'runtime') {
+    if (_environment_indicator_has_old_vars()) {
+      $requirements['environment_indicator'] = array(
+        'title' => $t('Environment indicator'),
+        'value' => $t('You are using old environment indicator variables. Please check the !help on how to upgrade your variables for the new release, and then remove the old ones.', array('!help' => l(t('help pages'), 'admin/help/environment_indicator'))),
+        'severity' => REQUIREMENT_ERROR
+      );
+    }
+    if (
+      !empty($_ENV['AH_SITE_ENVIRONMENT']) &&
+      variable_get('environment_indicator_git_support', TRUE)
+    ) {
+      $severity = REQUIREMENT_WARNING;
+      $env = $_ENV['AH_SITE_ENVIRONMENT'];
+      if (environment_indicator_ah_valid_post_deploy_hook($env)) {
+        // If there is no value in the release variable it can mean that the
+        // hook never run. Tell the user to check execute permisions on the
+        // script.
+        $release = variable_get('environment_indicator_remote_release.' . $env, NULL);
+        if ($release) {
+          $message = $t('The Acquia Cloud hook is installed and reports release: ' . $release);
+          $severity = REQUIREMENT_INFO;
+        }
+        else {
+          $message = $t('The Acquia Cloud hook is installed but there is no information about the release. This is normal if you never deployed your code. Otherwise check if the hook script has the execution permisions.');
+        }
+      }
+      else {
+        $message = $t('Missing Acquia Cloud hook for environment indicator integration. Please look at the <code>samples/environment-indicator.sh</code> folder and copy it to your <code>hooks/[your-environment]/post-code-deploy</code> directory. See the README.txt for more information.');
+      }
+      $requirements['environment_indicator_ah'] = array(
+        'title' => $t('Environment indicator'),
+        'value' => $message,
+        'severity' => $severity,
+      );
+    }
+  }
+  return $requirements;
+}
+
+/**
  * Add table when updating from 1.x
  */
 function environment_indicator_update_7200(&$sandbox) {

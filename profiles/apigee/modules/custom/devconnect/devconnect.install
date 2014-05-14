@@ -68,17 +68,16 @@ function devconnect_requirements($phase) {
     devconnect_init();
     d8cmi_init();
 
-    $config = Drupal::config('devconnect.settings');
-    $org = $config->get('org');
-    $endpoint = $config->get('endpoint');
-    $user = $config->get('user');
     $pass = FALSE;
-    if ($has_mcrypt) {
-      try {
+    try {
+      $config = Drupal::config('devconnect.settings');
+      $org = $config->get('org');
+      $endpoint = $config->get('endpoint');
+      $user = $config->get('user');
+      if ($has_mcrypt) {
         $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
       }
-      catch (Apigee\Exceptions\ParameterException $e) {}
-    }
+    } catch (Exception $e) {}
 
     if ($pass && _devconnect_test_kms_connection($org, $endpoint, "$user:$pass", TRUE)) {
       $requirements['devconnect_connection'] = array(
@@ -226,7 +225,17 @@ function devconnect_port_settings_to_d8cmi() {
   devconnect_init();
   d8cmi_init();
 
-  $config = Drupal::config('devconnect.settings');
+  try {
+    $config = Drupal::config('devconnect.settings');
+  } catch (Exception $e) {
+    if (function_exists('drush_set_error')) {
+      drush_set_error('DEVCONNECT_ERROR', $e->getMessage());
+    }
+    else {
+      drupal_set_message($e->getMessage(), 'error');
+    }
+    return;
+  }
 
   $org = variable_get('devconnect_org', $config->get('org'));
   $config->set('org', $org);
@@ -255,7 +264,7 @@ function devconnect_port_settings_to_d8cmi() {
 /**
  * Enable additional required modules. Also set devconnect to be one
  * weight-unit lighter than d8cmi, so that the YAML autoloader will run in the
- * correct sequence. Finally, disable/remove xautoload module.
+ * correct sequence.
  */
 function devconnect_update_7425() {
   module_enable(array('admin_views', 'contextual'));
@@ -271,11 +280,4 @@ function devconnect_update_7425() {
     ->condition('type', 'module')
     ->condition('name', 'devconnect')
     ->execute();
-
-  db_delete('system')
-    ->condition('name', 'xautoload')
-    ->condition('type', 'module')
-    ->execute();
-
-  cache_clear_all(NULL, 'cache_bootstrap');
 }

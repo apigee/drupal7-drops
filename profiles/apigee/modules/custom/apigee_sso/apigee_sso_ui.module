@@ -15,8 +15,8 @@ function apigee_sso_ui_init() {
  */
 function apigee_sso_ui_theme() {
   return array(
-    'apigee-sso-ui-signin-block' => array(
-      'template' => 'apigee_sso_ui_signin_block',
+    'apigee_sso_ui_signin_block' => array(
+      'template' => 'apigee-sso-ui-signin-block',
       'path' => drupal_get_path('module', 'apigee_sso_ui') . "/templates",
       'variables' => array(
         'github' => null
@@ -46,7 +46,7 @@ function apigee_sso_ui_form_alter(&$form, &$form_state, $form_id) {
       }
       $form['sso_buttons'] = array(
         '#type' => 'markup',
-        '#markup' => theme('apigee-sso-ui-signin-block', $vars),
+        '#markup' => theme('apigee_sso_ui_signin_block', $vars),
         '#weight' => -99
       );
       if (isset($form['twitter_signin'])) {
@@ -84,7 +84,7 @@ function apigee_sso_ui_block_view($delta = '') {
     default:
       $block = array();
       $block['subject'] = t('Apigee SSO');
-      $block['content'] = theme('apigee-sso-ui-signin-block');
+      $block['content'] = theme('apigee_sso_ui_signin_block');
   }
   return $block;
 }

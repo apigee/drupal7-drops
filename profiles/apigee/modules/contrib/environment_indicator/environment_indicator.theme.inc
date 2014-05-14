@@ -26,7 +26,13 @@ function theme_environment_indicator_switches($variables) {
  * Theme function for the indicator name.
  */
 function theme_environment_indicator_indicator_name($variables) {
-  $output = '<div class="environment-indicator-name">' . t($variables['name']) . '</div>';
+  $title = t('You are seeing the @name environment', array('@name' => t($variables['name'])));
+  $branch_html = '';
+  if (!empty($variables['git_branch'])) {
+    $branch_html = '<span class="git-branch"> - ' . $variables['git_branch'] . '</span>';
+    $title = t('GIT is running @branch branch in this environment.', array('@branch' => $variables['git_branch']));
+  }
+  $output = '<div class="environment-indicator-name" title="' . $title . '">' . t($variables['name']) . $branch_html . '</div>';
   $environments = environment_indicator_get_all(TRUE);
   if (!empty($environments)) {
     foreach ($environments as $environment) {

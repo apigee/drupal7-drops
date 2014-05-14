@@ -75,4 +75,9 @@ class ApiProductEntity extends ArrayEntity {
    * @var array
    */
   public $attributes = array();
+
+  /**
+   * @var bool
+   */
+  public $isPublic = TRUE;
 }

@@ -8,12 +8,6 @@
  * The main cleanup page.
  */
 function workflow_cleanup_form($form, $form_state) {
-  $bc = array(l(t('Home'), '<front>'));
-  $bc[] = l(t('Configuration'), 'admin/config');
-  $bc[] = l(t('Workflow'), 'admin/config/workflow');
-  $bc[] = l(t('Workflow'), 'admin/config/workflow/workflow');
-  drupal_set_breadcrumb($bc);
-
   $form = array();
 
   // Get all of the states, indexed by sid.
@@ -30,16 +24,6 @@ function workflow_cleanup_form($form, $form_state) {
         $inactive[$state->sid] = $state->getName();
       }
     }
-  }
-
-  // Deal with no orphan states.
-  if (!$orphans) {
-    $orphans[0] = t('None');
-  }
-
-  // Deal with no inactive states.
-  if (!$inactive) {
-    $inactive[0] = $states[0] = t('None');
   }
 
   $form['#workflow_states'] = $states;
@@ -110,7 +94,13 @@ function theme_workflow_cleanup_form($variables) {
 
   $output .= '<h3>' . $form['no_workflow']['#title'] . '</h3>';
   $output .= '<div class="description">' . $form['no_workflow']['#description'] . '</div>';
-  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('style' => 'width: auto;')));
+  $output .= theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'empty' => 'All states are fine',
+    'attributes' => array('style' => 'width: auto;'),
+  ));
+
 
   $header[] = t('Workflow');
   $rows = array();
@@ -124,7 +114,12 @@ function theme_workflow_cleanup_form($variables) {
 
   $output .= '<h3>' . $form['inactive']['#title'] . '</h3>';
   $output .= '<div class="description">' . $form['inactive']['#description'] . '</div>';
-  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('style' => 'width: auto;')));
+  $output .= theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'empty' => 'All states are fine',
+    'attributes' => array('style' => 'width: auto;'),
+   ));
 
   $output .= drupal_render_children($form);
   return $output;
@@ -136,6 +131,9 @@ function theme_workflow_cleanup_form($variables) {
 function workflow_cleanup_form_submit($form, $form_state) {
   $states = $form['#workflow_states'];
   foreach (array('no_workflow', 'inactive') as $section) {
+    if (!isset($form_state['values'][$section])) {
+      continue;
+    }
     foreach ($form_state['values'][$section] as $sid => $data) {
       // FAPI returns either a 0 or the sid.
       if ($data['check']) {
@@ -150,7 +148,7 @@ function workflow_cleanup_form_submit($form, $form_state) {
         }
 
         // Remove history records too.
-        $hist_del = WorkflowTransition::deleteMultiple(array('sid' => $sid));
+        $hist_del = db_delete('workflow_node_history')->condition('sid', $sid)->execute();
         if ($hist_del) {
           drupal_set_message(t('@count history records for the "@state" state have been deleted.',
             array('@state' => $state_name, '@count' => $hist_del)));

@@ -15,10 +15,18 @@
 
 // Set Title
 if ($user->uid == $GLOBALS['user']->uid) {
-  $title = t('My Apps');
+  if ((bool)variable_get('myapis')) {
+    $title = t('My APIs');
+  } else {
+    $title = t('My Apps');
+  }
 }
 else {
-  $title = t('@name’s Apps', array('@name' => $user->name));
+  if ((bool)variable_get('myapis')) {
+    $title = t('@name’s APIs', array('@name' => $user->name));
+  } else {
+    $title = t('@name’s Apps', array('@name' => $user->name));
+  }
 }
 drupal_set_title($title);
 
@@ -30,33 +38,37 @@ $breadcrumb[] = l('Home', '<front>');
 drupal_set_breadcrumb($breadcrumb);
 
 ?>
-<?php print l(t('Add a new app'), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
+<?php if ((bool)variable_get('myapis')) { ?>
+  <?php print l(t('Add a new API'), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
+<?php } else { ?>
+  <?php print l(t('Add a new app'), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
+<?php } ?>
 
 <form class="form-stacked">
 
-<?php if ($application_count) : ?>
+  <?php if ($application_count) : ?>
 
-<h2>These are your apps!</h2>
-<h3>Add more, edit or delete them as you like.</h3>
-<hr>
+    <h2>These are your apps!</h2>
+    <h3>Add more, edit or delete them as you like.</h3>
+    <hr>
 
-<?php
-  foreach ($applications as $app) {
-    print '<div class="app-delete">';
-    if (!empty($app['delete_url'])) {
-      print '<button class="btn primary action button-processed" title="' . t('Delete App') . '" data-url="' . $app['delete_url'] . '"></button>';
+    <?php
+    foreach ($applications as $app) {
+      print '<div class="app-delete">';
+      if (!empty($app['delete_url'])) {
+        print '<button class="btn primary action button-processed" title="' . t('Delete App') . '" data-url="' . $app['delete_url'] . '"></button>';
+      }
+      print '</div>';
+      print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], 'user/' . $user->uid . '/app-detail/' . $app['app_name']) . '</h4>';
+      if (!empty($app['attributes']['Description'])) {
+        print '<div class="app-desc">' . check_plain($app['attributes']['Description']) . '</div>';
+      }
+      print '</div>';
+      print '<br><hr>';
     }
-    print '</div>';
-    print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], 'user/' . $user->uid . '/app-detail/' . $app['app_name']) . '</h4>';
-    if (!empty($app['attributes']['Description'])) {
-      print '<div class="app-desc">' . check_plain($app['attributes']['Description']) . '</div>';
-    }
-    print '</div>';
-    print '<br><hr>';
-  }
-?>
-<?php else: ?>
-	<h2>Looks like you don’t have any apps</h2>
-  <h3>Get started by adding one.</h3>
-<?php endif; ?>
+    ?>
+  <?php else: ?>
+    <h2>Looks like you don’t have any apps</h2>
+    <h3>Get started by adding one.</h3>
+  <?php endif; ?>
 </form>

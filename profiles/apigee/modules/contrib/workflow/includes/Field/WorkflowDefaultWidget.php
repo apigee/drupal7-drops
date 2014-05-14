@@ -80,13 +80,23 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
     // Capture settings to format the form/widget.
     $settings_title_as_name = !empty($field['settings']['widget']['name_as_title']);
     $settings_options_type = $field['settings']['widget']['options'];
-    // The schedule can be hidden via field settings,
-    // and cannot be shown on a Content add page (no $entity_id),
-    // but can be shown on a VBO page (no entity).
-    $settings_schedule = !empty($field['settings']['widget']['schedule']) && !($entity && !$entity_id);
+    // The schedule can be hidden via field settings, ...
+    $settings_schedule = !empty($field['settings']['widget']['schedule']);
+    if ($settings_schedule) {
+      if (isset($form_state['step']) && ($form_state['step'] == 'views_bulk_operations_config_form')) {
+        // On VBO 'modify entity values' form, leave field settings.
+        $settings_schedule = TRUE;
+      }
+      else {
+        // ... and cannot be shown on a Content add page (no $entity_id),
+        // ...but can be shown on a VBO 'set workflow state to..'page (no entity).
+        $settings_schedule = !($entity && !$entity_id);
+      }
+    }
+
     $settings_schedule_timezone = !empty($field['settings']['widget']['schedule_timezone']);
     // Show comment, when both Field and Instance allow this.
-    $settings_comment = $field['settings']['widget']['comment'] ? 'textarea' : 'hidden';
+    $settings_comment = $field['settings']['widget']['comment'];
 
     $options = array();
     if (!$entity) {
@@ -101,13 +111,21 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
       $default_value = '0';
     }
     else {
+      $force = FALSE;
       $current_sid = workflow_node_current_state($entity, $entity_type, $field_name);
-      $current_state = workflow_state_load_single($current_sid);
-      // $grouped = TRUE; // Grouped options only makes sense for multiple workflows.
-      $options = $current_state->getOptions($entity_type, $entity);
-      $show_widget = $current_state->showWidget($options);
-      // Determine the default value. If we are in CreationState, use a fast alternative for $workflow->getFirstSid().
-      $default_value = $current_state->isCreationState() ? key($options) : $current_sid;
+      if ($current_state = workflow_state_load_single($current_sid)) {
+        // $grouped = TRUE; // Grouped options only makes sense for multiple workflows.
+        $options = $current_state->getOptions($entity_type, $entity, $force);
+        $show_widget = $current_state->showWidget($entity_type, $entity, $force);
+
+        // Determine the default value. If we are in CreationState, use a fast alternative for $workflow->getFirstSid().
+        $default_value = $current_state->isCreationState() ? key($options) : $current_sid;
+      }
+      else {
+        // We are in trouble! A message is already set in workflow_node_current_state().
+        $show_widget = FALSE;
+        $default_value = $current_sid;
+      }
     }
 
     // Get the scheduling info. This may change the $current_sid on the Form.
@@ -128,7 +146,9 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
     }
 
     // Fetch the form ID. This is unique for each entity, to allow multiple form per page (Views, etc.).
-    $form_id = $form_state['build_info']['form_id'];
+    // Make it uniquer by adding the field name, or else the scheduling of
+    // multiple workflow_fields is not indendent.
+    $form_id = $form_state['build_info']['form_id'] . '_' . $field_name;
 
     // Prepare a wrapper. This might be a fieldset.
     $element['workflow']['#type'] = 'container'; // 'fieldset';
@@ -233,7 +253,8 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
       );
     }
     $element['workflow']['workflow_comment'] = array(
-      '#type' => $settings_comment,
+      '#type' => $settings_comment == '0' ? 'hidden' : 'textarea',
+      '#required' => $settings_comment == '2',
       '#title' => t('Workflow comment'),
       '#description' => t('A comment to put in the workflow log.'),
       '#default_value' => $comment,
@@ -258,8 +279,7 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
       foreach ($options as $sid => $state_label) {
         $element['workflow']['submit_sid'][$sid] = array(
           '#type' => 'submit',
-          // @todo: the label could be set in 'transition permitted' hook, or when fetching the allowed states.
-          '#value' => (($sid == $current_sid) ? t('Leave at') : t('Set to')) . ' ' . $state_label,
+          '#value' => $state_label,
           '#executes_submit_callback' => TRUE,
           '#validate' => array('_workflow_transition_form_validate_buttons'), // ($form, &$form_state)
           // Add the submit function only if one provided. @todo: On node edit form, we have not the proper function. 
@@ -425,7 +445,16 @@ class WorkflowDefaultWidget extends WorkflowD7Base { // D8: extends WidgetBase {
       }
       else {
         // This may happen if only 1 option is left, and a formatter is shown.
-        $new_sid = $old_sid;
+        $state = workflow_state_load_single($old_sid);
+        if (!$state->isCreationState()) {
+          $new_sid = $old_sid;
+        }
+        else {
+          // This only happens on workflows, when only one transition from
+          // '(creation)' to another state is allowed.
+          $workflow = $state->getWorkflow();
+          $new_sid = $workflow->getFirstSid($items[0]['workflow']['workflow_entity_type'], $items[0]['workflow']['workflow_entity_type']);
+        }
       }
 
       // Remember, the workflow_scheduled element is not set on 'add' page.

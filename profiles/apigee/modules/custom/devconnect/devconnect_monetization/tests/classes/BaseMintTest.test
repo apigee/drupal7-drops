@@ -20,13 +20,14 @@ class BaseMintTest extends DrupalWebTestCase {
     }
     d8cmi_init();
 
+    // The following line could conceivably throw an Exception
     $config = Drupal::config('devconnect.settings');
     $org = $config->get('org');
     $endpoint = $config->get('endpoint');
     $username = $config->get('user');
     $pass_encrypted = $config->get('pass');
 
-    if ($org == 'fixme') {
+    if ($org == 'fixme' || $org == '') {
       throw new Exception(t('Your Endpoint info has not been set yet.'));
     }
 

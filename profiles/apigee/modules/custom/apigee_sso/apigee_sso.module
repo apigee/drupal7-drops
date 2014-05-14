@@ -23,7 +23,10 @@ function apigee_sso_do_sso() {
   // Set default values for these, which may be overridden by other modules.
   $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ? 'https' : 'http');
   $destination = (isset($_GET['destination']) ? $_GET['destination'] : variable_get('site_frontpage', 'node'));
-  $server_name = $_SERVER['SERVER_NAME'];
+  $server_name = NULL;
+  if (array_key_exists('SERVER_NAME', $_SERVER)) {
+    $server_name = $_SERVER['SERVER_NAME'];
+  }
   // SERVER_NAME is blank on Pantheon.
   if (empty($server_name) && array_key_exists('HTTP_HOST', $_SERVER)) {
     $server_name = $_SERVER['HTTP_HOST'];
@@ -59,6 +62,7 @@ function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
   $email = $identity = NULL;
   $first_name = $last_name = NULL;
   $language = NULL;
+  $user_name = NULL;
   if (isset($_SESSION['openid']['response']) && $_SESSION['openid']['response']['status'] == 'success') {
     // Clean up any stale accounts.apigee.com sessions.
     if (isset($_SESSION['aac_session'])) {
@@ -105,6 +109,13 @@ function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
       }
     }
 
+    // Use user_id as username, if it isn't just made up of digits
+    // (as Google's user_id is).
+    if (array_key_exists('openid.ext1.value.user_id', $response) && !ctype_digit($response['openid.ext1.value.user_id'])) {
+      $user_name = $response['openid.ext1.value.user_id'];
+    }
+
+    // Set user's default language if it is available.
     if (array_key_exists('openid.ext1.value.language', $response)) {
       $language = strtolower(substr($response['openid.ext1.value.language'], 0, 2));
       if (!in_array($language, language_list())) {
@@ -124,18 +135,49 @@ function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
         $u->status = 1;
         user_save($u);
       }
+      // If the developer exists on the KMS side and is not marked inactive,
+      // activate their Drupal account.
+      if ($u->status == 0 && module_exists('devconnect_user')) {
+        $developer = entity_load_single('developer', $email);
+        if (is_object($developer) && $developer->status != 'inactive') {
+          $u->status = 1;
+          user_save($u);
+        }
+      }
 
       if (apigee_sso_is_registration_complete($form)) {
-        user_login_finalize($form_state);
+        if (!array_key_exists('values', $form_state)) {
+          $form_state['values'] = array();
+        }
+        user_login_finalize($form_state['values']);
       }
     }
     else {
-      $form['account']['name']['#default_value'] = $mail_parts[0];
-
-      if (function_exists('devconnect_user_is_org_admin') && devconnect_user_is_org_admin($email)) {
-        if (!is_array($form['account']['roles']['#default_value'])) {
-          $form['account']['roles']['#default_value'] = array();
+      if (empty($user_name)) {
+        $user_name = $mail_parts[0];
+      }
+      $create_user = FALSE;
+      // See if user exists in KMS. If so, draw properties from KMS response
+      // rather than from OpenID response.
+      if (module_exists('devconnect_user')) {
+        $developer = entity_load_single('developer', $email);
+        if (is_object($developer) && $developer->status != 'inactive') {
+          $user_name = $developer->userName;
+          $first_name = $developer->firstName;
+          $last_name = $developer->lastName;
+          $email = $developer->developer;
+          // Flag that this user is to be auto-created.
+          $create_user = TRUE;
         }
+      }
+
+      $form['account']['name']['#default_value'] = $user_name;
+      $form['account']['mail']['#default_value'] = $email;
+
+      if (!is_array($form['account']['roles']['#default_value'])) {
+        $form['account']['roles']['#default_value'] = array();
+      }
+      if (function_exists('devconnect_user_is_org_admin') && devconnect_user_is_org_admin($email)) {
         $form['account']['status']['#access'] = TRUE;
         $form['account']['status']['#default_value'] = TRUE;
         $form['account']['roles']['#access'] = TRUE;
@@ -152,8 +194,29 @@ function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
         $form['locale']['language']['#default_value'] = $language;
       }
       $form['#after_build'][] = 'apigee_sso_set_field_defaults';
-    }
 
+      // If we authenticated the user with KMS above, see if all required
+      // fields are filled in. If so, create the user and log them in.
+      if ($create_user && apigee_sso_is_registration_complete($form)) {
+        $form_state['values'] = array(
+          'name' => $user_name,
+          'pass' => user_pass(),
+          'mail' => $email,
+          'status' => TRUE,
+          'field_first_name' => array(LANGUAGE_NONE => array(0 => $first_name)),
+          'field_last_name' => array(LANGUAGE_NONE => array(0 => $last_name)),
+          'roles' => $form['account']['roles']['#default_value']
+        );
+        if (!empty($language)) {
+          $form_state['values']['language'] = $language;
+        }
+        $user = new stdClass;
+        $user = user_save($user, $form_state['values']);
+        if ($user) {
+          user_login_finalize($form_state['values']);
+        }
+      }
+    }
   }
   else {
     $block = apigee_sso_ui_block_view();
@@ -188,7 +251,7 @@ function apigee_sso_openid($op, $request) {
   if ($op == 'request') {
     // Google fields
     $request['openid.sreg.required'] = 'nickname,email,firstname,lastname';
-    $request['openid.ax.required'] = 'email,firstname,language,lastname,country,name_son,mail_son,mail_ao,name_ao';
+    $request['openid.ax.required'] = 'email,firstname,language,lastname,country,name_son,mail_son,mail_ao,name_ao,user_id';
 
     $request['openid.ax.type.language'] = 'http://axschema.org/pref/language';
     $request['openid.ax.type.country'] = 'http://axschema.org/contact/country/home';
@@ -196,6 +259,8 @@ function apigee_sso_openid($op, $request) {
     $request['openid.ax.type.firstname'] = 'http://axschema.org/namePerson/first';
     $request['openid.ax.type.lastname'] = 'http://axschema.org/namePerson/last';
     $request['openid.ax.type.email'] = 'http://axschema.org/contact/email';
+
+    $request['openid.ax.type.user_id'] = 'http://schemas.openid.net/ax/api/user_id';
   }
   return $request;
 }

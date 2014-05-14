@@ -6,7 +6,7 @@
  */
 
 /**
- * Implement hook_help().
+ * Implements hook_help().
  */
 function environment_indicator_help($path, $arg) {
   switch ($path) {
@@ -34,27 +34,7 @@ function environment_indicator_help($path, $arg) {
 }
 
 /**
- * Implements hook_requirements().
- */
-function environment_indicator_requirements($phase) {
-  $requirements = array();
-
-  // Report Drupal version
-  if ($phase == 'runtime') {
-    if (_environment_indicator_has_old_vars()) {
-      $requirements['environment_indicator'] = array(
-        'title' => t('Environment indicator'),
-        'value' => t('You are using old environment indicator variables. Please check the !help on how to upgrade your variables for the new release, and then remove the old ones.', array('!help' => l(t('help pages'), 'admin/help/environment_indicator'))),
-        'severity' => REQUIREMENT_ERROR
-      );
-    }
-  }
-
-  return $requirements;
-}
-
-/**
- * Implement hook_menu().
+ * Implements hook_menu().
  */
 function environment_indicator_menu() {
   $items['admin/config/development/environment-indicator/settings'] = array(
@@ -87,13 +67,13 @@ function environment_indicator_permission() {
   foreach ($environments as $machine => $environment) {
     $permissons['access environment indicator ' . $environment->machine] = array(
       'title' => t('See environment indicator for %name', array('%name' => $environment->name)),
-      'description' => t('See the evironment indicator if the user is in the %name environment.', array('%name' => $environment->name)),
+      'description' => t('See the environment indicator if the user is in the %name environment.', array('%name' => $environment->name)),
     );
   }
   // Manually add the overwritten environment.
   $permissons['access environment indicator overwritten_environment'] = array(
     'title' => t('See environment indicator for the overwritten environment'),
-    'description' => t('See the evironment indicator if the user is in the environment defined in settings.php.'),
+    'description' => t('See the environment indicator if the user is in the environment defined in settings.php.'),
   );
   return $permissons;
 }
@@ -108,7 +88,7 @@ function environment_indicator_ctools_plugin_api($owner, $api) {
 }
 
 /**
- * Implementation of hook_default_environment_indicator_environment().
+ * Implements hook_default_environment_indicator_environment().
  */
 function environment_indicator_default_environment_indicator_environment() {
   $export = array();
@@ -125,7 +105,7 @@ function environment_indicator_default_environment_indicator_environment() {
 }
 
 /**
- * Implementation of hook_ctools_plugin_directory().
+ * Implements hook_ctools_plugin_directory().
  */
 function environment_indicator_ctools_plugin_directory($module, $type) {
   // Load the export_ui plugin.
@@ -137,7 +117,7 @@ function environment_indicator_ctools_plugin_directory($module, $type) {
 /**
  * System settings form
  */
-function environment_indicator_ctools_export_ui_form(&$form, &$form_state) {
+function environment_indicator_ui_form(&$form, &$form_state) {
   $environment = $form_state['item'];
   $environment->color = '';
   $environment->text_color = '';
@@ -175,7 +155,7 @@ function environment_indicator_ctools_export_ui_form(&$form, &$form_state) {
   $form['regexurl'] = array(
     '#type' => 'textfield',
     '#title' => t('Hostname'),
-    '#description' => t('The hostname you want to detect. You can use a regular expression in this field. This regular expression will be run against the current URL to determine whether the environment is active or not. If you use a regular expression here this environment will <strong>not be availabe</strong> for environment switch.'),
+    '#description' => t('The hostname you want to detect. You can use a regular expression in this field. This regular expression will be run against the current URL to determine whether the environment is active or not. If you use a regular expression here this environment will <strong>not be available</strong> for environment switch.'),
     '#default_value' => $environment->regexurl,
   );
   $form['color_picker'] = array(
@@ -234,9 +214,9 @@ function environment_indicator_ctools_export_ui_form(&$form, &$form_state) {
 }
 
 /**
- * Validate callback for environment_indicator_ctools_export_ui_form
+ * Validation callback for environment_indicator_ui_form().
  */
-function environment_indicator_ctools_export_ui_validate($form, &$form_state) {
+function environment_indicator_ui_validate($form, &$form_state) {
   $color_elements = array('color', 'text_color');
   $values = $form_state['values'];
   foreach ($color_elements as $color_element) {
@@ -245,12 +225,17 @@ function environment_indicator_ctools_export_ui_validate($form, &$form_state) {
       form_set_error($color_element, t('%name must be a valid color in the format <em>#RRGGBB</em>.', array('%name' => $form[$color_element]['#title'])));
     }
   }
+
+  // Validate hostname regexp.
+  if (preg_match("/$values[regexurl]/", '') === FALSE) {
+    form_set_error('regexurl', t('Hostname must be a valid regular expression.'));
+  }
 }
 
 /**
- * Submit callback for environment_indicator_ctools_export_ui_form
+ * Submit callback for environment_indicator_ui_form().
  */
-function environment_indicator_ctools_export_ui_form_submit(&$form, &$form_state) {
+function environment_indicator_ui_form_submit(&$form, &$form_state) {
   $form_state['item']->settings = array(
     'color' => $form_state['values']['color'],
     'text_color' => $form_state['values']['text_color'],
@@ -259,7 +244,7 @@ function environment_indicator_ctools_export_ui_form_submit(&$form, &$form_state
     'fixed' => $form_state['values']['fixed'],
   );
 
-  // We need to flush admin_menu cache so that the new indicator shows up properly
+  // We need to flush admin_menu cache so that the new indicator shows up properly.
   $integrations = variable_get('environment_indicator_integration', array('toolbar' => 'toolbar', 'admin_menu' => 'admin_menu'));
   if (module_exists('admin_menu') && user_access('access administration menu') && !empty($integrations['admin_menu'])) {
     admin_menu_flush_caches();
@@ -290,7 +275,6 @@ function environment_indicator_page_build(&$page) {
           'faviconTextColor' => $match['text_color'],
         ),
       );
-      $integrations = variable_get('environment_indicator_integration', array('toolbar' => 'toolbar', 'admin_menu' => 'admin_menu'));
       if (environment_indicator_needs_js()) {
         $js_settings['environment_indicator']['toolbar-color'] = $match['color'];
         $js_settings['environment_indicator']['toolbar-text-color'] = $match['text_color'];
@@ -365,41 +349,46 @@ function environment_indicator_attach_indicator($environment_info, &$page) {
  */
 function environment_indicator_get_active() {
   $env = &drupal_static(__FUNCTION__);
-  // Try to get the static or the db caches first.
-  if (isset($env)) {
-    return $env;
-  }
-  elseif ($cached_env = cache_get('environment_indicator')) {
-    // Check it the indicator is in the db cache.
-    return $cached_env->data;
-  }
-  // If no environment was found in the caches, then
-  if (_environment_indicator_is_overwritten()) {
-    $env = _environment_indicator_load_overwritten();
-  }
-  else {
-    $environments = environment_indicator_get_all();
-    $matches = array();
-    foreach ($environments as $machine => $environment) {
-      // Check if the environment record has ben disabled. Then check the regex.
-      if (preg_match("/$environment->regexurl/", $_SERVER['HTTP_HOST'])) {
-        $settings = $environment->settings;
-        $matches[] = array(
-          'name' => $environment->name,
-          'machine' => $environment->machine,
-          'weight' => $settings['weight'],
-          'color' => $settings['color'],
-          'text_color' => $settings['text_color'],
-          'position' => $settings['position'],
-          'fixed' => $settings['fixed'],
-        );
-      }
+
+  if (!isset($env)) {
+    // Check if the indicator is in the db cache.
+    if ($cached_env = cache_get('environment_indicator')) {
+      $env = $cached_env->data;
     }
-    uasort($matches, 'drupal_sort_weight');
-    $env = reset($matches);
+    else {
+      // Check if the indicator is in settings.php.
+      if (_environment_indicator_is_overwritten()) {
+        $env = _environment_indicator_load_overwritten();
+      }
+      else {
+        $environments = environment_indicator_get_all();
+        $matches = array();
+        foreach ($environments as $machine => $environment) {
+          // Check if the environment record has been disabled. Then check the regex.
+          if (preg_match("/$environment->regexurl/", $_SERVER['HTTP_HOST'])) {
+            $settings = $environment->settings;
+            $matches[] = array(
+              'name' => $environment->name,
+              'machine' => $environment->machine,
+              'weight' => $settings['weight'],
+              'color' => $settings['color'],
+              'text_color' => $settings['text_color'],
+              'position' => $settings['position'],
+              'fixed' => $settings['fixed'],
+            );
+          }
+        }
+        uasort($matches, 'drupal_sort_weight');
+        $env = reset($matches);
+      }
+
+      drupal_alter('environment_indicator_matched_indicator', $env);
+
+      // Save it to the db cache.
+      cache_set('environment_indicator', $env);
+    }
   }
-  // Save it to the db_cache.
-  cache_set('environment_indicator', $env);
+
   return $env;
 }
 
@@ -407,8 +396,10 @@ function environment_indicator_get_active() {
  * Helper function to get all environments.
  *
  * @param bool $fixed
- *   If TRUE it will only return fixed environments. Fixed environments are
+ *   (optional) If TRUE it will only return fixed environments. Fixed environments are
  *   those that do not use a regular expression for detection.
+ *
+ * @return array
  */
 function environment_indicator_get_all($fixed = FALSE) {
   module_load_include('inc', 'ctools', 'includes/export');
@@ -423,7 +414,8 @@ function environment_indicator_get_all($fixed = FALSE) {
  *
  * @param array
  *   The environment info array.
- * @return boolean
+ *
+ * @return bool
  *   TRUE if the user can see the indicator.
  */
 function environment_indicator_check_access($environment_info) {
@@ -445,8 +437,8 @@ function environment_indicator_check_access($environment_info) {
 /**
  * Helper function to check if the JS needs to be included.
  *
- * @return boolean
- *   TRUE if the extra javascript is needed.
+ * @return bool
+ *   TRUE if the extra JavaScript is needed.
  */
 function environment_indicator_needs_js() {
   $integrations = variable_get('environment_indicator_integration', array('toolbar' => 'toolbar', 'admin_menu' => 'admin_menu'));
@@ -454,14 +446,14 @@ function environment_indicator_needs_js() {
 }
 
 /**
- * Filter callback
+ * Filter callback for environment_indicator_get_all().
  */
 function _environment_indicator_regex_filter($item) {
   return !preg_match("/[\*\?\[\]\(\)]/", $item->regexurl);
 }
 
 /**
- * Filter callback
+ * Filter callback for environment_indicator_get_all().
  */
 function _environment_indicator_active($item) {
   return empty($item->disabled) || !$item->disabled;
@@ -508,3 +500,100 @@ function _environment_indicator_has_old_vars() {
   return $color || $enabled || $name;
 }
 
+/**
+ * Implements hook_environment_indicator_matched_indicator_alter().
+ */
+function environment_indicator_environment_indicator_matched_indicator_alter(&$environment_info) {
+  // Show the git branch, if it exists.
+  if (variable_get('environment_indicator_git_support', TRUE) && command_exists('git') && $git_path = exec('git rev-parse --show-toplevel')) {
+    // The first line of the .git/HEAD file contains a reference to the branch
+    // in a string like: ref: refs/heads/[branch]
+    $git_head_file = file($git_path . '/.git/HEAD', FILE_USE_INCLUDE_PATH);
+    list(,,$branch_name) = explode('/', reset($git_head_file));
+    if (!empty($branch_name)) {
+      $environment_info['git_branch'] = $branch_name;
+    }
+  }
+  // Acquia cloud environments don't have a .git directory to check. Instead, we
+  // need to maintain the release string ourselves using the post deploy hooks.
+  if (!empty($_ENV['AH_SITE_ENVIRONMENT']) && variable_get('environment_indicator_git_support', TRUE)) {
+    // Display the contents of the variable if it is not empty. If it is empty
+    // then a warning should be set in the status report about the hook being
+    // missing for the environment.
+    $release = variable_get('environment_indicator_remote_release.' . $_ENV['AH_SITE_ENVIRONMENT'], NULL);
+    if (!empty($git_branch)) {
+      $environment_info['git_branch'] = $release;
+    }
+  }
+}
+
+/**
+ * Determines if a command exists on the current environment
+ *
+ * @param string $command
+ *   The command to check.
+ *
+ * @return bool
+ *   TRUE if the command has been found; otherwise, FALSE.
+ */
+function command_exists ($command) {
+  if ($obj = cache_get('command_exists:' . $command)) {
+    return $obj->data;
+  }
+  $whereIsCommand = (PHP_OS == 'WINNT') ? 'where' : 'which';
+
+  $process = proc_open(
+    "$whereIsCommand $command",
+    array(
+      0 => array("pipe", "r"), //STDIN
+      1 => array("pipe", "w"), //STDOUT
+      2 => array("pipe", "w"), //STDERR
+    ),
+    $pipes
+  );
+  if ($process !== FALSE) {
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($process);
+
+    $output = ($stdout != '');
+    cache_set('command_exists:' . $command, $output);
+    return $output;
+  }
+
+  cache_set('command_exists:' . $command, FALSE);
+  return FALSE;
+}
+
+/**
+ * Helper function to determine if the Acquia post deploy hook is has been
+ * installed.
+ *
+ * @param string $env
+ *   String containing the name of the environment as declared in the drush
+ *   aliases.
+ *
+ * @return bool
+ *   Return TRUE if the hook script has been found.
+ */
+function environment_indicator_ah_valid_post_deploy_hook($env) {
+  $valid = FALSE;
+  if ($obj = cache_get('ei_ah_valid_hook:' . $env)) {
+    // Check if this is in the db cache. To avoid IO operations when possible.
+    return $obj->data;
+  }
+  // Find the base path where the hooks directory is.
+  $base_path = DRUPAL_ROOT . '/..';
+  $folders = array($env, 'common');
+  foreach ($folders as $folder) {
+    $path = "$base_path/hooks/$folder/post-code-deploy/environment-indicator.sh";
+    if (file_exists($path)) {
+      $valid = TRUE;
+      break;
+    }
+  }
+  cache_set('ei_ah_valid_hook:' . $env, $valid);
+  return $valid;
+}

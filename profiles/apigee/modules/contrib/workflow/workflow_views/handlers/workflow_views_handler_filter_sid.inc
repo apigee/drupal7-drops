@@ -20,7 +20,7 @@ class workflow_views_handler_filter_sid extends views_handler_filter_in_operator
       $this->value_options = array();
       $this->value_title = t('Workflow state');
 
-      $all = $this->options['expose']['workflow_include_all'];
+      $all = (bool) $this->options['expose']['workflow_include_all'];
       $wid = isset($this->options['expose']['workflow_reduce_wid']) ? $this->options['expose']['workflow_reduce_wid'] : 0;
 
       $states = array();

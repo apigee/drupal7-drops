@@ -41,18 +41,18 @@
     },
     {
         "name": "symfony/event-dispatcher",
-        "version": "v2.4.3",
-        "version_normalized": "2.4.3.0",
+        "version": "v2.4.4",
+        "version_normalized": "2.4.4.0",
         "target-dir": "Symfony/Component/EventDispatcher",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/EventDispatcher.git",
-            "reference": "4708b8cd41984a5ba29fe7dd40716f7f761ac501"
+            "reference": "e539602e5455aa086c0e81e604745af7789e4d8a"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/4708b8cd41984a5ba29fe7dd40716f7f761ac501",
-            "reference": "4708b8cd41984a5ba29fe7dd40716f7f761ac501",
+            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/e539602e5455aa086c0e81e604745af7789e4d8a",
+            "reference": "e539602e5455aa086c0e81e604745af7789e4d8a",
             "shasum": ""
         },
         "require": {
@@ -65,7 +65,7 @@
             "symfony/dependency-injection": "",
             "symfony/http-kernel": ""
         },
-        "time": "2014-02-11 13:52:09",
+        "time": "2014-04-16 10:34:31",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -99,17 +99,17 @@
     },
     {
         "name": "guzzle/guzzle",
-        "version": "v3.9.0",
-        "version_normalized": "3.9.0.0",
+        "version": "v3.9.1",
+        "version_normalized": "3.9.1.0",
         "source": {
             "type": "git",
             "url": "https://github.com/guzzle/guzzle3.git",
-            "reference": "e4d12d7d6acccf75a5e504114e2df9195e494108"
+            "reference": "92d9934f2fca1da15178c91239576ae26e505e60"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/guzzle/guzzle3/zipball/e4d12d7d6acccf75a5e504114e2df9195e494108",
-            "reference": "e4d12d7d6acccf75a5e504114e2df9195e494108",
+            "url": "https://api.github.com/repos/guzzle/guzzle3/zipball/92d9934f2fca1da15178c91239576ae26e505e60",
+            "reference": "92d9934f2fca1da15178c91239576ae26e505e60",
             "shasum": ""
         },
         "require": {
@@ -150,7 +150,7 @@
             "zendframework/zend-cache": "2.*,<2.3",
             "zendframework/zend-log": "2.*,<2.3"
         },
-        "time": "2014-04-23 21:43:40",
+        "time": "2014-05-07 17:04:22",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -193,24 +193,24 @@
     },
     {
         "name": "symfony/yaml",
-        "version": "v2.4.3",
-        "version_normalized": "2.4.3.0",
+        "version": "v2.4.4",
+        "version_normalized": "2.4.4.0",
         "target-dir": "Symfony/Component/Yaml",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/Yaml.git",
-            "reference": "77a41c2835ab7cfe8bf6d15e25d3af8f3eb3bacd"
+            "reference": "65539ecde838f9c0d18b006b2101e3deb4b5c9ff"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/Yaml/zipball/77a41c2835ab7cfe8bf6d15e25d3af8f3eb3bacd",
-            "reference": "77a41c2835ab7cfe8bf6d15e25d3af8f3eb3bacd",
+            "url": "https://api.github.com/repos/symfony/Yaml/zipball/65539ecde838f9c0d18b006b2101e3deb4b5c9ff",
+            "reference": "65539ecde838f9c0d18b006b2101e3deb4b5c9ff",
             "shasum": ""
         },
         "require": {
             "php": ">=5.3.3"
         },
-        "time": "2014-03-12 18:29:58",
+        "time": "2014-04-18 20:37:09",
         "type": "library",
         "extra": {
             "branch-alias": {

@@ -28,4 +28,3 @@ Available Translations:
 >
 > 3) Ensure the translation strings are in the database, and in the strings translation page.
 
-

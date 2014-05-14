@@ -8,7 +8,7 @@
 /**
  * Implements hook_workflow().
  */
-function workflownode_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $field_name = '') {
+function workflownode_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $field_name = '', $transition = NULL) {
   switch ($op) {
     case 'transition permitted':
       return TRUE;

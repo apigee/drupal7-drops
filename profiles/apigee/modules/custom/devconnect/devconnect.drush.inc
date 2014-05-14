@@ -163,7 +163,11 @@ function devconnect_drush_set_authentication() {
     $password = drush_prompt(dt('Enter @user’s password', array('@user' => $username)), NULL, TRUE, TRUE);
   }
 
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
+
   $old_user = $config->get('user');
   try {
     $old_pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
@@ -196,7 +200,10 @@ function devconnect_drush_set_authentication() {
  * Drush command callback for devconnect-test-conn
  */
 function devconnect_drush_test_connection() {
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $user = $config->get('user');
   $pass_encrypted = $config->get('pass');
   $pass = FALSE;
@@ -239,7 +246,10 @@ function devconnect_drush_test_connection() {
  * Drush command callback for devconnect-get-auth
  */
 function devconnect_drush_get_authentication() {
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $user = $config->get('user');
   $pass_encrypted = $config->get('pass');
   $pass = FALSE;
@@ -267,7 +277,10 @@ function devconnect_drush_set_org() {
     return;
   }
   list($org) = $args;
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $old_org = $config->get('org');
   if ($org != $old_org) {
     $config->set('org', $org);
@@ -284,7 +297,10 @@ function devconnect_drush_set_org() {
  * Drush command callback for devconnect-get-org
  */
 function devconnect_drush_get_org() {
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $org = $config->get('org');
   if (empty($org) || $org == 'fixme') {
     drush_print(dt('Org name has not yet been set.'));
@@ -298,7 +314,10 @@ function devconnect_drush_get_org() {
  * Drush command callback for devconnect-get-endpoint
  */
 function devconnect_drush_get_endpoint() {
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $endpoint = $config->get('endpoint');
   drush_print(dt('Endpoint is @endpoint', array('@endpoint' => $endpoint)));
 }
@@ -313,7 +332,10 @@ function devconnect_drush_set_endpoint() {
     return;
   }
   list($endpoint) = $args;
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $old_endpoint = $config->get('endpoint');
   if ($endpoint != $old_endpoint) {
     $config->set('org', $endpoint);
@@ -339,7 +361,10 @@ function devconnect_drush_update_settings() {
  * Drush command callback for devconnect-get-req-timeout
  */
 function devconnect_drush_get_request_timeout() {
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $timeout = $config->get('request_timeout');
   drush_print(dt('Request timeout is @sec seconds', array('@sec' => $timeout)));
 }
@@ -354,7 +379,10 @@ function devconnect_drush_set_request_timeout() {
     return;
   }
   list($timeout) = $args;
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   if ($timeout != $config->get('request_timeout')) {
     $config->set('request_timeout', $timeout);
     $config->save();
@@ -370,7 +398,10 @@ function devconnect_drush_set_request_timeout() {
  * Drush command callback for devconnect-get-con-timeout
  */
 function devconnect_drush_get_connect_timeout() {
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   $timeout = $config->get('connection_timeout');
   drush_print(dt('Connection timeout is @sec seconds', array('@sec' => $timeout)));
 }
@@ -385,7 +416,10 @@ function devconnect_drush_set_connect_timeout() {
     return;
   }
   list($timeout) = $args;
-  $config =& Drupal::config('devconnect.settings');
+  $config =& _devconnect_drush_get_settings();
+  if (!$config) {
+    return;
+  }
   if ($timeout != $config->get('connection_timeout')) {
     $config->set('connection_timeout', $timeout);
     $config->save();
@@ -393,5 +427,14 @@ function devconnect_drush_set_connect_timeout() {
   }
   else {
     drush_print(dt('Connection timeout @sec remains unchanged.', array('@sec' => $timeout)));
+  }
+}
+
+function _devconnect_drush_get_settings() {
+  try {
+    return Drupal::config('devconnect.settings');
+  } catch (Exception $e) {
+    drush_set_error('DEVCONNECT_ERROR', $e->getMessage());
+    return FALSE;
   }
 }

@@ -2,7 +2,8 @@
 /**
  * @file
  * Callback implementations for Rules integration for the Workflow module.
- *
+ * These callbacks must be include in the module file.
+ * It is not sufficient to have them in the rules_info file. 
  */
 
 /*
@@ -22,12 +23,10 @@ function _workflow_rules_token_replace($field_name) {
  * Condition callback: gather all workflow states, to show in list_options.
  */
 function _workflow_rules_workflow_get_options($data) {
-  $wid = 0;
   // This is a poorman's effort to convert a token into a field name.
   $field_name = isset($data->settings['field:select']) ? _workflow_rules_token_replace($data->settings['field:select']) : '';
-
-  $field = field_info_field($field_name);
-  $wid = !empty($field) ? $field['settings']['wid'] : 0;
+  $field = _workflow_info_field($field_name, NULL);
+  $wid = $field['settings']['wid'];
 
   $options['ANY'] = 'ANY state';
   $options += workflow_get_workflow_state_names($wid, $grouped = TRUE);

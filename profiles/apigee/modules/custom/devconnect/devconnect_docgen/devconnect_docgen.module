@@ -112,6 +112,14 @@ function devconnect_docgen_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -0,
   );
+  $items['admin/content/smartdocs/Export'] = array(
+    'title' => 'Export',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_docgen_export_file'),
+    'access arguments' => array('administer smartdocs content'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -1,
+  );
   $items['v1/api/smartdocs/update/%'] = array(
     'page callback' => 'devconnect_docgen_api_update',
     'page arguments' => array(4),
@@ -126,6 +134,15 @@ function devconnect_docgen_menu() {
     'type' => MENU_CALLBACK,
   );
   return $items;
+}
+
+/**
+ * Implements hook_flush_caches().
+ *
+ * @return array
+ */
+function devconnect_docgen_flush_caches() {
+  return array('cache_docgen');
 }
 
 /**
@@ -539,6 +556,11 @@ function devconnect_docgen_content_confirm_submit($form, &$form_state) {
               ->execute();
             foreach ($results as $result) {
               $nids[] = $result->nid;
+
+              // Delete Smartdocs row..  TODO: delete with entity_delete
+              db_delete('smartdocs')
+                ->condition('nid', $result->nid)
+                ->execute();
             }
             (!empty($nids)) ? node_delete_multiple($nids) : null;
             $update = db_update('node_type')->fields(array('custom' => 1,'modified' => 1,'locked' => 0))
@@ -705,6 +727,7 @@ function devconnect_docgen_model_detail($form, &$form_state, $mid) {
     'auth' => t('Authentication'),
     'node' => t('Node Association'),
     'status' => t('Published'),
+    'synced' => t('Synced'),
   );
   $model = entity_get_controller('docgen_model')->loadSingle($mid);
   $revisions = entity_get_controller('docgen_revision')->getAllRevisions($mid);
@@ -716,6 +739,7 @@ function devconnect_docgen_model_detail($form, &$form_state, $mid) {
   if (!empty($nodes)) {
     $operations_options['publish_nodes'] = t('Publish Nodes');
     $operations_options['unpublish_nodes'] = t('Unpublish Nodes');
+    $operations_options['sync_nodes'] = t('Sync Nodes to SmartDocs');
   }
   $form['options']['operation'] = array(
     '#type' => 'select',
@@ -870,6 +894,12 @@ function devconnect_docgen_model_detail($form, &$form_state, $mid) {
                     '#markup' => $base_url . $path,
                   );
                 }
+
+                $synced = 0;
+                if(isset($nodes[$tax])) {
+                  $synced = db_query("SELECT synced FROM {smartdocs} WHERE nid=:nid", array(':nid' => $nodes[$tax]))->fetchField();
+                }
+
                 $options[$tax] = array(
                   'tax' => (isset($property['tags'])) ? implode(', ', $property['tags']) : '',
                   'path' => array('data' => $resources['path'], 'class' => 'word-wrap'),
@@ -886,6 +916,7 @@ function devconnect_docgen_model_detail($form, &$form_state, $mid) {
                       )
                     )) : '<span style="color:red;">No</span>',
                   'status' => ((bool)$status) ? '<span style="color:green;">Yes</span>' : '<span style="color:red;">No</span>',
+                  'synced' => ((bool)$synced) ? '<span style="color:green;">Yes</span>' : '<span style="color:red;">No</span>',
                 );
               }
             }
@@ -1035,6 +1066,17 @@ function devconnect_docgen_model_detail_submit($form, &$form_state) {
               node_save($node);
             } else {
               drupal_set_message('The method you selected doesn\'t have an associated node.  Please render it first.', 'error');
+            }
+          }
+        }
+        break;
+      case 'sync_nodes':
+        $nodes = variable_get(_devconnect_docgen_model_name($form_state['input']['mid']) . '_nodes', array());
+        foreach ($form_state['input']['api_model_table'] as $uuid => $import) {
+          if (strlen($import) > 2) {
+            if (isset($nodes[$uuid])) {
+              drupal_set_message(t('Syncing method @uuid', array('@uuid' => $uuid)));
+              devconnect_docgen_sync_api_update($uuid);
             }
           }
         }
@@ -1305,6 +1347,84 @@ function _devconnect_docgen_sync_nodes($nid, $uuid, $mid, $action) {
 }
 
 /**
+ * Page callback for admin/content/smartdocs/export.
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function devconnect_docgen_export_file($form, &$form_state) {
+  $form = array();
+  $options = entity_load('docgen_model');
+  $choices = array();
+  foreach ($options as $option) {
+    $choices[$option['name']] = $option['displayName'];
+  }
+  if (!empty($choices)) {
+    $form['model'] = array(
+      '#type' => 'select',
+      '#title' => t('Select a model'),
+      '#options' => $choices,
+      '#default_value' => '',
+    );
+
+    $options = array('json' => 'SmartDocs JSON', 'wadl' => 'WADL');
+    $form['file_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Select export file type'),
+      '#options' => $options,
+      '#default_value' => '',
+    );
+
+    $form['options']['submit_export'] = array(
+      '#type' => 'submit',
+      '#value' => t('Export'),
+      '#prefix' => '<br>',
+    );
+
+    $form['#submit'][] = 'devconnect_docgen_export_file_submit';
+  }
+  return $form;
+}
+
+/**
+ * Submit Callback for devconnect_docgen_export_file().
+ *
+ * @param $form
+ * @param $form_state
+ */
+function devconnect_docgen_export_file_submit($form, &$form_state) {
+
+  try {
+    if ($form_state['input']['file_type'] == 'json') {
+      $data = entity_get_controller('docgen_model')->export($form_state['input']['model'], '');
+      $filename = $form_state['input']['model'] . '.json';
+    }
+    else {
+      $data = entity_get_controller('docgen_model')->export($form_state['input']['model'], $form_state['input']['file_type']);
+      $filename = $form_state['input']['model'] . '.wadl';
+    }
+
+//    drupal_set_message(t('The model @model has been exported.', array('@model' => $form_state['input']['model'])), 'status');
+  } catch (Exception $e) {
+    drupal_set_message(t('There was an error exporting the model: @model', array('@model' => $form_state['input']['model'])), 'error');
+    return;
+  }
+
+  $xexport_dir = 'public://wadls_export';
+  file_prepare_directory($xexport_dir, FILE_CREATE_DIRECTORY);
+
+  $destination = $xexport_dir . '/' . $filename;
+  $replace = FILE_EXISTS_REPLACE;
+  $my_file_obj = file_save_data($data, $destination, $replace);
+
+  $headers = file_get_content_headers($my_file_obj);
+
+  $headers['Content-Disposition'] = 'attachment; filename="' . $my_file_obj->filename . '"';
+  file_transfer($my_file_obj->uri, $headers);
+}
+
+/**
  * Page callback for admin/content/smartdocs/import.
  *
  * @param $form
@@ -1352,6 +1472,7 @@ function devconnect_docgen_import_content($form, &$form_state) {
       '#options' => array(
         'wadl' => 'WADL File',
         'swagger' => 'Swagger',
+        'apigee_json' => 'SmartDocs JSON',
       ),
       '#ajax' => array(
         'wrapper' => 'import-format',
@@ -1372,9 +1493,19 @@ function devconnect_docgen_import_content($form, &$form_state) {
           );
           break;
         default:
-          $form['format']['import']['wadl_type'] = array(
+          if ($form_state['values']['type'] == 'wadl'){
+            $name = 'WADL';
+            $file_type = 'wadl';
+            $file_extensions = 'xml wadl';
+          } else {
+            $name = 'SmartDocs JSON';
+            $file_type = 'apigee_json';
+            $file_extensions = 'js json';
+          }
+
+          $form['format']['import'][$file_type . '_type'] = array(
             '#type' => 'select',
-            '#title' => t('WADL Options'),
+            '#title' => t($name . ' Options'),
             '#options' => array(
               'upload' => 'Upload',
               'path' => 'URL Path',
@@ -1385,12 +1516,12 @@ function devconnect_docgen_import_content($form, &$form_state) {
             ),
             '#default_value' => array('upload'),
           );
-          if (isset($form_state['values']['wadl_type'])) {
-            switch($form_state['values']['wadl_type']) {
+          if (isset($form_state['values'][$file_type . '_type'])) {
+            switch($form_state['values'][$file_type. '_type']) {
               case 'path':
-                $form['format']['import']['wadl_path_model_import'] = array(
+                $form['format']['import'][$file_type . '_path_model_import'] = array(
                   '#type' => 'textfield',
-                  '#title' => t('WADL URL'),
+                  '#title' => t($name . ' URL'),
                   '#size' => 60,
                   '#maxlength' => 128,
                   '#default_value' => '',
@@ -1398,26 +1529,26 @@ function devconnect_docgen_import_content($form, &$form_state) {
                 );
                 break;
               default:
-                $form['format']['import']['wadl_upload_model_import'] = array(
+                $form['format']['import'][$file_type . '_upload_model_import'] = array(
                   '#type' => 'managed_file',
-                  '#title' => t('WADL File'),
-                  '#description' => t('Allowed extensions: xml wadl'),
+                  '#title' => t($name . ' File'),
+                  '#description' => t('Allowed extensions: ' . $file_extensions),
                   '#upload_location' => 'public://wadls',
                   '#upload_validators' => array(
-                    'file_validate_extensions' => array('xml wadl'),
+                    'file_validate_extensions' => array($file_extensions),
                   ),
                   '#required' => TRUE,
                 );
                 break;
             }
           } else {
-            $form['format']['import']['wadl_upload_model_import'] = array(
+            $form['format']['import'][$file_type . '_upload_model_import'] = array(
               '#type' => 'managed_file',
-              '#title' => t('WADL File'),
-              '#description' => t('Allowed extensions: xml wadl'),
+              '#title' => t($name . ' File'),
+              '#description' => t('Allowed extensions: ' . $file_extensions),
               '#upload_location' => 'public://wadls',
               '#upload_validators' => array(
-                'file_validate_extensions' => array('xml wadl'),
+                'file_validate_extensions' => array($file_extensions),
               ),
               '#required' => TRUE,
             );
@@ -1425,9 +1556,25 @@ function devconnect_docgen_import_content($form, &$form_state) {
           break;
       }
     } else {
-      $form['format']['import']['wadl_type'] = array(
+
+      $json_upload = '';
+      if (isset($form_state['input']['apigee_json_type'] )) {
+        $json_upload = $form_state['input']['apigee_json_type'];
+      }
+
+      if ($json_upload == 'upload'){
+        $name = 'SmartDocs JSON';
+        $file_type = 'apigee_json';
+        $file_extensions = 'js json';
+      } else {
+        $name = 'WADL';
+        $file_type = 'wadl';
+        $file_extensions = 'xml wadl';
+      }
+
+      $form['format']['import'][$file_type . '_type'] = array(
         '#type' => 'select',
-        '#title' => t('WADL Options'),
+        '#title' => t($name . ' Options'),
         '#options' => array(
           'upload' => 'Upload',
           'path' => 'URL Path',
@@ -1438,12 +1585,12 @@ function devconnect_docgen_import_content($form, &$form_state) {
         ),
         '#default_value' => array('upload'),
       );
-      if (isset($form_state['values']['wadl_type'])) {
-        switch($form_state['values']['wadl_type']) {
+      if (isset($form_state['values'][$file_type . '_type'])) {
+        switch($form_state['values'][$file_type . '_type']) {
           case 'path':
-            $form['format']['import']['wadl_path_model_import'] = array(
+            $form['format']['import'][$file_type . '_path_model_import'] = array(
               '#type' => 'textfield',
-              '#title' => t('WADL URL'),
+              '#title' => t($name . ' URL'),
               '#size' => 60,
               '#maxlength' => 128,
               '#default_value' => '',
@@ -1451,26 +1598,26 @@ function devconnect_docgen_import_content($form, &$form_state) {
             );
             break;
           default:
-            $form['format']['import']['wadl_upload_model_import'] = array(
+            $form['format']['import'][$file_type . '_upload_model_import'] = array(
               '#type' => 'managed_file',
-              '#title' => t('WADL File'),
-              '#description' => t('Allowed extensions: xml wadl'),
+              '#title' => t($name . ' File'),
+              '#description' => t('Allowed extensions: ' . $file_extensions),
               '#upload_location' => 'public://wadls',
               '#upload_validators' => array(
-                'file_validate_extensions' => array('xml wadl'),
+                'file_validate_extensions' => array($file_extensions),
               ),
               '#required' => TRUE,
             );
             break;
         }
       } else {
-        $form['format']['import']['wadl_upload_model_import'] = array(
+        $form['format']['import'][$file_type . '_upload_model_import'] = array(
           '#type' => 'managed_file',
-          '#title' => t('WADL File'),
-          '#description' => t('Allowed extensions: xml wadl'),
+          '#title' => t($name . ' File'),
+          '#description' => t('Allowed extensions: ' . $file_extensions),
           '#upload_location' => 'public://wadls',
           '#upload_validators' => array(
-            'file_validate_extensions' => array('xml wadl'),
+            'file_validate_extensions' => array($file_extensions),
           ),
           '#required' => TRUE,
         );
@@ -1509,12 +1656,25 @@ function devconnect_docgen_import_content_validate($form, &$form_state) {
         }
       }
       break;
+    case 'apigee_json':
+      switch($form_state['values']['apigee_json_type']) {
+        case 'path':
+          if (isset($form_state['values']['apigee_json_path_model_import'])) {
+            if(filter_var($form_state['values']['apigee_json_path_model_import'], FILTER_VALIDATE_URL) === FALSE) {
+              form_set_error('apigee_json_path_model_import', 'The SmartDocs JSON URL is not a valid URL.');
+            }
+          }
+          break;
+        default:
+          break;
+      }
+      break;
     default:
       switch($form_state['values']['wadl_type']) {
         case 'path':
           if (isset($form_state['values']['wadl_path_model_import'])) {
             if(filter_var($form_state['values']['wadl_path_model_import'], FILTER_VALIDATE_URL) === FALSE) {
-              form_set_error('swagger_model_import', 'The WADL URL is not a valid URL.');
+              form_set_error('wadl_path_model_import', 'The WADL URL is not a valid URL.');
             }
           }
           break;
@@ -1570,22 +1730,32 @@ function devconnect_docgen_import_content_submit($form, &$form_state) {
         drupal_set_message('There was an error importing the Swagger data.', 'error');
       }
       break;
-    case 'wadl':
-      switch($form_state['values']['wadl_type']) {
+    default:
+      if ($form_state['values']['type'] == 'apigee_json') {
+        $name = 'SmartDocs JSON';
+        $file_format = 'json';
+        $file_type = 'apigee_json';
+      } else {
+        $name = 'WADL XML';
+        $file_format = 'xml';
+        $file_type = 'wadl';
+      }
+
+      switch($form_state['values'][$file_type . '_type']) {
         case 'path':
-          $entity['xml'] = file_get_contents($form_state['values']['wadl_path_model_import']);
+          $entity[$file_format] = file_get_contents($form_state['values'][$file_type . '_path_model_import']);
           break;
         default:
-          $file = file_load($form_state['values']['wadl_upload_model_import']);
+          $file = file_load($form_state['values'][$file_type . '_upload_model_import']);
           $file->status = FILE_STATUS_PERMANENT;
           file_save($file);
-          $entity['xml'] = file_get_contents($file->uri);
+          $entity[$file_format] = file_get_contents($file->uri);
           break;
       }
       try {
-        $test = entity_get_controller('docgen_model')->import($entity, 'wadl');
-        if (!isset($test['messae'])) {
-          drupal_set_message('The WADL XML has been imported into the model.', 'status');
+        $test = entity_get_controller('docgen_model')->import($entity, $file_type);
+        if (!isset($test['message'])) {
+          drupal_set_message('The ' . $name . ' has been imported into the model.', 'status');
           $model = $form_state['input']['model'];
           if ((bool)$form_state['input'][$model . '_oauth_20_webserver_enable']) {
             $oauth = array();
@@ -1617,13 +1787,11 @@ function devconnect_docgen_import_content_submit($form, &$form_state) {
           }
           $form_state['redirect'] = 'admin/content/smartdocs/list/' . $form_state['values']['model'] .'/detail';
         } else {
-          drupal_set_message('There was an error importing the WADL XML. ' . $test['message'], 'error');
+          drupal_set_message('There was an error importing the ' . $name . '. ' . $test['message'], 'error');
         }
       } catch (Exception $e) {
-        drupal_set_message('There was an error importing the WADL XML.', 'error');
+        drupal_set_message('There was an error importing the ' . $name . '.', 'error');
       }
-      break;
-    default:
       break;
   }
 }

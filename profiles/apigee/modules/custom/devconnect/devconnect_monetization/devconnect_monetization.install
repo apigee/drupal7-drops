@@ -34,6 +34,20 @@ function devconnect_monetization_install() {
   db_create_table('cache_mint', drupal_get_schema_unprocessed('system', 'cache'));
 
   variable_del('devconnect_monetization-menu-links');
+
+  // Make this module heavier than devconnect module, so devconnect_init() runs
+  // before devconnect_monetization_init().
+  $dc_weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('type', 'module')
+    ->condition('name', 'devconnect')
+    ->execute()
+    ->fetchField();
+  db_update('system')
+    ->fields(array('weight' => $dc_weight + 1))
+    ->condition('type', 'module')
+    ->condition('name', 'devconnect_monetization')
+    ->execute();
 }
 
 function devconnect_monetization_uninstall() {

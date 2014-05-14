@@ -14,6 +14,7 @@ class Drupal {
    *
    * @param string $name
    * @return Drupal\Core\Config\Config
+   * @throws Exception
    */
   public static function &config($name) {
     static $instances = array();

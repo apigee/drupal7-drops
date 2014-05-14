@@ -27,14 +27,19 @@ class WorkflowConfigTransitionController extends EntityAPIController {
   }
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
+    // To avoid double posting, check if this transition already exist.
     if (empty($entity->tid)) {
-      $workflow = workflow_load_single($entity->wid);
-      // First check if this transition already exist.
-      $config_transitions = $workflow->getTransitionsBySidTargetSid($entity->sid, $entity->target_sid);
-      $config_transition = reset($config_transitions);
-      if ($config_transition) {
-        $entity->tid = $config_transition->tid;
+      if ($workflow = workflow_load_single($entity->wid)) {
+        $config_transitions = $workflow->getTransitionsBySidTargetSid($entity->sid, $entity->target_sid);
+        $config_transition = reset($config_transitions);
+        if ($config_transition) {
+          $entity->tid = $config_transition->tid;
+        }
       }
+    }
+    // Create the machine_name. This can be used to rebuild/revert the Feature in a target system.
+    if (empty($entity->name)) {
+      $entity->name = $entity->sid . '_'. $entity->target_sid;
     }
     $return = parent::save($entity, $transaction);
 
@@ -70,14 +75,12 @@ class WorkflowConfigTransition extends Entity {
    * Entity class functions.
    */
 
-  /**
-   * Creates a new entity.
-   *
-   * @see entity_create()
-   */
+  // Implementing clone needs a list of tid-less transitions, and a conversion
+  // of sids for both States and ConfigTransitions.
+  // public function __clone() {}
+
   public function __construct(array $values = array(), $entityType = NULL) {
-    $entityType = 'WorkflowConfigTransition';
-    return parent::__construct($values, $entityType);
+    return parent::__construct($values, $entityType = 'WorkflowConfigTransition');
   }
 
   /**
@@ -91,12 +94,12 @@ class WorkflowConfigTransition extends Entity {
     return parent::delete();
   }
 
-
   protected function defaultLabel() {
-    return ''; // $this->title;
+    return $this->label;
   }
+
   protected function defaultUri() {
-    return array('path' => 'admin/config/workflow/workflow/transitions/' . $this->wid);
+    return array('path' => 'admin/config/workflow/workflow/manage/' . $this->wid . '/transitions/');
   }
 
   /**
@@ -106,9 +109,15 @@ class WorkflowConfigTransition extends Entity {
   /**
    * Returns the Workflow object of this State.
    *
+   * @param $workflow
+   *  An optional workflow object. Can be used as a setter.
    * @return Workflow
    *  Workflow object.
    */
+  public function setWorkflow($workflow) {
+    $this->wid = $workflow->wid;
+  }
+
   public function getWorkflow() {
     return workflow_load_single($this->wid);
   }

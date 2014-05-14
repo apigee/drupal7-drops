@@ -3,9 +3,9 @@ description = A module demonstrating the kind of things that ECK can do from cod
 package = ECK
 core = 7.x
 dependencies[] = eck
-; Information added by drupal.org packaging script on 2013-05-02
-version = "7.x-2.0-rc2"
+; Information added by Drupal.org packaging script on 2014-04-30
+version = "7.x-2.0-rc3"
 core = "7.x"
 project = "eck"
-datestamp = "1367522713"
+datestamp = "1398836029"
 

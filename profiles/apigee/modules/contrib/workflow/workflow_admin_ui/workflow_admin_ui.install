@@ -16,25 +16,18 @@ function workflow_admin_ui_enable() {
  * Helper function. Used both by update and enable.
  */
 function _workflow_admin_ui_participate() {
-  $perms = array('participate in workflow' => 1);
-  foreach (user_roles() as $rid => $name) {
-    user_role_change_permissions($rid, $perms);
-  }
-  return t('Please review which roles may participate in workflows. <a href="!url">Permissions</a>',
-    array('!url' => url('admin/people/permissions', array('fragment' => 'module-workflow_admin_ui'))));
-}
-
-/**
- * Patch for #1540824 requires that the menu be rebuilt.
- */
-function workflow_admin_ui_update_7000(&$sandbox) {
-  menu_rebuild();
-  return t('Workflow_admin_ui requested a menu rebuild.');
+  return t("Please review which roles may 'participate in workflows' <a href='!url'>on the Permissions page</a>.",
+    array('!url' => url('admin/people/permissions', array('fragment' => 'module-workflow'))));
 }
 
 /**
  * Give all user roles the ability to participate in workflows.
+ * This is only done for updating. New installs must set the roles themselves.
  */
 function workflow_admin_ui_update_7001(&$sandbox) {
+  $perms = array('participate in workflow' => 1);
+  foreach (user_roles() as $rid => $name) {
+    user_role_change_permissions($rid, $perms);
+  }
   return _workflow_admin_ui_participate();
 }

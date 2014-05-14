@@ -96,6 +96,7 @@ function devconnect_monetization_variable_info($options = array()) {
  * Returns a wrapper around org connection settings.
  *
  * @return Apigee\Util\OrgConfig
+ * @throws Exception
  */
 function devconnect_monetization_default_org_config() {
 
@@ -110,6 +111,7 @@ function devconnect_monetization_default_org_config() {
   }
   d8cmi_init();
 
+  // The following may conceivably throw an Exception
   $config = Drupal::config('devconnect.settings');
   $org = $config->get('org');
   $endpoint = $config->get('endpoint');
@@ -130,6 +132,8 @@ function devconnect_monetization_default_org_config() {
   $message = '<pre>' . \Guzzle\Log\MessageFormatter::DEBUG_FORMAT . '</pre>';
   $guzzle_log_plugin = new \Guzzle\Plugin\Log\LogPlugin($adapter, $message);
 
+  $info = system_get_info('module', 'devconnect_monetization');
+
   $options = array(
     'logger' => $logger,
     'user_mail' => $user_mail,
@@ -137,7 +141,9 @@ function devconnect_monetization_default_org_config() {
     'http_options' => array(
       'connection_timeout' => intval($config->get('connection_timeout')),
       'timeout' => intval($config->get('request_timeout'))
-    )
+    ),
+    'user_agent' => 'devconnect_monetization/' . $info['version'],
+    'variable_store' => new Apigee\Drupal\VariableCache()
   );
   if (function_exists('devconnect_debug_register')) {
     $options['debug_callbacks'] = array('devconnect_debug_register');

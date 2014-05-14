@@ -1,8 +1,7 @@
 <?php
-
 /**
  * @file
- *   Install functions for the ECK Entity cache module.
+ * Install functions for the ECK Entity cache module.
  */
 
 /**

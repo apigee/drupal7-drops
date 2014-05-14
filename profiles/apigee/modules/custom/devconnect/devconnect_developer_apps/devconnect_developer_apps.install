@@ -162,6 +162,14 @@ function devconnect_developer_apps_schema() {
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE
+      ),
+      'is_public' => array(
+        'description' => 'Indicates whether API Product is private or public',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1
       )
     ),
     'primary key' => array('name')
@@ -249,4 +257,12 @@ function _devconnect_developer_apps_previous_status_schema() {
  */
 function devconnect_developer_apps_update_7426() {
   drupal_install_schema('devconnect_developer_apps');
+}
+
+/**
+ * Add is_public field to API Product cache table
+ */
+function devconnect_developer_apps_update_7427() {
+  $schema = devconnect_developer_apps_schema();
+  db_add_field('dc_api_product', 'is_public', $schema['dc_api_product']['fields']['is_public']);
 }

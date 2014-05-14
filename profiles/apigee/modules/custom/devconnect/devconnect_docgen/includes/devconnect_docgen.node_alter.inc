@@ -20,7 +20,8 @@ function _devconnect_docgen_validate_credentials($user, $pass, $timeout = 4) {
     'http_options' => array(
       'connection_timeout' => $timeout,
       'follow_location' => FALSE,
-    )
+    ),
+    'user_agent' => 'devconnect_docgen/validate_credentials'
   );
   $config = new Apigee\Util\OrgConfig($org, $endpoint, $user, $pass, $options);
   $org = new Apigee\ManagementAPI\Organization($config);
@@ -178,6 +179,114 @@ function devconnect_docgen_api_update($method) {
   drupal_json_output($data);
 }
 
+
+/**
+ * Provides an API for updating "syncing" Drupal nodes from Smartdocs UI
+ *
+ * @param $method
+ */
+function devconnect_docgen_sync_api_update($method) {
+  $query = db_select('smartdocs', 's');
+  $query->condition('s.method', $method);
+  $query->fields('s', array('sid', 'nid', 'revision', 'resource', 'method', 'model'));
+  $result = $query->execute();
+  foreach ($result as $record) {
+    $data_json = $record;
+  }
+  $data = (array) $data_json;
+  $data['operation'] = $method;
+
+  $drupal_update = 1;
+  $templates = entity_get_controller('docgen_doc');
+  $raw_data = $templates->loadOperation($data, $data['model'], '', $drupal_update);
+
+  $updates = drupal_json_decode($raw_data);
+  $nid = $data['nid'];
+  $mid = $data['model'];
+  $node = node_load($nid);
+
+  if (is_array($updates)) {
+    foreach ($updates as $title => $update) {
+
+      switch($title) {
+        case 'displayName':
+          if (isset($updates['displayName'])) {
+            $node->title = $updates['displayName'];
+          }
+          break;
+        case 'description':
+          if (isset($updates['description'])) {
+            $node->body[LANGUAGE_NONE][0]['value'] = $updates['description'];
+            $node->body[LANGUAGE_NONE][0]['summary'] = $updates['description'];
+            $node->body[LANGUAGE_NONE][0]['format'] = 'full_html';
+          }
+          break;
+        case 'path':
+          if (isset($updates['path'])) {
+            $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_path';
+            $field =& $node->$field_name;
+            $field[LANGUAGE_NONE][0]['value'] = $updates['path'];
+            $field[LANGUAGE_NONE][0]['safe_value'] = $updates['path'];
+          }
+          break;
+        case 'types':
+          // TODO: need to update types...
+          break;
+        case 'verb':
+          // Making assumption each method contains only one VERB
+          if (isset($updates['verb'])) {
+            $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_verb';
+            $field =& $node->$field_name;
+            $verb = $updates['verb'];
+            $term = taxonomy_get_term_by_name(strtoupper($verb), _devconnect_docgen_model_name($mid) . '_methods');
+            if (isset(current($term)->tid)) {
+              $field[LANGUAGE_NONE][0]['tid'] = intval(current($term)->tid);
+            }
+          }
+          break;
+        case 'authSchemes':
+          if (isset($updates['authSchemes'])) {
+            $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_authschemes';
+            $field =& $node->$field_name;
+            $i = 0;
+            foreach ($updates['authSchemes'] as $auth) {
+              $term = taxonomy_get_term_by_name(strtoupper($auth), _devconnect_docgen_model_name($mid) . '_auth_schemes');
+              if (isset(current($term)->tid)) {
+                $field[LANGUAGE_NONE][$i]['tid'] = intval(current($term)->tid);
+              }
+              $i++;
+            }
+          }
+          break;
+        case 'tags':
+          if (isset($updates['tags'])) {
+            $field_name = 'field_' . _devconnect_docgen_model_field_name($mid) . '_model_tags';
+            $field =& $node->$field_name;
+            $i = 0;
+            foreach ($updates['tags'] as $tag) {
+              $term = taxonomy_get_term_by_name(strtoupper($tag), _devconnect_docgen_model_name($mid) . '_tags');
+              if (isset(current($term)->tid)) {
+                $field[LANGUAGE_NONE][$i]['tid'] = intval(current($term)->tid);
+              }
+              $i++;
+            }
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Make this change a new revision
+    $node->revision = 1;
+    $node->log = t('Method @title - @method was synced from SmartDocs.', array('@title' => $updates['displayName'], '@method' => $method));
+    node_save($node);
+  } else {
+    drupal_set_message(t('Method @method doesn\'t exist on the Drupal installation.', array('@method' => $method)),'error');
+  }
+}
+
+
 /**
  * Implements hook_form_alter()
  *
@@ -297,6 +406,7 @@ function _devconnect_docgen_flush_node_redirect($form, &$form_state) {
       array(
         'query' => array(
           'flush' => '1',
+          'drupal_edit' => 1,
         ),
       ),
     );

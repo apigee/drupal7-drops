@@ -63,8 +63,31 @@ class DocGenModelController extends DrupalDefaultEntityController {
           $ret = $this->docGenModel->importWADL($entity['apiId'], $entity['xml']);
           return $ret;
           break;
+        case 'apigee_json':
+          $ret = $this->docGenModel->importApigeeJSON($entity['apiId'], $entity['json']);
+          return $ret;
+          break;
         default:
           drupal_set_message('Unsupported format, needs to be either swagger or wadl.', 'error');
+      }
+      return '';
+    } catch (Exception $e) {
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+      return array('code' => $e->getCode(), 'message' => $e->getMessage());
+    }
+  }
+
+  public function export($model, $format) {
+    try {
+      switch ($format) {
+        case 'wadl':
+          $ret = $this->docGenModel->exportModel($model, $format);
+          return $ret;
+          break;
+        default:
+          $ret = $this->docGenModel->exportModel($model, '');
+          return $ret;
+          break;
       }
       return '';
     } catch (Exception $e) {

@@ -11,12 +11,12 @@ function workflow_cleanup_menu() {
   $items = array();
 
   $items['admin/config/workflow/workflow/cleanup'] = array(
-    'title' => 'Workflow Clean Up',
+    'title' => 'Clean up workflow',
     'file' => 'workflow_cleanup.pages.inc',
     'access arguments' => array('administer workflow'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('workflow_cleanup_form'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_ACTION,
   );
 
   return $items;
@@ -29,24 +29,4 @@ function workflow_cleanup_theme() {
   return array(
     'workflow_cleanup_form' => array('render element' => 'form'),
   );
-}
-
-/**
- * Implements hook_workflow_operations().
- *
- * Might as well eat our own cooking.
- */
-function workflow_cleanup_workflow_operations($op, $workflow = NULL, $state = NULL) {
-  switch ($op) {
-    case 'top_actions':
-      $alt = t('Clean up workflow cruft');
-      $actions = array(
-        'workflow-cleanup' => array(
-          'title' => t('Clean up'),
-          'href' => 'admin/config/workflow/workflow/cleanup',
-          'attributes' => array('alt' => $alt, 'title' => $alt),
-        ),
-      );
-      return $actions;
-  }
 }

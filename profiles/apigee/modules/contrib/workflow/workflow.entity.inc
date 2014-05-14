@@ -14,17 +14,45 @@ function workflow_entity_info() {
 
   $entities['Workflow'] = array(
     'label' => t('Workflow'),
+    'plural label' => t('Workflows'),
     'entity class' => 'Workflow',
     'controller class' => 'WorkflowController',
+    'features controller class' => 'WorkflowFeaturesController',
+    'module' => 'workflow',
     'base table' => 'workflows',
+    'fieldable' => FALSE,
+    'exportable' => TRUE,
     'entity keys' => array(
       'id' => 'wid',
       'name' => 'name',
       // 'label' => 'label',
     ),
     'label callback' => 'entity_class_label',
-    //'uri callback' => 'entity_class_uri',
+    'uri callback' => 'entity_class_uri',
+    // The following is added in workflow_admin_ui.module.
+    // 'access callback' => 'workflow_access',
+    // 'admin ui' => array(
+    //   'path' => 'admin/config/workflow/workflow',
+    //   'file' => 'workflow_admin_ui/workflow_admin_ui.pages.inc',
+    //   'controller class' => 'EntityWorkflowUIController',
+    //   'menu wildcard' => '%workflow',
+    // ),
+  );
+
+  $entities['WorkflowState'] = array(
+    'label' => t('Workflow state'),
+    'entity class' => 'WorkflowState',
+    'controller class' => 'WorkflowStateController',
+//    'features controller class' => FALSE, //@todo: implement this.
     'module' => 'workflow',
+    'base table' => 'workflow_states',
+    'fieldable' => FALSE,
+    'exportable' => FALSE,
+    'entity keys' => array(
+      'id' => 'sid',
+    ),
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
   );
 
   $entities['WorkflowConfigTransition'] = array(
@@ -33,8 +61,7 @@ function workflow_entity_info() {
     // Add controller Class. 'Workflow' class is the de-facto controller.
     'controller class' => 'WorkflowConfigTransitionController',
     'base table' => 'workflow_transitions',
-//    'fieldable' => TRUE,
-//    'exportable' => TRUE,
+    'exportable' => FALSE,
     'entity keys' => array(
       'id' => 'tid',
 //      'name' => 'tid',
@@ -43,8 +70,15 @@ function workflow_entity_info() {
     ),
     'label callback' => 'entity_class_label',
     // 'uri callback' => 'entity_class_uri',
+//    'view modes' => array(
+//      'full' => array(
+//        'label' => t('Full'),
+//        'custom settings' => TRUE,
+//      ),
+//    ),
+//    'views controller class' => 'EntityDefaultViewsController',
     'module' => 'workflow',
-//    'access callback' => 'workflow_tab_access', // @todo: use to-be workflow_access here. Access to Tab <> access to workflow. 
+//    'access callback' => 'workflow_tab_access', // @todo: use to-be workflow_access here. Access to Tab <> access to workflow.
   );
 
   // The Controller class of Transitions and ScheduledTransition is shared.
@@ -52,28 +86,30 @@ function workflow_entity_info() {
     'label' => t('Workflow executed transition'),
     'entity class' => 'WorkflowTransition',
     'controller class' => 'WorkflowTransitionController',
+    'views controller class' => 'EntityDefaultViewsController',
+    'rules controller class' => 'EntityDefaultRulesController',
+    'features controller class' => FALSE,
     'base table' => 'workflow_node_history',
     'entity keys' => array(
       'id' => 'hid',
     ),
     'label callback' => 'entity_class_label',
     'module' => 'workflow',
-    'views controller class' => 'EntityDefaultViewsController',
-    'rules controller class' => 'EntityDefaultRulesController',
   );
 
   $entities['WorkflowScheduledTransition'] = array(
     'label' => t('Workflow scheduled transition'),
     'entity class' => 'WorkflowScheduledTransition',
     'controller class' => 'WorkflowTransitionController',
+    'views controller class' => 'EntityDefaultViewsController',
+    'rules controller class' => 'EntityDefaultRulesController',
+    'features controller class' => FALSE,
     'base table' => 'workflow_scheduled_transition',
     'entity keys' => array(
       'id' => '',
     ),
     'label callback' => 'entity_class_label',
     'module' => 'workflow',
-    'views controller class' => 'EntityDefaultViewsController',
-    'rules controller class' => 'EntityDefaultRulesController',
   );
 
   return $entities;
@@ -84,23 +120,27 @@ function workflow_entity_info() {
  *
  * Also used as Menu wild card loader {wildcard_name}_load for '%workflow'.
  * @see http://www.phpgainers.com/content/creating-menu-wildcard-loader-function-drupal-7
- * @todo D8: deprecated in favour of workflow_load_single(), not needed for menu. 
+ * @todo D8: deprecated in favour of workflow_load_single(), not needed for menu.
  */
 function workflow_load($wid) {
-  return entity_load_single('Workflow', $wid); 
+  // Some Admin UI menu page loaders pass the $wid as string, not int.
+  // @see workflow_admin_ui_edit_form_validate().
+  // The EntityController must be Exportable, or else a string won't work. #1741956
+  // $workflow = ctype_digit($wid) ? entity_load_single('Workflow', $wid) : workflow_load_by_name($wid);
+  $workflow = entity_load_single('Workflow', $wid);
+  return $workflow;
 }
 
+/*
+ * Caveat: this only works for entities with EntityAPIControllerExportable.
+ */
 function workflow_load_by_name($name) {
-  foreach (entity_load('Workflow') as $workflow) {
-    if ($name == $workflow->getName()) {
-      return $workflow;
-    }
-  }
-  return NULL;
+  $workflows = entity_load_multiple_by_name('Workflow', array($name));
+  return reset($workflows);
 }
 
 function workflow_load_single($wid) {
-  return entity_load_single('Workflow', $wid); 
+  return entity_load_single('Workflow', $wid);
 }
 
 function workflow_load_multiple($wids = FALSE, $reset = FALSE) {
@@ -125,7 +165,7 @@ function workflow_reset_cache($wid) {
 }
 
 /**
- * Loads a WorkflowState.
+ * CRUD for WorkflowState.
  */
 function workflow_state_load($sid) {
   return WorkflowState::load($sid);
@@ -139,6 +179,10 @@ function workflow_state_load_multiple($wid = 0, $reset = FALSE) {
   return WorkflowState::getStates($wid, $reset);
 }
 
+function workflow_state_load_by_name($name, $wid) {
+  return WorkflowState::loadByName($name, $wid);
+}
+
 /**
  * Load WorkflowTransitions, most recent first.
  *
@@ -148,10 +192,6 @@ function workflow_state_load_multiple($wid = 0, $reset = FALSE) {
  * @deprecated: workflow_get_workflow_node_history_by_nid() --> workflow_transition_load_single()
  * @deprecated: workflow_get_recent_node_history() --> workflow_transition_load_single()
  */
-
-function workflow_state_load_by_name($name, $wid) {
-  return WorkflowState::loadByName($name, $wid);
-}
 
 function workflow_transition_load_multiple($entity_type, array $entity_ids, $field_name = '', $limit = NULL) {
   return WorkflowTransition::loadMultiple($entity_type, $entity_ids, $field_name, $limit);
@@ -176,146 +216,4 @@ function workflow_transition_load_single($entity_type, $entity_id, $field_name =
  */
 function workflow_transition_load($hid) {
   return entity_load_single('WorkflowTransition', $hid);
-}
-
-/*
- * Test functions.
- *
- * To test caches, load same object twice in a page (see d.o. issue #1572466).
- */
-function workflow_test_entity_workflow_crud() {
-  $ws = workflow_load_multiple();
-  $count1 = count($ws);
-  $w = workflow_create('test' . REQUEST_TIME);
-
-  $w->save();
-
-  // Test cache: $w3 must be OK, too.
-  $w2 = workflow_load($w->wid);
-  $w3 = workflow_load($w->wid);
-  if ($w2 != $w3) {
-    // error.
-  }
-
-
-  // Test Cache: number of workflows must be OK.
-  $ws = workflow_load_multiple();
-  $count2 = count($ws);
-
-  $w->delete();
-  $ws = workflow_load_multiple();
-  $count3 = count($ws);
-  
-  if($count1 === $count3 && ($count2 - $count1) == 1) {
-    drupal_set_message('workflow->create/save/delete OK');
-  }
-  else  {
-    drupal_set_message('workflow->create/save/delete: error');
-  }
-
-
-  $w = workflow_create('test' . REQUEST_TIME);
-  $s1 = $w->createState('first');
-  $s2 = $w->createState('second');
-  $s3 = $w->createState('third');
-  $s1->save();
-  $s2->save();
-  $s2->save();
-  $s3->save();
-}
-
-function workflow_test_entity1() {
-  $w = workflow_create('test' . REQUEST_TIME);
-  $w->save();
-  $s1 = $w->createState('first');
-  $s2 = $w->createState('second');
-  $s3 = $w->createState('third');
-  $s1->save();
-  $s2->save();
-  $s2->save();
-  $s3->save();
-  dpm($s1);
-  dpm($s2);
-  dpm($w->getStates());
-  $t1 = $w->createTransition($s1->sid, $s2->sid);
-  $t1->save();
-  dpm($t1);
-  $t2 = $w->createTransition('third', 'second');
-  $t2->save();
-  $t3 = $w->createTransition('third', 'second');
-  dpm($t2);
-  dpm($t3);
-//  dpm($t->uri());
-//  dpm($t->label());
-// $w->delete();
-}
-
-function workflow_test_entity2() {
-  $ts = entity_load('WorkflowConfigTransition', array(6));
-  $t = reset($ts);
-  $t->roles += array(3 => 3);
-  entity_save('WorkflowConfigTransition', $t);
-}
-
-function workflow_test_entity3() {
-  $w = workflow_load_single(1);
-  dpm($w->getStates());
-dpm($w->loadTransitions());
-//  $t1 = $w->createTransition($s1->sid, $s2->sid);
-//  $t1->save();
-//  dpm($t1);
-//  $t2 = $w->createTransition('third', 'second');
-//  $t2->save();
-//  dpm($t2);
-//  dpm($t->uri());
-//  dpm($t->label());
-// $w->delete();
-
-//  $ts = entity_load('WorkflowConfigTransition', array(6));
-//  $t = reset($ts);
-//  $t->roles += array(3 => 3);
-//  entity_save('WorkflowConfigTransition', $t);
-}
-
-function workflow_test_entity_allowable() {
-  $w = workflow_create('workflow_test_'.REQUEST_TIME);
-  $w->save();
-  $s1 = $w->createState('to be opened');
-  $s2 = $w->createState('open');
-  $s3 = $w->createState('closed');
-  $s1->save();
-  $s2->save();
-  $s3->save();
-  $roles = array(1, 2); // anon, auth user.
-dpm($roles);
-  $t1 = $t = $w->createTransition(WORKFLOW_CREATION_STATE_NAME, 'to be opened');
-  $t->roles = $roles;
-  $t->save();
-  $t2 = $t = $w->createTransition('to be opened', 'open');
-  $t->roles = $roles;
-  $t->save();
-  $t3 = $t = $w->createTransition('open', 'closed');
-  $t->roles = $roles;
-DPM($t3);
-  $t->save();
-DPM($t3);
-  $t4 = $t = $w->createTransition('closed', 'open');
-  $t->roles = $roles;
-  $t->save();
-
-  dpm($s2->getOptions('', NULL));
-  // returns  TRUE if the role is allowed to do the transition.
-  $rc = $t3->isAllowed($role = 2);
-  dpm($t3);
-  dpm('this result must be TRUE: ' . (int) $rc);
-  $rc = $t3->isAllowed($role = 3);
-  dpm('this result must be FALSE: ' . (int) $rc);
-
-  $rc = $w->GetTransitionsBySid($s3->sid);
-  dpm($rc, 'allowed transitions from ' . $s3->label());
-
-  $ts = $w->getTransitions();
-  dpm($ts);
-  $ts = $w->getTransitionsBySid($s3->sid);
-  dpm($ts);
 }

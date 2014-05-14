@@ -51,7 +51,9 @@ class WatchdogLogger extends \Psr\Log\AbstractLogger
         // Translate Psr\LogLevel constants to WATCHDOG_* constants
         $severity = self::log2drupal($level);
         // Short-circuit if this event is too insignificant to log.
-        if ($severity < self::$logThreshold) {
+        // Note that Drupal's severity is in decreasing order, i.e.
+        // 0 = emergency and 7 = debug
+        if ($severity > self::$logThreshold) {
             return;
         }
 
@@ -81,9 +83,12 @@ class WatchdogLogger extends \Psr\Log\AbstractLogger
             if (version_compare(PHP_VERSION, '5.4', '>=')) {
                 // Be more efficient when running PHP 5.4
                 $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-            } else {
+            } elseif (defined('DEBUG_BACKTRACE_IGNORE_ARGS')) {
                 // Sigh. Pull entire backtrace.
                 $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+            } else {
+                // Double-sigh. We are dealing with PHP < 5.3.6 dinosaurs.
+                $backtrace = debug_backtrace();
             }
             $type = basename($backtrace[1]['file']);
             $type = preg_replace('!\.(module|php)$!', '', $type);

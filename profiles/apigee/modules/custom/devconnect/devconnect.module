@@ -89,20 +89,25 @@ function devconnect_variable_group_info() {
 
 function devconnect_admin_form($form, &$form_state) {
 
-  $config =& Drupal::config('devconnect.settings');
-
-  $org = $config->get('org');
-  $endpoint = $config->get('endpoint');
-  $user = $config->get('user');
   try {
-    $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+    $config =& Drupal::config('devconnect.settings');
+
+    $org = $config->get('org');
+    $endpoint = $config->get('endpoint');
+    $user = $config->get('user');
+    try {
+      $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+    }
+    catch (Apigee\Exceptions\ParameterException $e) {
+      $pass = '';
+    }
+    $log_threshold = intval($config->get('log_threshold'));
+    $conn_timeout = intval($config->get('connection_timeout'));
+    $req_timeout = intval($config->get('request_timeout'));
+  } catch (Exception $e) {
+    $org = $endpoint = $user = '';
+    $log_threshold = $conn_timeout = $req_timeout = 0;
   }
-  catch (Apigee\Exceptions\ParameterException $e) {
-    $pass = '';
-  }
-  $log_threshold = intval($config->get('log_threshold'));
-  $conn_timeout = intval($config->get('connection_timeout'));
-  $req_timeout = intval($config->get('request_timeout'));
 
   $form = array();
 
@@ -534,6 +539,7 @@ function devconnect_theme() {
  * for the sake of backwards compatibility.
  *
  * @return Apigee\Util\OrgConfig
+ * @throws Exception
  */
 function devconnect_default_api_client() {
   // make drush site-install happy
@@ -546,17 +552,24 @@ function devconnect_default_api_client() {
   }
   d8cmi_init();
 
-  $config = Drupal::config('devconnect.settings');
-  $org = $config->get('org');
-  $endpoint = $config->get('endpoint');
-  $username = $config->get('user');
-  $pass_encrypted = $config->get('pass');
-  $log_threshold = $config->get('log_threshold');
   try {
-    $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
-  }
-  catch (Apigee\Exceptions\ParameterException $e) {
-    $password = '';
+    $config = Drupal::config('devconnect.settings');
+    $org = $config->get('org');
+    $endpoint = $config->get('endpoint');
+    $username = $config->get('user');
+    $pass_encrypted = $config->get('pass');
+    $log_threshold = $config->get('log_threshold');
+    $conn_timeout = intval($config->get('connection_timeout'));
+    $timeout = intval($config->get('request_timeout'));
+    try {
+      $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
+    }
+    catch (Apigee\Exceptions\ParameterException $e) {
+      $password = '';
+    }
+  } catch (Exception $e) {
+    $org = $endpoint = $username = $password = $log_threshold = '';
+    $conn_timeout = $timeout = 1;
   }
 
   $logger = new Apigee\Drupal\WatchdogLogger();
@@ -567,14 +580,18 @@ function devconnect_default_api_client() {
   $message = '<pre>' . \Guzzle\Log\MessageFormatter::DEBUG_FORMAT . '</pre>';
   $guzzle_log_plugin = new \Guzzle\Plugin\Log\LogPlugin($adapter, $message);
 
+  $info = system_get_info('module', 'devconnect');
+
   $options = array(
     'logger' => $logger,
     'user_mail' => $user_mail,
     'subscribers' => array($guzzle_log_plugin),
     'http_options' => array(
-      'connection_timeout' => intval($config->get('connection_timeout')),
-      'timeout' => intval($config->get('request_timeout'))
-    )
+      'connection_timeout' => $conn_timeout,
+      'timeout' => $timeout
+    ),
+    'user_agent' => 'devconnect/' . $info['version'],
+    'variable_store' => new Apigee\Drupal\VariableCache()
   );
   if (function_exists('devconnect_debug_register')) {
     $options['debug_callbacks'] = array('devconnect_debug_register');

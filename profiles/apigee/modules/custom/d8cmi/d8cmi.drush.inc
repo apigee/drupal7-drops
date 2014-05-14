@@ -37,6 +37,24 @@ function d8cmi_drush_command() {
     'aliases' => array('d8-vset')
   );
 
+  $items['d8cmi-export'] = array(
+    'callback' => 'd8cmi_drush_export',
+    'description' => dt('Exports a module/theme\'s entire YAML configuration'),
+    'arguments' => array(
+      'object' => dt('The module or theme whose YAML configuration should be exported.'),
+    ),
+    'aliases' => array('d8-export')
+  );
+
+  $items['d8cmi-import'] = array(
+    'callback' => 'd8cmi_drush_import',
+    'description' => dt('Imports a module/theme\'s entire YAML configuration'),
+    'arguments' => array(
+      'object' => dt('The module or theme whose YAML configuration should be exported.'),
+    ),
+    'aliases' => array('d8-import')
+  );
+
   return $items;
 }
 
@@ -97,3 +115,41 @@ function d8cmi_drush_vset() {
   drush_log(dt('!name was set to !value.', array('!name' => $key, '!value' => $display)), 'success');
   return '';
 }
+
+function d8cmi_drush_export() {
+  $args = func_get_args();
+  if (empty($args)) {
+    drush_set_error(dt('Object value required'));
+    return '';
+  }
+  list($object) = $args;
+  try {
+    $config = Drupal::config($object);
+  }
+  catch (Exception $e) {
+    drush_set_error(dt('No such module or theme @obj.', array('@obj' => $object)));
+    return '';
+  }
+  drush_print($config->export(TRUE));
+}
+
+function d8cmi_drush_import() {
+  $args = func_get_args();
+  if (empty($args)) {
+    drush_set_error(dt('Object value required'));
+    return '';
+  }
+  list($object) = $args;
+  try {
+    $config = Drupal::config($object);
+  }
+  catch (Exception $e) {
+    drush_set_error(dt('No such module or theme @obj.', array('@obj' => $object)));
+    return '';
+  }
+
+  $yaml = file_get_contents('php://stdin');
+  $config->import($yaml);
+  drush_log(dt('Settings file was updated'), 'success');
+}
+

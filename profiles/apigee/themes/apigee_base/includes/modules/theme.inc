@@ -120,7 +120,7 @@ function apigee_base_theme_get_info($setting_name, $theme = NULL) {
  * the core implementation does not, and displays child menu links in a
  * dropdown.
  */
-function apigee_base_apigee_base_links($variables) {
+function apigee_base_links($variables) {
   $links = $variables['links'];
   $attributes = $variables['attributes'];
   $heading = $variables['heading'];
@@ -223,7 +223,7 @@ function apigee_base_apigee_base_links($variables) {
         $attributes = array();
         $attributes['class'] = array('dropdown-menu');
 
-        $output .= theme('bootstrap_links', array('links' => $children, 'attributes' => $attributes));
+        $output .= theme('apigee_base_links', array('links' => $children, 'attributes' => $attributes));
       }
 
       $output .= "</li>\n";

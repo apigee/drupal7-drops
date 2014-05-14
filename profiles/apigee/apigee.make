@@ -313,14 +313,14 @@ projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
-projects[devconnect][download][branch]                         = "7.x-14.03"
+projects[devconnect][download][branch]                         = "7.x-14.04"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module
 projects[apigee_sso][subdir]                                   = custom
 projects[apigee_sso][download][type]                           = 'git'
 projects[apigee_sso][download][url]                            = "git@github.com:apigee/apigee_drupal_sso.git"
-;projects[apigee_sso][download][branch]                        = "master"
+projects[apigee_sso][download][branch]                        = "7.x-14.04"
 
 
 
@@ -605,6 +605,11 @@ libraries[widget][directory_name]                              = "ckeditor/plugi
 libraries[widget][download][type]                              = "get"
 libraries[widget][download][url]                               = "http://download.ckeditor.com/widget/releases/widget_4.3.2.zip"
 
+libraries[insertpre][destination]                              = "libraries"
+libraries[insertpre][directory_name]                           = "ckeditor/plugins/insertpre"
+libraries[insertpre][download][type]                           = "get"
+libraries[insertpre][download][url]                            = "http://download.ckeditor.com/insertpre/releases/insertpre_1.1.zip"
+
 libraries[apigee_ckeditor_skin][destination]                   = "libraries"
 libraries[apigee_ckeditor_skin][directory_name]                = "ckeditor/skins/apigee"
 libraries[apigee_ckeditor_skin][download][type]                = "git"
@@ -662,7 +667,7 @@ libraries[mediaelement][download][url]                         = 'git://github.c
 libraries[mgmt-api-php-sdk][destination]                       = 'libraries'
 libraries[mgmt-api-php-sdk][directory_name]                    = 'mgmt-api-php-sdk'
 libraries[mgmt-api-php-sdk][download][type]                    = 'git'
-libraries[mgmt-api-php-sdk][download][url]                     = 'git@github.com:apigee/mgmt-api-php-sdk.git'
+libraries[mgmt-api-php-sdk][download][url]                     = 'git@github.com:apigee/edge-php-sdk.git'
 
 libraries[plupload][download][type]                            = "get"
 libraries[plupload][download][url]                             = "https://github.com/moxiecode/plupload/archive/v2.0.0.zip"

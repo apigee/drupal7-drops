@@ -20,7 +20,7 @@
     Defaults:
     -->
   <!-- php expression="date('y.m')" returnProperty="YYDD"/     -->
-  <php expression="14.03" returnProperty="YYDD"/>
+  <php expression="14.04" returnProperty="YYDD"/>
   <property name="VERSION" value="pantheon-${YYDD}.${env.BUILD_NUMBER}"/>
   <property name="branchname" value="master" override="false"/>
   <property name="create-new-branch-for-build" value="no"/>
@@ -45,7 +45,7 @@
           <option name="password">"${pantheon-password}"</option>
           <param>${pantheon-email}</param>
         </drush>
-        <drush command="pantheon-aliases" assume="yes"/>
+        <!-- drush command="pantheon-aliases" assume="yes"/ -->
         <php expression="str_replace('@codeserver', '', array_pop(array_splice(explode('.', '${repo-uri}'), 2,1)))" returnProperty="pantheon-uuid"/>
         <drush command="psite-cmode" assume="yes">
           <param>"${pantheon-uuid}"</param>

@@ -23,9 +23,15 @@
 <?php if ($application_count) { ?>
   <div class="row">
     <div class="col-sm-12">
-      <h2 class="featurette-heading">These are your apps!
-        <span class="text-muted">Add more, edit or delete them as you like.</span>
-      </h2>
+      <?php if ((bool)variable_get('myapis')) { ?>
+        <h2 class="featurette-heading">These are your APIs!
+          <span class="text-muted">Add more, edit or delete them as you like.</span>
+        </h2>
+      <?php } else { ?>
+        <h2 class="featurette-heading">These are your apps!
+          <span class="text-muted">Add more, edit or delete them as you like.</span>
+        </h2>
+      <?php } ?>
       <hr>
     </div>
   </div>
@@ -289,15 +295,19 @@
   </div>
   </div>
 
-
-
 <?php } else { ?>
   <?php // only one application ?>
   <div class="row">
     <div class="col-sm-12">
-      <h2 class="featurette-heading">Looks like you don’t have any apps!
-        <span class="text-muted"> Get started by adding one.</span>
-      </h2>
+      <?php if ((bool)variable_get('myapis')) { ?>
+        <h2 class="featurette-heading">These are your APIs!
+          <span class="text-muted">Add more, edit or delete them as you like.</span>
+        </h2>
+      <?php } else { ?>
+        <h2 class="featurette-heading">These are your apps!
+          <span class="text-muted">Add more, edit or delete them as you like.</span>
+        </h2>
+      <?php } ?>
     </div>
   </div>
 <?php } ?>

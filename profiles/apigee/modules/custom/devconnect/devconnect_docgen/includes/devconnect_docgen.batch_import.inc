@@ -664,8 +664,55 @@ function devconnect_docgen_operation_node($operation, $mid, $publish, $verbose, 
     'comment' => 1,
     'promote' => 0,
   );
-  $entity = entity_create('node', $values);
+
+  $query_param = '';
+  $new_revision = $operation['revisionNumber'];
+
+  // Filter Required Query Params
+  foreach ($context['results']['resources'] as $resource_info ) {
+    if ($resource_info['id'] == $operation['resourceId']) {
+      foreach ($resource_info['methods'] as $parameters) {
+        if ($operation['id'] == $parameters['id']) {
+          if (isset($parameters['parameters'])) {
+            foreach($parameters['parameters'] as $parameter_info) {
+              if ( ($parameter_info['type'] == 'QUERY') && ($parameter_info['required'] == TRUE) ) {
+                $query_param = $query_param . '--' . $parameter_info['name'];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  $mpid = $mid . $operation['path'] . '/' . strtoupper($operation['verb']) . $query_param;
+  $results = db_query('SELECT nid,revision FROM {smartdocs} WHERE mpid = :mpid', array(':mpid' => $mpid))->fetchObject();
+  $nid = 0;
+  $revision = '';
+  if (isset($results->nid)) {
+    $nid = $results->nid;
+    $revision = $results->revision;
+  }
+  if ($revision == $new_revision) {
+    drupal_set_message(t('ERROR: you have duplicate methods for: @path , @verb' , array('@path' => $operation['path'], '@verb' => $operation['verb'])), 'error');
+    if (!empty($query_param)) {
+      drupal_set_message(t('Params: @params', array('@params' => $query_param)), 'error');
+    }
+    return;
+  }
+
+  if ($nid) {
+    $entities = entity_load('node', FALSE, array('type' => _devconnect_docgen_model_name($mid), 'nid' => $nid));
+    $entity = current($entities);
+    //TODO: only save revision once - $wrapper->save() or entity_save()
+    $entity->revision = 1;
+    $entity->log = t('Revision: @rev - Method: @title - @method was synced from SmartDocs.', array('@rev' => $revision,'@title' => $operation['displayName'], '@method' => $operation['id']));
+  } else {
+    $entity = entity_create('node', $values);
+  }
+
   $wrapper = entity_metadata_wrapper('node', $entity);
+
   if (isset($operation['displayName'])) {
     $wrapper->title->set($operation['displayName']);
     $context['message'] = t('Creating node: ' . $operation['displayName']);
@@ -783,6 +830,8 @@ function devconnect_docgen_operation_node($operation, $mid, $publish, $verbose, 
       'resource' => $resource['id'],
       'method' => $operation['id'],
       'model' => $mid,
+      'synced' => 1,
+      'mpid' => $mpid,
     );
     if ($sid) {
       $record['sid'] = $sid;
@@ -800,6 +849,7 @@ function devconnect_docgen_operation_node($operation, $mid, $publish, $verbose, 
     'devportal' => TRUE,
   );
   entity_get_controller('docgen_operation')->updateMethod($mid, $element);
+  cache_clear_all($node->nid, 'cache_docgen');
 }
 
 /**
