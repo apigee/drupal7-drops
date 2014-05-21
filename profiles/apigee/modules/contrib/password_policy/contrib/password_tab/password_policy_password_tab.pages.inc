@@ -33,7 +33,7 @@ function password_policy_password_tab($form, &$form_state, $account) {
       $protected_values['mail'] = t('E-mail address');
       $protected_values['pass'] = t('Password');
       $request_new = l(t('Request new password'), 'user/password', array('attributes' => array('title' => t('Request new password via e-mail.'))));
-      $current_pass_description = t('Enter your current password to change the %mail or %pass. !request_new.', array('%mail' => $protected_values['mail'], '%pass' => $protected_values['pass'], '!request_new' => $request_new));
+      $current_pass_description = t('Enter your current password to change the %pass. !request_new.', array('%pass' => $protected_values['pass'], '!request_new' => $request_new));
     }
     // The user must enter their current password to change to a new one.
     if (isset($protected_values['pass'])){

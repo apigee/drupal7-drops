@@ -19,7 +19,7 @@ function password_policy_constraint_history_description() {
  */
 function password_policy_constraint_history_error($constraint) {
   if ($constraint == 'all') { 
-    return 'Password must not match any previous password.'; 
+    return t('Password must not match any previous password.');
   }
   else {
     return format_plural($constraint, 'Password must not match last password.', 'Password must not match last @count passwords.');
@@ -33,6 +33,7 @@ function password_policy_constraint_history_validate($password, $constraint, $ac
   require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
   $old_passwords = _password_policy_constraint_history_old_passwords($constraint, $account->uid);
   foreach ($old_passwords as $pw) {
+    $account->pass = $pw;
     if (user_check_password($password, $account)) {
       return FALSE;
     }
