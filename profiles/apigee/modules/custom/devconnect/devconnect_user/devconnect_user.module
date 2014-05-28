@@ -473,7 +473,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   $name = _devconnect_user_get_field_value('name', $edit, $account);
   $orig_mail = (empty($account->mail) ? $edit['mail'] : $account->mail);
 
-  $entity = entity_load_single('developer', $orig_mail);
+  $entity = entity_get_controller('developer')->loadIfExists($orig_mail);
   if ($entity) {
     $action = 'update';
   }
@@ -645,25 +645,37 @@ function devconnect_user_redirect_alter(&$redirect) {
 
 /**
  * Checks to see if developer_id has been set in $_SESSION. If not, we look
- * it up in KMS and set it.
+ * it up (in local cache or in Edge) and set it.
  *
  * @param stdClass $user
  * @return string|bool
  */
 function devconnect_user_get_developer_id($user) {
-  if (!isset($_SESSION['developer_id'])) {
-    try {
-      $entity = entity_load_single('developer', $user->mail);
-      if (empty($entity)) {
-        return FALSE;
+  $developer_id = FALSE;
+  if (!array_key_exists('developer_id', $_SESSION)) {
+    $_SESSION['developer_id'] = NULL;
+  }
+
+  if ($_SESSION['developer_id'] === NULL) {
+    $mail = $user->mail;
+    // First, check local cache
+    $query = db_select('dc_dev', 'd');
+    $query->innerJoin('users', 'u', 'u.uid = d.uid');
+    $developer_id = $query->condition('u.mail', $mail)
+      ->fields('d', array('developer_id'))
+      ->execute()
+      ->fetchField();
+    if (empty($developer_id)) {
+      // Not found in local cache,
+      $controller = entity_get_controller('developer');
+      $entity = $controller->loadIfExists($mail);
+      if (!empty($entity)) {
+        $developer_id = $entity->developerId;
       }
-      $_SESSION['developer_id'] = $entity['developerId'];
-    }
-    catch (Exception $e) {
-      return FALSE;
     }
   }
-  return $_SESSION['developer_id'];
+  $_SESSION['developer_id'] = $developer_id;
+  return $developer_id;
 }
 
 /**
@@ -1204,21 +1216,11 @@ function devconnect_user_write_to_cache(Drupal\devconnect_user\DeveloperEntity $
 }
 
 /**
- * Implements hook_flush_caches().
+ * Implements hook_cron().
  *
  * Refreshes our developer caches.
- *
- * @return array
  */
-function devconnect_user_flush_caches() {
-
-  static $already_ran = FALSE;
-
-  // Prevent this from running twice (drush cron may do this)
-  if ($already_ran) {
-    return array();
-  }
-  $already_ran = TRUE;
+function devconnect_user_cron() {
   // Do not try to rebuild caches if we're not yet configured.
   $org_config = devconnect_default_api_client();
   if (empty($org_config->orgName)) {
@@ -1243,16 +1245,7 @@ function devconnect_user_flush_caches() {
   foreach ($devs as $dev) {
     devconnect_user_write_to_cache($dev, FALSE);
   }
-
-  // hook_flush_caches requires an array as return type
-  return array();
-}
-
-/**
- * Implements hook_cron().
- */
-function devconnect_user_cron() {
-  devconnect_user_flush_caches();
+  // Transaction will auto-commit as we leave scope.
 }
 
 

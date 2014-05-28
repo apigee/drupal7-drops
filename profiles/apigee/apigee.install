@@ -16,15 +16,13 @@ function apigee_install_tasks(&$install_state) {
     'apigee_install_api_endpoint' => array(
       'display_name' => t('Configure the Apigee Endpoint'),
       'type' => 'form',
-      ),
+    ),
     'apigee_generate_make_smartdocs_model' => array(
-      'display_name' => t('Generate a sample model for SmartDocs.'),
+      'display_name' => t('Import sample SmartDocs model'),
+      'type' => 'form',
     ),
-    'apigee_generate_import_smartdocs_model' => array(
-      'display_name' => t('Import a sample WADL into the SmartDocs model.'),
-    ),
-    'apigee_generate_smartdocs_content' => array(
-      'display_name' => t('Render Content for the SmartDocs model.'),
+    'apigee_generate_import_smartdocs_model_content' => array(
+      'display_name' => t('Render sample SmartDocs content'),
       'type' => 'batch',
     ),
     'apigee_install_smtp_credentials' => array(

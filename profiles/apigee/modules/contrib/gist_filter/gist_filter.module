@@ -44,7 +44,7 @@ function gist_filter_filter_info() {
 function gist_filter_gist_filter_process($text, $filter, $format) {
   $display = $filter->settings['gist_filter_display_method'];
   $callback = '_gist_display_' . $display;
-  return preg_replace_callback('@\[gist\:(\d+)\:?(.*)?\]@', $callback, $text);
+  return preg_replace_callback('@\[gist\:([^:\]]+)\:?([^\]]+)?\]@', $callback, $text);
 }
 
 /**
@@ -113,7 +113,7 @@ function _gist_display_code($matches) {
  * Replace the text with embedded script.
  */
 function _gist_display_embed($matches) {
-  $gist_url = 'http://gist.github.com/' . $matches[1];
+  $gist_url = '//gist.github.com/' . $matches[1];
   $gist_url = isset($matches[2]) && !empty($matches[2]) ? $gist_url . '.js?file=' . $matches[2] : $gist_url . '.js';
 
   // Also grab the content and display it in code tags (in case the user does not have JS).

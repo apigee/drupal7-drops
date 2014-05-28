@@ -160,17 +160,17 @@ function devconnect_mint_worldpay_success() {
   $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
 
   $valid_message = _devconnect_mint_worldpay_verify_mac($payment_method, $data['query.params']);
-  if (!$valid_message) {
-    drupal_set_message(t('Your response from WorldPay seems to be corrupted.'), 'warning');
-    watchdog('payment_tampered', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
-    drupal_goto('checkout/' . rawurlencode($data['query.params']['orderid']) . '/complete');
-  }
+    if (!$valid_message) {
+        drupal_set_message(t('Your response from WorldPay seems to be corrupted.'), 'warning');
+        watchdog('payment_tampered', 'The response from WorldPay seems to be corrupted. orderId: ' . $data['query.params']['orderid'] . '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_ERROR);
+        drupal_goto('checkout/' . rawurlencode($data['query.params']['orderid']) . '/complete');
+    }
 
-  if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
-    drupal_set_message(t('This order has already been processed.'), 'warning');
-    watchdog('payment_tampered', '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_INFO);
-    drupal_goto('checkout/' . rawurlencode($data['query.params']['orderid']) . '/complete');
-  }
+    if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
+        drupal_set_message(t('This order has already been processed.'), 'warning');
+        watchdog('payment_tampered', 'This order has already been processed. orderId: ' . $data['query.params']['orderid'] . '<pre>' . print_r($data, TRUE) . '</pre>', array(), WATCHDOG_ERROR);
+        drupal_goto('checkout/' . rawurlencode($data['query.params']['orderid']) . '/complete');
+    }
 
   devconnect_mint_worldpay_transaction_process($order, $payment_method, $data['query.params']);
 

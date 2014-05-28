@@ -48,6 +48,11 @@ class Redis_Client {
   /**
    * Session implementation namespace.
    */
+  const REDIS_IMPL_PATH = 'Redis_Path_';
+
+  /**
+   * Session implementation namespace.
+   */
   const REDIS_IMPL_CLIENT = 'Redis_Client_';
 
   /**
@@ -60,6 +65,16 @@ class Redis_Client {
    */
   protected static $_client;
 
+  /**
+   * @var string
+   */
+  protected static $globalPrefix;
+
+  /**
+   * Has this instance a client set.
+   *
+   * @return boolean
+   */
   public static function hasClient() {
     return isset(self::$_client);
   }

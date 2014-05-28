@@ -68,6 +68,11 @@ projects[footermap][subdir]                                    = "contrib"
 projects[ftools][subdir]                                       = "contrib"
 projects[genpass][subdir]                                      = "contrib"
 projects[gist_filter][subdir]                                  = "contrib"
+projects[gist_filter][version]                                 = "1.x-dev"
+; see https://drupal.org/node/2114559
+projects[gist_filter][patch][2114559]                          = "https://drupal.org/files/gist_filter-embedding_on_https_sites-2114559-1.patch"
+; see https://drupal.org/node/1957754
+projects[gist_filter][patch][1957754]                          = "https://drupal.org/files/regex-not-working-1957754-1.patch"
 projects[github_connect][subdir]                               = "contrib"
 ; permissions
 ; see https://drupal.org/node/2150767
@@ -75,6 +80,8 @@ projects[github_connect][patch][2150767]                       = "https://drupal
 ; unset $_GET['destination']
 ; see https://drupal.org/node/1895544
 projects[github_connect][patch][1895544]                       = "https://drupal.org/files/issues/1895544-github-connect-return-user-5.patch"
+; see https://drupal.org/node/2266675
+projects[github_connect][patch][2266675]                       = "https://drupal.org/files/issues/github_connect-email-api-change-2266675-1.patch"
 projects[google_analytics][subdir]                             = "contrib"
 projects[google_analytics_reports][subdir]                     = "contrib"
 projects[gravatar][subdir]                                     = "contrib"
@@ -120,7 +127,6 @@ projects[module_filter][subdir]                                = "contrib"
 projects[nagios][subdir]                                       = "contrib"
 projects[navbar][subdir]                                       = "contrib"
 projects[node_export][subdir]                                  = "contrib"
-projects[notifications][subdir]                                = "contrib"
 projects[nra][subdir]                                          = "contrib"
 projects[oauthconnector][subdir]                               = "contrib"
 projects[oauth][subdir]                                        = "contrib"
@@ -173,6 +179,10 @@ projects[workflow][subdir]                                     = "contrib"
 ; xautoload is required by sps
 projects[xautoload][subdir]                                    = "contrib"
 projects[XHProf][subdir]                                       = "contrib"
+
+projects[ckeditor_bootstrap][type]                             = module
+projects[ckeditor_bootstrap][subdir]                           = "contrib"
+projects[ckeditor_bootstrap][version]                          = 1.0-alpha1
 
 projects[commerce_worldpay_business_gateway][subdir]           = "contrib"
 projects[commerce_worldpay_business_gateway][type]             = module
@@ -314,14 +324,14 @@ projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
-projects[devconnect][download][branch]                         = "7.x-14.04"
+projects[devconnect][download][branch]                         = "7.x-14.06"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module
 projects[apigee_sso][subdir]                                   = custom
 projects[apigee_sso][download][type]                           = 'git'
 projects[apigee_sso][download][url]                            = "git@github.com:apigee/apigee_drupal_sso.git"
-projects[apigee_sso][download][branch]                        = "7.x-14.04"
+projects[apigee_sso][download][branch]                         = "7.x-14.04"
 
 
 
@@ -335,11 +345,6 @@ libraries[ckeditor][destination]                               = "libraries"
 libraries[ckeditor][directory_name]                            = "ckeditor"
 libraries[ckeditor][download][type]                            = "get"
 libraries[ckeditor][download][url]                             = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.3.2/ckeditor_4.3.2_full.zip"
-
-1.0-alpha1
-projects[ckeditor_bootstrap][type] = module
-projects[ckeditor_bootstrap][subdir] = contrib
-projects[ckeditor_bootstrap][version] = 1.0-alpha1
 
 libraries[about][destination]                                  = "libraries"
 libraries[about][directory_name]                               = "ckeditor/plugins/about"

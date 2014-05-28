@@ -170,7 +170,7 @@ class DeveloperApp extends AbstractApp
         self::loadFromResponse($obj, $response, $owner_id);
         // Must load developer to get email
         if ($reset_developer && $reset_eligible) {
-            $this->client->setBaseUrl('/o/' . rawurlencode($this->config->orgName) . '/developers/' . rawurlencode($owner_id));
+            $this->setBaseUrl('/o/' . rawurlencode($this->config->orgName) . '/developers/' . rawurlencode($owner_id) . '/apps');
         }
     }
 
@@ -203,7 +203,7 @@ class DeveloperApp extends AbstractApp
     public static function afterLoad(AppInterface &$obj, array $response, $owner_identifier)
     {
         $obj->developerId = $response['developerId'];
-        $obj->developer = $owner_identifier;
+        $obj->developer = $obj->getDeveloperMailById($response['developerId']);
     }
 
     protected function alterAttributes(array &$payload)
@@ -211,9 +211,9 @@ class DeveloperApp extends AbstractApp
         $this->attributes['Developer'] = $this->developer;
     }
 
-    public static function getAppProperties()
+    public function getAppProperties()
     {
-        $properties = parent::getAppProperties();
+        $properties = parent::getAppProperties(__CLASS__);
         $properties[] = 'developerId';
         $properties[] = 'developer';
         return $properties;

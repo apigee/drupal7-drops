@@ -100,9 +100,7 @@ global $user;
     <?php if (!empty($primary_nav) || !empty($secondary_nav) || !empty($page['navigation'])): ?>
       <div class="navbar-collapse collapse">
         <nav role="navigation">
-          <?php if (!empty($primary_nav)): ?>
-            <?php print render($primary_nav); ?>
-          <?php endif; ?>
+          <?php if (!empty($primary_nav)): print render($primary_nav); endif; ?>
           <ul class="menu nav navbar-nav pull-right account-menu">
             <?php if (user_is_anonymous()) { ?>
               <li class="<?php echo (($current_path == "user/register") ? "active":""); ?>"><?php echo l(t("Register"), "user/register"); ?></li>
@@ -113,27 +111,19 @@ global $user;
                 <a data-toggle="dropdown" class="dropdown-toggle" data-target="#" title="" href="/user">
                   <?php print $user_mail_clipped; ?> <span class="caret"></span>
                 </a>
-                <ul class="dropdown-menu">
-                  <?php if (module_exists('devconnect_developer_apps')): ?>
-                    <li><?php print $myappslink; ?></li>
-                  <?php endif; ?>
-                  <li><?php print $profilelink; ?></li>
-                  <li><?php print $logoutlink; ?></li>
-                </ul>
+                <ul class="dropdown-menu"><?php print $dropdown_links; ?></ul>
               </li>
               <li class="last"><?php print l('Logout', 'user/logout'); ?></li>
             <?php } ?>
           </ul>
-          <?php if (!empty($page['navigation'])): ?>
-            <?php print render($page['navigation']); ?>
-          <?php endif; ?>
+          <?php if (!empty($page['navigation'])): print render($page['navigation']); endif; ?>
         </nav>
       </div>
     <?php endif; ?>
   </div>
 </header>
 <!-- Breadcrumbs -->
-<?php if ($search_form) { ?>
+<?php if (!empty($search_form)): ?>
   <div class="container search-container">
     <div class="row">
       <div class="col-md-3 pull-right">
@@ -141,7 +131,7 @@ global $user;
       </div>
     </div>
   </div>
-<?php } else if ($search) { ?>
+<?php elseif (!empty($search)): ?>
   <div class="container search-container">
     <div class="row">
       <div class="col-md-3 pull-right">
@@ -149,13 +139,13 @@ global $user;
       </div>
     </div>
   </div>
-<?php } else {} ?>
+<?php endif; ?>
 <!-- Breadcrumbs -->
 <div class="container" id="breadcrumb-navbar">
   <div class="row">
     <br/>
     <div class="col-md-12">
-      <?php if ($breadcrumb): print $breadcrumb; endif;?>
+      <?php if (!empty($breadcrumb)): print $breadcrumb; endif;?>
     </div>
   </div>
 </div>

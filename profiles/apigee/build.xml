@@ -1,32 +1,22 @@
 <?xml version="1.0"?>
 <project name="apigee-drupal-project" default="build-distro" description="Apigee Drupal Build">
-  <!--
-
-        Two types of builds: internal and external build. Internal builds are those who have access to the apigee/drupal-settings repo.
-        External builds are those who do not. Default is an external build. Internal builds will have ${build.type} = internal
-        in their Jenkins default properties.
+<!--
+  Two types of builds: internal and external build. Internal builds are those
+  who have access to the apigee/drupal-settings repo. External builds are those
+  who do not. Default is an external build. Internal builds will have
+  ${build.type} = internal in their Jenkins default properties.
 
   ============== To Install Phing  ======================
   to install phing: sudo sh ./pear-installs.sh
 
-
   ============== FOR LOCAL DEVELOPMENT  ======================
-        From the command line: phing apigee-drupal -Dbuild.type=local
-
-
-
-        -->
-  <!-- 
-    Defaults:
-    -->
-  <!-- php expression="date('y.m')" returnProperty="YYDD"/     -->
-  <php expression="14.04" returnProperty="YYDD"/>
+  From the command line: phing apigee-drupal -Dbuild.type=local
+-->
+  <php expression="14.06" returnProperty="YYDD"/>
   <property name="VERSION" value="pantheon-${YYDD}.${env.BUILD_NUMBER}"/>
   <property name="branchname" value="master" override="false"/>
   <property name="create-new-branch-for-build" value="no"/>
-  <!-- 
-  Drush Task:
-  -->
+  <!-- Drush Task: -->
   <taskdef name="drush" classname="tasks.drush.DrushTask"/>
   <target name="preflight">
     <fail unless="repo-uri" message="You must supply a repo-uri into which this build will be checked. Optionally you may include repo-branch."/>
@@ -55,20 +45,14 @@
       </then>
     </if>
   </target>
-  <!-- 
-    
-    
-    -->
+
   <target name="init" depends="preflight">
     <drush command="cc">
       <param>drush</param>
     </drush>
     <exec command="which git" outputProperty="git-binary"/>
   </target>
-  <!-- 
-    
-    
-    -->
+
   <target name="build-distro" depends="init">
     <gitclone repository="${repo-uri}" targetPath="${project.basedir}/webapp"/>
     <if>
@@ -102,7 +86,7 @@
     <gitcheckout repository="${project.basedir}/webapp/profiles/apigee" branchname="7.x-${YYDD}"/>
     <delete dir="${project.basedir}/webapp/profiles/apigee/.git" quiet="true"/>
     <exec command="drush make --no-core --no-gitinfofile --contrib-destination=. --yes --nocolor apigee.make" dir="${project.basedir}/webapp/profiles/apigee" logoutput="true" passthru="true"/>
-		<if>
+    <if>
       <not>
         <or>
           <available file="${project.basedir}/webapp/profiles/apigee/modules" type="dir"/>
@@ -118,18 +102,18 @@
       </then>
     </if>
 
-		<!-- Navbar makes sites/all/libraries/modernizr directory for some reason, delete it so it'll revert to profiles/apigee/libraries -->
-		<exec command="rm -rf '${project.basedir}/webapp/sites/all/libraries/modernizr'" logoutput="true" passthru="true"/>
-		<!-- make the modernizr directory in the profile -->
-		<mkdir dir="${project.basedir}/webapp/profiles/apigee/libraries/modernizr" />
+    <!-- Navbar makes sites/all/libraries/modernizr directory for some reason, delete it so it'll revert to profiles/apigee/libraries -->
+    <exec command="rm -rf '${project.basedir}/webapp/sites/all/libraries/modernizr'" logoutput="true" passthru="true"/>
+    <!-- make the modernizr directory in the profile -->
+    <mkdir dir="${project.basedir}/webapp/profiles/apigee/libraries/modernizr" />
 
-		<exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/libraries'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/libraries'" logoutput="true" passthru="true"/>
     <!-- remove duplicate file_entity module which media bundles for some reason. -->
     <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/media/file_entity'" logoutput="true" passthru="true"/>
     <exec command="cd &quot;${project.basedir}/webapp/profiles/apigee/libraries/mgmt-api-php-sdk&quot; &amp;&amp; rm .gitignore &amp;&amp; composer install --verbose --no-dev --no-progress" logoutput="true" />
-		<!-- get http://modernizr.com/downloads/modernizr-2.7.1.js and download it to the modernizr library -->
-		<exec command="cd &quot;${project.basedir}/webapp/profiles/apigee/libraries/modernizr&quot; &amp;&amp; wget -O modernizr.js http://modernizr.com/downloads/modernizr-2.7.1.js" logoutput="true"/>
-		<phingcall target="build-info-file"/>
+    <!-- get http://modernizr.com/downloads/modernizr-2.7.1.js and download it to the modernizr library -->
+    <exec command="cd &quot;${project.basedir}/webapp/profiles/apigee/libraries/modernizr&quot; &amp;&amp; wget -O modernizr.js http://modernizr.com/downloads/modernizr-2.7.1.js" logoutput="true"/>
+    <phingcall target="build-info-file"/>
     <exec command="touch '${project.basedir}/webapp/sites/default/settings.php'"/>
     <exec command="git add * --all" dir="${project.basedir}/webapp" logoutput="true"/>
     <exec command="git commit -m 'distro build ${VERSION}'" dir="${project.basedir}/webapp" logoutput="true"/>
@@ -147,12 +131,8 @@ SCM Revision: ${env.GIT_COMMIT}
     </echo>
   </target>
   <target name="display-step">
-    <echo>
-
-            -------------------------------------------------</echo>
+    <echo>-------------------------------------------------</echo>
     <echo>=&gt; ${message}</echo>
-    <echo>-------------------------------------------------
-    
-    </echo>
+    <echo>-------------------------------------------------</echo>
   </target>
 </project>

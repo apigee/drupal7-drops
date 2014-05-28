@@ -151,13 +151,6 @@ if [[ $INSTALL_WEBPORTAL == "Y" || $INSTALL_WEBPORTAL == "y" ]]; then
 
   display "Enabling SELinux outgoing connection policy"
   setsebool -P httpd_can_network_connect 1 >> $LOGFILE 2>&1
-
-  # TODO - incorporate into Apigee.install profile
-  # Do not generate Smartdocs model if no network access
-  if [[ ! $HAS_NETWORK == 1 ]] ; then
-    sed -i 's/"apigee_generate_make_smartdocs_model" => array/\/\/"apigee_generate_make_smartdocs_model" => array/' $DRUPAL_WEBAPP/profiles/apigee/apigee.install
-  fi
-
 fi
 
 # -----------------------------------------------------

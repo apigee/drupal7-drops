@@ -2,7 +2,8 @@
 
 namespace Apigee\ManagementAPI;
 
-use Apigee\Exceptions\ParameterException as ParameterException;
+use Apigee\Exceptions\ParameterException;
+use Apigee\Exceptions\ResponseException;
 
 /**
  * Superclass of DeveloperApps and CompanyApps.
@@ -606,7 +607,7 @@ abstract class AbstractApp extends Base implements AppInterface
      * @param AppInterface $obj
      * @param array $response
      */
-    protected static function loadFromResponse(AppInterface &$obj, array $response, $owner_identifier = null)
+    protected static function loadFromResponse(AbstractApp &$obj, array $response, $owner_identifier = null)
     {
         $obj->accessType = $response['accessType'];
         $obj->appFamily = (isset($response['appFamily']) ? $response['appFamily'] : null);
@@ -754,12 +755,23 @@ abstract class AbstractApp extends Base implements AppInterface
     public function validate($name = null)
     {
         $name = $name ? : $this->name;
+        $cached_logger = null;
+        // Make sure that errors are not logged by replacing the logger with a
+        // dummy that routes errors to /dev/null
+        if (!(self::$logger instanceof \Psr\Log\NullLogger)) {
+            $cached_logger = self::$logger;
+            self::$logger = new \Psr\Log\NullLogger();
+        }
         try {
             $this->get(rawurlencode($name));
-            return false;
-        } catch (\Apigee\Exceptions\ResponseException $e) {
+            $app_exists = true;
+        } catch (ResponseException $e) {
+            $app_exists = false;
         }
-        return true;
+        if (!empty($cached_logger)) {
+            self::$logger = $cached_logger;
+        }
+        return $app_exists;
     }
 
     /**
@@ -1110,7 +1122,7 @@ abstract class AbstractApp extends Base implements AppInterface
     public function toArray()
     {
         $output = array();
-        foreach (self::getAppProperties() as $property) {
+        foreach ($this->getAppProperties() as $property) {
             switch ($property) {
                 case 'debugData':
                     $output[$property] = $this->getDebugData();
@@ -1132,9 +1144,9 @@ abstract class AbstractApp extends Base implements AppInterface
      *
      * @return array
      */
-    public static function getAppProperties()
+    public function getAppProperties($class = __CLASS__)
     {
-        $properties = array_keys(get_class_vars(__CLASS__));
+        $properties = array_keys(get_class_vars($class));
 
         $parent_class = get_parent_class();
         $grandparent_class = get_parent_class($parent_class);

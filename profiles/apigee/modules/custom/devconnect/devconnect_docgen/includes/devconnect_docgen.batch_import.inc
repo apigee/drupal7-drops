@@ -694,11 +694,18 @@ function devconnect_docgen_operation_node($operation, $mid, $publish, $verbose, 
     $revision = $results->revision;
   }
   if ($revision == $new_revision) {
-    drupal_set_message(t('ERROR: you have duplicate methods for: @path , @verb' , array('@path' => $operation['path'], '@verb' => $operation['verb'])), 'error');
-    if (!empty($query_param)) {
-      drupal_set_message(t('Params: @params', array('@params' => $query_param)), 'error');
+    // Reset revisions of current Drupal content if model was deleted and re-created
+    if ($new_revision == 1) {
+      db_update('smartdocs')->fields(array('revision'=>0))
+        ->condition('model', $mid)
+        ->execute();
+    } else {
+      drupal_set_message(t('ERROR: you have duplicate methods for: @path , @verb' , array('@path' => $operation['path'], '@verb' => $operation['verb'])), 'error');
+      if (!empty($query_param)) {
+        drupal_set_message(t('Params: @params', array('@params' => $query_param)), 'error');
+      }
+      return;
     }
-    return;
   }
 
   if ($nid) {
@@ -861,10 +868,37 @@ function devconnect_docgen_operation_node($operation, $mid, $publish, $verbose, 
  * @param $context
  */
 function devconnect_docgen_import_create_views($mid, $verbose, $selected, &$context) {
+  // If this is somehow called before the private filesystem stream wrapper is
+  // registered, we need to perform ugly extra magic to make sure we can still
+  // write.
+  // todo: Should we just call drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL) instead?
+  $wrappers = stream_get_wrappers();
+  if (in_array('private', $wrappers)) {
+    $url_base = 'private://';
+  }
+  else {
+    // Ugh. Do it the hard way!
+    $url_base = variable_get('file_private_path', NULL);
+    // If this is not valid, make some guesses in a best-faith effort.
+    if (empty($url_base) || !is_dir($url_base)) {
+      $url_base = 'sites/default/files/private';
+      if (!is_dir($url_base)) {
+        $url_base = 'sites/default/private';
+        if (!is_dir($url_base)) {
+          throw new Exception('Cannot find private filesystem.');
+        }
+      }
+    }
+    $url_base .= '/';
+  }
+  if (!is_writable($url_base)) {
+    throw new Exception('Private filesystem is not writable.');
+  }
+
   $context['message'] = t('Creating views...');
   module_load_include('inc', 'devconnect_docgen', 'includes/templates/views/default_view.template');
   if (!views_get_view(_devconnect_docgen_model_name($mid) . '_listing')) {
-    file_save_data(_devconnect_docgen_generate_default_view($mid, $verbose['displayName']), 'private://' . _devconnect_docgen_model_name($mid) . '_listing.view', FILE_EXISTS_REPLACE);
+    file_save_data(_devconnect_docgen_generate_default_view($mid, $verbose['displayName']), $url_base . _devconnect_docgen_model_name($mid) . '_listing.view', FILE_EXISTS_REPLACE);
   }
   cache_clear_all('*', 'cache_views', TRUE);
   module_invoke_all('views_invalidate_cache');

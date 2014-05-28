@@ -86,7 +86,7 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
         'expire' => $expire,
       );
 
-      if (!is_scalar($data)) {
+      if (!is_string($data)) {
         $hash['data'] = serialize($data);
         $hash['serialized'] = 1;
       }

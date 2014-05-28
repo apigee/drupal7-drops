@@ -10,13 +10,13 @@ Predis
 ------
 
 This implementation uses the Predis PHP library. It is compatible PHP 5.3
-only, and need Redis >= 2.1.0 for using the WATCH command.
+only.
 
 PhpRedis
 --------
 
 This implementation uses the PhpRedis PHP extention. In order to use it, you
-will need to compile the extension yourself.
+probably will need to compile the extension yourself.
 
 Redis version
 -------------
@@ -26,12 +26,16 @@ WATCH command, it is actually there only since version 2.1.0. If you use
 the it, it will just pass silently and work gracefully, but lock exclusive
 mutex is exposed to race conditions.
 
-Use Redis 2.1.0 or later if you can! I warned you.
+Please use Redis 2.4.0 or later if you can. I won't maintain any bug for
+Redis versions prior to 2.4.0.
+
+If you can't upgrade you Redis server, please use an older version of this
+module (prior to 7.x-2.6).
 
 Notes
 -----
 
-Both backends provide the exact same functionnalities. The major difference is
+Both backends provide the exact same functionalities. The major difference is
 because PhpRedis uses a PHP extension, and not PHP code, it more performant.
 
 Difference is not that visible, it's really a few millisec on my testing box.
@@ -46,8 +50,35 @@ Redis <= 2.2. Using it with older versions is untested, might work but might
 also cause you serious trouble. Any bug report raised using such version will
 be ignored.
 
-Install
-=======
+Getting started
+===============
+
+Quick setup
+-----------
+
+Here is a simple yet working easy way to setup the module.
+This method will Drupal to use Redis for all caches and locks
+and path alias cache replacement.
+
+  $conf['redis_client_interface'] = 'PhpRedis'; // Can be "Predis".
+  $conf['redis_client_host']      = '1.2.3.4';  // Your Redis instance hostname.
+  $conf['lock_inc']               = 'sites/all/modules/redis/redis.lock.inc';
+  $conf['path_inc']               = 'sites/all/modules/redis/redis.path.inc';
+  $conf['cache_backends'][]       = 'sites/all/modules/redis/redis.autoload.inc';
+  $conf['cache_default_class']    = 'Redis_Cache';
+
+See next chapters for more information.
+
+Is there any cache bins that should *never* go into Redis?
+----------------------------------------------------------
+
+TL;DR: No.
+
+Redis has been maturing a lot over time, and will apply different sensible
+settings for different bins; It's today very stable.
+
+Advanced configuration
+======================
 
 Choose the Redis client library to use
 --------------------------------------
@@ -58,7 +89,7 @@ Add into your settings.php file:
 
 You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
 
-Note that this is optionnal but recommended. If you don't set this variable the
+Note that this is optional but recommended. If you don't set this variable the
 module will proceed to class lookups and attempt to choose the best client
 available, having always a preference for the Predis one.
 
@@ -80,6 +111,21 @@ Tell Drupal to use the lock backend
 Usual lock backend override, update you settings.php file as this:
 
   $conf['lock_inc'] = 'sites/all/modules/redis/redis.lock.inc';
+
+Tell Drupal to use the path alias backend
+-----------------------------------------
+
+Usual path backend override, update you settings.php file as this:
+
+  $conf['path_inc'] = 'sites/all/modules/redis/redis.path.inc';
+
+Notice that there is an additional variable for path handling that is set
+per default which will ignore any path that is an admin path, gaining a few
+SQL queries. If you want to be able to set aliases on admin path and restore
+an almost default Drupal core behavior, you should add this line into your
+settings.php file:
+
+  $conf['path_alias_admin_blacklist'] = FALSE;
 
 Drupal 6 and lock backend
 -------------------------
@@ -146,7 +192,7 @@ that will be the default prefix for all cache bins:
 
   $conf['cache_prefix'] = 'mysite_';
 
-Alternatively, to provide the same functionnality, you can provide the variable
+Alternatively, to provide the same functionality, you can provide the variable
 as an array:
 
   $conf['cache_prefix']['default'] = 'mysite_';
@@ -174,9 +220,10 @@ Here is a complex sample:
   $conf['cache_prefix']['cache_menu'] = 'menumysite_';
 
 Note that if you don't specify the default behavior, the Redis module will
-attempt to use the HTTP_HOST variable in order to provide a multisite safe
-default behavior. Notice that this is not failsafe, in such environment you
-are strongly advised to set at least an explicit default prefix.
+attempt to use the a hash of the database credentials in order to provide a
+multisite safe default behavior. Notice that this is not failsafe. In such
+environments you are strongly advised to set at least an explicit default
+prefix.
 
 Note that this last notice is Redis only specific, because per default Redis
 server will not namespace data, thus sharing an instance for multiple sites

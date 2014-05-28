@@ -1740,22 +1740,114 @@ function apigee_install_settings_form_submit($form, &$form_state, &$install_stat
 
 }
 
-function apigee_generate_make_smartdocs_model() {
-  if ($GLOBALS['apigee_api_endpoint_configured']!==TRUE) {
-     return;
+function apigee_generate_make_smartdocs_model($form, &$form_state) {
+  // If on Pantheon environment grab css and js from Apigee cloud
+  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+    $css = 'https://smartdocs.apigee.com/1/static/css/main.css
+https://smartdocs.apigee.com/1/static/css/codemirror.css
+https://smartdocs.apigee.com/1/static/css/prism.css';
+
+    $js = 'https://smartdocs.apigee.com/1/static/js/codemirror.js
+https://smartdocs.apigee.com/1/static/js/codemirror_javascript.js
+https://smartdocs.apigee.com/1/static/js/codemirror_xml.js
+https://smartdocs.apigee.com/1/static/js/prism.js
+https://smartdocs.apigee.com/1/static/js/base64_min.js
+https://smartdocs.apigee.com/1/static/js/model.js
+https://smartdocs.apigee.com/1/static/js/controller.js';
+  } else {
+    $css_path = $GLOBALS['base_url'] . '/profiles/apigee/modules/custom/devconnect/devconnect_docgen/css_apigee/';
+    $js_path = $GLOBALS['base_url'] . '/profiles/apigee/modules/custom/devconnect/devconnect_docgen/js_apigee/';
+
+    $css = $css_path . 'main.css
+' . $css_path . 'codemirror.css
+' . $css_path . 'prism.css';
+
+    $js = $js_path . 'codemirror.js
+' . $js_path . 'codemirror_javascript.js
+' . $js_path . 'codemirror_xml.js
+' . $js_path . 'prism.js
+' . $js_path . 'base64_min.js
+' . $js_path . 'model.js
+' . $js_path . 'controller.js';
   }
-  $css = 'https://smartdocs.apigee.com/static/css/main_cms.css
-https://smartdocs.apigee.com/static/css/codemirror.css
-https://smartdocs.apigee.com/static/css/prism.css';
 
-  $js = 'https://smartdocs.apigee.com/static/js/codemirror.js
-https://smartdocs.apigee.com/static/js/codemirror_javascript.js
-https://smartdocs.apigee.com/static/js/codemirror_xml.js
-https://smartdocs.apigee.com/static/js/prism.js
-https://smartdocs.apigee.com/static/js/base64_min.js
-https://smartdocs.apigee.com/static/js/model_cms.js
-https://smartdocs.apigee.com/static/js/controller_cms.js';
+  variable_set('SMARTDOCS_CSS_B2', $css);
+  variable_set('SMARTDOCS_CSS_B3', $css);
+  variable_set('SMARTDOCS_JS_B2', $js);
+  variable_set('SMARTDOCS_JS_B3', $js);
 
+  // Configure SmartDocs API Proxy URL
+  $form = array();
+  $form['smartdocs_api_proxy_url'] = array(
+    '#markup' => t('Click submit to install Smartdocs sample Weather model.'),
+  );
+  $form['apigee_api_endpoint_configured'] = array(
+    '#type' => 'hidden',
+    '#value' => $GLOBALS['apigee_api_endpoint_configured'],
+  );
+  $form['actions'] = array(
+    '#weight' => 100,
+    '#attributes' => array(
+      'class' => array('container-inline'),
+    ),
+  );
+  $form['actions']['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Install Sample SmartDocs WADL'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+  );
+  $form['actions']['skip'] = array(
+    '#type' => 'submit',
+    '#limit_validation_errors' => array(),
+    '#value' => t('Skip this config'),
+    '#submit' => array('apigee_skip_generate_make_smartdocs_model'),
+    '#attributes' => array(
+      'style' => 'float:left;',
+    ),
+  );
+  $form['#submit'][] = "apigee_generate_make_smartdocs_model_submit";
+  return $form;
+}
+
+
+/**
+ * Custom function that skips the Smartdocs installation piece
+ */
+function apigee_skip_generate_make_smartdocs_model($form, &$form_state) {
+  $GLOBALS['apigee_smartdocs_skip']=TRUE;
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+/**
+ * hook submit for create admin Apigee Smart Docs model
+ *
+ * @param string $form
+ * @param string $form_state
+ * @return void
+ */
+function apigee_generate_make_smartdocs_model_submit($form, &$form_state) {
+  // re-apply apigee_api_endpoint_configured status
+  $GLOBALS['apigee_api_endpoint_configured'] = $form_state['input']['apigee_api_endpoint_configured'];
+  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+
+function apigee_generate_import_smartdocs_model_content() {
+  if ( (!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip']==TRUE) ) {
+    return;
+  }
+
+  // Enable SmartDocs Module
+  if (!module_exists('devconnect_docgen')) {
+    $devconnect_docgen = array(
+      'devconnect_docgen'
+    );
+    module_enable($devconnect_docgen, TRUE);
+  }
+
+  // Create sample SmartDocs Weather Model
   $model_name = 'weather';
   $payload = array(
     'model_name' => $model_name,
@@ -1769,16 +1861,11 @@ https://smartdocs.apigee.com/static/js/controller_cms.js';
       _devconnect_docgen_render_operation_template($payload['model_name'], '3');
     }
   }
-  variable_set(_devconnect_docgen_model_name($model_name) . '_bootstrap_ver', '3');
-  variable_set(_devconnect_docgen_model_name($model_name) . '_css', $css);
-  variable_set(_devconnect_docgen_model_name($model_name) . '_js', $js);
-}
 
-function apigee_generate_import_smartdocs_model() {
-  if ($GLOBALS['apigee_api_endpoint_configured']!==TRUE) {
-      return;
-  }
-  $model_name = 'weather';
+  variable_set(_devconnect_docgen_model_name($model_name) . '_bootstrap_ver', '3');
+  variable_set(_devconnect_docgen_model_name($model_name) . '_css', variable_get('SMARTDOCS_CSS_B3'));
+  variable_set(_devconnect_docgen_model_name($model_name) . '_js', variable_get('SMARTDOCS_JS_B3'));
+
   $entity = array();
   $entity['apiId'] = $model_name;
   $entity['xml'] = file_get_contents(drupal_get_path('profile', 'apigee') . "/samples/smartdocs/weather.xml");
@@ -1788,12 +1875,7 @@ function apigee_generate_import_smartdocs_model() {
   } else {
     drupal_set_message('The WADL XML has been imported into the model.', 'status');
   }
-}
 
-function apigee_generate_smartdocs_content() {
-  if ($GLOBALS['apigee_api_endpoint_configured']!==TRUE) {
-      return;
-  }
   $model_name = 'weather';
   $payload = array(
     'model_name' => $model_name,
@@ -1815,6 +1897,7 @@ function apigee_generate_smartdocs_content() {
   $batch = _devconnect_docgen_import_nodes($model_name, $verbose, $selected, array('publish'=>'publish'), '3');
   unset($batch['finished']);
   return $batch;
+
 }
 
 

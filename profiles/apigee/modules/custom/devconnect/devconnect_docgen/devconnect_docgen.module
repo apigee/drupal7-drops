@@ -8,29 +8,52 @@
  * @version: v1.0
  */
 
-define('SMARTDOCS_CSS_B2', 'https://smartdocs.apigee.com/1/static/css/main.css
-https://smartdocs.apigee.com/1/static/css/codemirror.css
-https://smartdocs.apigee.com/1/static/css/prism.css');
+global $base_url;
 
-define('SMARTDOCS_JS_B2', "https://smartdocs.apigee.com/1/static/js/codemirror.js
+// Set SmartDoc global bootstrap css and js variables
+if (variable_get('SMARTDOCS_CSS_B2', '') == '') {
+  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+    $css = 'https://smartdocs.apigee.com/1/static/css/main.css
+https://smartdocs.apigee.com/1/static/css/codemirror.css
+https://smartdocs.apigee.com/1/static/css/prism.css';
+
+    $js = 'https://smartdocs.apigee.com/1/static/js/codemirror.js
 https://smartdocs.apigee.com/1/static/js/codemirror_javascript.js
 https://smartdocs.apigee.com/1/static/js/codemirror_xml.js
 https://smartdocs.apigee.com/1/static/js/prism.js
 https://smartdocs.apigee.com/1/static/js/base64_min.js
 https://smartdocs.apigee.com/1/static/js/model.js
-https://smartdocs.apigee.com/1/static/js/controller.js");
+https://smartdocs.apigee.com/1/static/js/controller.js';
+  } else {
+    $css_path = $base_url . '/profiles/apigee/modules/custom/devconnect/devconnect_docgen/css_apigee/';
+    $js_path = $base_url . '/profiles/apigee/modules/custom/devconnect/devconnect_docgen/js_apigee/';
 
-define('SMARTDOCS_CSS_B3', 'https://smartdocs.apigee.com/1/static/css/main.css
-https://smartdocs.apigee.com/1/static/css/codemirror.css
-https://smartdocs.apigee.com/1/static/css/prism.css');
+    $css = $css_path . 'main.css
+' . $css_path . 'codemirror.css
+' . $css_path . 'prism.css';
 
-define('SMARTDOCS_JS_B3', "https://smartdocs.apigee.com/1/static/js/codemirror.js
-https://smartdocs.apigee.com/1/static/js/codemirror_javascript.js
-https://smartdocs.apigee.com/1/static/js/codemirror_xml.js
-https://smartdocs.apigee.com/1/static/js/prism.js
-https://smartdocs.apigee.com/1/static/js/base64_min.js
-https://smartdocs.apigee.com/1/static/js/model.js
-https://smartdocs.apigee.com/1/static/js/controller.js");
+    $js = $js_path . 'codemirror.js
+' . $js_path . 'codemirror_javascript.js
+' . $js_path . 'codemirror_xml.js
+' . $js_path . 'prism.js
+' . $js_path . 'base64_min.js
+' . $js_path . 'model.js
+' . $js_path . 'controller.js';
+  }
+
+  if (strpos($base_url, '://default') != TRUE) {
+    variable_set('SMARTDOCS_CSS_B2', $css);
+    variable_set('SMARTDOCS_CSS_B3', $css);
+    variable_set('SMARTDOCS_JS_B2', $js);
+    variable_set('SMARTDOCS_JS_B3', $js);
+  }
+}
+
+/* Set variables SMARTDOCS_CSS_B2, SMARTDOCS_JS_B2, SMARTDOCS_CSS_B3, SMARTDOCS_JS_B3 in apigee.profile */
+define('SMARTDOCS_CSS_B2', variable_get('SMARTDOCS_CSS_B2', ''));
+define('SMARTDOCS_CSS_B3', variable_get('SMARTDOCS_CSS_B3', ''));
+define('SMARTDOCS_JS_B2', variable_get('SMARTDOCS_JS_B2', ''));
+define('SMARTDOCS_JS_B3', variable_get('SMARTDOCS_JS_B3', ''));
 
 module_load_include('inc', 'devconnect_docgen', 'includes/devconnect_docgen.node_alter');
 
@@ -1873,9 +1896,18 @@ function devconnect_docgen_views_api() {
 }
 
 /**
- * Implementation of hook_views_default_views().
+ * Implements hook_views_default_views().
+ *
+ * @return array
  */
 function devconnect_docgen_views_default_views() {
+  // This may get called during profile install BEFORE the private stream
+  // wrapper is registered. In that case, exit early.
+  $wrappers = stream_get_wrappers();
+  if (!in_array('private', $wrappers)) {
+    return array();
+  }
+
   $views = array();
   $files = file_scan_directory('private://', '/\.view$/');
   foreach ($files as $absolute => $file) {

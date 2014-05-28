@@ -225,12 +225,6 @@ function devconnect_developer_apps_schema() {
     'primary key' => array('app_id', 'name')
   );
 
-  $schema += _devconnect_developer_apps_previous_status_schema();
-
-  return $schema;
-}
-
-function _devconnect_developer_apps_previous_status_schema() {
   $schema['dc_dev_app_previous_status'] = array(
     'description' => 'Stores previous app status',
     'fields' => array(
@@ -263,6 +257,9 @@ function devconnect_developer_apps_update_7426() {
  * Add is_public field to API Product cache table
  */
 function devconnect_developer_apps_update_7427() {
+  if (db_field_exists('dc_api_product', 'is_public')) {
+    return;
+  }
   $schema = devconnect_developer_apps_schema();
   db_add_field('dc_api_product', 'is_public', $schema['dc_api_product']['fields']['is_public']);
 }

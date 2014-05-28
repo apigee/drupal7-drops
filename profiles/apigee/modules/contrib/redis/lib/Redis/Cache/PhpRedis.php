@@ -75,7 +75,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     );
 
     // Let Redis handle the data types itself.
-    if (!is_scalar($data)) {
+    if (!is_string($data)) {
       $hash['data'] = serialize($data);
       $hash['serialized'] = 1;
     }

@@ -129,7 +129,7 @@ function _github_connect_get_github_user_info($token) {
     $github_user = drupal_json_decode($ghuser->data);
 
     $github_user_emails = _github_connect_get_github_user_emails($token);
-    $github_user['email'] = $github_user_emails[0];
+    $github_user['email'] = $github_user_emails[0]['email'];
   }
 
   return $github_user;

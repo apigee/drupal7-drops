@@ -172,6 +172,32 @@ function apigee_responsive_preprocess_page(&$vars) {
   if (theme_get_setting('toggle_search') && module_exists('search')) {
     $vars['search'] = drupal_get_form('search_form');
   }
+
+  $second_arg = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
+
+  $dropdown_links = array(
+    array(
+      'classes' => array('glyphicon', 'glyphicon-user'),
+      'text' => 'Edit Profile',
+      'url' => 'user/' . $second_arg . '/edit'
+    ),
+    array(
+      'classes' => array('glyphicon', 'glyphicon-off'),
+      'text' => 'Logout',
+      'url' => 'user/logout'
+    )
+  );
+
+  drupal_alter('apigee_responsive_links', $dropdown_links);
+
+  $ddl = '';
+  foreach ($dropdown_links as $dropdown_link) {
+    $classes = join(' ', $dropdown_link['classes']);
+    $text = t($dropdown_link['text']);
+    $ddl .= '<li>' . l('<span class="' . $classes . '"></span>&nbsp;&nbsp; ' . check_plain($text), $dropdown_link['url'], array('html' => TRUE)) . '</li>';
+  }
+
+  $vars['dropdown_links'] = $ddl;
 }
 
 /**

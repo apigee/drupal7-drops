@@ -164,7 +164,9 @@ function devconnect_developer_apps_entity_property_info() {
   }
   d8cmi_init();
 
-  $raw_properties = Apigee\ManagementAPI\DeveloperApp::getAppProperties();
+  // Create a dummy app object just so we can get its property names
+  $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), '');
+  $raw_properties = $dev_app->getAppProperties();
   $dev_app_properties = array();
   foreach ($raw_properties as $raw_property) {
     if ($raw_property == 'createdAt' || $raw_property == 'modifiedAt') {
@@ -806,13 +808,15 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     // doesn't choke on them. At save time we will have to rawurldecode() them.
     $form_field_name = 'attribute_' . rawurlencode($machine_name);
 
+    // Load default values of App Attributes and assign to default values of form in
+    // case of app update operation.
+    if (isset($app_name)) {
+      $default_value = (isset($entity->attributes[$machine_name]) ? $entity->attributes[$machine_name] : NULL);
+    }
     if ($type == 'value') {
       $form[$form_field_name] = array('#type' => 'value', '#value' => $default_value);
     }
     else {
-      if (isset($app_name)) {
-        $default_value = (isset($entity->attributes[$machine_name]) ? $entity->attributes[$machine_name] : NULL);
-      }
       $uses_options = FALSE;
       if (($type == 'select' || $type == 'radios' || $type == 'checkboxes') && array_key_exists('options', $attribute)) {
         $uses_options = TRUE;
@@ -1050,12 +1054,13 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
     return;
   }
 
-  $entities = entity_load('developer_app', FALSE, array(
+  $criteria = array(
     'mail' => $form['user']['#value']->mail,
     'name' => $machine_name
-  ));
+  );
+  $app_exists = entity_get_controller('developer_app')->loadIfExists(FALSE, $criteria);
 
-  if (!empty($entities)) {
+  if ($app_exists) {
     // Throw form back to user.
     form_error($form['machine_name'], t('The App Name “:machine_name” is already in use. Please select a different name.', array(':machine_name' => $machine_name)));
     devconnect_default_api_client()->logger->notice("App $machine_name already exists.");
@@ -1672,6 +1677,9 @@ function devconnect_developer_apps_tokens($type, array $tokens, array $data = ar
       case 'apiProducts':
         $replacements[$original] = $sanitize ? check_plain(join(', ', $app->$name)) : join(', ', $app->$name);
         break;
+      case 'developerUid':
+        $replacements[$original] = $app->uid;
+        break;
       default:
         $replacements[$original] = $sanitize ? check_plain($app->$name) : $app->$name;
         break;
@@ -1749,11 +1757,29 @@ function devconnect_developer_apps_token_info() {
     'name' => t('App URL'),
     'description' => t('URL on this site where the app’s details may be viewed.')
   );
+  $app['developerUid'] = array(
+    'name' => t('Drupal User ID'),
+    'description' => t('The unique numeric uid of the developer who owns the app.')
+  );
 
   return array(
     'types' => array('developer_app' => $type),
     'tokens' => array('developer_app' => $app),
   );
+}
+
+/**
+ * Implements hook_token_info_alter().
+ *
+ * Removes [app:uid] token because it clashes with other tokens. We supply
+ * [app:developerUid] token for this purpose instead.
+ *
+ * @param $data
+ */
+function devconnect_developer_apps_token_info_alter(&$data) {
+  if (array_key_exists('uid', $data['tokens']['developer_app'])) {
+    unset($data['tokens']['developer_app']['uid']);
+  }
 }
 
 /**
@@ -1969,4 +1995,22 @@ function devconnect_developer_apps_get_api_products($show_private = FALSE, $name
     $api_products[$row->name] = $api_product;
   }
   return $api_products;
+}
+
+/**
+ * Implements hook_apigee_responsive_links_alter().
+ *
+ * Adds
+ *
+ * @param $links
+ * @param $user_id
+ */
+function devconnect_developer_apps_apigee_responsive_links_alter(&$links) {
+  $second_arg = (module_exists('me') ? 'me': $GLOBALS['user']->uid);
+  $link = array(
+    'classes' => array('glyphicon', 'glyphicon-pencil'),
+    'text' => variable_get('myapis') ? 'My APIs' : 'My Apps',
+    'url' => 'user/' . $second_arg . '/apps'
+  );
+  array_unshift($links, $link);
 }
