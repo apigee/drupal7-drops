@@ -7,6 +7,10 @@ class DeveloperAppEntity extends ArrayEntity {
   /**
    * @var string
    */
+  public $orgName = '';
+  /**
+   * @var string
+   */
   public $accessType = '';
   /**
    * @var array

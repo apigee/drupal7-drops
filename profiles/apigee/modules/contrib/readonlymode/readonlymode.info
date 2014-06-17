@@ -2,11 +2,12 @@ name = "Read Only Mode"
 description = "This module will lock your site for any form postings."
 core = 7.x
 package = Administration
-files[]= readonlymode.test
+configure = admin/config/development/maintenance
+files[] = readonlymode.test
 
-; Information added by drupal.org packaging script on 2013-01-23
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2014-06-12
+version = "7.x-1.2"
 core = "7.x"
 project = "readonlymode"
-datestamp = "1358978905"
+datestamp = "1402574630"
 

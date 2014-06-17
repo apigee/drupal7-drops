@@ -1,0 +1,72 @@
+<?php
+/**
+ * @file
+ * Install and uninstall functions for the Google Auth User module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function gauth_user_schema() {
+  $schema['gauth_user_services'] = array(
+    'description' => 'Google services enabled for end user.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The service machine name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The service name.  Will be visible to end user',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'developer_key' => array(
+        'description' => 'The api key of the service.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+      ),
+      'client_id' => array(
+        'description' => 'The Client Id of the service.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'client_secret' => array(
+        'description' => 'The Client Secret Id of the service.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'services' => array(
+        'description' => 'Services which will be enabled for this account.',
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function gauth_user_install() {
+  drupal_install_schema('gauth_user_services');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function gauth_user_uninstall() {
+  drupal_uninstall_schema('gauth_user_services');
+}

@@ -59,7 +59,7 @@ drupal_set_breadcrumb($breadcrumb);
         print '<button class="btn primary action button-processed" title="' . t('Delete App') . '" data-url="' . $app['delete_url'] . '"></button>';
       }
       print '</div>';
-      print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], 'user/' . $user->uid . '/app-detail/' . $app['app_name']) . '</h4>';
+      print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], $app['detail_url']) . '</h4>';
       if (!empty($app['attributes']['Description'])) {
         print '<div class="app-desc">' . check_plain($app['attributes']['Description']) . '</div>';
       }

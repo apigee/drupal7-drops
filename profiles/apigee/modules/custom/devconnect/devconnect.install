@@ -62,20 +62,21 @@ function devconnect_requirements($phase) {
       'title' => 'Edge SDK'
     );
 
-    module_load_include('module', 'devconnect');
-    module_load_include('module', 'd8cmi');
+    drupal_load('module', 'devconnect');
     // Make sure all autoloaders are registered
     devconnect_init();
-    d8cmi_init();
 
     $pass = FALSE;
     try {
-      $config = Drupal::config('devconnect.settings');
-      $org = $config->get('org');
-      $endpoint = $config->get('endpoint');
-      $user = $config->get('user');
+      $config = devconnect_get_org_settings();
+      if (array_key_exists('org_settings', $config) && !empty($config['org_settings'])) {
+        $config = $config['org_settings'][0];
+      }
+      $org = $config['org'];
+      $endpoint = $config['endpoint'];
+      $user = $config['user'];
       if ($has_mcrypt) {
-        $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+        $pass = Apigee\Util\Crypto::decrypt($config['pass']);
       }
     } catch (Exception $e) {}
 
@@ -205,79 +206,50 @@ function devconnect_update_7424(&$sandbox) {
     }
   }
 
-  if (!module_exists('d8cmi')) {
-    module_enable(array('d8cmi'));
-  }
-  devconnect_port_settings_to_d8cmi();
   if (module_exists('devconnect_wadl')) {
     module_disable(array('devconnect_wadl'), FALSE);
   }
 }
 
 /**
- * Moves devconnect KMS authentication settings out of the variable table and
- * into YAML in the filesystem.
- */
-function devconnect_port_settings_to_d8cmi() {
-  module_load_include('module', 'devconnect');
-  module_load_include('module', 'd8cmi');
-  // Make sure all autoloaders are registered
-  devconnect_init();
-  d8cmi_init();
-
-  try {
-    $config = Drupal::config('devconnect.settings');
-  } catch (Exception $e) {
-    if (function_exists('drush_set_error')) {
-      drush_set_error('DEVCONNECT_ERROR', $e->getMessage());
-    }
-    else {
-      drupal_set_message($e->getMessage(), 'error');
-    }
-    return;
-  }
-
-  $org = variable_get('devconnect_org', $config->get('org'));
-  $config->set('org', $org);
-
-  $endpoint = variable_get('devconnect_endpoint', $config->get('endpoint'));
-  $config->set('endpoint', $endpoint);
-
-  $curlauth = variable_get('devconnect_curlauth', NULL);
-  if ($curlauth) {
-    list($user, $pass) = explode(':', $curlauth, 2);
-    $config->set('user', $user);
-    $config->set('pass', $pass);
-  }
-
-  $threshold = variable_get('apigee_log_threshold', $config->get('log_threshold'));
-  $config->set('log_threshold', $threshold);
-
-  $config->save();
-
-  variable_del('devconnect_org');
-  variable_del('devconnect_endpoint');
-  variable_del('devconnect_curlauth');
-  variable_del('apigee_log_threshold');
-}
-
-/**
- * Enable additional required modules. Also set devconnect to be one
- * weight-unit lighter than d8cmi, so that the YAML autoloader will run in the
- * correct sequence.
+ * Enable additional required modules.
  */
 function devconnect_update_7425() {
   module_enable(array('admin_views', 'contextual'));
-
-  $d8cmi_weight = db_select('system', 's')
-    ->fields('s', array('weight'))
-    ->condition('type', 'module')
+}
+/**
+ * Restructure the org config and remove d8cmi entirely
+ */
+function devconnect_update_7426(){
+  // Nuke it entirely, in case this update is run AFTER the code
+  // has disappeared.
+  db_delete('system')
     ->condition('name', 'd8cmi')
-    ->execute()
-    ->fetchField();
-  db_update('system')
-    ->fields(array('weight' => $d8cmi_weight - 1))
-    ->condition('type', 'module')
-    ->condition('name', 'devconnect')
     ->execute();
+  drupal_load('module', 'devconnect');
+  $config = devconnect_get_org_settings();
+  if (!array_key_exists('org_settings', $config)) {
+    $config['org_settings'] = array($config);
+    variable_set('devconnect_org_settings', $config);
+  }
+}
+
+/**
+ * Disable devconnect_ui module if it exists, in preparation for
+ * code removal. Also disable node_export and its children.
+ */
+function devconnect_update_7428() {
+  $disable_modules = array('devconnect_ui');
+  foreach (array('devconnect_ui', 'node_export', 'node_export_dependency', 'node_export_features', 'node_export_feeds', 'node_export_relation') as $ne_module) {
+    if (module_exists($ne_module)) {
+      $disable_modules[] = $ne_module;
+    }
+  }
+  drupal_uninstall_modules($disable_modules);
+  // Nuke devconnect_ui entirely, in case this update is run AFTER the code
+  // has disappeared.
+  db_delete('system')
+    ->condition('name', $disable_modules)
+    ->execute();
+
 }

@@ -1,14 +1,9 @@
 <?php
 
-use Apigee\Mint\Types\BillingType;
 use Apigee\Mint\Types\BillingDocumentType;
 use Apigee\Mint\BillingDocument;
-use Apigee\Mint\ReportDefinition;
-use Apigee\Util\Debugger;
 use Apigee\Mint\Exceptions\MintApiException;
 use Apigee\Mint\Organization;
-use Apigee\Mint\Developer;
-use Apigee\Mint\DeveloperBalance;
 
 /**
  * Page callback for:
@@ -32,8 +27,7 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
     $organization = new Organization($config);
     $currencies = $organization->listSupportedCurrencies();
     $previous_prepaid_statements_form = drupal_get_form('devconnect_monetization_download_prepaid_report_form');
-    $devBalance = new DeveloperBalance($developer->getEmail(), $config);
-    $balances = $devBalance->getList();
+    $balances = $developer->getPrepaidBalance();
     $topped_up_currencies = 0;
     foreach ($balances as $balance) {
       foreach ($currencies as $currency) {
@@ -229,7 +223,8 @@ function devconnect_monetization_top_up_balance_form_submit($form, &$form_state)
   }
   catch (Exception $e) {
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
-    Apigee\Util\Log::write('devconnect_monetization', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
+    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
+    devconnect_default_api_client()->logger->critical($message);
   }
 }
 
@@ -279,7 +274,8 @@ function devconnect_monetization_download_report($currency_id, $date, \Apigee\Mi
   }
   catch (Exception $e) {
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
-    Apigee\Util\Log::write('devconnect_monetization', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
+    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
+    devconnect_default_api_client()->logger->critical($message);
   }
   $me = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
   drupal_goto("users/$me/monetization/billing/prepaid-balance");
@@ -757,7 +753,8 @@ function devconnect_monetization_billing_get_billing_document($doc_id, \Apigee\M
     drupal_exit();
   } catch (Exception $e) {
     drupal_set_message(t('Error while trying to serve your Billing Document. Please try again later.'), 'error');
-    Apigee\Util\Log::write('devconnect_monetization', Apigee\Util\Log::LOGLEVEL_ERROR, $e);
+    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
+    devconnect_default_api_client()->logger->error($message);
   }
   return "";
 }

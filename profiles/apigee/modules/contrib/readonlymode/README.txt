@@ -1,21 +1,33 @@
-This module is for administrative purposes.
+This module is intended for site administrators and developers. The module
+provides a great way to lock down or freeze a production server so that
+maintenance or large deployments can occur without taking the site offline.
+In a typical example, Read Only Mode is activated on the production server,
+the database is copied to a development server where work is done, and then the
+database is pushed back to the production server and Read Only Mode disabled.
 
-It is useful if you want to lock your site for a certain amount of time,
-but don't need the maintenance mode.
+Usage and configuration
+================================================================================
+The module can be configured in the Site Maintenance settings page alongside
+the built in maintenance mode settings. Simply choose to enable the mode and
+your site is now locked down to content additions. Read Only Mode and
+Maintenance mode are separate and you do not need to enable Maintenance Mode to
+enable Read Only Mode.
 
-It is great when using DTAP environments. For instance, when making a
-copy of your Production website to your Accept environment. In the accept
-environment you perform all updates. When all updates have been performed,
-you can now copy your accept environment back to the production environment,
-without losing data!
+Further configuration is possible to provide custom warnings and errors to users
+and to whitelist certain forms that your site deems 'safe' during Read Only
+Mode. For example, a form may submit content through email or by accessing a
+callback on a web service and no data is stored in the Drupal database. It may
+make sense to allow site users to access these forms even when the site is in
+Read Only Mode.
 
-How? The 'Read Only Mode' module puts your site in a Read-Only modus,
-where people can still access all nodes and comments.
+In addition to a whitelist, the site also provides a permission that overrides
+access restrictions and can be given to site administrators.
 
-Usage of this module is very simple:
-* After installing you can find the option to enable read-only mode for your
-  site under "Administration" -> "Configuration" -> "Development" ->
-  "Maintenance mode" (path: admin/config/development/maintenance).
-* Here you can put your site in Read-Only mode, and leave a message for
-  your visitors or enter a URL to redirect them to.
-* During this Read-Only mode, all users are permitted from any forms.
+Drush Support
+================================================================================
+Since Read Only Mode is defined by a single variable, it is easy to use Drush
+to enable and disable the mode.
+
+Check the status:         drush vget site_readonly
+Turn on Read Only Mode:   drush vset site_readonly 1
+Turn off Read Only Mode:  drush vset site_readonly 0

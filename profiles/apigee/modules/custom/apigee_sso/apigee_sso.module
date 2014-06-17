@@ -165,7 +165,6 @@ function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
           $user_name = $developer->userName;
           $first_name = $developer->firstName;
           $last_name = $developer->lastName;
-          $email = $developer->developer;
           // Flag that this user is to be auto-created.
           $create_user = TRUE;
         }
@@ -308,4 +307,26 @@ function apigee_sso_is_registration_complete($element) {
     }
   }
   return TRUE;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function apigee_sso_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'user_login' || $form_id == 'user_login_block') {
+    if (module_exists('gauth_login')) {
+      $form['submit_google']['#value'] = t('Authenticate with Google');
+    }
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function apigee_sso_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter' && isset($implementations['apigee_sso'])) {
+    $group = $implementations['apigee_sso'];
+    unset($implementations['apigee_sso']);
+    $implementations['apigee_sso'] = $group;
+  }
 }

@@ -9,9 +9,9 @@
  * @return bool
  */
 function _devconnect_docgen_validate_credentials($user, $pass, $timeout = 4) {
-  $config =& Drupal::config('devconnect.settings');
-  $org = $config->get('org');
-  $endpoint = $config->get('endpoint');
+  $config =& devconnect_get_org_settings();
+  $org = $config['org'];
+  $endpoint = $config['endpoint'];
   $timeout = intval(min($timeout, 8));
   if ($timeout < 1) {
     $timeout = 4;
@@ -509,7 +509,6 @@ function devconnect_docgen_preprocess_node(&$vars) {
   if (in_array($vars['type'], array_keys($models))) {
     $model = variable_get('use_docgen_templates', 1);
     if (!(bool)$model) {
-      // make schemes a pretty var
       $schemes = array();
       if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_authschemes']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_authschemes'])) {
         foreach ($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_authschemes'] as $scheme) {
@@ -519,7 +518,6 @@ function devconnect_docgen_preprocess_node(&$vars) {
       if (!empty($schemes)) {
         $vars['schemes'] = implode(', ', $schemes);
       }
-      // make types a pretty var
       $types = array();
       if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_types']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_types'])) {
         foreach ($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_types'] as $type) {
@@ -529,7 +527,6 @@ function devconnect_docgen_preprocess_node(&$vars) {
       if (!empty($types)) {
         $vars['types'] = implode(', ', $types);
       }
-      // make tags a pretty var
       $tags = array();
       if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_tags']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_tags'])) {
         foreach ($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_tags'] as $tag) {
@@ -539,15 +536,11 @@ function devconnect_docgen_preprocess_node(&$vars) {
       if (!empty($tags)) {
         $vars['terms'] = implode(', ', $tags);
       }
-      // Friendly Date
       $vars['date'] = date('j F, Y', $vars['node']->created);
-      // Verb
       if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_verb']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_verb'])) {
         $vars['verb'] = $vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_verb'][0]['taxonomy_term']->name;
       }
-      // Description
       $vars['description'] = (isset($vars['body'][0]['value']) && !empty($vars['body'][0]['value'])) ? $vars['body'][0]['value'] : '';
-      // Path
       if (isset($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_path']) && !empty($vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_path'][0]['value'])) {
         $vars['path'] = $vars['field_' . _devconnect_docgen_model_field_name($vars['type']) . '_model_path'][0]['value'];
       }
@@ -556,16 +549,27 @@ function devconnect_docgen_preprocess_node(&$vars) {
     } else {
       if (!$vars['teaser']) {
         $templates = entity_get_controller('docgen_doc');
-        $config =& Drupal::config('devconnect.settings');
+        $config =& devconnect_get_org_settings();
 
-        drupal_add_js(
-          array(
-            'devconnect_docgen' => array(
-              'isDrupal' => TRUE,
-              'apiModelBaseUrl' => str_replace('/v1', '', $config->get('endpoint')),
-              'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
-            )
-          ), 'setting');
+        if ((bool)variable_get('use_api_proxy_url', 0)) {
+          drupal_add_js(
+            array(
+              'devconnect_docgen' => array(
+                'isDrupal' => TRUE,
+                'apiModelBaseUrl' => variable_get('api_proxy_url'),
+                'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
+              )
+            ), 'setting');
+        } else {
+          drupal_add_js(
+            array(
+              'devconnect_docgen' => array(
+                'isDrupal' => TRUE,
+                'apiModelBaseUrl' => str_replace('/v1', '', $config['endpoint']),
+                'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
+              )
+            ), 'setting');
+        }
 
         $query = db_select('smartdocs', 's');
         $query->condition('s.nid', $vars['node']->nid);
@@ -583,31 +587,64 @@ function devconnect_docgen_preprocess_node(&$vars) {
           $model = $result->model;
         }
 
-        $ver = variable_get(_devconnect_docgen_model_name($model) . '_bootstrap_ver', '0');
-
-        switch($ver) {
-          case '2':
-            $def_js = SMARTDOCS_JS_B2;
-            $def_css = SMARTDOCS_CSS_B2;
-            break;
-          case '3':
-            $def_js = SMARTDOCS_JS_B3;
-            $def_css = SMARTDOCS_CSS_B3;
-            break;
-          default:
-            $def_js = SMARTDOCS_JS_B2;
-            $def_css = SMARTDOCS_CSS_B2;
-            break;
-        }
-
-        $js = preg_split("/\\r\\n|\\r|\\n/", variable_get(_devconnect_docgen_model_name($model) . '_js', $def_js));
-        $css = preg_split("/\\r\\n|\\r|\\n/", variable_get(_devconnect_docgen_model_name($model) . '_css', $def_css));
-
-        foreach($js as $file) {
-          drupal_add_js($file);
-        }
-        foreach($css as $file) {
-          drupal_add_css($file);
+        if (!(bool)variable_get('use_local_assets', 0)) {
+          $ver = variable_get(_devconnect_docgen_model_name($model) . '_bootstrap_ver', '0');
+          switch($ver) {
+            case '2':
+              $def_js = SMARTDOCS_JS_B2;
+              $def_css = SMARTDOCS_CSS_B2;
+              break;
+            case '3':
+              $def_js = SMARTDOCS_JS_B3;
+              $def_css = SMARTDOCS_CSS_B3;
+              break;
+            default:
+              $def_js = SMARTDOCS_JS_B2;
+              $def_css = SMARTDOCS_CSS_B2;
+              break;
+          }
+          $js = preg_split("/\\r\\n|\\r|\\n/", variable_get(_devconnect_docgen_model_name($model) . '_js', $def_js));
+          $css = preg_split("/\\r\\n|\\r|\\n/", variable_get(_devconnect_docgen_model_name($model) . '_css', $def_css));
+          foreach($js as $file) {
+            drupal_add_js($file);
+          }
+          foreach($css as $file) {
+            drupal_add_css($file);
+          }
+        } else {
+          $path = drupal_get_path('module', 'devconnect_docgen');
+          $css = array(
+            $path . '/css_apigee/main.css',
+            $path . '/css_apigee/codemirror.css',
+            $path . '/css_apigee/prism.css',
+          );
+          $js = array(
+            $path . '/js_apigee/codemirror.js',
+            $path . '/js_apigee/codemirror_javascript.js',
+            $path . '/js_apigee/codemirror_xml.js',
+            $path . '/js_apigee/prism.js',
+            $path . '/js_apigee/base64_min.js',
+            $path . '/js_apigee/model.js',
+            $path . '/js_apigee/controller.js',
+          );
+          $i = 100;
+          foreach($js as $file) {
+            $options = array(
+              'group' => JS_THEME,
+              'weight' => $i,
+            );
+            drupal_add_js($file, $options);
+            $i++;
+          }
+          $i = 100;
+          foreach($css as $file) {
+            $options = array(
+              'group' => CSS_THEME,
+              'weight' => $i,
+            );
+            drupal_add_css($file, $options);
+            $i++;
+          }
         }
 
         $data = $templates->loadOperation((array)$data, $model, 'drupal-cms');

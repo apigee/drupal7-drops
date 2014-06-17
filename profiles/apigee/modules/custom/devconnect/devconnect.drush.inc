@@ -1,5 +1,7 @@
 <?php
 
+// TODO: revisit this entire file to bring it into conformance with multi-org
+
 /**
  * Implements hook_drush_command().
  *
@@ -90,14 +92,6 @@ function devconnect_drush_command() {
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
-  $items['devconnect-update-settings'] = array(
-    'callback' => 'devconnect_drush_update_settings',
-    'description' => dt('Migrates org settings from the database to the filesystem.'),
-    'aliases' => array('dc-settings'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
-  );
-
-
   $items['devconnect-test-conn'] = array(
     'callback' => 'devconnect_drush_test_connection',
     'description' => dt('Tests the configured connection parameters.'),
@@ -163,33 +157,33 @@ function devconnect_drush_set_authentication() {
     $password = drush_prompt(dt('Enter @user’s password', array('@user' => $username)), NULL, TRUE, TRUE);
   }
 
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
 
-  $old_user = $config->get('user');
+  $old_user = $config['user'];
   try {
-    $old_pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
+    $old_pass = Apigee\Util\Crypto::decrypt($config['pass']);
   } catch (Apigee\Exceptions\ParameterException $e) {
     $old_pass = '';
   }
   $changes = array();
   if ($username != $old_user) {
     $changes[] = "user changed from “$old_user” to “$username”";
-    $config->set('user', $username);
+    $config['user'] = $username;
   }
   if ($old_pass != $password) {
     $from = (empty($old_pass) ? '*empty*' : '*encrypted*');
     $to = (empty($password) ? '*empty*' : '*encrypted*');
     $changes[] = "password changed from $from to $to";
-    $config->set('pass', Apigee\Util\Crypto::encrypt($password));
+    $config['pass'] = Apigee\Util\Crypto::encrypt($password);
   }
   if (empty($changes)) {
     drush_print(t('Username and password remain unchanged.'));
   }
   else {
-    $config->save();
+    variable_set('devconnect_org_settings', $config);
     $message = 'The following authentication configuration items were changed: ' . join(',', $changes);
     watchdog('devconnect', $message, array(), WATCHDOG_INFO);
     drush_print(t('Username and password have been set.'));
@@ -200,12 +194,12 @@ function devconnect_drush_set_authentication() {
  * Drush command callback for devconnect-test-conn
  */
 function devconnect_drush_test_connection() {
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $user = $config->get('user');
-  $pass_encrypted = $config->get('pass');
+  $user = $config['user'];
+  $pass_encrypted = $config['pass'];
   $pass = FALSE;
   if ($pass_encrypted) {
     try {
@@ -217,12 +211,12 @@ function devconnect_drush_test_connection() {
     drush_print(dt('Username/password have not yet been set.'));
     return;
   }
-  $org = $config->get('org');
+  $org = $config['org'];
   if (empty($org) || $org == 'fixme') {
     drush_print(dt('Org name has not yet been set.'));
     return;
   }
-  $endpoint = $config->get('endpoint');
+  $endpoint = $config['endpoint'];
 
   $ch = curl_init();
   curl_setopt($ch, CURLOPT_URL, "$endpoint/o/$org");
@@ -246,12 +240,12 @@ function devconnect_drush_test_connection() {
  * Drush command callback for devconnect-get-auth
  */
 function devconnect_drush_get_authentication() {
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $user = $config->get('user');
-  $pass_encrypted = $config->get('pass');
+  $user = $config['user'];
+  $pass_encrypted = $config['pass'];
   $pass = FALSE;
   if ($pass_encrypted) {
     try {
@@ -277,14 +271,14 @@ function devconnect_drush_set_org() {
     return;
   }
   list($org) = $args;
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $old_org = $config->get('org');
+  $old_org = $config['org'];
   if ($org != $old_org) {
-    $config->set('org', $org);
-    $config->save();
+    $config['org'] = $org;
+    variable_set('devconnect_org_settings', $config);
     watchdog('devconnect', 'The following authentication configuration item was changed: org was changed from “%old” to “%new”.', array('%old' => $old_org, '%new' => $org), WATCHDOG_INFO);
     drush_print(dt('Orgname has been set to @org', array('@org' => $org)));
   }
@@ -297,11 +291,11 @@ function devconnect_drush_set_org() {
  * Drush command callback for devconnect-get-org
  */
 function devconnect_drush_get_org() {
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $org = $config->get('org');
+  $org = $config['org'];
   if (empty($org) || $org == 'fixme') {
     drush_print(dt('Org name has not yet been set.'));
   }
@@ -314,11 +308,11 @@ function devconnect_drush_get_org() {
  * Drush command callback for devconnect-get-endpoint
  */
 function devconnect_drush_get_endpoint() {
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $endpoint = $config->get('endpoint');
+  $endpoint = $config['endpoint'];
   drush_print(dt('Endpoint is @endpoint', array('@endpoint' => $endpoint)));
 }
 
@@ -332,14 +326,14 @@ function devconnect_drush_set_endpoint() {
     return;
   }
   list($endpoint) = $args;
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $old_endpoint = $config->get('endpoint');
+  $old_endpoint = $config['endpoint'];
   if ($endpoint != $old_endpoint) {
-    $config->set('org', $endpoint);
-    $config->save();
+    $config['endpoint'] = $endpoint;
+    variable_set('devconnect_org_settings', $config);
     watchdog('devconnect', 'The following authentication configuration item was changed: endpoint was changed from “%old” to “%new”.', array('%old' => $old_endpoint, '%new' => $endpoint), WATCHDOG_INFO);
     drush_print(dt('Endpoint has been set to @endpoint', array('@endpoint' => $endpoint)));
   }
@@ -348,24 +342,16 @@ function devconnect_drush_set_endpoint() {
   }
 }
 
-/**
- * Drush command callback for devconnect-update-settings
- */
-function devconnect_drush_update_settings() {
-  module_load_install('devconnect');
-  devconnect_port_settings_to_d8cmi();
-  drush_print(dt('Settings have been moved to the filesystem.'));
-}
 
 /**
  * Drush command callback for devconnect-get-req-timeout
  */
 function devconnect_drush_get_request_timeout() {
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $timeout = $config->get('request_timeout');
+  $timeout = $config['request_timeout'];
   drush_print(dt('Request timeout is @sec seconds', array('@sec' => $timeout)));
 }
 
@@ -379,13 +365,13 @@ function devconnect_drush_set_request_timeout() {
     return;
   }
   list($timeout) = $args;
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  if ($timeout != $config->get('request_timeout')) {
-    $config->set('request_timeout', $timeout);
-    $config->save();
+  if ($timeout != $config['request_timeout']) {
+    $config['request_timeout'] = $timeout;
+    variable_set('devconnect_org_config', $config);
     drush_print(dt('Request timeout has been set to @sec seconds', array('@sec' => $timeout)));
 
   }
@@ -398,11 +384,11 @@ function devconnect_drush_set_request_timeout() {
  * Drush command callback for devconnect-get-con-timeout
  */
 function devconnect_drush_get_connect_timeout() {
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  $timeout = $config->get('connection_timeout');
+  $timeout = $config['connection_timeout'];
   drush_print(dt('Connection timeout is @sec seconds', array('@sec' => $timeout)));
 }
 
@@ -416,25 +402,16 @@ function devconnect_drush_set_connect_timeout() {
     return;
   }
   list($timeout) = $args;
-  $config =& _devconnect_drush_get_settings();
+  $config =& devconnect_get_org_settings();
   if (!$config) {
     return;
   }
-  if ($timeout != $config->get('connection_timeout')) {
-    $config->set('connection_timeout', $timeout);
-    $config->save();
+  if ($timeout != $config['connection_timeout']) {
+    $config['connection_timeout'] = $timeout;
+    variable_set('devconnect_org_settings', $config);
     drush_print(dt('Connection timeout has been set to @sec seconds', array('@sec' => $timeout)));
   }
   else {
     drush_print(dt('Connection timeout @sec remains unchanged.', array('@sec' => $timeout)));
-  }
-}
-
-function _devconnect_drush_get_settings() {
-  try {
-    return Drupal::config('devconnect.settings');
-  } catch (Exception $e) {
-    drush_set_error('DEVCONNECT_ERROR', $e->getMessage());
-    return FALSE;
   }
 }

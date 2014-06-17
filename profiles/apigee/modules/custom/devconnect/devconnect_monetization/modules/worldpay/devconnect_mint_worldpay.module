@@ -6,10 +6,7 @@
  * Time: 10:15 AM
  */
 
-use Apigee\Mint\Developer;
-use Apigee\Mint\DeveloperBalance;
 use Apigee\Mint\Provider;
-use Apigee\Util\Log;
 
 define('SUCCESS_RESPONSE_URL', 'devconnect/mint/payment/wp/success');
 define('PENDING_RESPONSE_URL', 'devconnect/mint/payment/wp/pending');

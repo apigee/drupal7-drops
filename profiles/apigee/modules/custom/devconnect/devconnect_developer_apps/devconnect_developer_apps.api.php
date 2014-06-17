@@ -166,7 +166,7 @@ function hook_devconnect_developer_app_delete(array $results, array &$form_state
  *   If $op is 'edit', this is a reference to the $u
  *   Otherwise this is NULL
  * @param mixed $arg2
- *   If $op is 'edit', this is the app name (if set)
+ *   If $op is 'edit', this is the app id (if set)
  *   Otherwise this is NULL
  */
 function hook_devconnect_developer_apps_prerender($op, $arg1 = NULL, $arg2 = NULL) {

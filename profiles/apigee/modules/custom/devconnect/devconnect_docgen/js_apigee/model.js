@@ -437,7 +437,9 @@ Apigee.APIModel.Editor = function() {
         data = jQuery.parseJSON(data);
         Apigee.APIModel.proxyURL = data.proxyUrl;
         Apigee.APIModel.authUrl = data.authUrl;
-
+        if (Apigee.APIModel.proxyURL.indexOf("/sendrequest") == -1 ) {
+            Apigee.APIModel.proxyURL = Apigee.APIModel.proxyURL + "/sendrequest";
+        }
     }
     /**
      * Success callback method of a OAuth2 web serser auth URL AJAX call.

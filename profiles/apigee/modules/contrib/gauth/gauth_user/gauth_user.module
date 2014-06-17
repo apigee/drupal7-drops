@@ -1,0 +1,326 @@
+<?php
+/**
+ * @file
+ * Google Auth Api for drupal.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function gauth_user_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#gauth_user':
+      $path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'gauth');
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t("This module allows admin to define services and handle in permissions that which role can authenticate for which google service, this authentication can then be used to carry other api requests on the users account.") . '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<p>' . t("This module allows you to enter google account details like client id, client secret key, developer key, select google services to be enabled and creates a tab on my account page for end users to authenticate and fetch OAuth2 access token from google. End user can also revoke access(unauthenticate) a account previously authenticated using the same.") . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function gauth_user_menu() {
+  $items = array();
+  $items['admin/config/services/gauth_user'] = array(
+    'title' => 'Google Account Services Settings',
+    'description' => 'Google Account services settings.',
+    'page callback' => 'gauth_user_services_list',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'gauth_user.admin.inc',
+  );
+  $items['admin/config/services/gauth_user/add'] = array(
+    'title' => 'Add Account',
+    'description' => 'Google Services Account Add.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_user_services_edit_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'gauth_user.admin.inc',
+  );
+  $items['admin/config/services/gauth_user/edit/%'] = array(
+    'title' => 'Google Services Account Edit',
+    'description' => 'Google Services Account Edit.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_user_services_edit_form', 5),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'gauth_user.admin.inc',
+  );
+  $items['admin/config/services/gauth_user/delete/%'] = array(
+    'title' => 'Google Services Account Delete',
+    'description' => 'Google Services Account delete.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_user_services_delete_form', 5),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'gauth_user.admin.inc',
+  );
+  $items['user/%user/gauth_user/add_authenticate/%'] = array(
+    'page callback' => 'gauth_user_services_user_account_create',
+    'page arguments' => array(4),
+    'access callback' => 'gauth_user_auth_services_enabled',
+    'access arguments' => array(1, TRUE, 4),
+    'file' => 'gauth_user.pages.inc',
+  );
+  $items['user/%user/gauth_user/delete/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_user_services_user_account_delete', 4),
+    'access callback' => 'gauth_user_auth_services_access',
+    'access arguments' => array(1, 4),
+    'file' => 'gauth_user.pages.inc',
+  );
+  $items['user/%user/gauth_user/revoke/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_user_services_user_account_revoke', 4),
+    'access callback' => 'gauth_user_auth_services_access',
+    'access arguments' => array(1, 4),
+    'file' => 'gauth_user.pages.inc',
+  );
+  $items['user/%user/gauth'] = array(
+    'title' => 'Gauth Services Authentication',
+    'page callback' => 'gauth_user_services_authenticate',
+    'page arguments' => array(1),
+    'access callback' => 'gauth_user_auth_services_enabled',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'gauth_user.pages.inc',
+    'weight' => 100,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function gauth_user_permission() {
+  $accounts = gauth_user_services_load();
+  // Generate standard services account permissions for all services.
+  $perms = array();
+  foreach ($accounts as $type) {
+    $perms += array(
+      "authenticate $type->id gauth services account" => array(
+        'title' => t('%type_name: Authenticate for gauth services account', array('%type_name' => $type->name)),
+      ),
+    );
+  }
+  return $perms;
+}
+/**
+ * Implements hook_theme().
+ */
+function gauth_user_theme() {
+  return array(
+    // Theme functions in gauth_user.admin.inc.
+    'gauth_user_services_list' => array(
+      'variables' => array('accounts' => NULL),
+    ),
+    // Theme functions in gauth_user.pages.inc.
+    'gauth_user_services_authenticate_list' => array(
+      'variables' => array('accounts' => NULL),
+    ),
+  );
+}
+
+/*** API Functions start ***/
+/**
+ * Get an array of all accounts or load a specific account.
+ *
+ * @param string $account_id
+ *   Name or id of the account to be loaded
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ * @param array $fields
+ *   Array of fields to be retrieved from the database
+ *
+ * @returns An array of accounts and their details.
+ */
+function gauth_user_services_load($account_id = NULL, $by_name = TRUE, $fields = 'gauth_user_services') {
+  $accounts = array();
+  if ($by_name) {
+    $filter = 'name';
+  }
+  else {
+    $filter = 'id';
+  }
+  $query = db_select('gauth_user_services');
+  if (is_array($fields)) {
+    $query->fields('gauth_user_services', $fields);
+  }
+  else {
+    $query->fields('gauth_user_services');
+  }
+  if ($account_id) {
+    $accounts = $query->condition($filter, $account_id, '=')
+      ->execute()
+      ->fetchAssoc();
+  }
+  else {
+    $accounts = $query->orderBy('id')
+      ->execute()
+      ->fetchAllAssoc($filter);
+  }
+  return $accounts;
+}
+
+/**
+ * Save an account.
+ *
+ * @param array $account
+ *   Account array that needs to be saved
+ * If you want to create a new account omit the id field in the array
+ * If you want to update existing account do have the id field
+ *
+ * @returns a account array
+ *
+ * Same account array reflects the changes
+ */
+function gauth_user_services_save(&$account) {
+  if (!(isset($account['is_new']) && $account['is_new'])) {
+    $fields = array('id' => $account['id']);
+    if (isset($account['name'])) {
+      $fields['name'] = check_plain($account['name']);
+    }
+    if (isset($account['client_id'])) {
+      $fields['client_id'] = check_plain($account['client_id']);
+    }
+    if (isset($account['client_secret'])) {
+      $fields['client_secret'] = check_plain($account['client_secret']);
+    }
+    if (isset($account['developer_key'])) {
+      $fields['developer_key'] = check_plain($account['developer_key']);
+    }
+    if (isset($account['services'])) {
+      if (is_array($account['services'])) {
+        $account['services'] = implode(",", $account['services']);
+      }
+      $fields['services'] = check_plain($account['services']);
+    }
+    if (drupal_write_record('gauth_user_services', $fields, 'id') == SAVED_UPDATED) {
+      return $fields;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    if (!isset($account['name'])) {
+      return array('is_error' => TRUE, 'message' => 'Name is required for creating new services account');
+    }
+    if (!isset($account['client_id'])) {
+      return array('is_error' => TRUE, 'message' => 'Client Id can\'t be Null');
+    }
+    if (!isset($account['client_secret'])) {
+      return array('is_error' => TRUE, 'message' => 'Client Secret can\'t be Null');
+    }
+    $fields = array(
+      'id' => $account['id'],
+      'name' => check_plain($account['name']),
+      'developer_key' => check_plain($account['developer_key']),
+      'client_id' => check_plain($account['client_id']),
+      'client_secret' => check_plain($account['client_secret']),
+    );
+    if (is_array($account['services'])) {
+      $account['services'] = implode(",", $account['services']);
+    }
+    $fields['services'] = check_plain($account['services']);
+    $accounts = gauth_user_services_load(NULL, TRUE, array('name'));
+    $accounts = array_keys($accounts);
+    if (in_array($account['name'], $accounts)) {
+      return array('is_error' => TRUE, 'message' => 'Name is already in use. Please choose a unique name for the account');
+    }
+    if (drupal_write_record('gauth_user_services', $fields) == SAVED_NEW) {
+      return $fields;
+    }
+    else {
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Delete an service account.
+ *
+ * @param string $account_id
+ *   Name or id of the account to be deleted
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ */
+function gauth_user_services_delete($account_id, $by_name = TRUE) {
+  if ($by_name) {
+    $filter = 'name';
+  }
+  else {
+    $filter = 'id';
+  }
+  return db_delete("gauth_user_services")
+    ->condition($filter, $account_id, '=')
+    ->execute();
+}
+
+/**
+ * Function returns the permission or the account types allowed for a user.
+ */
+function gauth_user_auth_services_enabled($user, $perm = TRUE, $specific_perm = '') {
+  if ($perm) {
+    if ($specific_perm) {
+      return user_access("authenticate $specific_perm gauth services account", $user);
+    }
+    elseif (user_access('administer users', $GLOBALS['user'])) {
+      return TRUE;
+    }
+    elseif ($user->uid == $GLOBALS['user']->uid) {
+      $accounts = gauth_user_services_load();
+      foreach ($accounts as $type) {
+        if (user_access("authenticate $type->id gauth services account", $user)) {
+          return TRUE;
+        }
+      }
+    }
+    return FALSE;
+  }
+  else {
+    $accounts = gauth_user_services_load();
+    $account_types = array();
+    foreach ($accounts as $type) {
+      if (user_access("authenticate $type->id gauth services account", $user)) {
+        $account_types[$type->id] = $type;
+        if ($gauth_account = gauth_account_load($type->id . '|' . $user->uid)) {
+          if ($gauth_account['is_authenticated']) {
+            $account_types[$type->id]->is_authenticated = TRUE;
+          }
+          else {
+            $account_types[$type->id]->is_authenticated = FALSE;
+          }
+          $account_types[$type->id]->id = $gauth_account['id'];
+        }
+      }
+    }
+    return $account_types;
+  }
+}
+
+/**
+ * Function returns the access true if the account is owned by the user viewing else false.
+ */
+function gauth_user_auth_services_access($user, $account_id) {
+  $account = gauth_account_load($account_id, FALSE);
+  if ($account['uid'] == $user->uid) {
+    return TRUE;
+  }
+  else{
+    return FALSE;
+  }
+}
+
+/**
+ * Function return the types of services created.
+ */
+function gauth_user_services_types($id = NULL) {
+  $accounts = gauth_user_services_load($id, FALSE);
+  $return = array();
+  if ($accounts) {
+    $return = entity_key_array_by_property($accounts, 'id');
+  }
+  return $return;
+}

@@ -17,11 +17,6 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   private static $lastException;
 
   /**
-   * @var \Apigee\Util\OrgConfig
-   */
-  private $orgConfig;
-
-  /**
    * Implements DrupalEntityControllerInterface::__construct().
    *
    * @param $entity_type
@@ -60,38 +55,22 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @param array $ids
    */
   public function delete($ids) {
-    foreach ($ids as $id) {
-      // If entity is in our cache, we can make one fewer server roundtrips.
-      if (array_key_exists($id, $this->appCache)) {
-        $dev_app = $this->appCache[$id];
-        unset ($this->appCache[$id]);
-      }
-      else {
-        // Not in cache. Fetch, then delete.
-        if (!($this->orgConfig instanceof \Apigee\Util\OrgConfig)) {
-          $this->orgConfig = devconnect_default_api_client();
+    if(empty($ids)) {
+        return;
+    }
+    static $developer_app = array();
+    foreach ($this->load($ids) as $entity) {
+        if(!isset($developer_app[$entity->orgName])){
+            $developer_app[$entity->orgName] =  new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client($entity->orgName), '');
         }
-
-        $dev_app = new Apigee\ManagementAPI\DeveloperApp($this->orgConfig, '');
+        $dev_app = $developer_app[$entity->orgName];
+        $dev_app->loadByAppId($entity->appId, TRUE);
         try {
-          $dev_app->loadByAppId($id, TRUE);
-        } catch (Apigee\Exceptions\ResponseException $e) {
-          $dev_app = NULL;
-          self::$lastException = $e;
-        } catch (Apigee\Exceptions\ParameterException $e) {
-          $dev_app = NULL;
-          self::$lastException = $e;
-        }
-      }
-      if (isset($dev_app)) {
-        try {
-          $entity = new Drupal\devconnect_developer_apps\DeveloperAppEntity($dev_app->toArray());
           $dev_app->delete();
           devconnect_developer_apps_delete_from_cache($entity);
         } catch (Apigee\Exceptions\ResponseException $e) {
           self::$lastException = $e;
         }
-      }
     }
   }
 
@@ -112,12 +91,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    */
   public function save($entity) {
     // Make a copy so we can remove irrelevant members
-    $entity = (array) $entity;
+    $entity = (array)$entity;
     $is_update = !empty($entity['appId']);
-    if (!($this->orgConfig instanceof \Apigee\Util\OrgConfig)) {
-      $this->orgConfig = devconnect_default_api_client();
-    }
-    $dev_app = new Apigee\ManagementAPI\DeveloperApp($this->orgConfig, $entity['developer']);
+    $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client($entity['orgName']), $entity['developer']);
     $product_cache = $entity['apiProductCache'];
     unset ($entity['apiProductCache']);
     $dev_app->fromArray($entity);
@@ -171,10 +147,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @return Drupal\devconnect_developer_apps\DeveloperAppEntity
    */
   public function create(array $values = array()) {
-    if (!($this->orgConfig instanceof \Apigee\Util\OrgConfig)) {
-      $this->orgConfig = devconnect_default_api_client();
-    }
-    $dev_app = new Apigee\ManagementAPI\DeveloperApp($this->orgConfig, '');
+    $dev_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client('default'), '');
     $dev_app->fromArray($values);
     return new Drupal\devconnect_developer_apps\DeveloperAppEntity($dev_app->toArray());
   }
@@ -242,71 +215,80 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @return array
    */
   public function load($ids = array(), $conditions = array()) {
-    if (!($this->orgConfig instanceof \Apigee\Util\OrgConfig)) {
-      $this->orgConfig = devconnect_default_api_client();
+    $all_apps = array();
+    $clients = NULL;
+    if(isset($conditions['orgName']) && $conditions['orgName'] !== 'all'){
+        $clients = array(devconnect_default_api_client($conditions['orgName']));
+    } else {
+        $clients = devconnect_default_api_client('all');
     }
-
-    if (isset($conditions['mail'])) {
-      $dev_app = new Apigee\ManagementAPI\DeveloperApp($this->orgConfig, $conditions['mail']);
-      if (isset($conditions['name'])) {
-        try {
-          $dev_app->load($conditions['name']);
-          $list = array($dev_app);
-        } catch (Apigee\Exceptions\ResponseException $e) {
-          $list = array();
-          self::$lastException = $e;
+    foreach($clients as $client) {
+        if(isset($conditions['disableLogging']) && ($conditions['disableLogging'] === TRUE)) {
+            $client->logger = new \Psr\Log\NullLogger();
+            $client->subscribers = array();
         }
-      }
-      else {
-        try {
-          $list = $dev_app->getListDetail();
-        } catch (Apigee\Exceptions\ResponseException $e) {
-          $list = array();
-          self::$lastException = $e;
+        if (isset($conditions['mail']) && empty($ids)) {
+          $dev_app = new Apigee\ManagementAPI\DeveloperApp($client, $conditions['mail']);
+          if (isset($conditions['name'])) {
+            try {
+              $dev_app->load($conditions['name']);
+              $list = array($dev_app);
+            } catch (Apigee\Exceptions\ResponseException $e) {
+              $list = array();
+              self::$lastException = $e;
+            }
+          }
+          else {
+            try {
+              $list = $dev_app->getListDetail();
+            } catch (Apigee\Exceptions\ResponseException $e) {
+              $list = array();
+              self::$lastException = $e;
+            }
+          }
+          $this->addListToCache($list, $ids);
         }
-      }
-      $this->addListToCache($list, $ids);
-    }
-    // TODO: add more conditions here such as Status
-    elseif (empty($ids)) { // Fetch all apps in the org.
-      $dev_app = new Apigee\ManagementAPI\DeveloperApp($this->orgConfig, '');
-      try {
-        $list = $dev_app->listAllApps();
-        $this->addListToCache($list, $ids);
-      } catch (Apigee\Exceptions\ResponseException $e) {
-        self::$lastException = $e;
-        $list = array();
-      }
-    }
-    else {
-      // We have a list of appIds. Fetch them now.
-      $list = array();
-      foreach ($ids as $id) {
-        if (isset($this->appCache[$id])) {
-          $list[$id] = $this->appCache[$id];
-        }
-      }
-      if (count($list) < count($ids)) {
-        $remaining_ids = array_diff($ids, array_keys($list));
-        $dev_app = new Apigee\ManagementAPI\DeveloperApp($this->orgConfig, '');
-        foreach ($remaining_ids as $id) {
-          $app = clone($dev_app);
+        // TODO: add more conditions here such as Status
+        elseif (empty($ids)) { // Fetch all apps in the org.
+          $dev_app = new Apigee\ManagementAPI\DeveloperApp($client, '');
           try {
-            $app->loadByAppId($id);
-            $list[] = $app;
+            $list = $dev_app->listAllApps();
+            $this->addListToCache($list, $ids);
           } catch (Apigee\Exceptions\ResponseException $e) {
             self::$lastException = $e;
-          } catch (Apigee\Exceptions\ParameterException $e) {
-            self::$lastException = $e;
+            $list = array();
           }
         }
-        $this->addListToCache($list, $ids);
-      }
-      $list = array_values($list);
-    }
-
+        else {
+          // We have a list of appIds. Fetch them now.
+          $list = array();
+          foreach ($ids as $id) {
+            if (isset($this->appCache[$id])) {
+              $list[$id] = $this->appCache[$id];
+            }
+          }
+          if (count($list) < count($ids)) {
+            $remaining_ids = array_diff($ids, array_keys($list));
+            $dev_app = new Apigee\ManagementAPI\DeveloperApp($client, '');
+            foreach ($remaining_ids as $id) {
+              $app = clone($dev_app);
+              try {
+                $app->loadByAppId($id);
+                $list[] = $app;
+              } catch (Apigee\Exceptions\ResponseException $e) {
+                self::$lastException = $e;
+              } catch (Apigee\Exceptions\ParameterException $e) {
+                self::$lastException = $e;
+              }
+            }
+            $this->addListToCache($list, $ids);
+          }
+          $list = array_values($list);
+        }
+        $all_apps = array_merge($all_apps, $list);
+     }
     $uids = array();
-    foreach ($list as $dev_app) {
+    foreach ($all_apps as $dev_app) {
       $email = $dev_app->getDeveloperMail();
       if (!array_key_exists($email, $uids)) {
         $uids[strtolower($email)] = NULL;
@@ -324,14 +306,15 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     $uids = array_flip($uids);
 
     $app_entities = array();
-    foreach ($list as $dev_app) {
+    $include_debug_data = (count($all_apps) == 1);
+    foreach ($all_apps as $dev_app) {
       $id = $dev_app->getAppId();
       $mail = strtolower($dev_app->getDeveloperMail());
-      $array = $dev_app->toArray();
+      $array = $dev_app->toArray($include_debug_data);
+      $array['orgName'] = $dev_app->getConfig()->orgName;
       $array['uid'] = (isset($uids[$mail]) ? $uids[$mail] : NULL);
       $app_entities[$id] = new Drupal\devconnect_developer_apps\DeveloperAppEntity($array);
     }
-
     return $app_entities;
   }
 
@@ -346,8 +329,8 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    */
   public static function setKeyStatus(Drupal\devconnect_developer_apps\DeveloperAppEntity &$entity, $status) {
     try {
-      $da = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), $entity->developer);
-      $da->fromArray((array) $entity);
+      $da = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client($entity->orgName), $entity->developer);
+      $da->fromArray((array)$entity);
       $da->setKeyStatus($status);
       $entity = new Drupal\devconnect_developer_apps\DeveloperAppEntity($da->toArray());
       return TRUE;
@@ -379,7 +362,6 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       }
     }
   }
-
   /**
    * Determines if an app exists with the given appId or set of conditions.
    *
@@ -394,22 +376,13 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     if (!empty($appId) && array_key_exists($appId, $this->appCache)) {
       return TRUE;
     }
-    if (!($this->orgConfig instanceof \Apigee\Util\OrgConfig)) {
-      $this->orgConfig = devconnect_default_api_client();
-    }
-    // Store initial state of the config object
-    $cached_org_config = $this->orgConfig;
-    // Turn off error logging
-    $this->orgConfig->logger = new \Psr\Log\NullLogger();
-    $this->orgConfig->subscribers = array();
 
     $ids = array();
     if (!empty($appId) && is_scalar($appId)) {
       $ids[] = $appId;
     }
+    $conditions['disableLogging'] = TRUE;
     $entities = $this->load($ids, $conditions);
-    // Restore initial state of the config object
-    $this->orgConfig = $cached_org_config;
     return empty($entities) ? FALSE : reset($entities);
   }
 

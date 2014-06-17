@@ -1,5 +1,6 @@
-name = "Devconnect User Interface"
+name = "Devconnect User Interface (DEPRECATED)"
 description = "Provides universal devconnect styles and theming"
 core = "7.x"
 package = "DevConnect"
 version = "7.x-4.23"
+hidden = TRUE

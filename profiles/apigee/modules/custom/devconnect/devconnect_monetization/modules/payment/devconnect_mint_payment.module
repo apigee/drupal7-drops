@@ -1,15 +1,8 @@
 <?php
 
-use Apigee\Mint\Developer;
-use Apigee\Mint\DeveloperBalance;
 use Apigee\Mint\MonetizationPackage;
-use Apigee\Mint\Provider;
-use Apigee\Util\CacheFactory;
 use Apigee\Mint\RatePlan;
-use Apigee\Mint\DeveloperRatePlan;
 use Apigee\Mint\Organization as Organization;
-use Apigee\Mint\Exceptions\MintApiException as MintApiException;
-use Apigee\Util\Log;
 
 /**
  *

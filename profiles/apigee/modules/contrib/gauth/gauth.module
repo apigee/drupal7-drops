@@ -1,0 +1,537 @@
+<?php
+/**
+ * @file
+ * Google Auth Api for drupal.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function gauth_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#gauth':
+      $path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'gauth');
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t("This module allows you to authenticate with google and use this authentication to carry other api requests. This module will help you to manage accounts, authenticate with google (i.e. get access token) and use this authentication to carry api requests in other modules.") . '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<p>' . t("This module allows you to enter google account details like client id, client secret key, developer key, select google services to be enabled and gets the OAuth2 access token from google.  You can also revoke access(unauthenticate) a account.") . '</p>';
+      $output .= '<p>' . t("For more details read the <a href='@url'>README.txt</a> file in the Google Auth module directory.", array('@url' => "$path/README.txt")) . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function gauth_menu() {
+  $items = array();
+  $items['admin/config/services/gauth_account'] = array(
+    'title' => 'Google Account Settings',
+    'description' => 'Google Account settings.',
+    'page callback' => 'gauth_account_list',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'gauth.admin.inc',
+  );
+  $items['admin/config/services/gauth_account/add'] = array(
+    'title' => 'Add Account',
+    'description' => 'Google Account Add.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_account_edit_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'gauth.admin.inc',
+  );
+  $items['admin/config/services/gauth_account/edit/%'] = array(
+    'title' => 'Google Account Edit',
+    'description' => 'Google Account Edit.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_account_edit_form', 5),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'gauth.admin.inc',
+  );
+  $items['admin/config/services/gauth_account/delete/%'] = array(
+    'title' => 'Google Account Delete',
+    'description' => 'Google Account delete.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_account_delete_form', 5),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'gauth.admin.inc',
+  );
+  $items['gauth/response_handler'] = array(
+    'page callback' => 'gauth_response_handler',
+    'access callback' => TRUE,
+  );
+  $items['gauth/revoke_token/%'] = array(
+    'title' => 'Google Account Token Revoke',
+    'description' => 'Revoke a access token.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gauth_account_token_revoke_form', 2),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'gauth.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function gauth_theme() {
+  return array(
+    // Theme functions in gauth.admin.inc.
+    'gauth_account_list' => array(
+      'variables' => array('accounts' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function gauth_libraries_info() {
+  $libraries['google-api-php-client'] = array(
+    'title' => 'Google OAuth2 Library',
+    'vendor url' => 'http://code.google.com/p/google-api-php-client',
+    'download url' => 'http://code.google.com/p/google-api-php-client/downloads/list',
+    'version arguments' => array(
+      'file' => 'src/io/Google_HttpRequest.php',
+      'pattern' => '/USER_AGENT_SUFFIX = "+(google-api-php-client\/\d\.\d\.\d)+";/',
+      'lines' => 27,
+    ),
+    'versions' => array(
+      'google-api-php-client/0.6.0' => array(),
+    ),
+    'files' => array(
+      'php' => array(
+        'src/Google_Client.php',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function gauth_user_delete($user) {
+  $gauth_account = gauth_account_load_by_uid($user->uid);
+  if ($gauth_account) {
+    gauth_account_delete($gauth_account);
+  }
+}
+
+/**
+ * Function to handle authentication and response from google.
+ *
+ * @param string $account_id
+ *   Account id of the account to be authenticated.
+ */
+function gauth_response_handler($account_id = NULL) {
+  $info = libraries_load('google-api-php-client');
+  if (!$info['loaded']) {
+    drupal_set_message(t("Can't authenticate with google as library is missing check Status report or Readme for requirements"), 'error');
+    return FALSE;
+  }
+  if ($account_id == NULL && isset($_SESSION['gauth_account_id'])) {
+    $account_id = $_SESSION['gauth_account_id'];
+  }
+  elseif ($account_id) {
+    $_SESSION['gauth_account_id'] = $account_id;
+  }
+  if ($account_id) {
+    $account = gauth_account_load($account_id, FALSE);
+    if (isset($account['client_id']) && isset($account['developer_key']) && isset($account['client_secret'])) {
+      $client = new Google_Client();
+      $client->setApplicationName("Google OAuth2");
+      $client->setClientId($account['client_id']);
+      $client->setClientSecret($account['client_secret']);
+      $client->setRedirectUri($GLOBALS['base_url'] . "/gauth/response_handler");
+      $client->setDeveloperKey($account['developer_key']);
+      $service_api = gauth_google_services_versions();
+      foreach (explode(",", $account['services']) as $service) {
+        $client->addService($service, $service_api[$service]);
+      }
+    }
+    if (isset($_GET['code'])) {
+      $client->authenticate($_GET['code']);
+      $account['access_token'] = $client->getAccessToken();
+      gauth_account_save($account);
+      unset($_SESSION['gauth_account_id']);
+      if (!user_access('administer site configuration') && module_exists('gauth_user')) {
+        drupal_goto('user/' . $GLOBALS['user']->uid . '/gauth');
+      }
+      else {
+        drupal_goto('admin/config/services/gauth_account');
+      }
+      drupal_set_message(t('Api Account saved'));
+    }
+    if ($client) {
+      $auth_url = $client->createAuthUrl();
+      drupal_goto($auth_url);
+    }
+  }
+  // Let other modules act of google response.
+  module_invoke_all('gauth_google_response');
+}
+
+/**
+ * Returns a array services api versions.
+ */
+function gauth_google_services_versions() {
+  return array(
+    'adexchangeseller' => 'v1',
+    'adexchangebuyer' => 'v1.1',
+    'adsense' => 'v1.2',
+    'adsensehost' => 'v4.1',
+    'analytics' => 'v3',
+    'bigquery' => 'v2',
+    'blogger' => 'v3',
+    'books' => 'v1',
+    'calendar' => 'v3',
+    'compute' => 'v1beta13',
+    'customsearch' => 'v1',
+    'dfareporting' => 'v1.1',
+    'drive' => 'v2',
+    'freebase' => 'v1',
+    'fustiontables' => 'v1',
+    'gan' => 'v1beta1',
+    'latitude' => 'v1',
+    'licensing' => 'v1',
+    'moderator' => 'v1',
+    'oauth2' => 'v2',
+    'orkut' => 'v2',
+    'pagespeedonline' => 'v1',
+    'prediction' => 'v1.4',
+    'shopping' => 'v1',
+    'siteVerification' => 'v1',
+    'storage' => 'v1beta1',
+    'taskqueue' => 'v1beta2',
+    'tasks' => 'v1',
+    'translate' => 'v2',
+    'urlshortener' => 'v1',
+    'webfonts' => 'v1',
+    'youtube' => 'v3',
+  );
+}
+
+/**
+ * Returns a array services api names.
+ */
+function gauth_google_services_names($services = FALSE) {
+  $names = array(
+    'adexchangeseller' => t('Google AdExchangeSeller'),
+    'adexchangebuyer' => t('Google Adexchangebuyer'),
+    'adsense' => t('Google AdSense'),
+    'adsensehost' => t('Google AdSenseHost'),
+    'analytics' => t('Google Analytics'),
+    'bigquery' => t('Google Bigquery'),
+    'blogger' => t('Google Blogger'),
+    'books' => t('Google Books'),
+    'calendar' => t('Google Calendar'),
+    'compute' => t('Google Compute'),
+    'customsearch' => t('Google Customsearch'),
+    'dfareporting' => t('Google Dfareporting'),
+    'drive' => t('Google Drive'),
+    'freebase' => t('Google Freebase'),
+    'fusiontables' => t('Google Freebasetables'),
+    'gan' => t('Google Gans'),
+    'latitude' => t('Google Latitude'),
+    'licensing' => t('Google Licensing'),
+    'moderator' => t('Google Moderator'),
+    'oauth2' => t('Google Oauth2'),
+    'orkut' => t('Google Orkut'),
+    'pagespeedonline' => t('Google Pagespeedonline'),
+    'plus' => t('Google Plus'),
+    'prediction' => t('Google Prediction'),
+    'shopping' => t('Google Shopping'),
+    'siteVerification' => t('Google SiteVerification'),
+    'storage' => t('Google Storage'),
+    'taskqueue' => t('Google Taskqueue'),
+    'tasks' => t('Google Tasks'),
+    'translate' => t('Google Translate'),
+    'urlshortener' => t('Google Urlshortener'),
+    'webfonts' => t('Google Webfonts'),
+    'youtube' => t('Google Youtube'),
+  );
+  if (!$services) {
+    return $names;
+  }
+  else {
+    $service_names = array();
+    foreach (explode(",", $services) as $service) {
+      $service_names[trim($service)] = $names[$service];
+    }
+    return $service_names;
+  }
+}
+
+/*** API Functions start ***/
+/**
+ * Get an array of all accounts or load a specific account.
+ *
+ * @param string $account_id
+ *   Name or id of the account to be loaded
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ * @param array $fields
+ *   Array of fields to be retrieved from the database
+ *
+ * @returns An array of accounts and their details.
+ */
+function gauth_account_load($account_id = NULL, $by_name = TRUE, $fields = 'gauth_accounts') {
+  $accounts = array();
+  if ($by_name) {
+    $filter = 'name';
+  }
+  else {
+    $filter = 'id';
+  }
+  $query = db_select('gauth_accounts');
+  if (is_array($fields)) {
+    $query->fields('gauth_accounts', $fields);
+  }
+  else {
+    $query->fields('gauth_accounts');
+  }
+  if ($account_id) {
+    $accounts = $query->condition($filter, $account_id, '=')
+      ->execute()
+      ->fetchAssoc();
+  }
+  else {
+    $accounts = $query->orderBy('id')
+      ->execute()
+      ->fetchAllAssoc($filter);
+  }
+  return $accounts;
+}
+
+/**
+ * Save an account.
+ *
+ * @param array $account
+ *   Account array that needs to be saved
+ * If you want to create a new account omit the id field in the array
+ * If you want to update existing account do have the id field
+ *
+ * @returns a account array
+ *
+ * Same account array reflects the changes
+ */
+function gauth_account_save(&$account) {
+  global $user;
+  if (isset($account['id'])) {
+    $fields = array('id' => $account['id'], 'uid' => isset($account['uid']) ? $account['uid'] : $user->uid);
+    if (isset($_SESSION['gauth_account_id']) && isset($account['access_token']) && $_SESSION['gauth_account_id'] == $account['id']) {
+      $fields['access_token'] = $account['access_token'];
+      $fields['is_authenticated'] = TRUE;
+    }
+    else {
+      if (isset($account['name'])) {
+        $fields['name'] = check_plain($account['name']);
+      }
+      $old_account = gauth_account_load($account['id'], FALSE);
+      $is_authenticated = $old_account['is_authenticated'];
+      if (isset($account['client_id'])) {
+        $fields['client_id'] = check_plain($account['client_id']);
+        if ($is_authenticated && $old_account['client_id'] != $account['client_id']) {
+          $is_authenticated = FALSE;
+        }
+      }
+      if (isset($account['client_secret'])) {
+        $fields['client_secret'] = check_plain($account['client_secret']);
+        if ($is_authenticated && $old_account['client_secret'] != $account['client_secret']) {
+          $is_authenticated = FALSE;
+        }
+      }
+      if (isset($account['developer_key'])) {
+        $fields['developer_key'] = check_plain($account['developer_key']);
+        if ($is_authenticated && $old_account['developer_key'] != $account['developer_key']) {
+          $is_authenticated = FALSE;
+        }
+      }
+      if (isset($account['services'])) {
+        if (is_array($account['services'])) {
+          $account['services'] = implode(",", $account['services']);
+        }
+        $fields['services'] = check_plain($account['services']);
+        if ($is_authenticated && $old_account['services'] != $account['services']) {
+          $is_authenticated = FALSE;
+        }
+      }
+      $fields['is_authenticated'] = $is_authenticated;
+    }
+    // Let other modules modify the account before saving existing account.
+    foreach (module_implements('gauth_account_update') as $module) {
+      $function = $module . '_gauth_account_update';
+      $function($fields, gauth_account_load($fields['id'], FALSE));
+    }
+    if (drupal_write_record('gauth_accounts', $fields, 'id') == SAVED_UPDATED) {
+      return $fields;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    if (!isset($account['name'])) {
+      return array('is_error' => TRUE, 'message' => 'Name is required for creating new account');
+    }
+    if (!isset($account['client_id'])) {
+      return array('is_error' => TRUE, 'message' => 'Client Id can\'t be Null');
+    }
+    if (!isset($account['client_secret'])) {
+      return array('is_error' => TRUE, 'message' => 'Client Secret can\'t be Null');
+    }
+    if (!isset($account['developer_key'])) {
+      return array('is_error' => TRUE, 'message' => 'Developer Key can\'t be Null');
+    }
+    $fields = array(
+      'name' => check_plain($account['name']),
+      'developer_key' => check_plain($account['developer_key']),
+      'client_id' => check_plain($account['client_id']),
+      'client_secret' => check_plain($account['client_secret']),
+      'uid' => $user->uid,
+    );
+    if (is_array($account['services'])) {
+      $account['services'] = implode(",", $account['services']);
+    }
+    $fields['services'] = check_plain($account['services']);
+    $accounts = gauth_account_load(NULL, TRUE, array('name'));
+    $accounts = array_keys($accounts);
+    if (in_array($account['name'], $accounts)) {
+      return array('is_error' => TRUE, 'message' => 'Name is already in use. Please choose a unique name for the account');
+    }
+    // Let other modules modify the account before saving new account.
+    module_invoke_all('gauth_account_insert', $fields);
+    if (drupal_write_record('gauth_accounts', $fields) == SAVED_NEW) {
+      return $fields;
+    }
+    else {
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Delete an account.
+ *
+ * @param string $account_id
+ *   Name or id of the account to be deleted
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ */
+function gauth_account_delete($account_id, $by_name = TRUE) {
+  if ($by_name) {
+    $filter = 'name';
+  }
+  else {
+    $filter = 'id';
+  }
+  // Let other modules perform delete for associated data if any.
+  module_invoke_all('gauth_account_delete', gauth_account_load($account_id, $by_name));
+  return db_delete("gauth_accounts")
+    ->condition($filter, $account_id, '=')
+    ->execute();
+}
+
+/**
+ * Check if an account is authenticated or not.
+ *
+ * @param string $account_id
+ *   Name or id of the account to be checked
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ */
+function gauth_account_is_authenticated($account_id, $by_name = TRUE) {
+  return gauth_account_load($account_id, $by_name, array('is_authenticated'));
+}
+
+/**
+ * Get Google_client object of an account.
+ *
+ * @param string $account_id
+ *   Name or id of the account which will be used to create google client.
+ *   Account array can also be passed with all parameters
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ */
+function gauth_client_get($account_id = NULL, $by_name = TRUE) {
+  $info = libraries_load('google-api-php-client');
+  if (!$info['loaded']) {
+    drupal_set_message(t("Can't create client object as library is missing check Status report or Readme for requirements"), 'error');
+    return FALSE;
+  }
+  if ($account_id == NULL) {
+    $client = new Google_Client();
+  }
+  else {
+    if (is_array($account_id)) {
+      $account = $account_id;
+    }
+    else {
+      $account = gauth_account_load($account_id, $by_name);
+    }
+    $client = new Google_Client();
+    $client->setClientId($account['client_id']);
+    $client->setAccessToken($account['access_token']);
+    $client->setClientSecret($account['client_secret']);
+    $client->setDeveloperKey($account['developer_key']);
+  }
+  $client->setApplicationName("Google OAuth2");
+  $client->setRedirectUri($GLOBALS['base_url'] . "/gauth/response_handler");
+  return $client;
+}
+
+/**
+ * Authenticate a google account.
+ *
+ * @param string $account_id
+ *   Name or id of the account which will be used to create google client
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ */
+function gauth_account_authenticate($account_id, $by_name) {
+  if ($by_name) {
+    $account = gauth_account_load($account_id, $by_name);
+    gauth_response_handler($account['id']);
+  }
+  else {
+    gauth_response_handler($account_id);
+  }
+}
+
+/**
+ * Unauthenticate an account.
+ *
+ * @param string $account_id
+ *   Name or id of the account to be unauthenticated
+ * @param bool $by_name
+ *   Set False if passing account id and True for account name
+ */
+function gauth_account_revoke_token($account_id, $by_name = TRUE) {
+  $account = gauth_account_load($account_id, $by_name);
+  if ($account['is_authenticated']) {
+    $client = gauth_client_get($account);
+    $client->revokeToken();
+    $account['is_authenticated'] = FALSE;
+    $account['access_token'] = '';
+    drupal_write_record('gauth_accounts', $account, 'id');
+    return TRUE;
+  }
+  else {
+    drupal_set_message(t("The account is not authenticated"));
+    return FALSE;
+  }
+}
+
+/**
+ * Function loads gauth account id by user id.
+ */
+function gauth_account_load_by_uid($uid) {
+  return db_select('gauth_accounts')
+    ->fields('gauth_accounts', array('name'))
+      ->condition('uid', $uid, '=')
+      ->execute()
+      ->fetchField();
+}
+

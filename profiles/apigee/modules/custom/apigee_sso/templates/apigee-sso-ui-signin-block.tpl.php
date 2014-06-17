@@ -13,9 +13,6 @@ if (module_exists('apigee_account')) {
 ?>
 <div id="apigee-sso-signin-block" class="clearfix">
   <ul class="federated-buttons">
-    <?php if (module_exists('apigee_sso')): ?>
-      <li><?php echo l('Authenticate with Google', 'apigee_sso', array('attributes' => array('class' => array('btn', 'google'))));?></li>
-    <?php endif; ?>
     <?php if ($can_use_apigee):?>
       <li><?php echo l("Authenticate with Apigee", 'aac-login', array('attributes' => array('class' => array('btn', 'aac'))));?></li>
     <?php endif; ?>

@@ -61,9 +61,10 @@ function devconnect_developer_apps_schema() {
       ),
       'description'   => array(
         'description' => 'App description',
-        'type'        => 'varchar',
-        'length'      => 255,
-        'not null'    => TRUE,
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+        'translatable' => TRUE,
       ),
       'consumer_key'  => array(
         'description' => 'Consumer key',
@@ -122,11 +123,17 @@ function devconnect_developer_apps_schema() {
         'type'        => 'varchar',
         'length'      => 255,
         'not null'    => TRUE
-      )
+      ),
+      'org_name'          => array(
+        'description' => 'Org name',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
     ),
     'primary key' => array('app_id'),
     'unique keys' => array(
-      'user_app' => array('uid', 'name')
+      'user_app' => array('uid', 'name', 'org_name')
     ),
     'foreign keys' => array(
       'app_owner' => array(
@@ -170,9 +177,15 @@ function devconnect_developer_apps_schema() {
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 1
-      )
+      ),
+      'org_name'      => array(
+        'description' => 'Org name',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
     ),
-    'primary key' => array('name')
+    'primary key' => array('name', 'org_name')
   );
 
   $schema['dc_dev_app_api_products'] = array(
@@ -196,8 +209,14 @@ function devconnect_developer_apps_schema() {
         'size'        => 'tiny',
         'not null'    => TRUE,
       ),
+      'org_name'          => array(
+        'description' => 'Org name',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
     ),
-    'primary key' => array('app_id', 'name')
+    'primary key' => array('app_id', 'name', 'org_name')
   );
 
   $schema['dc_dev_app_attributes'] = array(
@@ -262,4 +281,12 @@ function devconnect_developer_apps_update_7427() {
   }
   $schema = devconnect_developer_apps_schema();
   db_add_field('dc_api_product', 'is_public', $schema['dc_api_product']['fields']['is_public']);
+}
+
+/**
+ * Install developer-apps and api-products cache tables
+ */
+function devconnect_developer_apps_update_7428() {
+  drupal_uninstall_schema('devconnect_developer_apps');
+  drupal_install_schema('devconnect_developer_apps');
 }

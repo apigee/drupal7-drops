@@ -88,113 +88,191 @@ function devconnect_variable_group_info() {
 }
 
 function devconnect_admin_form($form, &$form_state) {
-
-  try {
-    $config =& Drupal::config('devconnect.settings');
-
-    $org = $config->get('org');
-    $endpoint = $config->get('endpoint');
-    $user = $config->get('user');
-    try {
-      $pass = Apigee\Util\Crypto::decrypt($config->get('pass'));
-    }
-    catch (Apigee\Exceptions\ParameterException $e) {
-      $pass = '';
-    }
-    $log_threshold = intval($config->get('log_threshold'));
-    $conn_timeout = intval($config->get('connection_timeout'));
-    $req_timeout = intval($config->get('request_timeout'));
-  } catch (Exception $e) {
-    $org = $endpoint = $user = '';
-    $log_threshold = $conn_timeout = $req_timeout = 0;
+  $org_settings = array();
+  if (isset($form_state['input']['org_settings'])) {
+    $org_settings = array_values($form_state['input']['org_settings']);
   }
-
-  $form = array();
-
+  else {
+    $org_settings =& devconnect_get_org_settings();
+    if (array_key_exists('org_settings', $org_settings)) {
+      $org_settings = $org_settings['org_settings'];
+    }
+  }
   $form['connection_config_container'] = array(
     '#title' => t('Connection Configuration'),
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
+    '#id' => 'edit-connection-config-container',
+    'org_settings' => array(
+      '#tree' => TRUE,
+    )
   );
+  $element = & $form['connection_config_container']['org_settings'];
+  for ($i = 0; $i < count($org_settings); $i++) {
+    $defaults = $org_settings[$i];
+    $org = $defaults['org'];
+    if (isset($form_state['storage']['org_to_delete']) && $form_state['storage']['org_to_delete'] === $org) {
+      continue;
+    }
+    $endpoint = $defaults['endpoint'];
+    $user = $defaults['user'];
 
-  $form['connection_config_container']['org'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Dev Portal Organization'),
-    '#required' => TRUE,
-    '#default_value' => $org,
-    '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
-    '#weight' => -6
-  );
+    $log_threshold = $defaults['log_threshold'];
+    $conn_timeout = intval($defaults['connection_timeout']);
+    $req_timeout = intval($defaults['request_timeout']);
+    if ($form_state['rebuild'] === TRUE) {
+      $pass = $defaults['pass'];
+    }
+    else {
+      try {
+        $pass = Apigee\Util\Crypto::decrypt($defaults['pass']);
+      } catch (Apigee\Exceptions\ParameterException $e) {
+        $pass = '';
+      }
+    }
+    $element[$i] = array(
+      '#title' => t('Connection #' . ($i + 1) . " ORG: " . $org . " " . ($i == 0 ? "(default)" : "")),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => count($org_settings) > 0 && !empty($org),
 
-  $form['connection_config_container']['endpoint'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Dev Portal Endpoint URL'),
-    '#required' => TRUE,
-    '#default_value' => $endpoint,
-    '#description' => t('URL to which to make Apigee REST calls.'),
-    '#weight' => -5
-  );
+    );
 
-  $form['connection_config_container']['user'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Endpoint Authenticated User'),
-    '#required' => TRUE,
-    '#default_value' => ($user == 'fixme' ? '' : $user),
-    '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
-    '#weight' => -4
-  );
+    $element[$i]['org'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Dev Portal Organization'),
+      '#required' => TRUE,
+      '#default_value' => $org,
+      '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
+      '#weight' => -6
+    );
 
-  $form['connection_config_container']['pass'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Authenticated User’s Password'),
-    '#required' => TRUE,
-    '#default_value' => ($pass == 'secret' ? '' : $pass),
-    '#description' => t('Password used when authenticating with the endpoint.'),
-    '#weight' => -3,
-    '#post_render' => array('devconnect_password_post_render')
-  );
+    $element[$i]['endpoint'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Dev Portal Endpoint URL'),
+      '#required' => TRUE,
+      '#default_value' => $endpoint,
+      '#description' => t('URL to which to make Apigee REST calls.'),
+      '#weight' => -5
+    );
 
-  $form['connection_config_container']['connection_timeout'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Connection Timeout'),
-    '#required' => TRUE,
-    '#default_value' => $conn_timeout,
-    '#description' => t('Number of seconds before an HTTP connection to KMS is assumed to have timed out.'),
-    '#weight' => -2,
-    '#post_render' => array('devconnect_number_post_render')
-  );
+    $element[$i]['user'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Endpoint Authenticated User'),
+      '#required' => TRUE,
+      '#default_value' => ($user == 'fixme' ? '' : $user),
+      '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
+      '#weight' => -4
+    );
 
-  $form['connection_config_container']['request_timeout'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Request Timeout'),
-    '#required' => TRUE,
-    '#default_value' => $req_timeout,
-    '#description' => t('Number of seconds before an HTTP response from KMS is assumed to have timed out.'),
-    '#weight' => -1,
-    '#post_render' => array('devconnect_number_post_render')
-  );
+    $element[$i]['pass'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Authenticated User’s Password'),
+      '#required' => TRUE,
+      '#default_value' => ($pass == 'secret' ? '' : $pass),
+      '#description' => t('Password used when authenticating with the endpoint.'),
+      '#weight' => -3,
+      '#post_render' => array('devconnect_password_post_render')
+    );
 
-  $form['connection_config_container']['log_threshold'] = array(
-    '#type' => 'radios',
-    '#title' => t('KMS logging threshold'),
-    '#description' => t('Controls what baseline level of KMS output should be written to the logs.'),
-    '#required' => TRUE,
-    '#default_value' => $log_threshold,
-    '#options' => array(
-      WATCHDOG_DEBUG => 'Debug',
-      WATCHDOG_INFO => 'Info',
-      WATCHDOG_NOTICE => 'Notice',
-      WATCHDOG_WARNING => 'Warning',
-      WATCHDOG_ERROR => 'Error',
-      WATCHDOG_CRITICAL => 'Critical',
-      WATCHDOG_ALERT => 'Alert',
-      WATCHDOG_EMERGENCY => 'Emergency'
+    $element[$i]['connection_timeout'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Connection Timeout'),
+      '#required' => TRUE,
+      '#default_value' => $conn_timeout,
+      '#description' => t('Number of seconds before an HTTP connection to KMS is assumed to have timed out.'),
+      '#weight' => -2,
+      '#post_render' => array('devconnect_number_post_render')
+    );
+
+    $element[$i]['request_timeout'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Request Timeout'),
+      '#required' => TRUE,
+      '#default_value' => $req_timeout,
+      '#description' => t('Number of seconds before an HTTP response from KMS is assumed to have timed out.'),
+      '#weight' => -1,
+      '#post_render' => array('devconnect_number_post_render')
+    );
+
+    $element[$i]['log_threshold'] = array(
+      '#type' => 'radios',
+      '#title' => t('KMS logging threshold'),
+      '#description' => t('Controls what baseline level of KMS output should be written to the logs.'),
+      '#required' => TRUE,
+      '#default_value' => $log_threshold,
+      '#options' => array(
+        WATCHDOG_DEBUG => 'Debug',
+        WATCHDOG_INFO => 'Info',
+        WATCHDOG_NOTICE => 'Notice',
+        WATCHDOG_WARNING => 'Warning',
+        WATCHDOG_ERROR => 'Error',
+        WATCHDOG_CRITICAL => 'Critical',
+        WATCHDOG_ALERT => 'Alert',
+        WATCHDOG_EMERGENCY => 'Emergency'
+      ),
+    );
+
+    $status = _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $conn_timeout);
+
+    $element[$i]['connect_test'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Test Configuration'),
+      '#weight' => 0,
+      '#prefix' => '<br/>',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+
+    $element[$i]['connect_test']['test_connection'] = array(
+      '#name' => 'test_connection_' . $i,
+      '#type' => 'button',
+      '#btn_index' => $i,
+      '#limit_validation_errors' => array(),
+      '#value' => t('Test Connection'),
+      '#ajax' => array(
+        'callback' => '_devconnect_test_management_connection_ajax',
+        'wrapper' => 'test-connect-result-' . $i,
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+    );
+    $element[$i]['connect_test']['test_connection_status'] = array(
+      '#prefix' => '<div id="test-connect-result-' . $i . '">',
+      '#suffix' => '</div>',
+      '#markup' => '<br>' . $status,
+    );
+    $element[$i]['remove_btn'] = array(
+      '#name' => 'remove_btn_' . $i,
+      '#type' => 'submit',
+      '#btn_index' => $i,
+      '#access' => count($org_settings) > 1,
+      '#value' => t('Mark for removal'),
+      '#limit_validation_errors' => array(),
+      '#submit' => array('devconnect_settings_remove_btn_submit'),
+      '#ajax' => array(
+        'callback' => 'devconnect_settings_remove_btn_callback',
+        'wrapper' => 'edit-connection-config-container',
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+    );
+  }
+  $form['connection_config_container']['add_more'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add one more'),
+    '#limit_validation_errors' => array(),
+    '#submit' => array('devconnect_settings_add_more_add_one'),
+    // See the examples in ajax_example.module for more details on the
+    // properties of #ajax.
+    '#ajax' => array(
+      'callback' => 'devconnect_settings_add_more_callback',
+      'wrapper' => 'edit-connection-config-container',
+      'method' => 'replace',
+      'effect' => 'fade',
     ),
-    '#weight' => 55
   );
-
-
   $form['#submit'] = array('devconnect_admin_form_submit');
 
   $modules = module_implements('variable_info');
@@ -283,78 +361,87 @@ function devconnect_admin_form($form, &$form_state) {
     $form[$set . '_container'][$name] = $form_element;
   }
 
-  if (isset($form_state['storage']['connection_status'])) {
-    $status = $form_state['storage']['connection_status'];
-  }
-  else {
-    $status = _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $conn_timeout);
-  }
-
-  $form['connection_config_container']['connect_test'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Test Configuration'),
-    '#weight' => 0,
-    '#prefix' => '<br/>',
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-
-  $form['connection_config_container']['connect_test']['test_connection'] = array(
-    '#type' => 'submit',
-    '#value' => t('Test Connection'),
-    '#submit' => array('_devconnect_test_management_connection_submit'),
-    '#ajax' => array(
-      'callback' => '_devconnect_test_management_connection_ajax',
-      'wrapper' => 'test-connect-result',
-      'method' => 'replace',
-      'effect' => 'fade',
-    ),
-  );
-  $form['connection_config_container']['connect_test']['test_connection_status'] = array(
-    '#type' => 'item',
-    '#prefix' => '<div id="test-connect-result">',
-    '#suffix' => '</div>',
-    '#markup' => '<br>' . $status,
-  );
-
   return system_settings_form($form);
 }
 
-function devconnect_admin_form_submit($form, &$form_state) {
-  $config =& Drupal::config('devconnect.settings');
-  $changes = array();
-
-  foreach (array('org', 'endpoint', 'user', 'pass', 'log_threshold', 'connection_timeout', 'request_timeout') as $key) {
-    $value = $form_state['values'][$key];
-    switch ($key) {
-      case 'org':
-      case 'endpoint':
-      case 'user':
-      case 'pass':
-        $old_value = $config->get($key);
-        if ($key == 'pass') {
-          try {
-            $old_value = Apigee\Util\Crypto::decrypt($old_value);
-          } catch (Apigee\Exceptions\ParameterException $e) {
-            $old_value = '';
-          }
-          if ($old_value != $value) {
-            $from = (empty($old_value) ? '*empty*' : '*encrypted*');
-            $changes[$key] = array($from, '*encrypted*');
-          }
-        }
-        elseif ($old_value != $value) {
-          $changes[$key] = array($old_value, $value);
-        }
-        break;
-    }
-    if ($key == 'pass') {
-      $value = Apigee\Util\Crypto::encrypt($value);
-    }
-
-    $config->set($key, $value);
+function devconnect_settings_org_name_validate($element, &$form_state, $form) {
+  if (empty($element['#value'])) {
+    form_error($element, t('This field is required.'));
   }
-  $config->save();
+}
+
+function devconnect_settings_remove_btn_callback($form, $form_state) {
+  return $form['connection_config_container'];
+}
+
+function devconnect_settings_add_more_add_one($form, &$form_state) {
+  drupal_set_message("Changes not saved yet", "warning");
+  $form_state['input']['org_settings'][] = \Symfony\Component\Yaml\Yaml::parse(drupal_get_path('module', 'devconnect') . '/config/devconnect.settings.yml');
+  $form_state['rebuild'] = TRUE;
+}
+
+function devconnect_settings_remove_btn_submit($form, &$form_state) {
+  drupal_set_message("Changes not saved yet", "warning");
+  $form_state['storage']['org_to_delete'] = $form_state['input']['org_settings'][$form_state['triggering_element']['#btn_index']]['org'];
+  $form_state['rebuild'] = TRUE;
+}
+
+function devconnect_settings_add_more_callback($form, $form_state) {
+  return $form['connection_config_container'];
+}
+
+function devconnect_admin_form_submit($form, &$form_state) {
+  $config = devconnect_get_org_settings();
+  $changes = array();
+  $org_settings = array();
+  $i = 0;
+  foreach ($form_state['values']['org_settings'] as $org_config) {
+    $org_setting = array();
+    foreach (array(
+               'org',
+               'endpoint',
+               'user',
+               'pass',
+               'log_threshold',
+               'connection_timeout',
+               'request_timeout'
+             ) as $key) {
+      $value = $org_config[$key];
+      switch ($key) {
+        case 'org':
+        case 'endpoint':
+        case 'user':
+        case 'pass':
+          $old_value = $org_config[$key];
+          if ($key == 'pass') {
+            try {
+              $old_value = Apigee\Util\Crypto::decrypt($old_value);
+            } catch (Apigee\Exceptions\ParameterException $e) {
+              $old_value = '';
+            }
+            if ($old_value != $value) {
+              $from = (empty($old_value) ? '*empty*' : '*encrypted*');
+              $changes["Connection #" . ($i + 1) . ": " . $key] = array($from, '*encrypted*');
+            }
+          }
+          elseif ($old_value != $value) {
+            $changes["Connection #" . ($i + 1) . ": " . $key] = array($old_value, $value);
+          }
+          break;
+      }
+      if ($key == 'pass') {
+        $value = Apigee\Util\Crypto::encrypt($value);
+      }
+      $org_setting[$key] = $value;
+      if ($i == 0) {
+        $config[$key] = $value;
+      }
+    }
+    $org_settings[] = $org_setting;
+    $i++;
+  }
+  $config['org_settings'] = $org_settings;
+  variable_set('devconnect_org_settings', $config);
 
   if (!empty($changes)) {
     $change_items = array();
@@ -378,24 +465,8 @@ function devconnect_number_post_render($content, $element) {
  * Ajax Callback for Testing the KMS Connection
  */
 function _devconnect_test_management_connection_ajax($form, &$form_state) {
-  return $form['connection_config_container']['connect_test']['test_connection_status'];
-}
-
-/**
- * Submit Callback for testing the KMS Connection
- */
-function _devconnect_test_management_connection_submit($form, &$form_state) {
-  // provide the currently user supplied credentials
-  $org = $form_state['input']['org'];
-  $endpoint = $form_state['input']['endpoint'];
-  $user = $form_state['input']['user'];
-  $pass = $form_state['input']['pass'];
-  $timeout = $form_state['input']['connection_timeout'];
-
-  // make the form states rebuild and store important variables
-  $form_state['rebuild'] = TRUE;
-  $form_state['storage']['ajaxed'] = TRUE;
-  $form_state['storage']['connection_status'] = _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout);
+  $i = $form_state['triggering_element']['#btn_index'];
+  return $form['connection_config_container']['org_settings'][$i]['connect_test']['test_connection_status'];
 }
 
 /**
@@ -432,14 +503,13 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
   try {
     $org->load();
     return '<span style="color:green">' . t('Connection Successful') . '</span>';
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     if ($e->getCode() == 302 && strpos($org, 'https') == 0) {
       return '<span style="color:orange">'
-              . t('DevPortal Endpoint seems to be SSL enabled. Try <strong style="color:green"><em>@endpoint</em></strong> instead.',
-                  array(
-                      '@endpoint' => str_replace('http', 'https', $endpoint)
-                )) . '</span>';
+      . t('DevPortal Endpoint seems to be SSL enabled. Try <strong style="color:green"><em>@endpoint</em></strong> instead.',
+        array(
+          '@endpoint' => str_replace('http', 'https', $endpoint)
+        )) . '</span>';
     }
     return '<span style="color:red">' . t('Connection Unsuccessful: ' . $e->getCode()) . '</span>';
   }
@@ -472,26 +542,10 @@ function devconnect_cron() {
     $dev_app = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_api_client());
     $environments = $dev_app->queryEnvironments();
     variable_set('devconnect_org_environments', $environments);
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     // Ignore any exceptions thrown. These probably result from
     // misconfiguration of the endpoint.
   }
-}
-
-
-/**
- * Format callback for the devconnect_curlauth variable.
- *
- * @see devconnect_variable_info
- *
- * @param $variable
- * @param $options
- * @return string
- */
-function devconnect_format_endpoint_auth($variable, $options) {
-  list($username) = explode(':', $variable['value']);
-  return $username . ':[encrypted]';
 }
 
 
@@ -505,7 +559,7 @@ function devconnect_format_endpoint_auth($variable, $options) {
 function devconnect_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'user_login') {
     $form['userpasswordlink'] = array(
-      '#markup' => '<br/>' . l('Forgot your password?', 'user/password') . '<br/><br/>',
+      '#markup' => '<br>' . l('Forgot your password?', 'user/password') . '<br><br>',
       '#weight' => 100
     );
   }
@@ -538,65 +592,83 @@ function devconnect_theme() {
  * The name of this function doesn't really make sense, but it is preserved
  * for the sake of backwards compatibility.
  *
+ * @todo As this function stands right now, it MAY return NULL instead of an
+ * OrgConfig object, because devconnect_api_client_config() may return NULL.
+ * This causes recoverable fatal errors when instantiating Edge SDK objects.
+ *
  * @return Apigee\Util\OrgConfig
- * @throws Exception
  */
-function devconnect_default_api_client() {
-  // make drush site-install happy
-  devconnect_init();
-  // When running update.php, we might reach this code before we get to the
-  // code that enables the d8cmi module. In that case, manually force the
-  // module to load.
-  if (!module_exists('d8cmi')) {
-    module_load_include('module', 'd8cmi');
-  }
-  d8cmi_init();
+function devconnect_default_api_client($requested_org = 'default') {
+  $static = & drupal_static(__FUNCTION__, array());
+  $default = & drupal_static(__FUNCTION__ . ":default", NULL);
+  if (empty($static)) {
+    $org_settings = devconnect_api_client_config('all');
+    $info = system_get_info('module', 'devconnect');
+    foreach ($org_settings as $settings) {
 
-  try {
-    $config = Drupal::config('devconnect.settings');
-    $org = $config->get('org');
-    $endpoint = $config->get('endpoint');
-    $username = $config->get('user');
-    $pass_encrypted = $config->get('pass');
-    $log_threshold = $config->get('log_threshold');
-    $conn_timeout = intval($config->get('connection_timeout'));
-    $timeout = intval($config->get('request_timeout'));
-    try {
-      $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
+      $logger = new Apigee\Drupal\WatchdogLogger();
+      $logger::setLogThreshold($settings['log_threshold']);
+      $user_mail = user_is_logged_in() ? $GLOBALS['user']->mail : NULL;
+
+      $adapter = new \Guzzle\Log\PsrLogAdapter($logger);
+      $message = '<pre>' . \Guzzle\Log\MessageFormatter::DEBUG_FORMAT . '</pre>';
+      $guzzle_log_plugin = new \Guzzle\Plugin\Log\LogPlugin($adapter, $message);
+
+      $options = array(
+        'logger' => $logger,
+        'user_mail' => $user_mail,
+        'subscribers' => array($guzzle_log_plugin),
+        'http_options' => array(
+          'connection_timeout' => intval($settings['connection_timeout']),
+          'timeout' => intval($settings['request_timeout'])
+        ),
+        'user_agent' => 'devconnect/' . $info['version'],
+        'variable_store' => new Apigee\Drupal\VariableCache(),
+      );
+      if (function_exists('devconnect_debug_register')) {
+        $options['debug_callbacks'] = array('devconnect_debug_register');
+      }
+      $static[$settings['org']] = new Apigee\Util\OrgConfig($settings['org'], $settings['endpoint'], $settings['user'], $settings['pass'], $options);
     }
-    catch (Apigee\Exceptions\ParameterException $e) {
-      $password = '';
+    $default_setting = devconnect_api_client_config('default');
+    $default = $static[$default_setting['org']];
+
+  }
+  return ($requested_org === 'default' ? $default : ($requested_org === 'all' ? $static : $static[$requested_org]));
+}
+
+/**
+ * Find configuration data for the requested org.
+ *
+ * @param string $requested_org
+ * @return array|null
+ */
+function devconnect_api_client_config($requested_org = 'default') {
+  $static = & drupal_static(__FUNCTION__, array());
+  $default = & drupal_static(__FUNCTION__ . ':default', NULL);
+  if (empty($static)) {
+    // make drush site-install happy
+    devconnect_init();
+    $config = devconnect_get_org_settings();
+    if (array_key_exists('org_settings', $config)) {
+      $config = $config['org_settings'];
     }
-  } catch (Exception $e) {
-    $org = $endpoint = $username = $password = $log_threshold = '';
-    $conn_timeout = $timeout = 1;
+    else {
+      $config = array($config);
+    }
+    foreach ($config as $org_config) {
+      try {
+        $org_config['pass'] = Apigee\Util\Crypto::decrypt($org_config['pass']);
+      } catch (Apigee\Exceptions\ParameterException $e) {
+        $org_config['pass'] = '';
+      }
+      $static[$org_config['org']] = $org_config;
+      if ($default == NULL) {
+        $default = $org_config;
+      }
+    }
   }
-
-  $logger = new Apigee\Drupal\WatchdogLogger();
-  $logger::setLogThreshold($log_threshold);
-  $user_mail = user_is_logged_in() ? $GLOBALS['user']->mail : NULL;
-
-  $adapter = new \Guzzle\Log\PsrLogAdapter($logger);
-  $message = '<pre>' . \Guzzle\Log\MessageFormatter::DEBUG_FORMAT . '</pre>';
-  $guzzle_log_plugin = new \Guzzle\Plugin\Log\LogPlugin($adapter, $message);
-
-  $info = system_get_info('module', 'devconnect');
-
-  $options = array(
-    'logger' => $logger,
-    'user_mail' => $user_mail,
-    'subscribers' => array($guzzle_log_plugin),
-    'http_options' => array(
-      'connection_timeout' => $conn_timeout,
-      'timeout' => $timeout
-    ),
-    'user_agent' => 'devconnect/' . $info['version'],
-    'variable_store' => new Apigee\Drupal\VariableCache()
-  );
-  if (function_exists('devconnect_debug_register')) {
-    $options['debug_callbacks'] = array('devconnect_debug_register');
-  }
-  return new Apigee\Util\OrgConfig($org, $endpoint, $username, $password, $options);
+  return $requested_org == 'all' ? $static : ($requested_org == 'default' ? $default : (isset($static[$requested_org]) ? $static[$requested_org] : NULL));
 }
 
 /**
@@ -608,9 +680,14 @@ function _devconnect_warn_deprecated() {
     // Be more efficient when running PHP 5.4
     $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
   }
-  else {
+  elseif (version_compare(PHP_VERSION, '5.3.6', '>=')) {
     // Sigh. Pull entire backtrace.
     $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+  }
+  else {
+    // We are dealing with real dinosaurs here. Be even less efficient.
+    // PHP < 5.3.6 does not support any args to debug_backtrace().
+    $backtrace = debug_backtrace();
   }
   $frame = $backtrace[1];
 
@@ -666,9 +743,51 @@ function devconnect_notify($error_code, $summary, $details, $severity = Apigee\U
     drupal_set_message($formatted_message, $message_type);
     return FALSE;
   }
-  return theme('devconnect_error_inline', array('summary' => $summary, 'detail' => $details, 'severity' => $message_type));
+  return theme('devconnect_error_inline', array(
+    'summary' => $summary,
+    'detail' => $details,
+    'severity' => $message_type
+  ));
 }
 
 function devconnect_get_debug_data() {
   return Apigee\Util\DebugData::toArray();
+}
+
+function devconnect_get_org_settings() {
+  $custom_vars = variable_get('devconnect_org_settings', NULL);
+  $settings_saved = !empty($custom_vars);
+  if (!$settings_saved) {
+    $private_filesystem = variable_get('file_private_path', NULL);
+    if ($private_filesystem && file_exists("$private_filesystem/config/active/devconnect.settings.yml")) {
+      devconnect_init(); // Make sure YAML autoloader is registered
+      $custom_vars = Symfony\Component\Yaml\Yaml::parse("$private_filesystem/config/active/devconnect.settings.yml");
+    }
+  }
+  if (empty($custom_vars)) {
+    $custom_vars = array(
+      'org' => '',
+      'user' => '',
+      'endpoint' => 'https://api.enterprise.apigee.com/v1',
+      'pass' => '',
+      'log_threshold' => 4,
+      'connection_timeout' => 4,
+      'request_timeout' => 4,
+      'org_settings' => array(
+        array(
+          'org' => '',
+          'user' => '',
+          'endpoint' => 'https://api.enterprise.apigee.com/v1',
+          'pass' => '',
+          'log_threshold' => 4,
+          'connection_timeout' => 4,
+          'request_timeout' => 4,
+        )
+      )
+    );
+  }
+  if (!$settings_saved) {
+    variable_set('devconnect_org_settings', $custom_vars);
+  }
+  return $custom_vars;
 }

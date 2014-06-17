@@ -73,4 +73,12 @@ class DeveloperEntity extends ArrayEntity {
    * @var array
    */
   public $debugData;
+  /**
+   * @var array
+   */
+  public $orgNames;
+  /**
+   * @var boolean
+   */
+  public $forceSync = FALSE;
 }

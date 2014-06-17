@@ -66,6 +66,7 @@ projects[flood_control][subdir]                                = "contrib"
 projects[fontyourface][subdir]                                 = "contrib"
 projects[footermap][subdir]                                    = "contrib"
 projects[ftools][subdir]                                       = "contrib"
+projects[gauth][subdir]                                        = "contrib"
 projects[genpass][subdir]                                      = "contrib"
 projects[gist_filter][subdir]                                  = "contrib"
 projects[gist_filter][version]                                 = "1.x-dev"
@@ -293,7 +294,6 @@ projects[apigee_base][download][branch]                        = "devconnect"
 projects[apigee_devconnect][type]                              = "theme"
 projects[apigee_devconnect][download][type]                    = 'git'
 projects[apigee_devconnect][download][url]                     = "git@github.com:apigee/apigee_drupal_devconnect_theme.git"
-projects[apigee_devconnect][download][branch]                  = "7.x-4.24"
 
 projects[apigee_responsive][type]                              = "theme"
 projects[apigee_responsive][download][type]                    = 'git'
@@ -312,26 +312,17 @@ projects[bootstrap][type]                                      = "theme"
 ; CUSTOM MODULES
 ; ------------------------------------------------------------------
 
-;d8cmi
-projects[d8cmi][type]                                          = module
-projects[d8cmi][subdir]                                        = custom
-projects[d8cmi][download][type]                                = 'git'
-projects[d8cmi][download][url]                                 = "http://git.drupal.org/sandbox/daniel_j/2122587.git"
-projects[d8cmi][directory_name]                                = d8cmi
-
 ;devconnect
 projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
-projects[devconnect][download][branch]                         = "7.x-14.06"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module
 projects[apigee_sso][subdir]                                   = custom
 projects[apigee_sso][download][type]                           = 'git'
 projects[apigee_sso][download][url]                            = "git@github.com:apigee/apigee_drupal_sso.git"
-projects[apigee_sso][download][branch]                         = "7.x-14.04"
 
 
 
@@ -636,6 +627,11 @@ libraries[colorpicker][destination]                            = "libraries"
 libraries[colorpicker][directory_name]                         = "colorpicker"
 libraries[colorpicker][download][type]                         = 'get'
 libraries[colorpicker][download][url]                          = 'http://www.eyecon.ro/colorpicker/colorpicker.zip'
+
+libraries[google-api-php-client][destination]                  = "libraries"
+libraries[google-api-php-client][directory_name]               = "google-api-php-client"
+libraries[google-api-php-client][download][type]               = 'get'
+libraries[google-api-php-client][download][url]                = 'https://google-api-php-client.googlecode.com/files/google-api-php-client-0.6.0.tar.gz'
 
 libraries[highcharts][destination]                             = "libraries"
 libraries[highcharts][directory_name]                          = "highcharts"

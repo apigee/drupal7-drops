@@ -3,8 +3,6 @@
 use Apigee\Mint\DeveloperBalance;
 use Apigee\Mint\Provider;
 use Apigee\Util\CacheFactory;
-use Apigee\Util\Log;
-use Apigee\Mint\BankDetail;
 use Apigee\Mint\Organization;
 use Apigee\Mint\DataStructures\DeveloperTnc;
 use Apigee\Mint\TermAndCondition;
@@ -309,7 +307,8 @@ function devconnect_monetization_company_details_form_submit(&$form, &$form_stat
     }
   } catch (\Exception $e) {
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
-    Apigee\Util\Log::write('devconnect_monetization', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
+    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
+    devconnect_default_api_client()->logger->critical($message);
   }
 }
 
@@ -490,7 +489,8 @@ function devconnect_monetization_company_bank_details_form_submit(&$form, &$form
     $bank_detail->save('save');
     drupal_set_message(t('Your Bank Details have been saved.'), 'status');
   } catch (Exception $e) {
-    Log::write('devconnect_monetization', Log::LOGLEVEL_ERROR, $e->getMessage());
+    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
+    devconnect_default_api_client()->logger->error($message);
     drupal_set_message(t('The operation could not be completed. Please try again later.'), 'error');
   }
 }
@@ -930,7 +930,7 @@ function devconnect_monetization_accept_tnc_form_submit($form, &$form_state) {
     }
   } catch (Exception $e) {
     drupal_set_message(t('Error while trying to accept TnCs. Please try again later.'));
-    Apigee\Util\Log::write('devconnect_monetization', Apigee\Util\Log::LOGLEVEL_ERROR, 'Could not accept terms and conditions: ' . $e->getMessage());
+    devconnect_default_api_client()->logger->error('Could not accept terms and conditions: ' . $e->getMessage());
   }
 }
 

@@ -12,7 +12,7 @@
   ============== FOR LOCAL DEVELOPMENT  ======================
   From the command line: phing apigee-drupal -Dbuild.type=local
 -->
-  <php expression="14.06" returnProperty="YYDD"/>
+  <php expression="14.07" returnProperty="YYDD"/>
   <property name="VERSION" value="pantheon-${YYDD}.${env.BUILD_NUMBER}"/>
   <property name="branchname" value="master" override="false"/>
   <property name="create-new-branch-for-build" value="no"/>

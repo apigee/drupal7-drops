@@ -31,8 +31,6 @@ automatically logged. You can see the report at:
 
   Administration >> Reports >> Apache Solr >> Statistics
 
-You can also view the report as a Google Gadget.
-
 You can configure the module at:
 
  * Administer >> Site Configurarion >> Apache Solr >> Statistics
@@ -48,8 +46,5 @@ Where you can configure:
    You could use this to specify IPs for web crawlers or monitoring scripts that
    make sure your site is working.
 
- * Google Gadget Settings.
-   You can configure a secret key to give access to your access report through
-   a Google Gadget.
-
 --
+

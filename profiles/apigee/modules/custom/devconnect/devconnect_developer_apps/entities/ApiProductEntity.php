@@ -5,6 +5,10 @@ use \Drupal\devconnect\ArrayEntity;
 
 class ApiProductEntity extends ArrayEntity {
   /**
+   * @var string
+   */
+  public $orgName = '';
+  /**
    * @var array
    */
   public $apiResources = array();

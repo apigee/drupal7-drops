@@ -90,7 +90,7 @@
     <li><a data-toggle="tab" href="#details<?php print $i; ?>">Details</a></li>
     <?php if ($show_analytics) { ?>
       <li>
-        <?php print l('Analytics', 'user/' . $app['entity']->uid . '/app-detail/' . $app['app_name']); ?>
+        <?php print l('Analytics', $app['detail_url']); ?>
       </li>
     <?php } ?>
     <li class="hidden-xs apigee-modal-link-edit">

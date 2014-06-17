@@ -4,8 +4,6 @@ use Apigee\Util\CacheFactory;
 use Apigee\Mint\RatePlan;
 use Apigee\Mint\DeveloperRatePlan;
 use Apigee\Mint\Organization as Organization;
-use Apigee\Mint\Developer as Developer;
-use Apigee\Mint\DataStructures\Address as Address;
 use Apigee\Mint\Exceptions\MintApiException as MintApiException;
 
 /**
@@ -198,11 +196,11 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
                 '@plan' => $rate_plan_id,
               );
               $message = t('Plan @plan from package @package has been purchased by @developer.', $vars);
-              Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
-
+              devconnect_default_api_client()->logger->notice($message);
             }
             catch(\Exception $e) {
-              Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
+              $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
+              devconnect_default_api_client()->logger->critical($message);
             }
             commerce_order_save($order);
           }
@@ -214,13 +212,14 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
             '@company_id' => $developer_id,
           );
           $message = t('Developer %developer with %email has topped up %amount %currency on behalf of @company_id\'s balance and updated Mint back end.', $vars);
-          Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
+          devconnect_default_api_client()->logger->notice($message);
         }
         catch(MintApiException $ce) {
           if ($GLOBALS['devconnect_monetization_debug_endpoint_response']) {
-            Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $ce->getMintMessage(TRUE));
+            devconnect_default_api_client()->logger->critical($ce->getMintMessage(TRUE));
           }
-          Apigee\Util\Log::write('devconnnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $ce);
+          $message = (method_exists($ce, '__toString') ? (string)$ce : $ce->getMessage());
+          devconnect_default_api_client()->logger->critical($message);
           throw $ce;
         }
       }
@@ -228,7 +227,8 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
         // If $e instance of Apigee\Mint\Exceptions\MintApiException, then log entries
         // have been already managed in the inner try/catch, if not then log it in here
         if (!is_a($e, 'Apigee\Mint\Exceptions\MintApiException')) {
-          Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_CRITICAL, $e);
+          $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
+          devconnect_default_api_client()->logger->critical($message);
         }
         // Queue the message to ask the developer to contact an administrator
         drupal_set_message(t('There was an error trying to complete your transaction. Please contact your adminstrator.'), 'error');
@@ -236,7 +236,7 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
       break;
     default:
       $message = t("checkout_complete fired with order deteails: \r\n %order", array('%order' => '<pre>' . print_r($order, TRUE) . '</pre>'));
-      Apigee\Util\Log::write('devconnect_monetization_payment', Apigee\Util\Log::LOGLEVEL_NOTICE, $message);
+      devconnect_default_api_client()->logger->notice($message);
       break;
   }
 }

@@ -44,7 +44,12 @@ class ApiProductController implements DrupalEntityControllerInterface {
    * @return array
    */
   public function load($ids = array(), $conditions = array('show_private' => FALSE)) {
-    $api_product = new Apigee\ManagementAPI\APIProduct(devconnect_default_api_client());
+    if(!empty($conditions['orgName'])){
+        $api_product = new Apigee\ManagementAPI\APIProduct(devconnect_default_api_client($conditions['orgName']));
+    } else {
+        $api_product = new Apigee\ManagementAPI\APIProduct(devconnect_default_api_client());
+    }
+
     if (!isset($conditions['show_private'])) {
       $conditions['show_private'] = FALSE;
     }
@@ -87,6 +92,7 @@ class ApiProductController implements DrupalEntityControllerInterface {
       if ($api_product->isPublic() || $conditions['show_private']) {
         $array = $api_product->toArray();
         $array['isPublic'] = $api_product->isPublic();
+        $array['orgName'] = $api_product->getConfig()->orgName;
         $return[$api_product->getName()] = new Drupal\devconnect_developer_apps\ApiProductEntity($array);
       }
     }

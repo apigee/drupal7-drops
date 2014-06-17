@@ -1,0 +1,56 @@
+<?php
+/**
+ * @file
+ * Install and uninstall functions for the Google Auth Login module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function gauth_login_schema() {
+  $schema['gauth_login'] = array(
+    'description' => 'Login using google enabled for end user.',
+    'fields' => array(
+      'google_id' => array(
+        'description' => 'The user id of the user in google',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The user id of the user',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'uid' => array('uid'),
+    ),
+    'foreign keys' => array(
+      'google_account' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('google_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function gauth_login_install() {
+  drupal_install_schema('gauth_login_services');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function gauth_login_uninstall() {
+  drupal_uninstall_schema('gauth_login_services');
+  variable_del('gauth_login_client_id');
+  variable_del('gauth_login_client_secret');
+  variable_del('gauth_login_developer_key');
+}

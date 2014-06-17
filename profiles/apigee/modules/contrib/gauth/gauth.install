@@ -1,0 +1,135 @@
+<?php
+/**
+ * @file
+ * Install and uninstall functions for the Google OAuth module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function gauth_schema() {
+  $schema['gauth_accounts'] = array(
+    'description' => 'Google OAuth2 api information.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'A unique identifier for the google api.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The account name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'developer_key' => array(
+        'description' => 'The api key for Google Access.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'client_id' => array(
+        'description' => 'The Client Id of Google Account.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'client_secret' => array(
+        'description' => 'The Client Secret Id of Google Account.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'services' => array(
+        'description' => 'The OAuth account is used for which services.',
+        'type' => 'text',
+      ),
+      'access_token' => array(
+        'description' => 'The OAuth access token.',
+        'type' => 'text',
+      ),
+      'is_authenticated' => array(
+        'description' => 'Is the account authenticated and ready to use?.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The users uid of the user who created the gauth account.',
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function gauth_install() {
+  drupal_install_schema('gauth_accounts');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function gauth_uninstall() {
+  drupal_uninstall_schema('gauth_accounts');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function gauth_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    $t = get_t();
+    $requirements['gauth'] = array(
+      'title' => $t('Google OAuth2'),
+      'value' => '',
+      'description' => '',
+      'severity' => REQUIREMENT_OK,
+    );
+    $info = libraries_load('google-api-php-client');
+    if (!$info['loaded']) {
+      $url = l($t('here'), $info['download url']);
+      $version = array_keys($info['versions']);
+      $requirements['gauth']['description'] = $t('Install version "@version" of the Google api php client library code (from !here) in a libraries directory such as "sites/all/libraries."', array('@version' => $version[0], '!here' => $url));
+      $requirements['gauth']['severity'] = REQUIREMENT_ERROR;
+    }
+    else {
+      $requirements['gauth']['value'] = $t($info['version']);
+    }
+  }
+  return $requirements;
+}
+
+/**
+ * Add the gauth_accounts.uid field.
+ */
+function gauth_update_7002() {
+  $field = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The {users}.uid of the user who created the redirect.',
+  );
+  db_add_field('gauth_accounts', 'uid', $field);
+
+  db_update('gauth_accounts')
+    ->fields(array('uid' => 1))
+    ->execute();
+}

@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: isaias
- * Date: 2/24/14
- * Time: 1:15 PM
- */
 
 class BaseMintTest extends DrupalWebTestCase {
 
@@ -15,17 +9,12 @@ class BaseMintTest extends DrupalWebTestCase {
     module_load_include('module', 'devconnect');
     devconnect_init();
 
-    if (!module_exists('d8cmi')) {
-      module_load_include('module', 'd8cmi');
-    }
-    d8cmi_init();
-
     // The following line could conceivably throw an Exception
-    $config = Drupal::config('devconnect.settings');
-    $org = $config->get('org');
-    $endpoint = $config->get('endpoint');
-    $username = $config->get('user');
-    $pass_encrypted = $config->get('pass');
+    $config = devconnect_get_org_settings();
+    $org = $config['org'];
+    $endpoint = $config['endpoint'];
+    $username = $config['user'];
+    $pass_encrypted = $config['pass'];
 
     if ($org == 'fixme' || $org == '') {
       throw new Exception(t('Your Endpoint info has not been set yet.'));
@@ -40,8 +29,8 @@ class BaseMintTest extends DrupalWebTestCase {
     $options = array(
       'subscribers' => array(),
       'http_options' => array(
-        'connection_timeout' => intval($config->get('connection_timeout')),
-        'timeout' => intval($config->get('request_timeout'))
+        'connection_timeout' => intval($config['connection_timeout']),
+        'timeout' => intval($config['request_timeout'])
       )
     );
     return new Apigee\Util\OrgConfig($org, $endpoint, $username, $password, $options);

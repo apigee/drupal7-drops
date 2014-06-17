@@ -1,8 +1,6 @@
 <?php
 
 require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
-require_once(dirname(__FILE__) . '/modules/custom/d8cmi/lib/Drupal.php');
-require_once(dirname(__FILE__) . '/modules/custom/d8cmi/lib/Config.php');
 // Make Crypto work properly with R23
 if (method_exists('Apigee\Util\Crypto', 'setKey')) {
   Apigee\Util\Crypto::setKey(hash('SHA256', 'w3-Love_ap|s', TRUE));
@@ -1701,19 +1699,19 @@ function apigee_skip_api_endpoint($form, &$form_state) {
 
 function apigee_install_api_endpoint_submit($form, &$form_state) {
 
-  try {
-    $config = Drupal::config('devconnect.settings');
-  } catch (Exception $e) {
-    return;
-  }
+  drupal_load('module', 'devconnect');
+  $config = devconnect_get_org_settings();
   foreach (array('org', 'endpoint', 'user', 'pass') as $key) {
     $value = $form_state['values'][$key];
     if ($key == 'pass') {
       $value = Apigee\Util\Crypto::encrypt($value);
     }
-    $config->set($key, $value);
+    $config[$key] = $value;
   }
-  $config->save();
+  $config_copy = $config;
+  unset($config_copy['org_settings']);
+  $config['org_settings'] = array($config_copy);
+  variable_set('devconnect_org_settings', $config);
   $GLOBALS['apigee_api_endpoint_configured'] = TRUE;
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
@@ -1739,6 +1737,7 @@ function apigee_install_settings_form_submit($form, &$form_state, &$install_stat
 
 
 }
+
 
 function apigee_generate_make_smartdocs_model($form, &$form_state) {
   // If on Pantheon environment grab css and js from Apigee cloud
@@ -1835,7 +1834,7 @@ function apigee_generate_make_smartdocs_model_submit($form, &$form_state) {
 
 
 function apigee_generate_import_smartdocs_model_content() {
-  if ( (!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip']==TRUE) ) {
+  if ( (!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip'] == TRUE) ) {
     return;
   }
 
@@ -1899,7 +1898,6 @@ function apigee_generate_import_smartdocs_model_content() {
   return $batch;
 
 }
-
 
 /**
  * Create a Drupal Admin User

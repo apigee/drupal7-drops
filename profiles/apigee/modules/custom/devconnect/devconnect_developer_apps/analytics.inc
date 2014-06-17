@@ -146,8 +146,10 @@ function devconnect_developer_apps_analytics_form_submit($form, &$form_state) {
   $form_state['redirect'] = array(current_path(), array('query' => $args, 'fragment' => 'performance'));
 }
 
-function devconnect_developer_apps_analytics_performance($user, $app_name) {
-
+function devconnect_developer_apps_analytics_performance($user, $app_id) {
+  $entities = entity_load('developer_app', array($app_id));
+  $entity = reset($entities);
+  $app_name = $entity->name;
   $my_data = _devconnect_developer_apps_analytics_get_datapoints($user, $app_name);
   $datapoints = $my_data['datapoints'];
   $date_format = $my_data['date_format'];
@@ -157,7 +159,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_name) {
   $metric_fullname = $my_data['params']['metric']['display_name'];
   $metric_name = $my_data['params']['metric']['name'];
 
-  if (count($datapoints) == 0) {
+  if (count($datapoints) == 0 || !isset($datapoints[$app_name])) {
     // TODO: handle this differently?
     return '';
   }

@@ -39,6 +39,7 @@ function devconnect_user_drush_help($section) {
  * Drush command callback to perform user-developer sync.
  */
 function devconnect_user_drush_user_sync() {
+  module_load_include('inc', 'devconnect_user', 'devconnect_user.sync');
   $items = devconnect_user_sync();
   if (count($items) == 0) {
     drush_log(dt('All users are in sync.'), 'success');

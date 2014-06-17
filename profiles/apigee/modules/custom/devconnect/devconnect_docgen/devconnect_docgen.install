@@ -61,7 +61,10 @@ function devconnect_docgen_schema() {
 
 
 /**
- * Verify that mint is enabled for the customer organization
+ * Implements hook_requirements
+ *
+ * @param $phase
+ * @return array
  */
 function devconnect_docgen_requirements($phase) {
   $result = array();
@@ -69,8 +72,7 @@ function devconnect_docgen_requirements($phase) {
   switch ($phase) {
     case 'install':
       if (defined('MAINTENANCE_MODE') && (MAINTENANCE_MODE == 'install')) {
-         // When a new site is being installed skip this step.
-         return $result;
+        return $result;
       }
       try {
         $client = devconnect_default_api_client();
@@ -80,31 +82,29 @@ function devconnect_docgen_requirements($phase) {
         if ($e->getCode() != '200') {
           $result['docgen_connection'] = array(
             'severity' => REQUIREMENT_ERROR,
-            'title' => 'DevConnect DocGen',
-            'value' => $t('DevConnect DocGen is not available for the current organization.'),
+            'title' => 'SmartDocs',
+            'value' => $t('Service is not available for the current organization.'),
           );
         }
       }
-      break;
-    case 'runtime':
-      try {
-        $client = devconnect_default_api_client();
-        $docgen = new \Apigee\DocGen\DocGenModel($client);
-        $docgen->getModels();
+      $js = preg_split("/\\r\\n|\\r|\\n/", SMARTDOCS_JS_B2);
+      $connectivity = FALSE;
+      foreach($js as $target) {
+        $test = drupal_http_request($target);
+        if (isset($test->code) && floor($test->code / 100) == 2) {
+          $connectivity = TRUE;
+        }
+      }
+      if (!$connectivity) {
+        $message = "Your server may not be connected to the public internet. You may need to host JavaScript and CSS " .
+          "assets locally."; //@todo add docs link
         $result['docgen_connection'] = array(
-          'severity' => REQUIREMENT_OK,
-          'title' => 'DevConnect Connection',
-          'value' => $t('DevConnect is connected to the management server.'),
+          'severity' => REQUIREMENT_WARNING,
+          'title' => 'SmartDocs',
+          'value' => $t($message),
         );
-      } catch (Exception $e) {
-        if ($e->getCode() != '200') {
-          $result['docgen_connection'] = array(
-            'severity' => REQUIREMENT_ERROR,
-            'title' => 'DevConnect DocGen',
-            'value' => $t('DevConnect DocGen is not available for the current organization.'),
-          );
-        }
       }
+
       break;
     default:
       break;

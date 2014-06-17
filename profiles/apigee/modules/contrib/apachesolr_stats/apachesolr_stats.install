@@ -21,7 +21,6 @@ function apachesolr_stats_uninstall() {
   variable_del('apachesolr_stats_flush_log_timer');
   variable_del('apachesolr_stats_ignore_ip_list');
   variable_del('apachesolr_stats_ignore_role_list');
-  variable_del('apachesolr_stats_gadget_key');
   // Remove cached info.
   cache_clear_all('apachesolr_stats_block_frequent_keywords', 'cache_block');
 }
@@ -120,15 +119,19 @@ function apachesolr_stats_schema() {
         'not null' => TRUE,
         'description' => 'Query sort arguments.',
       ),
-      /*
-      'params' => array(
-        'type' => 'text',
+      'env_id' => array(
+        'description' => 'Identifies the apachesolr environment',
+        'type' => 'varchar',
+        'length' => 64,
         'not null' => TRUE,
-        'size' => 'big',
-        'description' => "Query object's complete parameters.",
-        'default' => 'i:0',
       ),
-       */
+      'page_id' => array(
+        'description' => 'The machine readable name of the search page.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
     ),
     'primary key' => array('qid'),
   );
