@@ -3,20 +3,31 @@
 /**
  * @file
  * Admin page callback file for the password_policy module.
+ *
+ * @ignore sniffer_commenting_functioncomment_missingparamtype:file
+ * @ignore sniffer_commenting_functioncomment_missingreturntype:file
  */
 
-//////////////////////////////////////////////////////////////////////////////
-// Password policy admin settings
+/****************************************************************************/
+/* Password policy admin settings                                           */
+/****************************************************************************/
 
 /**
  * Settings form display.
  */
 function password_policy_admin_settings() {
+  $form['password_policy_force_change_reset'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Force password change on reset'),
+    '#default_value' => variable_get('password_policy_force_change_reset', 0),
+    '#description' => t('When a user requests a one-time login link, this option will require the user to change their password before continuing to browse the site.'),
+  );
+
   $form['expiration'] = array(
     '#type' => 'fieldset',
     '#title' => t('Expiration settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
   $form['expiration']['password_policy_admin'] = array(
     '#type' => 'checkbox',
@@ -34,15 +45,15 @@ function password_policy_admin_settings() {
     '#type' => 'radios',
     '#title' => t('Blocking expired accounts'),
     '#default_value' => variable_get('password_policy_block', 0),
-    '#options' => array('0' => t('Expired accounts are blocked. Only administrators can unblock them.'), '1' => t('The user with expired account is not blocked, but sent to a change password page. If the password is not changed, the account is blocked and the user cannot login again.')),
+    '#options' => array('0' => t('Expired accounts are blocked. Only administrators can unblock them. Users whose accounts have expired will be forced to change their passwords at next login (after being unblocked).'), '1' => t('Expired accounts are not blocked. Users whose accounts have expired will be forced to change their passwords at next login.')),
   );
 
-  // Visibility
+  // Visibility.
   $form['visibility'] = array(
     '#type' => 'fieldset',
     '#title' => t('Visibility settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
   $form['visibility']['password_policy_show_restrictions'] = array(
     '#type' => 'checkbox',
@@ -56,21 +67,21 @@ function password_policy_admin_settings() {
     '#type' => 'fieldset',
     '#title' => t('E-mail notification settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => TRUE,
   );
   $form['email']['password_policy_warning_subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Subject of warning e-mail'),
     '#default_value' => _password_policy_mail_text('warning_subject'),
     '#maxlength' => 180,
-    '#description' => t('Customize the subject of the warning e-mail message, which is sent to remind of password expiration.') .' '. t('Available variables are:') .' !username, !site, !uri, !uri_brief, !mailto, !date, !login_uri, !edit_uri, !days_left.',
+    '#description' => t('Customize the subject of the warning e-mail message, which is sent to remind of password expiration.') . ' ' . t('Available variables are:') . ' !username, !site, !uri, !uri_brief, !mailto, !date, !login_uri, !edit_uri, !days_left.',
   );
   $form['email']['password_policy_warning_body'] = array(
     '#type' => 'textarea',
     '#title' => t('Body of warning e-mail'),
     '#default_value' => _password_policy_mail_text('warning_body'),
     '#rows' => 15,
-    '#description' => t('Customize the body of the warning e-mail message, which is sent to remind of password expiration.') .' '. t('Available variables are:') .' !username, !site, !uri, !uri_brief, !mailto, !date, !login_uri, !edit_uri, !days_left.',
+    '#description' => t('Customize the body of the warning e-mail message, which is sent to remind of password expiration.') . ' ' . t('Available variables are:') . ' !username, !site, !uri, !uri_brief, !mailto, !date, !login_uri, !edit_uri, !days_left.',
   );
 
   $form['submit'] = array(
@@ -98,8 +109,10 @@ function password_policy_admin_settings_submit($form, &$form_state) {
       variable_set('password_policy_show_restrictions', $form_state['values']['password_policy_show_restrictions']);
       variable_set('password_policy_warning_subject', $form_state['values']['password_policy_warning_subject']);
       variable_set('password_policy_warning_body', $form_state['values']['password_policy_warning_body']);
+      variable_set('password_policy_force_change_reset', $form_state['values']['password_policy_force_change_reset']);
       drupal_set_message(t('The configuration options have been saved.'));
       break;
+
     case t('Reset to defaults'):
       variable_del('password_policy_admin');
       variable_del('password_policy_begin');
@@ -107,11 +120,21 @@ function password_policy_admin_settings_submit($form, &$form_state) {
       variable_del('password_policy_show_restrictions');
       variable_del('password_policy_warning_subject');
       variable_del('password_policy_warning_body');
+      variable_del('password_policy_force_change_reset');
       drupal_set_message(t('The configuration options have been reset to their default values.'));
       break;
   }
 }
 
+/**
+ * Lists roles to which a policy applies.
+ *
+ * @param $pid
+ *   Policy id.
+ *
+ * @return
+ *   Array of role names.
+ */
 function _password_policy_admin_list_roles($pid) {
   $roles = array();
   $query = db_select('role', 'r', array('target' => 'slave'));
@@ -132,6 +155,7 @@ function password_policy_admin_list($form) {
   $options = array();
   $enabled = array();
 
+  // @ignore sniffer_array_array_longlinedeclaration:2
   $result = db_select('password_policy', 'p', array('fetch' => PDO::FETCH_ASSOC, 'target' => 'slave'))
       ->fields('p', array('pid', 'name', 'enabled', 'description', 'created', 'weight'))
       ->orderBy('weight')
@@ -152,23 +176,23 @@ function password_policy_admin_list($form) {
       '#markup' => theme('item_list', array('items' => _password_policy_admin_list_roles($pid))),
     );
     $form['policies'][$pid]['enabled'] = array(
-      '#type' => 'checkbox', 
-      '#default_value' => $row['enabled']
+      '#type' => 'checkbox',
+      '#default_value' => $row['enabled'],
     );
     $form['policies'][$pid]['view'] = array(
       '#type' => 'link',
       '#title' => 'view',
-      '#href' => 'admin/config/people/password_policy/'. $pid,
+      '#href' => 'admin/config/people/password_policy/' . $pid,
     );
     $form['policies'][$pid]['edit'] = array(
       '#type' => 'link',
       '#title' => 'edit',
-      '#href' => 'admin/config/people/password_policy/'. $pid . '/edit',
+      '#href' => 'admin/config/people/password_policy/' . $pid . '/edit',
     );
     $form['policies'][$pid]['delete'] = array(
       '#type' => 'link',
       '#title' => 'delete',
-      '#href' => 'admin/config/people/password_policy/'. $pid . '/delete',
+      '#href' => 'admin/config/people/password_policy/' . $pid . '/delete',
     );
     $form['policies'][$pid]['weight'] = array(
       '#type' => 'weight',
@@ -187,23 +211,22 @@ function password_policy_admin_list($form) {
 }
 
 /**
- * Submit hook for the form on the default list view for the password policy module.
+ * Submit hook for the form on the default list view.
  */
 function password_policy_admin_list_submit($form, &$form_state) {
   foreach ($form_state['values']['policies'] as $pid => $policy) {
     db_query("UPDATE {password_policy} SET weight = :weight WHERE pid = :pid", array(':weight' => $policy['weight'], ':pid' => $pid));
     // Ensure we don't reset the timestamp on policies that are already enabled.
     if ($policy['enabled']) {
-      db_query("UPDATE {password_policy} SET enabled = 1, created = :time WHERE pid = :pid AND enabled = 0", array(':time'=>time(), ':pid'=>$pid));
+      db_query("UPDATE {password_policy} SET enabled = 1, created = :time WHERE pid = :pid AND enabled = 0", array(':time' => time(), ':pid' => $pid));
     }
     else {
-      db_query("UPDATE {password_policy} SET enabled = 0 WHERE pid = :pid", array(':pid'=>$pid));
+      db_query("UPDATE {password_policy} SET enabled = 0 WHERE pid = :pid", array(':pid' => $pid));
     }
   }
 
   drupal_set_message(t('The changes have been saved.'));
 }
-
 
 /**
  * Returns HTML for the password policy administration list.
@@ -226,7 +249,7 @@ function theme_password_policy_admin_list($variables) {
         'data' => array(
           drupal_render($form['policies'][$id]['name']),
           drupal_render($form['policies'][$id]['roles']),
-          drupal_render($form['policies'][$id]['enabled']),        
+          drupal_render($form['policies'][$id]['enabled']),
           drupal_render($form['policies'][$id]['weight']),
           drupal_render($form['policies'][$id]['view']),
           drupal_render($form['policies'][$id]['edit']),
@@ -236,10 +259,22 @@ function theme_password_policy_admin_list($variables) {
       );
     }
   }
-  $header = array(t('Name'), t('Roles'), t('Enabled'), t('Weight'), array('data' => t('Operations'), 'colspan' => 3));
+  if (empty($rows)) {
+    unset($form['actions']['submit']);
+  }
+  $header = array(
+    t('Name'),
+    t('Roles'),
+    t('Enabled'),
+    t('Weight'),
+    array(
+      'data' => t('Operations'),
+      'colspan' => 3,
+    ),
+  );
   $output = theme('table', array(
-    'header' => $header, 
-    'rows' => $rows, 
+    'header' => $header,
+    'rows' => $rows,
     'attributes' => array('id' => 'password-policy-order'),
     'empty' => t('There are currently no policies. <a href="!url">Add a new one</a>.',
       array('!url' => url('admin/config/people/password_policy/add'))),
@@ -311,21 +346,21 @@ function password_policy_admin_form($form, &$form_state, $policy = NULL) {
     '#type' => 'fieldset',
     '#title' => t('Roles'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
   $form['roles']['roles'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Roles'),
     '#options' => user_roles(TRUE),
     '#default_value' => isset($policy['roles']) ? $policy['roles'] : array(),
-    '#description' => t('Select the roles that this policy will apply to.'),
+    '#description' => t("Select the roles that this policy will apply to."),
   );
 
   $form['expiration'] = array(
     '#type' => 'fieldset',
     '#title' => t('Expiration'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
   $form['expiration']['expiration'] = array(
     '#type' => 'textfield',
@@ -333,32 +368,32 @@ function password_policy_admin_form($form, &$form_state, $policy = NULL) {
     '#default_value' => isset($policy['expiration']) ? $policy['expiration'] : '0',
     '#size' => 5,
     '#maxlength' => 5,
-    '#description' => t('The passwords will expire after this number of days. The users with expired passwords will be blocked. Setting this field to 0 will not put any password expiration constraints.'),
+    '#description' => t("The passwords will expire after this number of days. The users with expired passwords will be blocked. Setting this field to 0 will not put any password expiration constraints."),
   );
   $form['expiration']['warning'] = array(
     '#type' => 'textfield',
     '#title' => t('Password Expiration Warning'),
     '#default_value' => isset($policy['warning']) ? $policy['warning'] : '',
     '#size' => 10,
-    '#description' => t('The comma separated list of days. The warning about expiration of the password will be sent out on those days before the expiration. Leaving this field empty won\'t send out or display any warnings.'),
+    '#description' => t("The comma separated list of days. The warning about expiration of the password will be sent out on those days before the expiration. Leaving this field empty won't send out or display any warnings."),
   );
 
   $form['constraints'] = array(
     '#type' => 'fieldset',
     '#title' => t('Constraints'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
 
   foreach (_password_policy_constraints() as $constraint) {
     $desc = _password_policy_constraint_description($constraint);
-    $form['constraints']['constraint_'. $constraint] = array(
+    $form['constraints']['constraint_' . $constraint] = array(
       '#type' => 'textfield',
       '#size' => 5,
       '#default_value' => isset($policy['policy'][$constraint]) ? $policy['policy'][$constraint] : NULL,
       '#maxlength' => 3,
-      '#title' => $desc['name'],
-      '#description' => $desc['description'],
+      '#title' => filter_xss($desc['name']),
+      '#description' => filter_xss($desc['description']),
     );
   }
 
@@ -403,13 +438,14 @@ function password_policy_admin_form_submit($form, &$form_state) {
   $op = $form_state['values']['op'];
 
   if ($op == t('Delete')) {
-    drupal_goto('admin/config/people/password_policy/delete/'. $form_state['values']['pid']);
+    drupal_goto('admin/config/people/password_policy/delete/' . $form_state['values']['pid']);
   }
 
   $policy = array();
   foreach ($form_state['values'] as $key => $value) {
     // If we have no form value, then we have no constraint to set.
-    if (!is_array($value)) { //dodge issues with roles array
+    if (!is_array($value)) {
+      // Dodge issues with roles array.
       $value = trim($value);
       if ($value != "" && preg_match("/^constraint_/", $key)) {
         $policy[substr($key, 11)] = $value;
@@ -431,7 +467,7 @@ function password_policy_admin_form_submit($form, &$form_state) {
       ->condition('pid', $form_state['values']['pid'])
       ->execute();
     drupal_set_message(t('Policy %name has been updated.', array('%name' => $form_state['values']['name'])));
-    watchdog('password_policy', 'Policy %name updated.', array('%name' => $form_state['values']['name']), WATCHDOG_NOTICE, l(t('edit'), 'admin/config/people/password_policy/'. $form_state['values']['pid'] .'/edit'));
+    watchdog('password_policy', 'Policy %name updated.', array('%name' => $form_state['values']['name']), WATCHDOG_NOTICE, l(t('edit'), 'admin/config/people/password_policy/' . $form_state['values']['pid'] . '/edit'));
     $pid = $form_state['values']['pid'];
     db_delete('password_policy_role')
       ->condition('pid', $pid)
@@ -448,8 +484,8 @@ function password_policy_admin_form_submit($form, &$form_state) {
         'warning' => str_replace(' ', '', $form_state['values']['warning']),
       ))
       ->execute();
-    drupal_set_message(t('Policy %name has been created.', array('%name' =>  $form_state['values']['name'])));
-    watchdog('password_policy', 'New policy %name created.', array('%name' => $form_state['values']['name']), WATCHDOG_NOTICE, l(t('edit'), 'admin/config/people/password_policy/'. $pid .'/edit'));
+    drupal_set_message(t('Policy %name has been created.', array('%name' => $form_state['values']['name'])));
+    watchdog('password_policy', 'New policy %name created.', array('%name' => $form_state['values']['name']), WATCHDOG_NOTICE, l(t('edit'), 'admin/config/people/password_policy/' . $pid . '/edit'));
   }
 
   foreach (array_filter($form_state['values']['roles']) as $rid => $enabled) {
@@ -465,8 +501,9 @@ function password_policy_admin_form_submit($form, &$form_state) {
 }
 
 /**
- * Confirmation form for the deletion of a password policy.  Deletion takes place
- * in password_policy_admin_delete_submit().
+ * Confirmation form for the deletion of a password policy.
+ *
+ * Deletion takes place in password_policy_admin_delete_submit().
  */
 function password_policy_admin_delete($form, $form_state, $policy) {
   $form['pid'] = array('#type' => 'hidden', '#value' => $policy['pid']);
@@ -507,13 +544,13 @@ function password_policy_password_change_settings() {
     '#type' => 'checkboxes',
     '#options' => $roles,
     '#title' => t('Force users in the following roles to change their password'),
-    '#description' => t('Users who are not signed in will be required to change their password immediately upon sign in. Users who are currently signed in will be required to change their password upon their next page click, but after changing their password will be redirected back to the page they were attempting to access.'),
+    '#description' => t('Users who are not logged in will be required to change their password immediately upon login. Users who are currently logged in will be required to change their password upon their next page request, but after changing their password will be redirected back to the page they were attempting to access.'),
   );
-  
+
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Save changes'),
   );
 
   return $form;
@@ -527,19 +564,19 @@ function password_policy_password_change_settings_submit($form, &$form_state) {
   $selected_roles = array();
   variable_set('password_policy_new_login_change', $form_state['values']['password_policy_new_login_change']);
   if ($form_state['values']['password_policy_new_login_change'] == 1) {
-    watchdog('password_policy', t('New user accounts must change password on new login enabled by !admin', array('!admin' => $user->name)), array(), WATCHDOG_NOTICE);
+    watchdog('password_policy', 'New user accounts must change password on new login enabled by !admin', array('!admin' => $user->name), WATCHDOG_NOTICE);
   }
   ($form_state['values']['password_policy_new_login_change']) ? drupal_set_message(t('New users will be required to change their password on first-time login.')) : drupal_set_message(t('New users will not be required to change their pasword on first-time login.'));
   foreach ($form_state['values']['password_policy_force_change_roles'] as $role) {
-    // skip over null values returned by unselected roles
+    // Skip over null values returned by unselected roles.
     if ($role == 0) {
       continue;
     }
     $uids = array();
-    // special handling for authenticated users role
-    // since this role makes no entries in the users_roles table
+    // Special handling for authenticated users role, since this role makes no
+    // entries in the users_roles table.
     if ($role == 2) {
-      // no point in flagging Anonymous since they can't log in anyway
+      // No point in flagging anonymous since they can't log in anyway.
       $db_uids = db_query('SELECT uid FROM {users} WHERE uid <> 0')->fetchCol();
     }
     else {
@@ -553,7 +590,7 @@ function password_policy_password_change_settings_submit($form, &$form_state) {
     if (!empty($uids)) {
       db_update('password_policy_force_change')
         ->fields(array(
-          'force_change' => 1
+          'force_change' => 1,
         ))
         ->condition('uid', $uids, 'IN')
         ->execute();
@@ -568,7 +605,7 @@ function password_policy_password_change_settings_submit($form, &$form_state) {
     }
     $list = implode(', ', $list);
     drupal_set_message(t('Users in the following roles will be required to immediately change their password: %list', array('%list' => $list)), 'status');
-    watchdog('password_policy', t('!admin has flagged users in the following roles to immediately change their password: %list', array('%list' => $list, '!admin' => $user->name)), array(), WATCHDOG_NOTICE);
+    watchdog('password_policy', '!admin has flagged users in the following roles to immediately change their password: %list', array('%list' => $list, '!admin' => $user->name), WATCHDOG_NOTICE);
   }
   else {
     drupal_set_message(t('No roles were selected.'));

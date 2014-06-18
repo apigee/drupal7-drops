@@ -146,7 +146,7 @@ function devconnect_developer_apps_analytics_form_submit($form, &$form_state) {
   $form_state['redirect'] = array(current_path(), array('query' => $args, 'fragment' => 'performance'));
 }
 
-function devconnect_developer_apps_analytics_performance($user, $app_id) {
+function devconnect_developer_apps_analytics_performance($user, $app_id, $app_name = NULL) {
   $entities = entity_load('developer_app', array($app_id));
   $entity = reset($entities);
   $app_name = $entity->name;

@@ -4,8 +4,9 @@
  * Password policy constraint callbacks.
  */
 
-//////////////////////////////////////////////////////////////////////////////
-// Constraint API
+/****************************************************************************/
+/* Constraint API                                                           */
+/****************************************************************************/
 
 /**
  * Description of the constraint.
@@ -29,8 +30,9 @@ function password_policy_constraint_letter_validate($password, $constraint, $acc
   $num = 0;
   for ($i = 0; $i < $chars; ++$i) {
     $char = drupal_substr($password, $i, 1);
-    if (ctype_alpha($char))
+    if (ctype_alpha($char)) {
       $num++;
+    }
   }
   return $num >= $constraint;
 }
@@ -56,4 +58,3 @@ function password_policy_constraint_letter_js($constraint, $account) {
   $s .= "  }\n";
   return $s;
 }
-

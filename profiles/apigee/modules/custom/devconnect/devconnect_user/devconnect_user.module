@@ -8,7 +8,6 @@
 module_load_include('php', 'devconnect_user', 'controllers/DeveloperController');
 //module_load_include('php', 'devconnect_user', 'controllers/UserRoleController');
 
-module_load_include('php', 'devconnect', 'lib/ArrayEntity');
 module_load_include('php', 'devconnect_user', 'entities/DeveloperEntity');
 //module_load_include('php', 'devconnect_user', 'entities/UserRoleEntity');
 

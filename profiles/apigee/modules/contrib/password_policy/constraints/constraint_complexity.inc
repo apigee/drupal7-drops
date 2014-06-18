@@ -4,8 +4,9 @@
  * Password policy constraint callbacks.
  */
 
-//////////////////////////////////////////////////////////////////////////////
-// Constraint API
+/****************************************************************************/
+/* Constraint API                                                           */
+/****************************************************************************/
 
 /**
  * Description of the constraint.
@@ -87,4 +88,3 @@ function password_policy_constraint_complexity_js($constraint, $account) {
   $s .= "  }\n";
   return $s;
 }
-

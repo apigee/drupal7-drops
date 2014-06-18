@@ -166,8 +166,8 @@ function devconnect_developer_apps_schema() {
       ),
       'description' => array(
         'description' => 'API Product description',
-        'type' => 'varchar',
-        'length' => 255,
+        'type' => 'text',
+        'size' => 'medium',
         'not null' => TRUE
       ),
       'is_public' => array(
@@ -265,23 +265,6 @@ function devconnect_developer_apps_schema() {
   return $schema;
 }
 
-/**
- * Install developer-apps and api-products cache tables
- */
-function devconnect_developer_apps_update_7426() {
-  drupal_install_schema('devconnect_developer_apps');
-}
-
-/**
- * Add is_public field to API Product cache table
- */
-function devconnect_developer_apps_update_7427() {
-  if (db_field_exists('dc_api_product', 'is_public')) {
-    return;
-  }
-  $schema = devconnect_developer_apps_schema();
-  db_add_field('dc_api_product', 'is_public', $schema['dc_api_product']['fields']['is_public']);
-}
 
 /**
  * Install developer-apps and api-products cache tables

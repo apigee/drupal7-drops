@@ -1,9 +1,8 @@
 <?php
 
 namespace Drupal\devconnect_developer_apps;
-use \Drupal\devconnect\ArrayEntity;
 
-class ApiProductEntity extends ArrayEntity {
+class ApiProductEntity {
   /**
    * @var string
    */
@@ -84,4 +83,14 @@ class ApiProductEntity extends ArrayEntity {
    * @var bool
    */
   public $isPublic = TRUE;
+
+  public function __construct(array $values = array()) {
+    // Populate values if available.
+    foreach ($values as $key => $value) {
+      if (property_exists($this, $key)) {
+        $this->$key = $value;
+      }
+    }
+  }
+
 }

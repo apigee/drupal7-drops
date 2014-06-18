@@ -3,7 +3,6 @@
 module_load_include('php', 'devconnect_developer_apps', 'controllers/DeveloperAppController');
 module_load_include('php', 'devconnect_developer_apps', 'controllers/ApiProductController');
 
-module_load_include('php', 'devconnect', 'lib/ArrayEntity');
 module_load_include('php', 'devconnect_developer_apps', 'entities/DeveloperAppEntity');
 module_load_include('php', 'devconnect_developer_apps', 'entities/ApiProductEntity');
 
@@ -623,7 +622,7 @@ function devconnect_developer_apps_getlist($user) {
         $api_products = array();
         $api_product_entities = devconnect_developer_apps_get_api_products();
         foreach ($api_product_entities as $api_product_entity) {
-          $api_products[$api_product_entity['name']] = $api_product_entity['displayName'];
+          $api_products[$api_product_entity->name] = $api_product_entity->displayName;
         }
       }
 
@@ -965,18 +964,18 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     $widget_type = variable_get('devconnect_developer_apps_apiproduct_widget', 'select');
 
     uasort($api_products, function ($a, $b) {
-      return strcasecmp($a['displayName'], $b['displayName']);
+      return strcasecmp($a->displayName, $b->displayName);
     });
 
     foreach ($api_products as $api_product) {
-      $display = $api_product['displayName'];
+      $display = $api_product->displayName;
       if ($widget_type != 'select') {
         $display = check_plain($display);
-        if (!empty($api_product['description'])) {
-          $display .= '<div class="apiproduct-description">' . check_plain($api_product['description']) . '</div>';
+        if (!empty($api_product->description)) {
+          $display .= '<div class="apiproduct-description">' . check_plain($api_product->description) . '</div>';
         }
       }
-      $options['prod-' . $api_product['name']] = $display;
+      $options['prod-' . $api_product->name] = $display;
     }
     if ($widget_type != 'select') {
       $widget_type = ($multiple ? 'checkboxes' : 'radios');
@@ -1456,8 +1455,8 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
     if (!empty($product_entities)) {
       $product_entity = reset($product_entities);
       $cred['apiproducts'][] = array(
-        'display_name' => $product_entity['displayName'],
-        'description' => $product_entity['description'],
+        'display_name' => $product_entity->displayName,
+        'description' => $product_entity->description,
         'status' => $api_product['status'],
         'name' => $api_product['apiproduct']
       );
@@ -1474,7 +1473,7 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
   $show_analytics = devconnect_developer_apps_show_analytics($cred);
   if (devconnect_developer_apps_show_analytics($cred)) {
     module_load_include('inc', 'devconnect_developer_apps', 'analytics');
-    $info['analytics_chart'] = devconnect_developer_apps_analytics_performance($user, $app_name);
+    $info['analytics_chart'] = devconnect_developer_apps_analytics_performance($user, $entity->appId, $app_name);
   }
 
   // Invoke hook_devconnect_developer_app_alter on this info
@@ -1819,6 +1818,10 @@ function devconnect_developer_apps_token_info() {
   $app['developerUid'] = array(
     'name' => t('Drupal User ID'),
     'description' => t('The unique numeric uid of the developer who owns the app.')
+  );
+  $app['overallStatus'] = array(
+    'name' => t('Overall Status'),
+    'description' => t('The overall status, determined from the hierarchy of API Product, Key and App statuses.')
   );
 
   return array(

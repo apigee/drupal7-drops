@@ -86,12 +86,14 @@ function gauth_login_gauth_google_response() {
         $account['services'] = 'oauth2';
         $account['is_authenticated'] = TRUE;
 
-        $user = new stdClass();
-        $user->mail = $info['email'];
-        $user->name = user_load_by_name($info['name']) ? $info['name'] . time() : $info['name'];
-        $user->is_new = TRUE;
-        $user->status = 1;
-        $new_user = user_save($user);
+        if (!$new_user = user_load_by_mail($info['email'])) {
+          $user = new stdClass();
+          $user->mail = $info['email'];
+          $user->name = user_load_by_name($info['name']) ? $info['name'] . time() : $info['name'];
+          $user->is_new = TRUE;
+          $user->status = 1;
+          $new_user = user_save($user);
+        }
         $form_state['uid'] = $new_user->uid;
         user_login_submit(array(), $form_state);
         global $user;

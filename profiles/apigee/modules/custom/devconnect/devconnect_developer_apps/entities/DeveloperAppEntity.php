@@ -1,9 +1,8 @@
 <?php
 
 namespace Drupal\devconnect_developer_apps;
-use \Drupal\devconnect\ArrayEntity;
 
-class DeveloperAppEntity extends ArrayEntity {
+class DeveloperAppEntity {
   /**
    * @var string
    */
@@ -157,4 +156,14 @@ class DeveloperAppEntity extends ArrayEntity {
   public function setKeyStatus($status) {
     return \DeveloperAppController::setKeyStatus($this, $status);
   }
+
+  public function __construct(array $values = array()) {
+    // Populate values if available.
+    foreach ($values as $key => $value) {
+      if (property_exists($this, $key)) {
+        $this->$key = $value;
+      }
+    }
+  }
+
 }

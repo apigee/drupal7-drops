@@ -1,9 +1,8 @@
 <?php
 
 namespace Drupal\devconnect_user;
-use \Drupal\devconnect\ArrayEntity;
 
-class UserRoleEntity extends ArrayEntity {
+class UserRoleEntity {
   /**
    * @var string
    */
@@ -12,4 +11,14 @@ class UserRoleEntity extends ArrayEntity {
    * @var array
    */
   public $users;
+
+  public function __construct(array $values = array()) {
+    // Populate values if available.
+    foreach ($values as $key => $value) {
+      if (property_exists($this, $key)) {
+        $this->$key = $value;
+      }
+    }
+  }
+
 }

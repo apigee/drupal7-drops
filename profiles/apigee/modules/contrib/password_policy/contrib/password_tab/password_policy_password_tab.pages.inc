@@ -36,7 +36,7 @@ function password_policy_password_tab($form, &$form_state, $account) {
       $current_pass_description = t('Enter your current password to change the %pass. !request_new.', array('%pass' => $protected_values['pass'], '!request_new' => $request_new));
     }
     // The user must enter their current password to change to a new one.
-    if (isset($protected_values['pass'])){
+    if (isset($protected_values['pass'])) {
       $form['current_pass_required_values'] = array(
         '#type' => 'value',
         '#value' => array('pass' => $protected_values['pass']),

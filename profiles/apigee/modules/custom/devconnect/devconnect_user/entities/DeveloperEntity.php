@@ -1,9 +1,8 @@
 <?php
 
 namespace Drupal\devconnect_user;
-use \Drupal\devconnect\ArrayEntity;
 
-class DeveloperEntity extends ArrayEntity {
+class DeveloperEntity {
   /**
    * @var array
    */
@@ -81,4 +80,14 @@ class DeveloperEntity extends ArrayEntity {
    * @var boolean
    */
   public $forceSync = FALSE;
+
+  public function __construct(array $values = array()) {
+    // Populate values if available.
+    foreach ($values as $key => $value) {
+      if (property_exists($this, $key)) {
+        $this->$key = $value;
+      }
+    }
+  }
+
 }
