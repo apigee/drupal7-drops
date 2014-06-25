@@ -32,3 +32,24 @@ function hook_devconnect_error_alter($error_code, &$summary, &$details, &$severi
     $severity = Apigee\Util\ErrorHandling::SEVERITY_WARNING;
   }
 }
+
+/**
+ * Allows org settings to be altered prior to creating an Edge SDK object.
+ *
+ * @param array $org_settings
+ * @param string $requested_org
+ */
+function hook_devconect_org_settings_alter(array &$org_settings, $requested_org) {
+  $org_settings = $org_settings['secondary_orgs'][$requested_org];
+}
+
+
+/**
+ * Allows modules to define which orgs (in a multi-org setting) we can
+ * connect to.
+ *
+ * @return array
+ */
+function hook_get_configured_orgs() {
+  return array('default', 'mySuperSpecialOrg');
+}

@@ -90,7 +90,7 @@ function advanced_forum_forum_load($tid = NULL) {
 
 
   // Return a cached forum tree if available.
-  if (!isset($tid)) {
+  if (empty($tid)) {
     $tid = 0;
   }
   if (isset($cache[$tid])) {
@@ -137,7 +137,12 @@ function advanced_forum_forum_load($tid = NULL) {
     $_forums = i18n_taxonomy_localize_terms($_forums);
   }
 
-  if (count($_forums)) {
+  if ($cached = cache_get('adv_forum_counts' . $tid, 'cache')) {
+    if ($cached->expire > time()) {
+      $counts = $cached->data;
+    }
+  }
+  if (count($_forums) && empty($counts)) {
     $query = db_select('node', 'n');
     $query->join('node_comment_statistics', 'ncs', 'n.nid = ncs.nid');
     $query->join('forum_index', 'f', 'n.nid = f.nid');
@@ -173,7 +178,15 @@ function advanced_forum_forum_load($tid = NULL) {
         ->addTag('node_access')
         ->execute()
         ->fetchAllAssoc('tid');
+    cache_set('adv_forum_counts' . $tid, $counts, 'cache', time() + 60*60); //1 hour
   }
+
+  // get last nodes with comments for subquery SELECT optimization
+  $subquery = db_select('node_comment_statistics', 'lnsc')
+    ->fields('lnsc', array('nid'))
+    ->distinct()
+    ->orderBy('last_comment_timestamp', 'DESC')
+    ->range(0, 1000); // should be moved to options or additionally calculated elsewhere
 
   foreach ($_forums as $forum) {
     // Determine if the child term is a container.
@@ -193,6 +206,7 @@ function advanced_forum_forum_load($tid = NULL) {
 
     // Query "Last Post" information for this forum.
     $query = db_select('node', 'n');
+    $query->join($subquery, 'lastnodes', 'n.nid = lastnodes.nid');
     $query->join('forum_index', 'f', 'n.nid = f.nid AND f.tid = :tid', array(':tid' => $forum->tid));
     $query->join('node_comment_statistics', 'ncs', 'n.nid = ncs.nid');
     $query->join('users', 'u', 'ncs.last_comment_uid = u.uid');

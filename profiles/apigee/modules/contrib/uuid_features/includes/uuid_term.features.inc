@@ -9,20 +9,27 @@
  */
 function uuid_term_features_export_options() {
   $options = array();
-  $vocabs = variable_get('uuid_features_entity_taxonomy_term', FALSE);
-  if (!empty($vocabs)) {
-    $query = db_select('taxonomy_term_data', 't');
-    $query->innerJoin('taxonomy_vocabulary', 'v', 't.vid = v.vid');
-    $query->condition('v.machine_name', $vocabs)
-     ->fields('t', array('tid', 'name', 'uuid'))
-     ->addField('v', 'name', 'vname');
-    $query->orderBy('v.name', 'ASC');
-    $query->orderBy('t.name', 'ASC');
-    $results = $query->execute()->fetchAll();
-    foreach ($results as $term) {
-      $options[$term->uuid] = $term->vname . ' - ' . $term->name;
-    }
+  // Could just leave this empty.
+  $vocabs = variable_get('uuid_features_entity_taxonomy_term', array_fill_keys(array_keys(taxonomy_vocabulary_get_names()), 0));
+  // Only include vocabs that user has selected (ie. set a non zero value).
+  $vocabs = array_filter($vocabs);
+  if (empty($vocabs)) {
+    return $options;
   }
+
+  $query = db_select('taxonomy_term_data', 't');
+  $query->innerJoin('taxonomy_vocabulary', 'v', 't.vid = v.vid');
+  $query->condition('v.machine_name', array_keys($vocabs))
+    ->fields('t', array('tid', 'name', 'uuid'))
+    ->addField('v', 'name', 'vname');
+  $query->orderBy('v.name', 'ASC');
+  $query->orderBy('t.name', 'ASC');
+  $results = $query->execute()->fetchAll();
+
+  foreach ($results as $term) {
+    $options[$term->uuid] = $term->vname . ' - ' . $term->name;
+  }
+
   drupal_alter('uuid_term_features_export_options', $options);
   return $options;
 }
@@ -37,6 +44,11 @@ function uuid_term_features_export($data, &$export, $module_name = '') {
 
   foreach ($data as $uuid) {
     uuid_term_features_get_dependencies($export, $uuid);
+
+    $entity_type = 'taxonomy_term';
+    $term = entity_uuid_load($entity_type, $data);
+    $term = reset($term);
+    drupal_alter('uuid_entity_features_export', $entity_type, $export, $term);
   }
   return array();
 }
@@ -109,6 +121,7 @@ function uuid_term_features_export_render($module = 'foo', $data) {
     }
 
     $first_term = reset($terms);
+    // Clone entity to avoid changes by reference.
     $export = clone $first_term;
 
     // Do not export ids.
@@ -117,6 +130,10 @@ function uuid_term_features_export_render($module = 'foo', $data) {
     // No need to export the rdf mapping.
     unset($export->rdf_mapping);
     uuid_features_file_field_export($export, 'taxonomy_term');
+
+    $entity_type = 'taxonomy_term';
+    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $first_term);
+
     $code[] = '  $terms[] = ' . features_var_export($export, '  ') . ';';
   }
 
@@ -137,6 +154,7 @@ function uuid_term_features_revert($module) {
 
 /**
  * Implements hook_features_rebuild().
+ *
  * Rebuilds terms based on UUID from code defaults.
  */
 function uuid_term_features_rebuild($module) {
@@ -151,12 +169,16 @@ function uuid_term_features_rebuild($module) {
       $existing = entity_get_id_by_uuid('taxonomy_term', array($data['uuid']));
       if (!count($existing)) {
         $voc = taxonomy_vocabulary_machine_name_load($data['vocabulary_machine_name']);
-        // Only save the term, if the corresponding vocabulary already exisits.
+        // Only save the term, if the corresponding vocabulary already exists.
         if ($voc) {
-          $term = new stdClass;
+          $term = new stdClass();
           $term->uuid = $data['uuid'];
           $term->vid = $voc->vid;
           $term->name = $data['name'];
+
+          $entity_type = 'taxonomy_term';
+          drupal_alter('uuid_entity_features_rebuild', $entity_type, $node, $module);
+
           taxonomy_term_save($term);
         }
       }
@@ -173,4 +195,3 @@ function uuid_term_features_rebuild($module) {
     }
   }
 }
-

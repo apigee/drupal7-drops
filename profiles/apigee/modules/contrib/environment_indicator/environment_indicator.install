@@ -10,16 +10,19 @@
  */
 function environment_indicator_schema() {
   $schema['environment_indicator_environment'] = array(
-    'description' => t('Table storing preset definitions.'),
+    'description' => 'Table storing preset definitions.',
     'export' => array(
       'key' => 'machine',
       'key name' => 'Machine name',
       'primary key' => 'envid',
-      'identifier' => 'environment', // Exports will be defined as $environment
-      'default hook' => 'default_environment_indicator_environment',  // Function hook name.
+      // Exports will be defined as $environment.
+      'identifier' => 'environment',
+      // Function hook name.
+      'default hook' => 'default_environment_indicator_environment',
       'api' => array(
         'owner' => 'environment_indicator',
-        'api' => 'default_environment_indicator_environments',  // Base name for api include files.
+        // Base name for api include files.
+        'api' => 'default_environment_indicator_environments',
         'minimum_version' => 1,
         'current_version' => 1,
       ),
@@ -40,7 +43,8 @@ function environment_indicator_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'description' => 'Primary ID field for the table. Not used for anything except internal lookups.',
-        'no export' => TRUE, // Do not export database-only keys.
+        // Do not export database-only keys.
+        'no export' => TRUE,
       ),
       'regexurl' => array(
         'type' => 'varchar',
@@ -83,16 +87,16 @@ function environment_indicator_uninstall() {
  */
 function environment_indicator_requirements($phase) {
   $requirements = array();
-  // Ensure translations don't break at install time
+  // Ensure translations don't break at install time.
   $t = get_t();
 
-  // Report Drupal version
+  // Report Drupal version.
   if ($phase == 'runtime') {
     if (_environment_indicator_has_old_vars()) {
       $requirements['environment_indicator'] = array(
         'title' => $t('Environment indicator'),
         'value' => $t('You are using old environment indicator variables. Please check the !help on how to upgrade your variables for the new release, and then remove the old ones.', array('!help' => l(t('help pages'), 'admin/help/environment_indicator'))),
-        'severity' => REQUIREMENT_ERROR
+        'severity' => REQUIREMENT_ERROR,
       );
     }
     if (
@@ -128,7 +132,7 @@ function environment_indicator_requirements($phase) {
 }
 
 /**
- * Add table when updating from 1.x
+ * Add table when updating from 1.x.
  */
 function environment_indicator_update_7200(&$sandbox) {
   if (!db_table_exists('environment_indicator_environment')) {
@@ -183,6 +187,7 @@ function environment_indicator_update_7202(&$sandbox) {
           // This variable is no longer used. Remove it.
           variable_del($row['name']);
           break;
+
         case 'environment_indicator_suppress_pages':
           // This variable is still used, keep it.
           break;

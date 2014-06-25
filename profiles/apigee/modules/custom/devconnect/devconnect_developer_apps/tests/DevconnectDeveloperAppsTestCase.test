@@ -25,7 +25,7 @@ class DevconnectDeveloperAppsTestCase extends DrupalWebTestCase {
     //need connection to remote api
     $this->user = $this->drupalCreateUser(array('access content'));
     $this->drupalLogin($this->user);
-    $this->dc_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_api_client(), $this->user->mail);
+    $this->dc_app = new Apigee\ManagementAPI\DeveloperApp(devconnect_default_org_config(), $this->user->mail);
   }
 
   protected function tearDown() {

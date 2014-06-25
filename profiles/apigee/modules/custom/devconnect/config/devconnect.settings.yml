@@ -1,0 +1,16 @@
+org: ""
+user: ""
+endpoint: https://api.enterprise.apigee.com/v1
+pass: ""
+log_threshold: 4
+connection_timeout: 4
+request_timeout: 4
+org_settings:
+    -
+        org: ""
+        endpoint: 'https://api.enterprise.apigee.com/v1'
+        user: ""
+        pass: ""
+        log_threshold: 4
+        connection_timeout: 4
+        request_timeout: 4

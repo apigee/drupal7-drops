@@ -24,6 +24,7 @@ function uuid_bean_features_export_options() {
       ));
     }
   }
+  drupal_alter('uuid_bean_features_export_options', $options);
   return $options;
 }
 
@@ -95,6 +96,7 @@ function uuid_bean_features_export_render($module, $data) {
       continue;
     }
     $first_bean = reset($beans);
+    // Clone entity to avoid changes by reference.
     $export = clone $first_bean;
 
     // Unset some things that dont need to be exported.
@@ -106,10 +108,9 @@ function uuid_bean_features_export_render($module, $data) {
     // Enable file field exports.
     uuid_features_file_field_export($export, 'bean');
 
-    // Allow other modules to alter the export rendering.
-    // The hook_alter signature is:
-    // hook_uuid_bean_features_export_render_alter(&$export, $bean, $module);
-    drupal_alter('uuid_bean_features_export_render', $export, $bean, $module);
+    $entity_type = 'bean';
+    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $first_bean);
+    drupal_alter('uuid_bean_features_export_render', $export, $first_bean, $module);
 
     $json = json_encode($export);
     $export_array = json_decode($json, TRUE);

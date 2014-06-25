@@ -412,14 +412,14 @@ function _advanced_forum_add_files() {
         // style, look for the style specific CSS file first in the active
         // theme and then in the style directory.
         foreach ($lineage AS $key => $path) {
-          $css_file = "/advanced-forum.$key.$css_type";
+          $css_file = "advanced-forum.$key.$css_type";
           if (file_exists("$theme_path/$css_file")) {
             // If the style specific file is in the theme, use that.
             drupal_add_css("$theme_path/$css_file");
           }
           elseif (file_exists("$path/$css_file")) {
             // Otherwise look in the style for it.
-            drupal_add_css("$path" . "$css_file");
+            drupal_add_css("$path/$css_file");
           }
         }
       }

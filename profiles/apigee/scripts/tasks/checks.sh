@@ -27,8 +27,8 @@ elif [[ -f /etc/redhat-release && `cat /etc/redhat-release | cut -d " " -f1` == 
   PLATFORM_NAME="Redhat"
   PLATFORM_MAJOR_VERSION=`cat /etc/redhat-release | cut -d " " -f7 | cut -d. -f1`
   PLATFORM_MAJOR_RELEASE=`cat /etc/redhat-release | cut -d " " -f7 | cut -d. -f2`
-  if [[ ! $PLATFORM_MAJOR_VERSION == 6 || ! $PLATFORM_MAJOR_RELEASE == 5 ]] ; then
-    echo "The Server is not running Redhat 6.5."
+  if [[ ! $PLATFORM_MAJOR_VERSION == 6 || $PLATFORM_MAJOR_RELEASE < 4 ]] ; then
+    echo "The Server is not running Redhat 6.4 or 6.5."
     exit 1
   fi
 else

@@ -1,6 +1,15 @@
 
 ****************************** DRUPAL 7 - 2.x BRANCH ********************************
 
+September 26, 2013
+------------------
+Issue #2097767 by troky: Fixed CSS path.
+
+
+September 17, 2013
+------------------
+by troky: Added missing forum/search view.
+
 July 07, 2013
 -------------
 7.x-2.3 RELEASE

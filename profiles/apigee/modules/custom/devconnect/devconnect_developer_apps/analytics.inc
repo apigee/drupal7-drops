@@ -13,7 +13,7 @@ function &_devconnect_developer_apps_analytics_api_client() {
   static $dca;
 
   if (!isset($dca)) {
-    $client = devconnect_default_api_client();
+    $client = devconnect_default_org_config();
     $environment = variable_get('devconnect_analytics_environment', 'prod');
     $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics($client, $environment);
   }

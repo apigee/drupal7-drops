@@ -1,5 +1,7 @@
 <?php
 
+define ('UUID_FEATURES_DEFAULT_FALLBACK_ID', 1);
+
 /**
  * Implements hook_menu().
  */
@@ -43,6 +45,14 @@ function uuid_features_features_api() {
     'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_node.features.inc',
   );
 
+  $components['uuid_user'] = array(
+    'name' => t('Users'),
+    'feature_source' => TRUE,
+    'default_hook' => 'uuid_features_default_users',
+    'default_file' => FEATURES_DEFAULTS_INCLUDED,
+    'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_user.features.inc',
+  );
+
   if (module_exists('taxonomy')) {
     $components['uuid_term'] = array(
       'name' => t('Taxonomy Term'),
@@ -69,6 +79,36 @@ function uuid_features_features_api() {
     'default_file' => FEATURES_DEFAULTS_INCLUDED,
     'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_bean.features.inc',
   );
+
+  if (module_exists('field_collection')) {
+    $components['uuid_field_collection'] = array(
+      'name' => t('Field collection'),
+      'feature_source' => TRUE,
+      'default_hook' => 'uuid_features_default_field_collections',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_field_collection.features.inc',
+    );
+  }
+
+  if (module_exists('nodequeue')) {
+    $components['uuid_nodequeue_item'] = array(
+      'name' => t('Nodequeue item'),
+      'feature_source' => TRUE,
+      'default_hook' => 'uuid_features_default_nodequeue_items',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_nodequeue_item.features.inc',
+    );
+  }
+
+  if (module_exists('current_search')) {
+    $components['uuid_current_search_configuration'] = array(
+      'name' => t('Current search block configuration'),
+      'feature_source' => TRUE,
+      'default_hook' => 'uuid_features_default_current_search_configurations',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_current_search_configuration.features.inc',
+    );
+  }
 
   return $components;
 }
@@ -134,7 +174,7 @@ function uuid_features_settings($form, &$form_state) {
   $entity_info = entity_get_info();
 
   foreach ($entity_info as $type => $info) {
-    foreach($info['bundles'] as $bundle => $bundle_info) {
+    foreach ($info['bundles'] as $bundle => $bundle_info) {
       $bundles[$type][$bundle] = $bundle_info['label'];
     }
     if (isset($info['uuid features']) && $info['uuid features'] === TRUE) {
@@ -195,6 +235,13 @@ function uuid_features_settings($form, &$form_state) {
     '#description' => t('Comma seperated list of file field types to detect for export/import.'),
   );
 
+  $form['settings']['uuid_features_vocabulary_terms'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Auto detect uuid terms'),
+    '#description' => t('When exporting a vocabulary, include its terms.'),
+    '#default_value' => variable_get('uuid_features_vocabulary_terms', FALSE),
+  );
+
   return system_settings_form($form);
 }
 
@@ -212,6 +259,8 @@ function uuid_features_file_field_export(&$export, $entity_type) {
     case "node":
       $export_bundle = $export->type;
       break;
+    case "field_collection_item":
+      $export_bundle = $export->field_name;
   }
   $fields = field_info_instances($entity_type, $export_bundle);
   $supported_fields = array_map('trim', explode(',', variable_get('uuid_features_file_supported_fields', 'file, image')));
@@ -285,7 +334,7 @@ function uuid_features_file_field_export(&$export, $entity_type) {
 
               // Check the file
               if (!isset($file->uri) || !is_file($file->uri)) {
-                drupal_set_message(t("File field found on term, but file doesn't exist on disk? '!path'", array('!path' => $file->uri)), 'error');
+                drupal_set_message(t("File field found on term, but file doesn't exist on disk? '!path'", array('!path' => $file->uri)), 'warning');
                 continue;
               }
 
@@ -341,31 +390,35 @@ function uuid_features_file_field_import(&$import, $entity_type) {
     case "node":
       $import_bundle = $import->type;
       break;
+    case "field_collection_item":
+      $import_bundle = $import->field_name;
   }
   // Get all fields from this bundle.
   $fields = field_info_instances($entity_type, $import_bundle);
 
   foreach($fields as $field_instance) {
-    // Load field info to check the type.
-    $field = &$import->{$field_instance['field_name']};
-    $info = field_info_field($field_instance['field_name']);
-    $supported_fields = array_map('trim', explode(',', variable_get('uuid_features_file_supported_fields', 'file, image')));
-    // Check if this field should implement file import/export system.
-    if (in_array($info['type'], $supported_fields)) {
-      // We need to loop into each language because i18n translation can build
-      // fields with different language than the term one.
-      foreach($field as $language => $files) {
-        if (is_array($files)) {
-          foreach($files as $i => $file) {
-            // Convert file to array to stay into the default uuid_features_file format.
-            $file = (object)$file;
-            $result = _uuid_features_file_field_import_file($file);
-            // The file was saved successfully, update the file field (by reference).
-            if ($result == TRUE && isset($file->fid)) {
-              $field[$language][$i] = (array)$file;
-            }
-            else {
-              $field[$language][$i] = array();
+    if (isset($import->{$field_instance['field_name']})) {
+      // Load field info to check the type.
+      $field = &$import->{$field_instance['field_name']};
+      $info = field_info_field($field_instance['field_name']);
+      $supported_fields = array_map('trim', explode(',', variable_get('uuid_features_file_supported_fields', 'file, image')));
+      // Check if this field should implement file import/export system.
+      if (in_array($info['type'], $supported_fields)) {
+        // We need to loop into each language because i18n translation can build
+        // fields with different language than the term one.
+        foreach($field as $language => $files) {
+          if (is_array($files)) {
+            foreach($files as $i => $file) {
+              // Convert file to array to stay into the default uuid_features_file format.
+              $file = (object)$file;
+              $result = _uuid_features_file_field_import_file($file);
+              // The file was saved successfully, update the file field (by reference).
+              if ($result == TRUE && isset($file->fid)) {
+                $field[$language][$i] = (array)$file;
+              }
+              else {
+                $field[$language][$i] = array();
+              }
             }
           }
         }
@@ -495,4 +548,111 @@ function _uuid_features_file_field_import_file(&$file) {
   }
 
   return TRUE;
+}
+
+/**
+ * Helper function to get a filtered list of fields of the same type.
+ *
+ * @param object $export
+ *   The entity object to export e.g. a node.
+ * @param string $entity_type
+ *   The entity type.
+ * @param string $field_type
+ *   The field type to look for e.g. 'field_collection',
+ *   'taxonomy_term_reference'
+ *
+ * @return array
+ *   A filtered list of fields of the same type.
+ */
+function uuid_features_get_field_items_iterator(&$export, $entity_type, $field_type) {
+  $fields = field_info_instances($entity_type, isset($export->type) ? $export->type : NULL);
+  if (!isset($export->type)) {
+    $fields = reset($fields);
+  }
+  $return = array();
+  foreach ($fields as $field_instance) {
+    $info = field_info_field($field_instance['field_name']);
+    if (isset($export->{$info['field_name']})) {
+      $field = &$export->{$info['field_name']};
+      if ($info['type'] == $field_type) {
+        foreach ($field as $language => &$field_items) {
+          $return[$field_instance['field_name']] = array(
+            $language => &$field_items,
+          );
+        }
+      }
+    }
+  }
+  return $return;
+}
+
+/**
+ * Walks through a list of fields and sets UUID property using entity ids.
+ *
+ * @param array $fields
+ *   Filtered array of fields of the same type.
+ * @param string $entity_type
+ *   The entity type.
+ */
+function uuid_features_set_uuid_references(&$fields, $entity_type) {
+  foreach ($fields as $field_name => &$field_languages) {
+    foreach ($field_languages as &$field_values) {
+      foreach ($field_values as &$field_value) {
+        $field_info = field_info_field($field_name);
+        $columns = array_keys($field_info['columns']);
+        $id_column = $columns[0];
+        $entities = entity_get_uuid_by_id($entity_type, array($field_value[$id_column]));
+        $field_reference_uuid = reset($entities);
+        if ($field_reference_uuid) {
+          $field_value['uuid'] = $field_reference_uuid;
+          foreach ($columns as $column) {
+            $field_value[$column] = $field_reference_uuid;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Walks through list of fields and updates entity references using the UUID.
+ *
+ * @param array $fields
+ *   Filtered array of fields of the same type.
+ * @param string $entity_type
+ *   The entity type.
+ * @param array $map
+ *   Mapping from entity to reference fields properties.
+ *   Example:
+ *     Taxonomy term:
+ *     array(
+ *       'tid' => 'tid',
+ *     )
+ *
+ *     Field collection:
+ *     array(
+ *       'item_id' => 'value',
+ *       'revision_id' => 'revision_id',
+ *     )
+ */
+function uuid_features_fetch_uuid_references(&$fields, $entity_type, $map) {
+  foreach ($fields as $field_name => &$field_languages) {
+    foreach ($field_languages as &$field_values) {
+      if (is_array($field_values)) {
+        foreach ($field_values as &$field_value) {
+          $entities = entity_uuid_load($entity_type, array($field_value['uuid']), array(), TRUE);
+          $referenced_entity = reset($entities);
+          foreach ($map as $source => $destination) {
+            if ($referenced_entity) {
+              $field_value[$destination] = $referenced_entity->{$source};
+            }
+            else {
+              // Fallback.
+              $field_value[$destination] = UUID_FEATURES_DEFAULT_FALLBACK_ID;
+            }
+          }
+        }
+      }
+    }
+  }
 }

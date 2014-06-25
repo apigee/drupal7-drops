@@ -24,6 +24,7 @@ function devconnect_user_sync() {
   foreach ($kms_developers_orig as $email => $data) {
     $kms_developers[strtolower($email)] = $data;
   }
+
   // Fetch list of users in Drupal
   $stmt = db_select('users', 'u')
     ->fields('u', array('mail', 'uid'))
@@ -42,6 +43,7 @@ function devconnect_user_sync() {
     }
   }
   $not_in_drupal = array_diff_key($kms_developers, $drupal_users);
+
   $offset = 10;
   $operations = array();
   for ($i = 0, $len = count($not_in_drupal); $i < $len; $i += $offset) {
@@ -91,12 +93,12 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
   // For each developer in Edge that is not in Drupal, create user in Drupal.
   foreach ($developers  as $email => $developer) {
     // Skip any cruft users left over from failed simpletests
-    if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $developer['email'])) {
+    if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $developer->email)) {
       $context['results'][0]['simpletest_dc']++;
       $context['sandbox']['progress']++;
       continue;
     }
-    $kms_user_name = $developer['userName'];
+    $kms_user_name = $developer->userName;
     // Now find an untaken Drupal username. If there is already a user with
     // the name in question, start appending numbers until we find an untaken
     // name.
@@ -119,18 +121,18 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
 
     $edit = array(
       'name' => $drupal_name,
-      'mail' => $developer['email'],
+      'mail' => $developer->email,
       'field_first_name' => array(
         LANGUAGE_NONE => array(
-          0 => array('value' => $developer['firstName'])
+          0 => array('value' => $developer->firstName)
         )
       ),
       'field_last_name' => array(
         LANGUAGE_NONE => array(
-          0 => array('value' => $developer['lastName'])
+          0 => array('value' => $developer->lastName)
         )
       ),
-      'status' => ($developer['status'] == 'active' ? 1 : 0),
+      'status' => ($developer->status == 'active' ? 1 : 0),
       'pass' => user_password(),
       'already_in_kms' => !$developer->forceSync,
     );

@@ -1,7 +1,10 @@
 <?php
 
+use Apigee\ManagementAPI\APIProduct;
+use Drupal\devconnect_developer_apps\ApiProductEntity;
+
 class ApiProductController implements DrupalEntityControllerInterface {
-  private $productCache;
+  protected $productCache;
 
   /**
    * Implements DrupalEntityControllerInterface::__construct().
@@ -16,6 +19,11 @@ class ApiProductController implements DrupalEntityControllerInterface {
       devconnect_init();
     }
   }
+
+  protected static function getOrgs($conditions = NULL) {
+    return array('default');
+  }
+
 
   /**
    * Implements DrupalEntityControllerInterface::resetCache().
@@ -44,44 +52,43 @@ class ApiProductController implements DrupalEntityControllerInterface {
    * @return array
    */
   public function load($ids = array(), $conditions = array('show_private' => FALSE)) {
-    if(!empty($conditions['orgName'])){
-        $api_product = new Apigee\ManagementAPI\APIProduct(devconnect_default_api_client($conditions['orgName']));
-    } else {
-        $api_product = new Apigee\ManagementAPI\APIProduct(devconnect_default_api_client());
-    }
 
     if (!isset($conditions['show_private'])) {
       $conditions['show_private'] = FALSE;
     }
 
-    if (empty($ids)) {
-      try {
-        $list = $api_product->listProducts($conditions['show_private']);
-        if (!empty($list)) {
-          foreach ($list as $p) {
-            $this->productCache[$p->getName()] = $p;
-          }
-        }
-      } catch (Apigee\Exceptions\ResponseException $e) {
-        return array();
-      }
-    }
-    else {
-      $list = array();
-      foreach ($ids as $name) {
-        if (array_key_exists($name, $this->productCache)) {
-          $list[] = $this->productCache[$name];
-        }
-        else {
-          $my_product = clone $api_product;
-          try {
-            $my_product->load($name);
-            $this->productCache[$my_product->getName()] = $my_product;
-            if ($my_product->isPublic() || $conditions['show_private']) {
-              $list[] = $my_product;
+    $list = array();
+    foreach (self::getOrgs($conditions) as $org) {
+      $api_product = new Apigee\ManagementAPI\APIProduct(devconnect_default_org_config($org));
+
+      if (empty($ids)) {
+        try {
+          $sub_list = $api_product->listProducts($conditions['show_private']);
+          if (!empty($sub_list)) {
+            foreach ($list as $p) {
+              $this->productCache[$p->getName()] = $p;
             }
-          } catch (Apigee\Exceptions\ResponseException $e) {
-            // do nothing
+          }
+          $list += $sub_list;
+        } catch (Apigee\Exceptions\ResponseException $e) {
+        }
+      }
+      else {
+        foreach ($ids as $name) {
+          if (array_key_exists($name, $this->productCache)) {
+            $list[] = $this->productCache[$name];
+          }
+          else {
+            $my_product = clone $api_product;
+            try {
+              $my_product->load($name);
+              $this->productCache[$my_product->getName()] = $my_product;
+              if ($my_product->isPublic() || $conditions['show_private']) {
+                $list[] = $my_product;
+              }
+            } catch (Apigee\Exceptions\ResponseException $e) {
+              // do nothing
+            }
           }
         }
       }
@@ -89,12 +96,10 @@ class ApiProductController implements DrupalEntityControllerInterface {
 
     $return = array();
     foreach ($list as $api_product) {
-      if ($api_product->isPublic() || $conditions['show_private']) {
-        $array = $api_product->toArray();
-        $array['isPublic'] = $api_product->isPublic();
-        $array['orgName'] = $api_product->getConfig()->orgName;
-        $return[$api_product->getName()] = new Drupal\devconnect_developer_apps\ApiProductEntity($array);
-      }
+      $array = $api_product->toArray();
+      $array['isPublic'] = $api_product->isPublic();
+      $array['orgName'] = $api_product->getConfig()->orgName;
+      $return[$api_product->getName()] = new ApiProductEntity($array);
     }
     return $return;
   }

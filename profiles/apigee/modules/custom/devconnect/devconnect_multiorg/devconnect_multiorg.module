@@ -1,0 +1,263 @@
+<?php
+
+require_once(drupal_get_path('module', 'devconnect_multiorg') . '/controllers/MultiOrgApiProductController.php');
+require_once(drupal_get_path('module', 'devconnect_multiorg') . '/controllers/MultiOrgDeveloperAppController.php');
+require_once(drupal_get_path('module', 'devconnect_multiorg') . '/controllers/MultiOrgDeveloperController.php');
+
+/**
+ * Implements hook_devconnect_org_settings_alter().
+ *
+ * @param array $config
+ * @param string $requested_org
+ */
+function devconnect_multiorg_devconnect_org_settings_alter(array &$config, $requested_org) {
+  if ($requested_org == 'default' || !array_key_exists('secondary_orgs', $config) || !array_key_exists($requested_org, $config['secondary_orgs'])) {
+    return;
+  }
+  $my_config = $config['secondary_orgs'][$requested_org];
+  try {
+    $pass = Apigee\Util\Crypto::decrypt($my_config['pass']);
+  } catch (Exception $e) {
+    $pass = '';
+  }
+  $config['org'] = $my_config['org'];
+  $config['endpoint'] = $my_config['endpoint'];
+  $config['user'] = $my_config['user'];
+  $config['pass'] = $pass;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for devconnect_admin_form.
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function devconnect_multiorg_form_devconnect_admin_form_alter(array &$form, array &$form_state) {
+  $container =& $form['connection_config_container']['org_settings'];
+  $container[0] += array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => t('Default connection')
+  );
+
+  if (!empty($form_state['input']['org_settings'])) {
+    $secondary_orgs = $form_state['input']['org_settings'];
+    unset($secondary_orgs[0]);
+  }
+  else {
+    $org_settings =& $form['original_org_settings']['#value'];
+    if (array_key_exists('secondary_orgs', $org_settings)) {
+      $secondary_orgs = $org_settings['secondary_orgs'];
+    }
+    else {
+      $secondary_orgs = array();
+    }
+  }
+
+  $i = 1;
+  foreach ($secondary_orgs as $subsettings) {
+    if (empty($subsettings)) {
+      continue;
+    }
+    if (isset($form_state['storage']['org_to_delete'])) {
+      list($_endpoint, $_org) = explode("\n", $form_state['storage']['org_to_delete']);
+      if ($subsettings['endpoint'] == $_endpoint && $subsettings['org'] == $_org) {
+        continue;
+      }
+    }
+    $sub_org = (empty($subsettings['org']) ? '' : ' (' . $subsettings['org'] . ')');
+
+    $is_incomplete = (empty($subsettings['org']) || empty($subsettings['endpoint']) || empty($subsettings['user']) || empty($subsettings['pass']));
+
+    $pass = $subsettings['pass'];
+    if (!empty($pass)) {
+      try {
+        $pass = Apigee\Util\Crypto::decrypt($pass);
+      } catch (Exception $e) {
+        $pass = '';
+      }
+    }
+
+    $container[$i] = array(
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => !$is_incomplete,
+      '#title' => t('Secondary Connection @index@org', array('@index' => $i, '@org' => $sub_org))
+    );
+    $container[$i]['org'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Dev Portal Organization'),
+      '#required' => TRUE,
+      '#default_value' => $subsettings['org'],
+      '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
+      '#weight' => -6
+    );
+    $container[$i]['endpoint'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Dev Portal Endpoint URL'),
+      '#required' => TRUE,
+      '#default_value' => $subsettings['endpoint'],
+      '#description' => t('URL to which to make Apigee REST calls.'),
+      '#weight' => -5
+    );
+
+    $container[$i]['user'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Endpoint Authenticated User'),
+      '#required' => TRUE,
+      '#default_value' => $subsettings['user'],
+      '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
+      '#weight' => -4
+    );
+
+    $container[$i]['pass'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Authenticated User’s Password'),
+      '#required' => TRUE,
+      '#default_value' => $pass,
+      '#description' => t('Password used when authenticating with the endpoint.'),
+      '#weight' => -3,
+      '#post_render' => array('devconnect_password_post_render')
+    );
+
+    $container[$i]['remove_btn'] = array(
+      '#name' => 'remove_btn_' . $i,
+      '#type' => 'submit',
+      '#btn_index' => $i,
+      '#value' => t('Mark for removal'),
+      '#limit_validation_errors' => array(),
+      '#submit' => array('devconnect_multiorg_settings_remove_btn_submit'),
+      '#ajax' => array(
+        'callback' => 'devconnect_multiorg_change_callback',
+        'wrapper' => 'edit-connection-config-container',
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+    );
+
+    $i++;
+  }
+
+  $form['connection_config_container']['add_more'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add another endpoint/org'),
+    '#limit_validation_errors' => array(),
+    '#submit' => array('devconnect_multiorg_settings_add_more_add_one'),
+    '#ajax' => array(
+      'callback' => 'devconnect_multiorg_change_callback',
+      'wrapper' => 'edit-connection-config-container',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+  );
+
+  // Make button label more descriptive, so we know which connection is being tested.
+  $form['connection_config_container']['connect_test']['test_connection']['#value'] = t('Test Default Connection');
+
+  $form['#submit'][] = 'devconnect_multiorg_admin_form_submit';
+}
+
+function devconnect_multiorg_change_callback($form, $form_state) {
+  return $form['connection_config_container'];
+}
+
+function devconnect_multiorg_settings_remove_btn_submit($form, &$form_state) {
+  drupal_set_message('Changes not saved yet', 'warning');
+  $index = $form_state['triggering_element']['#btn_index'];
+  $settings = $form_state['input']['org_settings'][$index];
+  $form_state['storage']['org_to_delete'] = $settings['endpoint'] . "\n" . $settings['org'];
+  $form_state['rebuild'] = TRUE;
+}
+
+function devconnect_multiorg_settings_add_more_add_one($form, &$form_state) {
+  drupal_set_message('Changes not saved yet', 'warning');
+  $form_state['input']['org_settings'][] = array(
+    'org' => '',
+    'endpoint' => '',
+    'user' => '',
+    'pass' => '',
+  );
+  $form_state['rebuild'] = TRUE;
+}
+
+function devconnect_multiorg_admin_form_submit($form, &$form_state) {
+  $org_settings = $form_state['values']['org_settings'];
+  unset($org_settings[0]);
+  $var = variable_get('devconnect_org_settings');
+  $var['secondary_orgs'] = array();
+  foreach ($org_settings as $org_setting) {
+    if (array_key_exists('remove_btn', $org_setting)) {
+      unset($org_setting['remove_btn']);
+    }
+    try {
+      $org_setting['pass'] = Apigee\Util\Crypto::encrypt($org_setting['pass']);
+    } catch (Exception $e) {
+      $org_settings['pass'] = '';
+    }
+    $var['secondary_orgs'][] = $org_setting;
+  }
+  variable_set('devconnect_org_settings', $var);
+}
+
+
+/**
+ * Returns a list of all Edge orgs that have been configured.
+ *
+ * @return array
+ */
+function devconnect_multiorg_get_configured_orgs() {
+  $settings = devconnect_get_org_settings();
+  $orgs = array('default');
+  if (array_key_exists('secondary_orgs', $settings)) {
+    foreach ($settings['secondary_orgs'] as $org) {
+      $orgs[] = $org['org'];
+    }
+  }
+  return $orgs;
+}
+
+/**
+ * Returns the internal key associated with a requested org name.
+ *
+ * If the requested org is the default org, 'default' is returned. If the
+ * requested org is a valid configured org but is not the default, the
+ * requested org name is returned. If neither of these is true, an exception
+ * is thrown.
+ *
+ * In some cases
+ * @param $requested_org
+ * @return string
+ * @throws Exception
+ */
+function devconnect_multiorg_find_requested_org($requested_org) {
+  if ($requested_org == 'default') {
+    return $requested_org;
+  }
+  $config = devconnect_default_org_config();
+  if ($requested_org == $config->orgName) {
+    return 'default';
+  }
+  $settings = devconnect_get_org_settings();
+  if (array_key_exists('secondary_orgs', $settings)) {
+    foreach ($settings['secondary_orgs'] as $org) {
+      if ($org['org'] == $requested_org) {
+        return $requested_org;
+      }
+    }
+  }
+  throw new Exception('Requested org “' . $requested_org . '” not found.');
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Resets the controller classes for Dev Portal entities to support multi-org.
+ *
+ * @param array $entity_info
+ */
+function devconnect_multiorg_entity_info_alter(array &$entity_info) {
+  $entity_info['developer_app']['controller class'] = 'MultiOrgDeveloperAppController';
+  $entity_info['api_product']['controller class'] = 'MultiOrgApiProductController';
+  $entity_info['developer']['controller class'] = 'MultiOrgDeveloperController';
+}

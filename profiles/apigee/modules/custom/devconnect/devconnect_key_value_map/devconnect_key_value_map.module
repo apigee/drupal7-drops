@@ -7,7 +7,7 @@
  * @param array $entries
  */
 function devconnect_key_value_map_create($map_name, $entries = array()) {
-  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_org_config());
   $kvm->create($map_name, $entries);
 }
 
@@ -19,7 +19,7 @@ function devconnect_key_value_map_create($map_name, $entries = array()) {
  * @param string $value
  */
 function devconnect_key_value_map_set($map_name, $key_name, $value) {
-  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_org_config());
   $kvm->setEntryValue($map_name, $key_name, $value);
 }
 
@@ -31,7 +31,7 @@ function devconnect_key_value_map_set($map_name, $key_name, $value) {
  * @return null|string
  */
 function devconnect_key_value_map_get($map_name, $key_name) {
-  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_org_config());
   return $kvm->getEntryValue($map_name, $key_name);
 }
 
@@ -42,7 +42,7 @@ function devconnect_key_value_map_get($map_name, $key_name) {
  * @return array
  */
 function devconnect_key_value_map_get_all($map_name) {
-  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_org_config());
   return $kvm->getAllEntries($map_name);
 }
 
@@ -53,7 +53,7 @@ function devconnect_key_value_map_get_all($map_name) {
  * @param $key_name
  */
 function devconnect_key_value_map_delete_key($map_name, $key_name) {
-  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_org_config());
   $kvm->deleteEntry($map_name, $key_name);
 }
 
@@ -63,6 +63,6 @@ function devconnect_key_value_map_delete_key($map_name, $key_name) {
  * @param $map_name
  */
 function devconnect_key_value_map_delete_map($map_name) {
-  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_api_client());
+  $kvm = new Apigee\ManagementAPI\KeyValueMap(devconnect_default_org_config());
   $kvm->delete($map_name);
 }

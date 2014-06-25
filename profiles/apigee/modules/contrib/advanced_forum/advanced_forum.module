@@ -243,24 +243,30 @@ function advanced_forum_theme_registry_alter(&$theme_registry) {
 
   // Don't let core do its basic preprocess for forums, as we want to do
   // other stuff now.
-  foreach ($theme_registry['forums']['preprocess functions'] as $key => $value) {
-    if ($value == 'template_preprocess_forums') {
-      unset($theme_registry['forums']['preprocess functions'][$key]);
+  if (isset($theme_registry['forums']['preprocess functions'])) {
+    foreach ($theme_registry['forums']['preprocess functions'] as $key => $value) {
+      if ($value == 'template_preprocess_forums') {
+        unset($theme_registry['forums']['preprocess functions'][$key]);
+      }
     }
   }
 
   // We duplicate all of core's forum list preprocessing so no need to run
   // it twice. Running twice also causes problems with & in forum name.
-  foreach ($theme_registry['forum_list']['preprocess functions'] as $key => $value) {
-    if ($value == 'template_preprocess_forum_list') {
-      unset($theme_registry['forum_list']['preprocess functions'][$key]);
+  if (isset($theme_registry['forum_list']['preprocess functions'])) {
+    foreach ($theme_registry['forum_list']['preprocess functions'] as $key => $value) {
+      if ($value == 'template_preprocess_forum_list') {
+        unset($theme_registry['forum_list']['preprocess functions'][$key]);
+      }
     }
   }
 
   // Views handles the topic list pages so remove the core template preprocess.
-  foreach ($theme_registry['forum_topic_list']['preprocess functions'] as $key => $value) {
-    if ($value == 'template_preprocess_forum_topic_list') {
-      unset($theme_registry['forum_topic_list']['preprocess functions'][$key]);
+  if (isset($theme_registry['forum_topic_list']['preprocess functions'])) {
+    foreach ($theme_registry['forum_topic_list']['preprocess functions'] as $key => $value) {
+      if ($value == 'template_preprocess_forum_topic_list') {
+        unset($theme_registry['forum_topic_list']['preprocess functions'][$key]);
+      }
     }
   }
 
@@ -323,15 +329,21 @@ function advanced_forum_theme_registry_alter(&$theme_registry) {
           }
         }
         // Add in our new preprocess functions:
-        array_splice($theme_registry[$template]['preprocess functions'], $position, 0, $preprocess);
+        if (isset($theme_registry[$template]['preprocess functions'])) {
+          array_splice($theme_registry[$template]['preprocess functions'], $position, 0, $preprocess);
+        }
       }
     }
   }
 
 
   // temp workaround
-  array_splice($theme_registry['views_view__advanced_forum_topic_list']['preprocess functions'], 1, 0, 'template_preprocess_views_view');
-  array_splice($theme_registry['views_view__advanced_forum_group_topic_list']['preprocess functions'], 1, 0, 'template_preprocess_views_view');
+  if (isset($theme_registry['views_view__advanced_forum_topic_list']['preprocess functions'])) {
+    array_splice($theme_registry['views_view__advanced_forum_topic_list']['preprocess functions'], 1, 0, 'template_preprocess_views_view');
+  }
+  if (isset($theme_registry['views_view__advanced_forum_group_topic_list']['preprocess functions'])) {
+    array_splice($theme_registry['views_view__advanced_forum_group_topic_list']['preprocess functions'], 1, 0, 'template_preprocess_views_view');
+  }
   //array_splice($theme_registry['views_view_forum_topic_list__advanced_forum_topic_list']['preprocess functions'], 1, 0, 'template_preprocess_views_view_forum_topic_list');
 }
 
@@ -438,15 +450,6 @@ function advanced_forum_comment_view($comment, $view_mode, $langcode) {
 function advanced_forum_comment_delete($comment) {
   if (!empty($comment->node_type) && ($comment->node_type == "comment_node_forum")) {
     advanced_forum_statistics_replies(-1);
-  }
-}
-
-/**
- * Implementation of hook_comment_insert().
- */
-function advanced_forum_comment_insert($comment) {
-  if (!empty($comment->node_type) && ($comment->node_type == "comment_node_forum")) {
-    advanced_forum_statistics_replies(1);
   }
 }
 
@@ -1341,7 +1344,7 @@ function advanced_forum_post_position($node, $comment) {
   }
 
   $node_id = $node->nid;
-  $post_id = $comment->pid;
+  $post_id = $comment->cid;
 
   if (!isset($post_order[$node_id])) {
     // Initialize the spot for this node's list.

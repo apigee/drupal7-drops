@@ -192,7 +192,7 @@ function devconnect_developer_apps_create_app($parameters) {
       $detail = 'Duplicate app name "' . $account->name . '" for user "' . $account->name . '"!'
         . "\n" . $e->getResponse();
 
-      devconnect_default_api_client()->logger->warning($detail);
+      devconnect_default_org_config()->logger->warning($detail);
     } else {
       $response = @json_decode($e->getResponse());
       $uri = $e->getUri();

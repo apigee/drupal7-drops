@@ -267,7 +267,7 @@ function devconnect_developer_apps_schema() {
 
 
 /**
- * Install developer-apps and api-products cache tables
+ * (Re-)install developer-apps and api-products cache tables
  */
 function devconnect_developer_apps_update_7428() {
   drupal_uninstall_schema('devconnect_developer_apps');

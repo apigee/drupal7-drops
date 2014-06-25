@@ -1,5 +1,10 @@
 <?php
 
+use Apigee\ManagementAPI\Developer;
+use Apigee\Exceptions\ResponseException;
+use Apigee\Exceptions\ParameterException;
+use Drupal\devconnect_user\DeveloperEntity;
+
 class DeveloperController implements DrupalEntityControllerInterface, EntityAPIControllerInterface {
   /**
    * @var array
@@ -10,11 +15,6 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @var array
    */
   private $emailCache;
-
-  /**
-   * @var array
-   */
-  private $orgConfigs;
 
   /**
    * Initializes internal variables.
@@ -29,7 +29,6 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       module_load_include('module', 'devconnect');
       devconnect_init();
     }
-    $this->orgConfigs = devconnect_default_api_client("all");
   }
 
   /**
@@ -61,52 +60,56 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @return array
    */
   public function load($ids = array(), $conditions = array()) {
-    $list = array();
     $email_lookup = array();
-    foreach ($this->orgConfigs as $orgName => $config) {
-      $dev_obj = new Apigee\ManagementAPI\Developer($config);
 
+    $list = array();
+    foreach (self::getOrgs($conditions) as $org) {
+      $config = devconnect_default_org_config($org);
+      if (array_key_exists('suppressLogs', $conditions) && $conditions['suppressLogs']) {
+        $config->logger = new \Psr\Log\NullLogger();
+        $config->subscribers = array();
+      }
+
+      $dev_obj = new Developer(devconnect_default_org_config($org));
 
       if (empty($ids)) {
         // The following may throw Apigee\Exceptions\ResponseException if the
         // endpoint is unreachable.
-        foreach ($dev_obj->loadAllDevelopers() as $d) {
+        $list += $dev_obj->loadAllDevelopers();
+        foreach ($list as $d) {
+          /** @var Apigee\ManagementAPI\Developer $d */
           $email = $d->getEmail();
-          $this->devCache[$email]['obj'] = $d;
-          $this->devCache[$email]['orgNames'][$d->getDeveloperId()] = $orgName;
-          $list[$email] = $d;
+          $this->devCache[$d->getDeveloperId()] = $d;
           if (!array_key_exists($email, $this->emailCache)) {
             $email_lookup[] = $email;
           }
         }
       }
       else {
-        foreach ($ids as $email) {
-          if (array_key_exists($email, $this->devCache) && $this->devCache[$email]['loaded'] === TRUE) {
-            $list[] = $this->devCache[$email]['obj'];
-          }
-          else {
-            $my_dev = clone $dev_obj;
+        foreach ($ids as $id) {
+          $is_email = valid_email_address($id);
+          if ($is_email || !array_key_exists($id, $this->devCache)) {
             try {
-              $my_dev->load($email);
-              $email = $my_dev->getEmail(); // correct for case
-              $this->devCache[$email]['obj'] = $my_dev;
-              $this->devCache[$email]['orgNames'][$my_dev->getDeveloperId()] = $orgName;
-              if (!array_key_exists($email, $this->emailCache)) {
-                $email_lookup[] = $email;
-              }
+              $my_dev = clone $dev_obj;
+              $my_dev->load($id);
+              $id = $my_dev->getDeveloperId();
+              $mail = $my_dev->getEmail();
+              $this->devCache[$id] = $my_dev;
               $list[] = $my_dev;
-            } catch (Apigee\Exceptions\ResponseException $e) {
+              if (!in_array($mail, $this->emailCache)) {
+                $email_lookup[] = $mail;
+              }
+            } catch (Exception $e) {
               if ($e->getCode() != 404) {
                 throw $e;
               }
             }
           }
+          else {
+            $list[] = $this->devCache[$id];
+          }
         }
       }
-    }
-    foreach ($this->devCache as &$value) {
-      $value['loaded'] = TRUE;
     }
 
     // Look up UIDs by email
@@ -123,16 +126,10 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     $return = array();
     $include_debug_data = (count($list) == 1);
     foreach ($list as $dev) {
-      if (!($dev instanceof Apigee\ManagementAPI\DeveloperInterface)) {
-        watchdog('DeveloperController', 'Non-developer object returned: @object', array('@object' => print_r($dev, TRUE)), WATCHDOG_ERROR);
-        continue;
-      }
       $array = $dev->toArray($include_debug_data);
       $email = $array['email'];
       $array['uid'] = (isset($this->emailCache[$email]) ? $this->emailCache[$email] : NULL);
-      $array['orgNames'] = (isset($this->devCache[$email]['orgNames']) ? $this->devCache[$email]['orgNames'] : NULL);
-      $array['forceSync'] = count(array_diff(array_keys($this->orgConfigs), $array['orgNames'])) != 0;
-      $return[$email] = new Drupal\devconnect_user\DeveloperEntity($array);
+      $return[$email] = new DeveloperEntity($array);
     }
     // Correct for first/last name
     // TODO: verify that this is really necessary
@@ -162,7 +159,6 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     return $return;
   }
 
-
   /**
    * Determines if a developer exists with the given email or set of
    * conditions.
@@ -170,30 +166,20 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * This is accomplished without writing to logs or watchdog. If the developer
    * exists, the DeveloperEntity is returned, else FALSE.
    *
-   * @param string|null $appId
+   * @param string|null $id
    * @param array $conditions
    * @return bool|Drupal\devconnect_user\DeveloperEntity
    */
-  public function loadIfExists($email = NULL, $conditions = array()) {
-    if (!empty($email) && array_key_exists($email, $this->devCache)) {
-      return $this->devCache[$email]['obj'];
+  public function loadIfExists($id = NULL, $conditions = array()) {
+    if (!empty($id) && array_key_exists($id, $this->devCache)) {
+      return $this->devCache[$id];
     }
-    // Store initial state of the config object
-    $cached_org_config = array();
-    foreach ($this->orgConfigs as $orgName => $config) {
-      $cached_org_config[$orgName] = $config;
-      // Turn off error logging
-      $this->orgConfigs[$orgName]->logger = new \Psr\Log\NullLogger();
-      $this->orgConfigs[$orgName]->subscribers = array();
-    }
-
     $ids = array();
-    if (!empty($email) && is_scalar($email)) {
-      $ids[] = $email;
+    if (!empty($id) && is_scalar($id)) {
+      $ids[] = $id;
     }
+    $conditions['suppressLogs'] = TRUE;
     $entities = $this->load($ids, $conditions);
-    // Restore initial state of the config object
-    $this->orgConfigs = $cached_org_config;
     return empty($entities) ? FALSE : reset($entities);
   }
 
@@ -203,24 +189,47 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @param array $ids
    */
   public function delete($ids) {
-    foreach ($this->load($ids) as $id => $entity) {
-      foreach ($entity->orgNames as $developer_id => $config_name) {
-
-        $dev_app = new Apigee\ManagementAPI\Developer($this->orgConfigs[$config_name]);
-        try {
-          $dev_app->delete($id);
-        } catch (Apigee\Exceptions\ResponseException $e) {
-          if ($e->getCode() != 404) {
-            throw $e;
+    $id_count = count($ids);
+    $deleted_count = 0;
+    foreach (self::getOrgs() as $org) {
+      $config = devconnect_default_org_config($org);
+      foreach ($ids as $id) {
+        $delete_succeeded = FALSE;
+        // If entity is in our cache, we can make one fewer server roundtrips.
+        if (array_key_exists($id, $this->devCache)) {
+          unset ($this->devCache[$id]);
+          $delete_succeeded = TRUE;
+        }
+        else {
+          // Not in cache. Fetch, then delete.
+          $dev = new Developer($config);
+          try {
+            $entity = new DeveloperEntity($dev->toArray());
+            $dev->delete($id);
+            if ($dev->getDeveloperId() === NULL) {
+              devconnect_user_delete_from_cache($entity);
+              $deleted_count++;
+              $delete_succeeded = TRUE;
+              if (array_key_exists($entity->developerId, $this->devCache)) {
+                unset($this->devCache[$entity->developerId]);
+              }
+            }
+          } catch (ResponseException $e) {
+          } catch (ParameterException $e) {
           }
         }
-        $entity->developer_id = $developer_id;
-        devconnect_user_delete_from_cache($entity);
+        if ($delete_succeeded) {
+          $entity = new DeveloperEntity(array('developerId' => $id));
+          devconnect_user_delete_from_cache($entity);
+          $deleted_count++;
+        }
+
+        if ($id_count == $deleted_count) {
+          break;
+        }
       }
     }
-    $this->resetCache($ids);
   }
-
 
   /**
    * Implements EntityAPIControllerInterface::invoke().
@@ -238,38 +247,58 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @param $entity
    */
   public function save($entity) {
-    $developer = reset($this->load(array($entity->email)));
-    $entity->developerId = NULL;
-    $entity->organizationName = NULL;
-    $entity->createdAt = NULL;
-    $entity->createdBy = NULL;
-    $entity->modifiedAt = NULL;
-    $entity->modifiedBy = NULL;
-
-    foreach ($this->orgConfigs as $config) {
-      $dev = new Apigee\ManagementAPI\Developer($config);
-      $dev->fromArray($entity);
-      try {
-        // Force Developer object to figure out if it's an update or insert.
-        $dev->save(NULL);
-        $_entity = new Drupal\devconnect_user\DeveloperEntity($dev->toArray());
-        if ($_entity->email) {
-          $uid = db_select('users', 'u')
-            ->fields('u', array('uid'))
-            ->condition('mail', $_entity->email)
-            ->execute()
-            ->fetchField();
-          if ($uid > 1) {
-            $_entity->uid = $uid;
-            devconnect_user_write_to_cache($_entity);
-          }
-        }
-      } catch (Apigee\Exceptions\ResponseException $e) {
-        return FALSE;
-      }
+    $is_update = !empty($entity->developerId);
+    if (!$is_update) {
+      // Force Developer object to figure out if it's an update or insert.
+      $is_update = NULL;
     }
-    $this->resetCache(array($entity->email));
-    return ($developer != NULL ? SAVED_UPDATED : SAVED_NEW);
+    if ($entity->email) {
+      $uid = db_select('users', 'u')
+        ->fields('u', array('uid'))
+        ->condition('mail', $entity->email)
+        ->execute()
+        ->fetchField();
+    }
+    else {
+      $uid = 0;
+    }
+    $default_config = devconnect_default_org_config();
+
+    $old_entity = (array)$entity;
+    if (empty($entity->orgNames)) {
+      $entity->orgNames = array('default');
+    }
+
+    $overall_success = TRUE;
+    foreach ($entity->orgNames as $org) {
+      if ($org == 'default' || $org == $default_config->orgName) {
+        $config = $default_config;
+      }
+      else {
+        $config = devconnect_default_org_config($org);
+      }
+
+      $dev = new Developer($config);
+      $dev->fromArray($old_entity);
+      try {
+        $dev->save($is_update);
+        $new_entity = new DeveloperEntity($dev->toArray());
+        if ($new_entity->email && $uid > 1) {
+          $new_entity->uid = $uid;
+          devconnect_user_write_to_cache($new_entity);
+          // Prevent cache from being rewritten.
+          $uid = 0;
+        }
+        $this->devCache[$new_entity->developerId] = $new_entity;
+      } catch (ResponseException $e) {
+        $overall_success = FALSE;
+      }
+
+    }
+    if (!$overall_success) {
+      return FALSE;
+    }
+    return ($is_update ? SAVED_UPDATED : SAVED_NEW);
   }
 
   /**
@@ -278,7 +307,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @param array $values
    */
   public function create(array $values = array()) {
-    return new Drupal\devconnect_user\DeveloperEntity($values);
+    return new DeveloperEntity($values);
   }
 
   /**
@@ -340,25 +369,24 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * @param string $new_email
    * @return bool
    */
-  public function updateEmail(Drupal\devconnect_user\DeveloperEntity $entity, $new_email) {
-    $return = TRUE;
-    foreach ($this->orgConfigs as $config) {
+  public function updateEmail(DeveloperEntity $entity, $new_email) {
+    $saved = FALSE;
+    foreach ($entity->orgNames as $org) {
+      $org = devconnect_multiorg_find_requested_org($org);
+      $config = devconnect_default_org_config($org);
       try {
-        $dev = new Apigee\ManagementAPI\Developer($config);
-        $dev->load($entity->email);
+        $dev = new Developer($config);
+        $dev->load($entity->developerId);
         $dev->setEmail($new_email);
         $dev->save(TRUE, $entity->email);
-
-        $this->devCache[$new_email] = $this->devCache[$entity->email];
-        unset($this->devCache[$entity->email]);
+        $saved = TRUE;
+        $this->devCache[$entity->developerId] = $dev;
         $entity->email = $new_email;
-
-        devconnect_user_write_to_cache($entity);
       } catch (Exception $e) {
-        $return = FALSE;
+
       }
     }
-    return $return;
+    return $saved;
   }
 
   /**
@@ -368,15 +396,20 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    */
   public function listEmails() {
     $emails = array();
-    try {
-      foreach ($this->orgConfigs as $config) {
-        $dev = new Apigee\ManagementAPI\Developer($config);
+    foreach (self::getOrgs() as $org) {
+      $config = devconnect_default_org_config($org);
+      try {
+        $dev = new Developer($config);
         $emails += $dev->listDevelopers();
+      } catch (Exception $e) {
       }
-    } catch (Exception $e) {
-      // Do nothing
     }
     sort($emails);
     return array_unique($emails);
   }
+
+  protected static function getOrgs(array $conditions = NULL) {
+    return array('default');
+  }
+
 }

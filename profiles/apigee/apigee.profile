@@ -1708,9 +1708,6 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
     }
     $config[$key] = $value;
   }
-  $config_copy = $config;
-  unset($config_copy['org_settings']);
-  $config['org_settings'] = array($config_copy);
   variable_set('devconnect_org_settings', $config);
   $GLOBALS['apigee_api_endpoint_configured'] = TRUE;
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();

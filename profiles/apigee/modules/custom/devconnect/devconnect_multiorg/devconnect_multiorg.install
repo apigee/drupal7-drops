@@ -1,0 +1,17 @@
+<?php
+
+function devconnect_multiorg_install() {
+  // Make this module heavier than devconnect module.
+  $dc_weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('type', 'module')
+    ->condition('name', 'devconnect')
+    ->execute()
+    ->fetchField();
+  db_update('system')
+    ->fields(array('weight' => $dc_weight + 1))
+    ->condition('type', 'module')
+    ->condition('name', 'devconnect_multiorg')
+    ->execute();
+
+}

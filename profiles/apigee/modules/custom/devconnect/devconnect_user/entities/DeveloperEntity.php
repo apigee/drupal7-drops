@@ -82,6 +82,8 @@ class DeveloperEntity {
   public $forceSync = FALSE;
 
   public function __construct(array $values = array()) {
+
+    $this->orgNames = array();
     // Populate values if available.
     foreach ($values as $key => $value) {
       if (property_exists($this, $key)) {

@@ -318,6 +318,7 @@ projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
+projects[devconnect][download][branch]                         = "7.x-14.07"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module
