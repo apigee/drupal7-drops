@@ -53,8 +53,7 @@ function uuid_node_features_export($data, &$export, $module_name = '') {
     // drupal_alter() normally supports just one byref parameter. Using
     // the __drupal_alter_by_ref key, we can store any additional parameters
     // that need to be altered, and they'll be split out into additional params
-    // for the hook_*_alter() implementations.  The hook_alter signature is
-    // hook_uuid_node_features_export_alter(&$export, &$pipe, $node)
+    // for the hook_*_alter() implementations.
     $data = &$export;
     $data['__drupal_alter_by_ref'] = array(&$pipe);
     $entity_type = 'node';
@@ -92,7 +91,8 @@ function uuid_node_features_export_render($module, $data) {
     // Clone entity to avoid changes by reference.
     $export = clone $node;
 
-    // Use date instead of created, in the same format used by node_object_prepare.
+    // Use date instead of created, in the same format used by
+    // node_object_prepare().
     $export->date = format_date($export->created, 'custom', 'Y-m-d H:i:s O');
 
     // Don't cause conflicts with nid/vid/revision_timestamp/changed fields.

@@ -8,6 +8,9 @@
 function devconnect_init() {
   static $already_booted = FALSE;
   if (!$already_booted) {
+    if (!module_exists('libraries')) {
+      module_load_include('module', 'libraries');
+    }
     $lib_dir = libraries_get_path('mgmt-api-php-sdk');
     // During migrations, we might get an empty lib dir due to bad cached
     // install_profile value.
@@ -542,6 +545,8 @@ function devconnect_default_org_config($requested_org = 'default') {
   static $configs = array();
 
   if (!array_key_exists($requested_org, $configs)) {
+    // Make sure autoloader is run.
+    devconnect_init();
     $settings = devconnect_get_org_settings();
     drupal_alter('devconnect_org_settings', $settings, $requested_org);
 

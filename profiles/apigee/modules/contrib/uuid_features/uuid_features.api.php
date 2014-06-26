@@ -153,7 +153,7 @@ function hook_uuid_field_collection_features_export_options_alter(&$options) {
 }
 
 /**
- * Allows to adjust the features export options for the current search configuration.
+ * Allows to adjust the export options for the current search configuration.
  *
  * @param array $options
  *   The features export options.

@@ -75,8 +75,7 @@ function uuid_user_features_export_render($module, $data) {
 
     // Use date instead of created - same format used by node_object_prepare.
     $export->date = format_date($export->created, 'custom', 'Y-m-d H:i:s O');
-    unset($export->uid);
-    $export->pass = user_password(10);
+    unset($export->uid, $export->pass);
 
     $entity_type = 'user';
     drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $account);
@@ -154,10 +153,12 @@ function uuid_user_features_rebuild($module) {
       drupal_alter('uuid_user_features_rebuild', $account, $module);
 
       if ($existing->uid === NULL) {
+        // Ensure a new user gets a new password.
+        $account->pass = user_password(16);
         $account = user_save(NULL, (array) $account);
       }
       else {
-        // Dont' reset password.
+        // Ensure we don't reset the password.
         unset($account->pass);
         $account = user_save($existing, (array) $account);
       }

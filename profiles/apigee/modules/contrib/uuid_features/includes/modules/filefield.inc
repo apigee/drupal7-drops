@@ -22,8 +22,8 @@ function filefield_uuid_node_features_export_alter(&$export, &$pipe, $node) {
           foreach ($node->$field_name as $delta => $data) {
             if (!empty($data['fid'])) {
               $uuid = uuid_get_uuid('files', 'fid', $data['fid']);
-              // If the referenced file doesn't have a uuid, take this opportunity to
-              // create one.
+              // If the referenced file doesn't have a uuid, take this
+              // opportunity to create one.
               if (empty($uuid)) {
                 $uuid = uuid_set_uuid('files', 'fid', $data['fid']);
               }
@@ -65,6 +65,7 @@ function filefield_uuid_node_features_export_render_alter(&$export, $node, $modu
 
 /**
  * Implements hook_uuid_node_features_rebuild_alter().
+ *
  * Replace filefield uuid's with a field array suitable for node_save().
  */
 function filefield_uuid_node_features_rebuild_alter(&$node, $module) {
