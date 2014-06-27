@@ -5,9 +5,11 @@
  */
 
 /**
- * Implements hook_uuid_node_features_export_render().
+ * Implements hook_uuid_node_features_export_render_alter().
  */
-function taxonomy_uuid_node_features_export_alter(&$export, &$pipe, $node) {
+function taxonomy_uuid_node_features_export_alter(&$export, $node) {
+  // Access / modify the pipe.
+  $pipe = &$export['__drupal_alter_by_ref']['pipe'];
   if (!empty($node->taxonomy)) {
     foreach ($node->taxonomy as $term) {
       $vocabulary = taxonomy_vocabulary_load($term->vid);
@@ -31,7 +33,7 @@ function taxonomy_uuid_entity_features_export_render_alter($entity_type, &$expor
 /**
  * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function taxonomy_uuid_entity_features_rebuild_alter($entity_type, &$entity, $module) {
+function taxonomy_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data) {
   $fields = uuid_features_get_field_items_iterator($entity, $entity_type, 'taxonomy_term_reference');
   uuid_features_fetch_uuid_references($fields, 'taxonomy_term', array(
     'tid' => 'tid',

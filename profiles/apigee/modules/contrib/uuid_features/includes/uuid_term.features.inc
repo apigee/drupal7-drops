@@ -38,19 +38,25 @@ function uuid_term_features_export_options() {
  * Implements hook_features_export().
  */
 function uuid_term_features_export($data, &$export, $module_name = '') {
+  $pipe = array();
+
   $export['dependencies']['taxonomy'] = 'taxonomy';
   $export['dependencies']['uuid'] = 'uuid';
   $export['dependencies']['uuid_features'] = 'uuid_features';
 
   foreach ($data as $uuid) {
-    uuid_term_features_get_dependencies($export, $uuid);
+    uuid_term_features_get_dependencies($export, $uuid, $module_name);
 
     $entity_type = 'taxonomy_term';
     $term = entity_uuid_load($entity_type, $data);
     $term = reset($term);
+    $alter_data = &$export;
+    $alter_data['__drupal_alter_by_ref']['pipe'] = &$pipe;
     drupal_alter('uuid_entity_features_export', $entity_type, $export, $term);
+    drupal_alter('uuid_term_features_export', $alter_data, $term, $module_name);
+    unset($alter_data['__drupal_alter_by_ref']);
   }
-  return array();
+  return $pipe;
 }
 
 /**
@@ -59,7 +65,8 @@ function uuid_term_features_export($data, &$export, $module_name = '') {
  * Parents and term references are handled recursively, other references are not
  * yet supported.
  */
-function uuid_term_features_get_dependencies(&$export, $uuid) {
+function uuid_term_features_get_dependencies(&$export, $uuid, $module_name = '') {
+  $map = features_get_default_map('taxonomy');
   $terms = entity_uuid_load('taxonomy_term', array($uuid));
   if (!isset($export['features']['uuid_term'])) {
     $export['features']['uuid_term'] = array();
@@ -70,15 +77,21 @@ function uuid_term_features_get_dependencies(&$export, $uuid) {
   if (count($terms)) {
     $term = reset($terms);
     $export['features']['uuid_term'][$uuid] = $uuid;
-    $export['features']['taxonomy'][$term->vocabulary_machine_name] = $term->vocabulary_machine_name;
+    $machine_name = $term->vocabulary_machine_name;
+    if (isset($map[$machine_name]) && $map[$machine_name] != $module_name) {
+      $export['dependencies'][$map[$machine_name]] = $map[$machine_name];
+    }
+    else {
+      $export['features']['taxonomy'][$machine_name] = $machine_name;
+    }
     // Recursively add all parents and the references of the parents.
     foreach (taxonomy_get_parents($term->tid) as $parent) {
       if (!in_array($parent->uuid, $export['features']['uuid_term'])) {
-        uuid_term_features_get_dependencies($export, $parent->uuid);
+        uuid_term_features_get_dependencies($export, $parent->uuid, $module_name);
       }
     }
     // Get term references.
-    $instances = field_info_instances('taxonomy_term', $term->vocabulary_machine_name);
+    $instances = field_info_instances('taxonomy_term', $machine_name);
     foreach ($instances as $field_name => $instance) {
       $field = field_info_field($field_name);
       if ($field['type'] == 'taxonomy_term_reference') {
@@ -87,7 +100,7 @@ function uuid_term_features_get_dependencies(&$export, $uuid) {
             foreach ($values as $value) {
               // $value['tid'] already contains the UUID.
               if (!in_array($value['tid'], $export['features']['uuid_term'])) {
-                uuid_term_features_get_dependencies($export, $value['tid']);
+                uuid_term_features_get_dependencies($export, $value['tid'], $module_name);
               }
             }
           }
@@ -175,10 +188,6 @@ function uuid_term_features_rebuild($module) {
           $term->uuid = $data['uuid'];
           $term->vid = $voc->vid;
           $term->name = $data['name'];
-
-          $entity_type = 'taxonomy_term';
-          drupal_alter('uuid_entity_features_rebuild', $entity_type, $term, $module);
-
           taxonomy_term_save($term);
         }
       }
@@ -189,6 +198,10 @@ function uuid_term_features_rebuild($module) {
       $voc = taxonomy_vocabulary_machine_name_load($term->vocabulary_machine_name);
       if ($voc) {
         $term->vid = $voc->vid;
+
+        $entity_type = 'taxonomy_term';
+        drupal_alter('uuid_entity_features_rebuild', $entity_type, $term, $data);
+
         uuid_features_file_field_import($term, 'taxonomy_term');
         entity_uuid_save('taxonomy_term', $term);
       }

@@ -39,10 +39,10 @@ function hook_uuid_entity_features_export_render_alter($entity_type, $export, $e
  *   The entity type to export.
  * @param object $entity
  *   The entity to import.
- * @param string $module
- *   The module to import for.
+ * @param array $data
+ *   The raw data from the export.
  */
-function hook_uuid_entity_features_rebuild_alter($entity_type, $entity, $module) {
+function hook_uuid_entity_features_rebuild_alter($entity_type, $entity, $data) {
 
 }
 
@@ -54,8 +54,9 @@ function hook_uuid_entity_features_rebuild_alter($entity_type, $entity, $module)
  * @param object $node
  *   The node to export.
  */
-function hook_uuid_node_features_export_alter(&$data, $node) {
-
+function hook_uuid_node_features_export_alter(&$data, $node, $module) {
+  // Access / modify the pipe.
+  $pipe = &$export['__drupal_alter_by_ref']['pipe'];
 }
 
 /**

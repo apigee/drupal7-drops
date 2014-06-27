@@ -38,8 +38,6 @@ function uuid_bean_features_export($data, &$export, $module_name = '') {
   $export['dependencies']['bean_uuid'] = 'bean_uuid';
   $export['dependencies']['uuid_features'] = 'uuid_features';
 
-  uuid_features_load_module_includes();
-
   $bids = entity_get_id_by_uuid('bean', $data);
   foreach ($bids as $uuid => $bid) {
     // Load the bean matching the $bid.
@@ -73,8 +71,11 @@ function uuid_bean_features_export($data, &$export, $module_name = '') {
     // for the hook_*_alter() implementations.  The hook_alter signature is
     // hook_uuid_bean_features_export_alter(&$export, &$pipe, $bean).
     $data = &$export;
-    $data['__drupal_alter_by_ref'] = array(&$pipe);
-    drupal_alter('uuid_bean_features_export', $data, $bean);
+    $data['__drupal_alter_by_ref']['pipe'] = &$pipe;
+    $entity_type = 'bean';
+    drupal_alter('uuid_entity_features_export', $entity_type, $data, $bean);
+    drupal_alter('uuid_bean_features_export', $data, $bean, $module);
+    unset($data['__drupal_alter_by_ref']);
   }
 
   return $pipe;
@@ -85,8 +86,6 @@ function uuid_bean_features_export($data, &$export, $module_name = '') {
  */
 function uuid_bean_features_export_render($module, $data) {
   $translatables = $code = array();
-
-  uuid_features_load_module_includes();
 
   $code[] = '  $beans = array();';
   $code[] = '';

@@ -15,7 +15,7 @@ function entityreference_uuid_entity_features_export_render_alter($entity_type, 
 /**
  * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function entityreference_uuid_entity_features_rebuild_alter($entity_type, &$entity, $module) {
+function entityreference_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data) {
   $fields = uuid_features_get_field_items_iterator($entity, $entity_type, 'entityreference');
   _entity_reference_uuid_entity_features_rebuild_fetch_uuid_references($fields);
 }

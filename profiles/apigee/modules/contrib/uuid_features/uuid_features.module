@@ -6,6 +6,33 @@
 
 define('UUID_FEATURES_DEFAULT_FALLBACK_ID', 1);
 
+// Ensure our on-behalf implementations are detected.
+uuid_features_include();
+
+/**
+ * Load include files for on-behalf implementations of other modules.
+ *
+ * This modules provides on-behalf-of integrations for other modules. The
+ * required files can be included with this function.
+ *
+ * Similar to:
+ * @see features_include()
+ */
+function uuid_features_include() {
+  static $loaded = FALSE;
+
+  if (!$loaded) {
+    $inc_path = drupal_get_path('module', 'uuid_features') . '/includes/modules';
+    foreach (module_list() as $module) {
+      $file = "$inc_path/$module.inc";
+      if (file_exists($file)) {
+        include_once DRUPAL_ROOT . '/' . $file;
+      }
+    }
+    $loaded = TRUE;
+  }
+}
+
 /**
  * Implements hook_menu().
  */
@@ -118,27 +145,6 @@ function uuid_features_features_api() {
 }
 
 /**
- * Load all include files for enabled modules this module supports.
- *
- * This modules provides on-behalf-of integration for some modules, the required
- * files can be included with this function.
- */
-function uuid_features_load_module_includes() {
-  static $loaded = FALSE;
-
-  if (!$loaded) {
-    $inc_path = drupal_get_path('module', 'uuid_features') . '/includes/modules';
-    foreach (module_list() as $module) {
-      $file = "$inc_path/$module.inc";
-      if (file_exists($file)) {
-        include_once DRUPAL_ROOT . '/' . $file;
-      }
-    }
-    $loaded = TRUE;
-  }
-}
-
-/**
  * Implements hook_features_pipe_COMPONENT_alter().
  *
  * When exporting a vocabulary, include its terms.
@@ -155,7 +161,7 @@ function uuid_features_features_pipe_taxonomy_alter(&$pipe, $data, $export) {
       if ($vocab = taxonomy_vocabulary_machine_name_load($machine_name)) {
         $export['features']['uuid_term'] = array();
         foreach (taxonomy_get_tree($vocab->vid) as $term) {
-          uuid_term_features_get_dependencies($export, $term->uuid);
+          uuid_term_features_get_dependencies($export, $term->uuid, $export['module_name']);
         }
         if (!empty($export['features']['uuid_term'])) {
           $pipe['uuid_term'] = array_merge($pipe['uuid_term'], $export['features']['uuid_term']);
@@ -255,22 +261,8 @@ function uuid_features_settings($form, &$form_state) {
  * Handle exporting file fields.
  */
 function uuid_features_file_field_export(&$export, $entity_type) {
-  switch ($entity_type) {
-    case 'taxonomy_term':
-      $export_bundle = $export->vocabulary_machine_name;
-      break;
+  list($entity_id, $revision_id, $export_bundle) = entity_extract_ids($entity_type, $export);
 
-    case 'bean':
-      $export_bundle = $export->type;
-      break;
-
-    case 'node':
-      $export_bundle = $export->type;
-      break;
-
-    case 'field_collection_item':
-      $export_bundle = $export->field_name;
-  }
   $fields = field_info_instances($entity_type, $export_bundle);
   $supported_fields = array_map('trim', explode(',', variable_get('uuid_features_file_supported_fields', 'file, image')));
   $bundles = variable_get('uuid_features_file_' . $entity_type);
@@ -346,7 +338,11 @@ function uuid_features_file_field_export(&$export, $entity_type) {
 
               // Check the file.
               if (!isset($file->uri) || !is_file($file->uri)) {
-                drupal_set_message(t("File field found on term, but file doesn't exist on disk? '!path'", array('!path' => $file->uri)), 'warning');
+                $path = (isset($file->uri)) ? $file->uri : 'unknown';
+                drupal_set_message(t("File field found on %entity_type, but file doesn't exist on disk? '!path'", array(
+                  '%entity_type' => $entity_type,
+                  '!path' => $path,
+                )), 'warning');
                 continue;
               }
 
@@ -378,8 +374,10 @@ function uuid_features_file_field_export(&$export, $entity_type) {
               // Build the field again, and remove fid to be sure that imported
               // node will rebuild the file again, or keep an existing one with
               // a different fid.
-              $field[$language][$i]['fid'] = NULL;
-              $field[$language][$i]['timestamp'] = NULL;
+              unset(
+                $field[$language][$i]['fid'],
+                $field[$language][$i]['timestamp']
+              );
               $field[$language][$i][$export_var] = $export_data;
             }
           }
@@ -393,23 +391,8 @@ function uuid_features_file_field_export(&$export, $entity_type) {
  * Handle importing file fields.
  */
 function uuid_features_file_field_import(&$import, $entity_type) {
-  switch ($entity_type) {
-    case "taxonomy_term":
-      $import_bundle = $import->vocabulary_machine_name;
-      break;
+  list($entity_id, $revision_id, $import_bundle) = entity_extract_ids($entity_type, $import);
 
-    case "bean":
-      $import_bundle = $import->type;
-      break;
-
-    case "node":
-      $import_bundle = $import->type;
-      break;
-
-    case "field_collection_item":
-      $import_bundle = $import->field_name;
-      break;
-  }
   // Get all fields from this bundle.
   $fields = field_info_instances($entity_type, $import_bundle);
 
@@ -428,12 +411,15 @@ function uuid_features_file_field_import(&$import, $entity_type) {
             foreach ($files as $i => $file) {
               // Convert file to array to stay into the default
               // uuid_features_file format.
-              $file = (object) $file;
-              $result = _uuid_features_file_field_import_file($file);
+              $file_object = (object) $file;
+              $result = _uuid_features_file_field_import_file($file_object);
               // The file was saved successfully, update the file field
               // (by reference).
-              if ($result == TRUE && isset($file->fid)) {
-                $field[$language][$i] = (array) $file;
+              if ($result == TRUE && isset($file_object->fid)) {
+                // Mash up the file object and the file field data to ensure
+                // all data are present. The handling might strip properties
+                // required by the field that stores the file.
+                $field[$language][$i] = ((array) $file_object) + $file;
               }
               else {
                 $field[$language][$i] = array();
@@ -485,7 +471,14 @@ function _uuid_features_file_field_import_file(&$file) {
 
     if (!empty($query)) {
       watchdog('uuid_features', 'kept existing managed file at uri "%uri"', array('%uri' => $file->uri), WATCHDOG_NOTICE);
-      $file = file_load(array_shift($query));
+      // Load file from db and use it as source.
+      $db_file = file_load(array_shift($query));
+      // Remove empty fid. Earlier code exported the fid with a NULL value.
+      // @TODO Remove in next major version.
+      if (empty($file->fid)) {
+        unset($file->fid);
+      }
+      $file = (object) ((array) $file + (array) $db_file);
     }
 
     $file = file_save($file);

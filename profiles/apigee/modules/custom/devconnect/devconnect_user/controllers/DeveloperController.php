@@ -75,15 +75,17 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       if (empty($ids)) {
         // The following may throw Apigee\Exceptions\ResponseException if the
         // endpoint is unreachable.
-        $list += $dev_obj->loadAllDevelopers();
-        foreach ($list as $d) {
-          /** @var Apigee\ManagementAPI\Developer $d */
-          $email = $d->getEmail();
-          $this->devCache[$d->getDeveloperId()] = $d;
-          if (!array_key_exists($email, $this->emailCache)) {
-            $email_lookup[] = $email;
+        try {
+          $list += $dev_obj->loadAllDevelopers();
+          foreach ($list as $d) {
+            /** @var Apigee\ManagementAPI\Developer $d */
+            $email = $d->getEmail();
+            $this->devCache[$d->getDeveloperId()] = $d;
+            if (!array_key_exists($email, $this->emailCache)) {
+              $email_lookup[] = $email;
+            }
           }
-        }
+        } catch (ResponseException $e) {}
       }
       else {
         foreach ($ids as $id) {
@@ -99,11 +101,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
               if (!in_array($mail, $this->emailCache)) {
                 $email_lookup[] = $mail;
               }
-            } catch (Exception $e) {
-              if ($e->getCode() != 404) {
-                throw $e;
-              }
-            }
+            } catch (Exception $e) {}
           }
           else {
             $list[] = $this->devCache[$id];

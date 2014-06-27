@@ -7,7 +7,9 @@
 /**
  * Implements hook_uuid_node_features_export_alter().
  */
-function filefield_uuid_node_features_export_alter(&$export, &$pipe, $node) {
+function filefield_uuid_node_features_export_alter(&$export, $node) {
+  // Access / modify the pipe.
+  $pipe = &$export['__drupal_alter_by_ref']['pipe'];
   $types = content_types();
   if (!empty($types[$node->type])) {
     // Find CCK filefields.
