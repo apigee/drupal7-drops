@@ -7,7 +7,7 @@
 /**
  * Implements hook_uuid_entity_features_export_render_alter().
  */
-function file_entity_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity) {
+function file_entity_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity, $module) {
   list($entity_id, $revision_id, $export_bundle) = entity_extract_ids($entity_type, $entity);
 
   // Handle referenced file entities in fields.
@@ -27,7 +27,7 @@ function file_entity_uuid_entity_features_export_render_alter($entity_type, &$ex
             $file_entity_type = 'file';
             $file_entity = (object) $field_value;
             $export_file_entity = clone $file_entity;
-            drupal_alter('uuid_entity_features_export_render', $file_entity_type, $export_file_entity, $file_entity);
+            drupal_alter('uuid_entity_features_export_render', $file_entity_type, $export_file_entity, $file_entity, $module);
             $export->{$field_name}[$lang_code][$i] = (array) $export_file_entity;
           }
         }
@@ -52,7 +52,7 @@ function file_entity_uuid_entity_features_export_render_alter($entity_type, &$ex
 /**
  * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function file_entity_uuid_entity_features_rebuild_alter($entity_type, &$entity) {
+function file_entity_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data, $module) {
   list($entity_id, $revision_id, $import_bundle) = entity_extract_ids($entity_type, $entity);
 
   // Handle referenced file entities in fields.

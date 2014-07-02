@@ -186,7 +186,7 @@ table th {
  * Tabs ===============================================================
  */
 .tabs {
-  position:absolute;
+  float:right;
   right:0px;
   }
 
@@ -404,4 +404,8 @@ div.node .column-side .column-wrapper {
 .rules-elements-table ul.rules-operations a {
   text-shadow: none;
   color: #666;
+}
+/* Module filter "clear" link. */
+.module-filter-clear a {
+  margin: 3px 0 0 -35px;
 }

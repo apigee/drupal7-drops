@@ -55,7 +55,7 @@ function uuid_node_features_export($data, &$export, $module_name = '') {
     $data = &$export;
     $data['__drupal_alter_by_ref']['pipe'] = &$pipe;
     $entity_type = 'node';
-    drupal_alter('uuid_entity_features_export', $entity_type, $data, $node);
+    drupal_alter('uuid_entity_features_export', $entity_type, $data, $node, $module);
     drupal_alter('uuid_node_features_export', $data, $node, $module);
     unset($data['__drupal_alter_by_ref']);
   }
@@ -96,7 +96,7 @@ function uuid_node_features_export_render($module, $data) {
     uuid_features_file_field_export($export, 'node');
 
     $entity_type = 'node';
-    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $node);
+    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $node, $module);
     drupal_alter('uuid_node_features_export_render', $export, $node, $module);
 
     unset($export->revision_uid);
@@ -135,6 +135,7 @@ function uuid_node_features_revert($module) {
  * Rebuilds nodes based on UUID from code defaults.
  */
 function uuid_node_features_rebuild($module) {
+  $return = TRUE;
   // Import the terms first.
   uuid_term_features_rebuild($module);
 
@@ -151,9 +152,12 @@ function uuid_node_features_rebuild($module) {
     }
 
     $nodes = array_merge($nodes, $tmp);
-    return uuid_node_features_rebuild_nodes($nodes);
+    $return = uuid_node_features_rebuild_nodes($nodes, $module);
+
+    $entity_type = 'node';
+    module_invoke_all('uuid_entity_features_rebuild_complete', $entity_type, $nodes, $module);
   }
-  return TRUE;
+  return $return;
 }
 
 /**
@@ -165,6 +169,8 @@ function uuid_node_features_rebuild($module) {
  *
  * @param array $nodes
  *   The nodes to process.
+ * @param string $module
+ *   The module to rebuild for.
  * @param int $max_nesting
  *   Maximal nesting level.
  * @param int $nesting_level
@@ -173,7 +179,7 @@ function uuid_node_features_rebuild($module) {
  * @return bool
  *   TRUE if all nodes could be restored.
  */
-function uuid_node_features_rebuild_nodes($nodes, $max_nesting = 5, $nesting_level = 0) {
+function uuid_node_features_rebuild_nodes($nodes, $module, $max_nesting = 5, $nesting_level = 0) {
   // Max nesting level hit.
   if ($max_nesting < $nesting_level) {
     watchdog('UUID Features', 'Unable to restore nodes. Max nesting level reached.', array(), WATCHDOG_ERROR);
@@ -198,7 +204,7 @@ function uuid_node_features_rebuild_nodes($nodes, $max_nesting = 5, $nesting_lev
       }
 
       $entity_type = 'node';
-      drupal_alter('uuid_entity_features_rebuild', $entity_type, $node, $data);
+      drupal_alter('uuid_entity_features_rebuild', $entity_type, $node, $data, $module);
       drupal_alter('uuid_node_features_rebuild', $node, $module);
 
       $node = node_submit($node);
@@ -210,7 +216,7 @@ function uuid_node_features_rebuild_nodes($nodes, $max_nesting = 5, $nesting_lev
     }
   }
   if (!empty($second_run_nodes)) {
-    return uuid_node_features_rebuild_nodes($second_run_nodes, $max_nesting, ++$nesting_level);
+    return uuid_node_features_rebuild_nodes($second_run_nodes, $module, $max_nesting, ++$nesting_level);
   }
   return TRUE;
 }

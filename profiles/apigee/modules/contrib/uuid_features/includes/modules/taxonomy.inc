@@ -25,7 +25,7 @@ function taxonomy_uuid_node_features_export_alter(&$export, $node) {
 /**
  * Implements hook_uuid_entity_features_export_render_alter().
  */
-function taxonomy_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity) {
+function taxonomy_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity, $module) {
   $fields = uuid_features_get_field_items_iterator($export, $entity_type, 'taxonomy_term_reference');
   uuid_features_set_uuid_references($fields, 'taxonomy_term');
 }
@@ -33,7 +33,7 @@ function taxonomy_uuid_entity_features_export_render_alter($entity_type, &$expor
 /**
  * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function taxonomy_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data) {
+function taxonomy_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data, $module) {
   $fields = uuid_features_get_field_items_iterator($entity, $entity_type, 'taxonomy_term_reference');
   uuid_features_fetch_uuid_references($fields, 'taxonomy_term', array(
     'tid' => 'tid',

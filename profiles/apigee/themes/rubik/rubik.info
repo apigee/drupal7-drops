@@ -39,9 +39,9 @@ settings[rubik_sidebar_field_ui] = 0
 ; theme-settings.php file will be shown.
 features[] = 
 
-; Information added by Drupal.org packaging script on 2014-04-26
-version = "7.x-4.0+9-dev"
+; Information added by Drupal.org packaging script on 2014-07-01
+version = "7.x-4.1+4-dev"
 core = "7.x"
 project = "rubik"
-datestamp = "1398552610"
+datestamp = "1404247728"
 

@@ -7,7 +7,7 @@
 /**
  * Implements hook_uuid_entity_features_export_render_alter().
  */
-function field_collection_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity) {
+function field_collection_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity, $module) {
   $fields = uuid_features_get_field_items_iterator($export, $entity_type, 'field_collection');
   uuid_features_set_uuid_references($fields, 'field_collection_item');
 }
@@ -15,7 +15,7 @@ function field_collection_uuid_entity_features_export_render_alter($entity_type,
 /**
  * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function field_collection_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data) {
+function field_collection_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data, $module) {
   $fields = uuid_features_get_field_items_iterator($entity, $entity_type, 'field_collection');
   uuid_features_fetch_uuid_references($fields, 'field_collection_item', array(
     'item_id' => 'value',

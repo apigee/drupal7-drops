@@ -52,7 +52,7 @@ function uuid_term_features_export($data, &$export, $module_name = '') {
     $term = reset($term);
     $alter_data = &$export;
     $alter_data['__drupal_alter_by_ref']['pipe'] = &$pipe;
-    drupal_alter('uuid_entity_features_export', $entity_type, $export, $term);
+    drupal_alter('uuid_entity_features_export', $entity_type, $export, $term, $module_name);
     drupal_alter('uuid_term_features_export', $alter_data, $term, $module_name);
     unset($alter_data['__drupal_alter_by_ref']);
   }
@@ -145,7 +145,7 @@ function uuid_term_features_export_render($module, $data) {
     uuid_features_file_field_export($export, 'taxonomy_term');
 
     $entity_type = 'taxonomy_term';
-    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $first_term);
+    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $first_term, $module);
 
     $code[] = '  $terms[] = ' . features_var_export($export, '  ') . ';';
   }
@@ -192,6 +192,7 @@ function uuid_term_features_rebuild($module) {
         }
       }
     }
+    $entity_type = 'taxonomy_term';
     // Save all other data and resolve references.
     foreach ($terms as $data) {
       $term = (object) $data;
@@ -199,12 +200,12 @@ function uuid_term_features_rebuild($module) {
       if ($voc) {
         $term->vid = $voc->vid;
 
-        $entity_type = 'taxonomy_term';
-        drupal_alter('uuid_entity_features_rebuild', $entity_type, $term, $data);
+        drupal_alter('uuid_entity_features_rebuild', $entity_type, $term, $data, $module);
 
         uuid_features_file_field_import($term, 'taxonomy_term');
         entity_uuid_save('taxonomy_term', $term);
       }
     }
+    module_invoke_all('uuid_entity_features_rebuild_complete', $entity_type, $terms, $module);
   }
 }

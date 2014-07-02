@@ -1,0 +1,36 @@
+name = Apigee Responsive Starter Kit
+description = A starter theme for the Apigee developer portal with the apigee responsive theme as the base
+core = 7.x
+base theme = apigee_responsive
+
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Regions
+;;;;;;;;;;;;;;;;;;;;;
+
+regions[navigation]     = 'Navigation'
+regions[header]         = 'Top Bar'
+regions[highlighted]    = 'Highlighted'
+regions[help]           = 'Help'
+regions[content]        = 'Content'
+regions[sidebar_first]  = 'Primary'
+regions[sidebar_second] = 'Secondary'
+regions[footer]         = 'Footer'
+regions[page_top]       = 'Page top'
+regions[page_bottom]    = 'Page bottom'
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Apigee Specific Regions
+;;;;;;;;;;;;;;;;;;;;;
+
+regions[homepage_header] = Homepage Header
+regions[frontpage_panel_left] = Frontpage Panel Left
+regions[frontpage_panel_center] = Frontpage Panel Center
+regions[frontpage_panel_right] = Frontpage Panel Right
+
+
+
+stylesheets[all][] = css/apigee_responsive_starterkit.css
+scripts[] = js/apigee_responsive_starterkit.js
+

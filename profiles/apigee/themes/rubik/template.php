@@ -6,6 +6,17 @@ function rubik_preprocess_html(&$vars) {
   if (theme_get_setting('rubik_inline_field_descriptions')) {
     $vars['classes_array'][] = 'rubik-inline-field-descriptions';
   }
+
+   // add in a specific stylesheet for overrides in IE7. (BLAH)
+  drupal_add_css(drupal_get_path('theme', 'rubik') . '/ie.css', array(
+    'browsers' => array(
+      '!IE' => FALSE,
+    ),
+    'weight' => 500,
+    'group' => 5000,
+    'every_page' => TRUE,
+  ));
+
 }
 
 /**

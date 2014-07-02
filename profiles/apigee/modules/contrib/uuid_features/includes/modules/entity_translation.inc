@@ -7,7 +7,7 @@
 /**
  * Implements hook_uuid_entity_features_export_render_alter().
  */
-function entity_translation_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity) {
+function entity_translation_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity, $module) {
   if (entity_translation_enabled($entity_type, $entity)) {
     $entity_info = entity_get_info($entity_type);
     if (isset($entity_info['entity keys']['translations']) && isset($entity->{$entity_info['entity keys']['translations']})) {
@@ -43,7 +43,7 @@ function entity_translation_uuid_entity_features_export_render_alter($entity_typ
 /**
  * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function entity_translation_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data) {
+function entity_translation_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data, $module) {
   if (entity_translation_enabled($entity_type, $entity)) {
     $entity_info = entity_get_info($entity_type);
     if (isset($entity_info['entity keys']['translations']) && isset($entity->{$entity_info['entity keys']['translations']})) {

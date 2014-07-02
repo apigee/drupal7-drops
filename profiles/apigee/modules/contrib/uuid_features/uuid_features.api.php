@@ -12,10 +12,15 @@
  * @param array $data
  *   The array of the features export data
  * @param object $entity
- *   The entity to export.
+ *   The entity to export
+ * @param string $module
+ *   The module to export for..
  */
-function hook_uuid_entity_features_export_alter($entity_type, $data, $entity) {
-
+function hook_uuid_entity_features_export_alter($entity_type, &$data, $entity, $module) {
+  // Access / modify the pipe.
+  $pipe = &$data['__drupal_alter_by_ref']['pipe'];
+  $data['features']['uuid_panelizer']['xyz'] = 'xyz';
+  $pipe['dependencies']['module_xyz'] = 'module_xyz';
 }
 
 /**
@@ -27,8 +32,10 @@ function hook_uuid_entity_features_export_alter($entity_type, $data, $entity) {
  *   The for the export modified entity.
  * @param object $entity
  *   The original entity.
+ * @param string $module
+ *   The module to export for.
  */
-function hook_uuid_entity_features_export_render_alter($entity_type, $export, $entity) {
+function hook_uuid_entity_features_export_render_alter($entity_type, $export, $entity, $module) {
 
 }
 
@@ -36,14 +43,29 @@ function hook_uuid_entity_features_export_render_alter($entity_type, $export, $e
  * Allows to handle specific import tasks for an entity.
  *
  * @param string $entity_type
- *   The entity type to export.
+ *   The entity type to rebuild.
  * @param object $entity
  *   The entity to import.
  * @param array $data
  *   The raw data from the export.
+ * @param string $module
+ *   The module to import for.
  */
-function hook_uuid_entity_features_rebuild_alter($entity_type, $entity, $data) {
+function hook_uuid_entity_features_rebuild_alter($entity_type, $entity, $data, $module) {
 
+}
+
+/**
+ * Allows to act whenever all entities of a type / module are rebuilt.
+ *
+ * @param string $entity_type
+ *   The entity type to export.
+ * @param array $entities
+ *   The entities to import.
+ * @param string $module
+ *   The module to import for.
+ */
+function hook_uuid_entity_features_rebuild_complete($entity_type, $entities, $module) {
 }
 
 /**

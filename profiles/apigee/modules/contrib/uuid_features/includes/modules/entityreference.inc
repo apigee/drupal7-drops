@@ -7,7 +7,7 @@
 /**
  * Implements hook_uuid_entity_features_export_render_alter().
  */
-function entityreference_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity) {
+function entityreference_uuid_entity_features_export_render_alter($entity_type, &$export, &$entity, $module) {
   $fields = uuid_features_get_field_items_iterator($export, $entity_type, 'entityreference');
   _entity_reference_uuid_entity_features_export_set_uuid_references($fields);
 }
@@ -15,7 +15,7 @@ function entityreference_uuid_entity_features_export_render_alter($entity_type, 
 /**
  * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function entityreference_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data) {
+function entityreference_uuid_entity_features_rebuild_alter($entity_type, &$entity, $data, $module) {
   $fields = uuid_features_get_field_items_iterator($entity, $entity_type, 'entityreference');
   _entity_reference_uuid_entity_features_rebuild_fetch_uuid_references($fields);
 }
