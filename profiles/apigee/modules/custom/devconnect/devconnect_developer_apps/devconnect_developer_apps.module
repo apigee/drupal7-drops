@@ -1445,8 +1445,8 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
     if (!empty($product_entities)) {
       $product_entity = reset($product_entities);
       $cred['apiproducts'][] = array(
-        'display_name' => $product_entity['displayName'],
-        'description' => $product_entity['description'],
+        'display_name' => $product_entity->displayName,
+        'description' => $product_entity->description,
         'status' => $api_product['status'],
         'name' => $api_product['apiproduct']
       );

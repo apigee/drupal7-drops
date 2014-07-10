@@ -38,6 +38,7 @@ function devconnect_user_menu() {
     'access arguments' => array('administer users'),
     'type' => MENU_LOCAL_TASK,
     'menu_name' => 'api_products',
+    'file' => 'devconnect_user.sync.inc'
   );
   $items['admin/config/devconnect/user-settings'] = array(
     'title' => t('Dev Portal User Settings'),

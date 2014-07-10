@@ -3,5 +3,6 @@ description = "Adds ability to connect with multiple organizations on the Edge b
 package = "DevConnect"
 core = "7.x"
 version = "7.x-4.28"
+hidden = TRUE
 
 dependencies[] = devconnect_developer_apps
