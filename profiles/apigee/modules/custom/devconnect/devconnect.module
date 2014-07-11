@@ -691,6 +691,7 @@ function devconnect_get_org_settings() {
   }
   elseif (array_key_exists('pass', $custom_vars) && defined('MCRYPT_RIJNDAEL_128')) {
     try {
+      devconnect_init();
       $pass = Apigee\Util\Crypto::decrypt($custom_vars['pass']);
       if ($pass) {
         $custom_vars['pass'] = $pass;
