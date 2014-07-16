@@ -1,7 +1,8 @@
 <?php
 /**
  * @file
- * Provide rules for workflows.
+ * Provides Rules integration for Workflow.
+ *
  * Why it's own module? Some sites prefer rules, some prefer actions,
  * all prefer a lower code footprint and better performance.
  * Additional credit to gcassie ( http://drupal.org/user/80260 ) for

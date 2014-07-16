@@ -1093,10 +1093,10 @@
     },
 
     // Creates the `this.el` and `this.$el` references for this view using the
-    // given `el` and a hash of `attributes`. `el` can be a CSS selector or an
-    // HTML string, a jQuery context or an element. Subclasses can override
-    // this to utilize an alternative DOM manipulation API and are only required
-    // to set the `this.el` property.
+    // given `el`. `el` can be a CSS selector or an HTML string, a jQuery
+    // context or an element. Subclasses can override this to utilize an
+    // alternative DOM manipulation API and are only required to set the
+    // `this.el` property.
     _setElement: function(el) {
       this.$el = el instanceof Backbone.$ ? el : Backbone.$(el);
       this.el = this.$el[0];
@@ -1447,7 +1447,7 @@
     // Start the hash change handling, returning `true` if the current URL matches
     // an existing route, and `false` otherwise.
     start: function(options) {
-      if (History.started) throw new Error("Backbone.history has already been started");
+      if (History.started) throw new Error('Backbone.history has already been started');
       History.started = true;
 
       // Figure out the initial configuration. Do we need an iframe?

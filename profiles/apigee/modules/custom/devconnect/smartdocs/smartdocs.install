@@ -1,0 +1,125 @@
+<?php
+
+/**
+ * Implements hook_schema
+ */
+function smartdocs_schema() {
+  $schema['cache_docgen'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['smartdocs'] = array(
+    'description' => 'Provides all of the necessary data for smartdocs.',
+    'fields' => array(
+      'sid' => array(
+        'description' => 'SmartDocs Drupal ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'Node associated with the SmartDoc',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'revision' => array(
+        'description' => 'Revision associated with the SmartDoc',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'resource' => array(
+        'description' => 'Resource Associated with the SmartDoc',
+        'type' => 'varchar',
+        'length' => '256',
+        'not null' => FALSE,
+      ),
+      'method' => array(
+        'description' => 'Method Associated with the SmartDoc',
+        'type' => 'varchar',
+        'length' => '256',
+        'not null' => FALSE,
+      ),
+      'model' => array(
+        'description' => 'Model Associated with the SmartDoc',
+        'type' => 'varchar',
+        'length' => '256',
+        'not null' => FALSE,
+      ),
+      'synced' => array(
+        'description' => 'Sync Drupal node with SmartDocs',
+        'type' => 'int',
+        'default' => 1,
+      ),
+      'mpid' => array(
+        'description' => 'add a SmartDocs Method ID based on full method URL path',
+        'type' => 'varchar',
+        'length' => 256,
+      ),
+    ),
+    'primary key' => array('sid'),
+  );
+
+  return $schema;
+}
+
+
+/**
+ * Implements hook_requirements
+ *
+ * @param $phase
+ * @return array
+ */
+function smartdocs_requirements($phase) {
+  $result = array();
+  $t = get_t();
+  switch ($phase) {
+    case 'install':
+      if (defined('MAINTENANCE_MODE') && (MAINTENANCE_MODE == 'install')) {
+        return $result;
+      }
+      try {
+        $client = devconnect_default_api_client();
+        $smartdocs = new \Apigee\DocGen\DocGenModel($client);
+        $smartdocs->getModels();
+      } catch (Exception $e) {
+        if ($e->getCode() != '200') {
+          $result['smartdocs_connection'] = array(
+            'severity' => REQUIREMENT_ERROR,
+            'title' => 'SmartDocs',
+            'value' => $t('Service is not available for the current organization.'),
+          );
+        }
+      }
+      $js = preg_split("/\\r\\n|\\r|\\n/", SMARTDOCS_JS_B2);
+      $connectivity = FALSE;
+      foreach($js as $target) {
+        $test = drupal_http_request($target);
+        if (isset($test->code) && floor($test->code / 100) == 2) {
+          $connectivity = TRUE;
+        }
+      }
+      if (!$connectivity) {
+        $message = "Your server may not be connected to the public internet. You may need to host JavaScript and CSS " .
+          "assets locally."; //@todo add docs link
+        $result['smartdocs_connection'] = array(
+          'severity' => REQUIREMENT_WARNING,
+          'title' => 'SmartDocs',
+          'value' => $t($message),
+        );
+      }
+
+      break;
+    default:
+      break;
+  }
+  return $result;
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Sets pathauto settings to match Smartdocs requirements.
+ */
+function smartdocs_install() {
+  variable_set('pathauto_max_length', 255);
+  variable_set('pathauto_max_component_length', 255);
+  variable_set('pathauto_punctuation_left_curly', 2);
+  variable_set('pathauto_punctuation_right_curly', 2);
+}

@@ -952,6 +952,7 @@ body.tao #admin-toolbar a.menu-hover span.menu-description span.icon {
   border: 1px solid #CCCCCC;
   margin: 1em 0;
   position: relative;
+  padding-top: 0;
 }
 
 /**

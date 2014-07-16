@@ -22,5 +22,3 @@ function workflow_vbo_action_info() {
 
   return $actions;
 }
-
-

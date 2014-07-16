@@ -112,6 +112,6 @@ function password_policy_password_tab_submit($form, &$form_state) {
       parse_str($redirect['query'], $params);
       $opts['query'] = $params;
     }
-    drupal_goto($redirect['path'], $redirect);
+    $form_state['redirect'] = array($redirect['path'], $redirect);
   }
 }

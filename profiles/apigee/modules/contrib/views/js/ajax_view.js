@@ -26,51 +26,53 @@ Drupal.views.ajaxView = function(settings) {
   var selector = '.view-dom-id-' + settings.view_dom_id;
   this.$view = $(selector);
 
-  // Retrieve the path to use for views' ajax.
-  var ajax_path = Drupal.settings.views.ajax_path;
+  if (this.$view.length) {
+    // Retrieve the path to use for views' ajax.
+    var ajax_path = Drupal.settings.views.ajax_path;
 
-  // If there are multiple views this might've ended up showing up multiple times.
-  if (ajax_path.constructor.toString().indexOf("Array") != -1) {
-    ajax_path = ajax_path[0];
-  }
-
-  // Check if there are any GET parameters to send to views.
-  var queryString = window.location.search || '';
-  if (queryString !== '') {
-    // Remove the question mark and Drupal path component if any.
-    var queryString = queryString.slice(1).replace(/q=[^&]+&?|&?render=[^&]+/, '');
-    if (queryString !== '') {
-      // If there is a '?' in ajax_path, clean url are on and & should be used to add parameters.
-      queryString = ((/\?/.test(ajax_path)) ? '&' : '?') + queryString;
+    // If there are multiple views this might've ended up showing up multiple times.
+    if (ajax_path.constructor.toString().indexOf("Array") != -1) {
+      ajax_path = ajax_path[0];
     }
+
+    // Check if there are any GET parameters to send to views.
+    var queryString = window.location.search || '';
+    if (queryString !== '') {
+      // Remove the question mark and Drupal path component if any.
+      var queryString = queryString.slice(1).replace(/q=[^&]+&?|&?render=[^&]+/, '');
+      if (queryString !== '') {
+        // If there is a '?' in ajax_path, clean url are on and & should be used to add parameters.
+        queryString = ((/\?/.test(ajax_path)) ? '&' : '?') + queryString;
+      }
+    }
+
+    this.element_settings = {
+      url: ajax_path + queryString,
+      submit: settings,
+      setClick: true,
+      event: 'click',
+      selector: selector,
+      progress: { type: 'throbber' }
+    };
+
+    this.settings = settings;
+
+    // Add the ajax to exposed forms.
+    this.$exposed_form = $('form#views-exposed-form-'+ settings.view_name.replace(/_/g, '-') + '-' + settings.view_display_id.replace(/_/g, '-'));
+    this.$exposed_form.once(jQuery.proxy(this.attachExposedFormAjax, this));
+
+    // Add the ajax to pagers.
+    this.$view
+      // Don't attach to nested views. Doing so would attach multiple behaviors
+      // to a given element.
+      .filter(jQuery.proxy(this.filterNestedViews, this))
+      .once(jQuery.proxy(this.attachPagerAjax, this));
+
+    // Add a trigger to update this view specifically.
+    var self_settings = this.element_settings;
+    self_settings.event = 'RefreshView';
+    this.refreshViewAjax = new Drupal.ajax(this.selector, this.$view, self_settings);
   }
-
-  this.element_settings = {
-    url: ajax_path + queryString,
-    submit: settings,
-    setClick: true,
-    event: 'click',
-    selector: selector,
-    progress: { type: 'throbber' }
-  };
-
-  this.settings = settings;
-
-  // Add the ajax to exposed forms.
-  this.$exposed_form = $('form#views-exposed-form-'+ settings.view_name.replace(/_/g, '-') + '-' + settings.view_display_id.replace(/_/g, '-'));
-  this.$exposed_form.once(jQuery.proxy(this.attachExposedFormAjax, this));
-
-  // Add the ajax to pagers.
-  this.$view
-    // Don't attach to nested views. Doing so would attach multiple behaviors
-    // to a given element.
-    .filter(jQuery.proxy(this.filterNestedViews, this))
-    .once(jQuery.proxy(this.attachPagerAjax, this));
-
-  // Add a trigger to update this view specifically.
-  var self_settings = this.element_settings;
-  self_settings.event = 'RefreshView';
-  this.refreshViewAjax = new Drupal.ajax(this.selector, this.$view, self_settings);
 };
 
 Drupal.views.ajaxView.prototype.attachExposedFormAjax = function() {

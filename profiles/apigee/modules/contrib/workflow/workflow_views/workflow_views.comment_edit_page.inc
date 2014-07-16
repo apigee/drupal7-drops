@@ -1,8 +1,10 @@
 <?php
+
 /**
- * Display a text area populated with the selected workflow log comment and
- * allow the user to modify and save it.
+ * @file
+ * Displays a text area populated with the selected workflow log comment and allows the user to modify and save it.
  */
+
 function workflow_views_comment_edit_form($form, $form_state, $workflow_state_transition_record) {
   $form = array();
   $form['hid'] = array(

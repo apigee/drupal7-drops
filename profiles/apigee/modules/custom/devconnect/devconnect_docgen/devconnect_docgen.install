@@ -190,4 +190,15 @@ function devconnect_docgen_update_7002() {
   }
 }
 
+/**
+ * Implements hook_install().
+ *
+ * Sets pathauto settings to match Smartdocs requirements.
+ */
+function devconnect_docgen_install() {
+  variable_set('pathauto_max_length', 255);
+  variable_set('pathauto_max_component_length', 255);
+  variable_set('pathauto_punctuation_left_curly', 2);
+  variable_set('pathauto_punctuation_right_curly', 2);
+}
 

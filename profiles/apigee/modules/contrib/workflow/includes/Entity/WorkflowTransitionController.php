@@ -15,8 +15,8 @@
 class WorkflowTransitionController extends EntityAPIController {
 
   /**
-   * Overrides DrupalDefaultEntityController::cacheGet()
-   * 
+   * Overrides DrupalDefaultEntityController::cacheGet().
+   *
    * Override default function, due to core issue #1572466.
    */
   protected function cacheGet($ids, $conditions = array()) {

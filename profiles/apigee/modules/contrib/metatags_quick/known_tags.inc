@@ -5,6 +5,10 @@
 
 /**
  * Returns array of fields needed for upgrade from nodewords, keyed by meta name
+ * We can add a default formatter to each tag type
+ * this can be seen in the canonical tag where we want it formed as a link element
+ * by default. To do this add a 'formatter' array element matching one of the defined
+ * metatags_quick formatters
  * @todo: use hooks to alter known tags
  * @return array
  */
@@ -20,8 +24,9 @@ function _metatags_quick_known_fields() {
     'canonical' => array(
       'type' => 'head_link',
       'widget' => 'metatags_quick_textfield',
+      'formatter' => 'metatags_quick_link',
       'title' => t('Canonical URL'),
-      'description' => t('Canonical URLs are used from the search engines, and allow them to not report duplicate titles for HTML pages that are accessible from different URLs. Use a relative URL without the initial slash; canonical URLs that point to a different domain are normally not accepted.'),
+      'description' => t('Canonical URLs are used from the search engines, and allow them to not report duplicate titles for HTML pages that are accessible from different URLs. Use an absolute path for your URL; canonical URLs that point to a different domain are normally not accepted.'),
     ),
     'copyright' => array(
       'type' => 'meta_contents',
@@ -54,5 +59,13 @@ function _metatags_quick_known_fields() {
       'title' => t('Robots'),
       'options' => 'noarchive,nofollow,noindex,noodp,nosnippet,noydir', 
     ),
-  );
+    // Using 'title' as the key messes up the admin.
+    'meta_title' => array(
+      'meta_name' => 'title',
+      'type' => 'meta_contents',
+      'widget' => 'metatags_quick_textfield',
+      'title' => t('Title'),
+      'description' => t('Custom title.'),
+    ),
+   );
 }

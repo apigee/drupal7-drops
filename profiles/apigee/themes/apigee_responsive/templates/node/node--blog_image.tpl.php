@@ -54,7 +54,9 @@
       <?php endif; ?>
 
     </header>
-    <div class="posted"><?php print $posted; ?></div>
+    <?php if (isset($posted)) { ?>
+      <div class="posted"><?php print $posted; ?></div>
+    <?php } ?>
     <?php
     // Hide comments, tags, and links now so that we can render them later.
     hide($content['comments']);

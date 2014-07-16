@@ -14,8 +14,8 @@
 class WorkflowConfigTransitionController extends EntityAPIController {
 
   /**
-   * Overrides DrupalDefaultEntityController::cacheGet()
-   * 
+   * Overrides DrupalDefaultEntityController::cacheGet().
+   *
    * Override default function, due to core issue #1572466.
    */
   protected function cacheGet($ids, $conditions = array()) {
@@ -27,9 +27,11 @@ class WorkflowConfigTransitionController extends EntityAPIController {
   }
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
+    $workflow = $entity->getWorkflow();
+
     // To avoid double posting, check if this transition already exist.
     if (empty($entity->tid)) {
-      if ($workflow = workflow_load_single($entity->wid)) {
+      if ($workflow) {
         $config_transitions = $workflow->getTransitionsBySidTargetSid($entity->sid, $entity->target_sid);
         $config_transition = reset($config_transitions);
         if ($config_transition) {
@@ -37,13 +39,24 @@ class WorkflowConfigTransitionController extends EntityAPIController {
         }
       }
     }
+
     // Create the machine_name. This can be used to rebuild/revert the Feature in a target system.
     if (empty($entity->name)) {
-      $entity->name = $entity->sid . '_'. $entity->target_sid;
+      $entity->name = $entity->sid . '_' . $entity->target_sid;
     }
-    $return = parent::save($entity, $transaction);
 
-    // Reset the cache for the affected workflow.
+    $return = parent::save($entity, $transaction);
+    if ($return) {
+      // Save in current workflow for the remainder of this page request.
+      // Keep in sync with Workflow::getTransitions() !
+      $workflow = $entity->getWorkflow();
+      if ($workflow) {
+        $workflow->transitions[$entity->tid] = $entity;
+        // $workflow->sortTransitions();
+      }
+    }
+
+    // Reset the cache for the affected workflow, to force reload upon next page_load.
     workflow_reset_cache($entity->wid);
 
     return $return;
@@ -53,7 +66,6 @@ class WorkflowConfigTransitionController extends EntityAPIController {
 
 /**
  * Implements a configurated Transition.
- *
  */
 class WorkflowConfigTransition extends Entity {
 
@@ -67,19 +79,21 @@ class WorkflowConfigTransition extends Entity {
 
   // Extra fields.
   public $wid = 0;
-  // protected $is_scheduled = FALSE;
-  // protected $is_executed = FALSE;
-  // protected $force = NULL;
+  // The following must explicitely defined, and not be public, to avoid errors when exporting with json_encode().
+  protected $workflow = NULL;
 
   /**
    * Entity class functions.
    */
 
+/*
   // Implementing clone needs a list of tid-less transitions, and a conversion
   // of sids for both States and ConfigTransitions.
   // public function __clone() {}
+ */
 
   public function __construct(array $values = array(), $entityType = NULL) {
+    // Please be aware that $entity_type and $entityType are different things!
     return parent::__construct($values, $entityType = 'WorkflowConfigTransition');
   }
 
@@ -109,28 +123,39 @@ class WorkflowConfigTransition extends Entity {
   /**
    * Returns the Workflow object of this State.
    *
-   * @param $workflow
-   *  An optional workflow object. Can be used as a setter.
+   * @param Workflow $workflow
+   *   An optional workflow object. Can be used as a setter.
+   *
    * @return Workflow
-   *  Workflow object.
+   *   Workflow object.
    */
   public function setWorkflow($workflow) {
     $this->wid = $workflow->wid;
+    $this->workflow = $workflow;
   }
 
   public function getWorkflow() {
+    if (isset($this->workflow)) {
+      return $this->workflow;
+    }
     return workflow_load_single($this->wid);
+  }
+  public function getOldState() {
+    return workflow_state_load_single($this->sid);
+  }
+  public function getNewState() {
+    return workflow_state_load_single($this->target_sid);
   }
 
   /**
    * Verifies if the given transition is allowed.
    *
-   * - in settings
-   * - in permissions
-   * - by permission hooks, implemented by other modules.
+   * - In settings;
+   * - In permissions;
+   * - By permission hooks, implemented by other modules.
    *
    * @return bool
-   *  TRUE if OK, else FALSE.
+   *   TRUE if OK, else FALSE.
    */
   public function isAllowed($user_roles) {
     if ($user_roles == 'ALL') {
@@ -138,9 +163,6 @@ class WorkflowConfigTransition extends Entity {
       return TRUE;
     }
     elseif ($user_roles) {
-      if (!is_array($user_roles)) {
-        $user_roles = array($user_roles);
-      }
       return array_intersect($user_roles, $this->roles) == TRUE;
     }
     return TRUE;

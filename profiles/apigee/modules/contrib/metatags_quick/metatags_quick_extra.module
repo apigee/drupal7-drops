@@ -100,15 +100,15 @@ function metatags_quick_extra_html_head_alter(&$head_elements) {
 	$language = field_language('node', $node, 'body');
         $source = $auto_settings['meta_description']['source'];
         if ($source == 'teaser') {
-          $content = $node->body[$language][0]['summary'];
+          $content = check_markup($node->body[$language][0]['summary'], $node->body[$language][0]['format']);
         }
         elseif ($source == 'body') {
-          $content = $node->body[$language][0]['value'];
+          $content = check_markup($node->body[$language][0]['value'], $node->body[$language][0]['format']);
         }
         else {
-          $content = $node->body[$language][0]['summary'] ? $node->body[$language][0]['summary'] : $node->body[$language][0]['value'];
+          $content = $node->body[$language][0]['summary'] ? check_markup($node->body[$language][0]['summary'], $node->body[$language][0]['format']) : check_markup($node->body[$language][0]['value'], $node->body[$language][0]['format']);
         }
- 				
+
 	// Trim content
         $content = drupal_substr(trim(strip_tags($content)), 0, 255);
         // Stop on word boundary

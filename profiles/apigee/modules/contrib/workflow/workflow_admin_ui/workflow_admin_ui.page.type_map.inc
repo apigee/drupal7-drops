@@ -6,7 +6,7 @@
 
 /**
  * Page builder. Show a maintenance table for type mapping.
- * 
+ *
  * Appends the type_map form, allowing administrator
  * to map workflows to content types and determine placement on content forms.
  */
@@ -15,7 +15,7 @@ function workflow_admin_ui_type_map_form(&$form) {
   // Validate each workflow, and generate a message if not complete.
   $workflows[0] = t('None');
   foreach (workflow_load_multiple() as $workflow) {
-    if ($is_valid = $workflow->validate()) {
+    if ($workflow->isValid()) {
       $workflows[$workflow->wid] = $workflow->label();
     }
   }
@@ -30,7 +30,7 @@ function workflow_admin_ui_type_map_form(&$form) {
 
   $form['type_map'] = array(
     '#type' => 'fieldset',
-//    '#type' => 'container',
+    // '#type' => 'container',
     '#theme' => 'workflow_admin_ui_type_map_form',
     '#title' => t('Content Type Mapping'),
     '#collapsible' => TRUE,
@@ -40,8 +40,9 @@ function workflow_admin_ui_type_map_form(&$form) {
   $form['type_map']['help'] = array(
     '#type' => 'item',
     '#title' => '<h3>' . t('Content Type Mapping') . '</h3>',
-    '#markup' => t('Each content type may have a separate workflow. The form for changing workflow state can be '
-      . 'displayed when editing a node, editing a comment for a node, or both.'),
+    '#markup' => t('Each content type may have a separate workflow. The form 
+      for changing workflow state can be displayed when editing a node, editing
+      a comment for a node, or both.'),
   );
 
   $placement_options = array(
@@ -138,9 +139,9 @@ function theme_workflow_admin_ui_type_map_form($variables) {
     comment for a node, or both.');
 
   $rows = array();
-  foreach (node_type_get_names() as $node_type => $name) {
+  foreach (node_type_get_names() as $node_type => $type_name) {
     $rows[] = array(
-      check_plain(t($name)),
+      check_plain(t($type_name)),
       drupal_render($form[$node_type]['workflow']),
       drupal_render($form[$node_type]['placement']),
     );
@@ -160,17 +161,18 @@ function theme_workflow_admin_ui_type_map_form($variables) {
  * Submit handler for workflow type mapping form.
  *
  * Save mapping of workflow to node type. E.g., the story node type is using the Foo workflow.
+ *
  * @see workflow_types_form()
  */
 function workflow_admin_ui_type_map_form_submit($form, &$form_state) {
   $form_values = $form_state['values'];
 
   // Empty the table and the variables so that types no longer under workflow go away.
-  //@todo: it is possible to switch to new workflow for node_type, leaving nodes stuck in old workflow.
+  // @todo: it is possible to switch to new workflow for node_type, leaving nodes stuck in old workflow.
   workflow_delete_workflow_type_map_all();
 
   $node_types = node_type_get_names();
-  foreach ($node_types as $node_type => $name) {
+  foreach ($node_types as $node_type => $type_name) {
     $wid = $form_values['type_map'][$node_type]['workflow'];
     variable_del('workflow_' . $node_type);
     if ($wid) {
@@ -180,7 +182,7 @@ function workflow_admin_ui_type_map_form_submit($form, &$form_state) {
       // If this type uses workflow, make sure pre-existing nodes are set
       // to the workflow's creation state.
       if ($form_values['type_map'][$node_type]['workflow']) {
-        _workflow_node_initialize_nodes('node', $node_type, '', $wid);
+        _workflow_node_initialize_nodes('node', $node_type, $field_name = '', $wid);
       }
     }
   }
@@ -189,15 +191,14 @@ function workflow_admin_ui_type_map_form_submit($form, &$form_state) {
 
 /**
  * Initialize all pre-existing nodes of a type to their first state.
- * @todo: adjust _workflow_node_initialize_nodes() to handle Workflow Field.
  *
- * @param $node_type - node type
+ * @param string $node_type
+ *   The node type.
+ *
+ * @todo: adjust _workflow_node_initialize_nodes() to handle Workflow Field.
  */
 function _workflow_node_initialize_nodes($entity_type, $node_type, $field_name, $wid) {
   global $user;
-
-  $entity_type = 'node';  // 'Initialize' only for 'pure' nodes with type_map + Node API
-  $field_name = '';
 
   // Build the select query.
   // We want all published nodes of this type that don't already have a workflow state.
@@ -219,20 +220,21 @@ function _workflow_node_initialize_nodes($entity_type, $node_type, $field_name, 
   $comment = t('Pre-existing content set to initial state.');
 
   $workflow = workflow_load_single($wid);
+  $force = TRUE;
   $creation_sid = $workflow->getCreationSid();
 
   // Load them all up.
   $nodes = node_load_multiple($nids);
   foreach ($nodes as $entity) {
     // Get the initial state for this entity.
-    // Due to permissions, it might be different for each.
-    $new_sid = $workflow->getFirstSid($entity_type, $entity);
+    // Due to permissions, it might be different for each user.
+    $new_sid = $workflow->getFirstSid($entity_type, $entity, $field_name, $user, $force);
 
     $transition = new WorkflowTransition();
     $transition->setValues($entity_type, $entity, $field_name, $creation_sid, $new_sid, $user->uid, REQUEST_TIME, $comment);
 
     // Force it to transition to the first state and get a history record.
-    workflow_execute_transition($entity_type, $entity, $field_name, $transition, $force = TRUE);
+    workflow_execute_transition($entity_type, $entity, $field_name, $transition, $force);
   }
 
   drupal_set_message(t('!count @type nodes have been initialized.', array('@type' => node_type_get_name($node_type), '!count' => $how_many)));

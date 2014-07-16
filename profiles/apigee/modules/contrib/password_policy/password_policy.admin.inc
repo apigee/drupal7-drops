@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Admin page callback file for the password_policy module.
+ * Admin page callback file for the Password Policy module.
  *
  * @ignore sniffer_commenting_functioncomment_missingparamtype:file
  * @ignore sniffer_commenting_functioncomment_missingreturntype:file

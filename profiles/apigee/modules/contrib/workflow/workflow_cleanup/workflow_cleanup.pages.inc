@@ -101,7 +101,6 @@ function theme_workflow_cleanup_form($variables) {
     'attributes' => array('style' => 'width: auto;'),
   ));
 
-
   $header[] = t('Workflow');
   $rows = array();
   foreach (element_children($form['inactive']) as $sid) {
@@ -114,12 +113,15 @@ function theme_workflow_cleanup_form($variables) {
 
   $output .= '<h3>' . $form['inactive']['#title'] . '</h3>';
   $output .= '<div class="description">' . $form['inactive']['#description'] . '</div>';
-  $output .= theme('table', array(
-    'header' => $header,
-    'rows' => $rows,
-    'empty' => 'All states are fine',
-    'attributes' => array('style' => 'width: auto;'),
-   ));
+  $output .= theme(
+    'table',
+    array(
+      'header' => $header,
+      'rows' => $rows,
+      'empty' => 'All states are fine',
+      'attributes' => array('style' => 'width: auto;'),
+    )
+  );
 
   $output .= drupal_render_children($form);
   return $output;

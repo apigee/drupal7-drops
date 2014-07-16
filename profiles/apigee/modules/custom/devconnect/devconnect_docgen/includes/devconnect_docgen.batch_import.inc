@@ -665,67 +665,80 @@ function devconnect_docgen_operation_node($operation, $mid, $publish, $verbose, 
     'promote' => 0,
   );
 
-  $query_param = '';
-  $new_revision = $operation['revisionNumber'];
-
-  // Filter Required Query Params
-  foreach ($context['results']['resources'] as $resource_info ) {
-    if ($resource_info['id'] == $operation['resourceId']) {
-      foreach ($resource_info['methods'] as $parameters) {
-        if ($operation['id'] == $parameters['id']) {
-          if (isset($parameters['parameters'])) {
-            foreach($parameters['parameters'] as $parameter_info) {
-              if ( ($parameter_info['type'] == 'QUERY') && ($parameter_info['required'] == TRUE) ) {
-                $query_param = $query_param . '--' . $parameter_info['name'];
-              }
-            }
-          }
-        }
+  $query = array();
+  if (!empty($operation['parameters'])) {
+    foreach($operation['parameters'] as $parameter) {
+      if (strtolower($parameter['type']) == 'query') {
+        $query[] = $parameter['name'];
       }
     }
   }
-
-  $mpid = $mid . $operation['path'] . '/' . strtoupper($operation['verb']) . $query_param;
-  $results = db_query('SELECT nid,revision FROM {smartdocs} WHERE mpid = :mpid', array(':mpid' => $mpid))->fetchObject();
-  $nid = 0;
-  $revision = '';
-  if (isset($results->nid)) {
-    $nid = $results->nid;
-    $revision = $results->revision;
+  if (!empty($query)) {
+    $mpid = $mid . $operation['path'] . '/' . strtoupper($operation['verb']) . '?' . implode('&', $query);
+  } else {
+    $mpid = $mid . $operation['path'] . '/' . strtoupper($operation['verb']);
   }
-  if ($revision == $new_revision) {
-    // Reset revisions of current Drupal content if model was deleted and re-created
-    if ($new_revision == 1) {
-      db_update('smartdocs')->fields(array('revision'=>0))
+
+  $revision = db_query('SELECT revision FROM {smartdocs} WHERE mpid = :mpid AND model = :mid', array(
+    ':mpid' => $mpid,
+    ':mid' => $mid,
+  ))->fetchField();
+
+  $exists = db_query('SELECT nid FROM {smartdocs} WHERE mpid = :mpid AND model = :mid', array(
+    ':mpid' => $mpid,
+    ':mid' => $mid,
+  ))->fetchField();
+
+  $loaded = FALSE;
+
+  if ($exists) {
+    if ($revision < $verbose['revisionNumber'] || $revision > $verbose['revisionNumber']) {
+      $entities = entity_load('node', FALSE, array('type' => _devconnect_docgen_model_name($mid), 'nid' => $exists));
+      $loaded = TRUE;
+      $entity = current($entities);
+      $entity->revision = 1;
+      $entity->log = t('Revision: @rev - Method: @title - @method was synced from SmartDocs.', array(
+        '@rev' => $verbose['revisionNumber'],
+        '@title' => $operation['displayName'],
+        '@method' => $operation['id']
+      ));
+      db_update('smartdocs')->fields(array('revision' => $verbose['revisionNumber']))
         ->condition('model', $mid)
+        ->condition('mpid', $mpid)
         ->execute();
     } else {
-      drupal_set_message(t('ERROR: you have duplicate methods for: @path , @verb' , array('@path' => $operation['path'], '@verb' => $operation['verb'])), 'error');
-      if (!empty($query_param)) {
-        drupal_set_message(t('Params: @params', array('@params' => $query_param)), 'error');
-      }
+      drupal_set_message(t('ERROR: you have duplicate methods for: %p , %v (%m)' , array(
+          '%p' => $operation['path'],
+          '%v' => $operation['verb'],
+          '%m' => $mpid)
+      ), 'error');
       return;
     }
-  }
-
-  if ($nid) {
-    $entities = entity_load('node', FALSE, array('type' => _devconnect_docgen_model_name($mid), 'nid' => $nid));
-    $entity = current($entities);
-    //TODO: only save revision once - $wrapper->save() or entity_save()
-    $entity->revision = 1;
-    $entity->log = t('Revision: @rev - Method: @title - @method was synced from SmartDocs.', array('@rev' => $revision,'@title' => $operation['displayName'], '@method' => $operation['id']));
   } else {
     $entity = entity_create('node', $values);
+    $entity->revision = 1;
+    $entity->log = t('Revision: @rev - Method: @title - @method was created from SmartDocs.', array(
+      '@rev' => $verbose['revisionNumber'],
+      '@title' => $operation['displayName'],
+      '@method' => $operation['id']
+    ));
   }
 
   $wrapper = entity_metadata_wrapper('node', $entity);
-
   if (isset($operation['displayName'])) {
     $wrapper->title->set($operation['displayName']);
-    $context['message'] = t('Creating node: ' . $operation['displayName']);
+    if ($loaded) {
+      $context['message'] = t('Syncing node: ' . $operation['displayName']);
+    } else {
+      $context['message'] = t('Creating node: ' . $operation['displayName']);
+    }
   } else {
     $wrapper->title->set($operation['name']);
-    $context['message'] = t('Creating node: ' . $operation['name']);
+    if ($loaded) {
+      $context['message'] = t('Syncing node: ' . $operation['name']);
+    } else {
+      $context['message'] = t('Creating node: ' . $operation['name']);
+    }
   }
   if (isset($operation['description'])) {
     $wrapper->body->set(array('value' => $operation['description']));

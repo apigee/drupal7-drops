@@ -84,6 +84,8 @@ projects[github_connect][patch][2150767]                       = "https://drupal
 projects[github_connect][patch][1895544]                       = "https://drupal.org/files/issues/1895544-github-connect-return-user-5.patch"
 ; see https://drupal.org/node/2266675
 projects[github_connect][patch][2266675]                       = "https://drupal.org/files/issues/github_connect-email-api-change-2266675-1.patch"
+; see https://drupal.org/node/2292767
+projects[github_connect][patch][2292767]                       = "https://drupal.org/files/issues/github_connect-2292767-openid-dependency.patch"
 projects[google_analytics][subdir]                             = "contrib"
 projects[google_analytics_reports][subdir]                     = "contrib"
 projects[gravatar][subdir]                                     = "contrib"
@@ -153,6 +155,7 @@ projects[rules_conditional][subdir]                            = "contrib"
 projects[services][subdir]                                     = "contrib"
 projects[securepages][subdir]                                  = "contrib"
 projects[services_views][subdir]                               = "contrib"
+projects[siteminder][subdir]                                   = "contrib"
 projects[smtp][subdir]                                         = "contrib"
 projects[special_menu_items][subdir]                           = "contrib"
 projects[sps][subdir]                                          = "contrib"
@@ -167,6 +170,7 @@ projects[twitter][subdir]                                      = "contrib"
 projects[util][subdir]                                         = "contrib"
 projects[uuid][subdir]                                         = "contrib"
 projects[variable][subdir]                                     = "contrib"
+projects[views][patch][1809958] = "https://www.drupal.org/files/issues/fix-views-missing-dom-id-1809958-7.patch"
 projects[views][subdir]                                        = "contrib"
 projects[views_accordion][subdir]                              = "contrib"
 projects[views_bulk_operations][subdir]                        = "contrib"
@@ -281,8 +285,6 @@ projects[file_entity_link][version]                            = "1.0-alpha3"
 projects[uuid_features][subdir]                                = "contrib"
 projects[uuid_features][version]                               = "1.x-dev"
 
-
-
 ; THEMES
 ; ------------------------------------------------------------------
 ; apigee base theme
@@ -318,13 +320,14 @@ projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
-projects[devconnect][download][branch]                         = "7.x-14.07"
+;projects[devconnect][download][branch]                         = "development"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module
 projects[apigee_sso][subdir]                                   = custom
 projects[apigee_sso][download][type]                           = 'git'
 projects[apigee_sso][download][url]                            = "git@github.com:apigee/apigee_drupal_sso.git"
+;projects[apigee_sso][download][branch]                         = "development"
 
 
 

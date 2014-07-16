@@ -9,9 +9,9 @@ dependencies[] = workflow
 files[] = includes/Entity/EntityWorkflowUIController.php
 stylesheets[all][] = workflow_admin_ui.css
 
-; Information added by Drupal.org packaging script on 2014-04-25
-version = "7.x-2.3"
+; Information added by Drupal.org packaging script on 2014-07-15
+version = "7.x-2.4"
 core = "7.x"
 project = "workflow"
-datestamp = "1398387530"
+datestamp = "1405454629"
 

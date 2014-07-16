@@ -241,7 +241,7 @@ function metatags_quick_admin_path($form, &$form_state) {
   }
   $entities = $controller->load(array($entity_id));
   $form_state['entity'] = $entities[$entity_id];
-  field_attach_form('metatags_path_based', $entities[$entity_id], $form, $form_state);
+  field_attach_form('metatags_path_based', $entities[$entity_id], $form, $form_state, LANGUAGE_NONE);
   // Do we have any fields attached?
   $childen = element_children($form);
   if (!$childen) {
@@ -273,12 +273,6 @@ function metatags_quick_admin_path_submit($form, &$form_state) {
   field_attach_update('metatags_path_based', $entity);
   
   drupal_set_message('Meta tags updated', 'status');
-  if(isset($_GET['destination'])) {
-    $form_state['redirect'] = $_GET['destination'];
-  }
-  else {
-    $form_state['redirect'] = FALSE;
-  }
 }
 
 // Create known meta fields.
@@ -362,6 +356,14 @@ function _metatags_quick_field_attach($entity_type, $bundle, $meta_name) {
   );
   if (isset($known_tags[$meta_name]['options'])) {
     $instance['settings']['options'] = $known_tags[$meta_name]['options'];
+  }
+  // Assign a default format for the field taken from known_tags.inc
+  if (isset($known_tags[$meta_name]['formatter'])) {
+    $instance['display']['default']['type'] = $known_tags[$meta_name]['formatter'];
+  }
+  // Assign a description for the field taken from known_tags.inc
+  if (isset($known_tags[$meta_name]['description'])) {
+    $instance['description'] = $known_tags[$meta_name]['description'];
   }
   field_create_instance($instance);
 }
@@ -535,7 +537,7 @@ function metatags_quick_admin_path_based_edit($form, &$form_state) {
   }
   
   $form_state['entity'] = $entity;
-  field_attach_form('metatags_path_based', $entity, $form, $form_state);
+  field_attach_form('metatags_path_based', $entity, $form, $form_state, LANGUAGE_NONE);
   //
   $form['entity_id'] = array(
     '#type' => 'hidden',
@@ -573,15 +575,10 @@ function metatags_quick_admin_path_based_edit($form, &$form_state) {
 }
 
 /**
- * Returns back to the metatags listing
- *
- * @param type $form
- * @param type $form_state
+ * Does nothing. We need this callback to avoid default 'Meta tags updated' message.
  */
 function metatags_quick_admin_path_based_edit_cancel($form, &$form_state) {
-  if(isset($_GET['destination'])) {
-    $form_state['redirect'] = $_GET['destination'];
-  }
+  return;
 }
 
 /**
@@ -647,12 +644,6 @@ function metatags_quick_admin_path_based_edit_submit($form, &$form_state) {
   field_attach_update('metatags_path_based', $entity);
   // display message and redirect
   drupal_set_message('Meta tags updated', 'status');
-  if(isset($_GET['destination'])) {
-    $form_state['redirect'] = $_GET['destination'];
-  }
-  else {
-    $form_state['redirect'] = FALSE;
-  }
 }
 
 /**
@@ -686,7 +677,7 @@ function metatags_quick_admin_path_based_delete($form, &$form_state) {
     
     $form['item'] = array(
       '#type' => 'item',
-      '#markup' => htmlspecialchars_decode($path_object->path) . '(' . $path_object->lang . ')',
+      '#markup' => check_plain($path_object->path) . '(' . $path_object->lang . ')',
       '#prefix' => '<ul><li>',
       '#suffix' => '</ul></li>'
     );
@@ -726,9 +717,7 @@ function metatags_quick_admin_path_based_delete_submit($form, &$form_state) {
  * @param type $form_state
  */
 function metatags_quick_admin_path_based_delete_cancel($form, &$form_state) {
-  if(isset($_GET['destination'])) {
-    $form_state['redirect'] = $_GET['destination'];
-  }
+  return;
 }
 
 /**

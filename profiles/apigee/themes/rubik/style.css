@@ -409,3 +409,25 @@ div.node .column-side .column-wrapper {
 .module-filter-clear a {
   margin: 3px 0 0 -35px;
 }
+
+/* Fix Workbench Moderation links. */
+.view-workbench-moderation tbody .views-field-moderation-actions li {
+  float: none;
+  margin-bottom: 5px;
+  margin-right: 3px;
+  overflow: auto;
+}
+.view-workbench-moderation tbody .views-field-moderation-actions li a {
+  background-color: #7bc;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  color: #fff;
+  display: block;
+  padding: 0 7px;
+  text-shadow: #38a 0px 1px 0px;
+}
+.view-workbench-moderation tbody .views-field-moderation-actions li a:hover {
+  background-color: #52a8be;
+  color: #fff;
+}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Provides node access permissions based on workflow states.
@@ -23,13 +24,18 @@ function workflow_access_menu() {
     'page arguments' => array('workflow_access_priority_form'),
     'type' => MENU_LOCAL_ACTION,
   );
-  $items[$path . '/manage/' . '%workflow' . '/access'] = array(
+  $items[$path . '/manage/%workflow/access'] = array(
     'title' => 'Access',
     'file' => 'workflow_access.pages.inc',
     'access arguments' => array('administer workflow'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('workflow_access_form', $id_count + 1, $id_count + 2),
-    // 'type' => MENU_CALLBACK, //'type' => MENU_LOCAL_TASK,
+    'page arguments' => array(
+      'workflow_access_form',
+      $id_count + 1,
+      $id_count + 2,
+    ),
+    // 'type' => MENU_CALLBACK,
+    // 'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
@@ -122,26 +128,30 @@ function workflow_access_node_access_records($node) {
     // - when rebuilding permissions via batch for workflow_node and workflow_field.
     // In that case, we need to create the workflow_transions ourselves to
     // calculate the grants.
-    foreach ($fields = _workflow_info_fields($node, 'node') as $field_name => $field) {
+    foreach (_workflow_info_fields($node, 'node') as $field_name => $field) {
+      $old_sid = FALSE;
       // Create a dummy transition, just to set $node->workflow_transitions.
       if (isset($node->workflow)) {
         $old_sid = $new_sid = $node->workflow;
       }
-      else {
-        $old_sid = $new_sid = $node->{$field_name};
+      elseif (isset($node->{$field_name}[LANGUAGE_NONE])) {
+        $old_sid = $new_sid = _workflow_get_sid_by_items($node->{$field_name}[LANGUAGE_NONE]);
       }
-      $transition = new WorkflowTransition();
-      $transition->setValues('node', $node, $field_name, $old_sid, $new_sid, $node->uid, REQUEST_TIME, '');
+      if ($old_sid) {
+        $transition = new WorkflowTransition();
+        $transition->setValues('node', $node, $field_name, $old_sid, $new_sid, $node->uid, REQUEST_TIME, '');
 
-      // Store the transition, so it can be easily fetched later on.
-      // Store in an array, to prepare for multiple workflow_fields per entity.
-      // This is a.o. used in hook_entity_update to trigger 'transition post'.
-      $node->workflow_transitions[$field_name] = $transition;
+        // Store the transition, so it can be easily fetched later on.
+        // Store in an array, to prepare for multiple workflow_fields per entity.
+        // This is a.o. used in hook_entity_update to trigger 'transition post'.
+        $node->workflow_transitions[$field_name] = $transition;
+      }
     }
   }
 
   // Get 'author' of this entity.
   // - Some entities (e.g., taxonomy_term) do not have a uid.
+  // But then again: node_access is only for nodes...
   $uid = isset($node->uid) ? $node->uid : 0;
 
   foreach ($node->workflow_transitions as $transition) {
@@ -155,7 +165,7 @@ function workflow_access_node_access_records($node) {
 
         // Anonymous ($uid == 0) author is not allowed for role 'author' (== -1).
         // Both logically (Anonymous having more rights then authenticated)
-        // and technically: $gid must be a positive int. 
+        // and technically: $gid must be a positive int.
         if ($gid < 0) { // if ($uid == 0 && $grant->rid == WORKFLOW_ROLE_AUTHOR_RID) {
           continue;
         }

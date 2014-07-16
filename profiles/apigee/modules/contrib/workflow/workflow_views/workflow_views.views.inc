@@ -3,14 +3,11 @@
 /**
  * @file
  * Provide views data and handler information for workflow.module.
- */
-
-/**
- * @defgroup views_workflow_module workflow.module handlers
  *
  * Includes the 'workflow_node' and 'workflow_state' tables, but generates a
  * pseudo-table for each separate workflow that's been set up.
- * @{
+ *
+ * @defgroup views_workflow_module workflow.module handlers
  */
 
 /**
@@ -32,7 +29,7 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_node_history']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
   $data['workflow_node_history']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
   $data['workflow_node_history']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
-  $data['workflow_node_history']['uid']['relationship'] =  array(
+  $data['workflow_node_history']['uid']['relationship'] = array(
     'handler' => 'views_handler_relationship',
     'base' => 'users',
     'base field' => 'uid',
@@ -76,6 +73,7 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_node_current'] = $data['workflow_node_history'];
   $data['workflow_node_current']['table']['group'] = t('Workflow current');
   $data['workflow_node_current']['table']['join'] = array(
+/*
     // For reference, the relationship used in Workflow versions below 7.x-2.x
     // 'node' => array(
     //   'table' => 'workflow_node_history',
@@ -84,14 +82,15 @@ function workflow_views_views_data_alter(&$data) {
     //   'left_field' => 'nid',
     //   'extra' => 'workflow_node.stamp = workflow_node_current.stamp AND workflow_node.nid = workflow_node_current.nid',
     // ),
+ */
     'node' => array(
       'table' => 'workflow_node_history',
       'field' => 'hid',
       'left_table' => 'node',
       'left_field' => 'nid',
-      // Do not use the default 'views_join', but add a subquery. 
+      // Do not use the default 'views_join', but add a subquery.
       'handler' => 'views_join_subquery',
-      'left_query' => "  SELECT max(hid) FROM {workflow_node_history} where nid = node.nid and sid != old_sid ",
+      'left_query' => " SELECT max(hid) FROM {workflow_node_history} where nid = node.nid and sid != old_sid ",
     ),
   );
   $data['workflow_node_current']['sid']['title'] = t('Current state');
@@ -120,7 +119,7 @@ function workflow_views_views_data_alter(&$data) {
   $data['workflow_scheduled_transition']['sid']['filter']['handler'] = 'workflow_views_handler_filter_sid';
   $data['workflow_scheduled_transition']['uid']['field']['handler'] = 'workflow_views_handler_field_username';
   $data['workflow_scheduled_transition']['uid']['filter']['handler'] = 'views_handler_filter_user_name';
-  $data['workflow_scheduled_transition']['uid']['relationship'] =  array(
+  $data['workflow_scheduled_transition']['uid']['relationship'] = array(
     'handler' => 'views_handler_relationship',
     'base' => 'users',
     'base field' => 'uid',
@@ -195,7 +194,7 @@ function workflow_views_views_data_alter(&$data) {
 
   // Workflow states.
   // @todo: implement this as a proper relationship (like 'user').
-  //        to support Workflow Field, do not use workflow_node
+  // To support Workflow Field, do not use workflow_node.
   if (module_exists('workflownode')) {
     $data['workflow_states']['table']['group'] = t('Workflow states (deprecated)');
     $data['workflow_states']['table']['join'] = array(
@@ -269,7 +268,3 @@ function workflow_views_views_data() {
 
   return $data;
 }
-
-/**
- * @}
- */

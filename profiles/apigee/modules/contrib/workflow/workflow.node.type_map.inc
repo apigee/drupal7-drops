@@ -9,7 +9,7 @@
  */
 
 /**
- * Get all workflow_type_map.
+ * Gets all workflow_type_map.
  */
 function workflow_get_workflow_type_map() {
   $results = db_query('SELECT type, wid FROM {workflow_type_map}');
@@ -17,7 +17,8 @@ function workflow_get_workflow_type_map() {
 }
 
 /**
- * Get workflow_type_map for a type. On no record, FALSE is returned.
+ * Getss workflow_type_map for a type. On no record, FALSE is returned.
+ *
  * Currently this is a unique result but requests have been made to allow a node to have multiple
  * workflows. This is trickier than it sounds as a lot of our processing code will have to be
  * tweaked to account for multiple results.
@@ -37,7 +38,7 @@ function workflow_get_workflow_type_map_by_type($type) {
 }
 
 /**
- * Given a wid, find all node types mapped to it.
+ * Given a wid, finds all node types mapped to it.
  */
 function workflow_get_workflow_type_map_by_wid($wid) {
   static $map = array();
@@ -50,30 +51,32 @@ function workflow_get_workflow_type_map_by_wid($wid) {
 }
 
 /**
- * Delete all type maps.
- * @TODO: why is this here instead of the admin_ui?
+ * Deletes all type maps.
+ *
+ * @todo: why is this here instead of the admin_ui?
  */
 function workflow_delete_workflow_type_map_all() {
   return db_delete('workflow_type_map')->execute();
 }
 
 /**
- * Given a wid, delete the map for that workflow.
+ * Given a wid, deletes the map for that workflow.
  */
 function workflow_delete_workflow_type_map_by_wid($wid) {
   return db_delete('workflow_type_map')->condition('wid', $wid)->execute();
 }
 
 /**
- * Given a type, delete the map for that workflow.
+ * Given a type, deletes the map for that workflow.
  */
 function workflow_delete_workflow_type_map_by_type($type) {
   return db_delete('workflow_type_map')->condition('type', $type)->execute();
 }
 
 /**
- * Given information, insert a new workflow_type_map. Returns data by ref. (like node_save).
- * @TODO: why is this here instead of the admin_ui?
+ * Given information, inserts a new workflow_type_map. Returns data by ref. (like node_save).
+ *
+ * @todo: why is this here instead of the admin_ui?
  */
 function workflow_insert_workflow_type_map($node_type, $wid) {
   $type_map = (object) array(

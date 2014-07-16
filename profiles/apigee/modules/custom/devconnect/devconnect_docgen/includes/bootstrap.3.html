@@ -34,13 +34,13 @@
 
     }
 </style>
+<!-- Main container -->
+<div class="row" id="method_container">
 <!-- Main content -->
 <div class="col-sm-9" id="method_content">
 <div class="col-sm-12">
 <!-- Error container -->
-<div data-role="error_container">
-
-</div>
+<div data-role="error_container"></div>
 <!-- Inline edit Organization admin credential section -->
 <div class="admin_auth_section hide">
     <a class="set_admin_credentials hide" href="javascript:void(0)" title="set admin credentials.">Set Admin Credentials...</a>
@@ -75,131 +75,226 @@
         </div>
     </div><!--/.resource_details -->
 </div>
-<div class="row">
-    <div class="col-sm-12">
-        <div>
-            {{#if-query-param this.parameters}}
-            <h3>Query Parameters</h3>
-            <hr>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Values</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {{#query-list this.parameters}}
-                    <tr data-role="query-param-list" data-scope="{{scope}}">
-                        <td>
-                            <span data-role="name">{{name}}</span>
-                            {{#required}}
-                            <br/><span class="required" data-role="required">(required)</span>
-                            {{/required}}
-                        </td>
-                        <td>
-                            {{#if required}}
-                            <input type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
-                            {{else}}
-                            <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
-                            {{/if}}
-                        </td>
-                        <td>
-                            <p data-role="description" data-allow-edit="true">
-                                {{description}}
-                            </p>
-                        </td>
-                    </tr>
-                    {{/query-list}}
-                    </tbody>
-                </table>
-            </div>
-            <hr>
-            {{/if-query-param}}
-            {{#if-header-param this.parameters}}
-            <h3>Header Parameters</h3>
-            <hr>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Values</th>
-                        <th>Description</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {{#header-list this.parameters}}
-                    <tr data-role="header-param-list" data-scope="{{scope}}">
-                        <td>
-                            <span data-role="name">{{name}}</span>
-                            {{#required}}
-                            <br/><span class="required" data-role="required">(required)</span>
-                            {{/required}}
-                        </td>
-                        <td>
-                            {{#if required}}
-                            <input type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
-                            {{else}}
-                            <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
-                            {{/if}}
-                        </td>
-                        <td>
-                            <p data-role="description" data-allow-edit="true">
-                                {{description}}
-                            </p>
-                        </td>
-                    </tr>
-                    {{/header-list}}
-                    </tbody>
-                </table>
-            </div>
-            {{/if-header-param}}
-            {{#if attachments}}
-            <form enctype="multipart/form-data" method="post" name="formAttachment" id="formAttachment">
-                <h3>Attachments</h3>
-                <hr>
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Value</th>
-                            <th>Description</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {{#each attachments}}
-                        <tr class="method_details" data-role="attachments-list" data-scope="{{#if resourceParam}}resource{{else}}method{{/if}}">
-                            <td>
-                                <span data-role="name">{{name}}</span>
-                                {{#required}}
-                                <br/><span class="required" data-role="required">(required)</span>
-                                {{/required}}
-                            </td>
-                            <td>
-                                {{#if required}}
-                                <input name="{{name}}" class="form-control" type="file" data-role="value" required/>
-                                {{else}}
-                                <input name="{{name}}" class="form-control" type="file" data-role="value" />
-                                {{/if}}
-                            </td>
-                            <td>
-                                <p data-role="description" data-allow-edit="true">
-                                    {{description}}
-                                </p>
-                            </td>
-                        </tr>
-                        {{/each}}
-                        </tbody>
-                    </table>
-                </div>
-            </form>
+<div>
+{{#if-query-param this.parameters}}
+<!-- Query parameters section -->
+<ul class="method_table">
+    <h3>Query Parameters</h3>
+    <li class="method_title">
+        <div class="method_data title">Name</div>
+        <div class="method_data value">Value</div>
+        <div class="method_data description">Description</div>
+    </li>
+    {{#query-list this.parameters}}
+    <li class="method_details" data-role="query-param-list" data-scope="{{scope}}">
+        <div class="method_data title">
+            <span data-role="name">{{name}}</span>
+            {{#required}}
+            <br/>
+            <span class="required" data-role="required">(required)</span>
+            {{/required}}
+        </div>
+        <div class="method_data value">
+            {{#if options}}
+            <select name="{{name}}" data-role="multiple-value">
+                {{#options}}
+                <option value="{{.}}">{{.}}</option>
+                {{/options}}
+            </select>
+            {{else}}
+            {{#if required}}
+            <input name="{{name}}" class="form-control" type="text" data-role="value" value="{{defaultValue}}"/>
+            {{else}}
+            <input name="{{name}}"  class="form-control" type="text" data-role="value" placeholder="{{defaultValue}}" value=""/>
+            {{/if}}
             {{/if}}
         </div>
+        <div class="method_data description">
+            <div data-role="description" data-allow-edit="true">
+                {{{this.description}}}
+            </div>
+        </div>
+    </li>
+    {{/query-list}}
+</ul>
+{{/if-query-param}}
+{{#if-header-param this.parameters}}
+<!-- Header parameters section -->
+<ul class="method_table">
+    <h3>Header Parameters</h3>
+    <li class="method_title">
+        <div class="method_data title">Name</div>
+        <div class="method_data value">Value</div>
+        <div class="method_data description">Description</div>
+    </li>
+    {{#header-list this.parameters}}
+    <li class="method_details" data-role="header-param-list" data-scope="{{scope}}">
+        <div class="method_data title">
+            <span data-role="name">{{name}}</span>
+            {{#required}}
+            <br/>
+            <span class="required" data-role="required">(required)</span>
+            {{/required}}
+        </div>
+        <div class="method_data value">
+            {{#if options}}
+            <select name="{{name}}" data-role="multiple-value">
+                {{#options}}
+                <option value="{{.}}">{{.}}</option>
+                {{/options}}
+            </select>
+            {{else}}
+            {{#if required}}
+            <input type="text" name="{{name}}" data-role="value"  class="form-control" value="{{defaultValue}}"/>
+            {{else}}
+            <input type="text" name="{{name}}" data-role="value"  class="form-control" placeholder="{{defaultValue}}" value=""/>
+            {{/if}}
+            {{/if}}
+        </div>
+        <div class="method_data description">
+            <div data-role="description" data-allow-edit="true">
+                {{{this.description}}}
+            </div>
+        </div>
+    </li>
+    {{/header-list}}
+</ul>
+{{/if-header-param}}
+{{#if parameterGroups}}
+<h3>Param Groups</h3>
+{{#each parameterGroups}}
+<!-- Header parameters section -->
+<ul class="method_table" data-role="param-groups" data-scope="{{scope}}">
+    <div class="clearfix">
+        {{#if minChoice}}
+        <p> Minimum Choice : <span data-role="minChoice">{{minChoice}}</span> </p>
+        {{/if}}
+        {{#if maxChoice}}
+        <p> Maximum Choice : <span data-role="maxChoice">{{maxChoice}}</span> </p>
+        {{/if}}
     </div>
+    <li class="method_title">
+        <div class="method_data title">Name</div>
+        <div class="method_data type">Type</div>
+        <div class="method_data value">Value</div>
+        <div class="method_data description">Description</div>
+    </li>
+    {{#each parameters}}
+    <li class="method_details" data-role="param-group-list" data-scope="{{scope}}">
+        <div class="method_data title">
+            <span data-role="name">{{name}}</span>
+            {{#required}}
+            <br/>
+            <span class="required" data-role="required">(required)</span>
+            {{/required}}
+        </div>
+        <div class="method_data type">
+            <span data-role="type">{{type}}</span>
+        </div>
+        <div class="method_data value">
+            {{#if options}}
+            <select name="{{name}}" data-role="multiple-value">
+                {{#options}}
+                <option value="{{.}}">{{.}}</option>
+                {{/options}}
+            </select>
+            {{else}}
+            {{#if required}}
+            <input type="text" name="{{name}}" data-role="value"  class="form-control" value="{{defaultValue}}"/>
+            {{else}}
+            <input type="text" name="{{name}}" data-role="value"  class="form-control" placeholder="{{defaultValue}}" value=""/>
+            {{/if}}
+            {{/if}}
+        </div>
+        <div class="method_data description">
+            <div data-role="description" data-allow-edit="true">
+                {{{this.description}}}
+            </div>
+        </div>
+    </li>
+    {{/each}}
+</ul>
+{{/each}}
+{{/if}}
+<!-- Body parameters and attachement section -->
+<form enctype="multipart/form-data" method="post" name="formAttachment" id="formAttachment">
+    {{#body}}
+    {{#if parameters}}
+    <ul class="method_table">
+        <h3>Body Parameters</h3>
+        <li class="method_title">
+            <div class="method_data title">Name</div>
+            <div class="method_data value">Value</div>
+            <div class="method_data description">Description</div>
+        </li>
+        {{#each parameters}}
+        <li class="method_details" data-role="body-param-list" data-scope="method">
+            <div class="method_data title">
+                <span data-role="name">{{name}}</span>
+                {{#required}}
+                <br/>
+                <span class="required" data-role="required">(required)</span>
+                {{/required}}
+            </div>
+            <div class="method_data value">
+                {{#if options}}
+                <select name="{{name}}" data-role="multiple-value">
+                    {{#options}}
+                    <option value="{{.}}">{{.}}</option>
+                    {{/options}}
+                </select>
+                {{else}}
+                {{#if required}}
+                <input name="{{name}}" type="text"  class="form-control" data-role="value" value="{{defaultValue}}"/>
+                {{else}}
+                <input name="{{name}}" type="text"  class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                {{/if}}
+                {{/if}}
+            </div>
+            <div class="method_data description">
+                <div data-role="description" data-allow-edit="true">
+                    {{{this.description}}}
+                </div>
+            </div>
+        </li>
+        {{/each}}
+    </ul>
+    {{/if}}
+    <ul class="method_table">
+        {{#if attachments}}
+        <h3>Attachments</h3>
+        <li class="method_title">
+            <div class="method_data title">Name</div>
+            <div class="method_data value">Value</div>
+            <div class="method_data description">Description</div>
+        </li>
+        {{/if}}
+        {{#each attachments}}
+        <li class="method_details" data-role="attachments-list" data-scope="method">
+            <div class="method_data title">
+                <span data-role="name">{{name}}</span>
+                {{#required}}
+                <br/>
+                <span class="required" data-role="required">(required)</span>
+                {{/required}}
+            </div>
+            <div class="method_data value">
+                {{#if required}}
+                <input name="{{name}}" type="file" data-role="value" data-content-disposition="{{contentDisposition}}" data-sample-file-url="{{sampleFileUrl}}" required/>
+                {{else}}
+                <input name="{{name}}" type="file" data-role="value" data-content-disposition="{{contentDisposition}}" data-sample-file-url="{{sampleFileUrl}}" />
+                {{/if}}
+            </div>
+            <div class="method_data description">
+                <div data-role="description" data-allow-edit="true">
+                    {{{this.description}}}
+                </div>
+            </div>
+        </li>
+        {{/each}}
+    </ul>
+    {{/body}}
+</form>
 </div>
 {{#body}}
 {{#if sample}}
@@ -312,9 +407,9 @@
             <span data-role="code">{{code}}</span>
         </div>
         <div class="method_data description">
-            <p data-role="description" data-allow-edit="true">
+            <div data-role="description" data-allow-edit="true">
                 {{{description}}}
-            </p>
+            </div>
         </div>
     </li>
     {{/each}}
@@ -376,6 +471,7 @@
         </div>
         <!-- Resource summary - right side info section -->
     </div>
+</div>
 </div>
 <div id="working_alert">
     <p>Working...</p>
@@ -538,6 +634,8 @@
 </div>
 <!-- /.modal -->
 <script type="text/javascript">
+    var Apigee = Apigee || {}; // Look for a namespace 'Apigee', if it is not there, creates an empty one.
+    Apigee.APIModel = Apigee.APIModel || {}; // Look for a namespace 'APIModel' under 'Apigee', if it is not there, creates an empty one.
     Apigee.APIModel.apiName = "{{apiName}}";
     Apigee.APIModel.revisionNumber = "{{revisionNumber}}";
     Apigee.APIModel.organizationName = "{{organizationName}}";
@@ -545,4 +643,3 @@
     Apigee.APIModel.methodId = "{{id}}";
     Apigee.APIModel.methodType ="details";
 </script>
-</div>

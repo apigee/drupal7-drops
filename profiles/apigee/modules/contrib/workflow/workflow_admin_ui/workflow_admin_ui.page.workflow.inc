@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Provides an Admin UI page for the Workflow Properties.
@@ -7,9 +8,10 @@
 /**
  * Menu callback. Edit a workflow's properties.
  *
- * @param $wid
+ * @param Workflow $worflow
  *   The workflow object.
- * @return
+ *
+ * @return array
  *   HTML form and permissions table.
  */
 function workflow_admin_ui_edit_form($form, &$form_state, $workflow = NULL, $op) {
@@ -41,7 +43,7 @@ function workflow_admin_ui_edit_form($form, &$form_state, $workflow = NULL, $op)
   $form['name'] = array(
     '#type' => 'machine_name',
     '#default_value' => $workflow->getName(),
-    '#maxlength' => '254',  // $todo D8 : '#maxlength' => 32,
+    '#maxlength' => '254', // $todo D8 : '#maxlength' => 32,
     '#required' => TRUE,
     '#disabled' => !empty($workflow->locked),
     '#machine_name' => array(
@@ -75,7 +77,7 @@ function workflow_admin_ui_edit_form($form, &$form_state, $workflow = NULL, $op)
       'buttons' => 'Action buttons',
     ),
     '#description' => t("The Widget shows all available states. Decide which
-      is the best way to show them. ('Action buttons' do not work on Comment form.)"
+      is the best way to show them."
     ),
   );
   $form['basic']['name_as_title'] = array(
@@ -84,8 +86,8 @@ function workflow_admin_ui_edit_form($form, &$form_state, $workflow = NULL, $op)
     '#attributes' => array('class' => array('container-inline')),
     '#title' => t('Use the workflow name as the title of the workflow form?'),
     '#default_value' => isset($workflow->options['name_as_title']) ? $workflow->options['name_as_title'] : 0,
-    '#description' => t('The workflow section of the editing form is in its own fieldset. Checking the box will add the workflow ' .
-      'name as the title of workflow section of the editing form.'),
+    '#description' => t('The workflow section of the editing form is in its own
+      fieldset. Checking the box will add the workflow name as the title of workflow section of the editing form.'),
   );
 
   $form['schedule'] = array(
@@ -99,8 +101,8 @@ function workflow_admin_ui_edit_form($form, &$form_state, $workflow = NULL, $op)
     '#attributes' => array('class' => array('container-inline')),
     '#title' => t('Allow scheduling of workflow transitions?'),
     '#default_value' => isset($workflow->options['schedule']) ? $workflow->options['schedule'] : 1,
-    '#description' => t('Workflow transitions may be scheduled to a moment in the future. ' .
-      'Soon after the desired moment, the transition is executed by Cron.'),
+    '#description' => t('Workflow transitions may be scheduled to a moment in the future.
+      Soon after the desired moment, the transition is executed by Cron.'),
   );
 
   $form['schedule']['schedule_timezone'] = array(
@@ -260,5 +262,5 @@ function workflow_admin_ui_edit_form_submit($form, &$form_state) {
   }
   // This redirect is needed, when changing the workflow name, with name in URL.
   // Also for cloning a workflow.
-  $form_state['redirect'] = 'admin/config/workflow/workflow/manage/' .  $workflow->wid;
+  $form_state['redirect'] = 'admin/config/workflow/workflow/manage/' . $workflow->wid;
 }

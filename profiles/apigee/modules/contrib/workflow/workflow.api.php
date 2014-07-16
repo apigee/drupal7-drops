@@ -27,22 +27,23 @@
  * @param string $field_name
  *   The name of the Workflow Field. Empty in case of Workflow Node.
  *   This is used when saving a state change of a Workflow Field.
- * @param $transition
+ * @param object $transition
  *   The transition, that contains all of the above.
- *    @todo D8: remove all other paramters.
+ *   @todo D8: remove all other parameters.
  *
- * @return
+ * @return mixed
  *   Only 'transition permitted' expects a boolean result.
  */
-function hook_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $field_name = '', $transition = NULL) {
+function hook_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $field_name = '', $transition = NULL, $user = NULL) {
   switch ($op) {
     case 'transition permitted':
-      // This operation is called in the following situations: 
+      // This operation is called in the following situations:
       // 1. when the widget with list of available transitions is built;
       // 2. when executing a transition, just before the 'transition pre';
       // 3. when showing a 'revert state' link in a Views display.
       // Your module's implementation may return FALSE here and disallow
       // the execution, or avoid the presentation of the new State.
+      // This may be user-dependent.
       // As of 7.x-2.3, better use hook_workflow_permitted_state_transitions_alter() in option 1.
       // For options 2 and 3, the 'transition pre' gives an alternative.
       return TRUE;
@@ -56,12 +57,12 @@ function hook_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $
     case 'transition post':
       // This is called by Workflow Node during update of the state, directly
       // after updating {workflow_node}. Workflow Field does not call this,
-      // since you can call an Entity event after saving the entity. 
+      // since you can call an Entity event after saving the entity.
       break;
 
     case 'transition delete':
       // A transition is deleted. Only the first parameter is used.
-      //$tid = $id;
+      // $tid = $id;
       break;
 
     case 'state delete':
@@ -78,7 +79,7 @@ function hook_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $
 
 /**
  * Implements hook_workflow_history_alter().
- * 
+ *
  * Allow other modules to add Operations to the most recent history change.
  * E.g., Workflow Revert implements an 'undo' operation.
  *
@@ -90,34 +91,34 @@ function hook_workflow($op, $id, $new_sid, $entity, $force, $entity_type = '', $
  *   'state_name' - The state name of the current state.
  *   'history' - The row from the workflow_node_history table.
  *   'transition' - a WorkflowTransition object, containing all of the above.
- *
- * If you want to add additional data, such as an operation link,
- * place it in the 'extra' value.
  */
 function hook_workflow_history_alter(array &$variables) {
   // The Workflow module does nothing with this hook.
   // For an example implementation, see the Workflow Revert add-on.
   $options = array();
   $path = '<front>';
+
+  // If you want to add additional data, such as an operation link,
+  // place it in the 'extra' value.
   $variables['extra'] = l(t('My new operation: go to frontpage'), $path, $options);
 }
 
 /**
  * Implements hook_workflow_comment_alter().
- * 
+ *
  * Allow other modules to change the user comment when saving a state change.
  *
- * @param $comment
+ * @param string $comment
  *   The comment of the current state transition.
  * @param array $context
  *   'transition' - The current transition itself.
  */
-function hook_workflow_comment_alter(&$comment, &$context) {
+function hook_workflow_comment_alter(&$comment, array &$context) {
   $transition = $context->transition;
   $comment = $transition->uid . 'says: ' . $comment;
 }
 
-/*
+/**
  * Implements hook_workflow_permitted_state_transitions_alter().
  *
  * @param array $transitions
@@ -132,14 +133,15 @@ function hook_workflow_comment_alter(&$comment, &$context) {
  *      'force' => $force,
  *      'workflow' => $workflow,
  *      'state' => $current_state,
- *      'user_roles' => $roles,
+ *      'user' => $user,
+ *      'user_roles' => $roles, // @todo: can be removed in D8, since $user is in.
  *    );
  *
- * This hook in invoked in WorkflowState::getOptions().
- * This hooks allows you to add custom filtering of allowed target states,
- * add new custom states, change labels, etc.
+ * This hook allows you to add custom filtering of allowed target states, add
+ * new custom states, change labels, etc.
+ * It is invoked in WorkflowState::getOptions().
  */
-function hook_workflow_permitted_state_transitions_alter(&$transitions, $context) {
+function hook_workflow_permitted_state_transitions_alter(array &$transitions, array $context) {
   // This example creates a new custom target state.
   $values = array(
     // Fixed values for new transition.
@@ -154,4 +156,66 @@ function hook_workflow_permitted_state_transitions_alter(&$transitions, $context
   $new_transition = new WorkflowConfigTransition($values);
 
   $transitions[] = $new_transition;
+}
+
+/**
+ * Examples of hooks, that can be used to alter the Workflow Form.
+ */
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Use this hook to alter the form.
+ * It is only suited if you only use View Page or Workflow Tab.
+ * If you change the state on the Node Form (Edit modus), you need the hook
+ * hook_form_alter(). See below for more info.
+ */
+function workflowfield_form_workflow_transition_form_alter(&$form, &$form_state, $form_id) {
+
+  // Get the Entity.
+  $entity = $form['workflow']['workflow_entity']['#value'];
+  $entity_type = $form['workflow']['workflow_entity_type']['#value'];
+
+  // Use the complicated form, which is suited for all Entity types.
+  // For nodes only: $entity_type = 'node'; $entity_bundle = $entity->type;
+  list(, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
+
+  // Get the current State ID.
+  $sid = workflow_node_current_state($entity, $entity_type, $field_name = NULL);
+  // Get the State object, if needed.
+  $state = workflow_state_load($sid);
+
+  // Change the form, depending on the state ID.
+  // In the upcoming version 7.x-2.4, States should have a machine_name, too.
+  if ($entity_type == 'node' && $entity_bundle == 'MY_NODE_TYPE') {
+    switch ($state->sid) {
+      case '2':
+        // Change form element, form validate and form submit for state '2'.
+        break;
+
+      case '3':
+        // Change form element, form validate and form submit for state '3'.
+        break;
+    }
+  }
+
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Use this hook to alter the form on a Node Form, Comment Form (Edit page).
+ */
+function workflowfield_form_alter(&$form, $form_state, $form_id) {
+
+  // Get the Entity.
+  $entity = $form['#entity'];
+  $entity_type = $form['#entity_type'];
+  // Use the complicated form, which is suited for all Entity Types.
+  list(, , $entity_bundle) = entity_extract_ids($entity_type, $entity);
+
+  // Discover if this is the correct form.
+  // ...
+  // Get the current state and act upon it.
+  // .. copy code from the hook above.
 }

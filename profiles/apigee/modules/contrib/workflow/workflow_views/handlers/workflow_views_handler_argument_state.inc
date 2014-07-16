@@ -14,16 +14,17 @@ class views_handler_argument_workflow_state extends views_handler_argument {
   }
 
   /**
-   * Override the behavior of summary_name(). Get the user-friendly version
-   * of the workflow state.
+   * Overrides the behavior of summary_name().
+   *
+   * Gets the user-friendly version of the workflow state.
    */
   function summary_name($data) {
     return workflow_get_sid_label($data->{$this->name_alias});
   }
 
   /**
-   * Override the behavior of title(). Get the user-friendly version of the
-   * workflow state.
+   * Overrides the behavior of title().
+   * Get the user-friendly version of the workflow state.
    */
   function title() {
     return workflow_get_sid_label($this->argument);

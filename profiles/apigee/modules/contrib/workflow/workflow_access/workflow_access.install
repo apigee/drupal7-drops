@@ -6,16 +6,6 @@
  */
 
 /**
- * Implements hook_install().
- */
-//function workflow_access_install() {}
-
-/**
- * Implements hook_uninstall().
- */
-//function workflow_access_uninstall() {}
-
-/**
  * Implements hook_schema().
  */
 function workflow_access_schema() {

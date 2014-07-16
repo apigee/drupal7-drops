@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Adds an 'Revert' link to the first workflow history row.
@@ -52,28 +53,23 @@ function workflow_revert_rules_event_info() {
 
 /**
  * Implements hook_workflow_history_alter().
- * Add an 'undo' operation for the most recent history change.
  *
- * @param $variables
+ * Adds an 'undo' operation for the most recent history change.
+ *
+ * @param array $variables
  *   The current workflow history information as an array.
- *   'old_sid' - The state ID of the previous state.
- *   'old_state_name' - The state name of the previous state.
- *   'sid' - The state ID of the current state.
- *   'state_name' - The state name of the current state.
- *   'history' - The row from the workflow_node_history table.
- *   'transition' - a WorkflowTransition object, containing all of the above.
- *
- * If you want to add additional data, place it in the 'extra' value.
+ *   'transition' - a WorkflowTransition object.
  */
-function workflow_revert_workflow_history_alter(&$variables) {
+function workflow_revert_workflow_history_alter(array &$variables) {
+  global $user;
   static $first = TRUE;
 
   $transition = $variables['transition'];
 
   // Check access, to avoid that user sees a revert link, but is not allowed to
-  // view the revert form. Use $first to check only once per page. 
+  // view the revert form. Use $first to check only once per page.
   if ($first) {
-    if (!user_access('revert workflow')) {
+    if (!user_access('revert workflow', $user)) {
       $first = FALSE;
       return;
     }
@@ -83,14 +79,10 @@ function workflow_revert_workflow_history_alter(&$variables) {
   if ($first) {
     $old_sid = $transition->old_sid;
     $new_sid = $transition->new_sid;
-    $entity_type = $transition->entity_type;
-    $entity = $transition->getEntity();
-    $id = $transition->entity_id;
-    $field_name = $transition->field_name;
 
-    $old_state = workflow_state_load_single($old_sid);
-    // Some state are not fit to revert to. In each of these cases, prohibit
+    // Some states are not fit to revert to. In each of these cases, prohibit
     // to revert to an even older state.
+    $old_state = $transition->getOldState();
     if (!$old_state || !$old_state->isActive() || $old_state->isCreationState()) {
       $first = FALSE;
     }
@@ -100,13 +92,19 @@ function workflow_revert_workflow_history_alter(&$variables) {
     else {
       // Let's ask other modules if the reversion is allowed. Reversing old and new sid!
       // @todo D8: remove, or replace by 'transition pre'. See WorkflowState::getOptions().
-      $permitted = module_invoke_all('workflow', 'transition permitted', $transition->new_sid, $old_sid, $entity, $force = FALSE, $entity_type, $field_name, $transition);
+      $entity_type = $transition->entity_type;
+      $entity = $transition->getEntity();
+      $id = $transition->entity_id;
+      $field_name = $transition->field_name;
+      $permitted = module_invoke_all('workflow', 'transition permitted', $new_sid, $old_sid, $entity, $force = FALSE, $entity_type, $field_name, $transition, $user);
       // Stop if a module says so.
       if (!in_array(FALSE, $permitted, TRUE)) {
         // If not vetoed, mark it.
         $options = array('query' => array('token' => drupal_get_token('workflow_revert ' . $old_sid)));
         $path = 'workflow_revert/' . $entity_type . '/' . $id . '/' . $field_name . '/' . $old_sid;
-        $variables['extra'] = l('Revert state change', $path, $options);
+
+        // If you want to add additional data, place it in the 'extra' value.
+        $variables['extra'] = l(t('Revert state change'), $path, $options);
 
         $first = FALSE;
       }

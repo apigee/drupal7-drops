@@ -502,6 +502,20 @@ function hook_facetapi_force_delta_mapping() {
 }
 
 /**
+ * Alters the hash that is generated for block deltas.
+ *
+ * @param type &$hash
+ *   The delta hash.
+ * @param type $delta
+ *   The block's delta.
+ *
+ * @see https://www.drupal.org/node/1828396
+ */
+function hook_facetapi_hash_alter(&$hash, $delta) {
+  $hash = drupal_html_class($hash);
+}
+
+/**
  * Implemented by the translator module to translate a string.
  *
  * This hook is invoked by the facetapi_translate_string() function. The

@@ -24,7 +24,6 @@ function devconnect_user_sync() {
   foreach ($kms_developers_orig as $email => $data) {
     $kms_developers[strtolower($email)] = $data;
   }
-
   // Fetch list of users in Drupal
   $stmt = db_select('users', 'u')
     ->fields('u', array('mail', 'uid'))
@@ -43,7 +42,6 @@ function devconnect_user_sync() {
     }
   }
   $not_in_drupal = array_diff_key($kms_developers, $drupal_users);
-
   $offset = 10;
   $operations = array();
   for ($i = 0, $len = count($not_in_drupal); $i < $len; $i += $offset) {
@@ -204,24 +202,42 @@ function _devconnect_user_sync_to_kms($developers, $counters, &$context) {
  */
 function _devconnect_user_sync_finished($success, $results, $operations) {
   if ($success) {
+    $statistics = $results[0];
+    $simpletest = $statistics['simpletest_kms'] + $statistics['simpletest_dc'];
+
     if (function_exists('drush_print')) {
+      drush_print('Sync completed.');
+      drush_print($statistics['processed_kms'] . ' account(s) created in Edge');
+      drush_print($statistics['processed_dc'] . ' account(s) created in Dev Portal');
+      drush_print($simpletest . ' Simpletest account(s) skipped');
+      return;
+    }
+
+    $message = '';
+    if ($statistics['processed_kms']) {
+      $message .= t('@count created in Edge', array('@count' => $statistics['processed_kms'])) . '<br>';
+    }
+    if ($statistics['processed_dc']) {
+      $message .= t('@count created in Dev Portal', array('@count' => $statistics['processed_dc'])) . '<br>';
+    }
+    if ($simpletest) {
+      $message .= t('@count Simpletest accounts skipped', array('@count' => $simpletest)) . '<br>';
+    }
+
+    if (strlen($message) > 0) {
       array_shift($results);
       $results = array_filter($results, function($item) { return !is_array($item) && trim($item) != ''; });
-      return $results;
+      foreach (array_keys($results) as $key) {
+        $results[$key] = array(
+          'id' => 'Item' . $key,
+          'data' => $results[$key]
+        );
+      }
+      $message .= theme_item_list(array('items' => $results, 'title' => t('Synced Developers'), 'type' => 'ul', 'attributes' => array()));
     }
-    $message = $results[0]['processed_kms'] . ' created in Edge<br>'
-      . $results[0]['processed_dc'] . ' created in Dev Portal<br>'
-      . ($results[0]['simpletest_kms'] + $results[0]['simpletest_dc']) . ' Simpletest accounts not created<br>' ;
-
-    array_shift($results);
-    $results = array_filter($results, function($item) { return !is_array($item) && trim($item) != ''; });
-    foreach (array_keys($results) as $key) {
-      $results[$key] = array(
-        'id' => 'Item' . $key,
-        'data' => $results[$key]
-      );
+    else {
+      $message = t('All developer accounts are in sync.');
     }
-    $message .= theme_item_list(array('items' => $results, 'title' => t('Synced Developers'), 'type' => 'ul', 'attributes' => array()));
     drupal_set_message($message);
   }
   else {

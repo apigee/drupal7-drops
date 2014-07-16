@@ -5,11 +5,11 @@
  */
 
 /**
- * Field handler to allow linking to a user account
+ * Field handler to allow linking to a user account.
  */
 class workflow_views_handler_field_username extends views_handler_field_user_name {
 
-  /*
+  /**
    * Return user name as default value.
    */
   function get_value($values, $field = NULL) {

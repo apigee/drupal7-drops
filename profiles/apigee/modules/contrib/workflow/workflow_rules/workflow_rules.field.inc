@@ -10,10 +10,12 @@ if (module_exists('rules')) {
 
 /**
  * Implements subfunction of hook_rules_condition_info().
- * Using "node:" and "node:unchanged", there is no need to create more conditions to check transitions.
+ *
+ * When using "node:" and "node:unchanged", there is no need to create more
+ * conditions to check transitions.
  */
-//function workflowfield_rules_condition_info() {
-//}
+// function workflowfield_rules_condition_info() {
+// }
 
 /**
  * Implements subfunction of hook_rules_action_info().
@@ -25,10 +27,11 @@ function _workflowfield_rules_action_info() {
     'group' => t('Workflow'),
     'label' => t('Set a Workflow Field state'),
     'parameter' => array(
+      // "parameter['node']" is for backwards compatibility: can be any entity_type.
       'node' => array(
-        'type' => 'node',
-        'label' => t('Node'),
-        'description' => t('The node to set the current workflow state of.'),
+        'type' => 'entity',
+        'label' => t('Entity'),
+        'description' => t('The entity to set the current workflow state of.'),
         // 'save' => TRUE,
       ),
       'field' => array(

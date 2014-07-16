@@ -1,7 +1,7 @@
-
 /**
- * Attach handlers to evaluate the strength of any password fields and to check
- * that its confirmation is correct.
+ * @file
+ * Attaches handlers to evaluate the strength of any password fields and to
+ * check that its confirmation is correct.
  */
 Drupal.behaviors.password = function(context) {
   var translate = Drupal.settings.password_policy;

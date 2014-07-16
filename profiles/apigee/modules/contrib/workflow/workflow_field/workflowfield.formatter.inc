@@ -20,9 +20,13 @@ function workflowfield_field_formatter_info() {
 /**
  * Implements hook_field_formatter_view().
  *
- * Shows the current state and the Widget on a Node View page or a Workflow History tab.
+ * Shows current State + Widget on a Node View page or a Workflow History tab.
  */
 function workflowfield_field_formatter_view($entity_type, $entity, $field, $instance, $langcode = 'und', $items = array(), $display = array()) {
+  global $user; // @todo #2287057: OK?
+  // @todo: Perhaps global user is not always the correct user.
+  // E.g., on ScheduledTransition->execute()? But this function is mostly used in UI.
+
   $field_name = isset($field['field_name']) ? $field['field_name'] : '';
   $field_id = isset($field['id']) ? $field['id'] : 0;
 
@@ -31,10 +35,10 @@ function workflowfield_field_formatter_view($entity_type, $entity, $field, $inst
 
   if ($field_name) {
     // First compose the current value with the normal formatter from list.module.
-    $list_element = workflow_state_formatter($entity_type, $entity, $field, $instance);
+    $list_element = workflow_state_formatter($entity_type, $entity, $field, $instance, $current_sid);
   }
   elseif (!empty($field['settings']['widget']['current_status'])) {
-    $list_element = workflow_state_formatter($entity_type, $entity, $field, $instance);
+    $list_element = workflow_state_formatter($entity_type, $entity, $field, $instance, $current_sid);
   }
 
   // Check permission, so that even with state change rights,
@@ -42,15 +46,15 @@ function workflowfield_field_formatter_view($entity_type, $entity, $field, $inst
   if (!user_access('show workflow state form')) {
     return $list_element;
   }
-  if ($entity_type == 'comment') { // No Workflow form on a comment display, (Also, this avoids a lot of error messages.)
+  if ($entity_type == 'comment') {
+    // No Workflow form allowed on a comment display.
+    // (Also, this avoids a lot of error messages.)
     return $list_element;
   }
   // Only build form if user has possible target state(s).
-  if (!$current_state->showWidget($entity_type, $entity, $force = FALSE)) {
+  if (!$current_state->showWidget($entity_type, $entity, $field_name, $user, FALSE)) {
     return $list_element;
   }
-
-  $workflow = $current_state->getWorkflow();
 
   // Add some data for the form.
   // Add the current value to the form.

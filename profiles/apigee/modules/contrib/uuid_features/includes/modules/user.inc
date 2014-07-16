@@ -5,38 +5,43 @@
  */
 
 /**
- * Implements hook_uuid_node_features_export_render_alter().
+ * Implements hook_uuid_entity_features_export_render_alter().
  */
-function user_uuid_node_features_export_render_alter(&$export, &$node, $module) {
-  $uuids = entity_get_uuid_by_id('user', array($node->uid));
-  $uuid = reset($uuids);
-  if ($uuid) {
-    $export->user_uuid = $uuid;
-  }
-  unset($export->uid);
-  // Ensure we don't export the name or uid property which could lead to a user
-  // override due to the handling in node_submit().
-  unset($export->name);
+function user_uuid_entity_features_export_render_alter($entity_type, $export, $entity, $module) {
+  if (isset($entity->uid) && isset($export->uid)) {
+    $uuids = entity_get_uuid_by_id('user', array($entity->uid));
+    $uuid = reset($uuids);
+    if ($uuid) {
+      $export->user_uuid = $uuid;
+    }
+    unset($export->uid);
 
-  // Remove other properties handled solely by user module.
-  unset($export->data, $export->picture);
+    if ($entity_type == 'node') {
+      // Ensure we don't export the name or uid property which could lead to a
+      // user override due to the handling in node_submit().
+      unset($export->name);
+
+      // Remove other properties handled solely by user module.
+      unset($export->data, $export->picture);
+    }
+  }
 }
 
 /**
- * Implements hook_uuid_node_features_rebuild_alter().
+ * Implements hook_uuid_entity_features_rebuild_alter().
  */
-function user_uuid_node_features_rebuild_alter(&$node, $module) {
-  if (isset($node->user_uuid) && uuid_is_valid($node->user_uuid)) {
-    $uids = entity_get_id_by_uuid('user', array($node->user_uuid));
+function user_uuid_entity_features_rebuild_alter($entity_type, $entity, $data, $module) {
+  if (isset($entity->user_uuid) && uuid_is_valid($entity->user_uuid)) {
+    $uids = entity_get_id_by_uuid('user', array($entity->user_uuid));
     $uid = reset($uids);
     if ($uid) {
-      $node->uid = $uid;
+      $entity->uid = $uid;
     }
     else {
-      $node->uid = 1;
+      $entity->uid = 1;
     }
   }
-  else {
-    $node->uid = 1;
+  elseif (in_array($entity_type, array('node', 'file'))) {
+    $entity->uid = 1;
   }
 }

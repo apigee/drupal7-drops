@@ -330,10 +330,11 @@ function facetapi_get_widgets(array $realm, array $facet) {
       'requirements' => array(
         'facetapi_requirement_realm_property' => array('element type' => 'links')
       ),
+      'requirements operator' => 'AND',
     );
 
     // Checks requirements, only saves widgets that pass all requirements.
-    if (facetapi_check_requirements($plugin['handler']['requirements'], $realm, $facet)) {
+    if (facetapi_check_requirements($plugin['handler']['requirements'], $realm, $facet, $plugin['handler']['requirements operator'])) {
       $plugins[$id] = $plugin;
     }
   }
@@ -521,6 +522,22 @@ function facetapi_facet_display_form($form, &$form_state, FacetapiAdapter $adapt
     '#description' => t('The action to take when a facet has no items.'),
   );
 
+  $form['widget']['facet_more_text'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<div class="facetapi-more-text-setting">',
+    '#suffix' => '</div>',
+    '#title' => t('Facet "more" link text'),
+    '#default_value' => $facet_settings->settings['facet_more_text'],
+  );
+
+  $form['widget']['facet_fewer_text'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<div class="facetapi-fewer-text-setting">',
+    '#suffix' => '</div>',
+    '#title' => t('Facet "fewer" link text'),
+    '#default_value' => $facet_settings->settings['facet_fewer_text'],
+  );
+
   ////
   ////
   //// Global settings
@@ -659,11 +676,12 @@ function facetapi_facet_display_form($form, &$form_state, FacetapiAdapter $adapt
   $form['#submit'][] = 'facetapi_facet_display_form_submit';
   $form['#validate'][] = 'facetapi_facet_display_form_validate';
 
-  // Allow the realm and adapter to alter the form.
+  // Allow the realm, adapter, and URL  to alter the form.
   if ($realm['settings callback']) {
     $realm['settings callback']($form, $form_state);
   }
   $adapter->settingsForm($form, $form_state);
+  $adapter->getUrlProcessor()->settingsForm($form, $form_state);
 
   return $form;
 }
@@ -728,6 +746,7 @@ function theme_facetapi_sort_settings_table($variables) {
  * Form validation handler for facetapi_facet_display_form().
  */
 function facetapi_facet_display_form_validate($form, &$form_state) {
+  ctools_include('plugins');
   // Gets the selected query type and widget.
   $query_type = $form_state['values']['global']['query_type'];
   $widget_name = $form_state['values']['widget'];

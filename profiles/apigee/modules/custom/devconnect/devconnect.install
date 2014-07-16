@@ -228,12 +228,20 @@ function devconnect_update_7426(){
 
 /**
  * Disable devconnect_ui module if it exists, in preparation for
- * code removal.
+ * code removal. Also disable node_export and its children.
  */
 function devconnect_update_7428() {
-  // Nuke it entirely, in case this update is run AFTER the code
+  $disable_modules = array('devconnect_ui');
+  foreach (array('devconnect_ui', 'node_export', 'node_export_dependency', 'node_export_features', 'node_export_feeds', 'node_export_relation') as $ne_module) {
+    if (module_exists($ne_module)) {
+      $disable_modules[] = $ne_module;
+    }
+  }
+  drupal_uninstall_modules($disable_modules);
+  // Nuke devconnect_ui entirely, in case this update is run AFTER the code
   // has disappeared.
   db_delete('system')
-    ->condition('name', 'devconnect_ui')
+    ->condition('name', $disable_modules)
     ->execute();
+
 }

@@ -1,0 +1,6 @@
+name = DevConnect Monetization Monitor
+description = Monitor and alerting for Apigee Dev Portal Monetization.
+core = 7.x
+package = DevConnect Mint
+version = 7.x-1.0
+project = devconnect

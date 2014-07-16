@@ -11,4 +11,4 @@ You can add a Rule using:
 - After saving a new workflow scheduled transition
 - After updating an existing Entity
 The 'transition post' hook is not called for Workflow Field, since at that
-moment in the update proces, the data is not saved yet.
+moment in the update process, the data is not saved yet.

@@ -452,7 +452,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
   );
 
   // Analytics environments
-  $options = array();
+  $options = $environments = array();
   try {
     $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_org_config());
     $environments = $dca->getAllEnvironments();
@@ -477,7 +477,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
     // endpoint.
     $options = array('prod' => 'Production');
   }
-  if (empty($options) || array_key_exists('prod', $options)) {
+  if (empty($options) || empty($environments) || array_key_exists('prod', $options)) {
     $default_env = 'prod';
   }
   else {
@@ -634,11 +634,18 @@ function devconnect_developer_apps_getlist($user) {
         $entity->credentialApiProducts[$key]['displayName'] = (array_key_exists($product['apiproduct'], $api_products) ? $api_products[$product['apiproduct']] : $product['apiproduct']);
       }
 
+      if (array_key_exists('DisplayName', $entity->attributes) && !empty($entity->attributes['DisplayName'])) {
+        $display_name = $entity->attributes['DisplayName'];
+      }
+      else {
+        $display_name = $entity->name;
+      }
+
       $row = array(
         'org_name' => $entity->orgName,
-        'app_name' => $entity->name,
+        'app_name' => $display_name,
         'callback_url' => $entity->callbackUrl,
-        'attributes' => _devconnect_developer_apps_get_attributes($entity->attributes),
+        'attributes' => _devconnect_developer_apps_get_attributes($entity->attributes, TRUE),
         'createdAt' => floor($entity->createdAt / 1000),
         'credential' => array(
           'apiProducts' => $entity->credentialApiProducts,
@@ -691,7 +698,7 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   $module_path = drupal_get_path('module', 'devconnect_developer_apps');
   drupal_add_css("$module_path/devconnect_developer_apps.css");
 
-  $entity = NULL;
+  $entity = $app_name = NULL;
   if (isset($app_id)) {
     $entities = entity_load('developer_app', array($app_id), array('mail' => $account->mail));
     if (count($entities) == 0) {
@@ -742,33 +749,50 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     '#title' => $header_caption,
   );
 
-  if (isset($app_name)) {
-    $form['existing_machine_name'] = array(
-      '#type' => 'item',
-      '#title' => ((bool) variable_get('myapis')) ? t('API Name') : t('App Name'),
-      '#markup' => check_plain($app_name),
-      '#id' => 'existing_machine_name'
-    );
-    $form['machine_name'] = array(
-      '#type' => 'value',
-      '#value' => $app_name
-    );
-
+  if (isset($entity)) {
+    if (array_key_exists('DisplayName', $entity->attributes) && !empty($entity->attributes['DisplayName'])) {
+      $display_name = $entity->attributes['DisplayName'];
+    }
+    else {
+      $display_name = $entity->name;
+    }
   }
   else {
-    $form['machine_name'] = array(
-      '#title' => ((bool) variable_get('myapis')) ? t('API Name') : t('App Name'),
-      '#type' => 'textfield',
-      '#id' => 'new_machine_name',
-      '#default_value' => '',
-      '#required' => TRUE,
-      '#size' => 145,
-      '#attributes' => array(
-        'pattern' => '^[^&]+$',
-        'title' => ((bool) variable_get('myapis')) ? t('The API Name may not contain ampersands') : t('The App Name may not contain ampersands')
-      )
-    );
+    $display_name = '';
   }
+
+  $form['name']['human'] = array(
+    '#title' => ((bool) variable_get('myapis')) ? t('API Name') : t('App Name'),
+    '#type' => 'textfield',
+    '#default_value' => $display_name,
+    '#maxlength' => 64,
+    '#required' => TRUE
+  );
+  $form['name']['machine'] = array(
+    '#type' => 'machine_name',
+    '#default_value' => $app_name,
+    '#maxlength' => 64,
+    '#machine_name' => array(
+      'source' => array('name', 'human'),
+      'label' => t('Internal name'),
+      'replace_pattern' => '[^A-Za-z0-9_$%-]+',
+      'replace' => '-',
+      'exists' => 'devconnect_developer_apps_machine_name_exists'
+    ),
+    '#required' => TRUE,
+    '#disabled' => ($app_name !== NULL),
+    '#access' => TRUE,
+  );
+  $form['attribute_DisplayName'] = array(
+    '#type' => 'value',
+    '#value' => ($app_name !== NULL)?$app_name:'',
+  );
+  if ($app_name !== NULL) {
+    $form['name']['machine']['#access'] = FALSE;
+  }
+
+  $form['#attached'][] = 'misc/machine-name.js';
+
   if (variable_get('devconnect_callback_handling', 'require') != 'none') {
     $form['callback_url'] = array(
       '#title' => t('Callback URL'),
@@ -799,6 +823,9 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   // defined custom attributes to appear in this form.
   $custom_attributes = module_invoke_all('devconnect_app_attributes');
   foreach ($custom_attributes as $machine_name => $attribute) {
+    if ($machine_name == 'DisplayName') {
+      continue;
+    }
     $name = $attribute['name'];
     $default_value = (array_key_exists('default', $attribute) ? $attribute['default'] : NULL);
     $description = (array_key_exists('description', $attribute) ? $attribute['description'] : NULL);
@@ -840,6 +867,9 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
         '#default_value' => $default_value,
         '#required' => $required
       );
+      if (array_key_exists('weight', $attribute)) {
+        $form[$form_field_name]['#weight'] = $attribute['weight'];
+      }
       if ($description) {
         $form[$form_field_name]['#description'] = t($description);
       }
@@ -1057,19 +1087,20 @@ function devconnect_developer_apps_pattern_validate(array $element, array &$form
  * @param array $form_state
  */
 function devconnect_developer_apps_edit_form_validate(array $form, array &$form_state) {
-  if ($form['machine_name']['#type'] == 'value') {
+  if (!$form['name']['machine']['#access']) {
     // No need to validate existing machine names.
     return;
   }
-  if (strlen(trim($form_state['values']['machine_name'])) == 0) {
+  if (strlen(trim($form_state['values']['machine'])) == 0) {
     // If machine name was left empty, let default form validator handle it.
     // If we don't return here, the code below will still execute and throw
     // warnings.
     return;
   }
-  $machine_name = strtolower($form_state['values']['machine_name']);
-  if (strpos($machine_name, '&') !== FALSE) {
-    form_error($form['machine_name'], t('The App Name may not contain ampersands.'));
+  $machine_name = strtolower($form_state['values']['machine']);
+  if (preg_match('![^A-Za-z0-9_$% -]!', $machine_name)) {
+    // N.B. space is permitted but not documented here
+    form_error($form['machine_name'], t('The App Name may only contain letters, numbers, underscores, dollars, percent, or hyphens.'));
     return;
   }
 
@@ -1096,6 +1127,11 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
 function devconnect_developer_apps_edit_form_submit(array $form, array &$form_state) {
   // Invoke hook_devconnect_developer_app_presave on all implementing modules.
   // If any module returns FALSE, abort.
+
+  // Backwards compatibility
+  $form_state['values']['attribute_DisplayName'] = $form_state['values']['human'];
+  $form_state['values']['machine_name'] = $form_state['values']['machine'];
+
   $continue = devconnect_developer_apps_hook('presave', $form_state);
   if (!$continue) {
     return;
@@ -1228,6 +1264,28 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
     rules_invoke_event($event, $entity);
   }
 
+}
+
+/**
+ * Callback to ensure uniqueness of app name for the given developer.
+ *
+ * @param string $value
+ * @param array $element
+ * @param array $form_state
+ * @return bool
+ */
+function devconnect_developer_apps_machine_name_exists($value, array $element, array $form_state) {
+  if (empty($value) || empty($form_state['values']['uid'])) {
+    return TRUE; // is this the right thing to do?
+  }
+  $uid = $form_state['values']['uid'];
+  $name = db_select('dc_dev_app', 'a')
+    ->fields('a', array('name'))
+    ->condition('uid', $uid)
+    ->condition('name', $value)
+    ->execute()
+    ->fetchField();
+  return ($name !== FALSE);
 }
 
 /**
@@ -1425,6 +1483,13 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
   $access_type = $entity->accessType;
   $raw_result = $entity->debugData;
 
+  if (array_key_exists('DisplayName', $entity->attributes) && !empty($entity->attributes['DisplayName'])) {
+    $display_name = $entity->attributes['DisplayName'];
+  }
+  else {
+    $display_name = $entity->name;
+  }
+
   $info = array(
     'account' => $user,
     'access_type' => ($access_type == 'both' ? 'read/write' : $access_type),
@@ -1433,7 +1498,7 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
     'status' => $entity->status,
     'attributes' => array(),
     'credentials' => array(),
-    'page_title' => $entity->name,
+    'page_title' => $display_name,
     'breadcrumb' => $breadcrumb,
     'raw_data' => $raw_result['data'],
     'analytics_chart' => FALSE
@@ -1522,11 +1587,14 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
  * @param $app_attributes
  * @return array
  */
-function _devconnect_developer_apps_get_attributes($app_attributes) {
+function _devconnect_developer_apps_get_attributes($app_attributes, $omit_display_name = FALSE) {
   // Invoke custom hook
   $shown_attributes = module_invoke_all('devconnect_attributes_display_list');
   $items = array();
   foreach ($shown_attributes as $attr_name => $attr_display) {
+    if ($omit_display_name && $attr_name == 'DisplayName') {
+      continue;
+    }
     foreach ($app_attributes as $result_attr_name => $result_attr_value) {
       if ($result_attr_name == $attr_name) {
         $items[$attr_display] = $result_attr_value;

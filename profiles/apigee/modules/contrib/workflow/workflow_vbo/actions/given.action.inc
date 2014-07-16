@@ -1,7 +1,8 @@
 <?php
 
 /**
- * @file VBO action to modify entity values (properties and fields).
+ * @file
+ * VBO action to modify entity values (properties and fields).
  */
 
 /**
@@ -27,7 +28,7 @@ function workflow_vbo_given_state_action($entity, array $context) {
   global $user;
 
   $entity_type = $context['entity_type'];
-  if (!$entity_id = entity_id($entity_type, $entity)) {
+  if (!entity_id($entity_type, $entity)) {
     watchdog('workflow_vbo', 'Unable to get current entity ID - entity is not yet saved.');
     return;
   }
@@ -42,7 +43,7 @@ function workflow_vbo_given_state_action($entity, array $context) {
   $new_sid = $form_state['input']['workflow_sid'];
   $comment_string = $form_state['input']['workflow_comment'];
   $comment = t($comment_string, array(
-      '%title' => check_plain(entity_label($entity_type, $entity)),
+      '%title' => entity_label($entity_type, $entity), // "@" and "%" will automatically run check_plain().
       '%state' => workflow_get_sid_label($new_sid),
       '%user' => theme('username', array('account' => $user)),
     )
@@ -62,7 +63,6 @@ function workflow_vbo_given_state_action($entity, array $context) {
  */
 function workflow_vbo_given_state_action_form(array $context) {
   $form = array();
-  $options = array();
 
   // @todo: There's a problem here: we do not know the node types of the
   // selected items, and we do not know the field_names, so we have no clue
@@ -123,7 +123,7 @@ function workflow_vbo_given_state_action_form(array $context) {
     $instance['widget']['settings']['submit_function'] = '';
     if (!$field['id']) {
       // This is a Workflow Node workflow. Set widget options as in v7.x-1.2
-      $field['settings']['widget']['comment'] = isset($workflow->options['comment_log_tab']) ? $workflow->options['comment_log_tab'] : 1; // vs. ['comment_log_node']; 
+      $field['settings']['widget']['comment'] = isset($workflow->options['comment_log_tab']) ? $workflow->options['comment_log_tab'] : 1; // vs. ['comment_log_node'];
       $field['settings']['widget']['current_status'] = TRUE;
       // As stated above, the options list is probably very long, so let's use select list.
       $field['settings']['widget']['options'] = 'select';
@@ -163,8 +163,7 @@ function workflow_vbo_given_state_action_form(array $context) {
 }
 
 /**
- * Submit handler for "Change workflow state of post to new state" action
- * configuration form.
+ * Submit handler for "Change workflow state of post to new state" action configuration form.
  *
  * @see workflow_vbo_given_state_action_form()
  */

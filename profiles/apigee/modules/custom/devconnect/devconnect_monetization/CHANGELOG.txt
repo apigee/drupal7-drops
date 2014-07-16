@@ -1,0 +1,5 @@
+devconnect_monetization 7.x-4.26
+================================
+DEVSOL-251: Not selecting a start date for a plan will throw Fatal error.
+DEVSOL-302: Dev Portal Monetization is no longer dependent on the "Payment via WorldPay" (commerce_worldpay_bg) module.
+DEVSOL-296: New Devconnect monetization monitoring module to monitor critical issues in monetization.

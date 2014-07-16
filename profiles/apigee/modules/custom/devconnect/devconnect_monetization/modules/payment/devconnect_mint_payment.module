@@ -3,6 +3,7 @@
 use Apigee\Mint\MonetizationPackage;
 use Apigee\Mint\RatePlan;
 use Apigee\Mint\Organization as Organization;
+use Apigee\Exceptions\ResponseException;
 
 /**
  *
@@ -176,9 +177,7 @@ function devconnect_mint_payment_submit_form_submit($payment_method, $pane_form,
  * @return array
  */
 function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $payment_method, $address = NULL) {
-
-  $config = devconnect_monetization_default_org_config();
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+  global $user;
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $currency_code = strtolower($order_wrapper->commerce_order_total->currency_code->value());
 
@@ -211,8 +210,21 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   $payload = devconnect_mint_payment_build_address_payload($address);
 
   $developer = devconnect_monetization_developer_load();
-  $payment = $developer->createPayment($parameters, $payload);
-  if (!$payment->getSuccess()) {
+  try {
+    $payment = $developer->createPayment($parameters, $payload);
+  }
+  catch (ResponseException $exception) {
+    // If this is a white listing error at WorldPay, throw error with
+    // 'emergency' severity so that monetization monitor picks up error.
+    $response = json_decode($exception->getMessage());
+    watchdog('devconnect_mint_payment', "Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription), WATCHDOG_EMERGENCY);
+
+    drupal_set_message('The WorldPay payment gateway is currently not available. Please select a different payment system or try again later.', 'error');
+    // Send the customer to the previous step of the checkout process, Worldpay is not working.
+    commerce_payment_redirect_pane_previous_page($order, t("Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription)));
+    drupal_goto(commerce_checkout_order_uri($order));
+  }
+  if (is_object($payment) && !$payment->getSuccess()) {
     drupal_set_message('Could not create payment order. If problem persists please contact your administrator.', 'warning');
     watchdog('devconnect_mint_payment', "Could not create payment order: @message", array('@message' => '<pre>' . print_r($payment, TRUE) . '</pre>'), WATCHDOG_WARNING);
     drupal_goto('<front>');

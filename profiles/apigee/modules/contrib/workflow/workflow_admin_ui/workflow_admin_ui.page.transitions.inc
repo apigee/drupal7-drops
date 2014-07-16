@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Provides an Admin UI page for the Workflow Transitions.
@@ -19,10 +20,10 @@
  *   means the transition from state 18 to state 20 can be executed by
  *   the node author or a user in role 2. The $transitions array should
  *   contain ALL transitions for the workflow.
+ * @param Workflow $workflow
+ *   The Workflow object.
  *
- * @param $wid
- *   The workflow object.
- * @return
+ * @return array
  *   HTML form and permissions table.
  */
 function workflow_admin_ui_transitions_form($form, &$form_state, $workflow, $op) {
@@ -43,18 +44,16 @@ function workflow_admin_ui_transitions_form($form, &$form_state, $workflow, $op)
 /**
  * Form builder. Build the grid of transitions for defining a workflow.
  *
- * @param int $wid
- *   The workflow object.
- *
- * Some special situationa exist: 
+ * Some special situations exist:
  * - it is not allowed to go to the '(creation)' state.
  * - all roles are permitted to use the 'stay on this state' transition.
  *   So, this is hidden from the user.
+ *
+ * @param Workflow $workflow
+ *   The Workflow object.
  */
 function _workflow_admin_ui_transition_grid_form($form, &$form_state, $workflow) {
   $form = array('#tree' => TRUE);
-
-  $roles = workflow_get_roles();
 
   $states = $workflow->getStates($all = 'CREATION');
   if (!$states) {
@@ -65,30 +64,29 @@ function _workflow_admin_ui_transition_grid_form($form, &$form_state, $workflow)
     return $form;
   }
 
+  $roles = workflow_get_roles();
   foreach ($states as $state1) {
     $from = $state1->sid;
     foreach ($states as $state2) {
-      if ($state2->isCreationState()) {
-        // Don't allow transition TO (creation).
-        continue;
-      }
+      // Don't allow transition TO '(creation)'.
+      if (!$state2->isCreationState()) {
+        $to = $state2->sid;
+        $stay_on_this_state = ($to == $from);
 
-      $to = $state2->sid;
-      $stay_on_this_state = $to == $from;
-      // Generate checkboxes for each transition.
-      foreach ($roles as $rid => $role_name) {
-        $checked = $stay_on_this_state;
-        $config_transitions = $workflow->getTransitionsBySidTargetSid($from, $to);
-        $config_transition = reset($config_transitions);
-        if ($config_transition) {
-          $checked |= $config_transition->isAllowed($rid);
+        // Generate checkboxes for each transition.
+        foreach ($roles as $rid => $role_name) {
+          $checked = $stay_on_this_state;
+          $config_transitions = $workflow->getTransitionsBySidTargetSid($from, $to);
+          if ($config_transition = reset($config_transitions)) {
+            $checked |= $config_transition->isAllowed(array($rid));
+          }
+          $form[$from][$to][$rid] = array(
+            '#type' => $stay_on_this_state ? 'hidden' : 'checkbox',
+            '#title' => check_plain($role_name),
+            '#default_value' => $checked,
+            '#disabled' => $stay_on_this_state,
+          );
         }
-        $form[$from][$to][$rid] = array(
-          '#type' => $stay_on_this_state ? 'hidden' : 'checkbox',
-          '#title' => check_plain($role_name),
-          '#default_value' => $checked,
-          '#disabled' => $stay_on_this_state,
-        );
       }
     }
   }
@@ -105,10 +103,9 @@ function theme_workflow_admin_ui_transitions_form($variables) {
   $form = $variables['form'];
 
   $workflow = $form['workflow']['#value'];
-  $name = $workflow->getName();
 
   if ($workflow) {
-    drupal_set_title(t('Edit workflow %name transitions', array('%name' => $name)), PASS_THROUGH);
+    drupal_set_title(t('Edit workflow %name transitions', array('%name' => $workflow->getName())), PASS_THROUGH);
 
     $states = $workflow->getStates($all = 'CREATION');
     if ($states) {

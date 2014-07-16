@@ -58,7 +58,7 @@ function apigee_responsive_preprocess_html(&$vars) {
   drupal_add_css("body header.navbar.navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar.navbar-nav > .open > a:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar .nav > li > a {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body header.navbar .nav > li > a:hover, body ul.menu li.active-trail a {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body header.navbar .nav > li > a:hover {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar-inverse .navbar-collapse, .navbar-inverse .navbar-form, .navbar-inverse .navbar-toggle,
   .navbar-default .navbar-collapse, .navbar-default .navbar-form, .navbar-default .navbar-toggle, header.navbar.navbar-collapse,
   header.navbar.navbar-form, header.navbar.navbar-toggle {border-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -74,6 +74,12 @@ function apigee_responsive_preprocess_html(&$vars) {
   drupal_add_css("body .footer .footer-inner {background-color: $footer_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .footer .footer-inner .navbar ul.footer-links > li > a {color: $footer_link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .footer .footer-inner .navbar ul.footer-links > li > a:hover {color: $footer_link_hover_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+
+  // Main menu expanded drop down colors.
+  drupal_add_css(".navbar-nav > li > span {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li.expanded.active {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li > span > span.caret {border-bottom-color: $header_txt_color; border-top-color: $header_txt_color; color: $header_txt_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+
 
   switch (theme_get_setting('logo_size')) {
     case 'big':

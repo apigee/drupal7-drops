@@ -1,3 +1,66 @@
+body #index_content h1,
+body #index_content h2,
+body #index_content h3,
+body #index_content h4,
+body #index_content h5,
+body #index_content h6,
+body #method_content h1,
+body #method_content h2,
+body #method_content h3,
+body #method_content h4,
+body #method_content h5,
+body #method_content h6,
+body #method_content .resource_description,
+body #method_content .request_response_tabs a.selected,
+body #method_content .operation_container .authentication .title,
+body #method_content .method_table .method_title .method_data,
+body #method_content .method_table .method_details .title span:first-child,
+body #index_content .method_table .method_title .method_data,
+body #index_content .method_table .method_details .title span:first-child,
+body #method_content .method_table .method_details .title span.required,
+body #method_content button#send_request,
+body #method_content button#send_request span,
+body #index_content .method_table .method_details .title span.required {
+    font-family: Helvetica,Arial,sans-serif;
+}
+
+body #index_content h1,
+body #index_content h2,
+body #index_content h3,
+body #index_content h4,
+body #index_content h5,
+body #index_content h6,
+body #method_content h1,
+body #method_content h2,
+body #method_content h3,
+body #method_content h4,
+body #method_content h5,
+body #method_content h6 {
+    width:auto;
+    margin-bottom:10px;
+}
+
+body #method_container,
+body #index_container {
+    border: 0 none;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    width: auto;
+}
+
+body #method_content p.title {
+    margin-top:0px;
+}
+
+body #method_content p {
+    margin-top:15px;
+}
+
+body #method_content table p {
+    margin-top:0px;
+}
+
 .node-teaser .method_details,
 .view .method_details {
     border-bottom: 1px solid #CACACA;
@@ -367,4 +430,16 @@ table.table td p.data {
         border-left: 1px dashed #E0E0E0;
         border-right: 1px dashed #E0E0E0;
     }
+}
+
+/**
+Adding suggestion from Ajay
+*/
+
+body.smartdocs #method_container *:before,
+body.smartdocs #method_container *:after {
+    box-sizing: border-box;
+}
+body.smartdocs #method_container * {
+    box-sizing: border-box;
 }

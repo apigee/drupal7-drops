@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- *   Provides node access permissions based on workflow states.
+ * Provides node access permissions based on workflow states.
  */
 
 /**

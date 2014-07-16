@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Rules integration for the Workflow module with Node API
+ * Rules integration for the Workflow module with Node API.
  */
 
 /**
@@ -120,6 +120,7 @@ function _workflownode_rules_action_info() {
         'description' => t('The node to set the current workflow state of.'),
         // 'save' => TRUE,
       ),
+/*
       //'field' => array(
       //  'type' => 'text', // WORKFLOWFIELD_PROPERTY_TYPE,
       //  'label' => t('Workflow field to set'),
@@ -127,6 +128,7 @@ function _workflownode_rules_action_info() {
       //  'restriction' => 'selector',
       //  'allow null' => TRUE,
       //),
+ */
       'workflow_state' => array(
         'type' => 'list<integer>',
         'label' => t('New workflow state'),

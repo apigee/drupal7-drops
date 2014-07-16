@@ -6,22 +6,38 @@ description = "We ♥ APIs"
 exclusive = "1"
 core = "7.x"
 
+; Modules no longer listed as dependencies in 14.08:
+; acl
+; apigee_sso - No longer functions
+; bean - "soft" dependency of uuid_features which we do not enable by default (see below)
+; content_access
+; contextual - has no 7.x release
+; dashboard
+; devconnect_docgen - enabled manually when appropriate during install
+; devel, devel_generate
+; diff
+; ftools
+; gravatar
+; logintoboggan
+; markdown
+; metatag
+; openid - all modules that depend on this have been disabled
+; rest_server
+; remote_stream_wrapper
+
 ; ----------
 ; Dependencies
 ; ----------
-dependencies[] = acl
 dependencies[] = admin_menu
 dependencies[] = admin_menu_toolbar
-dependencies[] = apigee_sso
-dependencies[] = bean
+dependencies[] = advanced_forum
+dependencies[] = apigee_account
 dependencies[] = block
 dependencies[] = bootstrap_modal_forms
 dependencies[] = ckeditor
 dependencies[] = ckeditor_bootstrap
 dependencies[] = comment
-dependencies[] = content_access
 dependencies[] = context
-dependencies[] = contextual
 dependencies[] = context_ui
 dependencies[] = ctools
 dependencies[] = dashboard
@@ -36,14 +52,10 @@ dependencies[] = devconnect_homepage
 dependencies[] = devconnect_app_attributes
 dependencies[] = devconnect_content_creation_menu
 dependencies[] = devconnect_default_structure
-;dependencies[] = devconnect_docgen
-;dependencies[] = devel
-;dependencies[] = devel_generate
-dependencies[] = diff
 dependencies[] = entity
 dependencies[] = entity_token
+dependencies[] = environment_indicator
 dependencies[] = features
-dependencies[] = ftools
 dependencies[] = field
 dependencies[] = field_group
 dependencies[] = field_sql_storage
@@ -53,8 +65,6 @@ dependencies[] = file_entity
 dependencies[] = filter
 dependencies[] = flood_control
 dependencies[] = forum
-dependencies[] = advanced_forum
-dependencies[] = gravatar
 dependencies[] = help
 dependencies[] = image
 dependencies[] = jquery_colorpicker
@@ -62,25 +72,21 @@ dependencies[] = jquery_update
 dependencies[] = libraries
 dependencies[] = link
 dependencies[] = list
-dependencies[] = markdown
+dependencies[] = logintoboggan
 dependencies[] = me
 dependencies[] = media
 dependencies[] = media_internet
 dependencies[] = media_youtube
 dependencies[] = menu
 dependencies[] = menu_attributes
-dependencies[] = metatag
 dependencies[] = module_filter
 dependencies[] = node
 dependencies[] = number
-dependencies[] = openid
 dependencies[] = options
 dependencies[] = path
 dependencies[] = pathauto
 dependencies[] = rdf
 dependencies[] = redirect
-dependencies[] = rest_server
-dependencies[] = remote_stream_wrapper
 dependencies[] = search
 dependencies[] = system
 dependencies[] = taxonomy
@@ -93,4 +99,3 @@ dependencies[] = views_ui
 dependencies[] = admin_views
 dependencies[] = webform
 
-dependencies[] = apigee_account

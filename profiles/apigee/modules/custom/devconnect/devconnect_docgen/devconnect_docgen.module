@@ -8,29 +8,29 @@
  * @version: v1.0
  */
 
-define('SMARTDOCS_CSS_B2', 'https://smartdocs.apigee.com/1/static/css/main.css
-https://smartdocs.apigee.com/1/static/css/codemirror.css
-https://smartdocs.apigee.com/1/static/css/prism.css');
+define('SMARTDOCS_CSS_B2', 'https://smartdocs.apigee.com/3/static/css/main.css
+https://smartdocs.apigee.com/3/static/css/codemirror.css
+https://smartdocs.apigee.com/3/static/css/prism.css');
 
-define('SMARTDOCS_JS_B2', "https://smartdocs.apigee.com/1/static/js/codemirror.js
-https://smartdocs.apigee.com/1/static/js/codemirror_javascript.js
-https://smartdocs.apigee.com/1/static/js/codemirror_xml.js
-https://smartdocs.apigee.com/1/static/js/prism.js
-https://smartdocs.apigee.com/1/static/js/base64_min.js
-https://smartdocs.apigee.com/1/static/js/model.js
-https://smartdocs.apigee.com/1/static/js/controller.js");
+define('SMARTDOCS_JS_B2', "https://smartdocs.apigee.com/3/static/js/codemirror.js
+https://smartdocs.apigee.com/3/static/js/codemirror_javascript.js
+https://smartdocs.apigee.com/3/static/js/codemirror_xml.js
+https://smartdocs.apigee.com/3/static/js/prism.js
+https://smartdocs.apigee.com/3/static/js/base64_min.js
+https://smartdocs.apigee.com/3/static/js/model.js
+https://smartdocs.apigee.com/3/static/js/controller.js");
 
-define('SMARTDOCS_CSS_B3', 'https://smartdocs.apigee.com/1/static/css/main.css
-https://smartdocs.apigee.com/1/static/css/codemirror.css
-https://smartdocs.apigee.com/1/static/css/prism.css');
+define('SMARTDOCS_CSS_B3', 'https://smartdocs.apigee.com/3/static/css/main.css
+https://smartdocs.apigee.com/3/static/css/codemirror.css
+https://smartdocs.apigee.com/3/static/css/prism.css');
 
-define('SMARTDOCS_JS_B3', "https://smartdocs.apigee.com/1/static/js/codemirror.js
-https://smartdocs.apigee.com/1/static/js/codemirror_javascript.js
-https://smartdocs.apigee.com/1/static/js/codemirror_xml.js
-https://smartdocs.apigee.com/1/static/js/prism.js
-https://smartdocs.apigee.com/1/static/js/base64_min.js
-https://smartdocs.apigee.com/1/static/js/model.js
-https://smartdocs.apigee.com/1/static/js/controller.js");
+define('SMARTDOCS_JS_B3', "https://smartdocs.apigee.com/3/static/js/codemirror.js
+https://smartdocs.apigee.com/3/static/js/codemirror_javascript.js
+https://smartdocs.apigee.com/3/static/js/codemirror_xml.js
+https://smartdocs.apigee.com/3/static/js/prism.js
+https://smartdocs.apigee.com/3/static/js/base64_min.js
+https://smartdocs.apigee.com/3/static/js/model.js
+https://smartdocs.apigee.com/3/static/js/controller.js");
 
 module_load_include('inc', 'devconnect_docgen', 'includes/devconnect_docgen.node_alter');
 
@@ -588,7 +588,8 @@ function devconnect_docgen_content_confirm_submit($form, &$form_state) {
             ($update) ? node_type_delete(_devconnect_docgen_model_name($model)) : null;
             $vocabs = array( 'tags', 'auth_schemes', 'methods', 'revisions', 'types');
             foreach ($vocabs as $machine) {
-              if ($vid = taxonomy_vocabulary_machine_name_load(_devconnect_docgen_model_name($model) . '_' . $machine)->vid) {
+              $tax_machine = taxonomy_vocabulary_machine_name_load(_devconnect_docgen_model_name($model) . '_' . $machine);
+              if (is_object($tax_machine) && $vid = $tax_machine->vid) {
                 foreach (taxonomy_get_tree($vid) as $term) {
                   taxonomy_term_delete($term->tid);
                 }
@@ -1333,11 +1334,18 @@ function _devconnect_docgen_render_operation_template($apiId, $ver = NULL) {
  * @param $node
  */
 function devconnect_docgen_node_delete($node) {
-  _devconnect_docgen_sync_nodes($node->nid, NULL, $node->type, 'delete');
-  drupal_set_message(t('The node %title has also been unsynced from the %type model.', array(
-    '%title' => $node->title,
-    '%type' => $node->type,
-  )), 'warning');
+  $nid = db_query('SELECT nid FROM {smartdocs} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+  if (!empty($nid)) {
+    $update = db_update('smartdocs')->fields(array('nid' => null))
+      ->condition('nid', $node->nid)
+      ->execute();
+    if ($update) {
+      drupal_set_message(t('The node %title has also been unsynced from the %type model.', array(
+        '%title' => $node->title,
+        '%type' => $node->type,
+      )), 'warning');
+    }
+  }
 }
 
 /**
@@ -1708,8 +1716,12 @@ function devconnect_docgen_import_content_validate($form, &$form_state) {
   if (isset($form_state['input'][$model . '_oauth_20_webserver_enable'])) {
     $correct = TRUE;
   }
-  if (!$correct && (bool)$form_state['input'][$model . '_oauth_20_webserver_enable']) {
-    form_set_error('model', 'There was an error in loading the correct model.  Please reselect ' . $model . ' to update the form.');
+  if (!$correct) {
+    if (isset($form_state['input'][$model . '_oauth_20_webserver_enable'])) {
+      if ((bool)$form_state['input'][$model . '_oauth_20_webserver_enable']) {
+        form_set_error('model', 'There was an error in loading the correct model.  Please reselect ' . $model . ' to update the form.');
+      }
+    }
   }
 }
 

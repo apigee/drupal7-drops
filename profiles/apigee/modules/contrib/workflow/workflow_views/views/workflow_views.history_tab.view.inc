@@ -3,13 +3,12 @@
  * @file
  * A view that overrides the programmed 'workflow history tab'.
  *
- * Usage: 
+ * Usage:
  * - enable the view. it contains a Page and an Attachment.
  * -- the Page shows the current Node.
  * -- the Attachment shows the workflow history (transitions) beneath it.
  * - Go to the content type administration page. If the content type has a
  *   workflow field attached to it, it has a 'Workflow History' view mode.
- * 
  *
  * Modifications:
  * - modify the Contextual filter and the Path to make it work for Taxonomy terms, etc.

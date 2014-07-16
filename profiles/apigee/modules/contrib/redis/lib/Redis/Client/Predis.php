@@ -66,13 +66,18 @@ class Redis_Client_Predis implements Redis_Client_Interface {
     }
   }
 
-  public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL) {
+  public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL, $socket = NULL) {
     $connectionInfo = array(
       'password' => $password,
       'host'     => $host,
       'port'     => $port,
       'database' => $base
     );
+
+    if (!empty($socket)) {
+      $connectionInfo['scheme'] = 'unix';
+      $connectionInfo['path'] = $socket;
+    }
 
     foreach ($connectionInfo as $key => $value) {
       if (!isset($value)) {

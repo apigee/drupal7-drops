@@ -136,6 +136,10 @@ function uuid_node_features_revert($module) {
  */
 function uuid_node_features_rebuild($module) {
   $return = TRUE;
+
+  variable_set('menu_rebuild_needed', FALSE);
+  lock_acquire('menu_rebuild');
+
   // Import the terms first.
   uuid_term_features_rebuild($module);
 
@@ -218,5 +222,7 @@ function uuid_node_features_rebuild_nodes($nodes, $module, $max_nesting = 5, $ne
   if (!empty($second_run_nodes)) {
     return uuid_node_features_rebuild_nodes($second_run_nodes, $module, $max_nesting, ++$nesting_level);
   }
+  lock_release('menu_rebuild');
+  variable_set('menu_rebuild_needed', TRUE);
   return TRUE;
 }

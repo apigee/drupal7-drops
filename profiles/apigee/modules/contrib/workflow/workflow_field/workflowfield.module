@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Support workflows made up of arbitrary states.
+ * Supports workflows made up of arbitrary states.
  */
 
 // The name of the Workfow form and function, to be used in various callbacks.
@@ -10,3 +10,15 @@ define('WORKFLOWFIELD_FORM', 'workflowfield_field_widget_form');
 module_load_include('inc', 'workflowfield', 'workflowfield.field');
 module_load_include('inc', 'workflowfield', 'workflowfield.widget');
 module_load_include('inc', 'workflowfield', 'workflowfield.formatter');
+
+/**
+ * Implements hook_help().
+ */
+function workflowfield_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/workflow/workflow':
+      return t('This page allows you to maintain Workflows. Once a workflow is
+        created, you can maintain your entity type and add a Field of type
+        \'Workflow\'.');
+  }
+}

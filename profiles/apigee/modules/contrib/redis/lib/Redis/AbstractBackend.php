@@ -105,6 +105,17 @@ abstract class Redis_AbstractBackend
     }
 
     /**
+     * Get redis client
+     *
+     * @return Redis|Predis\Client
+     */
+    public function getClient()
+    {
+        // Ugly stateless and static
+        return Redis_Client::getClient();
+    }
+
+    /**
      * Set prefix
      *
      * @param string $prefix

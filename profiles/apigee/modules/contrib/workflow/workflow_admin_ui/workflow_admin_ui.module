@@ -1,7 +1,9 @@
 <?php
+
 /**
  * @file
  * Provides administrative UI for workflow.
+ *
  * Why it's own module? Lower code footprint and better performance.
  * Additional credit to gcassie ( http://drupal.org/user/80260 ) for
  * the initial push to split UI out of core workflow.
@@ -9,11 +11,10 @@
  */
 
 // Caveat: Several hooks have moved into the EntityWorkflowUIController class.
-
 define('WORKFLOW_ADMIN_UI_ARROW', '&#8594;');
 
 /**
- * Implements hook_entity_info_alter.
+ * Implements hook_entity_info_alter().
  *
  * Adds Admin UI to entities, using EntityWorkflowUIController.
  */
@@ -23,7 +24,7 @@ function workflow_admin_ui_entity_info_alter(&$entity_info) {
     'admin ui' => array(
       'path' => 'admin/config/workflow/workflow',
       // Do not add 'file', since each page has its own file.
-      //'file' => 'workflow_admin_ui/workflow_admin_ui.pages.inc',
+      // 'file' => 'workflow_admin_ui/workflow_admin_ui.pages.inc',
       'controller class' => 'EntityWorkflowUIController',
       'menu wildcard' => '%workflow',
     ),
@@ -35,6 +36,19 @@ function workflow_admin_ui_entity_info_alter(&$entity_info) {
  */
 function workflow_admin_ui_help($path, $arg) {
   switch ($path) {
+
+    case 'admin/modules':
+    case 'admin/config/workflow/workflow':
+    case 'admin/config/workflow/workflow/manage/%/states':
+      if (module_exists('workflownode') && module_exists('workflowfield')) {
+        $m = t('Do not enable Workfow Node and Workflow Field submodules at the
+          same time (unless you are in a migration phase). Visit the <a href=
+          "@url">modules</a> page.', array('@url' => url('admin/modules',
+          array('fragment' => 'Workflow'))));
+        drupal_set_message($m, 'error');
+      }
+      return;
+
     case 'admin/config/workflow/workflow/add':
       return t('To get started, provide a name for your workflow. This name
         will be used as a label when the workflow status is shown during node
@@ -61,8 +75,8 @@ function workflow_admin_ui_help($path, $arg) {
       . '<br /><i>'
       . t("If not all roles are in the list, please review which roles may
         'participate in workflows' <a href='!url'> on the Permissions page</a>.",
-        array('!url' => url('admin/people/permissions', array('fragment' =>
-        'module-workflow'))));
+        array('!url' => url('admin/people/permissions', array(
+          'fragment' => 'module-workflow'))));
 
     case 'admin/config/workflow/workflow/manage/%/labels':
       return t('You can add labels to transitions if you don\'t like the
@@ -95,6 +109,7 @@ function workflow_form($form, &$form_state, $workflow, $op, $entity_type) {
     case 'edit':
     case 'clone':
       return workflow_admin_ui_edit_form($form, $form_state, $workflow, $op);
+
     case 'view':
     case 'delete':
     default:
@@ -104,27 +119,22 @@ function workflow_form($form, &$form_state, $workflow, $op, $entity_type) {
 /**
  * Determines whether the given user has access to a Workflow entity.
  *
- * @param $op
+ * @param string $op
  *   The operation being performed. One of 'view', 'update', 'create' or 'delete'.
- * @param $entity
+ * @param object $entity
  *   Entity to check access for. If no entity is given, it will be
  *   determined whether access is allowed for all entities of the given type.
- * @param $account
+ * @param object $account
  *   The user to check for. Leave it to NULL to check for the global user.
- * @param $entity_type
+ * @param string $entity_type
  *   The entity type.
  *
- * @return
+ * @return bool
  *   Whether access is allowed or not. If the entity type does not specify any
  *   access information, NULL is returned.
  */
 function workflow_access($op, $entity, $account, $entity_type) {
-  global $user;
-
-  if (!isset($account)) {
-    $account = $user;
-  }
-  return user_access('administer workflows', $account);
+  return user_access('administer workflow', $account);
 }
 
 /**
@@ -141,20 +151,17 @@ function workflow_admin_ui_theme() {
 /**
  * Helper function. Create breadcrumbs.
  *
- * @param $workflow
- *  The workflow object.
- * @param $extra (optional)
- *  The link to the extra item to add to the end of the breadcrumbs.
- *
- * @return
- *   none.
+ * @param object $workflow
+ *   The workflow object.
+ * @param mixed $extra
+ *   Optional. The link to the extra item to add to the end of the breadcrumbs.
  */
 function workflow_admin_ui_breadcrumbs($workflow, $extra = NULL) {
   $bc = array(l(t('Home'), '<front>'));
   $bc[] = l(t('Configuration'), 'admin/config');
   $bc[] = l(t('Workflow'), 'admin/config/workflow');
   $bc[] = l(t('Workflow'), 'admin/config/workflow/workflow');
-  if ($workflow) { 
+  if ($workflow) {
     $bc[] = l($workflow->label(), "admin/config/workflow/workflow/$workflow->wid");
   }
   if ($extra) {

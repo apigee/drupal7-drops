@@ -142,6 +142,15 @@ greatly appreciated).
 Common settings
 ===============
 
+Connect throught a UNIX socket
+------------------------------
+
+All you have to do is specify this line:
+
+  $conf['redis_client_socket'] = '/some/path/redis.sock';
+
+Both drivers support it.
+
 Connect to a remote host
 ------------------------
 
@@ -336,6 +345,36 @@ be faster than the default SQL based one when using both servers on the same box
 
 Both backends, thanks to the Redis WATCH, MULTI and EXEC commands provides a
 real race condition free mutexes if you use Redis >= 2.1.0.
+
+Queue backend
+-------------
+
+This module provides an experimental queue backend. It is for now implemented
+only using the PhpRedis driver, any attempt to use it using Predis will result
+in runtime errors.
+
+If you want to change the queue driver system wide, set this into your
+setting.php file:
+
+    $conf['queue_default_class'] = 'Redis_Queue';
+    $conf['queue_default_reliable_class'] = 'Redis_Queue';
+
+Note that some queue implementations such as the batch queue are hardcoded
+within Drupal and will always use a database dependent implementation.
+
+If you need to proceed with finer tuning, you can set a per-queue class in
+such way:
+
+    $conf['queue_class_NAME'] = 'Redis_Queue';
+
+Where NAME is the arbitrary module given queue name, used as first parameter
+for the method DrupalQueue::get().
+
+THIS IS STILL VERY EXPERIMENTAL. The queue should work without any problems
+except it does not implement the item lease time correctly, this means that
+items that are too long to process won't be released back and forth but will
+block the thread processing it instead. This is the only side effect I am
+aware of at the current time.
 
 Testing
 =======

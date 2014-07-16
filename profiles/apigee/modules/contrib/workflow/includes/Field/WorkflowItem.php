@@ -19,7 +19,7 @@
  * )
  */
 class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase implements PrepareCacheInterface {
-  /*
+  /**
    * Function, that gets replaced by the 'annotations' in D8. (@see comments above this class)
    */
   public static function getInfo() {
@@ -47,15 +47,18 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
             'roles' => array(),
           ),
         ),
+        'instance_settings' => array(),
         'default_widget' => 'workflow',
         'default_formatter' => 'list_default',
-        'property_type' => WORKFLOWFIELD_PROPERTY_TYPE, // Used for Entity API / Rules integration.
+        // Properties are introduced in Entity API and used for Rules integration.
+        'property_type' => WORKFLOWFIELD_PROPERTY_TYPE,
+        'property_callbacks' => array('workflowfield_property_info_callback'),
       ),
     );
   }
 
-  /*
-   * Implements hook_field_settings_form() -> ConfigFieldItemInterface::settingsForm()
+  /**
+   * Implements hook_field_settings_form() -> ConfigFieldItemInterface::settingsForm().
    */
   public function settingsForm(array $form, array &$form_state, $has_data) {
     $field_info = self::getInfo();
@@ -63,21 +66,22 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
     $settings += $field_info['workflow']['settings'];
     $settings['widget'] += $field_info['workflow']['settings']['widget'];
 
-    $wid = $settings['wid'];
-
     // Create list of all Workflow types. Include an initial empty value.
     // Validate each workflow, and generate a message if not complete.
     $workflows = array();
     $workflows[''] = t('- Select a value -');
-    foreach (workflow_load_multiple() as $workflow) {
-      if ($workflow->validate()) {
-        $workflows[$workflow->wid] = $workflow->name;
+    foreach (workflow_load_multiple() as $wid => $workflow) {
+      if ($workflow->isValid()) {
+        $workflows[$wid] = check_plain($workflow->label()); // No t() on settings page.
       }
     }
+
+    // Set message, if no 'validated' workflows exist.
     if (count($workflows) == 1) {
       drupal_set_message(
         t('You must create at least one workflow before content can be
-          assigned to a workflow.'));
+          assigned to a workflow.')
+      );
     }
 
     // The allowed_values_functions is used in the formatter from list.module.
@@ -86,6 +90,8 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
       '#value' => $settings['allowed_values_function'], // = 'workflowfield_allowed_values',
     );
 
+    // $field['settings']['wid'] can be numeric or named, or empty.
+    $wid = isset($settings['wid']) ? $settings['wid'] : '';
     // Let the user choose between the available workflow types.
     $element['wid'] = array(
       '#type' => 'select',
@@ -229,8 +235,9 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
   // }
 
   /**
-   * Do not implement hook_field_presave(),
-   * since $nid is needed, but not yet known at this moment.
+   * Does NOT not implement hook_field_presave().
+   *
+   * Since $nid is needed, but not yet known at this moment.
    * hook_field_presave() -> FieldItemInterface::preSave()
    */
   // function workflowfield_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
@@ -258,8 +265,9 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
 
     // @todo: apparently, in course of time, this is not used anymore. Restore or remove.
     $field_name = $this->field['field_name'];
-    $wid = $this->field['settings']['wid'];
-    $new_state = workflow_state_load_single($sid = _workflow_get_sid_by_items($items), $wid);
+    // $field['settings']['wid'] can be numeric or named.
+    $workflow = workflow_load_single($this->field['settings']['wid']);
+    $wid = $workflow->wid;
 
     // @todo D8: remove below lines.
     $entity = $this->entity;
@@ -285,8 +293,8 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
       $widget->submit($form, $form_state, $items); // $items is a proprietary D7 parameter.
 
       // Remember: we are on a comment form, so the comment is saved automatically, but the referenced entity is not.
-      // @todo: probably we'd like to do this form within the Widget, but that does not know
-      //        wether we are on a comment or a node form.
+      // @todo: probably we'd like to do this form within the Widget, but
+      // $todo: that does not know wether we are on a comment or a node form.
       //
       // Widget::submit() returns the new value in a 'sane' state.
       // Save the referenced entity, but only is transition succeeded, and is not scheduled.
@@ -319,7 +327,7 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
   }
 
   /**
-   * Implements hook_field_delete() -> FieldItemInterface::delete()
+   * Implements hook_field_delete() -> FieldItemInterface::delete().
    */
   public function delete($items) {
     global $user;
@@ -331,7 +339,7 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
 
     // Delete the record in {workflow_node} - not for Workflow Field.
     // Use a one-liner for better code analysis when grepping on old code.
-    (!$field_name) ? workflow_delete_workflow_node_by_nid($entity_id) : NULL ;
+    (!$field_name) ? workflow_delete_workflow_node_by_nid($entity_id) : NULL;
 
     // Add a history record in {workflow_node_history}.
     // @see drupal.org/node/2165349, comment by Bastlynn:
@@ -341,7 +349,7 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
     // *absolutely* required. Think banking and/or particularly strict
     // retention policies for legal reasons.
     //
-    // However, a deleted nid may be re-used under certain circumstances: 
+    // However, a deleted nid may be re-used under certain circumstances:
     // e.g., working with InnoDB or after restart the DB server.
     // This may cause that old history is associated with a new node.
     $old_sid = _workflow_get_sid_by_items($items);
@@ -357,16 +365,15 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
     }
   }
 
-  /*
+  /**
    * Helper functions for the Field Settings page.
+   *
    * Generates a string representation of an array of 'allowed values'.
    * This is a copy from list.module's list_allowed_values_string().
+   * The string format is suitable for edition in a textarea.
    *
-   * This string format is suitable for edition in a textarea.
-   *
-   * @param $values
-   *   An array of values, where array keys are values and array values are
-   *   labels.
+   * @param int $wid
+   *   The Workflow Id.
    *
    * @return
    *   The string representation of the $values array:
@@ -386,27 +393,28 @@ class WorkflowItem extends WorkflowD7Base {// D8: extends ConfigFieldItemBase im
           $previous_wid = $state->wid;
           $lines[] = $state->name . "'s states: ";
         }
-        $label = t($state->label());
-        $states[$state->sid] = check_plain($label);
-        $lines[] = $state->sid . ' | ' . check_plain($label);
+        $label = check_plain(t($state->label()));
+        $states[$state->sid] = $label;
+        $lines[] = $state->sid . ' | ' . $label;
       }
     }
     return implode("\n", $lines);
   }
 
-  /*
+  /**
    * Helper function for list.module formatter.
    *
    * Callback function for the list module formatter.
-   * @see list_allowed_values
-   *  "The strings are not safe for output. Keys and values of the array should
-   *  "be sanitized through field_filter_xss() before being displayed.
    *
-   * @return
-   *  The array of allowed values. Keys of the array are the raw stored values
-   *  (number or text), values of the array are the display labels.
-   *  It contains all possible values, beause the result is cached,
-   *  and used for all nodes on a page.
+   * @see list_allowed_values
+   *   "The strings are not safe for output. Keys and values of the array should
+   *   "be sanitized through field_filter_xss() before being displayed.
+   *
+   * @return array
+   *   The array of allowed values. Keys of the array are the raw stored values
+   *   (number or text), values of the array are the display labels.
+   *   It contains all possible values, beause the result is cached,
+   *   and used for all nodes on a page.
    */
   public function getAllowedValues() {
     // Get all state names, including inactive states.

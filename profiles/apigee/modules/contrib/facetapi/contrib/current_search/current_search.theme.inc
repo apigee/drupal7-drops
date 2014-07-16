@@ -65,6 +65,7 @@ function theme_current_search_item_wrapper(array $variables) {
     'class' => array(
       'current-search-item',
       drupal_html_class('current-search-item-' . $element['#current_search_id']),
+      drupal_html_class('current-search-item-' . $element['#current_search_name']),
     ),
   );
   return '<div' . drupal_attributes($attributes) . '>' . $element['#children'] . '</div>';

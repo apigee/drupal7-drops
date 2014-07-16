@@ -174,14 +174,14 @@ function workflow_access_features_revert($module) {
 /**
  * Get workflow_access object like below by state id.
  *
- * array(
+ * Array(
  *   'rname' => 'authenticated user',
  *   'grant_view' => 1,
  *   'grant_update' => 0,
  *   'grant_delete' => 0,
  * );
  *
- * State id and workflow id are not returned because they are implicit for a
+ * State ID and Workflow ID are not returned because they are implicit for a
  * given sid.
  */
 function workflow_access_get_features_workflow_access_by_sid($sid) {

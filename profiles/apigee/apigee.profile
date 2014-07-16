@@ -24,11 +24,7 @@ function apigee_install_load_profile(&$install_state) {
   install_load_profile($install_state);
 
   if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
-    $install_state['profile_info']['dependencies'][] = "apachesolr";
-    $install_state['profile_info']['dependencies'][] = "apachesolr_search";
     $install_state['profile_info']['dependencies'][] = "pantheon_api";
-    $install_state['profile_info']['dependencies'][] = "pantheon_apachesolr";
-    $install_state['profile_info']['dependencies'][] = "environment_indicator";
   }
 
   // Include any dependencies that we might have missed...
@@ -45,9 +41,6 @@ function apigee_install_load_profile(&$install_state) {
   }
 
   $install_state['profile_info']['dependencies'] = array_unique($dependencies);
-  //variable_set("install_profile_modules", $install_state['profile_info']['dependencies']);
-  //$install_state['profiles'] = array("apigee");
-  //drupal_get_messages();
 }
 
 /**
@@ -79,6 +72,7 @@ function apigee_install_configure_batch(&$install_state) {
       array("apigee_install_create_audio_content", array()),
       array("apigee_install_create_video_content", array()),
       array("apigee_install_create_faq_content", array()),
+      array("apigee_install_create_environmental_indicators", array()),
       array("apigee_install_clear_caches_flush", array()),
       array("apigee_install_clear_caches_css", array()),
       array("apigee_install_clear_caches_js", array()),
@@ -164,6 +158,8 @@ function apigee_install_configure_variables(&$context) {
   variable_set('bootstrap_version', '3');
   variable_set('bootstrap_modal_forms_login', '1');
   variable_set('bootstrap_modal_forms_register', '1');
+  
+  variable_set('logintoboggan_login_with_email', 1); // Set use email for login flag
 
   $crypt_key = drupal_random_bytes(64);
   variable_set('apigee_crypt_key', $crypt_key);
@@ -1708,6 +1704,9 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
     }
     $config[$key] = $value;
   }
+  $config_copy = $config;
+  unset($config_copy['org_settings']);
+  $config['org_settings'] = array($config_copy);
   variable_set('devconnect_org_settings', $config);
   $GLOBALS['apigee_api_endpoint_configured'] = TRUE;
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
@@ -1779,7 +1778,7 @@ https://smartdocs.apigee.com/1/static/js/controller.js';
   );
   $form['apigee_api_endpoint_configured'] = array(
     '#type' => 'hidden',
-    '#value' => $GLOBALS['apigee_api_endpoint_configured'],
+    '#value' => (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? intval($GLOBALS['apigee_api_endpoint_configured']) : 0),
   );
   $form['actions'] = array(
     '#weight' => 100,
@@ -1831,8 +1830,10 @@ function apigee_generate_make_smartdocs_model_submit($form, &$form_state) {
 
 
 function apigee_generate_import_smartdocs_model_content() {
-  if ( (!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip'] == TRUE) ) {
-    return;
+  if (isset($GLOBALS['apigee_smartdocs_skip'])) {
+    if ( (!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip'] == TRUE) ) {
+      return;
+    }
   }
 
   // Enable SmartDocs Module
@@ -2208,4 +2209,48 @@ function apigee_install_create_admin_user_submit($form, &$form_state) {
   user_save($account);
 
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+/**
+ * Batch process callback to create the environmental indicators.
+ * @param array $context the batch context.
+ */
+function apigee_install_create_environmental_indicators(&$context) {
+  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+    $environment_dev = (object) array(
+      'disabled' => FALSE,
+      'api_version' => 1,
+      'machine' => 'development_environment',
+      'name' => 'Development Environment',
+      'regexurl' => 'dev-*',
+      'settings' => array(
+        'color' => '#fd7272',
+        'text_color' => '#ffffff',
+        'weight' => '',
+        'position' => 'top',
+        'fixed' => 0
+      )
+    );
+
+    ctools_export_crud_save('environment_indicator_environment', $environment_dev);
+
+    $environment_test = (object) array(
+      'disabled' => FALSE,
+      'api_version' => 1,
+      'machine' => 'testing_environment',
+      'name' => 'Testing Environment',
+      'regexurl' => 'test-*',
+      'settings' => array(
+        'color' => '#fbf479',
+        'text_color' => '#ffffff',
+        'weight' => '',
+        'position' => 'top',
+        'fixed' => 0
+      )
+    );
+
+    ctools_export_crud_save('environment_indicator_environment', $environment_test);
+
+    $context['message'] = st('Created environmental indicators');
+  }
 }

@@ -51,10 +51,10 @@ if [ ! -d ${SCRIPT_PATH}/bundle/devportal-repo ] ; then
   # Copy over Apigee RPM to bundle dir
   cp -rp ${SCRIPT_PATH}/bundle.Apigee/* ${SCRIPT_PATH}/bundle/devportal-repo >> $LOGFILE 2>&1
 
-  # Copy Redhat Bundle Version files
-  if [[ $PLATFORM_NAME == "Redhat" ]] ; then
-    cp -rp ${SCRIPT_PATH}/bundle.${PLATFORM_NAME}.${PLATFORM_MAJOR_VERSION}.${PLATFORM_MAJOR_RELEASE}/devportal-repo/* ${SCRIPT_PATH}/bundle/devportal-repo >> $LOGFILE 2>&1
-  fi
+#  # Copy Redhat Bundle Version files
+#  if [[ $PLATFORM_NAME == "Redhat" ]] ; then
+#    cp -rp ${SCRIPT_PATH}/bundle.${PLATFORM_NAME}.${PLATFORM_MAJOR_VERSION}.${PLATFORM_MAJOR_RELEASE}/* ${SCRIPT_PATH}/bundle/devportal-repo >> $LOGFILE 2>&1
+#  fi
 fi
 
 found_bundle=0

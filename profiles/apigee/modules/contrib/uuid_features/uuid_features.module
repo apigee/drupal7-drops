@@ -59,6 +59,9 @@ function uuid_features_entity_info_alter(&$entity_info) {
     'taxonomy_term',
     'fieldable_panels_pane',
   );
+  if (module_exists('file_entity')) {
+    $entity_types[] = 'file';
+  }
   foreach ($entity_types as $type) {
     // Only add flag on existing entity types.
     if (isset($entity_info[$type])) {
@@ -114,6 +117,15 @@ function uuid_features_features_api() {
       'default_hook' => 'uuid_features_default_files',
       'default_file' => FEATURES_DEFAULTS_INCLUDED,
       'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_file.features.inc',
+    );
+  }
+
+  if (module_exists('file_entity')) {
+    $components['uuid_file_entity'] = array(
+      'name' => t('File Entity'),
+      'default_hook' => 'uuid_features_default_file_entities',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_file_entity.features.inc',
     );
   }
 
@@ -371,7 +383,6 @@ function uuid_features_file_field_export(&$export, $entity_type) {
     }
   }
   else {
-    $orig_assets_path = $assets_path = variable_get('uuid_features_file_assets_path', '');
     $export_mode = variable_get('uuid_features_file_mode', 'inline');
 
     switch ($export_mode) {
@@ -388,26 +399,6 @@ function uuid_features_file_field_export(&$export, $entity_type) {
         $export_var = 'uuid_features_file_data';
         break;
     }
-    // If files are supposed to be copied to the assets path.
-    if ($export_mode == 'local' && $assets_path) {
-      // Ensure the assets path is created.
-      if ((!is_dir($assets_path) && mkdir($assets_path, 0777, TRUE) == FALSE)
-        || !is_writable($assets_path)
-      ) {
-        // Try creating a public path if the local path isn't writeable.
-        // This is a kludgy solution to allow writing file assets to places
-        // such as the profiles/myprofile directory, which isn't supposed to
-        // be writeable.
-        $new_assets_path = 'public://' . $assets_path;
-        if (!is_dir($new_assets_path) && mkdir($new_assets_path, 0777, TRUE) == FALSE) {
-          drupal_set_message(t("Could not create assets path! '!path'", array('!path' => $assets_path)), 'error');
-          // Don't continue if the assets path is not ready.
-          return;
-        }
-        $assets_path = $new_assets_path;
-      }
-    }
-
     // Get all fields from this entity.
     foreach ($fields as $field_instance) {
       // Load field infos to check the type.
@@ -423,44 +414,13 @@ function uuid_features_file_field_export(&$export, $entity_type) {
         foreach ($field as $language => $files) {
           if (is_array($files)) {
             foreach ($files as $i => $file) {
-
-              // Convert file to array to stay into the default
-              // uuid_features_file format.
-              $file = (object) $file;
-
-              // Check the file.
-              if (!isset($file->uri) || !is_file($file->uri)) {
-                $path = (isset($file->uri)) ? $file->uri : 'unknown';
-                drupal_set_message(t("File field found on %entity_type, but file doesn't exist on disk? '!path'", array(
-                  '%entity_type' => $entity_type,
-                  '!path' => $path,
-                )), 'warning');
+              try {
+                $export_data = uuid_features_file_export($file, $export_mode);
+              }
+              catch (Exception $e) {
+                // There was an error exporting the file - skip it.
+                drupal_set_message($e->getMessage(), 'warning', FALSE);
                 continue;
-              }
-
-              if ($export_mode == 'local') {
-                if ($assets_path) {
-                  // The writeable path may be different from the path that gets
-                  // saved during the feature export to handle the
-                  // public path/local path dilemma mentioned above.
-                  $writeable_export_data = $assets_path . '/' . basename($file->uri);
-                  $export_data = $orig_assets_path . '/' . basename($file->uri);
-                  if (!copy($file->uri, $writeable_export_data)) {
-                    drupal_set_message(t("Export file error, could not copy '%filepath' to '%exportpath'.", array('%filepath' => $file->uri, '%exportpath' => $writeable_export_data)), 'error');
-                    return FALSE;
-                  }
-                }
-                else {
-                  $export_data = $file->uri;
-                }
-              }
-              // Remote export mode.
-              elseif ($export_mode == 'remote') {
-                $export_data = url($file->uri, array('absolute' => TRUE));
-              }
-              // Default is 'inline' export mode.
-              else {
-                $export_data = base64_encode(file_get_contents($file->uri));
               }
 
               // Build the field again, and remove fid to be sure that imported
@@ -477,6 +437,81 @@ function uuid_features_file_field_export(&$export, $entity_type) {
       }
     }
   }
+}
+
+/**
+ * Exports the file and returns a handle to store in the features export.
+ *
+ * @param object $file
+ *   The file object to handle.
+ * @param string $export_mode
+ *   The export mode - currently supported:
+ *   - remote
+ *   - local
+ *   - inline
+ *
+ * @throws Exception
+ *
+ * @return string
+ *   Returns the handle to store in the features export or FALSE on failure.
+ */
+function uuid_features_file_export($file, $export_mode) {
+  $orig_assets_path = $assets_path = variable_get('uuid_features_file_assets_path', '');
+
+  // If files are supposed to be copied to the assets path.
+  if ($export_mode == 'local' && $assets_path) {
+    // Ensure the assets path is created.
+    if ((!is_dir($assets_path) && mkdir($assets_path, 0777, TRUE) == FALSE)
+      || !is_writable($assets_path)
+    ) {
+      // Try creating a public path if the local path isn't writeable.
+      // This is a kludgy solution to allow writing file assets to places
+      // such as the profiles/myprofile directory, which isn't supposed to
+      // be writeable.
+      $new_assets_path = 'public://' . $assets_path;
+      if (!is_dir($new_assets_path) && mkdir($new_assets_path, 0777, TRUE) == FALSE) {
+        // Don't continue if the assets path is not ready.
+        throw new Exception(t("Could not create assets path! '!path'", array('!path' => $assets_path)), 'error');
+      }
+      $assets_path = $new_assets_path;
+    }
+  }
+
+  // Convert file to array to stay into the default
+  // uuid_features_file format.
+  $file = (object) $file;
+
+  // Check the file.
+  if (!isset($file->uri) || !is_file($file->uri)) {
+    $path = (isset($file->uri)) ? $file->uri : 'unknown';
+    throw new Exception(t("File field found on, but file '!path' doesn't exist on disk?", array('!path' => $path)));
+  }
+
+  if ($export_mode == 'local') {
+    if ($assets_path) {
+      // The writable path may be different from the path that gets
+      // saved during the feature export to handle the
+      // public path/local path dilemma mentioned above.
+      $writeable_export_data = $assets_path . '/' . basename($file->uri);
+      $export_data = $orig_assets_path . '/' . basename($file->uri);
+      if (!copy($file->uri, $writeable_export_data)) {
+        drupal_set_message(t("Export file error, could not copy '%filepath' to '%exportpath'.", array('%filepath' => $file->uri, '%exportpath' => $writeable_export_data)), 'error');
+        return FALSE;
+      }
+    }
+    else {
+      $export_data = $file->uri;
+    }
+  }
+  // Remote export mode.
+  elseif ($export_mode == 'remote') {
+    $export_data = url($file->uri, array('absolute' => TRUE));
+  }
+  // Default is 'inline' export mode.
+  else {
+    $export_data = base64_encode(file_get_contents($file->uri));
+  }
+  return $export_data;
 }
 
 /**

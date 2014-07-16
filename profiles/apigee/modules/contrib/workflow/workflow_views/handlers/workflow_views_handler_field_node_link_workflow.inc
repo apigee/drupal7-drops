@@ -17,8 +17,8 @@ class workflow_views_handler_field_node_link_workflow extends views_handler_fiel
   function render_link($node, $values) {
     // Ensure user has access to edit this node.
     $entity_type = $this->entity_type;
+    // if (!node_access('update', $node)) {
     if (!workflow_tab_access($entity_type, $node)) {
-//    if (!node_access('update', $node)) {
       return;
     }
     $this->options['alter']['make_link'] = TRUE;

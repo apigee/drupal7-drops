@@ -2,7 +2,7 @@
 /**
  * @file
  * Adds workflow state information to Search API index.
- * 
+ *
  * This is only valid for Workflow Node, not Workflow Field.
  */
 

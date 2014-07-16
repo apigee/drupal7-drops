@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Today date is: ${DD}"
-#date +%D -s 2014-04-30
+date +%D -s 2014-04-30
 
 # Display a question, make the user answer it, and set a variable with their answer.
 #

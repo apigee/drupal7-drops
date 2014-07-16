@@ -142,6 +142,10 @@ function devconnect_user_entity_info() {
  */
 function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
+    case 'user_login':
+      $form['name']['#attributes']['autocomplete'] = 'off';
+      $form['pass']['#attributes']['autocomplete'] = 'off';
+      break;
     case 'user_profile_form':
 
       if ($form['#user_category'] != 'account' && $form['#user_category'] != 'register') {
@@ -939,19 +943,24 @@ function devconnect_user_views_api() {
 
 
 /**
- * Deletes references to a specific developer_app or api_product entity from
- * our internal cache.
+ * Deletes references to a specific developer entity from our internal cache.
+ *
+ * Also removes cached references to any of this developer's apps.
  *
  * @param $entity
  */
 function devconnect_user_delete_from_cache(Drupal\devconnect_user\DeveloperEntity $entity) {
+  $developer_ids = $uid = NULL;
   if (empty($entity->developerId)) {
     $_user = user_load_by_mail($entity->email);
-    $developer_ids = db_select('dc_dev', 'd')
-      ->fields('d', array('developer_id'))
-      ->condition('uid', $_user->uid)
-      ->execute()
-      ->fetchCol();
+    if (is_object($_user)) {
+      $uid = $_user->uid;
+      $developer_ids = db_select('dc_dev', 'd')
+        ->fields('d', array('developer_id'))
+        ->condition('uid', $uid)
+        ->execute()
+        ->fetchCol();
+    }
   }
   else {
     $developer_ids = array($entity->developerId);
@@ -959,11 +968,29 @@ function devconnect_user_delete_from_cache(Drupal\devconnect_user\DeveloperEntit
   if (!empty($developer_ids)) {
     db_delete('dc_dev_attributes')->condition('developer_id', $developer_ids)->execute();
     db_delete('dc_dev')->condition('developer_id', $developer_ids)->execute();
+
+    // Now delete developer's apps as well
+    if (!empty($uid)) {
+      $app_ids = array();
+      $result = db_select('dc_dev_app', 'a')
+        ->fields('a', array('app_id'))
+        ->condition('uid', $uid)
+        ->execute();
+      while ($app_id = $result->fetchCol()) {
+        $app_ids[] = $app_id;
+      }
+      if (!empty($app_ids)) {
+        db_delete('dc_dev_app_api_products')->condition('app_id', $app_ids);
+        db_delete('dc_dev_app_attributes')->condition('app_id', $app_ids);
+        db_delete('dc_dev_app_previous_status')->condition('app_id', $app_ids);
+        db_delete('dc_dev_app')->condition('app_id', $app_ids);
+      }
+    }
   }
 }
 
 /**
- * Writes a developer_app or api_product entity to our internal cache.
+ * Writes a developer entity to our internal cache.
  *
  * By default we delete any references to this entity from our cache before
  * writing, but when $ensure_clean is set to FALSE we can skip this step.

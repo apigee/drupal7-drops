@@ -1,0 +1,22 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the siteminder module.
+ *
+ */
+
+
+
+/**
+ * Implements hook_install().
+ */
+function siteminder_install() {
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function siteminder_uninstall() {
+
+}

@@ -40,11 +40,16 @@ function workflow_revert_form($form, $form_state, $entity_type, $id, $field_name
   }
 }
 
+/**
+ * Submit callback function.
+ *
+ * The function is magically called, due to its name <form>_submit.
+ */
 function workflow_revert_form_submit($form, $form_state) {
   global $user;
 
   $previous_sid = $form['#previous_sid'];
-  $id = $form['#entity_id'];
+  // $id = $form['#entity_id'];
   $entity = $form['#entity'];
   $entity_type = $form['#entity_type'];
   $field_name = $form['#field_name'];
@@ -64,9 +69,8 @@ function workflow_revert_form_submit($form, $form_state) {
   $transition->setValues($entity_type, $entity, $field_name, $current_sid, $previous_sid, $user->uid, REQUEST_TIME, $comment);
 
   // Force the transition because it's probably not valid.
-  workflow_execute_transition($entity_type, $entity, $field_name, $transition, $force = TRUE);
-
-  drupal_set_message($comment);
+  $new_sid = workflow_execute_transition($entity_type, $entity, $field_name, $transition, TRUE);
+  ($previous_sid == $new_sid) ? drupal_set_message($comment) : drupal_set_message(t('State could not be reverted.'), 'warning');  
 
   drupal_goto($return_uri . '/workflow');
 }

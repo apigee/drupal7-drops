@@ -24,7 +24,7 @@ function metatags_quick_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('metatags_quick_admin_path_based'),
     'title' => 'Path-Based Metatags',
-    'access arguments' => array('edit metatags_quick'),
+    'access arguments' => array('edit path_based metatags_quick'),
     'file' => 'metatags_quick.admin.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 50
@@ -33,7 +33,7 @@ function metatags_quick_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('metatags_quick_admin_path_based_edit'),
     'title' => 'Path-Based Metatags',
-    'access arguments' => array('edit metatags_quick'),
+    'access arguments' => array('edit path_based metatags_quick'),
     'file' => 'metatags_quick.admin.inc',
     'type' => MENU_CALLBACK
   );
@@ -41,7 +41,7 @@ function metatags_quick_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('metatags_quick_admin_path_based_delete'),
     'title' => 'Path-Based Metatags',
-    'access arguments' => array('edit metatags_quick'),
+    'access arguments' => array('edit path_based metatags_quick'),
     'file' => 'metatags_quick.admin.inc',
     'type' => MENU_CALLBACK
   );
@@ -67,6 +67,9 @@ function metatags_quick_permission() {
     ),
     'edit metatags_quick' => array(
       'title' => t('Edit meta tags'),
+    ),
+    'edit path_based metatags_quick' => array(
+    'title' => t('Edit path based meta tags'),
     ),
   );
 }
@@ -215,7 +218,7 @@ function metatags_quick_page_build(&$page) {
       $controller = new DrupalDefaultEntityController('metatags_path_based');
       $path_entities = $controller->load(array($path_based_id));
       foreach ($path_entities as $entity) {
-        field_attach_view('metatags_path_based', $entity, 'default');
+        field_attach_view('metatags_path_based', $entity, 'default', LANGUAGE_NONE);
       }
     }
   }
@@ -316,6 +319,10 @@ function metatags_quick_field_formatter_info() {
       'description' => t('Provide the content as plain text.'),
       'field types' => array('metatags_quick'),
     ),
+    'metatags_quick_title' => array(
+      'label' => t('Set page title'),
+      'field types' => array('metatags_quick'),
+    ),
     'metatags_quick_default' => array(
       'label' => t('Default metatags_quick formatter'),
       'description' => t('Add meta to html head.'),
@@ -346,6 +353,19 @@ function metatags_quick_field_formatter_view($object_type, $object, $field, $ins
       foreach ($items as $delta => $item) {
         $element[$delta] = array('#markup' => $item['metatags_quick']);
       }
+      break;
+    case 'metatags_quick_title':
+      // In case we get a multiple field, we concat the values with ' - ', just
+      // to have some sane handling.
+      $title = array();
+      foreach ($items as $delta => $item) {
+        $title[] = $item['metatags_quick'];
+      }
+      if (!empty($title)) {
+        drupal_set_title(join(' - ', $title));
+      }
+      // Hide element.
+      $element = array('#markup' => '', '#printed' => TRUE);
       break;
     case 'metatags_quick_default':
       foreach ($items as $delta => $item) {
@@ -530,6 +550,13 @@ function _metatags_quick_add_head($item = FALSE) {
             'name' => $item['name'], 
             'content' => $item['content']));
         drupal_add_html_head($element, 'metatags_quick_' . $item['name']);
+    }
+    if ($item['name'] == 'title') {
+      $element = array(
+        '#tag' => 'title',
+        '#value' => $item['content'],
+      );
+      drupal_add_html_head($element, 'metatags_quick_' . $item['name']);
     }
   }
   $added_meta[$item['name']] = TRUE;

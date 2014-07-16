@@ -2,6 +2,7 @@
 /**
  * @file
  * Provide actions and triggers for workflows.
+ *
  * Why it's own module? Some sites prefer rules, some prefer actions,
  * all prefer a lower code footprint and better performance.
  * Additional credit to gcassie ( http://drupal.org/user/80260 ) for
@@ -30,7 +31,7 @@ function workflow_actions_workflow_operations($level, $workflow = NULL, $state =
 function workflow_actions_workflow($op, $id, $new_sid, $entity, $force = FALSE, $entity_type = 'node', $field_name = '', $transition = NULL) {
   switch ($op) {
     case 'transition post':
-      // As a reminder: event 'transition post' does not occur for Workflow Field.
+      // Reminder: event 'transition post' does not occur for Workflow Field.
       _workflow_actions_do($transition);
       break;
 
@@ -43,7 +44,7 @@ function workflow_actions_workflow($op, $id, $new_sid, $entity, $force = FALSE, 
       // $tid = $id;
       // $actions = _workflow_actions_get_actions_by_tid($tid);
       // foreach ($actions as $aid) {
-      //   _workflow_actions_remove($tid, $aid);
+      // _workflow_actions_remove($tid, $aid);
       // }
       break;
   }
@@ -63,25 +64,25 @@ function workflow_actions_entity_insert($entity, $type) {
 /**
  * Implements hook_entity_update().
  *
- * @see WorkflowTransition->execute().
+ * @see WorkflowTransition->execute()
  */
 function workflow_actions_entity_update($entity, $entity_type) {
-  // For workflow_field, the 'transition post' event is not triggered in 
+  // For workflow_field, the 'transition post' event is not triggered in
   // WorkflowTransition->execute(), since we are still IN a transition.
   // This is now triggered here.
   // (But without hook_workflow, since it crashes workflow_access.)
   // P.S. You should not mix workflow field and workflow node!!
   if (module_exists('workflowfield') && !module_exists('workflownode')) {
     if (isset($entity->workflow_transitions)) {
-      foreach($entity->workflow_transitions as $transition) {
-        //$transition->post_execute(); // equivalent with hook_entity_save().
+      foreach ($entity->workflow_transitions as $transition) {
+        // $transition->post_execute(); // equivalent with hook_entity_save().
         _workflow_actions_do($transition);
       }
     }
   }
   elseif (module_exists('workflownode')) {
-    // This is alrady done in workflow_actions_workflow().
-    // But we cannot move that here, since node_save()/entity_save() isn't alwasy triggered.
+    // This is already done in workflow_actions_workflow(). But we cannot move
+    // that here, since node_save()/entity_save() isn't always triggered.
   }
 }
 
@@ -110,7 +111,7 @@ function workflow_actions_trigger_info() {
 
   // Get the mapping for Node API.
   // Build an array of Wid => array of types.
-  $workflow_node_type_map = module_exists('workflownode') ? workflow_get_workflow_type_map() : array(); 
+  $workflow_node_type_map = module_exists('workflownode') ? workflow_get_workflow_type_map() : array();
   foreach ($workflow_node_type_map as $type => $wid) {
     $type_map[$wid][] = array('entity_type' => 'node', 'bundle' => $type);
   }
@@ -120,7 +121,10 @@ function workflow_actions_trigger_info() {
     if ($field['type'] == 'workflow') {
       foreach ($field['bundles'] as $entity_type => $bundles) {
         foreach ($bundles as $bundle) {
-            $type_map[$field['settings']['wid']][] = array('entity_type' => $entity_type, 'bundle' => $bundle,);
+          $type_map[$field['settings']['wid']][] = array(
+            'entity_type' => $entity_type,
+            'bundle' => $bundle,
+          );
         }
       }
     }
@@ -131,22 +135,23 @@ function workflow_actions_trigger_info() {
     $states = $workflow->getStates('CREATION');
     foreach ($workflow->getTransitions() as $transition) {
       $state = $states[$transition->sid];
-      if (!$state->isActive()) {
+      $target_state = $states[$transition->target_sid];
+      if (!$state || !$target_state || !$state->isActive() || !$target_state->isActive()) {
         continue;
       }
-      $creation_flag = $states[$transition->sid]->isCreationState();
       // Add hook for Node API.
       if (isset($type_map[$wid])) {
+        $creation_flag = $state->isCreationState();
         foreach ($type_map[$wid] as $type_bundle) {
           $label = t('When @entity_type %bundle moves from %state to %target_state',
             array(
-             '@entity_type' => $type_bundle['entity_type'],
-             '%bundle' => $type_bundle['bundle'],
-             '%state' => $state->label(),
-              '%target_state' => $states[$transition->target_sid]->label(),
+              '@entity_type' => $type_bundle['entity_type'],
+              '%bundle' => $type_bundle['bundle'],
+              '%state' => $state->label(),
+              '%target_state' => $target_state->label(),
             )
           );
-          $pseudohooks['workflow-' . $type_bundle['entity_type'] .'-'. $type_bundle['bundle'] . '-' . $transition->tid] = array(
+          $pseudohooks['workflow-' . $type_bundle['entity_type'] . '-' . $type_bundle['bundle'] . '-' . $transition->tid] = array(
             'label' => $label,
             'workflow_creation_state' => $creation_flag,
           );
@@ -204,10 +209,9 @@ function _workflow_actions_do($transition) {
   $entity = $transition->getEntity();
   $old_sid = $transition->old_sid;
   $new_sid = $transition->new_sid;
-  // A transition has occurred; fire off actions associated with this transition.
-  $old_state = workflow_state_load_single($old_sid);
-  $workflow = $old_state->getWorkflow();
 
+  // A transition occurred; fire off actions associated with this transition.
+  $workflow = $transition->getWorkflow();
   $config_transitions = $workflow->getTransitionsBySidTargetSid($old_sid, $new_sid);
   $config_transition = reset($config_transitions);
   if ($config_transition) {
@@ -253,9 +257,9 @@ function _workflow_actions_do($transition) {
  *
  * Helpful when deleting a workflow.
  *
- * @param integer $tid
+ * @param int $tid
  *   Transition ID.
- * @param integer $aid
+ * @param int $aid
  *   Action ID.
  */
 function _workflow_actions_remove($tid, $aid) {

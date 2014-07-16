@@ -1,0 +1,91 @@
+<?php
+/**
+ * @file
+ * The Siteminder Module
+ *
+ * This module manages Siteminder authentication.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function siteminder_menu() {
+  $items = array();
+  $items['admin/config/people/siteminder'] = array(
+    'title' => t('Siteminder authentication'),
+    'description' => t('Configure your Siteminder authentication settings.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('siteminder_admin'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'includes/siteminder.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_init().
+ *
+ * TODO: Ideally drupal_access_denied would be used instead of just returning messages,
+ * however, the "exit" required after drupal_access_denied kills drush.
+ */
+function siteminder_init() {
+  // User is already logged in, pass through.
+  global $user;
+  if ($user->uid) {
+    return;
+  }
+
+  // Check for Siteminder headers
+  if ($username = _siteminder_get_headers(variable_get('siteminder_username', 'HTTP_SM_USER'))) {
+    siteminder_login($username);
+  }
+}
+
+/**
+ * Login or deny a user access based on the siteminder identifier they're sending.
+ *
+ * @param $username A siteminder unique identifier.
+ * @return NULL
+ */
+function siteminder_login($username) {
+  // Filter the $username according to the module configuration
+  $username = _siteminder_prepare_username($username);
+
+  // Login using Drupal's helper function for external authentication
+  user_external_login_register($username, 'siteminder');
+}
+
+/**
+ * Filter the username passed by Siteminder according to the modules
+ * settings.
+ *
+ * @param string $username
+ * @return The filtered username based on the modules settings.
+ */
+function _siteminder_prepare_username($username) {
+  if (variable_get('siteminder_strip_prefix', FALSE)) {
+    $fields = explode("\\", $username);
+    $username = $fields [count ($fields) - 1];
+  }
+  if (variable_get('siteminder_strip_domain', FALSE)) {
+    $fields = explode ('@', $username);
+    $username = $fields [0];
+  }
+
+  return $username;
+}
+
+/**
+ * Get the appropriate HTTP Request header.
+ *
+ * @param string $key
+ * @return The Header value for the given key, or $default if it is not present.
+ */
+function _siteminder_get_headers($key = NULL) {
+  if ($key && isset($_SERVER[$key])) {
+    return $_SERVER[$key];
+  } else {
+    return FALSE;
+  }
+}

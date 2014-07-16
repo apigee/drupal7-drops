@@ -2,6 +2,7 @@ name = Github Connect
 description = Enables connecting Drupal accounts with Github.
 package = Github
 core = 7.x
+dependencies[] = openid
 
 ; Information added by drupal.org packaging script on 2012-03-23
 version = "7.x-1.1"

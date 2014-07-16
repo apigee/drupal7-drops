@@ -21,9 +21,9 @@ class workflow_views_handler_field_sid extends views_handler_field {
       '#description' => t('Determines how the state will be displayed.'),
       '#type' => 'select',
       '#options' => array(
-        '0' => 'State name',
-        '1' => 'State value',  // keep this value for backwards compatibility.
-        'count' => 'Count number of entities with this state',
+        '0' => t('State name'),
+        '1' => t('State value'), // Keep this value for backwards compatibility.
+        'count' => t('Count number of entities with this state'),
       ),
       '#default_value' => $this->options['value'],
     );

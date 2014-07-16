@@ -6,11 +6,11 @@
                 $('div.modal div.apigee-responsive-openidhide').show();
             });
 
-            $('ul.account-menu li.dropdown').mouseover(function() {
+            $('li.dropdown').mouseover(function() {
                 $(this).addClass('open');
             });
 
-            $('ul.account-menu li.dropdown').mouseout(function() {
+            $('li.dropdown').mouseout(function() {
                 $(this).removeClass('open');
             });
 

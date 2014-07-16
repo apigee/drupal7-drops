@@ -1,17 +1,21 @@
 <?php
+
 /**
  * @file
  * Contains contains per-class functions, that are deprecated.
+ *
  * Usage: The new code can be tested, by removing this file-include from workflow.module.
  */
 
 /**
  * Deprecated functions related to table {workflows}.
+ *
  * These are replaced by methods of class Workflow.
  */
 
 /**
  * Get all workflows.
+ *
  * @deprecated: workflow_get_workflows --> workflow_load_multiple
  */
 function workflow_get_workflows() {
@@ -20,6 +24,7 @@ function workflow_get_workflows() {
 
 /**
  * Get a specific workflow, wid is a unique ID.
+ *
  * @deprecated: workflow_get_workflows_by_wid --> workflow_load_single
  */
 function workflow_get_workflows_by_wid($wid, $reset = FALSE) {
@@ -28,6 +33,7 @@ function workflow_get_workflows_by_wid($wid, $reset = FALSE) {
 
 /**
  * Get a specific workflow, name is a unique ID.
+ *
  * @deprecated: workflow_get_workflows_by_name --> workflow_load_by_name
  */
 function workflow_get_workflows_by_name($name) {
@@ -35,11 +41,30 @@ function workflow_get_workflows_by_name($name) {
 }
 
 /**
+ * Helper function, to get the label of a given workflow.
+ *
+ * @deprecated: workflow_get_wid_label --> workflow_label
+ */
+function workflow_get_wid_label($wid) {
+  if (empty($wid)) {
+    $output = t('No workflow');
+  }
+  elseif ($workflow = workflow_load_single($wid)) {
+    $output = $workflow->label();
+  }
+  else {
+    $output = t('Unknown workflow');
+  }
+  return $output;
+}
+
+/**
  * Return the ID of the creation state for this workflow.
- * @deprecated: workflow_get_creation_state_by_wid($wid) --> $workflow->getCreationSid().
  *
  * @param mixed $wid
  *   The ID of the workflow.
+ *
+ * @deprecated: workflow_get_creation_state_by_wid($wid) --> $workflow->getCreationSid().
  */
 function workflow_get_creation_state_by_wid($wid) {
   $sid = 0;
@@ -108,6 +133,7 @@ function workflow_delete_workflows_by_wid($wid) {
 
 /**
  * Deprecated functions related to table {workflow_states}.
+ *
  * These are replaced by methods of class WorkflowState.
  */
 
@@ -115,7 +141,8 @@ function workflow_delete_workflows_by_wid($wid) {
  * Get all active states in the system.
  *
  * @return array
- *  a keyed array $id => $name, of all active states.
+ *   A keyed array $id => $name, of all active states.
+ *
  * @deprecated: workflow_get_workflow_states_all() --> Workflow::getOptions()
  */
 function workflow_get_workflow_states_all() {
@@ -131,25 +158,28 @@ function workflow_get_workflow_states_all() {
 function workflow_node_tab_access($node = NULL) {
   if ($node == NULL) {
     return FALSE;
-  } 
+  }
   return workflow_tab_access('node', $node);
 }
 
 /**
  * Get the states current user can move to for a given node.
- * @deprecated workflow_field_choices() --> WorkflowState->getOptions()
  *
  * @param object $node
- *  The node to check.
+ *   The node to check.
  * @param bool $force
- *  A switch to enable access to all states (e.g. for Rules)
+ *   A switch to enable access to all states (e.g., for Rules).
  * @param State $state
- *  The predetermined state object (v7.x-1.3: new parameter for Workflow Field.)
+ *   The predetermined state object (v7.x-1.3: new parameter for Workflow Field).
  *
  * @return array
- *  Array of transitions.
+ *   Array of transitions.
+ *
+ * @deprecated workflow_field_choices() --> WorkflowState->getOptions()
  */
 function workflow_field_choices($node, $force = FALSE, $state = NULL) {
+  global $user; // Alert: In 7.x-2.4, getOptions() has a new $user parameter.
+
   $choices = array();
 
   if (!$node) {
@@ -162,18 +192,15 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
   }
   else {
     // This is used in Node API.
-    $workflow = workflow_get_workflow_type_map_by_type($node->type);
     $current_sid = workflow_node_current_state($node, 'node', '');
     $state = workflow_state_load_single($current_sid);
   }
-  return $state->getOptions('node', $node, $force);
+  return $state->getOptions('node', $node, '', $user, $force);
 }
 
 /**
  * Determine if the Workflow Form must be shown.
  * If not, a formatter must be shown, since there are no valid options.
- *
- * @deprecated workflow_show_form() --> WorkflowState->showWidget()
  *
  * @param mixed $sid
  *   the current state ID.
@@ -184,6 +211,8 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
  *
  * @return bool $show_widget
  *   TRUE = a form must be shown; FALSE = no form, a formatter must be shown instead.
+ *
+ * @deprecated workflow_show_form() --> WorkflowState->showWidget()
  */
 // function workflow_show_form($sid, $workflow, array $options) {
 //   $state = workflow_state_load_single($sid);
@@ -194,8 +223,6 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
  * Validate target state and either execute a transition immediately or schedule
  * a transition to be executed later by cron.
  *
- * @deprecated: workflow_transition --> WorkflowDefaultWidget::submit()
- *
  * @param object $entity
  * @param string $new_sid
  *   An integer; the target state ID.
@@ -203,6 +230,8 @@ function workflow_field_choices($node, $force = FALSE, $state = NULL) {
  *   Allows bypassing permissions, primarily for Rules.
  * @param array $field
  *   The field structure for the operation.
+ *
+ * @deprecated: workflow_transition --> WorkflowDefaultWidget::submit()
  */
 function workflow_transition($entity, $new_sid, $force = FALSE, $field = array()) {
   $entity_type = 'node'; // Entity support is in workflow_transition --> WorkflowDefaultWidget::submit()
@@ -224,8 +253,7 @@ function workflow_get_workflow_states_by_type($type) {
     . "FROM {workflow_type_map} wtm "
     . "INNER JOIN {workflow_states} ws ON ws.wid = wtm.wid "
     . "WHERE wtm.type = :type AND ws.status = 1 "
-    . "ORDER BY ws.weight, ws.sid "
-  ;
+    . "ORDER BY ws.weight, ws.sid ";
   $query_array = array(':type' => $type);
   $results = db_query($query, $query_array);
   return $results->fetchAll();
@@ -273,6 +301,7 @@ function workflow_get_workflow_states_by_wid($wid, $options = array()) {
 
 /**
  * Given a sid, return a workflow. Sids are a unique id.
+ *
  * @deprecated: workflow_get_workflow_by_sid --> workflow_state_load_single
  */
 function workflow_get_workflow_by_sid($sid) {
@@ -283,6 +312,7 @@ function workflow_get_workflow_by_sid($sid) {
 
 /**
  * Given a sid, return a state. Sids are a unique id.
+ *
  * @deprecated: workflow_get_workflow_states_by_sid --> workflow_state_load_single
  */
 function workflow_get_workflow_states_by_sid($sid, $options = array()) {
@@ -302,8 +332,7 @@ function workflow_get_workflow_states_by_sid($sid, $options = array()) {
 function workflow_get_other_states_by_sid($sid) {
   $query = "SELECT sid, state "
     . "FROM {workflow_states} "
-    . "WHERE wid = (SELECT wid FROM {workflow_states} WHERE sid = :sid AND status = 1 AND sysid = 0) "
-  ;
+    . "WHERE wid = (SELECT wid FROM {workflow_states} WHERE sid = :sid AND status = 1 AND sysid = 0) ";
   return db_query($query, array(':sid' => $sid))->fetchAllKeyed();
 }
 
@@ -320,6 +349,7 @@ function workflow_get_workflow_states_by_wid_state($wid, $state) {
 
 /**
  * Given a sid, delete the state and all associated data.
+ *
  * @deprecated: workflow_delete_workflow_states_by_sid($sid, $new_sid, $true_delete) --> WorkflowState->delete()
  */
 function workflow_delete_workflow_states_by_sid($sid, $new_sid = FALSE, $true_delete = FALSE) {
@@ -330,6 +360,7 @@ function workflow_delete_workflow_states_by_sid($sid, $new_sid = FALSE, $true_de
 
 /**
  * Save (update/insert) a Workflow State into table {workflow_states}.
+ *
  * @deprecated: workflow_update_workflow_states() --> WorkflowState->save()
  */
 function workflow_update_workflow_states(&$data) {
@@ -443,11 +474,11 @@ function workflow_get_workflow_transitions_by_tid($tid) {
 
 /**
  * Given a tid, delete the transition.
- * 
+ *
  * @deprecated: workflow_delete_workflow_transitions_by_tid ==> entity_delete($transition)
  */
 function workflow_delete_workflow_transitions_by_tid($tid) {
-  // Notify any interested modules before we delete, in case there's data needed.
+  // Notify any interested modules before we delete, in case data is needed.
   module_invoke_all('workflow', 'transition delete', $tid, NULL, NULL, FALSE);
 
   return db_delete('workflow_transitions')->condition('tid', $tid)->execute();
@@ -489,6 +520,7 @@ function workflow_delete_workflow_transitions_by_roles($roles) {
 
 /**
  * Given a tid and new roles, update them.
+ *
  * @todo - this should be refactored out, and the update made a full actual update.
  */
 //function workflow_update_workflow_transitions_roles($tid, $roles) {
@@ -496,10 +528,11 @@ function workflow_delete_workflow_transitions_by_roles($roles) {
 //}
 
 /**
- * Get allowable transitions for a given workflow state. Typical use:
+ * Get allowable transitions for a given workflow state.
  *
- * global $user;
- * $possible = workflow_allowable_transitions($sid, 'to', $user->roles);
+ * Typical use:
+ * "global $user;
+ * "$possible = workflow_allowable_transitions($sid, 'to', $user->roles);
  *
  * If the state ID corresponded to the state named "Draft", $possible now
  * contains the states that the current user may move to from the Draft state.
@@ -577,12 +610,12 @@ function workflow_delete_workflow_transitions_by_roles($roles) {
  * See if a transition is allowed for a given role.
  *
  * @param int $tid
- *  A transition ID.
+ *   A transition ID.
  * @param mixed $role
- *  A single role (int or string 'author') or array of roles.
+ *   A single role (int or string 'author') or array of roles.
  *
  * @return bool
- *  TRUE if the role is allowed to do the transition.
+ *   TRUE if the role is allowed to do the transition.
  *
  * @deprecated: workflow_transition_allowed => WorkflowConfigTransition::isAllowed
  */
@@ -602,11 +635,13 @@ function workflow_transition_allowed($tid, $role = NULL) {
 
 /**
  * Deprecated functions related to table {workflow_scheduled_transition}.
+ *
  * These are replaced by methods of class WorkflowScheduledTransition.
  */
 
 /**
  * Given a node, get all scheduled transitions for it.
+ *
  * @deprecated: workflow_get_workflow_scheduled_transition_by_nid() --> WorkflowScheduledTransition::load()
  */
 function workflow_get_workflow_scheduled_transition_by_nid($nid) {
@@ -615,6 +650,7 @@ function workflow_get_workflow_scheduled_transition_by_nid($nid) {
 
 /**
  * Given a timeframe, get all scheduled transitions.
+ *
  * @deprecated: workflow_get_workflow_scheduled_transition_by_between() --> WorkflowScheduledTransition::loadBetween()
  */
 function workflow_get_workflow_scheduled_transition_by_between($start = 0, $end = REQUEST_TIME) {
@@ -623,6 +659,7 @@ function workflow_get_workflow_scheduled_transition_by_between($start = 0, $end 
 
 /**
  * Insert a new scheduled transition. Only one transition at a time (for now).
+ *
  * @deprecated: workflow_insert_workflow_scheduled_transition() --> WorkflowScheduledTransition::save()
  */
 function workflow_insert_workflow_scheduled_transition($data) {
@@ -633,8 +670,8 @@ function workflow_insert_workflow_scheduled_transition($data) {
 
 /**
  * Given a node, delete transitions for it.
+ *
  * @deprecated: workflow_delete_workflow_scheduled_transition_by_nid() --> WorkflowScheduledTransition::delete()
- *        It is still used in workflow_execute_transition().
  */
 // function workflow_delete_workflow_scheduled_transition_by_nid($nid) {
 //   return WorkflowScheduledTransition::deleteById('node', $nid);

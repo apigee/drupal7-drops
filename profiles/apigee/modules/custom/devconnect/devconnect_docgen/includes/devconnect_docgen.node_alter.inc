@@ -436,6 +436,20 @@ function theme_devconnect_docgen_param_table($vars) {
 }
 
 /**
+ * Implements hooks preprocess html().
+ *
+ * @param $vars
+ */
+function devconnect_docgen_preprocess_html(&$vars) {
+  if ($node = menu_get_object()) {
+    $models = variable_get('devconnect_docgen_content_types', array());
+    if (in_array($node->type, array_keys($models))) {
+      $vars['classes_array'][] = 'smartdocs';
+    }
+  }
+}
+
+/**
  * Implements preprocess_page()
  *
  * @param $vars
@@ -649,6 +663,20 @@ function devconnect_docgen_preprocess_node(&$vars) {
 
         $data = $templates->loadOperation((array)$data, $model, 'drupal-cms');
         $vars['content'] = array();
+        $regex = '!(\[node:([0-9]+)\])!';
+        $replacements = array();
+        if (preg_match_all($regex, $data, $matches, PREG_SET_ORDER)) {
+          foreach ($matches as $match) {
+            $replacements[$match[1]] = $match[2];
+          }
+        }
+        foreach($replacements as $token => $nid) {
+          $nodes = db_query('SELECT nid, title FROM {node} WHERE nid = :nid', array(':nid' => $nid));
+          foreach($nodes as $node) {
+            $link = l($node->title, 'node/' . $node->nid);
+            $data = str_replace($token, $link, $data);
+          }
+        }
         $vars['content']['#markup'] = $data;
       } else {
         $vars['content']['#markup'] = '<div class="col-sm-12">' . theme('operation_template', $vars) . '</div>';

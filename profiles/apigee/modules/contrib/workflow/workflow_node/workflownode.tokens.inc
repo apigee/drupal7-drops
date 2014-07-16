@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Tokens hooks for Workflow Node module.
@@ -106,23 +107,22 @@ function workflownode_tokens($type, $tokens, array $data = array(), array $optio
     $entity_type = 'node'; // @todo: support other entity types in workflow_tokens().
     $entity_bundle = $node->type;
     // We do not know which field we want to use. Just pick one.
-    $field_name = NULL; // @todo: support multiple Workflow fields per entity in workflow_tokens(), using $node->workflow_transitions.
+    $field_name = ''; // For workflow_node, multiple workflow per node_type are not supported.
 
     if ($workflow = workflow_get_workflows_by_type($entity_bundle, $entity_type)) {
       // Get a list of all possible states for returning state names.
       $states = workflow_state_load_multiple();
-      $wid = $workflow->wid;
 
-      $last_history = workflow_transition_load_single($entity_type, $entity_id, $field_name);
+      $last_history = workflow_transition_load_single($entity_type, $entity_id, '');
 
       if (isset($node->workflow) && !isset($node->workflow_stamp)) {
         // Workflow Node mode.
         // The node is being submitted but the form data has not been saved to the database yet,
         // so we set the token values from the workflow form fields.
-        $new_sid = $node->workflow;
-        $old_sid = isset($last_history->old_sid) ? $last_history->old_sid : $workflow->getCreationSid();
         $uid = $node->uid;
         $account = user_load($uid);
+        $new_sid = $node->workflow;
+        $old_sid = isset($last_history->old_sid) ? $last_history->old_sid : $workflow->getCreationSid();
         $user_name = ($uid && isset($node->name)) ? $node->name : variable_get('anonymous', 'Anonymous');
         $mail = ($uid && isset($node->user_mail)) ? $node->user_mail : '';
         $comment = isset($node->workflow_comment) ? $node->workflow_comment : '';
@@ -132,10 +132,12 @@ function workflownode_tokens($type, $tokens, array $data = array(), array $optio
         if (empty($last_history)) {
           // If the node has no workflow history,
           // the node is being inserted and will soon be transitioned to the first valid state.
-          $new_sid = $workflow->getFirstSid($entity_type, $node);
+          $uid = $node->uid;
+          $account = user_load($uid);
           if ($new_sid) {
             // @TODO: Some users, like anonymous, may not be allowed
             // to cause transitions, so there will be no choices.
+            $new_sid = $workflow->getFirstSid($entity_type, $node, '', $account, FALSE);
             $old_sid = $workflow->getCreationSid();
           }
           else {
@@ -143,10 +145,8 @@ function workflownode_tokens($type, $tokens, array $data = array(), array $optio
             $new_sid = workflow_node_current_state($node, $entity_type, $field_name);
             $old_sid = $workflow->getCreationSid();
           }
-          $uid = $node->uid;
-          $account = user_load($node->uid);
           $user_name = ($uid && isset($node->name)) ? $node->name : variable_get('anonymous', 'Anonymous');
-          $mail = ($node->uid && isset($node->user_mail)) ? $node->user_mail : '';
+          $mail = ($uid && isset($node->user_mail)) ? $node->user_mail : '';
           $comment = isset($node->workflow_comment) ? $node->workflow_comment : '';
         }
         else {
@@ -159,7 +159,7 @@ function workflownode_tokens($type, $tokens, array $data = array(), array $optio
           if ($current_sid != $last_history->new_sid) {
             $new_sid = $current_sid;
             $old_sid = $last_history->new_sid;
-            $date = REQUEST_TIME; //$node->workflow_stamp;
+            $date = REQUEST_TIME; // $node->workflow_stamp;
             $uid = $node->uid;
           }
           else {
@@ -181,49 +181,60 @@ function workflownode_tokens($type, $tokens, array $data = array(), array $optio
       foreach ($tokens as $name => $original) {
         switch ($name) {
           case 'workflow-name':
-            $replacements[$original] = $sanitize ? check_plain($workflow->name) : $workflow->name;
+            $replacements[$original] = $sanitize ? check_plain($workflow->label()) : $workflow->label();
             break;
+
           case 'workflow-current-state-name':
             $replacements[$original] = $sanitize ? check_plain($states[$new_sid]->getName()) : $states[$new_sid]->getName();
             break;
+
           case 'workflow-old-state-name':
             $old_state_name = (!empty($states[$old_sid])) ? $states[$old_sid]->getName() : 'Deleted state';
             $replacements[$original] = $sanitize ? check_plain($old_state_name) : $old_state_name;
             break;
+
           case 'workflow-current-state-updating-user-name':
             $name = format_username($account);
             $replacements[$original] = $sanitize ? check_plain($name) : $name;
             break;
+
           case 'workflow-current-state-updating-user-link':
             $replacements[$original] = theme('username', array('account' => $account));
             break;
+
           case 'workflow-current-state-updating-user-uid':
             // User IDs are integers only and do not need sanitization.
             $replacements[$original] = $uid;
             break;
+
           case 'workflow-current-state-updating-user-mail':
             $replacements[$original] = $sanitize ? check_plain($account->mail) : $account->mail;
             break;
+
           case 'workflow-current-state-updating-user-mailto':
             $replacements[$original] = '<a href="mailto:' . check_plain($account->mail) . '">' . check_plain($user_name) . '</a>';
             break;
+
           case 'workflow-current-state-log-entry':
             $replacements[$original] = $sanitize ? check_markup($comment, filter_default_format(), $langcode) : $comment;
             break;
+
           case 'workflow-current-state-date-iso':
             $replacements[$original] = format_date($date, 'custom', 'c', NULL, $langcode);
             break;
+
           case 'workflow-current-state-date-tstamp':
             $replacements[$original] = $sanitize ? check_plain($date) : $date;
             break;
+
           case 'workflow-current-state-date-formatted':
             $replacements[$original] = format_date($date, 'medium', '', NULL, $langcode);
             break;
 
           default:
             // Add support for custom date formats. (see token.tokens.inc)
-            // @todo1 Remove when http://drupal.org/node/1173706 is fixed.
-            // @todo2 It seems the custom date formats work normally in D7.22 with chained tokens. 
+            // @todo Remove when http://drupal.org/node/1173706 is fixed.
+            // @todo It seems the custom date formats work normally in D7.22 with chained tokens.
             $date_format_types = system_get_date_types();
             foreach ($date_format_types as $date_type => $date_info) {
               if ($name == 'workflow-current-state-date-' . $date_type) {

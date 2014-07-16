@@ -101,7 +101,7 @@ function devconnect_admin_form($form, &$form_state) {
 */
   }
   else {
-    $org_settings =& devconnect_get_org_settings();
+    $org_settings = devconnect_get_org_settings();
   }
 
   $form['original_org_settings'] = array(
@@ -156,13 +156,23 @@ function devconnect_admin_form($form, &$form_state) {
     '#post_render' => array('devconnect_password_post_render')
   );
 
-  $conn_timeout = intval($org_settings['conn_timeout']);
-  if ($conn_timeout < 1) {
-    $conn_timeout = 8;
+  if (array_key_exists('connection_timeout', $org_settings)) {
+    $conn_timeout = intval($org_settings['connection_timeout']);
+    if ($conn_timeout < 1) {
+      $conn_timeout = 8;
+    }
   }
-  $req_timeout = intval($org_settings['req_timeout']);
-  if ($req_timeout < 1) {
-    $req_timeout = 8;
+  else {
+    $conn_timeout = 4;
+  }
+  if (array_key_exists('request_timeout', $org_settings)) {
+    $req_timeout = intval($org_settings['request_timeout']);
+    if ($req_timeout < 1) {
+      $req_timeout = 8;
+    }
+  }
+  else {
+    $req_timeout = 4;
   }
 
   $form['connection_config_container']['connection_timeout'] = array(
@@ -171,7 +181,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => $conn_timeout,
     '#description' => t('Number of seconds before an HTTP connection to Edge is assumed to have timed out.'),
-    '#weight' => -2,
+    '#weight' => 10,
     '#post_render' => array('devconnect_number_post_render')
   );
 
@@ -181,16 +191,18 @@ function devconnect_admin_form($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => $req_timeout,
     '#description' => t('Number of seconds before an HTTP response from Edge is assumed to have timed out.'),
-    '#weight' => -1,
+    '#weight' => 11,
     '#post_render' => array('devconnect_number_post_render')
   );
+
+  $default_log_threshold = (array_key_exists('log_threshold', $org_settings) ? intval($org_settings['log_threshold']) : WATCHDOG_WARNING);
 
   $form['connection_config_container']['log_threshold'] = array(
     '#type' => 'radios',
     '#title' => t('Edge logging threshold'),
     '#description' => t('Controls what baseline level of Edge output should be written to the logs.'),
     '#required' => TRUE,
-    '#default_value' => $org_settings['log_threshold'],
+    '#default_value' => $default_log_threshold,
     '#options' => array(
       WATCHDOG_DEBUG => 'Debug',
       WATCHDOG_INFO => 'Info',
@@ -201,7 +213,7 @@ function devconnect_admin_form($form, &$form_state) {
       WATCHDOG_ALERT => 'Alert',
       WATCHDOG_EMERGENCY => 'Emergency'
     ),
-    '#weight' => 10
+    '#weight' => 12
   );
 
   $status = _devconnect_test_kms_connection($org_settings['org'], $org_settings['endpoint'], $org_settings['user'], $org_settings['pass'], $conn_timeout);
@@ -325,61 +337,40 @@ function devconnect_admin_form($form, &$form_state) {
 }
 
 function devconnect_admin_form_submit($form, &$form_state) {
-  $config = devconnect_get_org_settings();
   $changes = array();
-  $i = 0;
-  $org_setting = array();
-  foreach ($form_state['values']['org_settings'] as $org_config) {
-    $fields = array('org', 'endpoint', 'user', 'pass');
-    $old_config = array();
-    if ($i == 0) {
-      $fields += array('log_threshold', 'connection_timeout', 'request_timeout');
-      $old_config = $config;
+  // Read existing settings. These are our comparison baseline.
+  $existing_config = devconnect_get_org_settings();
+  // Prepare for new configuration.
+  // Make sure we have some default values present.
+  $form_state['values'] += array('connection_timeout' => 8, 'request_timeout' => 8, 'log_threshold' => 3);
+  $new_config = array(
+    'connection_timeout' => intval($form_state['values']['connection_timeout']),
+    'request_timeout' => intval($form_state['values']['request_timeout']),
+    'log_threshold' => intval($form_state['values']['log_threshold'])
+  );
+
+  // Set default org settings
+  if (isset($form_state['values']['org_settings'][0])) {
+    $default_org = $form_state['values']['org_settings'][0];
+  }
+  else {
+    // This should never happen!
+    $default_org = array();
+  }
+  foreach (array('org', 'endpoint', 'user', 'pass') as $field) {
+    if (array_key_exists($field, $default_org)) {
+      $new_config[$field] = $default_org[$field];
     }
     else {
-      foreach ($config['secondary_orgs'] as $secondary_org) {
-        if ($secondary_org['org'] == $org_config['org']) {
-          $old_config = $secondary_org;
-          break;
-        }
-      }
+      $new_config[$field] = $existing_config[$field];
     }
-    foreach ($fields as $key) {
-      $value = $org_config[$key];
-      switch ($key) {
-        case 'org':
-        case 'endpoint':
-        case 'user':
-        case 'pass':
-          $old_value = $old_config[$key];
-          if ($key == 'pass') {
-            try {
-              $old_value = Apigee\Util\Crypto::decrypt($old_value);
-            } catch (Apigee\Exceptions\ParameterException $e) {
-              $old_value = '';
-            }
-            if ($old_value != $value) {
-              $from = (empty($old_value) ? '*empty*' : '*encrypted*');
-              $changes["Connection $i: $key"] = array($from, '*encrypted*');
-            }
-          }
-          elseif ($old_value != $value) {
-            $changes["Connection $i: $key"] = array($old_value, $value);
-          }
-          break;
-      }
-      if ($key == 'pass') {
-        $value = Apigee\Util\Crypto::encrypt($value);
-      }
-      $org_setting[$key] = $value;
-      if ($i == 0) {
-        $config[$key] = $value;
-      }
+    if ($new_config[$field] != $existing_config[$field]) {
+      $old_value = (empty($existing_config[$field]) ? '*empty*' : ($field == 'pass' ? '*encrypted*' : $existing_config[$field]));
+      $new_value = (empty($new_config[$field]) ? '*empty*' : ($field == 'pass' ? '*encrypted*' : $new_config[$field]));
+      $changes["Default Connection: $field"] = array($old_value, $new_value);
     }
-    $i++;
   }
-
-  variable_set('devconnect_org_settings', $config);
+  variable_set('devconnect_org_settings', $new_config);
 
   if (!empty($changes)) {
     $change_items = array();
@@ -662,7 +653,8 @@ function devconnect_get_debug_data() {
   return Apigee\Util\DebugData::toArray();
 }
 
-function devconnect_get_org_settings() {
+function &devconnect_get_org_settings() {
+  devconnect_init();
   $custom_vars = variable_get('devconnect_org_settings', NULL);
   $settings_saved = !empty($custom_vars);
   if (!$settings_saved) {
@@ -691,7 +683,6 @@ function devconnect_get_org_settings() {
   }
   elseif (array_key_exists('pass', $custom_vars) && defined('MCRYPT_RIJNDAEL_128')) {
     try {
-      devconnect_init();
       $pass = Apigee\Util\Crypto::decrypt($custom_vars['pass']);
       if ($pass) {
         $custom_vars['pass'] = $pass;

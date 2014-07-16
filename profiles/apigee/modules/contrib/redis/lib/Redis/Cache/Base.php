@@ -6,6 +6,10 @@
  *
  * For a detailed history of flush modes see:
  *   https://drupal.org/node/1980250
+ *
+ * You will find the driver specific implementation in the Redis_Cache_*
+ * classes as they may differ in how the API handles transaction, pipelining
+ * and return values.
  */
 abstract class Redis_Cache_Base extends Redis_AbstractBackend implements
     DrupalCacheInterface

@@ -4,6 +4,18 @@ define('MONETIZATION_ADMIN_ROLE_NAME', 'Monetization Administrator');
 define('MONETIZATION_FINANCE_ADMIN_ROLE_NAME', 'Finance Administrator');
 define('MONETIZATION_DEVELOPER_ROLE_NAME', 'Developer');
 
+/**
+ * Use /developers/{{developer_email}}/prepaid-developer-balance API call
+ * to display report table values on 'Billing and Reports' page
+ */
+define('BILLING_AND_REPORTS_USE_PREPAID_API_CALL', 0);
+
+/**
+ * Use /developers/{{developer_email}}/developer-balances?all=true API call
+ * to display report table values on 'Billing and Reports' page
+ */
+define('BILLING_AND_REPORTS_USE_DEVELOPER_BALANCES_API_CALL', 1);
+
 define('MONETIZATION_PRODUCT_VERIFY_ACCEPTED_URL', '/users/me/monetization/packages/accepted-product/');
 
 use Apigee\ManagementAPI\DeveloperApp;
@@ -111,6 +123,15 @@ function devconnect_monetization_menu() {
 
   $items = array();
 
+  $items['admin/config/devconnect_monetization'] = array(
+    'title' => 'Monetization settings',
+    'description' => 'Control behavior of the Monetization module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_monetization_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'devconnect_monetization.admin.inc',
+  );
+  
   $items['admin/people/sync-from-4g-to-mint'] = array(
     'title' => t('Dev Portal Developer Sync From 4G to Mint'),
     'page callback' => 'devconnect_monetization_user_sync_from_4g_to_mint',

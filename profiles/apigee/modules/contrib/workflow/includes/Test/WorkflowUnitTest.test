@@ -9,7 +9,7 @@
  * Tests for the Workflow classes.
  */
 class WorkflowExampleTestCase extends DrupalWebTestCase {
-  protected $workflow; 
+  protected $workflow;
   public static function getInfo() {
     return array(
       'name' => 'Workflow',
@@ -19,10 +19,12 @@ class WorkflowExampleTestCase extends DrupalWebTestCase {
   }
 
   public function setUp() {
-    parent::setUp('workflow');  // Enable any modules required for the test
+    parent::setUp('workflow');  // Enable any modules required for the test.
   }
 
-  // Create a simpletest_example node using the node form
+  /**
+    * Creates a simpletest_example node using the node form.
+    */
   public function testWorkflow() {
 
 //    $workflows = workflow_load_multiple();

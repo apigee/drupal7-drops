@@ -1,13 +1,14 @@
 <?php
+
 /**
  * @file
  * Provides an Admin UI page for the Workflow Permissions.
  */
 
 /**
- * View workflow permissions by role
+ * View workflow permissions by role.
  *
- * @param $workflow
+ * @param Workflow $workflow
  *   The workflow object.
  */
 function workflow_admin_ui_view_permissions_form($workflow, $op) {
@@ -25,9 +26,9 @@ function workflow_admin_ui_view_permissions_form($workflow, $op) {
   $transitions = $workflow->getTransitions();
   foreach ($transitions as $transition) {
     foreach ($transition->roles as $rid) {
-      $current_state = $workflow->getState($transition->sid);
-      $target_state = $workflow->getState($transition->target_sid);
-      $all[$rid]['transitions'][] = array(check_plain(t($current_state->label())), WORKFLOW_ADMIN_UI_ARROW, check_plain(t($target_state->label())));
+      $old_state = $transition->getOldState();
+      $new_state = $transition->getNewState();
+      $all[$rid]['transitions'][] = array(check_plain(t($old_state->label())), WORKFLOW_ADMIN_UI_ARROW, check_plain(t($new_state->label())));
     }
   }
 

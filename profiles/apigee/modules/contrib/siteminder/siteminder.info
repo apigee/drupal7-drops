@@ -1,0 +1,11 @@
+name = "Siteminder"
+description = "Siteminder authentication system"
+package = "Siteminder"
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2014-01-31
+version = "7.x-2.x-dev"
+core = "7.x"
+project = "siteminder"
+datestamp = "1391129605"
+

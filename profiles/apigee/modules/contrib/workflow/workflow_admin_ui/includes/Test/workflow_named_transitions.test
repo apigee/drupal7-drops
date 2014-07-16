@@ -10,7 +10,7 @@ class WorkflowNamedTransitionsTest extends DrupalWebTestCase {
     return array(
       'name' => 'Workflow Named Transitions Test',
       'description' => "This tests whether the Edit Labels tab exists in the workflow area.",
-      'group' => 'Workflow'
+      'group' => 'Workflow',
     );
   }
 
@@ -22,7 +22,7 @@ class WorkflowNamedTransitionsTest extends DrupalWebTestCase {
     $user = $this->drupalCreateUser(array('administer workflow'));
     $this->drupalLogin($user);
     $this->drupalGet('admin/build/workflow');
-    // HTML of the Edit labels tab
+    // HTML of the Edit labels tab.
     $this->assertRaw(sprintf('admin/build/workflow/labels">%s</a>', t('Edit labels')), t('Edit labels tab found'));
     $this->drupalGet('admin/build/workflow/labels');
     $this->assertResponse('200');
