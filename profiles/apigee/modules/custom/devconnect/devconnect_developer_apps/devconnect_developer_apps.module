@@ -777,11 +777,13 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
       'label' => t('Internal name'),
       'replace_pattern' => '[^A-Za-z0-9_$%-]+',
       'replace' => '-',
-      'exists' => 'devconnect_developer_apps_machine_name_exists'
+      'exists' => 'devconnect_developer_apps_machine_name_exists',
+      'error' => 'The Internal Name must contain only letters, digits, underscores, hyphen, percent, or dollar sign.'
     ),
     '#required' => TRUE,
     '#disabled' => ($app_name !== NULL),
     '#access' => TRUE,
+    '#element_validate' => array('devconnect_developer_apps_machine_name_validate')
   );
   $form['attribute_DisplayName'] = array(
     '#type' => 'value',
@@ -1053,6 +1055,22 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   $form_state['storage']['entity'] = $entity;
 
   return $form;
+}
+
+/**
+ * Handles validation of the app internal name (machine name).
+ *
+ * We must grandfather in older legal app names that contained spaces.
+ *
+ * @param array $element
+ * @param array $form_state
+ */
+function devconnect_developer_apps_machine_name_validate(&$element, &$form_state) {
+  $old_pattern = $element['#machine_name']['replace_pattern'];
+  // Grandfather spaces in.
+  $element['#machine_name']['replace_pattern'] = str_replace('Za', 'Z a', $old_pattern);
+  form_validate_machine_name($element, $form_state);
+  $element['#machine_name']['replace_pattern'] = $old_pattern;
 }
 
 function devconnect_developer_apps_reload_products_ajax($form, $form_state) {
