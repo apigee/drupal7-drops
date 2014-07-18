@@ -30,8 +30,8 @@ jQuery(function() {
         var editModeQueryParam = apiModelCommon.getQueryParam(location.href,"editMode");
         // Create an instance of 'Apigee.APIModel.InlineEdit' class, if there is a query param called 'editMode' with value =1 or 2 in the URL.
         if (editModeQueryParam == "1" || editModeQueryParam == "2") { // Invoke index class object if there is a query param called 'editMode' available in the URL.
-          apiModelInlineEdit = new Apigee.APIModel.InlineEdit();
-          apiModelInlineEdit.init(parseInt(editModeQueryParam))
+            apiModelInlineEdit = new Apigee.APIModel.InlineEdit();
+            apiModelInlineEdit.init(parseInt(editModeQueryParam))
         }
     }
 });
@@ -123,16 +123,16 @@ Apigee.APIModel.initInlineEditAdminAuthEvents = function() {
     jQuery("[data-role='edit_auth_modal']").find(".button_save_modal").unbind("click").click(apiModelInlineEdit.saveAuthModal);
     jQuery("[data-role='edit_auth_modal']").find(".button_close_modal").unbind("click").click(apiModelCommon.closeAuthModal);
     jQuery("[data-role='confirm_modal']").find(".button_close_modal").unbind("click").click( function() {
-      apiModelCommon.closeAuthModal();
-      apiModelInlineEdit.resetEditableElement();
-      return false;
+        apiModelCommon.closeAuthModal();
+        apiModelInlineEdit.resetEditableElement();
+        return false;
     });
     jQuery("[data-role='confirm_modal']").find(".button_save_modal").unbind("click").click(apiModelInlineEdit.handleConfirmDialogSave);
 }
 Apigee.APIModel.inlineEditPageEvents = function() {
     jQuery(".icon-remove").click( function() {
-      apiModelInlineEdit.clearAdminAuthDetails();
-      location.reload()
+        apiModelInlineEdit.clearAdminAuthDetails();
+        location.reload()
     });
     jQuery("a.auth_admin_email").click(apiModelInlineEdit.reOpenAdminAuthDetails);
     // Editable fields event handlers.

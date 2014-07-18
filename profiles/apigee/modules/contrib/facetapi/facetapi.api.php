@@ -246,6 +246,27 @@ function hook_facetapi_facet_info_alter(array &$facet_info, array $searcher_info
 }
 
 /**
+ * Allows for alterations of the facets on the fly, without caching.
+ *
+ * @param array &$enabled_facets
+ *   The return facets, which enabled for current search.
+ * @param $searcher
+ *   The machine readable name of the searcher.
+ * @param $realm_name
+ *   The machine readable name of the realm.
+ */
+function hook_facetapi_enabled_facets_alter(array &$enabled_facets, $searcher, $realm_name) {
+  if ($searcher == 'something') {
+    // Put facet1 to the end.
+    if (!empty($enabled_facets['facet1'])) {
+      $facet1 = $enabled_facets['facet1'];
+      unset($enabled_facets['facet1']);
+      $enabled_facets['facet1'] = $facet1;
+    }
+  }
+}
+
+/**
  * Define all facets sorting algorithms provided by the module.
  *
  * Sorts are applied in the FacetapiWidget::sortFacet() method which is called

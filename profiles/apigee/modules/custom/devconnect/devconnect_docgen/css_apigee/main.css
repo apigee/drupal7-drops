@@ -25,7 +25,7 @@
     padding: 40px 0 0 0;
     font-family: 'ars_maquette_probold',"ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
 }
-#method_content input.error, #modal_container.modal input.error {
+#method_content input.error, [role="dialog"].modal input.error {
     border: 1px solid #B94A48;
 }
 #method_container code {
@@ -46,11 +46,11 @@
     margin: 0 0 40px 0;
     padding: 10px;
 }
-#modal_container.modal .modal-header .close {
-  margin-top: 4px;
+[role="dialog"].modal .modal-header .close {
+    margin-top: 4px;
 }
 #method_content [data-role="error_container"] span, #method_content .modal .error_container span {
-  font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
+    font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
 }
 #method_content .table th {
     background-color: #F9F9F9;
@@ -120,7 +120,7 @@
 
 /* Resource Summary Section */
 #method_content .resource_summary {
-    width: 236px;
+    width: 34.8%;
     background-color: #f9f9f9;
     border-radius: 4px;
     float: right;
@@ -144,7 +144,7 @@
 }
 #method_content .resource_summary div p.data {
     float: right;
-    width: 117px;
+    width: 49.5%;
     text-align: right;
     word-wrap: break-word;
 }
@@ -200,7 +200,7 @@
     line-height: 30px;
     margin: 0 0 0 10px;
     float: left;
-    width: 339px;
+    width: 49%;
     word-wrap: break-word;
 }
 
@@ -263,7 +263,30 @@
     border-radius: 0 4px 4px 0;
 }
 #method_content .method_table .title {
-    width: 150px;
+    width: 21.5%;
+
+}
+#method_content .method_table[data-role='param-groups'] .title {
+    width: 90px;
+}
+#method_content .method_table[data-role='param-groups'] > div {
+    padding: 5px;
+    margin: 10px 0 5px 0;
+    background-color: #CACACA;
+    font-weight: bold;
+    border-radius: 5px;
+}
+#method_content .method_table[data-role='param-groups'] > div p:first-child {
+    float: left;
+    padding-left:0;
+}
+#method_content .method_table[data-role='param-groups'] > div p {
+    padding-left:30px;
+    display: inline-block;
+}
+#method_content .method_table .type {
+    width: 60px;
+    float: left;
 }
 #method_content .method_table > li, #index_content .method_table .method_title, #index_content .method_table .method_details {
     border-bottom: 1px solid #cacaca;
@@ -286,12 +309,12 @@
     color:#aaa;
 }
 #method_content .method_table .value, #index_content .method_table .value {
-    width: 168px;
+    width: 27%;
     float: left;
 }
 #method_content .method_table .method_details .value input, #index_content .method_table .method_details .value input {
     height: 25px;
-    width: 144px;
+    width: 85%;
     font-size: 13px;
     margin-bottom: 0;
     padding: 0 12px;
@@ -304,10 +327,10 @@
     float: right;
 }
 #method_content .method_table .method_details .description, #method_content .method_table .method_title .description {
-    width: 336px;
+    width: 49%;
 }
 #method_content .method_table select {
-    width: 144px;
+    width: 87%;
 }
 
 /* Request Payload */
@@ -317,7 +340,7 @@
 #method_content .request_payload_doc_edit, #method_content .response_payload_doc_edit {
     display: none;
     float:left;
-    width: 600px;
+    width: 90%;
 }
 #method_content [data-role='request-payload-example'] {
     border: 1px solid #cacaca;
@@ -333,11 +356,17 @@
 }
 /* Operation Container */
 #method_content .operation_container {
-    margin: 40px 0;
+    margin: 20px 0;
+}
+#method_content .operation_container:after, #method_content .operation_container:before {
+    content: " ";
+    display: table;
+    clear: both;
 }
 #method_content .operation_container .authentication {
     float: left;
     min-width: 170px;
+    margin-bottom: 10px;
 }
 #method_content .operation_container .authentication .well {
     width: 120px;
@@ -437,28 +466,28 @@
     display: none;
 }
 #method_content #request_response_container div strong {
-  font-size: 18px;
-  margin: 0;
-  display: block;
-  width: 100%;
-  word-wrap: break-word;
-  line-height: 24px;
+    font-size: 18px;
+    margin: 0;
+    display: block;
+    width: 100%;
+    word-wrap: break-word;
+    line-height: 24px;
 }
 #method_content #request_response_container .success {
-  color: #5ca816;
+    color: #5ca816;
 }
 #method_content #request_response_container div dt {
-  float: left;
-  padding-right: .5em;
-  color: #0b599f;
-  font-weight: normal;
-  margin:0;
+    float: left;
+    padding-right: .5em;
+    color: #0b599f;
+    font-weight: normal;
+    margin:0;
 }
 #method_content #request_response_container div dd {
-  clear: right;
-  color: #7c1392;
-  margin: 0;
-  word-wrap: break-word;
+    clear: right;
+    color: #7c1392;
+    margin: 0;
+    word-wrap: break-word;
 }
 
 /* Response Payload */
@@ -498,64 +527,65 @@
     line-height: 18px;
 }
 /* Modal Container */
-#modal_container.modal input[type="radio"] {
+
+[role="dialog"].modal input[type="radio"] {
     margin: 0;
 }
-#modal_container.modal h3 {
+[role="dialog"].modal h3 {
     padding: 0;
 }
-#modal_container.modal input {
+[role="dialog"].modal input {
     height: 30px;
 }
-#modal_container.modal .modal-footer p {
+[role="dialog"].modal .modal-footer p {
     float: left;
     padding-top: 4px;
     color: #686969;
     font-size: 13px;
     text-align: left;
 }
-#modal_container.modal .modal-footer p input[type="checkbox"] {
+[role="dialog"].modal .modal-footer p input[type="checkbox"] {
     height: auto;
     margin-right: 5px;
 }
-#modal_container.modal .modal-body {
+[role="dialog"].modal .modal-body {
     max-height: 400px;
     overflow-y: auto;
     padding: 15px;
     position: relative;
 }
-#modal_container.modal .modal-body label {
+[role="dialog"].modal .modal-body label {
     float: left;
     padding-top: 5px;
     text-align: right;
     width: 160px;
     font-weight: normal;
 }
-#modal_container .form-group {
+[role="dialog"] .form-group {
     clear: both;
     float: left;
     margin-top: 10px;
 }
-#modal_container.modal .modal-body input {
+[role="dialog"].modal .modal-body input {
     float: left;
     width: 206px;
     margin-left: 20px;
 }
-#modal_container.modal .modal-body input[type="radio"] {
-  width: 18px;
+[role="dialog"].modal .modal-body input[type="radio"] {
+    width: 18px;
 }
-#modal_container.modal .modal-body .content p {
+[role="dialog"].modal .modal-body .content p {
     padding: 5px;
     font-size: 13px;
 }
-#modal_container.modal .modal-footer a.button_close_modal {
+[role="dialog"].modal .modal-footer a.button_close_modal {
     padding: 0 20px 0 5px;
     text-decoration: none;
 }
-#modal_container.modal-footer a.button_save_modal {
+[role="dialog"].modal-footer a.button_save_modal {
     padding: 4px 20px;
 }
-#modal_container.modal .error_container  {
+[role="dialog"].modal .error_container  {
     margin: 0 0 20px 97px;
     width: 265px;
 }
@@ -587,7 +617,7 @@
 #method_content.edit_mode [data-role="method-title"][data-allow-edit="true"] {
     border: 1px solid #FFFFFF;
     padding: 0 5px;
-    width: 244px;
+    width: 58%;
     margin-bottom: 5px;
     float: left;
 }
@@ -606,17 +636,18 @@
 #method_content.edit_mode .method_table .method_details [data-allow-edit="true"] {
     float: left;
     padding: 0 5px;
-    width: 285px;
+    width: 84%;
+    min-height:18px;
 }
 #method_content.edit_mode [data-role="request-payload-docs"], #method_content.edit_mode [data-role="request-payload-example"], #method_content.edit_mode [data-role="request-payload-docs"] {
     border: 1px solid #ffffff;
 }
 #method_content.edit_mode [data-role='request-payload-docs'], #method_content.edit_mode [data-role='request-payload-example'] {
-    width: 600px;
+    width: 90%;
     float: left;
 }
 #method_content.edit_mode [data-role='request-payload-example'] {
-  margin:0;
+    margin:0;
 }
 
 #method_content.edit_mode [data-role='response-payload-docs'] {
@@ -625,7 +656,7 @@
 }
 #method_content.edit_mode .resource_details {
     float: left;
-    width: 420px;
+    width: 62%;
 }
 #method_content.edit_mode li {
     padding: 10px 0;
@@ -643,7 +674,7 @@
     width: 53px;
 }
 #method_content.edit_mode .description_container .resource_description, #method_content.edit_mode .description_container textarea {
-    width: 372px;
+    width: 88.5%;
     float: left;
     padding: 5px 5px;
 }

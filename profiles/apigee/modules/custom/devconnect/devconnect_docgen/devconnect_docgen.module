@@ -112,7 +112,7 @@ function devconnect_docgen_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -0,
   );
-  $items['admin/content/smartdocs/Export'] = array(
+  $items['admin/content/smartdocs/export'] = array(
     'title' => 'Export',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_docgen_export_file'),
@@ -1425,11 +1425,11 @@ function devconnect_docgen_export_file_submit($form, &$form_state) {
 
   try {
     if ($form_state['input']['file_type'] == 'json') {
-      $data = entity_get_controller('docgen_model')->export($form_state['input']['model'], '');
+      $data = entity_get_controller('docgen_model')->export($form_state['input']['model'], 'json');
       $filename = $form_state['input']['model'] . '.json';
     }
     else {
-      $data = entity_get_controller('docgen_model')->export($form_state['input']['model'], $form_state['input']['file_type']);
+      $data = entity_get_controller('docgen_model')->export($form_state['input']['model'], 'wadl');
       $filename = $form_state['input']['model'] . '.wadl';
     }
 

@@ -79,17 +79,8 @@ class DocGenModelController extends DrupalDefaultEntityController {
 
   public function export($model, $format) {
     try {
-      switch ($format) {
-        case 'wadl':
-          $ret = $this->docGenModel->exportModel($model, $format);
-          return $ret;
-          break;
-        default:
-          $ret = $this->docGenModel->exportModel($model, '');
-          return $ret;
-          break;
-      }
-      return '';
+      $ret = $this->docGenModel->exportModel($model, $format);
+      return $ret;
     } catch (Exception $e) {
       watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
       return array('code' => $e->getCode(), 'message' => $e->getMessage());

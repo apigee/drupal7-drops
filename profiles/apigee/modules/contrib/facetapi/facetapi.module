@@ -855,6 +855,8 @@ function facetapi_get_enabled_facets($searcher, $realm_name = NULL) {
     // Gets facet definitions for all enabled facets.
     $facet_info = facetapi_get_facet_info($searcher);
     $enabled_facets[$cid] = array_intersect_key($facet_info, $facets);
+    // Alter enabled facets on the fly.
+    drupal_alter('facetapi_enabled_facets', $enabled_facets[$cid], $searcher, $realm_name);
   }
   return $enabled_facets[$cid];
 }

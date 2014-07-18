@@ -42,12 +42,12 @@ Drupal.facetapi.applyLimit = function(settings) {
       return $(this).find('li').length > settings.limit;
     }).each(function() {
       $('<a href="#" class="facetapi-limit-link"></a>').text(Drupal.t(settings.showMoreText)).click(function() {
-        if ($(this).prev().find('li:hidden').length > 0) {
-          $(this).prev().find('li:gt(' + limit + ')').slideDown();
+        if ($(this).siblings().find('li:hidden').length > 0) {
+          $(this).siblings().find('li:gt(' + limit + ')').slideDown();
           $(this).addClass('open').text(Drupal.t(settings.showFewerText));
         }
         else {
-          $(this).prev().find('li:gt(' + limit + ')').slideUp();
+          $(this).siblings().find('li:gt(' + limit + ')').slideUp();
           $(this).removeClass('open').text(Drupal.t(settings.showMoreText));
         }
         return false;

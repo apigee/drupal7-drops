@@ -399,7 +399,7 @@ function facetapi_facet_display_form($form, &$form_state, FacetapiAdapter $adapt
     'sort_info' => array(),
     'excluded_values' => array(
       'form_build_id', 'form_token', 'form_id', 'op', 'submit', 'submit_list',
-      'settings__active_tab',
+      'submit_realm', 'settings__active_tab',
     ),
   );
 
@@ -602,6 +602,22 @@ function facetapi_facet_display_form($form, &$form_state, FacetapiAdapter $adapt
     '#default_value' => $global_settings->settings['flatten'],
     '#options' => array(0 => t('No'), 1 => t('Yes')),
     '#description' => t('Do not process hierarchical relationships and display facet items as a flat list.'),
+  );
+
+  $form['global']['individual_parent'] = array(
+    '#type' => 'radios',
+    '#access' => $facet['hierarchy callback'],
+    '#title' => t('Treat parent items as individual facet items'),
+    '#prefix' => '<div class="facetapi-global-setting">',
+    '#suffix' => '</div>',
+    '#default_value' => $global_settings->settings['individual_parent'],
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Parent items will not be active when selecting a children and if active, they will not clear their children facet selection.'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="global[flatten]"]' => array('value' => 0),
+      ),
+    ),
   );
 
   $form['global']['facet_mincount'] = array(
@@ -1069,6 +1085,10 @@ function facetapi_facet_filters_form_submit($form, &$form_state) {
  * @ingroup forms
  */
 function facetapi_facet_dependencies_form($form, &$form_state, FacetapiAdapter $adapter, array $realm, array $dependencies) {
+
+  // Ensure that the CTools plugin component is loaded.
+  // @see https://www.drupal.org/node/2122119
+  module_load_include('inc', 'ctools','includes/plugins');
 
   // We have to set the title due to contextual link magic.
   // @see http://drupal.org/node/1147588#comment-4428940

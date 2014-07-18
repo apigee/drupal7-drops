@@ -82,7 +82,7 @@ function theme_current_search_item_wrapper(array $variables) {
  */
 function theme_current_search_group_wrapper(array $variables) {
   $element = $variables['element'];
-  $attributes = array('class' => array('current-search-group'));
+  $attributes = array('class' => array('current-search-group current-search-group-' . drupal_html_class($element['#facet_name'])), 'id' => $element['#id']);
   return '<div' . drupal_attributes($attributes) . '>' . $element['#children'] . '</div>';
 }
 
