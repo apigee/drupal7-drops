@@ -23,7 +23,8 @@ module_load_include('inc', 'eck', 'includes/eck.references_dialog');
 function eckentity_load($id, $type) {
   try{
     $entity = entity_load_single($type, $id);
-  } catch (Exception $ex) {
+  }
+  catch (Exception $ex) {
     drupal_not_found();
     exit();
   }
@@ -50,7 +51,10 @@ function eck_flush_caches() {
   Bundle::loadAll(NULL, TRUE);
 }
 
-function eck_eck_default_properties(){
+/**
+ * Implements hook_eck_default_properties().
+ */
+function eck_eck_default_properties() {
   $default_properties = array();
 
   $default_properties['title'] = array(
@@ -170,6 +174,18 @@ function eck_schema_alter(&$schema) {
       // The function eck__entity_type__schema returns a schema for that
       // entity type given and entity_type object.
       $schema = array_merge($schema, array("eck_{$entity_type->name}" => eck__entity_type__schema($entity_type)));
+
+      // Allow properties to modify the schema.
+      $vars = array('entity_type' => $entity_type, 'schema' => $schema);
+
+      // The behavior hook should return its modifications in the same format
+      // that they were sent to it. So we would be expecting an array with an
+      // entity_type key, and a schema key.
+      $vars = eck_property_behavior_invoke_plugin_alter($entity_type, 'schema', $vars);
+
+      if (array_key_exists('schema', $vars) && isset($vars['schema'])) {
+        $schema = array_merge($schema, $vars['schema']);
+      }
     }
   }
 }
@@ -216,10 +232,20 @@ function entity_table($entities, $select = FALSE) {
       $delete_path = str_replace('%eckentity', $id, $crud_info['delete']['path']);
       $allowed_operations .= (($allowed_operations) ? '<br />' : '') . l(t('delete'), $delete_path, array('query' => $destination));
     }
-    $uri = entity_uri($entity_type, $entity);
-    $row = array(
-      l(entity_label($entity_type, $entity), $uri['path'], $uri['options']),
-    );
+
+    // Check that the user has permissions to view.
+    if (eck__entity_menu_access('view', $entity_type, $bundle, $id)) {
+      $uri = entity_uri($entity_type, $entity);
+      $row = array(
+        l(entity_label($entity_type, $entity), $uri['path'], $uri['options']),
+      );
+    }
+    else {
+      $row = array(
+        entity_label($entity_type, $entity),
+      );
+    }
+
     $row[] = array('data' => $allowed_operations);
     $info['entity'] = $entity;
     drupal_alter("entity_{$entity_type}_{$bundle}_tr", $row, $info);
@@ -626,20 +652,6 @@ function entity_table_select($form, &$state, $entity_type, $bundle, $header, $ro
 class ECKEntity extends Entity {}
 
 /**
- * Implements hook_entity_presave().
- */
-function eck_entity_presave($entity, $entity_type) {
-  $entity_type = EntityType::loadByName($entity_type);
-
-  // This is an eck entity.
-  if ($entity_type) {
-    eck_property_behavior_invoke_plugin($entity_type, 'entity_save',
-      array('entity' => $entity)
-    );
-  }
-}
-
-/**
  * Implements hook_entity_insert().
  */
 function eck_entity_insert($entity, $entity_type) {
@@ -810,21 +822,20 @@ function eck__entity_access($op, $entity_or_bundle, $account, $entity_type_name)
  */
 function eck_entity_view_alter(&$build, $entity_type) {
   $entity_types = EntityType::loadAll();
-  
+
   $this_entity_type = $build['#entity_type'];
-  
-  foreach($entity_types as $et){
-    if($et->name == $this_entity_type){
+
+  foreach ($entity_types as $et) {
+    if ($et->name == $this_entity_type) {
       $entity = $build['#entity'];
       $this_bundle = $entity->bundle();
       // Lets add contextual links to our entities in eck you can change
       // the paths of any of the possible operations, since contextual links
       // are dependent on the hierarchy of those paths, changing the paths
       // could cause of contextual links not to work correctly.
-      
-      $build['#contextual_links']['eck'] =
-      array(
-        "{$this_entity_type}/{$this_bundle}",array($entity->id));
+
+      $build['#contextual_links']['eck']
+        = array("{$this_entity_type}/{$this_bundle}",array($entity->id));
     }
   }
 }
@@ -834,4 +845,50 @@ function eck_entity_view_alter(&$build, $entity_type) {
  */
 function eck_alphabetical_cmp($a, $b) {
   return strcasecmp($a->name, $b->name);
+}
+
+/**
+ * Implements hook_init().
+ */
+function eck_init() {
+  // Let's initialize our global caches.
+  global $_eck_entity_types_cache;
+  global $_eck_bundles_cache;
+
+  $_eck_entity_types_cache = new ECKCache("entity_types");
+  $_eck_bundles_cache = new ECKCache("bundles");
+
+  if (variable_get("eck_clear_caches", FALSE)) {
+    variable_set("eck_clear_caches", FALSE);
+    eck_clean_up();
+  }
+}
+
+/**
+ * Clean/clear all relevant caches.
+ *
+ * Actions like creating and entity type or a bundle require modifycations
+ * to many parts of drupal, this function takes care of clearing those
+ * caches.
+ */
+function eck_clean_up() {
+  drupal_get_schema(NULL, TRUE);
+  entity_info_cache_clear();
+  entity_flush_caches();
+  menu_rebuild();
+}
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * If there are entity types created, let's not let the user disable the module.
+ */
+function eck_system_info_alter(&$info, $file, $type) {
+  if ($type == "module" && array_key_exists("name", $info) && $info['name'] == "Entity Construction Kit") {
+    $entity_types = EntityType::loadAll();
+    if (!empty($entity_types)) {
+      $info['required'] = TRUE;
+      $info['explanation'] = "Entity types created by ECK are still present in the system.";
+    }
+  }
 }

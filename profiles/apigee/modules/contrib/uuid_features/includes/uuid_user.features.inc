@@ -123,7 +123,8 @@ function uuid_user_features_rebuild($module) {
       $result = $efq->execute();
 
       if (isset($result['user'])) {
-        $uid = reset(array_keys($result['user']));
+        $uids = array_keys($result['user']);
+        $uid = reset($uids);
       }
 
       if (!empty($uid)) {

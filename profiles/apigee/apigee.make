@@ -67,7 +67,6 @@ projects[fontyourface][subdir]                                 = "contrib"
 projects[footermap][subdir]                                    = "contrib"
 projects[ftools][subdir]                                       = "contrib"
 projects[gauth][subdir]                                        = "contrib"
-projects[gauth][patch][2084493]                                = "https://drupal.org/files/dupe_user_created_fixed-2084493-1.patch"
 projects[genpass][subdir]                                      = "contrib"
 projects[gist_filter][subdir]                                  = "contrib"
 projects[gist_filter][version]                                 = "1.x-dev"
@@ -170,8 +169,13 @@ projects[twitter][subdir]                                      = "contrib"
 projects[util][subdir]                                         = "contrib"
 projects[uuid][subdir]                                         = "contrib"
 projects[variable][subdir]                                     = "contrib"
-projects[views][patch][1809958] = "https://www.drupal.org/files/issues/fix-views-missing-dom-id-1809958-7.patch"
+
 projects[views][subdir]                                        = "contrib"
+; Fix broken jQuery when a view is displayed inside a modal
+projects[views][patch][1809958] = "http://drupal.org/files/issues/fix-views-missing-dom-id-1809958-7.patch"
+; Fix bad ajax destination link on administrative views
+projects[views][patch][1036962] = "http://drupal.org/files/views-fix-destination-link-for-ajax-1036962-29.patch"
+
 projects[views_accordion][subdir]                              = "contrib"
 projects[views_bulk_operations][subdir]                        = "contrib"
 projects[views_rules][subdir]                                  = "contrib"
@@ -300,7 +304,7 @@ projects[apigee_devconnect][download][url]                     = "git@github.com
 
 projects[apigee_responsive][type]                              = "theme"
 projects[apigee_responsive][download][type]                    = 'git'
-projects[apigee_responsive][download][url]                     = "http://git.drupal.org/sandbox/bhasselbeck/2168189.git"
+projects[apigee_responsive][download][url]                     = "git@github.com:apigee/devconnect_apigee_responsive.git"
 projects[apigee_responsive][directory_name]                    = apigee_responsive
 
 ; development seed's admin theme

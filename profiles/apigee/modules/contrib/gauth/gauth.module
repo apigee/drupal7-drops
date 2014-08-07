@@ -5,6 +5,16 @@
  */
 
 /**
+ * Implements hook_init().
+ */
+function gauth_init() {
+  $path = libraries_get_path('google-api-php-client');
+  if ($path) {
+    set_include_path($path."/src/" . PATH_SEPARATOR . get_include_path());
+  }
+}
+
+/**
  * Implements hook_help().
  */
 function gauth_help($path, $arg) {
@@ -60,6 +70,7 @@ function gauth_menu() {
   $items['gauth/response_handler'] = array(
     'page callback' => 'gauth_response_handler',
     'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
   );
   $items['gauth/revoke_token/%'] = array(
     'title' => 'Google Account Token Revoke',
@@ -88,21 +99,23 @@ function gauth_theme() {
  * Implements hook_libraries_info().
  */
 function gauth_libraries_info() {
+  $path = libraries_get_path('google-api-php-client');
+  set_include_path($path."/src/" . PATH_SEPARATOR . get_include_path());
   $libraries['google-api-php-client'] = array(
-    'title' => 'Google OAuth2 Library',
+    'name' => 'Google OAuth2 Library',
     'vendor url' => 'http://code.google.com/p/google-api-php-client',
-    'download url' => 'http://code.google.com/p/google-api-php-client/downloads/list',
+    'download url' => 'http://github.com/google/google-api-php-client/archive/master.zip',
     'version arguments' => array(
-      'file' => 'src/io/Google_HttpRequest.php',
-      'pattern' => '/USER_AGENT_SUFFIX = "+(google-api-php-client\/\d\.\d\.\d)+";/',
-      'lines' => 27,
+      'file' => 'src/Google/Client.php',
+      'pattern' => '/LIBVER = "([0-9\.a-z]+)/',
+      'lines' => 40,
     ),
     'versions' => array(
-      'google-api-php-client/0.6.0' => array(),
+      '1.0.5-beta' => array(),
     ),
     'files' => array(
       'php' => array(
-        'src/Google_Client.php',
+        'src/Google/Client.php',
       ),
     ),
   );
@@ -144,11 +157,11 @@ function gauth_response_handler($account_id = NULL) {
       $client->setApplicationName("Google OAuth2");
       $client->setClientId($account['client_id']);
       $client->setClientSecret($account['client_secret']);
-      $client->setRedirectUri($GLOBALS['base_url'] . "/gauth/response_handler");
+      $client->setRedirectUri(url('gauth/response_handler', array('https' => TRUE, 'absolute' => TRUE)));
       $client->setDeveloperKey($account['developer_key']);
-      $service_api = gauth_google_services_versions();
+      $scopes = gauth_google_services_scopes();
       foreach (explode(",", $account['services']) as $service) {
-        $client->addService($service, $service_api[$service]);
+        $client->addScope($scopes[$service]);
       }
     }
     if (isset($_GET['code'])) {
@@ -176,40 +189,72 @@ function gauth_response_handler($account_id = NULL) {
 /**
  * Returns a array services api versions.
  */
-function gauth_google_services_versions() {
+function gauth_google_services_scopes() {
   return array(
-    'adexchangeseller' => 'v1',
-    'adexchangebuyer' => 'v1.1',
-    'adsense' => 'v1.2',
-    'adsensehost' => 'v4.1',
-    'analytics' => 'v3',
-    'bigquery' => 'v2',
-    'blogger' => 'v3',
-    'books' => 'v1',
-    'calendar' => 'v3',
-    'compute' => 'v1beta13',
-    'customsearch' => 'v1',
-    'dfareporting' => 'v1.1',
-    'drive' => 'v2',
-    'freebase' => 'v1',
-    'fustiontables' => 'v1',
-    'gan' => 'v1beta1',
-    'latitude' => 'v1',
-    'licensing' => 'v1',
-    'moderator' => 'v1',
-    'oauth2' => 'v2',
-    'orkut' => 'v2',
-    'pagespeedonline' => 'v1',
-    'prediction' => 'v1.4',
-    'shopping' => 'v1',
-    'siteVerification' => 'v1',
-    'storage' => 'v1beta1',
-    'taskqueue' => 'v1beta2',
-    'tasks' => 'v1',
-    'translate' => 'v2',
-    'urlshortener' => 'v1',
-    'webfonts' => 'v1',
-    'youtube' => 'v3',
+    'adexchangeseller' => 'https://www.googleapis.com/auth/adexchange.seller',
+    'adexchangebuyer' => 'https://www.googleapis.com/auth/adexchange.buyer',
+    'adsense' => 'https://www.googleapis.com/auth/adsense',
+    'adsensehost' => 'https://www.googleapis.com/auth/adsensehost',
+    'analytics' => array(
+      'https://www.googleapis.com/auth/analytics',
+      'https://www.googleapis.com/auth/analytics.edit',
+      'https://www.googleapis.com/auth/analytics.manage.users',
+      'https://www.googleapis.com/auth/analytics.provision',
+    ),
+    'bigquery' => array(
+      'https://www.googleapis.com/auth/bigquery',
+      'https://www.googleapis.com/auth/bigquery.insertdata',
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/devstorage.full_control',
+    ),
+    'blogger' => 'https://www.googleapis.com/auth/blogger',
+    'books' => 'https://www.googleapis.com/auth/books',
+    'calendar' => 'https://www.googleapis.com/auth/calendar',
+    'compute' => array(
+      'https://www.googleapis.com/auth/compute',
+      'https://www.googleapis.com/auth/devstorage.full_control',
+    ),
+    'customsearch' => '',
+    'dfareporting' => 'https://www.googleapis.com/auth/dfareporting',
+    'drive' => array(
+      'https://www.googleapis.com/auth/drive',
+      'https://www.googleapis.com/auth/drive.appdata',
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive.scripts',
+    ),
+    'freebase' => '',
+    'fustiontables' => 'https://www.googleapis.com/auth/fusiontables',
+    'licensing' => '',
+    'oauth2' => array(
+      'https://www.googleapis.com/auth/plus.login',
+      'https://www.googleapis.com/auth/plus.me',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ),
+    'orkut' => 'https://www.googleapis.com/auth/orkut',
+    'pagespeedonline' => '',
+    'prediction' => array(
+      'https://www.googleapis.com/auth/devstorage.full_control',
+      'https://www.googleapis.com/auth/prediction',
+    ),
+    'shopping' => 'https://www.googleapis.com/auth/content',
+    'siteVerification' => 'https://www.googleapis.com/auth/siteverification',
+    'storage' => 'https://www.googleapis.com/auth/devstorage.full_control',
+    'taskqueue' => array(
+      'https://www.googleapis.com/auth/taskqueue',
+      'https://www.googleapis.com/auth/taskqueue.consumer',
+    ),
+    'tasks' => 'https://www.googleapis.com/auth/tasks',
+    'translate' => '',
+    'urlshortener' => 'https://www.googleapis.com/auth/urlshortener',
+    'webfonts' => '',
+    'youtube' => array(
+      'https://www.googleapis.com/auth/youtube',
+      'https://www.googleapis.com/auth/youtube.readonly',
+      'https://www.googleapis.com/auth/youtube.upload',
+      'https://www.googleapis.com/auth/youtubepartner',
+      'https://www.googleapis.com/auth/youtubepartner-channel-audit',
+    ),
   );
 }
 
@@ -233,8 +278,6 @@ function gauth_google_services_names($services = FALSE) {
     'drive' => t('Google Drive'),
     'freebase' => t('Google Freebase'),
     'fusiontables' => t('Google Freebasetables'),
-    'gan' => t('Google Gans'),
-    'latitude' => t('Google Latitude'),
     'licensing' => t('Google Licensing'),
     'moderator' => t('Google Moderator'),
     'oauth2' => t('Google Oauth2'),
@@ -478,7 +521,7 @@ function gauth_client_get($account_id = NULL, $by_name = TRUE) {
     $client->setDeveloperKey($account['developer_key']);
   }
   $client->setApplicationName("Google OAuth2");
-  $client->setRedirectUri($GLOBALS['base_url'] . "/gauth/response_handler");
+  $client->setRedirectUri(url('gauth/response_handler', array('https' => TRUE, 'absolute' => TRUE)));
   return $client;
 }
 

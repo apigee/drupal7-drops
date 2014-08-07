@@ -41,18 +41,18 @@
     },
     {
         "name": "symfony/event-dispatcher",
-        "version": "v2.5.2",
-        "version_normalized": "2.5.2.0",
+        "version": "v2.5.3",
+        "version_normalized": "2.5.3.0",
         "target-dir": "Symfony/Component/EventDispatcher",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/EventDispatcher.git",
-            "reference": "2215d2ef6fd7ab24d55576a3d924df575c741762"
+            "reference": "8faf5cc7e80fde74a650a36e60d32ce3c3e0457b"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/2215d2ef6fd7ab24d55576a3d924df575c741762",
-            "reference": "2215d2ef6fd7ab24d55576a3d924df575c741762",
+            "url": "https://api.github.com/repos/symfony/EventDispatcher/zipball/8faf5cc7e80fde74a650a36e60d32ce3c3e0457b",
+            "reference": "8faf5cc7e80fde74a650a36e60d32ce3c3e0457b",
             "shasum": ""
         },
         "require": {
@@ -68,7 +68,7 @@
             "symfony/dependency-injection": "",
             "symfony/http-kernel": ""
         },
-        "time": "2014-07-09 09:05:48",
+        "time": "2014-07-28 13:20:46",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -87,14 +87,12 @@
         ],
         "authors": [
             {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com",
-                "homepage": "http://fabien.potencier.org",
-                "role": "Lead Developer"
-            },
-            {
                 "name": "Symfony Community",
                 "homepage": "http://symfony.com/contributors"
+            },
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
             }
         ],
         "description": "Symfony EventDispatcher Component",
@@ -196,24 +194,24 @@
     },
     {
         "name": "symfony/yaml",
-        "version": "v2.5.2",
-        "version_normalized": "2.5.2.0",
+        "version": "v2.5.3",
+        "version_normalized": "2.5.3.0",
         "target-dir": "Symfony/Component/Yaml",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/Yaml.git",
-            "reference": "f868ecdbcc0276b6158dfbf08b9e98ce07f014e1"
+            "reference": "5a75366ae9ca8b4792cd0083e4ca4dff9fe96f1f"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/Yaml/zipball/f868ecdbcc0276b6158dfbf08b9e98ce07f014e1",
-            "reference": "f868ecdbcc0276b6158dfbf08b9e98ce07f014e1",
+            "url": "https://api.github.com/repos/symfony/Yaml/zipball/5a75366ae9ca8b4792cd0083e4ca4dff9fe96f1f",
+            "reference": "5a75366ae9ca8b4792cd0083e4ca4dff9fe96f1f",
             "shasum": ""
         },
         "require": {
             "php": ">=5.3.3"
         },
-        "time": "2014-07-09 09:05:48",
+        "time": "2014-08-05 09:00:40",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -232,14 +230,12 @@
         ],
         "authors": [
             {
-                "name": "Fabien Potencier",
-                "email": "fabien@symfony.com",
-                "homepage": "http://fabien.potencier.org",
-                "role": "Lead Developer"
-            },
-            {
                 "name": "Symfony Community",
                 "homepage": "http://symfony.com/contributors"
+            },
+            {
+                "name": "Fabien Potencier",
+                "email": "fabien@symfony.com"
             }
         ],
         "description": "Symfony Yaml Component",

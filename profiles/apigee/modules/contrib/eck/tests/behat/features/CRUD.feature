@@ -44,7 +44,7 @@ Feature: CRUD
     And I fill in "Title" with "Entity 1239"
     And I press the "Save" button
     Then I should see the text "Entity 1239 has been saved"
-    And I should see the heading "Entity 1239"
+    And I should see the link "Entity 1239"
 
   @entity
   Scenario: I am able to edit entities
@@ -53,7 +53,7 @@ Feature: CRUD
     And I fill in "Title" with "Entity 1239999999"
     And I press the "Save" button
     Then I should see the text "Entity 1239999999 has been saved"
-    And I should see the heading "Entity 1239999999"
+    And I should see the link "Entity 1239999999"
 
   @entity
   Scenario: I am able to delete entities

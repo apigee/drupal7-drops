@@ -89,7 +89,7 @@ function devconnect_developer_apps_rules_action_info() {
     'label' => t('Status'),
     'description' => t('Please provide the status of the application. Example: pending, approved, etc'),
   );
-  if (variable_get('devconnect_callback_handling', 'require') != 'none') {
+  if (variable_get('devconnect_callback_handling', 'none') != 'none') {
     $parameters['callback_url'] = array(
       'type' => 'uri',
       'label' => t('Callback URL'),

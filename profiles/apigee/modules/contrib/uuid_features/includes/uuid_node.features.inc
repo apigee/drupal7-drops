@@ -140,8 +140,10 @@ function uuid_node_features_rebuild($module) {
   variable_set('menu_rebuild_needed', FALSE);
   lock_acquire('menu_rebuild');
 
-  // Import the terms first.
-  uuid_term_features_rebuild($module);
+  if (function_exists('uuid_term_features_rebuild')) {
+    // Import the terms first.
+    uuid_term_features_rebuild($module);
+  }
 
   $nodes = module_invoke($module, 'uuid_features_default_content');
   if (!empty($nodes)) {

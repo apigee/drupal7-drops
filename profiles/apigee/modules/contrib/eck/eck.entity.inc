@@ -11,7 +11,7 @@ function eck__entity__menu($entity_type, $bundle) {
   $path = eck__entity_type__path();
   $menu = array();
 
-  // DELETE Bundle.
+  // DELETE Bundles.
   $menu["{$path}/{$entity_type->name}/{$bundle->name}/delete"] = array(
     'title' => "Delete",
     'page callback' => "drupal_get_form",
@@ -29,6 +29,7 @@ function eck__entity__menu($entity_type, $bundle) {
     'type' => MENU_LOCAL_TASK,
   );
 
+  // EDIT Bundles.
   $menu["{$path}/{$entity_type->name}/{$bundle->name}/edit"] = array(
     'title' => 'Edit',
     'page callback' => 'drupal_get_form',
@@ -52,7 +53,7 @@ function eck__entity__menu($entity_type, $bundle) {
 
   $admin_info = get_bundle_admin_info($entity_type->name, $bundle->name);
 
-  // OVERVIEW Entity.
+  // LIST Entities.
   $menu[$admin_info['path']] = array(
     'title' => "{$bundle->label}",
     'description' => "View all entites of type {$entity_type->label} with bundle {$bundle->label}",
@@ -61,12 +62,6 @@ function eck__entity__menu($entity_type, $bundle) {
     'access callback' => 'eck__multiple_access_check',
     'access arguments' => array(
       array(
-        'eck administer bundles',
-        'eck add bundles',
-        'eck edit bundles',
-        "eck administer {$entity_type->name} bundles",
-        "eck add {$entity_type->name} bundles",
-        "eck edit {$entity_type->name} bundles",
         'eck administer entities',
         "eck list entities",
         "eck administer {$entity_type->name} {$bundle->name} entities",
@@ -438,6 +433,10 @@ function eck__entity__form_submit($form, &$state) {
       $wrapper->{$property}->set($form_value);
     }
   }
+
+  // Let the behaviors to modify the entity.
+  eck_property_behavior_invoke_plugin($entity_type, 'entity_save',
+    array('entity' => $entity, 'form' => $form, 'form_state' => $state));
 
   $entity->save();
 

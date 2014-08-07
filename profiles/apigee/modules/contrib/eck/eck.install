@@ -28,36 +28,6 @@ function eck_requirements($phase) {
 }
 
 /**
- * Implements hook_disable().
- */
-function eck_disable() {
-  
-  drupal_set_message("Due to dependencies within the Entity system, ECK is not able"
-    . "to fully clean up during uninstall. This left over data can cause issues."
-    . " Make sure to delete all of your entity types before uninstalling ECK.", "warning");
-  
-  $entity_types = EntityType::loadAll();
-  // Lets save the name of every entity type so we can delete them in uninstall.
-  foreach ($entity_types as $entity_type) {
-    $tables[] = $entity_type->name;
-  }
-
-  variable_set('eck_tables', $tables);
-}
-
-/**
- * Implements hook_uninstall().
- */
-function eck_uninstall() {
-  $tables = variable_get('eck_tables');
-  foreach ($tables as $table) {
-    db_drop_table("eck_{$table}");
-  }
-
-  variable_del('eck_tables');
-}
-
-/**
  * Implements hook_schema().
  *
  * Create the database table that will store the entities information.
@@ -152,7 +122,7 @@ function eck_schema() {
     ),
     'primary key' => array('id'),
     'unique' => array(
-      'machine_name' => array('machine_name')
+      'machine_name' => array('machine_name'),
     ),
   );
 
@@ -547,15 +517,13 @@ function eck_update_7009() {
  */
 function eck_update_7010() {
   db_add_unique_key("eck_entity_type", "name", array('name'));
-  db_add_unique_key("eck_bundle", "machine_name", array('machine_name')); 
+  db_add_unique_key("eck_bundle", "machine_name", array('machine_name'));
 }
 
 /**
  * Add an eck cache table.
- **/
+ */
 function eck_update_7011() {
   $schema = drupal_get_schema_unprocessed('system', 'cache');
   db_create_table('cache_eck', $schema);
 }
-
-

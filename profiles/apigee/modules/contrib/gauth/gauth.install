@@ -106,7 +106,7 @@ function gauth_requirements($phase) {
     if (!$info['loaded']) {
       $url = l($t('here'), $info['download url']);
       $version = array_keys($info['versions']);
-      $requirements['gauth']['description'] = $t('Install version "@version" of the Google api php client library code (from !here) in a libraries directory such as "sites/all/libraries."', array('@version' => $version[0], '!here' => $url));
+      $requirements['gauth']['description'] = $t('Install version "@version" of the Google api php client library code (from !here) in a libraries directory such as "sites/all/libraries/google-api-php-client."', array('@version' => $version[0], '!here' => $url));
       $requirements['gauth']['severity'] = REQUIREMENT_ERROR;
     }
     else {

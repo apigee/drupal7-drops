@@ -418,7 +418,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
       'optional' => t('Callback URL is optional for all developer apps.'),
       'none' => t('Callback URL is neither required nor displayed.')
     ),
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_callback_handling', 'require', $form_state),
+    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_callback_handling', 'none', $form_state),
     '#required' => TRUE
   );
 
@@ -795,13 +795,13 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
 
   $form['#attached'][] = 'misc/machine-name.js';
 
-  if (variable_get('devconnect_callback_handling', 'require') != 'none') {
+  if (variable_get('devconnect_callback_handling', 'none') != 'none') {
     $form['callback_url'] = array(
       '#title' => t('Callback URL'),
       '#type' => 'textfield',
       '#id' => 'new_callback_url',
       '#default_value' => (isset($app_name) ? $entity->callbackUrl : ''),
-      '#required' => (variable_get('devconnect_callback_handling', 'require') == 'require'),
+      '#required' => (variable_get('devconnect_callback_handling', 'none') == 'require'),
       '#size' => 145,
     );
     $regex = variable_get('devconnect_validate_callback_url', NULL);

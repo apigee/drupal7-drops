@@ -9,30 +9,44 @@
  * Implements hook_init().
  */
 function bootstrap_modal_forms_init() {
-  if(_is_bootstrap_modal_request()) {
-    if (module_exists('navbar')){
-        navbar_suppress();
+  if (_is_bootstrap_modal_request()) {
+    if (module_exists('navbar')) {
+      navbar_suppress();
     }
-    if (module_exists('admin_menu')){
-        admin_menu_suppress();
+    if (module_exists('admin_menu')) {
+      admin_menu_suppress();
     }
   }
+  $query = array('query' => array('destination' => implode('/', arg())));
   if (user_is_anonymous()) {
     //Add the user login and registration form to the bootstrap modal window.
-    if ((bool) variable_get('bootstrap_modal_forms_login', 0) && current_path()!= 'user/login') {
+    if ((bool) variable_get('bootstrap_modal_forms_login', 0) && current_path() != 'user/login') {
       $form = drupal_get_form('user_login');
-      $path = implode('/', arg());
       $form['#bootstrap_form_title'] = t('Log in');
-      $form['#action'] = url('user/login', array('query' => array('destination' => $path)));
+      $form['#action'] = url('user/login', $query);
       bootstrap_modal_forms_add_form('login', 'user/login', $form);
     }
-    if ((bool) variable_get('bootstrap_modal_forms_register', 0) && current_path()!= 'user/register') {
+    if ((bool) variable_get('bootstrap_modal_forms_register', 0) && current_path() != 'user/register') {
       $form = drupal_get_form('user_register_form');
-      $path = implode('/', arg());
       $form['#bootstrap_form_title'] = t('Register a new user');
-      $form['#action'] = url('user/register', array('query' => array('destination' => $path)));
+      $form['#action'] = url('user/register', $query);
       bootstrap_modal_forms_add_form('register', 'user/register', $form);
     }
+    if ((bool) variable_get('bootstrap_modal_forms_pass', 0) && current_path() != 'user/password') {
+      module_load_include('inc', 'user', 'user.pages');
+      $form = drupal_get_form('user_pass');
+      $form['#bootstrap_form_title'] = t('Request new password');
+      $form['#action'] = url('user/password', $query);
+      bootstrap_modal_forms_add_form('password', 'user/password', $form);
+    }
+  }
+
+  $forms = module_invoke_all('bootstrap_modal_forms');
+  foreach ($forms as $id => $form_descriptor) {
+    $form = $form_descriptor['form'];
+    $form['#bootstrap_form_title'] = $form_descriptor['title'];
+    $form['#action'] = url($form_descriptor['action'], $query);
+    bootstrap_modal_forms_add_form($id, $form_descriptor['action'], $form);
   }
 }
 
@@ -42,8 +56,8 @@ function bootstrap_modal_forms_init() {
 function bootstrap_modal_forms_menu() {
   $items = array();
   $items['admin/config/user-interface/bootstrap_modal_forms'] = array(
-    'title' => 'Boostrap Modal forms',
-    'description' => 'Administrative tasks with bootstrap modal forms. (Requires bootstrap 3.0 or higher)',
+    'title' => 'Bootstrap Modal forms',
+    'description' => 'Administrative tasks with bootstrap modal forms.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bootstrap_model_forms_settings'),
     'access arguments' => array('administer site configuration'),
@@ -54,12 +68,16 @@ function bootstrap_modal_forms_menu() {
 
 /**
  * Implements hook_help().
+ *
+ * @param $path
+ * @param $arg
+ * @return string
  */
 function bootstrap_modal_forms_help($path, $arg) {
   switch ($path) {
     case 'admin/config/user-interface/bootstrap_modal_forms':
       return '<p>Once enabled (and the bootstrap library is being used as your active theme,
-      all you\'ll have to do is add a link to the drupal form, and it will render into a modal.</p>';
+      all you’ll have to do is add a link to the drupal form, and it will render into a modal.</p>';
     default:
       return '';
   }
@@ -76,7 +94,7 @@ function bootstrap_modal_forms_theme($existing, $type, $theme, $path) {
         'header' => 'Default Header',
         'identifier' => '',
         'modal_form' => NULL,
-        'version' =>  NULL,
+        'version' => NULL,
         'tpl_suffix' => '',
         'modal_style' => ''
       ),
@@ -107,37 +125,44 @@ function bootstrap_modal_forms_theme($existing, $type, $theme, $path) {
 }
 
 /**
- * Implements hook_process_bootstrap_modal_forms
+ * Implements hook_process_bootstrap_modal_forms().
+ *
+ * @param $vars
  */
 function bootstrap_modal_forms_process_bootstrap_modal_forms(&$vars) {
   $vars['version'] = variable_get('bootstrap_version', '2');
   if (!empty($vars['tpl_suffix'])) {
-    $vars['theme_hook_suggestions'][] = 'bootstrap_modal_forms__'. $vars['tpl_suffix'];
+    $vars['theme_hook_suggestions'][] = 'bootstrap_modal_forms__' . $vars['tpl_suffix'];
   }
 }
 
 /**
- * Implements hook_preprocess_html
+ * Implements hook_preprocess_html().
+ *
+ * @param $vars
  */
-function bootstrap_modal_forms_preprocess_html(&$vars){
+function bootstrap_modal_forms_preprocess_html(&$vars) {
   //Do not process the modal forms in maintenance mode
   if (defined('MAINTENANCE_MODE')) {
     return;
   }
 
-  if(_is_bootstrap_modal_request()) {
+  if (_is_bootstrap_modal_request()) {
     $vars['theme_hook_suggestions'][] = 'html__bootstrap_modal_forms';
   }
   $info = bootstrap_modal_forms_add_form();
   if (!empty($info)) {
-    if(!isset($vars['page']['page_bottom'])) {
-        $vars['page']['page_bottom'] = array();
+    if (!isset($vars['page']['page_bottom'])) {
+      $vars['page']['page_bottom'] = array();
     }
-    foreach ($info as $key=>&$values) {
-      $vars['page']['page_bottom']['bootstrap_modal_forms-'. $key]['#markup'] = $values['form_html'];
+    foreach ($info as $key => &$values) {
+      $vars['page']['page_bottom']['bootstrap_modal_forms-' . $key]['#markup'] = $values['form_html'];
       unset($values['form_html']);
     }
-    drupal_add_js(array('bootstrap_modal_forms' => $info, 'bootstrap_modal_forms_current_path' => implode('/', arg())), 'setting');
+    drupal_add_js(array(
+      'bootstrap_modal_forms' => $info,
+      'bootstrap_modal_forms_current_path' => implode('/', arg())
+    ), 'setting');
     drupal_add_js(drupal_get_path('module', 'bootstrap_modal_forms') . '/js/bootstrap_modal_forms.forms.js');
   }
 }
@@ -146,38 +171,53 @@ function bootstrap_modal_forms_preprocess_html(&$vars){
  * Check if the page needs to be displayed in the bootstrap modal.
  * Returns
  */
-function _is_bootstrap_modal_request(){
-    $bool = &drupal_static(__FUNCTION__, NULL);
-    if(!isset($bool)) {
-      $bool = (isset($_REQUEST['bootstrap_modal_forms']) && $_REQUEST['bootstrap_modal_forms'] == '1');
-    }
-    return $bool;
+function _is_bootstrap_modal_request() {
+  $bool = & drupal_static(__FUNCTION__, NULL);
+  if (!isset($bool)) {
+    $bool = (isset($_REQUEST['bootstrap_modal_forms']) && $_REQUEST['bootstrap_modal_forms'] == '1');
+  }
+  return $bool;
 }
+
 /**
- * Function used to register a modal with the bootstrap
- * identifier - this is the ID of the modal form. Also used to load any alternative bootstrap_modal_forms__<identifier> tpls
- * url - URL to load in the bootstrap modal
- * form - If specified the will be added to the page as static html at the end of the page. (expects a drupal renderable array)
- *     If you choose to pass in html with the bootstrap wrapper that will work too.
- * open_onload - If you want to bootstrap window to be open by default
+ * Registers a modal with Bootstrap.
+ *
+ * @param string|null $identifier
+ *    this is the ID of the modal form. Also used to load any alternative
+ *    bootstrap_modal_forms__<identifier> tpls
+ * @param string|null $url
+ *    URL to load in the bootstrap modal
+ * @param array|null $form
+ *    If specified, this will be added to the page as static html at the end
+ *    of the page. (Expects a Drupal renderable array.) If you choose to pass
+ *    in html with the bootstrap wrapper that will work too.
+ * @param bool $open_onload
+ *    If you want to bootstrap window to be open by default
+ * @return null|array
  */
 function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form = NULL, $open_onload = FALSE) {
   //If the current_path is the same as the $url passed in we do not process the bootstrap modal form
   if ($url == current_path()) {
-    return;
+    return NULL;
   }
-  $info = &drupal_static(__FUNCTION__, array());
+  $info = & drupal_static(__FUNCTION__, array());
   if ($identifier != NULL) {
+
     $modal_style = '';
     if ($form == NULL && $url != NULL) {
       $close_and_reload_page = drupal_get_path('module', 'bootstrap_modal_forms') . '/modals/closeAndReloadPage.html';
       //If form is NULL we will just load the url in an iframe
       $form = array(
-        '#type' => 'html_tag' ,
+        '#type' => 'html_tag',
         '#tag' => 'iframe',
         '#value' => '',
         '#attributes' => array(
-          'data-src' => url(urldecode($url), array('query' => array('destination' => $close_and_reload_page, 'bootstrap_modal_forms' => '1'))),
+          'data-src' => url(urldecode($url), array(
+            'query' => array(
+              'destination' => $close_and_reload_page,
+              'bootstrap_modal_forms' => '1'
+            )
+          )),
           'width' => '100%',
         )
       );
@@ -190,20 +230,25 @@ function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form =
           'identifier' => $identifier,
           'modal_style' => $modal_style,
           'tpl_suffix' => $identifier,
-          'header' => isset($form['#bootstrap_form_title']) ? $form['#bootstrap_form_title']: 'Default Header',
+          'header' => isset($form['#bootstrap_form_title']) ? $form['#bootstrap_form_title'] : 'Default Header',
         )
       ) : $form;
-    if(!isset($info[$identifier])) {
-      $info[$identifier] = array('identifier' => $identifier, 'url' => $url, 'form_html' => $form_html, 'open_onload' => $open_onload);
+    if (!isset($info[$identifier])) {
+      $info[$identifier] = array(
+        'identifier' => $identifier,
+        'url' => $url,
+        'form_html' => $form_html,
+        'open_onload' => $open_onload
+      );
     }
     else {
-      if($url!= NULL) {
+      if ($url != NULL) {
         $info[$identifier]['url'] = $url;
       }
-      if($form_html!= NULL) {
+      if ($form_html != NULL) {
         $info[$identifier]['form_html'] = $form_html;
       }
-      if($open_onload) {
+      if ($open_onload) {
         $info[$identifier]['open_onload'] = $open_onload;
       }
     }
@@ -212,10 +257,12 @@ function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form =
 }
 
 /**
- * Implements hook_preprocess_page
+ * Implements hook_preprocess_page().
+ *
+ * @param $vars
  */
-function bootstrap_modal_forms_preprocess_page(&$vars){
-    if(_is_bootstrap_modal_request()) {
-      $vars['theme_hook_suggestions'][] = 'page__bootstrap_modal_forms';
-    }
+function bootstrap_modal_forms_preprocess_page(&$vars) {
+  if (_is_bootstrap_modal_request()) {
+    $vars['theme_hook_suggestions'][] = 'page__bootstrap_modal_forms';
+  }
 }

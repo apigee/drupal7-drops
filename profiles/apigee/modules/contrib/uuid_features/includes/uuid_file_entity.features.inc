@@ -107,7 +107,7 @@ function uuid_file_entity_features_export_render($module, $data) {
 
     // Use date instead of created, in the same format used by
     // file_object_prepare().
-    $export->date = format_date($export->created, 'custom', 'Y-m-d H:i:s O');
+    $export->date = format_date($export->timestamp, 'custom', 'Y-m-d H:i:s O');
 
     // Don't cause conflicts with fid/vid/revision_timestamp/changed fields.
     $export->{$export_var} = uuid_features_file_export($export, $export_mode);
@@ -116,8 +116,11 @@ function uuid_file_entity_features_export_render($module, $data) {
     drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $file, $module);
     drupal_alter('uuid_file_entity_features_export_render', $export, $file, $module);
 
-    unset($export->fid);
-    unset($export->timestamp);
+    unset(
+      $export->fid,
+      $export->timestamp,
+      $export->created
+    );
 
     $code[] = '  $files[] = ' . features_var_export($export, '  ') . ';';
   }

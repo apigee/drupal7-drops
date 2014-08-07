@@ -45,10 +45,17 @@ INSTALLATION
 
 2. Download the latest release of google php client library and
    extract it in libraries folder of the site, mostly located at
-   sites/all/libraries, the path is sites/all/libraries/google-api-php-client.
+   sites/all/libraries, the path is 
+  'sites/all/libraries/google-api-php-client/src..'
+   Note that version 1.3 of this module required google-api-php-client 0.6.0 and
+   1.4 is tested with 1.0.5-beta release of google-api-php-client.
 
 3. Enable the module and manage accounts at
    admin/config/services/gauth_account.
+
+Common problems reported at https://www.drupal.org/node/2099901 show that if 
+the library folder don't have proper permissions and need to flush cache after 
+setting these permissions.
 
 
 GOOGLE CONFIGURATION

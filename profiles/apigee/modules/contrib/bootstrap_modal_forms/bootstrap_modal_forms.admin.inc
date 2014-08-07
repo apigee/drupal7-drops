@@ -7,6 +7,10 @@
 
 /**
  * Administrative settings for bootstrap_modal_forms.
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
  */
 function bootstrap_model_forms_settings($form, $form_state) {
   $form = array();
@@ -23,7 +27,7 @@ function bootstrap_model_forms_settings($form, $form_state) {
       '2' => '2.3.2',
       '3' => '3',
     ),
-    '#default_value' => variable_get('bootstrap_version', '2'),
+    '#default_value' => variable_get('bootstrap_version', '3'),
     '#description' => t('The bootstrap version the active theme is using.'),
   );
 
@@ -48,6 +52,17 @@ function bootstrap_model_forms_settings($form, $form_state) {
     '#title' => t('Enable for the Registration Form'),
     '#default_value' => variable_get('bootstrap_modal_forms_register', 0),
     '#description' => t('Use the bootstrap modal for registration.'),
+  );
+  // Defines whether or not to use the Password Request form.
+  $form['bootstrap_modal_form_pass_form_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Lost Password Form Settings'),
+  );
+  $form['bootstrap_modal_form_pass_form_settings']['bootstrap_modal_forms_pass'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable for the Request New Password Form'),
+    '#default_value' => variable_get('bootstrap_modal_forms_pass', 0),
+    '#description' => t('Use the bootstrap modal for requesting a new password.'),
   );
   return system_settings_form($form);
 }

@@ -19,7 +19,7 @@ function eck__bundle__menu($entity_type) {
   $path = eck__entity_type__path();
   $menu = array();
 
-  // DELETE ENTITY TYPE.
+  // DELETE Entity Types.
   $menu["{$path}/{$entity_type->name}/delete"] = array(
     'title' => "Delete",
     'description' => "Delete the '{$entity_type->label}' Entity Type",
@@ -41,30 +41,32 @@ function eck__bundle__menu($entity_type) {
     'page callback' => "drupal_get_form",
     'page arguments' => array("eck__properties__form", $entity_type->name),
     'access callback' => 'eck__multiple_access_check',
-    'access arguments' => array(array('eck administer entity types',
-        'eck edit entity types',
+    'access arguments' => array(
+      array(
+        'eck administer entity types',
         "manage {$entity_type->name} properties",
-      )),
+      ),
+    ),
     'file' => 'eck.properties.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
   );
 
-  // OVERVIEW Entity types.
+  // LIST Bundles.
   $menu["{$path}/{$entity_type->name}"] = array(
     'title' => "{$entity_type->label}",
     'description' => "View all the bundles for '{$entity_type->label}'",
     'page callback' => "eck__bundle__list",
     'page arguments' => array(3),
     'access callback' => 'eck__multiple_access_check',
-    'access arguments' => array(array('eck administer entity types',
-        'eck add entity types',
-        'eck edit entity types',
+    'access arguments' => array(
+      array(
         'eck administer bundles',
         'eck list bundles',
         "eck administer {$entity_type->name} bundles",
         "eck list {$entity_type->name} bundles",
-      )),
+      ),
+    ),
     'file' => 'eck.bundle.inc',
   );
 
@@ -74,6 +76,7 @@ function eck__bundle__menu($entity_type) {
     'weight' => 100,
   );
 
+  // EDIT Entity Types.
   $menu["{$path}/{$entity_type->name}/edit"] = array(
     'title' => "Edit",
     'description' => "Edit the '{$entity_type->label}' entity type",
@@ -86,15 +89,21 @@ function eck__bundle__menu($entity_type) {
     'weight' => 2,
   );
 
+  // ADD Bundles.
   $menu["{$path}/{$entity_type->name}/add"] = array(
     'title' => "Add bundle ",
     'description' => "Add a(n) new '{$entity_type->label} Bundle'",
     'page callback' => "drupal_get_form",
     'page arguments' => array('eck__bundle__add', 3),
     'access callback' => 'eck__multiple_access_check',
-    'access arguments' => array(array('eck administer bundles',
-        'eck add bundles', "eck add {$entity_type->name} bundles",
-      )),
+    'access arguments' => array(
+      array(
+        'eck administer bundles',
+        'eck add bundles',
+        "eck administer {$entity_type->name} bundles",
+        "eck add {$entity_type->name} bundles",
+      ),
+    ),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 0,
     'file' => 'eck.bundle.inc',
@@ -121,8 +130,10 @@ function eck__bundle__list($entity_type) {
   $entity_type = entity_type_load($entity_type);
 
   // Check that the user has permissions to view bundle lists.
-  if (eck__multiple_access_check(
-      array('eck administer bundles',
+  // @todo Do we really need this, can they be here without the right
+  // permissions in the first place?
+  if (eck__multiple_access_check(array(
+        'eck administer bundles',
         'eck list bundles',
         "eck administer {$entity_type->name} bundles",
         "eck list {$entity_type->name} bundles",
@@ -157,16 +168,19 @@ function eck__bundle__list($entity_type) {
       if (eck__multiple_access_check($perm_check)) {
         $allowed_operations = l(t('delete'), $uri . "/delete");
       }
-      
+
+      // Check that the user can view lists of entities.
       $perm_check = array(
         'eck administer entities',
         'eck list entities',
+        "eck administer {$entity_type->name} {$bundle->name} entities",
+        "eck list {$entity_type->name} {$bundle->name} entities",
       );
       if (eck__multiple_access_check($perm_check)) {
-        $label =  l($bundle_label, url($uri, array('absolute' => TRUE)));
+        $label = l($bundle_label, url($uri, array('absolute' => TRUE)));
       }
       else {
-         $label = $bundle_label;
+        $label = $bundle_label;
       }
 
       $rows[] = array($label, $allowed_operations);
