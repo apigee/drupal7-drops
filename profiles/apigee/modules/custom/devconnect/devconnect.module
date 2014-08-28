@@ -122,7 +122,7 @@ function devconnect_admin_form($form, &$form_state) {
   $element =& $form['connection_config_container']['org_settings'][0];
   $element['org'] = array(
     '#type' => 'textfield',
-    '#title' => t('Dev Portal Organization'),
+    '#title' => t('Management API Organization'),
     '#required' => TRUE,
     '#default_value' => $org_settings['org'],
     '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
@@ -130,7 +130,7 @@ function devconnect_admin_form($form, &$form_state) {
   );
   $element['endpoint'] = array(
     '#type' => 'textfield',
-    '#title' => t('Dev Portal Endpoint URL'),
+    '#title' => t('Management API Endpoint URL'),
     '#required' => TRUE,
     '#default_value' => $org_settings['endpoint'],
     '#description' => t('URL to which to make Apigee REST calls.'),
