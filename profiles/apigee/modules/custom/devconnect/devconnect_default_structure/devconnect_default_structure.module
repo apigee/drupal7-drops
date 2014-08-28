@@ -30,7 +30,7 @@ function devconnect_default_structure_block_info() {
  */
 function _devconnect_default_structure_footer_content() {
   $content = '';
-  $theme_path = base_path() . drupal_get_path('theme', 'apigee_base');
+  $theme_path = base_path() . drupal_get_path('theme', 'apigee_responsive');
   $html = '<div class="navbar">
             <div class="navbar-inner">
               <div class="container">
@@ -69,7 +69,7 @@ function _devconnect_default_structure_footer_content() {
 function devconnect_default_structure_block_configure($delta = '') {
   $form = array();
   if ($delta == 'footer') {
-    $theme_path = base_path() . drupal_get_path('theme', 'apigee_base');
+    $theme_path = base_path() . drupal_get_path('theme', 'apigee_responsive');
     $html = '<div class="navbar">
             <div class="navbar-inner">
               <div class="container">

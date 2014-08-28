@@ -451,6 +451,22 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_show_analytics', 0, $form_state)
   );
 
+  $form['cache'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cache Performance settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
+
+  $form['cache']['devconnect_apps_cron_interval'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Minimum developer/app cache lifetime in minutes'),
+    '#description' => t('Developers and apps are locally cached by a cron job. If the last caching invocation started fewer than this number of minutes ago, we do not rebuild the developer/app caches.'),
+    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_apps_cron_interval', 60, $form_state),
+    '#post_render' => array('_devconnect_developer_apps_number_post_render'),
+    '#size' => 6
+  );
+
   // Analytics environments
   $options = $environments = array();
   try {
@@ -503,6 +519,10 @@ function devconnect_developer_apps_config($form, &$form_state) {
 
 function _devconnect_developer_apps_render_apiproducts($form, &$form_state) {
   return $form['apiproduct']['devconnect_default_api_product'];
+}
+
+function _devconnect_developer_apps_number_post_render($content, $element) {
+  return str_replace('type="text"', 'type="number" min="0" max="3600" step="1"', $content);
 }
 
 function devconnect_developer_apps_config_submit($form, &$form_state) {
@@ -991,7 +1011,7 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
       if ($widget_type == 'radios') {
         $api_product_default = empty($api_product_default) ? '' : $api_product_default[0];
         unset($form_state['input']['api_product']); //Need to unset this so that the right radios gets selected on ajax
-        if (!isset($options[$api_product_default])) {
+        if (!isset($options[$api_product_default]) && count($options) > 1) {
           $api_product_default = array_shift(array_keys($options));
         }
       }
@@ -1370,7 +1390,6 @@ function devconnect_developer_app_delete_form($form, &$form_state, $user, $appId
     '#markup' => l(t('Cancel'), 'user/' . $uid_arg . '/apps', array('attributes' => array('class' => array('cancel-link btn')))),
     '#weight' => 11,
   );
-
   $form['#entity'] = $entity;
 
   return $form;
@@ -2161,31 +2180,30 @@ function devconnect_developer_apps_sync_org($org, $truncate = FALSE) {
  * Refreshes our developer_app and api_product caches.
  */
 function devconnect_developer_apps_cron() {
-  $has_drush = function_exists('drush_print');
   static $already_ran = FALSE;
-  if ($has_drush) {
-    drush_print('entering ' . __FUNCTION__);
-  }
-
   // Prevent this from running twice (drush cron may do this)
   if ($already_ran) {
-    if ($has_drush) {
-      drush_print(__FUNCTION__ . ' already ran; skipping');
-    }
     return;
   }
   $already_ran = TRUE;
-  $client =& devconnect_default_org_config();
-  devconnect_developer_apps_sync_org($client->orgName, TRUE);
 
-  if ($has_drush) {
-    drush_print('Normal exit from ' . __FUNCTION__);
+  // interval is set in minutes, so multiply by 60 to get seconds
+  $interval = variable_get('devconnect_apps_cron_interval', 60) * 60;
+  $last_run = variable_get('devconnect_apps_cron_start', 0);
+  // Skip this run if we ran it recently enough
+  if (time() - $last_run <= $interval) {
+    return;
   }
+  // Mark this run as in progress
+  variable_set('devconnect_apps_cron_start', time());
+
+  $client = devconnect_default_org_config();
+  devconnect_developer_apps_sync_org($client->orgName, TRUE);
 }
 
 function devconnect_developer_apps_get_api_products($show_private = FALSE, $names = FALSE, $orgName = 'default') {
   if ($orgName == 'default') {
-    $config =& devconnect_default_org_config();
+    $config = devconnect_default_org_config();
     $orgName = $config->orgName;
   }
   $query = db_select('dc_api_product', 'a')

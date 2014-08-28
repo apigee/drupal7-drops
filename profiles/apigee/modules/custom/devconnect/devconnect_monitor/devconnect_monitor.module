@@ -1,0 +1,302 @@
+<?php
+
+/**
+ * @file
+ * Enables monitor alerting for Apigee Monetization.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function devconnect_monitor_menu() {
+  $items = array();
+
+  $items['admin/config/devconnect/monitor'] = array(
+    'title' => 'Dev Portal Monitor',
+    'description' => 'Control behavior of the Monetization monitor module.',
+    'page arguments' => array('devconnect_monitor_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'devconnect_monitor.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/devconnect/monitor/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items['admin/config/devconnect/monitor/emails'] = array(
+    'title' => 'Emails',
+    'description' => 'Add emails to send alerts to.',
+    'page arguments' => array('devconnect_monitor_admin_emails_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'devconnect_monitor.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/config/devconnect/monitor/%/delete/%'] = array(
+    'title' => 'Delete E-mail Address',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_monitor_admin_email_delete_form', 4, 6),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'devconnect_monitor.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function devconnect_monitor_permission() {
+  return array(
+    'view error details' => array(
+      'title' => t('View error details'),
+      'description' => t('View extended error details when errors occur.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_watchdog().
+ */
+function devconnect_monitor_watchdog(array $log_entry) {
+  // Quickly return if no alerts are selected.
+  $alerts_selected = variable_get('devconnect_monitor_alerts_selected');
+  if (count($alerts_selected) < 1) {
+    return;
+  }
+
+  // Get all events.
+  $events = &drupal_static(__FUNCTION__);
+  if (!isset($events)) {
+    $events = module_invoke_all('devconnect_monitor_event_info');
+  }
+
+  $alerts_selected = variable_get('devconnect_monitor_alerts_selected');
+
+  // Find an event that matches the log entry.
+  $event_match = FALSE;
+  foreach ($events as $event_name => $event) {
+    if($log_entry['type'] == $event['log_type'] && $log_entry['severity'] == $event['log_severity'] ){
+      $event_match = $event;
+      // Add the name onto the event match array.
+      $event_match['name'] = $event_name;
+      break;
+    }
+  }
+
+  // If we did not find a match, no need to continue
+  if($event_match == FALSE) {
+    return;
+  }
+
+  // Alert is found, but is it selected to send a notification?
+  if(!(in_array($event_match['name'], $alerts_selected))) {
+    return;
+  }
+
+  $log_vars = (isset($log_entry['variables']))? $log_entry['variables'] : array();
+  $log_message = t($log_entry['message'], $log_vars);
+  $error_message = t('<a href="@url">Dev Portal Monitor</a> Event Occurred. Type: %type Message: %message', array('%type' => $log_entry['type'], '%message' => $log_message, '@url' => url('admin/config/devconnect/monitor')));
+
+  // If the user is an admin of the system, give them more information about the
+  // error that occurred.
+  if(user_access('view error details')) {
+    drupal_set_message($error_message, 'error');
+  }
+
+  // Send email only if there is an email address.
+  $emails = devconnect_monitor_load_notification_emails();
+  if (count($emails) < 1) {
+    return;
+  }
+
+  // Send emails
+  // All system mails need to specify the module and template key (mirrored from
+  // hook_mail()) that the message they want to send comes from.
+  $module = 'devconnect_monitor';
+  $key = 'error_monitoring';
+
+  // Specify 'to' and 'from' addresses.
+//  $to = implode(',', $emails);
+  foreach($emails as $email) {
+    $to = $email->email . ' ';
+  }
+-  $from = variable_get('site_mail', ini_get('sendmail_from'));
+
+  $params = array(
+    'log_entry' => $log_entry,
+  );
+
+  // The language of the e-mail. This will one of three values:
+  // - user_preferred_language(): Used for sending mail to a particular website
+  //   user, so that the mail appears in their preferred language.
+  // - global $language: Used when sending a mail back to the user currently
+  //   viewing the site. This will send it in the language they're currently
+  //   using.
+  // - language_default(): Used when sending mail to a pre-existing, 'neutral'
+  //   address, such as the system e-mail address, or when you're unsure of the
+  //   language preferences of the intended recipient.
+  //
+  // Since in our case, we are sending a message to a random e-mail address that
+  // is not necessarily tied to a user account, we will use the site's default
+  // language.
+  $language = language_default();
+
+  // Whether or not to automatically send the mail when drupal_mail() is
+  // called. This defaults to TRUE, and is normally what you want unless you
+  // need to do additional processing before drupal_mail_send() is called.
+  $send = TRUE;
+  // Send the mail, and check for success. Note that this does not guarantee
+  // message delivery; only that there were no PHP-related issues encountered
+  // while sending.
+  $result = drupal_mail($module, $key, $to, $language, $params, $from, $send);
+  if ($result['result'] != TRUE) {
+    watchdog(t('There was a problem sending an email to the monetization monitor email list.'), 'error');
+  }
+}
+
+
+/**
+ * Implements hook_mail().
+ *
+ * This hook defines a list of possible e-mail templates that this module can
+ * send. Each e-mail is given a unique identifier, or 'key'.
+ *
+ * $message comes in with some standard properties already set: 'to' address,
+ * 'from' address, and a set of default 'headers' from drupal_mail(). The goal
+ * of hook_mail() is to set the message's 'subject' and 'body' properties, as
+ * well as make any adjustments to the headers that are necessary.
+ *
+ * The $params argument is an array which can hold any additional data required
+ * to build the mail subject and body; for example, user-entered form data, or
+ * some context information as to where the mail request came from.
+ *
+ * Note that hook_mail() is not actually a hook. It is only called for a single
+ * module, the module named in the first argument of drupal_mail(). So it's
+ * a callback of a type, but not a hook.
+ */
+function devconnect_monitor_mail($key, &$message, $params) {
+  global $user;
+
+  // Each message is associated with a language, which may or may not be the
+  // current user's selected language, depending on the type of e-mail being
+  // sent. This $options array is used later in the t() calls for subject
+  // and body to ensure the proper translation takes effect.
+  $options = array(
+    'langcode' => $message['language']->language,
+  );
+
+  switch ($key) {
+    // Send a simple message from the contact form.
+    case 'error_monitoring':
+      $log_entry = $params['log_entry'];
+      $site_name =  variable_get('site_name', "Default site name");
+      $date = format_date($log_entry['timestamp'], 'short');
+      $log_severity_levels = watchdog_severity_levels();
+
+      $message['subject'] = t('Dev Portal Error Logged at @site-name, @date', array('@site-name' => $site_name, '@date' => $date), $options);
+      // Note that the message body is an array, not a string.
+      $message['body'][] = t('Date @date', array('@date' => $date), $options);
+      $message['body'][] = t('User:  @user_name @user_mail', array('@user_name' => $user->name, '@user_mail' => $user->mail), $options);
+      $message['body'][] = t('Log request URI:  @url', array('@url' => $log_entry['request_uri']), $options);
+      $message['body'][] = t('Referer:  @url', array('@url' => $log_entry['referer']), $options);
+      $message['body'][] = t('Log Type:  @log_type', array('@log_type' => $log_entry['type']), $options);
+      $message['body'][] = t('Log Severity: @log_severity', array('@log_severity' => $log_severity_levels[$log_entry['severity']]), $options);
+      $message['body'][] = t('Log Message:', $options);
+
+      $log_vars = (isset($log_entry['variables']))? $log_entry['variables'] : array();
+      $message['body'][] = t($log_entry['message'], $log_vars, $options);
+
+      $log_message = t($log_entry['message'], $log_vars, $options);
+      $message['body'][] = t("Dev Portal Monitor Event Occurred. Type: @type Message: @message", array('%type' => $log_entry['type'], '%message' => $log_message), $options);
+      break;
+  }
+}
+
+/**
+ * Returns an array of email addresses to send notifications to.
+ */
+function devconnect_monitor_load_notification_emails($id=NULL) {
+  if(isset($id)) {
+    $result = db_query('SELECT id, email, created FROM {devconnect_monitor_email} em where em.id = :id', array(':id' => $id));
+    return $result->fetchAllAssoc('id');
+  }
+  else {
+    // Put email list in a static function to cut down on DB calls when
+    // things are logged to watchdog.
+    $emails = &drupal_static(__FUNCTION__);
+    if (!isset($emails)) {
+      $result = db_query("SELECT id, email, created FROM {devconnect_monitor_email}");
+      $emails =  $result->fetchAllAssoc('id');
+    }
+    return $emails;
+  }
+}
+
+/**
+ * Finds the specified e-mail and returns an object containing its data.
+ * Returns false if e-mail cannot be found.
+ *
+ * @param string $email
+ *
+ * @return mixed
+ */
+function devconnect_monitor_find_address($email) {
+  $email = strtolower($email);
+  $query = db_select('devconnect_monitor_email', 'em');
+  $query->addField('em', 'id');
+  $query->condition('em.email', db_like($email), 'LIKE');
+  $result = $query->execute();
+  $id = $result->fetchField();
+
+  if ($id) {
+    return devconnect_monitor_load_notification_emails($id);
+  }
+  return FALSE;
+}
+
+
+/**
+ * Adds an e-mail address to the notifications.
+ */
+function devconnect_monitor_register_email($email) {
+  $email = strtolower($email);
+  $query = db_insert('devconnect_monitor_email')
+    ->fields(array('email', 'created'),
+      array($email, REQUEST_TIME));
+
+  $success = ($id = $query->execute());
+
+  if ($success !== FALSE) {
+    return $id;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Adds an e-mail address to the notifications.
+ */
+function devconnect_monitor_remove_email($id) {
+    db_delete('devconnect_monitor_email')
+      ->condition('id', $id)
+      ->execute();
+}
+
+/**
+ * Implements hook_theme().
+ */
+function devconnect_monitor_theme() {
+  return array(
+    'devconnect_monitor_admin_emails_form' => array(
+      'render element' => 'form',
+      'file' => 'devconnect_monitor.admin.inc',
+    ),
+  );
+}

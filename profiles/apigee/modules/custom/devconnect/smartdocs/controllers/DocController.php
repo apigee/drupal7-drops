@@ -19,49 +19,24 @@ class SmartDocsDocController extends DrupalDefaultEntityController {
 
   public function loadOperation($data, $mid, $name,  $drupal_update = NULL) {
     $flush = (isset($_GET['flush']) && is_numeric($_GET['flush']) && (strlen($_GET['flush']) == 1)) ? $_GET['flush'] : 0;
-    $drupal_edit = (isset($_GET['drupal_edit']) && is_numeric($_GET['drupal_edit']) && (strlen($_GET['drupal_edit']) == 1)) ? $_GET['drupal_edit'] : 0;
     if ((bool)$flush) {
       try {
-        // Flag Drupal node as synced
-        if ((bool)$drupal_edit) {
-          db_update('smartdocs')
-            ->fields(array('synced' => 1))
-            ->condition('nid', $data['nid'])
-            ->execute();
-        }
-        // Flag Drupal node as unsynced
-        else {
-          db_update('smartdocs')
-            ->fields(array('synced' => 0))
-            ->condition('nid', $data['nid'])
-            ->execute();
-        }
-
         $ret = $this->SmartDocsDoc->requestOperation($data, $mid, $name);
-        cache_set($data['nid'], $ret, 'cache_docgen', CACHE_PERMANENT);
+        cache_set($data['nid'], $ret, 'cache_smartdocs', CACHE_PERMANENT);
         return $ret;
       } catch (Exception $e) {
         watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
         return '';
       }
-    } elseif ((bool)$drupal_update) {
-      db_update('smartdocs')
-        ->fields(array('synced' => 1))
-        ->condition('nid', $data['nid'])
-        ->execute();
-
-      // retrieve raw json
-      $ret = $this->SmartDocsDoc->requestOperation($data, $mid, '');
-      return $ret;
     } else {
       $my_data = &drupal_static(__FUNCTION__);
       if (!isset($my_data)) {
-        if ($cache = cache_get($data['nid'], 'cache_docgen')) {
+        if ($cache = cache_get($data['nid'], 'cache_smartdocs')) {
           $my_data = $cache->data;
         } else {
           try {
             $ret = $this->SmartDocsDoc->requestOperation($data, $mid, $name);
-            cache_set($data['nid'], $ret, 'cache_docgen', CACHE_PERMANENT);
+            cache_set($data['nid'], $ret, 'cache_smartdocs', CACHE_PERMANENT);
             return $ret;
           } catch (Exception $e) {
             watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);

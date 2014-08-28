@@ -105,10 +105,6 @@ function uuid_file_entity_features_export_render($module, $data) {
     // Clone entity to avoid changes by reference.
     $export = clone $file;
 
-    // Use date instead of created, in the same format used by
-    // file_object_prepare().
-    $export->date = format_date($export->timestamp, 'custom', 'Y-m-d H:i:s O');
-
     // Don't cause conflicts with fid/vid/revision_timestamp/changed fields.
     $export->{$export_var} = uuid_features_file_export($export, $export_mode);
 

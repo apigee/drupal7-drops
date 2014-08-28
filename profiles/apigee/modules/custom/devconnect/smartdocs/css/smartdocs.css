@@ -1,3 +1,60 @@
+body #method_content h1,
+body #method_content h2,
+body #method_content h3,
+body #method_content h4,
+body #method_content h5,
+body #method_content h6,
+body #method_content p,
+body #method_content a,
+body #method_content span,
+body #method_content td,
+body #method_content tr,
+body #method_content th,
+body #method_content .resource_description,
+#method_content .operation_container .authentication .title,
+#method_content button#send_request,
+#method_content .request_response_tabs a.selected {
+    font-family: Helvetica,Arial,sans-serif;
+}
+
+.modal[role="dialog"] .modal-body #user-login input,
+.modal[role="dialog"] .modal-body #user-register-form input {
+    float: none;
+    margin-left: inherit;
+    width: 100%;
+}
+
+.modal[role="dialog"] .modal-body #user-login label,
+.modal[role="dialog"] .modal-body #user-register-form label {
+    float: none;
+    font-weight: bold;
+    padding-top: 5px;
+    text-align: left;
+    width: inherit;
+}
+
+#register.modal[role="dialog"] .modal-body,
+#register.modal[role="dialog"] .modal-body {
+    max-height: 1000px;
+    overflow-y: visible;
+}
+
+[role="dialog"] #user-login .form-group,
+[role="dialog"] #user-register-form .form-group {
+    clear: none;
+    float: none;
+    margin-top: 10px;
+}
+
+.modal[role="dialog"] #user-login input,
+.modal[role="dialog"] #user-register-form input {
+    height:inherit;
+}
+
+body #method_content .resource_description {
+    padding-top:35px;
+}
+
 body.page-admin-smartdocs th.smartdocs-operations {
     width: 24%;
 }
@@ -127,7 +184,7 @@ body.page-admin-smartdocs .api-model-table-operations {
 
 .node-teaser span.icon_lock,
 .view span.icon_lock {
-    background: url("img/lock.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
+    background: url("../img/lock.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0);
     display: inline-block;
     float: left;
     height: 12px;

@@ -4,7 +4,7 @@
  * Implements hook_init().
  */
 function apigee_sso_ui_init() {
-  drupal_add_css(drupal_get_path('module', 'apigee_sso_ui') . '/apigee_sso.css',
+  drupal_add_css(drupal_get_path('module', 'apigee_sso') . '/apigee_sso.css',
     array('group' => CSS_THEME, 'every_page' => TRUE));
 }
 
@@ -17,7 +17,7 @@ function apigee_sso_ui_theme() {
   return array(
     'apigee_sso_ui_signin_block' => array(
       'template' => 'apigee-sso-ui-signin-block',
-      'path' => drupal_get_path('module', 'apigee_sso_ui') . "/templates",
+      'path' => drupal_get_path('module', 'apigee_sso') . "/templates",
       'variables' => array(
         'github' => null
       ),
@@ -32,11 +32,20 @@ function apigee_sso_ui_theme() {
  * @param $form_id
  */
 function apigee_sso_ui_form_alter(&$form, &$form_state, $form_id) {
+  global $base_url;
   switch ($form_id) {
     case 'user_login':
+      if (module_exists('github_connect')) {
+        $client_id = variable_get('github_connect_client_id');
+        $destination = user_login_destination();
+        $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
+        $vars['github'] = $link;
+      } else {
+        $vars = array();
+      }
       $form['sso_buttons'] = array(
         '#type' => 'markup',
-        '#markup' => theme('apigee_sso_ui_signin_block'),
+        '#markup' => theme('apigee_sso_ui_signin_block', $vars),
         '#weight' => -99
       );
       if (isset($form['twitter_signin'])) {
@@ -86,12 +95,12 @@ function apigee_sso_ui_block_view($delta = '') {
  * @param $vars
  */
 function template_preprocess_apigee_sso_ui_signin_block(&$vars){
-    if (module_exists('github_connect')) {
-        global $base_url;
-        // how the github_connect module generated the url.
-        $client_id = variable_get('github_connect_client_id');
-        $destination = user_login_destination();
-        $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
-        $vars['github'] = $link;
-    }
+  if (module_exists('github_connect')) {
+    global $base_url;
+    // how the github_connect module generated the url.
+    $client_id = variable_get('github_connect_client_id');
+    $destination = user_login_destination();
+    $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
+    $vars['github'] = $link;
+  }
 }

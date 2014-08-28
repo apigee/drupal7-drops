@@ -1,0 +1,323 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ *
+ * @return array
+ */
+function devconnect_status_menu() {
+  $items = array();
+  $items['admin/reports/devconnect'] = array(
+    'title' => 'Edge Connection Status',
+    'description' => 'Status report on connectivity to Edge server.',
+    'page callback' => 'devconnect_status_edge_report',
+    'access arguments' => array('administer organization settings')
+  );
+  return $items;
+}
+
+/**
+ * Generates a report on Edge connection status.
+ * 
+ * @return string
+ */
+function devconnect_status_edge_report() {
+  $config = devconnect_default_org_config();
+  if ($config->orgName == '' || $config->orgName == 'fixme') {
+    return '<div class="messages error">' . t('Your connection to the Edge server has not yet been configured.');
+  }
+
+  drupal_add_css(drupal_get_path('module', 'devconnect_status') . '/devconnect_status.css');
+
+  $output = '<table id="devconnect-status-edge-report">' . PHP_EOL;
+
+  # Password strength
+  $pw_strength = _devconnect_status_password_strength($config->pass, $config->orgName);
+  $output .= '<tr class="' . $pw_strength['class'] . '">'
+    . '<th scope="row">' . t('Password strength') . '</th>'
+    . '<td><strong>' . ucfirst(t($pw_strength['indicator_text'])) . '</strong>';
+  if (count($pw_strength['messages']) > 0) {
+    $output .= '<ul><li>' . join('</li><li>', $pw_strength['messages']) . '</li></ul>';
+  }
+  $output .= '</td></tr>' . PHP_EOL;
+
+  # Org connection
+  $org = new Apigee\ManagementAPI\Organization($config);
+  $start = microtime(TRUE);
+  try {
+    $org->load();
+    $time_elapsed = microtime(TRUE) - $start;
+  } catch (Exception $e) {
+    $time_elapsed = -1;
+  }
+
+  //return $output;
+
+  if ($time_elapsed == -1) {
+    $class = 'red';
+  }
+  elseif ($time_elapsed < 1) {
+    $class = 'green';
+  }
+  elseif ($time_elapsed < 8) {
+    $class = 'yellow';
+  }
+  else {
+    $class = 'red';
+  }
+
+  $output .= '<tr class="' . $class . '">'
+    . '<th scope="row">' . t('Organization details') . '</th>'
+    . '<td>';
+
+  if ($time_elapsed == -1) {
+    $output .= t('Connection failed');
+  }
+  else {
+    $output .= t('Organization name: @org<br>Call took @sec seconds', array('@org' => $org->getName(), '@sec' => number_format($time_elapsed, 3)));
+  }
+  $output .= '</td></tr>' . PHP_EOL;
+
+  if ($time_elapsed > -1) {
+    // API Products
+    $start = microtime(TRUE);
+    try {
+      $products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+      $time_elapsed = microtime(TRUE) - $start;
+    } catch (Exception $e) {
+      $products = array();
+      $time_elapsed = -1;
+    }
+    $public = $private = 0;
+    foreach ($products as $product) {
+      if ($product->isPublic) {
+        $public++;
+      }
+      else {
+        $private++;
+      }
+    }
+    if ($time_elapsed > -1) {
+      $time_message = t('Call took @sec seconds', array('@sec' => number_format($time_elapsed, 3)));
+    }
+    if ($time_elapsed == -1) {
+      $message = t('Connection failed');
+      $class = 'red';
+      $time_message = NULL;
+    }
+    elseif (count($products) == 0) {
+      $message = t('No API Products are configured.');
+      $class = 'red';
+    }
+    elseif (count($public) == 0) {
+      $message = t('There are @count API Products configured, but all are marked as private.', array('@count' => $private));
+      $class = 'red';
+    }
+    else {
+      if ($time_elapsed < 1) {
+        $class = 'green';
+      }
+      elseif ($time_elapsed < 8) {
+        $class = 'yellow';
+      }
+      else {
+        $class = 'red';
+      }
+      $message = t('@public public and @private private API Products are configured.', array('@public' => $public, '@private' => $private));
+    }
+    $output .= '<tr class="' . $class . '">'
+      . '<th scope="row">' . t('API Products') . '</th>'
+      . '<td>' . $message
+      . (isset($time_message) ? '<br>' . $time_message : '')
+      . '</td></tr>' . PHP_EOL;
+
+    // Developers
+    // Avoid entity_load('developer') because it will pull back too much detail
+    $dev = new Apigee\ManagementAPI\Developer($config, '');
+    $start = microtime(TRUE);
+    try {
+      $list = $dev->listDevelopers();
+      $time_elapsed = microtime(TRUE) - $start;
+    } catch (Exception $e) {
+      $time_elapsed = -1;
+      $list = array();
+    }
+    if ($time_elapsed > -1) {
+      $time_message = t('Call took @sec seconds', array('@sec' => number_format($time_elapsed, 3)));
+    }
+    if ($time_elapsed == -1) {
+      $message = t('Connection failed');
+      $class = 'red';
+      $time_message = NULL;
+    }
+    else {
+      if ($time_elapsed < 1) {
+        $class = 'green';
+      }
+      elseif ($time_elapsed < 8) {
+        $class = 'yellow';
+      }
+      else {
+        $class = 'red';
+      }
+      $message = t('@count developers are listed.', array('@count' => count($list)));
+    }
+    $output .= '<tr class="' . $class . '">'
+      . '<th scope="row">' . t('Developers') . '</th>'
+      . '<td>' . $message
+      . (isset($time_message) ? '<br>' . $time_message : '')
+      . '</td></tr>' . PHP_EOL;
+  }
+  $output .= '</table>';
+  return $output;
+}
+
+/**
+ * Checks strength of password.
+ *
+ * This is largely a PHP-ization of /modules/user/user.js with a few
+ * enhancements to check for 133t-speak.
+ *
+ * @param string $password
+ * @param string $org_name
+ * @return array
+ */
+function _devconnect_status_password_strength($password, $org_name) {
+  if (strlen($password) == 0) {
+    return array(
+      'strength' => 0,
+      'messages' => array(t('The password is empty')),
+      'indicator_text' => 'weak',
+      'class' => 'red'
+    );
+  }
+
+  $lc_pass = strtolower($password);
+  $lc_org = strtolower($org_name);
+  $denum_pass = strtr($lc_pass, '5301!', 'seoll');
+  $strength = 100;
+  $weakness = 0;
+  $messages = array();
+
+  $len = strlen($password);
+
+  if ($len < 6) {
+    $strength -= ((6 - $len) * 5) + 30;
+    $messages[] = t('The password should be longer.');
+  }
+
+  $uc = 0;
+  $lc = 0;
+  $num = 0;
+  $other = 0;
+  for ($i = 0; $i < $len; $i++) {
+    $c = substr($password, $i, 1);
+    if (preg_match('/^[[:upper:]]$/', $c)) {
+      $uc++;
+    }
+    elseif (preg_match('/^[[:lower:]]$/', $c)) {
+      $lc++;
+    }
+    elseif (preg_match('/^[[:digit:]]$/', $c)) {
+      $num++;
+    }
+    else {
+      $other++;
+    }
+  }
+  $max = $len - 2;
+
+  if ($max > 4) {
+    if ($lc == 0) {
+      $weakness++;
+      $messages[] = t('The password should contain lowercase letters.');
+    }
+    elseif ($lc > $max) {
+      $weakness++;
+      $messages[] = t('The password should contain fewer lowercase letters.');
+    }
+
+    if ($uc == 0) {
+      $weakness++;
+      $messages[] = t('The password should contain uppercase letters.');
+    }
+    elseif ($uc > $max) {
+      $weakness++;
+      $messages[] = t('The password should contain fewer uppercase letters.');
+    }
+
+    if ($num == 0) {
+      $weakness++;
+      $messages[] = t('The password should contain numeric digits.');
+    }
+    elseif ($uc > $max) {
+      $weakness++;
+      $messages[] = t('The password should contain fewer numeric digits.');
+    }
+
+    if ($num == 0) {
+      $weakness++;
+      $messages[] = t('The password should contain special characters.');
+    }
+    elseif ($uc > $max) {
+      $weakness++;
+      $messages[] = t('The password should contain fewer special characters.');
+    }
+    // Not implemented: dictionary word
+  }
+
+  // Apply penalty for each weakness (balanced against length penalty).
+  switch ($weakness) {
+    case 1:
+      $strength -= 12.5;
+      break;
+
+    case 2:
+      $strength -= 25;
+      break;
+
+    case 3:
+      $strength -= 40;
+      break;
+
+    case 4:
+      $strength -= 40;
+      break;
+  }
+
+  // passwords based on org name are very weak.
+  if ($lc_pass == $lc_org) {
+    $messages[] = t('The password should not be the same as the organization name.');
+    $strength = 5;
+  }
+  elseif ($denum_pass == $lc_org) {
+    $messages[] = t('The password should not be based on the organization name.');
+    $strength = 20;
+  }
+
+  // Based on the strength, work out what text should be shown by the password strength meter.
+  if ($strength < 60) {
+    $indicator_text = 'weak';
+    $class = 'red';
+  }
+  elseif ($strength < 70) {
+    $indicator_text = 'fair';
+    $class = 'yellow';
+  }
+  elseif ($strength < 80) {
+    $indicator_text = 'good';
+    $class = 'green';
+  }
+  elseif ($strength <= 100) {
+    $indicator_text = 'strong';
+    $class = 'green';
+  }
+
+  return array(
+    'strength' => $strength,
+    'messages' => $messages,
+    'indicator_text' => $indicator_text,
+    'class' => $class
+  );
+
+}

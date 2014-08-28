@@ -7,6 +7,12 @@ if (array_key_exists('HTTP_X_PANTHEON_SCREENSHOT', $_SERVER)) {
 
 require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
 
+/**
+ * Implements hook_install_tasks().
+ *
+ * @param $install_state
+ * @return array
+ */
 function apigee_install_tasks(&$install_state) {
   if (!array_key_exists('batch_configure_complete', $install_state)) {
     $install_state['batch_configure_complete'] = false;
@@ -18,10 +24,19 @@ function apigee_install_tasks(&$install_state) {
       'type' => 'form',
     ),
     'apigee_generate_make_smartdocs_model' => array(
-      'display_name' => t('Import sample SmartDocs model'),
+      'display_name' => t('Enable SmartDocs sample content'),
       'type' => 'form',
     ),
     'apigee_generate_import_smartdocs_model_content' => array(
+      'display_name' => t('Import sample SmartDocs content'),
+      'type' => 'normal',
+    ),
+    'apigee_generate_render_smartdocs_model_template' => array(
+      'display_name' => t('Import sample SmartDocs content'),
+      'display' => 0,
+      'type' => 'normal',
+    ),
+    'apigee_generate_render_smartdocs_model_content' => array(
       'display_name' => t('Render sample SmartDocs content'),
       'type' => 'batch',
     ),
@@ -37,10 +52,10 @@ function apigee_install_tasks(&$install_state) {
 }
 
 /**
- * @see hook_install_tasks_alter().
+ * Implements hook_install_tasks_alter().
  *
- * @param $config
- *   The config array for a Profiler Install Profile.
+ * @param $tasks
+ * @param $install_state
  */
 function apigee_install_tasks_alter(&$tasks, &$install_state) {
   $tasks['install_select_profile']['function'] = 'apigee_install_select_profile';

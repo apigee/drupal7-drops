@@ -83,7 +83,7 @@
     <gitpull repository="${project.basedir}/webapp" source="git://github.com/pantheon-systems/drops-7.git" refspec="+refs/heads/master:+refs/remotes/origin/master" quiet="false" strategyOption="theirs"/>
     <delete dir="${project.basedir}/webapp/profiles/apigee" quiet="true"/>
     <gitclone repository="git@github.com:apigee/apigee-drupal-profile" targetPath="${project.basedir}/webapp/profiles/apigee"/>
-    <gitcheckout repository="${project.basedir}/webapp/profiles/apigee" branchname="master"/>
+    <gitcheckout repository="${project.basedir}/webapp/profiles/apigee" branchname="development"/>
     <delete dir="${project.basedir}/webapp/profiles/apigee/.git" quiet="true"/>
     <exec command="drush make --no-core --no-gitinfofile --contrib-destination=. --yes --nocolor apigee.make" dir="${project.basedir}/webapp/profiles/apigee" logoutput="true" passthru="true"/>
     <if>
@@ -113,10 +113,68 @@
     <exec command="cd &quot;${project.basedir}/webapp/profiles/apigee/libraries/mgmt-api-php-sdk&quot; &amp;&amp; rm .gitignore &amp;&amp; composer install --verbose --no-dev --no-progress" logoutput="true" />
     <!-- get http://modernizr.com/downloads/modernizr-2.7.1.js and download it to the modernizr library -->
     <exec command="cd &quot;${project.basedir}/webapp/profiles/apigee/libraries/modernizr&quot; &amp;&amp; wget -O modernizr.js http://modernizr.com/downloads/modernizr-2.7.1.js" logoutput="true"/>
+
+    <!-- begin removal of extraneous library content -->
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/awssdk/_compatibility_test'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/awssdk/_docs'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/awssdk/_samples'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/backbone/docs'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/backbone/examples'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/backbone/test'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/ckeditor/samples'" logoutput="true" passthru="true"/>
+    <exec command="rm -f '${project.basedir}/webapp/profiles/apigee/libraries/colorpicker/index.html'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/google-api-php-client/examples'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/google-api-php-client/test'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/highcharts/examples'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/highcharts/exporting-server'" logoutput="true" passthru="true"/>
+    <exec command="rm -f '${project.basedir}/webapp/profiles/apigee/libraries/highcharts/index.htm'" logoutput="true" passthru="true"/>
+    <exec command="rm -f '${project.basedir}/webapp/profiles/apigee/libraries/jquery.cycle/example.html'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/mediaelement/demo'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/mediaelement/test'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/mgmt-api-php-sdk/vendor/guzzle/docs'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/mgmt-api-php-sdk/vendor/guzzle/phing'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/plupload/examples'" logoutput="true" passthru="true"/>
+    <exec command="rm -f '${project.basedir}/webapp/profiles/apigee/libraries/respondjs/cross-domain/*.html'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/respondjs/test'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/SolrPhpClient/phpdocs'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/SolrPhpClient/tests'" logoutput="true" passthru="true"/>
+    <exec command="rm -f '${project.basedir}/webapp/profiles/apigee/libraries/syntaxhighlighter/index.html'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/libraries/syntaxhighlighter/tests'" logoutput="true" passthru="true"/>
+    <!-- finished removal of extraneous library content -->
+
+    <!-- begin removal of extraneous module content -->
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/cdn/help'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/ckeditor/includes/uicolor/samples'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/commerce_worldpay_business_gateway/worldpay page example'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/ctools/ctools_plugin_example'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/ctools/help'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/ctools/page_manager/help'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/devel/krumo/docs'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/import_html/extras/features_import_sample_content'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/import_html/help'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/import_html/static'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/import_html/tests'" logoutput="true" passthru="true"/>
+    <exec command="sed -i ':tests/import:d' '${project.basedir}/webapp/profiles/apigee/modules/contrib/import_html/import_html.info'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/lingotek/lib/oauth-php/example'" logoutput="true" passthru="true"/>
+    <exec command="rm -f '${project.basedir}/webapp/profiles/apigee/modules/contrib/mailsystem/README.html'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/panels/help'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/views/help'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/modules/contrib/views_accordion/help'" logoutput="true" passthru="true"/>
+    <!-- finished removal of extraneous module content -->
+
+    <!-- begin removal of extraneous theme content -->
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/themes/apigee_base/bootstrap/js/tests'" logoutput="true" passthru="true"/>
+    <exec command="rm -rf '${project.basedir}/webapp/profiles/apigee/themes/apigee_base/bootstrap/less/tests'" logoutput="true" passthru="true"/>
+    <!-- finished removal of extraneous theme content -->
+    
+    <!-- remove txt files from webroot -->
+    <exec command="rm -f '${project.basedir}/webapp/*.txt'" logoutput="true" passthru="true"/>
+
+    <!-- finish up -->
     <phingcall target="build-info-file"/>
     <exec command="touch '${project.basedir}/webapp/sites/default/settings.php'"/>
     <exec command="git add * --all" dir="${project.basedir}/webapp" logoutput="true"/>
-    <exec command="git commit -m 'distro build ${VERSION}'" dir="${project.basedir}/webapp" logoutput="true"/>
+    <exec command="git commit -m 'UPDATE: Developer Services 14.08.27.${env.BUILD_NUMBER}'" dir="${project.basedir}/webapp" logoutput="true"/>
     <exec command="git push origin ${push-branch}" dir="${project.basedir}/webapp"/>
   </target>
   <!-- 
@@ -125,7 +183,7 @@
     -->
   <target name="build-info-file">
     <tstamp/>
-    <echo file="${project.basedir}/webapp/buildInfo" append="false" level="verbose">Version: ${VERSION}
+    <echo file="${project.basedir}/webapp/buildInfo" append="false" level="verbose">Version: Developer Services 14.08.27.${env.BUILD_NUMBER}
 Build Timestamp: ${DSTAMP}.${TSTAMP}
 SCM Revision: ${env.GIT_COMMIT}
     </echo>

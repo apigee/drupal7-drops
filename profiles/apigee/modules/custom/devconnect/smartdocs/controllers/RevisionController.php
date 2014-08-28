@@ -68,8 +68,12 @@ class SmartDocsRevisionController extends DrupalDefaultEntityController {
       }
       return array();
     } catch (Exception $e) {
-      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
-      return '';
+      if ($e->getCode() == 404) {
+        return '';
+      } else {
+        watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+        return '';
+      }
     }
   }
 
@@ -81,8 +85,12 @@ class SmartDocsRevisionController extends DrupalDefaultEntityController {
       }
       return array();
     } catch (Exception $e) {
-      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
-      return '';
+      if ($e->getCode() == 404) {
+        return '';
+      } else {
+        watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+        return '';
+      }
     }
   }
 

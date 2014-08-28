@@ -136,6 +136,11 @@ function panelizer_uuid_entity_features_rebuild_alter($entity_type, &$entity, $d
         $handler = panelizer_entity_plugin_get_handler($entity_type);
         $entity->panelizer[$view_mode] = $handler->get_default_panelizer_object($bundle . '.' . $view_mode, $panelizer_settings['name']);
         $entity->panelizer[$view_mode]->did = NULL;
+        list($entity_id, $revision_id, $bundle) = entity_extract_ids($entity_type, $entity);
+        // Ensure these variables are set - if not panelizer will try to insert
+        // instead update in certain cases.
+        $entity->panelizer[$view_mode]->entity_id = $entity_id;
+        $entity->panelizer[$view_mode]->revision_id = $revision_id;
       }
     }
   }

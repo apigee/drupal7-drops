@@ -74,6 +74,13 @@ function devconnect_monetization_enable() {
   // Rebuild menu so monetization menu shows up, menu_clear_cache would be invoked
   //instead but it seems to have issues and does not execute properly
   menu_rebuild();
+
+  // Move timeout to Edge backend to 60 seconds to make sure timeouts do not
+  // happen on long running API calls.
+  $org_settings = devconnect_get_org_settings();
+  $org_settings['connection_timeout'] = 60;
+  $org_settings['request_timeout'] = 60;
+  variable_set('devconnect_org_settings', $org_settings);
 }
 
 /**

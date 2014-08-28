@@ -262,14 +262,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  if (module_exists('devconnect_monetization')) {
-    $form['monetization_config_container'] = array(
-      '#title' => t('Monetization Configuration'),
-      '#type' => 'fieldset',
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
-  }
+
   foreach ($my_variables as $name => $info) {
     $default = (isset($info['default'])) ? $info['default'] : '';
     $default_value = variable_get($name, $default);
@@ -694,4 +687,35 @@ function &devconnect_get_org_settings() {
     variable_set('devconnect_org_settings', $custom_vars);
   }
   return $custom_vars;
+}
+
+/**
+ * Implements hook_devconnect_monitor_event_info().
+ *
+ * Implementations return an associative array whose keys define
+ * the unique alert name and whose values are an associative array of
+ * properties for each path.  The alert name can be anything you want,
+ * but should be prefixed with your module name to make sure it is
+ * unique, such as "mymodule_overheating" and "mymodule_virusdetected".
+ *
+ * The array contains the following properties:
+ *
+ * description: A description of the alert, this can be anything to help
+ * the end user.
+ *
+ * log_type: The watchdog type to match against when deciding to
+ * sent out an alert.
+ *
+ * log_severity: The watchdog severity to match against when deciding to
+ * sent out an alert.
+ *
+ */
+function devconnect_devconnect_monitor_event_info() {
+  return array(
+    'edge_api_exceptions' => array(
+      'description' => t('Edge API exceptions and timeouts.'),
+      'log_type' => 'APIObject',
+      'log_severity' => WATCHDOG_EMERGENCY,
+    ),
+  );
 }

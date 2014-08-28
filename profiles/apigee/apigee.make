@@ -186,7 +186,7 @@ projects[workbench][subdir]                                    = "contrib"
 projects[workbench_moderation][subdir]                         = "contrib"
 projects[workbench_moderation_notes][subdir]                   = "contrib"
 projects[workflow][subdir]                                     = "contrib"
-; xautoload is required by sps
+; xautoload is required by sps and other modules
 projects[xautoload][subdir]                                    = "contrib"
 projects[XHProf][subdir]                                       = "contrib"
 
@@ -305,6 +305,7 @@ projects[apigee_devconnect][download][url]                     = "git@github.com
 projects[apigee_responsive][type]                              = "theme"
 projects[apigee_responsive][download][type]                    = 'git'
 projects[apigee_responsive][download][url]                     = "git@github.com:apigee/devconnect_apigee_responsive.git"
+projects[apigee_responsive][download][branch]                  = "development"
 projects[apigee_responsive][directory_name]                    = apigee_responsive
 
 ; development seed's admin theme
@@ -324,14 +325,14 @@ projects[devconnect][type]                                     = module
 projects[devconnect][subdir]                                   = custom
 projects[devconnect][download][type]                           = 'git'
 projects[devconnect][download][url]                            = "git@github.com:apigee/devconnect.git"
-;projects[devconnect][download][branch]                         = "development"
+projects[devconnect][download][branch]                         = "development"
 
 ; apigee SSO module
 projects[apigee_sso][type]                                     = module
 projects[apigee_sso][subdir]                                   = custom
 projects[apigee_sso][download][type]                           = 'git'
 projects[apigee_sso][download][url]                            = "git@github.com:apigee/apigee_drupal_sso.git"
-;projects[apigee_sso][download][branch]                         = "development"
+projects[apigee_sso][download][branch]                         = "development"
 
 
 

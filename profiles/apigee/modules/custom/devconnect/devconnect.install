@@ -207,7 +207,12 @@ function devconnect_update_7424(&$sandbox) {
  * Enable additional required modules.
  */
 function devconnect_update_7425() {
-  module_enable(array('admin_views', 'contextual'));
+  $enable = array('admin_views', 'contextual');
+  // DEVSOL-4: make sure we pick up home_featured_forum_posts view when updating to R25
+  if (module_exists('devconnect_default_structure') && !module_exists('devconnect_views')) {
+    $enable[] = 'devconnect_views';
+  }
+  module_enable($enable);
 }
 /**
  * Restructure the org config and remove d8cmi entirely

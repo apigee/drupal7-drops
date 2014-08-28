@@ -152,7 +152,7 @@ function smartdocs_model_detail($form, $form_state, $mid) {
 
   $rows[] = $specific;
 
-  drupal_set_title('`' . $specific['displayName'] . '` Details');
+  drupal_set_title('‘' . $specific['displayName'] . '’ Details');
 
   foreach($rows as $item) {
     $form['models'][$item['id']] = array(
@@ -208,7 +208,7 @@ function smartdocs_import_model($form, $form_state, $mid) {
     '#type' => 'hidden',
     '#value' => entity_get_controller('smartdocs_model')->loadSingle($mid)
   );
-  drupal_set_title('Import into `' . $form['model']['#value']['displayName'] . '`');
+  drupal_set_title('Import into ‘' . $form['model']['#value']['displayName'] . '’');
   $form['format'] = array(
     '#prefix' => '<div id="import-format">',
     '#suffix' => '</div>',
@@ -232,89 +232,169 @@ function smartdocs_import_model($form, $form_state, $mid) {
     '#default_value' => array('wadl'),
   );
   if (isset($form_state['values']['type']) || $form['format']['type']['#default_value'][0] == 'wadl') {
-    switch($form_state['values']['type']) {
-      case 'swagger':
-        $form['format']['import']['swagger_model_import'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Swagger URL'),
-          '#size' => 60,
-          '#maxlength' => 128,
-          '#default_value' => '',
-          '#required' => TRUE,
-        );
-        break;
-      case 'apigee_json':
-        $form['format']['import']['apigee_json_import'] = array(
-          '#type' => 'textarea',
-          '#title' => t('SmartDocs JSON'),
-          '#rows' => 10,
-          '#default_value' => '',
-          '#required' => TRUE,
-        );
-        break;
-      default:
-        $form['format']['import']['upload_type'] = array(
-          '#type' => 'select',
-          '#title' => t('Upload Type'),
-          '#options' => array(
-            'upload' => 'File',
-            'path' => 'URL Path',
-          ),
-          '#ajax' => array(
-            'wrapper' => 'import-format',
-            'callback' => 'smartdocs_import_ajax',
-          ),
-          '#default_value' => array('upload'),
-        );
-        if (isset($form_state['values']['upload_type'])) {
-          switch($form_state['values']['upload_type']) {
-            case 'upload':
-              $form['format']['import']['file_model_import'] = array(
-                '#type' => 'managed_file',
-                '#title' => t('File'),
-                '#description' => t('Allowed extensions: .wadl .xml'),
-                '#upload_location' => 'public://wadls',
-                '#upload_validators' => array(
-                  'file_validate_extensions' => array('wadl xml'),
-                ),
-                '#required' => TRUE,
-              );
-              break;
-            case 'path':
-              $form['format']['import']['path_model_import'] = array(
-                '#type' => 'textfield',
-                '#title' => t('URL Path'),
-                '#size' => 60,
-                '#maxlength' => 128,
-                '#default_value' => '',
-                '#required' => TRUE,
-              );
-              break;
-            default:
-              $form['format']['import']['file_model_import'] = array(
-                '#type' => 'managed_file',
-                '#title' => t('File'),
-                '#description' => t('Allowed extensions: .wadl .xml'),
-                '#upload_location' => 'public://wadls',
-                '#upload_validators' => array(
-                  'file_validate_extensions' => array('wadl xml'),
-                ),
-                '#required' => TRUE,
-              );
-          }
-        } else {
-          $form['format']['import']['file_model_import'] = array(
-            '#type' => 'managed_file',
-            '#title' => t('File'),
-            '#description' => t('Allowed extensions: .wadl .xml'),
-            '#upload_location' => 'public://wadls',
-            '#upload_validators' => array(
-              'file_validate_extensions' => array('wadl xml'),
-            ),
+    if (isset($form_state['values']) && array_key_exists('type', $form_state['values'])) {
+      switch($form_state['values']['type']) {
+        case 'swagger':
+          $form['format']['import']['swagger_model_import'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Swagger URL'),
+            '#size' => 60,
+            '#maxlength' => 128,
+            '#default_value' => '',
             '#required' => TRUE,
           );
-        }
-        break;
+          break;
+        case 'apigee_json':
+          $form['format']['import']['upload_type'] = array(
+            '#type' => 'select',
+            '#title' => t('Upload Type'),
+            '#options' => array(
+              'upload' => 'File',
+              'path' => 'URL Path',
+            ),
+            '#ajax' => array(
+              'wrapper' => 'import-format',
+              'callback' => 'smartdocs_import_ajax',
+            ),
+            '#default_value' => array('upload'),
+          );
+          if (isset($form_state['values']['upload_type'])) {
+            switch($form_state['values']['upload_type']) {
+              case 'upload':
+                $form['format']['import']['file_model_import'] = array(
+                  '#type' => 'managed_file',
+                  '#title' => t('File'),
+                  '#description' => t('Allowed extensions: .json'),
+                  '#upload_location' => 'public://jsons',
+                  '#upload_validators' => array(
+                    'file_validate_extensions' => array('json'),
+                  ),
+                  '#required' => TRUE,
+                );
+                break;
+              case 'path':
+                $form['format']['import']['path_model_import'] = array(
+                  '#type' => 'textfield',
+                  '#title' => t('URL Path'),
+                  '#size' => 60,
+                  '#maxlength' => 128,
+                  '#default_value' => '',
+                  '#required' => TRUE,
+                );
+                break;
+              default:
+                $form['format']['import']['file_model_import'] = array(
+                  '#type' => 'managed_file',
+                  '#title' => t('File'),
+                  '#description' => t('Allowed extensions: .json'),
+                  '#upload_location' => 'public://jsons',
+                  '#upload_validators' => array(
+                    'file_validate_extensions' => array('json'),
+                  ),
+                  '#required' => TRUE,
+                );
+            }
+          } else {
+            $form['format']['import']['file_model_import'] = array(
+              '#type' => 'managed_file',
+              '#title' => t('File'),
+              '#description' => t('Allowed extensions: .json'),
+              '#upload_location' => 'public://jsonss',
+              '#upload_validators' => array(
+                'file_validate_extensions' => array('json'),
+              ),
+              '#required' => TRUE,
+            );
+          }
+          break;
+        default:
+          $form['format']['import']['upload_type'] = array(
+            '#type' => 'select',
+            '#title' => t('Upload Type'),
+            '#options' => array(
+              'upload' => 'File',
+              'path' => 'URL Path',
+            ),
+            '#ajax' => array(
+              'wrapper' => 'import-format',
+              'callback' => 'smartdocs_import_ajax',
+            ),
+            '#default_value' => array('upload'),
+          );
+          if (isset($form_state['values']['upload_type'])) {
+            switch($form_state['values']['upload_type']) {
+              case 'upload':
+                $form['format']['import']['file_model_import'] = array(
+                  '#type' => 'managed_file',
+                  '#title' => t('File'),
+                  '#description' => t('Allowed extensions: .wadl .xml'),
+                  '#upload_location' => 'public://wadls',
+                  '#upload_validators' => array(
+                    'file_validate_extensions' => array('wadl xml'),
+                  ),
+                  '#required' => TRUE,
+                );
+                break;
+              case 'path':
+                $form['format']['import']['path_model_import'] = array(
+                  '#type' => 'textfield',
+                  '#title' => t('URL Path'),
+                  '#size' => 60,
+                  '#maxlength' => 128,
+                  '#default_value' => '',
+                  '#required' => TRUE,
+                );
+                break;
+              default:
+                $form['format']['import']['file_model_import'] = array(
+                  '#type' => 'managed_file',
+                  '#title' => t('File'),
+                  '#description' => t('Allowed extensions: .wadl .xml'),
+                  '#upload_location' => 'public://wadls',
+                  '#upload_validators' => array(
+                    'file_validate_extensions' => array('wadl xml'),
+                  ),
+                  '#required' => TRUE,
+                );
+            }
+          } else {
+            $form['format']['import']['file_model_import'] = array(
+              '#type' => 'managed_file',
+              '#title' => t('File'),
+              '#description' => t('Allowed extensions: .wadl .xml'),
+              '#upload_location' => 'public://wadls',
+              '#upload_validators' => array(
+                'file_validate_extensions' => array('wadl xml'),
+              ),
+              '#required' => TRUE,
+            );
+          }
+          break;
+      }
+    } else {
+      $form['format']['import']['upload_type'] = array(
+        '#type' => 'select',
+        '#title' => t('Upload Type'),
+        '#options' => array(
+          'upload' => 'File',
+          'path' => 'URL Path',
+        ),
+        '#ajax' => array(
+          'wrapper' => 'import-format',
+          'callback' => 'smartdocs_import_ajax',
+        ),
+        '#default_value' => array('upload'),
+      );
+      $form['format']['import']['file_model_import'] = array(
+        '#type' => 'managed_file',
+        '#title' => t('File'),
+        '#description' => t('Allowed extensions: .wadl .xml'),
+        '#upload_location' => 'public://wadls',
+        '#upload_validators' => array(
+          'file_validate_extensions' => array('wadl xml'),
+        ),
+        '#required' => TRUE,
+      );
     }
   }
   $form['import'] = array(
@@ -348,7 +428,8 @@ function smartdocs_import_model_validate($form, &$form_state) {
       }
       break;
     default:
-      switch($form_state['values']['wadl_type']) {
+      $wadl_type = (array_key_exists('wadl_type', $form_state['values']) ? $form_state['values']['wadl_type'] : NULL);
+      switch($wadl_type) {
         case 'path':
           if (isset($form_state['values']['wadl_path_model_import'])) {
             if (!(filter_var($form_state['values']['wadl_path_model_import'], FILTER_VALIDATE_URL))) {
@@ -380,7 +461,7 @@ function smartdocs_import_model_submit($form, &$form_state) {
     case 'wadl':
       $action = $form_state['values']['upload_type'];
       switch($action) {
-        case 'file':
+        case 'upload':
           $file = file_load($form_state['values']['file_model_import']);
           $file->status = FILE_STATUS_PERMANENT;
           file_save($file);
@@ -398,15 +479,28 @@ function smartdocs_import_model_submit($form, &$form_state) {
       $message = t('The swagger data has been imported into the model.');
       break;
     case 'apigee_json':
-      $entity['json'] = $form_state['values']['apigee_json_import'];
-      $message = t('The JSON data has been imported into the model.');
+      $action = $form_state['values']['upload_type'];
+      switch($action) {
+        case 'upload':
+          $file = file_load($form_state['values']['file_model_import']);
+          $file->status = FILE_STATUS_PERMANENT;
+          file_save($file);
+          $entity['json'] = file_get_contents($file->uri);
+          $message = t('The WADL XML has been imported into the model.');
+          break;
+        case 'path':
+          $entity['json'] = file_get_contents($form_state['values']['path_model_import']);
+          $message = t('The WADL XML has been imported into the model.');
+          break;
+      }
       break;
   }
-  if ($import = entity_get_controller('smartdocs_model')->import($entity, $type)) {
+  $import = entity_get_controller('smartdocs_model')->import($entity, $type);
+  if (isset($import['revisionNumber'])) {
     drupal_set_message($message, 'status');
-    $form_state['redirect'] = 'admin/smartdocs/models/' . $form_state['values']['model']['name'] . '/revisions/' . $import['revision'];
+    $form_state['redirect'] = 'admin/smartdocs/models/' . $form_state['values']['model']['name'] . '/revisions/' . $import['revisionNumber'];
   } else {
-    drupal_set_message($message, 'error');
+    drupal_set_message('There was an error importing your data. Please consult the logs.', 'error');
   }
 }
 
@@ -489,7 +583,7 @@ function smartdocs_model_export_submit($form, &$form_state) {
  */
 function smartdocs_model_settings($form, &$form_state, $mid) {
   $model = entity_get_controller('smartdocs_model')->loadSingle($mid);
-  drupal_set_title('`' . $model['displayName'] . '`' . ' Settings');
+  drupal_set_title('‘' . $model['displayName'] . '’' . ' Settings');
   $form['model'] = array(
     '#type' => 'hidden',
     '#value' => $model,
@@ -574,14 +668,13 @@ function smartdocs_method_save($form, &$form_state) {
     $html = $form_state['values'][$mid . '_method_template'];
     if ($save = entity_get_controller('smartdocs_template')->updateTemplate($mid, 'method', $html)) {
       drupal_set_message('Template Saved. Cache cleared for the ' . $display . ' model.');
-      $query = db_select('smartdocs', 's');
+      $query = db_select('smartdata', 's');
       $query->condition('s.model', $mid);
       $query->fields('s', array('nid'));
       $results = $query->execute();
       foreach($results as $result) {
-        cache_clear_all($result->nid, 'cache_docgen');
+        cache_clear_all($result->nid, 'cache_smartdocs');
       }
-      cache_clear_all('smartdocs', 'cache', TRUE);
     }
   } catch (Exception $e) {
     drupal_set_message('There was an error saving your template.', 'error');
@@ -637,7 +730,7 @@ function smartdocs_model_delete_submit($form, &$form_state) {
         ->execute();
       foreach ($results as $result) {
         $nids[] = $result->nid;
-        db_delete('smartdocs')
+        db_delete('smartdata')
           ->condition('nid', $result->nid)
           ->execute();
       }

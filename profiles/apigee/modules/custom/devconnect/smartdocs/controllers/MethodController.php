@@ -24,36 +24,9 @@ class SmartDocsMethodController extends DrupalDefaultEntityController {
   /**
    * Updates a given operation
    */
-  public function updateMethod($mid, $element) {
-    global $base_url;
+  public function updateMethod($mid, $rev, $res, $method_id, $payload) {
     try {
-      $full = $element['method_full'];
-      if (isset($element['tags']) && isset($full['tags'])) {
-        $full['tags'] = $element['tags'];
-      }
-      if (isset($element['verb']) && isset($full['verb'])) {
-        $full['verb'] = $element['verb'];
-      }
-      if (isset($element['path']) && isset($full['path'])) {
-        $full['path'] = $element['path'];
-      }
-      if (isset($element['auth']) && isset($full['authSchemes'])) {
-        $full['authSchemes'] = $element['auth'];
-      }
-      if ((isset($full['displayName']) || $full['name']) && isset($element['title'])) {
-        $full['displayName'] = $element['title'];
-      }
-      if (isset($full['description']) && isset($element['body'])) {
-        $full['description'] = $element['body'];
-      }
-      if (isset($full['customAttributes']) && $element['devportal']) {
-        if ($element['devportal']) {
-          $url = parse_url($base_url);
-          $full['customAttributes'][] = array('name' => 'drupal_' . $url['host'], 'value' => $url['host']);
-        }
-      }
-      $payload = drupal_json_encode($full);
-      $ret = $this->SmartDocsMethod->updateMethod($mid, $element['revision'], $element['rid'], $element['method_id'], $payload);
+      $ret = $this->SmartDocsMethod->updateMethod($mid, $rev, $res, $method_id, $payload);
       return $ret;
     } catch (Exception $e) {
       watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
@@ -64,6 +37,16 @@ class SmartDocsMethodController extends DrupalDefaultEntityController {
   public function createMethod($apiId, $revisionId, $resourceId, $payload) {
     try {
       $ret = $this->SmartDocsMethod->createMethod($apiId, $revisionId, $resourceId, $payload);
+      return $ret;
+    } catch (Exception $e) {
+      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+      return $e->getMessage();
+    }
+  }
+
+  public function getMethod($apiId, $revisionId, $resourceId, $methodId) {
+    try {
+      $ret = $this->SmartDocsMethod->getMethod($apiId, $revisionId, $resourceId, $methodId);
       return $ret;
     } catch (Exception $e) {
       watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);

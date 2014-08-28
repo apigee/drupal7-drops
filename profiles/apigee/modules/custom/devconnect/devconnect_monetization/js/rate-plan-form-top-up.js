@@ -43,16 +43,7 @@
                     $("#edit-amount", context).focus();
 
                     var currency = Drupal.settings.devconnect_monetization.currencies[$("#edit-amount", context).attr("currency")];
-                    $("#edit-amount", context).maskMoney({
-                        prefix: currency.symbol + ' ',
-                        thousands: currency.thousands_separator,
-                        decimal: currency.decimal_separator,
-                        precision: currency.decimals,
-                        defaultZero: false,
-                        allowNegative: false,
-                        allowZero: false,
-                        affixesStay: false
-                    });
+                    $("#edit-amount", context).maskMoney(getMaskMoneyOptions(currency));
                     $("#edit-amount", context).maskMoney("mask");
                     $("#edit-amount", context).focus();
 

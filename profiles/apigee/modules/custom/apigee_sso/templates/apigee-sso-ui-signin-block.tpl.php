@@ -1,11 +1,7 @@
 <?php
 $can_use_apigee = FALSE;
 if (module_exists('apigee_account')) {
-  $server_name = strtolower($_SERVER['SERVER_NAME']);
-  if (empty($server_name) && array_key_exists('HTTP_HOST', $_SERVER)) {
-    $server_name = strtolower($_SERVER['HTTP_HOST']);
-  }
-  // Server host whitelist includes 'localhost' and *.apigee.com. TODO: make this dynamic
+  $server_name = strtolower($_SERVER['HTTP_HOST']);
   if ($server_name == 'localhost' || preg_match('!apigee.com$!', $server_name) || preg_match('!opdk.info$!', $server_name)) {
     $can_use_apigee = TRUE;
   }

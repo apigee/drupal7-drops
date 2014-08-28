@@ -68,16 +68,7 @@
                     $("div#edit-current-balance div.controls", container).html(formatCurrencyAmount(currentBalance, currency));
                     var topUpAmount =  unmaskCurrencyAmount($("input#edit-top-up-amount", container).val(), currency) * 1.0;
 
-                    $("input#edit-top-up-amount", container).maskMoney({
-                        prefix: currency.symbol + ' ',
-                        thousands: currency.thousands_separator,
-                        decimal: currency.decimal_separator,
-                        precision: currency.decimals,
-                        defaultZero: true,
-                        allowNegative: false,
-                        allowZero: false,
-                        affixesStay: true
-                    });
+                    $("input#edit-top-up-amount", container).maskMoney(getMaskMoneyOptions(currency));
 
                     $("input#edit-top-up-amount", context).maskMoney("mask");
 

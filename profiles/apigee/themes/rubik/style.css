@@ -309,6 +309,21 @@ ul.secondary-tabs li a {
     -webkit-border-radius:3px 3px 0px 0px;
     }
 
+ul.secondary.tabs {
+    position: static;
+    float: right;
+    font-size: 0.923em;
+    padding: 0 3px 5px;
+    line-height: 1.385em;
+    overflow: hidden;
+    background-color: #fff;
+    }
+
+  ul.secondary.tabs li {
+    margin: 0 5px;
+    float: none;
+    display: inline;
+    }
 /**
  * Content ============================================================
  */
@@ -404,6 +419,22 @@ div.node .column-side .column-wrapper {
 .rules-elements-table ul.rules-operations a {
   text-shadow: none;
   color: #666;
+}
+/* Views exposed filters forms. */
+div.views-exposed-form {
+  margin-bottom: 20px;
+}
+div.views-exposed-form div.form-item {
+  border: 0;
+  padding: 0;
+}
+div.views-exposed-form div.views-submit-button {
+  margin-right: 1em;
+}
+div.views-exposed-form input.form-text,
+div.views-exposed-form select.form-select,
+div.views-exposed-form input.form-autocomplete {
+  height: 28px;
 }
 /* Module filter "clear" link. */
 .module-filter-clear a {

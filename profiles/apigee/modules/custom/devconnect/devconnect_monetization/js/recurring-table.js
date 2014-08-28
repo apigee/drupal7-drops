@@ -27,16 +27,7 @@
                 var currency = Drupal.settings.devconnect_monetization.currencies[$(this).attr("currency")];
                 var value = ($(this).attr("value") * 1).toFixed(currency.decimals) + '';
                 $(this).attr("value", value);
-                $(this).maskMoney({
-                    prefix: currency.symbol + ' ',
-                    thousands: currency.thousands_separator,
-                    decimal: currency.decimal_separator,
-                    precision: currency.decimals,
-                    allowNegative: false,
-                    allowZero: false,
-                    affixesStay: true
-                });
-
+                $(this).maskMoney(getMaskMoneyOptions(currency));
                 $(this).maskMoney("mask");
             });
 

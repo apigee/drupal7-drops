@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for module.
+ */
+
+
+/**
+ * Implements hook_install().
+ */
+function devconnect_monitor_install() {
+  // Allow administrators by default see error details.
+  if ($admin_role = variable_get('user_admin_role', 0)) {
+    $permissions = array(
+      'view error details',
+    );
+    user_role_grant_permissions($admin_role, $permissions);
+  }
+
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function devconnect_monitor_schema() {
+  return array(
+    'devconnect_monitor_email' => array(
+      'description' => 'Store emails to send notifications to.',
+      'fields' => array(
+        'id' => array(
+          'description' => 'The primary identifier for an email.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'email' => array(
+          'type' => 'varchar',
+          'description' => 'Email address.',
+          'length' => 255,
+          'not null' => TRUE,
+        ),
+        'created' => array(
+          'description' => 'The Unix timestamp when the email was created.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0
+        )
+      ),
+      'primary key' => array('id'),
+      'unique keys' => array(
+        'email' => array('email'),
+      ),
+    )
+  );
+}

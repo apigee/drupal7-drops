@@ -236,10 +236,11 @@ use Apigee\Mint\Types\Country;
             <?php if (strlen($rate_plan_detail->getRevenueType())): ?>
             <td><?php echo ucwords(strtolower($rate_plan_detail->getRevenueType())); ?></td>
             <?php endif; ?>
-            <?php foreach ($rate_values['REVSHARE'] as $rate_value): ?>
+            <?php (isset($rate_values['REVSHARE']))? $revshare_rate_values = $rate_values['REVSHARE'] : $revshare_rate_values = array();  ?>
+            <?php foreach ($revshare_rate_values as $rate_value): ?>
             <td><?php echo $rate_value->getRevshare(); ?>&nbsp;%</td>
             <?php endforeach; ?>
-            <?php foreach ($rate_values['RATECARD'] as $rate_value): ?>
+            <?php foreach ($revshare_rate_values as $rate_value): ?>
             <td><?php echo $rate_value->getRate(); ?></td>
             <?php endforeach; ?>
           </tr>

@@ -59,3 +59,45 @@ function formatCurrencyAmount(amount, currency) {
     }
     return formattedValue.trim();
 }
+
+/**
+ * Given a currency object, create the options for the
+ * jquery-maskmoney plugin.
+ * @param amount Formatted amount
+ * @param currency Currency to be used in format
+ * @returns object of proper jquery-maskmoney options
+ */
+function getMaskMoneyOptions(currency) {
+
+  var indicator_type = null;
+  var prefix_option = "";
+  var suffix_option = "";
+
+  // If currency symbol is not hidden, use it, else use currency code.
+  if(currency.symbol_placement != "hidden") {
+    indicator_type = "symbol";
+  }
+  else {
+    indicator_type = "code";
+  }
+
+  // Create indicator string in prefix or suffix position.
+  if(currency[indicator_type + "_placement"] == "before") {
+    prefix_option = currency[indicator_type] + currency[indicator_type + "_spacer"];
+  }
+  else {
+    suffix_option = currency[indicator_type + "_spacer"] + currency[indicator_type];
+  }
+
+  var options = {
+      prefix: prefix_option,
+      suffix: suffix_option,
+      affixesStay: false,
+      thousands: currency.thousands_separator,
+      decimal: currency.decimal_separator,
+      precision: currency.decimals,
+      allowZero: false,
+      allowNegative: false
+  };
+  return options;
+}

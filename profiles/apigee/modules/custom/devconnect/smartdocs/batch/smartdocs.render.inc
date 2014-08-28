@@ -7,41 +7,47 @@
  * @param $verbose
  * @param $selected
  * @param $options
+ * @param bool $render_template
  * @return array
  */
-function smartdocs_render($model, $verbose, $selected, $options) {
+function smartdocs_render($model, $verbose, $selected, $options, $render_template = TRUE) {
   $model['smart_mid'] = smartdocs_model_name($model['name']);
   $model['smart_field'] = smartdocs_field_name($model['name']);
-  if (!isset($model['displayName'])) {
+  if (!array_key_exists('displayName', $model)) {
     $model['displayName'] = $model['name'];
   }
-  $operations[] = array('smartdocs_template', array($model['name']));
+  if ($render_template) {
+    $operations[] = array('smartdocs_template', array($model['name']));
+  }
   $operations[] = array('smartdocs_taxonomy_vocab', array($model['smart_mid'], $model['displayName']));
   $operations[] = array('smartdocs_taxonomy_term', array($model['name'], $model['smart_mid'], $verbose, $selected));
   $operations[] = array('smartdocs_content_type', array($model['name'], $model['smart_mid'], $model['displayName'], $verbose));
   $operations[] = array('smartdocs_node_fields', array($model['name'], $model['smart_mid'], $model['smart_field'], $verbose));
+  $operations[] = array('smartdocs_node_paths', array($model['name'], $model['smart_mid'], $model['smart_field'], $options, $verbose));
   $publish = ($options['publish']) ? TRUE : FALSE;
-  foreach ($selected as $key => $select) {
-    if ($select != '0') {
-      if (is_array($verbose['resources'])) {
-        foreach ($verbose['resources'] as $resource) {
-          if (isset($resource['methods']) && is_array($resource['methods'])) {
-            foreach ($resource['methods'] as $method) {
-              if ($select == $method['id']) {
-                $operations[] = array(
-                  'smartdocs_render_nodes',
-                  array(
-                    $model['name'],
-                    $model['smart_mid'],
-                    $model['smart_field'],
-                    $verbose,
-                    $method,
-                    $resource,
-                    $publish
-                  )
-                );
-              }
-            }
+  if (is_array($verbose['resources'])) {
+    foreach ($selected as $select) {
+      if ($select == '0') {
+        continue;
+      }
+      foreach ($verbose['resources'] as $resource) {
+        if (!array_key_exists('methods', $resource) || !is_array($resource['methods'])) {
+          continue;
+        }
+        foreach ($resource['methods'] as $method) {
+          if ($select == $method['id']) {
+            $operations[] = array(
+              'smartdocs_render_nodes',
+              array(
+                $model['name'],
+                $model['smart_mid'],
+                $model['smart_field'],
+                $verbose,
+                $method,
+                $resource,
+                $publish
+              )
+            );
           }
         }
       }
@@ -326,6 +332,8 @@ function smartdocs_content_type($mid, $smart_mid, $display, $verbose, &$context)
  * Batch operation for creating all of the necessary fields for the content type.
  *
  * @param $mid
+ * @param $smart_mid
+ * @param $smart_field
  * @param $verbose
  * @param $context
  */
@@ -455,6 +463,73 @@ function smartdocs_node_fields($mid, $smart_mid, $smart_field, $verbose, &$conte
                 ),
               );
             }
+						if (!field_info_field('field_' . $smart_field . '_model_uuid')) {
+							$fields['field_' . $smart_field . '_model_uuid'] = array(
+								'active' => 1,
+								'cardinality' => 1,
+								'deleted' => 0,
+								'entity_types' => array(),
+								'field_name' => 'field_' . $smart_field . '_model_uuid',
+								'foreign keys' => array(
+									'format' => array(
+										'columns' => array(
+											'format' => 'format',
+										),
+										'table' => 'filter_format',
+									),
+								),
+								'indexes' => array(
+									'format' => array(
+										0 => 'format',
+									),
+								),
+								'locked' => 0,
+								'module' => 'text',
+								'settings' => array(
+									'max_length' => 255,
+								),
+								'translatable' => 0,
+								'type' => 'text',
+							);
+							$instances['node-' . $smart_mid . '-field_' . $smart_field . '_model_uuid'] = array(
+								'bundle' => $smart_mid,
+								'default_value' => NULL,
+								'deleted' => 0,
+								'description' => '',
+								'display' => array(
+									'default' => array(
+										'label' => 'above',
+										'module' => 'text',
+										'settings' => array(),
+										'type' => 'text_default',
+										'weight' => 5,
+									),
+									'teaser' => array(
+										'label' => 'above',
+										'settings' => array(),
+										'type' => 'hidden',
+										'weight' => 0,
+									),
+								),
+								'entity_type' => 'node',
+								'field_name' => 'field_' . $smart_field . '_model_uuid',
+								'label' => 'UUID',
+								'required' => 1,
+								'settings' => array(
+									'text_processing' => 0,
+									'user_register_form' => FALSE,
+								),
+								'widget' => array(
+									'active' => 1,
+									'module' => 'text',
+									'settings' => array(
+										'size' => 60,
+									),
+									'type' => 'text_textfield',
+									'weight' => 36,
+								),
+							);
+						}
           }
         }
       }
@@ -470,11 +545,41 @@ function smartdocs_node_fields($mid, $smart_mid, $smart_field, $verbose, &$conte
       field_create_instance($instance);
     }
   }
-  $path = variable_get('pathauto_node_' . $smart_mid . '_pattern', NULL);
-  if (is_null($path)) {
-    $pattern = $mid . '/apis/[node:field-' . str_replace('_', '-', $smart_field) . '-model-verb:name]/[node:field-'.str_replace('_', '-', $smart_field).'-model-path]';
-    variable_set('pathauto_node_' . $smart_mid . '_pattern', $pattern);
-  }
+}
+
+/**
+ * Generates path aliases for a given node.
+ *
+ * @param $mid
+ * @param $smart_mid
+ * @param $smart_field
+ * @param $options
+ * @param $verbose
+ * @param $context
+ */
+function smartdocs_node_paths($mid, $smart_mid, $smart_field, $options, $verbose, &$context) {
+	switch($options['path']) {
+		case 'uuid':
+			$path = variable_get('pathauto_node_' . $smart_mid . '_pattern', NULL);
+			if (is_null($path)) {
+				$pattern = $mid . '/apis/[node:field-' . str_replace('_', '-', $smart_field) . '-model-verb:name]/[node:field-'.str_replace('_', '-', $smart_field).'-model-uuid]';
+				variable_set('pathauto_node_' . $smart_mid . '_pattern', $pattern);
+			}
+			break;
+		case 'path':
+			$path = variable_get('pathauto_node_' . $smart_mid . '_pattern', NULL);
+			if (is_null($path)) {
+				$pattern = $mid . '/apis/[node:field-' . str_replace('_', '-', $smart_field) . '-model-verb:name]/[node:field-'.str_replace('_', '-', $smart_field).'-model-path]';
+				variable_set('pathauto_node_' . $smart_mid . '_pattern', $pattern);
+			}
+			break;
+		default:
+			$path = variable_get('pathauto_node_' . $smart_mid . '_pattern', NULL);
+			if (is_null($path)) {
+				$pattern = $mid . '/apis/[node:field-' . str_replace('_', '-', $smart_field) . '-model-verb:name]/[node:title]';
+				variable_set('pathauto_node_' . $smart_mid . '_pattern', $pattern);
+			}
+	}
 }
 
 /**
@@ -575,11 +680,11 @@ function smartdocs_field_info($cardinality, $vocab, $mid, $smart_mid, $smart_fie
  * @param $verbose
  * @param $method
  * @param $resource
- * @param $selected
  * @param $publish
+ * @param $context
  */
 function smartdocs_render_nodes($mid, $smart_mid, $smart_field, $verbose, $method, $resource, $publish, &$context) {
-  $exists = db_query('SELECT nid FROM {smartdocs} WHERE method = :uuid', array(
+  $exists = db_query('SELECT nid FROM {smartdata} WHERE method = :uuid', array(
     ':uuid' => $method['id'],
   ))->fetchField();
   if (!$exists) {
@@ -630,12 +735,12 @@ function smartdocs_render_node($method, $mid, $smart_mid, $smart_field, $publish
     $mpid = $mid . $method['path'] . '/' . strtoupper($method['verb']);
   }
 
-  $revision = db_query('SELECT revision FROM {smartdocs} WHERE mpid = :mpid AND model = :mid', array(
+  $revision = db_query('SELECT revision FROM {smartdata} WHERE mpid = :mpid AND model = :mid', array(
     ':mpid' => $mpid,
     ':mid' => $mid,
   ))->fetchField();
 
-  $exists = db_query('SELECT nid FROM {smartdocs} WHERE mpid = :mpid AND model = :mid', array(
+  $exists = db_query('SELECT nid FROM {smartdata} WHERE mpid = :mpid AND model = :mid', array(
     ':mpid' => $mpid,
     ':mid' => $mid,
   ))->fetchField();
@@ -653,7 +758,7 @@ function smartdocs_render_node($method, $mid, $smart_mid, $smart_field, $publish
         '@title' => $method['displayName'],
         '@method' => $method['id']
       ));
-      db_update('smartdocs')->fields(array('revision' => $verbose['revisionNumber']))
+      db_update('smartdata')->fields(array('revision' => $verbose['revisionNumber']))
         ->condition('model', $mid)
         ->condition('mpid', $mpid)
         ->execute();
@@ -746,7 +851,7 @@ function smartdocs_render_node($method, $mid, $smart_mid, $smart_field, $publish
         }
       }
     }
-    if (is_array($method['authSchemes']) && !empty($method['authSchemes'])) {
+    if (array_key_exists('authSchemes', $method) && is_array($method['authSchemes']) && !empty($method['authSchemes'])) {
       foreach($method['authSchemes'] as $scheme) {
         $terms = taxonomy_get_term_by_name($scheme, $smart_mid . '_auth_schemes');
         foreach ($terms as $term) {
@@ -789,13 +894,17 @@ function smartdocs_render_node($method, $mid, $smart_mid, $smart_field, $publish
         break;
     }
   }
-  $field_name = 'field_' . $smart_field . '_model_path';
+  // path
+	$field_name = 'field_' . $smart_field . '_model_path';
   $wrapper->$field_name = $resource['path'];
+	// uuid
+	$field_name = 'field_' . $smart_field . '_model_uuid';
+	$wrapper->$field_name = $resource['id'];
   if ($wrapper->save()) {
     $node = $wrapper->value();
     if ($node->nid) {
-      cache_clear_all($node->nid, 'cache_docgen');
-      $sid = db_query('SELECT sid FROM {smartdocs} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+      cache_clear_all($node->nid, 'cache_smartdocs');
+      $sid = db_query('SELECT sid FROM {smartdata} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
       $record = array (
         'nid' =>  $node->nid,
         'revision' => $verbose['revisionNumber'],
@@ -807,9 +916,9 @@ function smartdocs_render_node($method, $mid, $smart_mid, $smart_field, $publish
       );
       if ($sid) {
         $record['sid'] = $sid;
-        drupal_write_record('smartdocs', $record, 'sid');
+        drupal_write_record('smartdata', $record, 'sid');
       } else {
-        drupal_write_record('smartdocs', $record);
+        drupal_write_record('smartdata', $record);
       }
     }
   }
@@ -819,9 +928,11 @@ function smartdocs_render_node($method, $mid, $smart_mid, $smart_field, $publish
  * Batch operation for creating views.
  *
  * @param $mid
- * @param $verbose
- * @param $selected
+ * @param $smart_mid
+ * @param $smart_field
+ * @param $display
  * @param $context
+ * @throws Exception
  */
 function smartdocs_views($mid, $smart_mid, $smart_field, $display, &$context) {
   $wrappers = stream_get_wrappers();

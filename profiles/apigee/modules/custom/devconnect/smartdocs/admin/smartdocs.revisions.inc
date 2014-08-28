@@ -12,7 +12,7 @@ function smartdocs_revision_detail($form, $form_state, $mid) {
   $model = entity_get_controller('smartdocs_model')->loadSingle($mid);
   $revisions = entity_get_controller('smartdocs_revision')->getAllRevisions($mid);
 
-  drupal_set_title('`' . $model['displayName'] . '` API Revisions');
+  drupal_set_title('‘' . $model['displayName'] . '’ API Revisions');
 
   $rows = array();
   foreach($revisions as $revision) {
@@ -68,7 +68,7 @@ function smartdocs_revision_detail($form, $form_state, $mid) {
  */
 function smartdocs_add_revision($form, $form_state, $mid) {
   $model = entity_get_controller('smartdocs_model')->loadSingle($mid);
-  drupal_set_title('Add API Revision to `' . $model['displayName'] . '`');
+  drupal_set_title('Add API Revision to ‘' . $model['displayName'] . '’');
   $form['model'] = array(
     '#type' => 'hidden',
     '#value' => $model,
@@ -79,6 +79,9 @@ function smartdocs_add_revision($form, $form_state, $mid) {
     '#size' => 60,
     '#maxlength' => 128,
     '#required' => TRUE,
+    '#attributes' => array(
+      'placeholder' => t('New Revision'),
+    )
   );
   $form['version'] = array(
     '#type' => 'textfield',
@@ -86,6 +89,9 @@ function smartdocs_add_revision($form, $form_state, $mid) {
     '#size' => 60,
     '#maxlength' => 128,
     '#required' => TRUE,
+    '#attributes' => array(
+      'placeholder' => t('v1'),
+    )
   );
   $form['description'] = array(
     '#type' => 'textarea',
@@ -153,7 +159,7 @@ function smartdocs_add_revision_submit($form, &$form_state) {
  * @param $rev
  * @return array
  */
-function smartdocs_revision_auth($form, $form_state, $mid, $rev) {
+function smartdocs_revision_auth($form, &$form_state, $mid, $rev) {
 
   drupal_set_title('Authentication Settings for API Revision #' . $rev);
 
@@ -290,7 +296,6 @@ function smartdocs_revision_auth($form, $form_state, $mid, $rev) {
       'query' => 'Query',
     ),
   );
-
   $form['token']['tokenMap'] = array(
     '#prefix' => '<div id="custom-token-map">',
     '#suffix' => '</div>',
@@ -298,46 +303,63 @@ function smartdocs_revision_auth($form, $form_state, $mid, $rev) {
     '#collapsible' => TRUE,
     '#tree' => TRUE,
   );
-
-  if (isset($token['tokenMap'])) {
-    $count = count($token['tokenMap']);
-    if (empty($form_state['num_tokens'])) {
-      $form_state['num_tokens'] = $count;
-      if ($count == 0) {
-        $form_state['num_tokens'] = 1;
+  $button = TRUE;
+  if (empty($form_state['num_tokens'])) {
+    if (!empty($token['tokenMap'])) {
+      foreach($token['tokenMap'] as $name => $value) {
+        $form_state['num_tokens'][uniqid()] = array(
+          'name' => $name,
+          'value' => $value
+        );
       }
-    }
-  } else {
-    $form_state['num_tokens'] = 1;
-  }
-  for ($i = 0; $i < $form_state['num_tokens']; $i++) {
-    if (isset($token) && isset($token['tokenMap'])) {
-      $keys = array_keys($token['tokenMap']);
-      $values = array_values($token['tokenMap']);
     } else {
-      $keys = array();
-      $values = array();
+      $form_state['num_tokens'][uniqid()] = array(
+        'name' => '',
+        'value' => ''
+      );
     }
-    $form['token']['tokenMap'][$i] = array(
-      '#title' => t('Token #' . ($i + 1)),
-      '#type' => 'fieldset',
-      '#collapsed' => FALSE,
-      '#collapsible' => TRUE,
-    );
-    $form['token']['tokenMap'][$i]['name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Name'),
-      '#default_value' => (isset($keys[$i])) ? $keys[$i] : '',
-    );
-    $form['token']['tokenMap'][$i]['value'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Value'),
-      '#default_value' => (isset($values[$i])) ? $values[$i] : '',
-    );
+  }
+  $i = 0;
+  foreach ($form_state['num_tokens'] as $uuid => $params) {
+    if (is_array($params) && isset($params['name'])) {
+      $form['token']['tokenMap'][$uuid] = array(
+        '#title' => t('Default Token Value #' . ($i + 1) . '(optional)'),
+        '#type' => 'fieldset',
+        '#collapsed' => FALSE,
+        '#collapsible' => TRUE,
+      );
+      $form['token']['tokenMap'][$uuid]['name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Default Name'),
+        '#default_value' => (!empty($params['name'])) ? $params['name'] : '',
+      );
+      $form['token']['tokenMap'][$uuid]['value'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Default Value'),
+        '#default_value' => (!empty($params['value'])) ? $params['value'] : '',
+      );
+      if ($button) {
+        $form['token']['tokenMap'][$uuid]['remove'] = array(
+          '#type' => 'submit',
+          '#attributes' => array(
+            'data' => $uuid,
+          ),
+          '#value' => t('Remove token #' . ($i + 1)),
+          '#submit' => array('smartdocs_token_auth_remove'),
+          '#limit_validation_errors' => array(),
+          '#ajax' => array(
+            'callback' => 'smartdocs_token_auth_callback',
+            'wrapper' => 'custom-token-map',
+          ),
+          '#suffix' => '<br/><br/>'
+        );
+      }
+      $i++;
+    }
   }
   $form['token']['tokenMap']['add'] = array(
     '#type' => 'submit',
-    '#value' => t('Add Parameter'),
+    '#value' => t('Add Token'),
     '#submit' => array('smartdocs_token_auth_add'),
     '#limit_validation_errors' => array(),
     '#ajax' => array(
@@ -346,7 +368,6 @@ function smartdocs_revision_auth($form, $form_state, $mid, $rev) {
     ),
     '#suffix' => '<br/><br/>'
   );
-
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Save Authentication Settings'
@@ -371,8 +392,37 @@ function smartdocs_token_auth_callback($form, $form_state) {
  * @param $form
  * @param $form_state
  */
+function smartdocs_token_auth_remove($form, &$form_state) {
+  $form_state['num_tokens'] = array();
+  $remove = $form_state['clicked_button']['#attributes']['data'];
+  foreach($form_state['input']['token']['tokenMap'] as $uuid => $token) {
+    if (!($remove == $uuid)) {
+      $form_state['num_tokens'][$uuid] = array(
+        'name' => $token['name'],
+        'value' => $token['value']
+      );
+    }
+  }
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Adds parameter to the form
+ *
+ * @param $form
+ * @param $form_state
+ */
 function smartdocs_token_auth_add($form, &$form_state) {
-  $form_state['num_tokens']++;
+  foreach($form_state['input']['token']['tokenMap'] as $uuid => $token) {
+    $form_state['num_tokens'][$uuid] = array(
+      'name' => $token['name'],
+      'value' => $token['value']
+    );
+  }
+  $form_state['num_tokens'][uniqid()] = array(
+    'name' => '',
+    'value' => ''
+  );
   $form_state['rebuild'] = TRUE;
 }
 
@@ -383,62 +433,61 @@ function smartdocs_token_auth_add($form, &$form_state) {
  * @param $form_state
  */
 function smartdocs_revision_auth_submit($form, &$form_state) {
-  if ($form_state['values']['oauth_action'] == 'add') {
-    $form_state['values']['oauth']['name'] = 'oauth2WebServerFlow';
-    $payload = $form_state['values']['oauth'];
-    $model = $form_state['values']['model'];
-    $rev = $form_state['values']['rev'];
-    if ($callback = entity_get_controller('smartdocs_revision')->addAuth($model, $rev, $payload)) {
-      drupal_set_message('OAuth 2 Web Server Flow has been added to the revision.', 'status');
-      variable_set($model . '_' . $rev . '_callbackURL', $callback);
+  $model = $form_state['values']['model'];
+  $rev = $form_state['values']['rev'];
+  if (!empty($form_state['values']['oauth']['clientId'])) {
+    if ($form_state['values']['oauth_action'] == 'add') {
+      $form_state['values']['oauth']['name'] = 'oauth2WebServerFlow';
+      $payload = $form_state['values']['oauth'];
+      if ($callback = entity_get_controller('smartdocs_revision')->addAuth($model, $rev, $payload)) {
+        drupal_set_message('OAuth 2 Web Server Flow has been added to the revision.', 'status');
+        variable_set($model . '_' . $rev . '_callbackURL', $callback);
+      } else {
+        drupal_set_message('There was a problem adding ‘OAuth 2 Web Server Flow’ to the current revision.', 'error');
+      }
     } else {
-      drupal_set_message('There was a problem adding `OAuth 2 Web Server Flow` to the current revision.', 'error');
+      $form_state['values']['oauth']['name'] = 'oauth2WebServerFlow';
+      $payload = $form_state['values']['oauth'];
+      if (entity_get_controller('smartdocs_revision')->updateAuth($model, $rev, $payload)) {
+        drupal_set_message('OAuth 2 Web Server Flow has been updated.', 'status');
+      } else {
+        drupal_set_message('There was a problem updating the ‘OAuth 2 Web Server Flow’ for the current revision.', 'error');
+      }
     }
   } else {
-    $form_state['values']['oauth']['name'] = 'oauth2WebServerFlow';
-    $payload = $form_state['values']['oauth'];
-    $model = $form_state['values']['model'];
-    $rev = $form_state['values']['rev'];
-    if (entity_get_controller('smartdocs_revision')->updateAuth($model, $rev, $payload)) {
-      drupal_set_message('OAuth 2 Web Server Flow has been updated.', 'status');
-    } else {
-      drupal_set_message('There was a problem updating the `OAuth 2 Web Server Flow` for the current revision.', 'error');
-    }
+    drupal_set_message('No configuration settings for OAuth 2 Web Server Flow found.', 'info');
   }
-  if ($form_state['values']['token_action'] == 'add') {
+  if (!empty($form_state['values']['token']['tokenType'])) {
     $map = array();
     foreach($form_state['values']['token']['tokenMap'] as $key => $value) {
-      if (is_numeric($key)) {
-        $map[$value['name']] = $value['value'];
+      if (is_array($value)) {
+        if (isset($value['name']) && !empty($value['name'])) {
+          $map[$value['name']] = $value['value'];
+        }
       }
     }
     $payload = array(
       'name' => 'custom',
       'tokenType' => $form_state['values']['token']['tokenType'],
-      'tokenMap' => $map,
     );
-    if (entity_get_controller('smartdocs_revision')->addAuth($model, $rev, $payload)) {
-      drupal_set_message('Custom Token has been added to the revision.', 'status');
+    if (!empty($map)) {
+      $payload['tokenMap'] = $map;
+    }
+    if ($form_state['values']['token_action'] == 'add') {
+      if (entity_get_controller('smartdocs_revision')->addAuth($model, $rev, $payload)) {
+        drupal_set_message('Custom Token has been add to the revision.', 'status');
+      } else {
+        drupal_set_message('There was a problem adding ‘Custom Token’ to the revision.', 'error');
+      }
     } else {
-      drupal_set_message('There was a problem adding `Custom Token` to the current revision.', 'error');
+      if (entity_get_controller('smartdocs_revision')->updateAuth($model, $rev, $payload)) {
+        drupal_set_message('Custom Token has been updated.', 'status');
+      } else {
+        drupal_set_message('There was a problem updating the ‘Custom Token’ information to the revision.', 'error');
+      }
     }
   } else {
-    $map = array();
-    foreach($form_state['values']['token']['tokenMap'] as $key => $value) {
-      if (is_numeric($key)) {
-        $map[$value['name']] = $value['value'];
-      }
-    }
-    $payload = array(
-      'name' => 'custom',
-      'tokenType' => $form_state['values']['token']['tokenType'],
-      'tokenMap' => $map,
-    );
-    if (entity_get_controller('smartdocs_revision')->updateAuth($model, $rev, $payload)) {
-      drupal_set_message('Custom Token has been updated.', 'status');
-    } else {
-      drupal_set_message('There was a problem updating the `Custom Token` to the current revision.', 'error');
-    }
+    drupal_set_message('No configuration settings for Custom Token found.', 'info');
   }
 }
 
@@ -453,7 +502,7 @@ function smartdocs_revision_auth_submit($form, &$form_state) {
  */
 function smartdocs_edit_revision($form, $form_state, $mid, $rev) {
   $rev = entity_get_controller('smartdocs_revision')->getRevision($mid, $rev);
-  drupal_set_title('Edit API Revision `' . (isset($rev['displayName'])) ? $rev['displayName'] : $rev['name'] . '`');
+  drupal_set_title('Edit API Revision ‘' . (isset($rev['displayName'])) ? $rev['displayName'] : $rev['name'] . '’');
   $form['model'] = array(
     '#type' => 'hidden',
     '#value' => $mid,
@@ -518,6 +567,7 @@ function smartdocs_edit_revision_submit($form, &$form_state) {
   $mid = $form_state['values']['model'];
   $rev = $form_state['values']['rev'];
   if ($revision = entity_get_controller('smartdocs_revision')->updateRevision($mid, $rev, $payload)) {
+    cache_clear_all('*', 'cache_smartdocs', TRUE);
     drupal_set_message('Revision #' . $rev .' has been updated.');
     $form_state['redirect'] = 'admin/smartdocs/models/' . $mid .'/revisions/' . $revision['revisionNumber'];
   }

@@ -1,5 +1,17 @@
+devconnect_monetization 7.x-4.27
+================================
+DEVSOL-288: Edge Server Connection Timeout should be set to ~30s
+Better error messages if developer company data in user profile is messed up.
+DEVRT-1112: CHF topups are no longer off by factor of ten when using topup modal form.
+DEVSOL-478: Swiss Francs use proper currency code or symbol, and is properly placed before or after amount in text input fields.
+Added Better error message if backend Monetization server is not responding.
+DEVSOL-478: Dev Portal requires wrong top up amount to buy freemium plan.
+DEVSOL-532: Top up balance message no longer shows currency code twice for currencies without a symbol.
+
 devconnect_monetization 7.x-4.26
 ================================
 DEVSOL-251: Not selecting a start date for a plan will throw Fatal error.
 DEVSOL-302: Dev Portal Monetization is no longer dependent on the "Payment via WorldPay" (commerce_worldpay_bg) module.
 DEVSOL-296: New Devconnect monetization monitoring module to monitor critical issues in monetization.
+DEVSOL-376: Do not make /billing-documents-months API call if user does not have permission
+DEVSOL-385: Create configuration to allow either /developer-balance or /prepaid-developer-balances API call populate prepaid balance table on "billing & Reports" page.

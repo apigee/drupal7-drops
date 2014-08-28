@@ -6,6 +6,7 @@
  * @param $form
  * @param $form_state
  * @param $mid
+ * @param $rev
  * @return mixed
  */
 function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
@@ -23,16 +24,26 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
 
   $model['revisions'][$rev] = entity_get_controller('smartdocs_revision')->loadVerbose($mid, $rev);
 
-  drupal_set_title('`' . $model['displayName'] . '` API Revision #' . $rev);
+  drupal_set_title('‘' . $model['displayName'] . '’ API Revision #' . $rev);
   $crumb = drupal_get_breadcrumb();
   $crumb[] = '#' . $rev;
   drupal_set_breadcrumb($crumb);
+
+
+	$query = db_select('smartdata', 's');
+	$query->condition('model', $model['name'], '=');
+	$query->fields('s', array('nid'));
+	$nids = $query->execute();
+	$nodes = array();
+	foreach ($nids as $nid) {
+		$nodes[$nid->nid] = $model;
+	}
 
   $operations_options['render_nodes'] = t('Render Nodes');
   if (!empty($nodes)) {
     $operations_options['publish_nodes'] = t('Publish Nodes');
     $operations_options['unpublish_nodes'] = t('Unpublish Nodes');
-    $operations_options['sync_nodes'] = t('Sync Nodes to SmartDocs');
+    //$operations_options['sync_nodes'] = t('Sync Nodes to SmartDocs');
   }
 
   $operations = array(
@@ -122,7 +133,7 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
       $form['resources'] = array(
         '#type' => 'fieldset',
         '#title' => 'Resources',
-        '#collapsed' => TRUE,
+        '#collapsed' => FALSE,
         '#collapsible' => TRUE,
       );
     }
@@ -132,8 +143,8 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
       $resource_row['base'] = $resource['baseUrl'];
       $resource_row['path'] = $resource['path'];
       $operations = array(
-        'resource/edit/' . $rev . '/' . $resource['id'] => 'Edit Resource',
         'method/add/' . $rev . '/' . $resource['id'] => 'Add Method',
+        'resource/edit/' . $rev . '/' . $resource['id'] => 'Edit Resource',
       );
       $links = array();
       foreach($operations as $key => $op) {
@@ -156,7 +167,7 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
       $resource_rows[] = $resource_row;
       if (isset($resource['methods']) && is_array($resource['methods'])) {
         foreach ($resource['methods'] as $uuid => $method) {
-          $nid = db_query("SELECT nid FROM {smartdocs} WHERE method = :uuid", array(':uuid' => $method['id']))->fetchField();
+          $nid = db_query("SELECT nid FROM {smartdata} WHERE method = :uuid", array(':uuid' => $method['id']))->fetchField();
           $synced = 0;
           $node = 0;
           $status = 0;
@@ -166,12 +177,15 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
               'html' => TRUE,
               'attributes' => array(
                 'target' => '_blank',
+              ),
+              'query' => array(
+                'flush' => '1'
               )
             ));
             $node = 1;
             $status = db_query("SELECT status FROM {node} WHERE nid = :nid", array(':nid' => $nid))->fetchField();
             if(isset($nid)) {
-              $synced = db_query("SELECT synced FROM {smartdocs} WHERE nid = :nid", array(':nid' => $nid))->fetchField();
+              $synced = db_query("SELECT synced FROM {smartdata} WHERE nid = :nid", array(':nid' => $nid))->fetchField();
             }
           }
           $operations = array(
@@ -270,7 +284,7 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
     $form['resources'] = array(
       '#type' => 'fieldset',
       '#title' => 'Resources',
-      '#collapsed' => TRUE,
+      '#collapsed' => FALSE,
       '#collapsible' => TRUE,
     );
     $form['methods'] = array(
@@ -303,6 +317,34 @@ function smartdocs_resource_detail_submit($form, &$form_state) {
         $form_state['render_options'] = TRUE;
         $form_state['rebuild'] = TRUE;
         break;
+			case 'publish_nodes':
+				foreach ($form_state['input']['api_model_table'] as $uuid => $import) {
+					if (!is_null($import)) {
+						$nid = db_query('SELECT nid FROM {smartdata} WHERE method = :method', array(':method' => $uuid))->fetchField();
+						if (isset($nid)) {
+							$node = node_load($nid);
+							$node->status = 1;
+							node_save($node);
+						} else {
+							drupal_set_message('The method you selected doesn\'t have an associated node.  Please render it first.', 'error', FALSE);
+						}
+					}
+				}
+				break;
+			case 'unpublish_nodes':
+				foreach ($form_state['input']['api_model_table'] as $uuid => $import) {
+					if (!is_null($import)) {
+						$nid = db_query('SELECT nid FROM {smartdata} WHERE method = :method', array(':method' => $uuid))->fetchField();
+						if (isset($nid)) {
+							$node = node_load($nid);
+							$node->status = 0;
+							node_save($node);
+						} else {
+							drupal_set_message('The method you selected doesn\'t have an associated node.  Please render it first.', 'error', FALSE);
+						}
+					}
+				}
+				break;
       default:
         break;
     }
@@ -329,6 +371,7 @@ function smartdocs_resource_detail_submit($form, &$form_state) {
  * @param $form_state
  * @param $selected
  * @param $verbose
+ * @param $model
  * @return mixed
  */
 function smartdocs_render_confirmation_form($form, $form_state, $selected, $verbose, $model) {
@@ -383,9 +426,21 @@ function smartdocs_render_confirmation_form($form, $form_state, $selected, $verb
  * @param $mid
  * @param $rev
  */
-function smartdocs_resource_add($form, $form_state, $mid, $rev) {
+function smartdocs_resource_add($form, &$form_state, $mid, $rev) {
+	module_load_include('inc', 'smartdocs', 'admin/smartdocs.methods.examples');
   $model = entity_get_controller('smartdocs_model')->loadSingle($mid);
-  drupal_set_title('Add Resource to `' . $model['displayName'] . '`');
+  drupal_set_title('Add Resource to ‘' . $model['displayName'] . '’');
+
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Administration', 'admin');
+	$breadcrumb[] = l('SmartDocs', 'admin/smartdocs');
+	$breadcrumb[] = l('Models', 'admin/smartdocs/models');
+	$breadcrumb[] = l($model['displayName'], 'admin/smartdocs/models/' . $model['name']);
+	$breadcrumb[] = l('API Revisions', 'admin/smartdocs/models/' . $model['name'] . '/revisions/');
+	$breadcrumb[] = l('#' . $rev, 'admin/smartdocs/models/' . $model['name'] . '/revisions/' . $rev);
+	drupal_set_breadcrumb($breadcrumb);
+
   $form['model'] = array(
     '#type' => 'hidden',
     '#value' => $model,
@@ -406,70 +461,42 @@ function smartdocs_resource_add($form, $form_state, $mid, $rev) {
     '#description' => t('Provide a path with dynamic values, ex: %e' , array('%e' => '/consoles/{name}')),
     '#size' => 60,
     '#maxlength' => 128,
+    '#attributes' => array(
+      'placeholder' => t('/editPath'),
+    )
   );
   $form['description'] = array(
     '#type' => 'textarea',
     '#title' => t('Description'),
     '#rows' => 5,
   );
-  $form['parameters'] = array(
-    '#prefix' => '<div id="parameters">',
-    '#suffix' => '</div>',
-    '#tree' => TRUE,
-  );
-  if (empty($form_state['num_parameters'])) {
-    $form_state['num_parameters'] = 0;
-  }
-  for ($i = 0; $i <= $form_state['num_parameters']; $i++) {
-    $form['parameters'][$i] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Parameter #' . ($i + 1)),
-    );
-    $form['parameters'][$i]['required'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Required'),
-      '#suffix' => '<br/>'
-    );
-    $form['parameters'][$i]['name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Name'),
-      '#description' => t('Provide the name for this parameter.')
-    );
-    $form['parameters'][$i]['defaultvalue'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Default Value'),
-      '#description' => t('Provide the default value for this parameter.')
-    );
-    $form['parameters'][$i]['datatype'] = array(
-      '#type' => 'radios',
-      '#title' => t('Data Type'),
-      '#options' => array(
-        'int' => 'Int',
-        'string' => 'String',
-      ),
-    );
-    $form['parameters'][$i]['type'] = array(
-      '#type' => 'radios',
-      '#title' => t('Type'),
-      '#options' => array(
-        'header' => 'Header',
-        'body' => 'Body',
-        'query' => 'Query',
-        'template' => 'Template',
-      ),
-    );
-  }
-  $form['parameters']['add'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add Parameter'),
-    '#submit' => array('smartdocs_resource_add_parameter'),
-    '#limit_validation_errors' => array(),
-    '#ajax' => array(
-      'callback' => 'smartdocs_resource_callback',
-      'wrapper' => 'parameters',
-    ),
-    '#suffix' => '<br/><br/>'
-  );
+	$output = (isset($resource['parameters'])) ? json_encode($resource['parameters']) : '';
+  $output = _smartdocs_prettyprint($output);
+	// CodeMirror
+	$version = variable_get('local_asset_version', '3');
+	drupal_add_js(drupal_get_path('module', 'smartdocs') . '/local/js/v' . $version .'/codemirror.js');
+	drupal_add_js(drupal_get_path('module', 'smartdocs') . '/local/js/v' . $version .'/codemirror_javascript.js');
+	drupal_add_css(drupal_get_path('module', 'smartdocs') . '/local/css/v' . $version .'/codemirror.css');
+	// Custom Javascript
+	drupal_add_js(array('smartdocs' => array('parameters' => strtolower('parameters'))), 'setting');
+	drupal_add_js(drupal_get_path('module', 'smartdocs') . '/js/smartdocs.js');
+	$form['parameters'] = array(
+		'#type' => 'textarea',
+		'#title' => t('Parameters'),
+		'#default_value' => $output,
+	);
+	$example = smartdocs_method_examples('parameters');
+	if (!empty($example)) {
+		$form['examples'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Examples'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['examples']['ex'] = array(
+			'#markup' => $example,
+		);
+	}
   $form['submit'] = array(
     '#type' => 'submit',
     '#submit' => array('smartdocs_resource_add_submit'),
@@ -488,10 +515,22 @@ function smartdocs_resource_add($form, $form_state, $mid, $rev) {
  * @param $res
  * @return mixed
  */
-function smartdocs_resource_edit($form, $form_state, $mid, $rev, $res) {
+function smartdocs_resource_edit($form, &$form_state, $mid, $rev, $res) {
+	module_load_include('inc', 'smartdocs', 'admin/smartdocs.methods.examples');
   $resource = entity_get_controller('smartdocs_resource')->loadResource($mid, $rev, $res);
   $model = entity_get_controller('smartdocs_model')->loadSingle($mid);
-  drupal_set_title('Edit Resource from `' . $model['displayName'] . '`');
+  drupal_set_title('Edit Resource from ‘' . $model['displayName'] . '’');
+
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Administration', 'admin');
+	$breadcrumb[] = l('SmartDocs', 'admin/smartdocs');
+	$breadcrumb[] = l('Models', 'admin/smartdocs/models');
+	$breadcrumb[] = l($model['displayName'], 'admin/smartdocs/models/' . $model['name']);
+	$breadcrumb[] = l('API Revisions', 'admin/smartdocs/models/' . $model['name'] . '/revisions/');
+	$breadcrumb[] = l('#' . $rev, 'admin/smartdocs/models/' . $model['name'] . '/revisions/' . $rev);
+	drupal_set_breadcrumb($breadcrumb);
+
   $form['model'] = array(
     '#type' => 'hidden',
     '#value' => $model,
@@ -525,70 +564,33 @@ function smartdocs_resource_edit($form, $form_state, $mid, $rev, $res) {
     '#title' => t('Description'),
     '#rows' => 5,
   );
-  $form['parameters'] = array(
-    '#prefix' => '<div id="parameters">',
-    '#suffix' => '</div>',
-    '#tree' => TRUE,
-  );
-  $count = count($resource['parameters']);
-  if (empty($form_state['num_parameters'])) {
-    $form_state['num_parameters'] = $count - 1;
-  }
-  for ($i = 0; $i <= $form_state['num_parameters']; $i++) {
-    $form['parameters'][$i] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Parameter #' . ($i + 1)),
-    );
-    $form['parameters'][$i]['required'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Required'),
-      '#default_value' => (bool)$resource['parameters'][$i]['required'],
-      '#suffix' => '<br/>'
-    );
-    $form['parameters'][$i]['name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Name'),
-      '#default_value' => $resource['parameters'][$i]['name'],
-      '#description' => t('Provide the name for this parameter.')
-    );
-    $form['parameters'][$i]['defaultValue'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Default Value'),
-      '#default_value' => (isset($resource['parameters'][$i]['defaultValue'])) ? $resource['parameters'][$i]['defaultValue'] : '',
-      '#description' => t('Provide the default value for this parameter.')
-    );
-    $form['parameters'][$i]['dataType'] = array(
-      '#type' => 'radios',
-      '#title' => t('Data Type'),
-      '#default_value' => (isset($resource['parameters'][$i]['dataType'])) ? $resource['parameters'][$i]['dataType'] : '',
-      '#options' => array(
-        'int' => 'Int',
-        'string' => 'String',
-      ),
-    );
-    $form['parameters'][$i]['type'] = array(
-      '#type' => 'radios',
-      '#title' => t('Type'),
-      '#default_value' => (isset($resource['parameters'][$i]['type'])) ? $resource['parameters'][$i]['type'] : '',
-      '#options' => array(
-        'HEADER' => 'Header',
-        'BODY' => 'Body',
-        'QUERY' => 'Query',
-        'TEMPLATE' => 'Template',
-      ),
-    );
-  }
-  $form['parameters']['add'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add Parameter'),
-    '#submit' => array('smartdocs_resource_add_parameter'),
-    '#limit_validation_errors' => array(),
-    '#ajax' => array(
-      'callback' => 'smartdocs_resource_callback',
-      'wrapper' => 'parameters',
-    ),
-    '#suffix' => '<br/><br/>'
-  );
+	$output = (isset($resource['parameters'])) ? json_encode($resource['parameters']) : '';
+  $output = _smartdocs_prettyprint($output);
+	// CodeMirror
+	$version = variable_get('local_asset_version', '3');
+	drupal_add_js(drupal_get_path('module', 'smartdocs') . '/local/js/v' . $version .'/codemirror.js');
+	drupal_add_js(drupal_get_path('module', 'smartdocs') . '/local/js/v' . $version .'/codemirror_javascript.js');
+	drupal_add_css(drupal_get_path('module', 'smartdocs') . '/local/css/v' . $version .'/codemirror.css');
+	// Custom Javascript
+	drupal_add_js(array('smartdocs' => array('parameters' => strtolower('parameters'))), 'setting');
+	drupal_add_js(drupal_get_path('module', 'smartdocs') . '/js/smartdocs.js');
+	$form['parameters'] = array(
+		'#type' => 'textarea',
+		'#title' => t('Parameters'),
+		'#default_value' => $output,
+	);
+	$example = smartdocs_method_examples('parameters');
+	if (!empty($example)) {
+		$form['examples'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Examples'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['examples']['ex'] = array(
+			'#markup' => $example,
+		);
+	}
   $form['submit'] = array(
     '#type' => 'submit',
     '#submit' => array('smartdocs_resource_edit_submit'),
@@ -598,25 +600,27 @@ function smartdocs_resource_edit($form, $form_state, $mid, $rev, $res) {
 }
 
 /**
- * Ajax Callback to rebuild form
- *
- * @param $form
- * @param $form_state
- * @return mixed
+ * Implements hook_validate().
  */
-function smartdocs_resource_callback($form, $form_state) {
-  return $form['parameters'];
+function smartdocs_resource_add_validate($form, &$form_state) {
+	$json_error = t('Please specify proper JSON values for the ');
+	if (!empty($form_state['values']['parameters'])) {
+		if (smartdocs_json_validate($form_state['values']['parameters'])) {
+			form_set_error('parameters', $json_error . 'parameters');
+		}
+	}
 }
 
 /**
- * Adds parameter to the form
- *
- * @param $form
- * @param $form_state
+ * Implements hook_validate().
  */
-function smartdocs_resource_add_parameter($form, &$form_state) {
-  $form_state['num_parameters']++;
-  $form_state['rebuild'] = TRUE;
+function smartdocs_resource_edit_validate($form, &$form_state) {
+	$json_error = t('Please specify proper JSON values for the ');
+	if (!empty($form_state['values']['parameters'])) {
+		if (smartdocs_json_validate($form_state['values']['parameters'])) {
+			form_set_error('parameters', $json_error . 'parameters');
+		}
+	}
 }
 
 /**
@@ -626,20 +630,15 @@ function smartdocs_resource_add_parameter($form, &$form_state) {
  * @param $form_state
  */
 function smartdocs_resource_add_submit($form, &$form_state) {
-  unset($form_state['values']['parameters']['add']);
-  foreach ($form_state['values']['parameters'] as $key => $parameter) {
-    if ((bool)$parameter['required']) {
-      $form_state['values']['parameters'][$key]['required'] = 'true';
-    } else {
-      $form_state['values']['parameters'][$key]['required'] = 'false';
-    }
-  }
+
+	$parameters = drupal_json_decode($form_state['values']['parameters']);
+
   $payload = array(
     'name' => preg_replace('/[^A-Za-z0-9]/', "", $form_state['values']['display_name']),
     'displayName' => $form_state['values']['display_name'],
     'description' => $form_state['values']['description'],
     'path' => $form_state['values']['path'],
-    'parameters' => $form_state['values']['parameters'],
+		'parameters' => (!empty($parameters)) ? $parameters : array(),
   );
   $mid = $form_state['values']['model']['name'];
   $rev = $form_state['values']['rev'];
@@ -658,20 +657,15 @@ function smartdocs_resource_add_submit($form, &$form_state) {
  * @param $form_state
  */
 function smartdocs_resource_edit_submit($form, &$form_state) {
-  unset($form_state['values']['parameters']['add']);
-  foreach ($form_state['values']['parameters'] as $key => $parameter) {
-    if ((bool)$parameter['required']) {
-      $form_state['values']['parameters'][$key]['required'] = 'true';
-    } else {
-      $form_state['values']['parameters'][$key]['required'] = 'false';
-    }
-  }
+
+	$parameters = drupal_json_decode($form_state['values']['parameters']);
+
   $payload = array(
     'name' => preg_replace('/[^A-Za-z0-9]/', "", $form_state['values']['display_name']),
     'displayName' => $form_state['values']['display_name'],
     'description' => $form_state['values']['description'],
     'path' => $form_state['values']['path'],
-    'parameters' => $form_state['values']['parameters'],
+    'parameters' => (!empty($parameters)) ? $parameters : array(),
   );
   $mid = $form_state['values']['model']['name'];
   $rev = $form_state['values']['rev'];

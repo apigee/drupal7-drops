@@ -1,0 +1,7 @@
+name = "Dev Portal Status Report"
+description = "Provides a status report on connectivity to the Edge server"
+core = "7.x"
+package = "DevConnect"
+version = "7.x-1.0"
+
+dependencies[] = devconnect_developer_apps

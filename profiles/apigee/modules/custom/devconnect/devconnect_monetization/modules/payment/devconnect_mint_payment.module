@@ -386,3 +386,34 @@ function devconnect_mint_payment_purchase_plan($order) {
 function devconnect_mint_payment_init() {
   drupal_add_js(drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js', 'file');
 }
+
+/**
+ * Implements hook_devconnect_monitor_event_info().
+ *
+ * Implementations return an associative array whose keys define
+ * the unique alert name and whose values are an associative array of
+ * properties for each path.  The alert name can be anything you want,
+ * but should be prefixed with your module name to make sure it is
+ * unique, such as "mymodule_overheating" and "mymodule_virusdetected".
+ *
+ * The array contains the following properties:
+ *
+ * description: A description of the alert, this can be anything to help
+ * the end user.
+ *
+ * log_type: The watchdog type to match against when deciding to
+ * sent out an alert.
+ *
+ * log_severity: The watchdog severity to match against when deciding to
+ * sent out an alert.
+ *
+ */
+function devconnect_mint_payment_devconnect_monitor_event_info() {
+  return array(
+    'mint_critical' => array(
+      'description' => t('Monetization payment errors.'),
+      'log_type' => 'devconnect_mint_payment',
+      'log_severity' => WATCHDOG_EMERGENCY,
+    ),
+  );
+}

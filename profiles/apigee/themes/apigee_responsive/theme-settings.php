@@ -108,6 +108,18 @@ function apigee_responsive_form_system_theme_settings_alter(&$form, $form_state)
     '#default_value' => theme_get_setting('button_text_color'),
     '#description'   => t("Use this field to change the button text color"),
   );
+  $form['devconnect_settings']['devconnect_branding']['button_hover_background_color'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Button Hover Background Color'),
+    '#default_value' => theme_get_setting('button_hover_background_color'),
+    '#description'   => t("Use this field to change the button background color on hover"),
+  );
+  $form['devconnect_settings']['devconnect_branding']['button_hover_text_color'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Button Hover Text Color'),
+    '#default_value' => theme_get_setting('button_hover_text_color'),
+    '#description'   => t("Use this field to change the button text color on hover"),
+  );
   $form['devconnect_settings']['logo_variant'] = array(
     '#type' => 'fieldset',
     '#title' => t('Logo Settings'),

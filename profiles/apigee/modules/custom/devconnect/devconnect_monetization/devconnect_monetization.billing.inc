@@ -214,7 +214,7 @@ function devconnect_monetization_top_up_balance_form_submit($form, &$form_state)
     $values = array(
       'currency_id' => $form_state['values']['currency_id'],
       'amount' => $form_state['values']['top_up_amount'],
-      'notes' => $form_state['values']['notes'],
+      'notes' => (isset($form_state['values']['notes'])) ? $form_state['values']['notes'] : '',
     );
 
     $deposit_order = devconnect_monetization_start_payment_order($user, $values);

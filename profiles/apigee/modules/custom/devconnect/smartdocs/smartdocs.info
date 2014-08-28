@@ -1,8 +1,8 @@
 name = SmartDocs
-description = Provides integration to Apigee Modeling API
+description = Provides integration to Apigee SmartDocs API
 package = devconnect
+version = "7.x-14.08.13"
 core = 7.x
-hidden = TRUE
 
 dependencies[] = devconnect
 dependencies[] = entity

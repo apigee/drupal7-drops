@@ -1042,6 +1042,16 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
     '#prefix' => '<span id="plan_name"><strong>',
     '#suffix' => '</strong></span>',
   );
+
+  // Decide how much the user needs to add in order to pay for plan.
+  $form_state['values']['required_balance'] = $form_state['values']['required_balance'] - $current_balance;
+
+  // When the form is first rendered, the "Current Balance" and "Amount to Top
+  // Up" is displayed with default values, so the "New Balance" field is
+  // the "Current Balance" added to the "Amount to Top Up".
+  $new_balance = $form_state['values']['required_balance'] + $current_balance;
+  $formatted_new_balance = commerce_currency_format($new_balance, $form_state['values']['currency'], NULL, FALSE);
+
   $formatted_required = commerce_currency_format($form_state['values']['required_balance'], $form_state['values']['currency'], NULL, FALSE);
   $form['required_display'] = array(
     '#type' => 'markup',
@@ -1055,7 +1065,7 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
   );
   $form['new_balance_display'] = array(
     '#type' => 'markup',
-    '#markup' => $formatted_required,
+    '#markup' => $formatted_new_balance,
   );
   $form['start_date'] = array(
     '#type' => 'hidden',

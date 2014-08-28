@@ -10,7 +10,7 @@
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
     <h3 id="topUpLabel">Top Up Prepaid Balance <span id="currency_title"></span></h3>
     <div id="topup_alert_minimum_required" class="alert alert-error hide">
-      You have to top up your balance for at least <span id="span-minimum-amount">0</span>.
+      You have to top up your balance to at least <span id="span-minimum-amount">0</span>.
     </div>
     <div id="topup_alert_maximum_required" class="alert alert-error hide">
       You cannot top up your balance with more than <span id="span-maximum-amount">0</span>.

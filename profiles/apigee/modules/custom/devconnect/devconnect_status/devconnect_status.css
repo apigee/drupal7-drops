@@ -1,0 +1,9 @@
+#devconnect-status-edge-report tr.green th, #devconnect-status-edge-report tr.green td {
+  background-color: #dfd;
+}
+#devconnect-status-edge-report tr.yellow th, #devconnect-status-edge-report tr.yellow td {
+  background-color: #ffd;
+}
+#devconnect-status-edge-report tr.red th, #devconnect-status-edge-report tr.red td {
+  background-color: #fcc;
+}

@@ -37,6 +37,20 @@ settings[bootstrap_region_well-sidebar_second] = 'well'
 settings[bootstrap_region_well-sidebar_first] = 'well'
 settings[bootstrap_cdn] = 0
 
+settings[header_bg_color] = #FF4300
+settings[header_txt_color] = #FFFFFF
+settings[header_hover_bg_color] = #E02E01
+settings[header_hover_txt_color] = #FFFFFF
+settings[link_color] = #137AAA
+settings[link_hover_color] = #0B4965
+settings[footer_bg_color] = #FFFFFF
+settings[footer_link_color] = #0B4965
+settings[footer_link_hover_color] = #0B4965
+settings[button_background_color] = #009FD0
+settings[button_text_color] = #FFFFFF
+
+settings[footer_position] = fixed
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Stylesheets
 ;;;;;;;;;;;;;;;;;;;;;

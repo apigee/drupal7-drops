@@ -35,7 +35,6 @@ dependencies[] = apigee_account
 dependencies[] = block
 dependencies[] = bootstrap_modal_forms
 dependencies[] = ckeditor
-dependencies[] = ckeditor_bootstrap
 dependencies[] = comment
 dependencies[] = context
 dependencies[] = context_ui

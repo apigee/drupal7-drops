@@ -1,9 +1,0 @@
-{
-    "config": {
-        "bin-dir": "bin/"
-    },
-    "require": {
-        "behat/behat": "2.4.*@stable",
-        "drupal/drupal-extension": "*"
-    }
-}

@@ -113,7 +113,7 @@ function devconnect_developer_apps_keys_pane($variables) {
       '#weight' => 1
     );
   }
-  if (!empty($variables['callback_url']) && variable_get('devconnect_callback_handling', 'none') != 'none') {
+  if (!empty($variables['callback_url']) && variable_get('devconnect_callback_handling', 'require') != 'none') {
     $pane['details']['callback_url'] = array(
       '#prefix' => '<div class="key">',
       '#suffix' => '</div>',
@@ -240,7 +240,7 @@ function devconnect_developer_apps_detail_pane($variables) {
     ),
     '#weight' => 0
   );
-  if (!empty($variables['callback_url']) && variable_get('devconnect_callback_handling', 'none') != 'none') {
+  if (!empty($variables['callback_url']) && variable_get('devconnect_callback_handling', 'require') != 'none') {
     $pane['details']['callback_url'] = array(
       '#prefix' => '<div class="control-group callback-url">',
       '#suffix' => '</div>',

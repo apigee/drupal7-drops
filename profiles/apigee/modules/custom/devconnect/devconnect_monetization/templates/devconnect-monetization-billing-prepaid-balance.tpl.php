@@ -30,17 +30,18 @@
       <?php foreach ($balances as $balance) : ?>
         <tr>
           <td><?php print $balance->getSupportedCurrency()->getName(); ?></td>
-          <?php if ($balance_report_type == BILLING_AND_REPORTS_USE_PREPAID_API_CALL): ?>
-          <td><?php print commerce_currency_format($balance->getTopups(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?></td>
-          <td><?php print commerce_currency_format($balance->getUsage(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?></td>
-          <td><?php print commerce_currency_format($balance->getTax(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?>
-        <td><?php print commerce_currency_format($balance->getCurrentBalance(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?>
-        <?php else: ?>
-          <td><?php print commerce_currency_format($balance->getPreviousBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
-          <td><?php print commerce_currency_format($balance->getTransaction()->getRate(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?></td>
-          <td><?php print commerce_currency_format($balance->getUsage(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?></td>
-          <td><?php print commerce_currency_format($balance->getTax(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?></td>
-          <td><?php print  commerce_currency_format($balance->getAmount(), $balance->getSupportedCurrency()->name, NULL, FALSE); ?>
+            <?php if ($balance_report_type == BILLING_AND_REPORTS_USE_PREPAID_API_CALL): ?>
+              <td><?php print commerce_currency_format($balance->getPreviousBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+              <td><?php print commerce_currency_format($balance->getTopups(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+              <td><?php print commerce_currency_format($balance->getUsage(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+              <td><?php print commerce_currency_format($balance->getTax(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?>
+              <td><?php print commerce_currency_format($balance->getCurrentBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?>
+            <?php else: ?>
+              <td><?php print commerce_currency_format($balance->getPreviousBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+              <td><?php print commerce_currency_format($balance->getTransaction()->getRate(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+              <td><?php print commerce_currency_format($balance->getUsage(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+              <td><?php print commerce_currency_format($balance->getTax(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+              <td><?php print commerce_currency_format($balance->getAmount(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?>
             <?php endif; ?>
             <?php if ($download_prepaid_report_perm) : ?>&nbsp;&nbsp;
               <?php print l(t('Balance Detail (CSV)'), 'users/me/monetization/billing/report/download-prepaid-report/' . rawurlencode($balance->getSupportedCurrency()->getName()) . '/' . rawurlencode(date('F-Y', time())), array('attributes' => array('style' => 'float:right'))); ?>

@@ -6,3 +6,4 @@ version = "7.x-4.26"
 
 dependencies[] = openid
 dependencies[] = apigee_sso_ui
+

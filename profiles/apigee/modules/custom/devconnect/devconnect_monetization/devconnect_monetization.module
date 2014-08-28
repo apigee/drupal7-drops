@@ -39,64 +39,6 @@ use Apigee\Util\CacheFactory;
 module_load_include('php', 'devconnect_monetization', 'MintCacheManager');
 
 /**
- * Implements hook_variable_info().
- */
-function devconnect_monetization_variable_info($options = array()) {
-
-  $role_ids = array(
-    variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL),
-    variable_get('devconnect_monetization_role_' . MONETIZATION_FINANCE_ADMIN_ROLE_NAME, NULL),
-    variable_get('devconnect_monetization_role_' . MONETIZATION_DEVELOPER_ROLE_NAME, NULL),
-  );
-
-  $roles = db_select('role', 'r')
-    ->fields('r', array('rid', 'name'))
-    ->condition('rid', $role_ids, 'IN')
-    ->orderBy('weight')
-    ->execute();
-
-  $role_options = array();
-  while ($role = $roles->fetchAssoc()) {
-    $role_options[$role['rid']] = $role['name'];
-  }
-
-  $variables['devconnect_monetization_default_role'] = array(
-    'type' => 'select',
-    'title' => t('Default Monetization Role'),
-    'default' => variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL),
-    'options' => $role_options,
-  );
-
-  $variables['devconnect_monetization_recurring_enabled'] = array(
-    'type' => 'boolean',
-    'title' => t('Display recurring table to edit recurring parameters in company settings form.'),
-    'description' => t('Allows developer to choose if they want to use recurring payment.'),
-    'default' => variable_get('devconnect_monetization_recurring_enabled', FALSE),
-    'group' => 'devconnect',
-  );
-
-  $variables['devconnect_monetization_clear_cache'] = array(
-    'type' => 'integer',
-    'title' => t('Perform periodic cache clear of monetization API every (seconds)'),
-    'description' => t('Endpoint responses are cached to avoid overhead of GET calls, this setting specified how often this responses are clear from cache. Value must be specified in seconds'),
-    'default' => variable_get('devconnect_monetization_clear_cache', 600 /*10 minutes*/),
-    'required' => TRUE,
-    'group' => 'devconnect',
-  );
-
-  $variables['devconnect_monetization_debug_endpoint_response'] = array(
-    'type' => 'boolean',
-    'title' => t("Display error messages returned by Monetization Endpoint"),
-    'default' => variable_get('devconnect_monetization_debug_endpoint_response', FALSE),
-    'description' => t('Will display Monetization Endpoint error messages as warnings.'),
-    'required' => FALSE,
-    'group' => 'devconnect'
-  );
-
-  return $variables;
-}
-
-/**
  * Returns a wrapper around org connection settings.
  *
  * @return Apigee\Util\OrgConfig
@@ -479,9 +421,9 @@ function devconnect_monetization_package_load($package_id) {
     }
     catch (Exception $e) {
       if ($e->getCode() != 404) {
-        drupal_set_message(t('An error has occurred. Please try again later.'), 'error');
+        drupal_set_message(t('Error communicating with the system backend. Purchasing plans and viewing billing information may not be available.'), 'error');
         $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-        devconnect_default_api_client()->logger->critical($message);
+        devconnect_default_org_config()->logger->critical($message);
       }
     }
   }
@@ -492,7 +434,8 @@ function devconnect_monetization_package_load($package_id) {
 }
 
 /**
- * Developer menu wildcard loader
+ * Load the developer, and if the developer is in a company, load that
+ * company instead.  Edge considers companies and developers the same.
  *
  * @param $uid
  *
@@ -512,13 +455,28 @@ function devconnect_monetization_developer_load($uid = NULL) {
       return $developer;
     }
     catch (Exception $e) {
+      global $user;
       $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-      devconnect_default_api_client()->logger->critical('Could not retrieve developer object from 4G backend: ' . $message);
-      if ($e->getCode() != 404) {
-        drupal_set_message(t('An error has occurred. Please try again later.'), 'error');
-      }
-      else {
-        drupal_set_message('You do not have a Mint-enabled account. Please contact your administrator.', 'error');
+
+      // If we are trying to load a company, the developer id will not be the
+      // user's email, but the company's email address.
+      if($user->mail != $developer_id) {
+        drupal_set_message('There was an error loading your company information, please contact support.', 'error');
+        $message_vars = array(
+          '%company_email' => $developer_id,
+          '%user_name' => $user->name,
+          '%user_email' => $user->mail,
+          '!message' => $message,
+        );
+        watchdog('devconnect_monetization', "Could not load company %company_email for user %user_name (%user_email) from Edge backend.  Is the user company information in Dev Portal invalid? Details: !message", $message_vars, WATCHDOG_ERROR);
+      } else {
+        devconnect_default_org_config()->logger->critical('Could not retrieve developer object from 4G backend: ' . $message);
+        if ($e->getCode() != 404) {
+          drupal_set_message(t('Error communicating with the system backend. Purchasing plans and viewing billing information may not be available.'), 'error');
+        }
+        else {
+          drupal_set_message('You do not have a Mint-enabled account. Please contact your administrator.', 'error');
+        }
       }
     }
   }
@@ -540,9 +498,9 @@ function devconnect_monetization_plan_load($plan_id, $package_id = NULL) {
     }
     catch (Exception $e) {
       if ($e->getCode() != 404) {
-        drupal_set_message(t('An error has occurred. Please try again later.'), 'error');
+        drupal_set_message(t('Error communicating with the system backend. Purchasing plans and viewing billing information may not be available.'), 'error');
         $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-        devconnect_default_api_client()->logger->critical($message);
+        devconnect_default_org_config()->logger->critical($message);
       }
     }
   }
@@ -1574,9 +1532,8 @@ function devconnect_monetization_commerce_checkout_router($order, $checkout_page
     $package_id = $order->data['purchase']['packageid'];
     $plan_id = $order->data['purchase']['planid'];
 
-    drupal_set_message(t('You have topped up @amount @currency to your balance.', array(
+    drupal_set_message(t('You have topped up @amount  to your balance.', array(
       '@amount' => commerce_currency_format($amount, $currency, $order, TRUE),
-      '@currency' => $currency,
     )), 'status');
 
     if (isset($order->data['purchase'])) {
@@ -1784,9 +1741,6 @@ function devconnect_monetization_purchase_plan_requirements(Apigee\Mint\Develope
 
 /**
  * Menu callback to sync developers from 4G to Mint
- *
- * @return string
- *
  */
 function devconnect_monetization_user_sync_from_4g_to_mint() {
   $config = devconnect_monetization_default_org_config();

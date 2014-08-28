@@ -4,8 +4,8 @@
  * Implements hook_schema
  */
 function smartdocs_schema() {
-  $schema['cache_docgen'] = drupal_get_schema_unprocessed('system', 'cache');
-  $schema['smartdocs'] = array(
+  $schema['cache_smartdocs'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['smartdata'] = array(
     'description' => 'Provides all of the necessary data for smartdocs.',
     'fields' => array(
       'sid' => array(
@@ -55,7 +55,6 @@ function smartdocs_schema() {
     ),
     'primary key' => array('sid'),
   );
-
   return $schema;
 }
 
@@ -71,40 +70,17 @@ function smartdocs_requirements($phase) {
   $t = get_t();
   switch ($phase) {
     case 'install':
+      if (module_exists('devconnect_docgen')) {
+        $result['smartdocs_docgen'] = array(
+          'severity' => REQUIREMENT_ERROR,
+          'title' => 'SmartDocs',
+          'value' => $t(' (beta).  Please disable SmartDocs (beta) before enabling the full version.'),
+        );
+        return $result;
+      }
       if (defined('MAINTENANCE_MODE') && (MAINTENANCE_MODE == 'install')) {
         return $result;
       }
-      try {
-        $client = devconnect_default_api_client();
-        $smartdocs = new \Apigee\DocGen\DocGenModel($client);
-        $smartdocs->getModels();
-      } catch (Exception $e) {
-        if ($e->getCode() != '200') {
-          $result['smartdocs_connection'] = array(
-            'severity' => REQUIREMENT_ERROR,
-            'title' => 'SmartDocs',
-            'value' => $t('Service is not available for the current organization.'),
-          );
-        }
-      }
-      $js = preg_split("/\\r\\n|\\r|\\n/", SMARTDOCS_JS_B2);
-      $connectivity = FALSE;
-      foreach($js as $target) {
-        $test = drupal_http_request($target);
-        if (isset($test->code) && floor($test->code / 100) == 2) {
-          $connectivity = TRUE;
-        }
-      }
-      if (!$connectivity) {
-        $message = "Your server may not be connected to the public internet. You may need to host JavaScript and CSS " .
-          "assets locally."; //@todo add docs link
-        $result['smartdocs_connection'] = array(
-          'severity' => REQUIREMENT_WARNING,
-          'title' => 'SmartDocs',
-          'value' => $t($message),
-        );
-      }
-
       break;
     default:
       break;
@@ -118,6 +94,28 @@ function smartdocs_requirements($phase) {
  * Sets pathauto settings to match Smartdocs requirements.
  */
 function smartdocs_install() {
+	if (db_table_exists('smartdocs')) {
+		$query = db_select('smartdocs', 's');
+		$query->fields('s', array('sid', 'nid', 'revision', 'resource', 'method', 'model', 'synced', 'mpid'));
+		$result = $query->execute();
+		foreach ($result as $row) {
+			$record = array (
+				'nid' =>  $row->nid,
+				'revision' => $row->revision,
+				'resource' => $row->resource,
+				'method' => $row->method,
+				'model' => $row->model,
+				'synced' => $row->synced,
+				'mpid' => $row->mpid,
+			);
+			drupal_write_record('smartdata', $record);
+		}
+	}
+	if (module_exists('devconnect_docgen')) {
+		module_disable(array('devconnect_docgen'));
+		db_drop_table('smartdocs');
+		db_drop_table('cache_docgen');
+	}
   variable_set('pathauto_max_length', 255);
   variable_set('pathauto_max_component_length', 255);
   variable_set('pathauto_punctuation_left_curly', 2);

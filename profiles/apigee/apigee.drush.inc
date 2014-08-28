@@ -156,9 +156,8 @@ if (!function_exists('apigee_drush_command')) {
     db_query("update menu_router set include_file=replace(include_file, 'sites/all/modules/custom', 'profiles/apigee/modules/custom');");
     db_query("update system set weight=-10 where filename like '%view%';");
     db_query("update system set weight=-10 where filename like '%rules%';");
-    db_query("update system set status=0 where name like '%apachesolr%';");
+    db_query("DELETE FROM system WHERE name LIKE '%apachesolr%';");
     db_query("update system set status=0 where name like '%facet%';");
-    db_query("update system set schema_version=-1 where name like '%apachesolr%';");
     db_query("delete from variable where name like 'apachesolr%'");
     db_query("drop table if exists temp_og_users_roles;");
 
@@ -206,15 +205,6 @@ if (!function_exists('apigee_drush_command')) {
       }
     } catch (Exception $e) {
       drush_set_error("APIGEE_MIGRATE", dt("Migration failed. " . $e->getMessage()));
-    }
-    try {
-      module_enable(array("apachesolr", "apachesolr_search"));
-      module_load_include("profile", "apigee");
-      $context = array();
-      apigee_install_pantheon_push_solr($context);
-    } catch (Exception $e) {
-      drush_set_error("APIGEE_MIGRATE", dt("Unable to turn on apachesolr modules. " . $e->getMessage()));
-      exit($e->getMessage());
     }
     drush_cache_command_clear("menu");
     drush_drupal_cache_clear_all();

@@ -72,7 +72,7 @@ class SmartDocsModelController extends DrupalDefaultEntityController {
       }
       return '';
     } catch (Exception $e) {
-      watchdog(__FUNCTION__, $e->getCode() . ' ' . $e->getMessage(), array(), WATCHDOG_DEBUG);
+      watchdog(__FUNCTION__, $e->getMessage() , array(), WATCHDOG_DEBUG);
       return array('code' => $e->getCode(), 'message' => $e->getMessage());
     }
   }

@@ -17,6 +17,12 @@ function rubik_form_system_theme_settings_alter(&$form, $form_state, $form_id = 
     '#type' => 'fieldset',
     '#title' => t('Rubik'),
   );
+  $form['rubik']['rubik_show_branding'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show branding'),
+    '#description' => t('Display the "branding" line at the top of the page with breadcrumbs and secondary menu.'),
+    '#default_value' => theme_get_setting('rubik_show_branding', 'rubik'),
+  );
   $form['rubik']['rubik_inline_field_descriptions'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display form field descriptions inline.'),

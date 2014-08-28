@@ -410,7 +410,7 @@ input.teaser-button,
 input.form-submit, a.button,
 .form-actions #edit-cancel {
   cursor:pointer;
-  padding:2px 10px;
+  padding:3px 10px;
   color:#333;
   font-size:13px;
   text-align:center;
@@ -484,6 +484,10 @@ input.form-submit, a.button,
   .media-widget .preview {
     min-height:35px;
   }
+
+select.form-select {
+  height: 28px;
+}
 
 input.form-autocomplete,
 input.form-text,
