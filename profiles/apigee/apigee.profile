@@ -1645,7 +1645,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
   $form = array();
   $form['org'] = array(
     '#type' => 'textfield',
-    '#title' => t('Dev Portal Organization'),
+    '#title' => t('Management API Organization'),
     '#required' => TRUE,
     '#default_value' => $org,
     '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
@@ -1653,7 +1653,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
   );
   $form['endpoint'] = array(
     '#type' => 'textfield',
-    '#title' => t('Management Endpoint URL'),
+    '#title' => t('Management API Endpoint URL'),
     '#required' => TRUE,
     '#default_value' => $endpoint,
     '#description' => t('URL to which to make Edge REST calls. For on-prem installs you will need to change this value.'),
