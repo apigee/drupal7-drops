@@ -1038,34 +1038,35 @@ function devconnect_user_cron() {
     return;
   }
 
-  if ($has_drush) {
-    drush_print('Loading all developers from Edge');
-  }
-  $devs = entity_load('developer');
-  if ($has_drush) {
-    drush_print('Loaded ' . (count($devs)) . ' developer(s) from Edge');
-  }
-
-  if (empty($devs)) {
-    return;
-  }
-
-  module_load_install('devconnect_user');
-  $tables = array_keys(devconnect_user_schema());
-  //db_transaction();
-  foreach ($tables as $table) {
+  if (lock_acquire(__FUNCTION__ . '_developers', 5)) {
     if ($has_drush) {
-      drush_print('Truncating ' . $table);
+      drush_print('Loading all developers from Edge');
     }
-    db_truncate($table)->execute();
-  }
-  foreach ($devs as $dev) {
+    $devs = entity_load('developer');
     if ($has_drush) {
-      drush_print('writing dev ' . $dev->email);
+      drush_print('Loaded ' . (count($devs)) . ' developer(s) from Edge');
     }
-    devconnect_user_write_to_cache($dev, FALSE);
+    $count = count($devs);
+
+    if ($count) {
+      module_load_install('devconnect_user');
+      $tables = array_keys(devconnect_user_schema());
+      foreach ($tables as $table) {
+        if ($has_drush) {
+          drush_print('Truncating ' . $table);
+        }
+        db_truncate($table)->execute();
+      }
+      $devs = array_values($devs);
+      foreach ($devs as $i => $dev) {
+        if ($has_drush) {
+          drush_print('writing dev ' . ($i + 1) . ' of ' . $count . ': ' . $dev->email);
+        }
+        devconnect_user_write_to_cache($dev, FALSE);
+      }
+    }
+    lock_release(__FUNCTION__ . '_developers');
   }
-  // Transaction will auto-commit as we leave scope.
 }
 
 
