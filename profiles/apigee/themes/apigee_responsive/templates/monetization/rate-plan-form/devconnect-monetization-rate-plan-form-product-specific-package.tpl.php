@@ -47,7 +47,6 @@
       <div id="future" class="tab-pane">
         <br>
         <?php $rate_plan = $rate_plan->getChildRatePlan(); ?>
-        <?php list($rate_plan_rates) = $rate_plan_detail->getRatePlanRates(); ?>
         <?php if ($rate_plan->getContractDuration() > 0 || $rate_plan->getSetUpFee() > 0 || $rate_plan->getRecurringFee() > 0 || $rate_plan->getEarlyTerminationFee() > 0): ?>
           <div class="table-responsive">
             <table class="table table-bordered">

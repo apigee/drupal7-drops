@@ -69,7 +69,6 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
               </div>
               <div id="future_<?php echo preg_replace('/[^a-z0-9_-]/i', '_', $rate_plan->getId()); ?>" class="tab-pane">
                 <?php $rate_plan = $rate_plan->getChildRatePlan(); ?>
-                <?php list($rate_plan_rates) = $rate_plan_detail->getRatePlanRates(); ?>
                 <?php if ($rate_plan->getContractDuration() > 0 || $rate_plan->getSetUpFee() > 0 || $rate_plan->getRecurringFee() > 0 || $rate_plan->getEarlyTerminationFee() > 0): ?>
                   <div class="table-responsive">
                     <table class="table table-bordered">
