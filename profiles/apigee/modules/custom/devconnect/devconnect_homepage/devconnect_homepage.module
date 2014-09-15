@@ -19,7 +19,7 @@ function devconnect_homepage_block_info() {
  */
 function devconnect_homepage_block_configure($delta = '') {
   $form = array();
-  $theme_path = base_path() . drupal_get_path("theme", "apigee_devconnect");
+  $theme_path = base_path() . drupal_get_path("theme", "apigee_responsive");
 
   switch ($delta) {
     case 'homepage_header' :
@@ -88,7 +88,7 @@ function devconnect_homepage_block_view($delta = '') {
  */
 function homepage_header_view() {
   $block = array();
-  $theme_path = base_path() . drupal_get_path("theme", "apigee_devconnect");
+  $theme_path = base_path() . drupal_get_path("theme", "apigee_responsive");
 
   // Capture WYSIWYG text from the variable
   $text = variable_get('text_variable', '<div class="get">GET</div><div class="buttons"><div class="home-header-btn document"><a href="/documentation"><strong><span style="font-size: x-large;">Started</span><br></strong><br> with documentation<span class="iconbtn document"></span></a></div><div class="home-header-btn"><a href="/user/me/apps"><strong><span style="font-size: x-large;">Building</span><br></strong><br> with access to a key<span class="iconbtn key"></span></a></div></div><div class="home-img"><img src="' . $theme_path . '/images/homepage-image.png" alt=""></div>');
