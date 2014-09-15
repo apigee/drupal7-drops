@@ -48,6 +48,9 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
           break;
         }
       }
+      // Calculate the Current Balance from Total - Usage
+      if (! (variable_get('devconnect_monetization_balance_report_type', BILLING_AND_REPORTS_USE_PREPAID_API_CALL) == BILLING_AND_REPORTS_USE_PREPAID_API_CALL) )
+        $balance->setAmount($balance->getAmount() - $balance->getUsage());
     }
   }
   else {
