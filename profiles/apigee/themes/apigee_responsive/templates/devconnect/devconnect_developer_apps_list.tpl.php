@@ -13,6 +13,7 @@
  *  - delete_url
  */
 ?>
+<?php if($add_app):?>
 	<div class="row">
 		<div class="col-sm-12">
 			<div class="add-app-button pull-right">
@@ -20,6 +21,7 @@
 			</div>
 		</div>
 	</div>
+<?php endif; ?>
 <?php if ($application_count) { ?>
 	<div class="row">
 		<div class="col-sm-12">

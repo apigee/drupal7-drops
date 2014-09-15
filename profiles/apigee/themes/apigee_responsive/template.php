@@ -274,22 +274,25 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
   drupal_set_breadcrumb($breadcrumb);
 
   $vars['show_status'] = variable_get('devconnect_show_apiproduct_status', FALSE);
-  if ((bool)variable_get('myapis')) {
-    $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new API'), 'user/' . $user->uid . '/apps/add', array(
+  if (user_access("create developer apps")) {
+    if ((bool) variable_get('myapis')) {
+      $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new API'), 'user/' . $user->uid . '/apps/add', array(
         'html' => TRUE,
         'attributes' => array('class' => array(
-          'add-app')
+            'add-app')
         )
-      )
-    );
-  } else {
-    $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new app'), 'user/' . $user->uid . '/apps/add', array(
+          )
+      );
+    }
+    else {
+      $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new app'), 'user/' . $user->uid . '/apps/add', array(
         'html' => TRUE,
         'attributes' => array('class' => array(
-          'add-app')
+            'add-app')
         )
-      )
-    );
+          )
+      );
+    }
   }
 
   $vars['i'] = 0;
