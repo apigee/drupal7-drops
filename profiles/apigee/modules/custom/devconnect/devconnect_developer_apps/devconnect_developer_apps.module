@@ -386,6 +386,13 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#default_value' => $default_api_product
   );
 
+  $form['apiproduct']['devconnect_api_product_cache_enable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable the API Product cache'),
+    '#default_value' => variable_get('devconnect_api_product_cache_enable', 1),
+    '#return_value' => 1,
+  );
+
   $form['ui_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Application UI Settings'),
@@ -2218,10 +2225,22 @@ function devconnect_developer_apps_cron() {
   devconnect_developer_apps_sync_apps($client->orgName, TRUE, TRUE);
 }
 
+/**
+ * Returns specified API Products. API Products are read from cache unless
+ * caching is specifically disabled, in which case they are read from Edge.
+ *
+ * @param bool $show_private
+ * @param bool $names
+ * @param string $orgName
+ * @return array
+ */
 function devconnect_developer_apps_get_api_products($show_private = FALSE, $names = FALSE, $orgName = 'default') {
   if ($orgName == 'default') {
     $config = devconnect_default_org_config();
     $orgName = $config->orgName;
+  }
+  if (!variable_get('devconnect_api_product_cache_enable', 1)) {
+    return entity_load('api_product', $names, array('show_private' => $show_private, 'orgName' => $orgName));
   }
   $query = db_select('dc_api_product', 'a')
     ->fields('a', array('name', 'display_name', 'approval_type', 'description', 'is_public', 'org_name'))
