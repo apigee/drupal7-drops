@@ -25,8 +25,8 @@ interface xautoload_FinderPlugin_Interface extends DirectoryBehaviorInterface {
    *     because all those exotic classes all begin with Some\Namespace\
    *   -> The arguments will be:
    *     ($api = the API object, see below)
-   *     $path_fragment = "Some/Namespace/"
-   *     $path_suffix = "Some/Class.php"
+   *     $logical_base_path = "Some/Namespace/"
+   *     $relative_path = "Some/Class.php"
    *     $api->getClass() gives the original class name, if we still need it.
    *   -> We are supposed to:
    *     if ($api->suggestFile('exotic/location.php')) {
@@ -37,15 +37,15 @@ interface xautoload_FinderPlugin_Interface extends DirectoryBehaviorInterface {
    *   An object with a suggestFile() method.
    *   We are supposed to suggest files until suggestFile() returns TRUE, or we
    *   have no more suggestions.
-   * @param string $path_fragment
+   * @param string $logical_base_path
    *   The key that this plugin was registered with.
    *   With trailing '/'.
-   * @param string $path_suffix
+   * @param string $relative_path
    *   Second part of the canonical path, ending with '.php'.
    *
-   * @return bool|NULL
+   * @return bool|null
    *   TRUE, if the file was found.
-   *   FALSE, otherwise.
+   *   FALSE or NULL, otherwise.
    */
-  function findFile($api, $path_fragment, $path_suffix);
+  function findFile($api, $logical_base_path, $relative_path);
 }

@@ -2,6 +2,8 @@
 
 /**
  * Implements hook_form_alter().
+ *
+ * Removes the wrapper around most forms.
  */
 function apigee_base_form_alter(&$form, &$form_state, $form_id) {
   // Id's of forms that should be ignored
@@ -10,37 +12,18 @@ function apigee_base_form_alter(&$form, &$form_state, $form_id) {
     'node_form',
     'system_site_information_settings',
     'user_profile_form',
-    'node_delete_confirm',
   );
 
   // Only wrap in container for certain form
-  if (isset($form['#form_id']) && !in_array($form['#form_id'], $form_ids) && !isset($form['#node_edit_form']) && isset($form['actions']) && ($form['actions']['#type'] == 'actions')) {
+  if (isset($form['#form_id']) && !in_array($form['#form_id'], $form_ids) && !isset($form['#node_edit_form'])) {
     $form['actions']['#theme_wrappers'] = array();
   }
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() for search_block_form().
- */
-function apigee_base_form_search_block_form_alter(&$form, &$form_state) {
-  $form['#attributes']['class'][] = 'form-search';
-
-  $form['search_block_form']['#title'] = '';
-  $form['search_block_form']['#attributes']['class'][] = 'search-query';
-  $form['search_block_form']['#attributes']['class'][] = 'span2';
-  $form['search_block_form']['#attributes']['placeholder'] = t('Search');
-
-  // Hide the default button from display and implement a theme wrapper to add
-  // a submit button containing a search icon directly after the input element.
-  $form['actions']['submit']['#attributes']['class'][] = 'element-invisible';
-  $form['search_block_form']['#theme_wrappers'][] = 'apigee_base_search_form_wrapper';
-
-  // Apply a clearfix so the results don't overflow onto the form.
-  $form['#attributes']['class'][] = 'content-search';
-}
-
-/**
- * Returns HTML for a form element.
+ * Override theme_form_element().
+ * Removes some of the wrapper containers and adds the control classes used by
+ * Bootstrap.
  */
 function apigee_base_form_element(&$variables) {
   $element = &$variables['element'];
@@ -58,15 +41,8 @@ function apigee_base_form_element(&$variables) {
     $attributes['id'] = $element['#id'];
   }
 
-  $exclude_control = FALSE;
-  $control_wrapper = '<div class="controls">';
-  // Add apigee_base class
-  if (isset($element['#type']) && ($element['#type'] == "radio" || $element['#type'] == "checkbox")){
-    $exclude_control = TRUE;
-  }
-  else {
-    $attributes['class'] = array('control-group');
-  }
+  // Add bootstrap class
+  $attributes['class'] = array('control-group');
 
   // Check for errors and set correct error class
   if (isset($element['#parents']) && form_get_error($element)) {
@@ -83,7 +59,6 @@ function apigee_base_form_element(&$variables) {
   if (!empty($element['#attributes']['disabled'])) {
     $attributes['class'][] = 'form-disabled';
   }
-  $attributes['class'][] = 'form-item';
   $output = '<div' . drupal_attributes($attributes) . '>' . "\n";
 
   // If #title is not set, we don't display any label or required marker.
@@ -93,26 +68,16 @@ function apigee_base_form_element(&$variables) {
   $prefix = isset($element['#field_prefix']) ? '<span class="field-prefix">' . $element['#field_prefix'] . '</span> ' : '';
   $suffix = isset($element['#field_suffix']) ? ' <span class="field-suffix">' . $element['#field_suffix'] . '</span>' : '';
 
-  // Prepare input whitelist - added to ensure ajax functions don't break
-  $whitelist = _apigee_base_element_whitelist();
-
   switch ($element['#title_display']) {
     case 'before':
     case 'invisible':
       $output .= ' ' . theme('form_element_label', $variables);
-      // Check if item exists in element whitelist
-      if (isset($element['#id']) && in_array($element['#id'], $whitelist)) {
-        $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
-        $exclude_control = TRUE;
-      }
-      else {
-        $output = $exclude_control ? $output : $output.$control_wrapper;
-        $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
-      }
+      $output .= '<div class="controls">';
+      $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
       break;
 
     case 'after':
-      $output = $exclude_control ? $output : $output.$control_wrapper;
+      $output .= '<div class="controls">';
       $variables['#children'] = ' ' . $prefix . $element['#children'] . $suffix;
       $output .= ' ' . theme('form_element_label', $variables) . "\n";
       break;
@@ -120,27 +85,24 @@ function apigee_base_form_element(&$variables) {
     case 'none':
     case 'attribute':
       // Output no label and no required marker, only the children.
-      $output = $exclude_control ? $output : $output.$control_wrapper;
+      $output .= '<div class="controls">';
       $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
       break;
   }
 
-  if ( !empty($element['#description']) ) {
+  if (!empty($element['#description']) ) {
     $output .= '<p class="help-block">' . $element['#description'] . "</p>\n";
   }
 
-  // Check if control wrapper was added to ensure we close div correctly
-  if ($exclude_control) {
-    $output .= "</div>\n";
-  }
-  else {
-    $output .= "</div></div>\n";
-  }
+  $output .= "</div></div>\n";
+
   return $output;
 }
 
 /**
- * Returns HTML for a form element label and required marker.
+ * Override theme_form_element_label().
+ * Adds the control-label class used by Bootstrap, and build the label content a
+ * bit differently.
  */
 function apigee_base_form_element_label(&$variables) {
   $element = $variables['element'];
@@ -172,17 +134,16 @@ function apigee_base_form_element_label(&$variables) {
     $attributes['for'] = $element['#id'];
   }
 
-  // @apigee_base: Add apigee_base control-label class except for radio.
-  if ($element['#type'] != 'radio') {
-    $attributes['class'][] = 'control-label';
-  }
-  // @apigee_base: Insert radio and checkboxes inside label elements.
+  // @Bootstrap: Add Bootstrap control-label class.
+  $attributes['class'][] = 'control-label';
+
+  // @Bootstrap: Insert radio and checkboxes inside label elements.
   $output = '';
-  if ( isset($variables['#children']) ) {
+  if (isset($variables['#children']) ) {
     $output .= $variables['#children'];
   }
 
-  // @apigee_base: Append label
+  // @Bootstrap: Append label
   $output .= $t('!title !required', array('!title' => $title, '!required' => $required));
 
   // The leading whitespace helps visually separate fields from inline labels.
@@ -191,6 +152,7 @@ function apigee_base_form_element_label(&$variables) {
 
 /**
  * Preprocessor for theme('button').
+ * Add the btn class, and optionally add another class based on the button type.
  */
 function apigee_base_preprocess_button(&$vars) {
   $vars['element']['#attributes']['class'][] = 'btn';
@@ -216,7 +178,6 @@ function apigee_base_preprocess_button(&$vars) {
       t('Restore') => 'btn-primary',
       t('Rebuild') => 'btn-primary',
       t('Search') => 'btn-primary',
-      t('Add') => 'btn-info',
       t('Update') => 'btn-info',
       t('Delete') => 'btn-danger',
       t('Remove') => 'btn-danger',
@@ -228,156 +189,4 @@ function apigee_base_preprocess_button(&$vars) {
       }
     }
   }
-}
-
-/**
- * Returns HTML for a button form element.
- */
-function apigee_base_button($variables) {
-  $element = $variables['element'];
-  $label = $element['#value'];
-  element_set_attributes($element, array('id', 'name', 'value', 'type'));
-
-  $element['#attributes']['class'][] = 'form-' . $element['#button_type'];
-  if (!empty($element['#attributes']['disabled'])) {
-    $element['#attributes']['class'][] = 'form-button-disabled';
-  }
-
-  // Prepare input whitelist - added to ensure ajax functions don't break
-  $whitelist = _apigee_base_element_whitelist();
-
-  if (isset($element['#id']) && in_array($element['#id'], $whitelist)) {
-    return '<input' . drupal_attributes($element['#attributes']) . ">\n"; // This line break adds inherent margin between multiple buttons
-  }
-  else {
-    return '<button' . drupal_attributes($element['#attributes']) . '>'. $label ."</button>\n"; // This line break adds inherent margin between multiple buttons
-  }
-}
-
-/**
- * Returns an array containing ids of any whitelisted drupal elements
- */
-function _apigee_base_element_whitelist() {
-/**
- * Why whitelist an element?
- * The reason is to provide a list of elements we wish to exclude
- * from certain modifications made by the apigee_base theme which
- * break core functionality - e.g. ajax.
- */
-  return array(
-    'edit-refresh',
-    'edit-pass-pass1',
-    'edit-pass-pass2',
-    'panels-ipe-cancel',
-    'panels-ipe-customize-page',
-    'panels-ipe-save',
-  );
-}
-
-function apigee_base_apigee_base_append_element(&$variables) {
-  $element = &$variables['element'];
-
-  // This is also used in the installer, pre-database setup.
-  $t = get_t();
-
-  // This function is invoked as theme wrapper, but the rendered form element
-  // may not necessarily have been processed by form_builder().
-  $element += array(
-    '#title_display' => 'before',
-  );
-
-  // Add element #id for #type 'item'.
-  if (isset($element['#markup']) && !empty($element['#id'])) {
-    $attributes['id'] = $element['#id'];
-  }
-
-  $exclude_control = FALSE;
-  $control_wrapper = '<div class="controls">';
-  // Add apigee_base class
-  if ($element['#type'] == "radio" || $element['#type'] == "checkbox" || isset($element['#exclude_control'])) {
-    $exclude_control = TRUE;
-  }
-  else {
-    $attributes['class'] = array('control-group');
-  }
-
-  // Check for errors and set correct error class
-  if (isset($element['#parents']) && form_get_error($element)) {
-    $attributes['class'][] = 'error';
-  }
-
-  if (!empty($element['#type'])) {
-    $attributes['class'][] = 'form-type-' . strtr($element['#type'], '_', '-');
-  }
-  if (!empty($element['#name'])) {
-    $attributes['class'][] = 'form-item-' . strtr($element['#name'], array(' ' => '-', '_' => '-', '[' => '-', ']' => ''));
-  }
-  // Add a class for disabled elements to facilitate cross-browser styling.
-  if (!empty($element['#attributes']['disabled'])) {
-    $attributes['class'][] = 'form-disabled';
-  }
-
-
-  if (isset($element['#field_prefix'])) {
-    $attributes['class'][] = 'input-prepend';
-  }
-
-  if (isset($element['#field_suffix'])) {
-    $attributes['class'][] = 'input-append';
-  }
-
-  $attributes['class'][] = 'form-item';
-  $output = '<div' . drupal_attributes($attributes) . '>' . "\n";
-
-  // If #title is not set, we don't display any label or required marker.
-  if (!isset($element['#title'])) {
-    $element['#title_display'] = 'none';
-  }
-  $prefix = isset($element['#field_prefix']) ? $element['#field_prefix'] : '';
-  $suffix = isset($element['#field_suffix']) ? $element['#field_suffix'] : '';
-
-  // Prepare input whitelist - added to ensure ajax functions don't break
-  $whitelist = _apigee_base_element_whitelist();
-
-  switch ($element['#title_display']) {
-    case 'before':
-    case 'invisible':
-      $output .= ' ' . theme('form_element_label', $variables);
-      // Check if item exists in element whitelist
-      if (isset($element['#id']) && in_array($element['#id'], $whitelist)) {
-        $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
-        $exclude_control = TRUE;
-      }
-      else {
-        $output = $exclude_control ? $output : $output.$control_wrapper;
-        $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
-      }
-      break;
-
-    case 'after':
-      $output = $exclude_control ? $output : $output.$control_wrapper;
-      $variables['#children'] = ' ' . $prefix . $element['#children'] . $suffix;
-      $output .= ' ' . theme('form_element_label', $variables) . "\n";
-      break;
-
-    case 'none':
-    case 'attribute':
-      // Output no label and no required marker, only the children.
-      $output = $exclude_control ? $output : $output.$control_wrapper;
-      $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
-      break;
-  }
-
-  if ( !empty($element['#description']) ) {
-    $output .= '<p class="help-block">' . $element['#description'] . "</p>\n";
-  }
-
-  // Check if control wrapper was added to ensure we close div correctly
-  if ($exclude_control) {
-    $output .= "</div>\n";
-  }
-  else {
-    $output .= "</div></div>\n";
-  }
-  return $output;
 }

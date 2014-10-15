@@ -47,7 +47,7 @@ function apigee_responsive_preprocess_html(&$vars) {
   drupal_add_css("body .navbar-inverse .navbar-toggle:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-toggle:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-nav > .open > a {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_hover_bg_color; color:$header_hover_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-default .navbar-toggle:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-default .navbar-toggle:active {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -75,9 +75,9 @@ function apigee_responsive_preprocess_html(&$vars) {
   drupal_add_css("body header.navbar .nav > li > a:hover {color: $header_hover_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body a {color: $link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body a:hover {color: $link_hover_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .footer .footer-inner {background-color: $footer_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .footer .footer-inner .navbar ul.footer-links > li > a {color: $footer_link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .footer .footer-inner .navbar ul.footer-links > li > a:hover {color: $footer_link_hover_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .footer {background-color: $footer_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .footer .navbar ul.footer-links > li > a {color: $footer_link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .footer .navbar ul.footer-links > li > a:hover {color: $footer_link_hover_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .btn {background-color: $button_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .btn {color: $button_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .btn:hover {background-color: $button_hover_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -93,6 +93,8 @@ function apigee_responsive_preprocess_html(&$vars) {
 
   // Main menu expanded drop down colors.
   drupal_add_css(".navbar-nav > li > span {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li > span:hover {color: $header_hover_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li.expanded span:hover {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar-nav > li.expanded.active {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar-nav > li > span > span.caret {border-bottom-color: $header_txt_color; border-top-color: $header_txt_color; color: $header_txt_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
 
@@ -274,6 +276,7 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
   drupal_set_breadcrumb($breadcrumb);
 
   $vars['show_status'] = variable_get('devconnect_show_apiproduct_status', FALSE);
+  
   if (user_access("create developer apps")) {
     if ((bool) variable_get('myapis')) {
       $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new API'), 'user/' . $user->uid . '/apps/add', array(
@@ -294,6 +297,7 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
       );
     }
   }
+  
 
   $vars['i'] = 0;
 
@@ -362,13 +366,8 @@ function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
           unset($form['github_links']);
         }
       }
-      foreach ($form as $key => $name) {
-        if (strpos($key, 'openid') !== false) {
-          unset($form[$key]);
-          if (isset($form['userpasswordlink'])) {
-            $form['userpasswordlink']['#prefix'] = '<br>';
-          }
-        }
+      if (isset($form['userpasswordlink'])) {
+        $form['userpasswordlink']['#prefix'] = '<br>';
       }
       break;
     case 'devconnect_developer_app_list':

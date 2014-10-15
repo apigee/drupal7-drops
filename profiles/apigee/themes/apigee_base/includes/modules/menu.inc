@@ -1,23 +1,24 @@
 <?php
 
 /**
- * Returns HTML for primary and secondary local tasks.
+ * Overrides theme_menu_local_tasks().
+ * Change classes used by <ul> elements.
  */
-function apigee_base_menu_local_tasks(&$variables) {
+function apigee_base_menu_local_tasks(&$vars) {
   $output = '';
 
-  if (!empty($variables['primary'])) {
-    $variables['primary']['#prefix'] = '<h2 class="element-invisible">' . t('Primary tabs') . '</h2>';
-    $variables['primary']['#prefix'] = '<ul class="nav nav-tabs">';
-    $variables['primary']['#suffix'] = '</ul>';
-    $output .= drupal_render($variables['primary']);
+  if (!empty($vars['primary']) ) {
+    // Include invisible label for non-visual users.
+    $vars['primary']['#prefix'] = '<h2 class="element-invisible">' . t('Primary tabs') . '</h2>';
+    $vars['primary']['#prefix'] .= '<ul class="nav nav-tabs">';
+    $vars['primary']['#suffix'] = '</ul>';
+    $output .= drupal_render($vars['primary']);
   }
 
-  if (!empty($variables['secondary'])) {
-    $variables['primary']['#prefix'] = '<h2 class="element-invisible">' . t('Primary tabs') . '</h2>';
-    $variables['secondary']['#prefix'] = '<ul class="nav nav-pills">';
-    $variables['secondary']['#suffix'] = '</ul>';
-    $output .= drupal_render($variables['secondary']);
+  if (!empty($vars['secondary']) ) {
+    $vars['secondary']['#prefix'] = '<ul class="nav nav-pills">';
+    $vars['secondary']['#suffix'] = '</ul>';
+    $output .= drupal_render($vars['secondary']);
   }
 
   return $output;
@@ -25,7 +26,10 @@ function apigee_base_menu_local_tasks(&$variables) {
 
 
 /**
- * Returns HTML for primary and secondary local tasks.
+ * Overrides theme_menu_local_task().
+ *
+ * Returns HTML for primary and secondary local tasks. In addition to what the
+ * core does, this function includes the child tasks.
  *
  * @ingroup themeable
  */
@@ -49,40 +53,27 @@ function apigee_base_menu_local_task($variables) {
     $classes[] = 'active';
   }
 
-  return '<li class="' . implode(' ', $classes) . '">' . l($link_text, $link['href'], $link['localized_options']) . "</li>\n";
+  // Render child tasks if available.
+  $children = '';
+  if (element_children($variables['element'])) {
+    $link['localized_options']['attributes']['class'][] = 'dropdown-toggle';
+    $link['localized_options']['attributes']['data-toggle'][] = 'dropdown';
+    $classes[] = 'dropdown';
+
+    $children = drupal_render_children($variables['element']);
+    $children = '</b><ul class="secondary-tabs dropdown-menu">' . $children . "</ul>";
+
+    return '<li class="' . implode(' ', $classes) . '"><a href="#"' . drupal_attributes($link['localized_options']['attributes']) .'>' . $link_text . '<b class="caret"></a>' . $children . "</li>\n";
+  }
+  else{
+    return '<li class="' . implode(' ', $classes) . '">' . l($link_text, $link['href'], $link['localized_options']) . $children . "</li>\n";
+  }
 }
 
+/**
+ * Overrides theme_menu_tree().
+ * Includes the nav class on the menu <ul>
+ */
 function apigee_base_menu_tree(&$variables) {
   return '<ul class="menu nav">' . $variables['tree'] . '</ul>';
-}
-
-function apigee_base_menu_link(array $variables) {
-  $element = $variables['element'];
-  $sub_menu = '';
-
-  if ($element['#below']) {
-    // Ad our own wrapper
-    unset($element['#below']['#theme_wrappers']);
-    $sub_menu = '<ul class="dropdown-menu">' . drupal_render($element['#below']) . '</ul>';
-    $element['#localized_options']['attributes']['class'][] = 'dropdown-toggle';
-    $element['#localized_options']['attributes']['data-toggle'] = 'dropdown';
-
-    // Check if this element is nested within another
-    if ((!empty($element['#original_link']['depth'])) && ($element['#original_link']['depth'] > 1)) {
-      // Generate as dropdown submenu
-      $element['#attributes']['class'][] = 'dropdown-submenu';
-    }
-    else {
-      // Generate as standard dropdown
-      $element['#attributes']['class'][] = 'dropdown';
-      $element['#localized_options']['html'] = TRUE;
-      $element['#title'] .= '<span class="caret"></span>';
-    }
-
-    // Set dropdown trigger element to # to prevent inadvertant page loading with submenu click
-    $element['#localized_options']['attributes']['data-target'] = '#';
-  }
-
-  $output = l($element['#title'], $element['#href'], $element['#localized_options']);
-  return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
 }

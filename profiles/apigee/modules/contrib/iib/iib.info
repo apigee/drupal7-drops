@@ -1,6 +1,0 @@
-name = "Interactive Information Bar"
-description = "Provides an area for modules to place Forms and other information"
-core = "7.x"
-package = Administration
-
-files[] = tests/*.test

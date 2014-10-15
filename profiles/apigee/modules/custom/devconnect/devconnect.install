@@ -71,7 +71,8 @@ function devconnect_requirements($phase) {
     $endpoint = $config['endpoint'];
     $user = $config['user'];
     $pass = $config['pass'];
-
+    
+    module_load_include('inc', 'devconnect', 'devconnect.admin');
     if ($pass && _devconnect_test_kms_connection($org, $endpoint, $user, $pass)) {
       $requirements['devconnect_connection'] = array(
         'severity' => REQUIREMENT_OK,
@@ -236,7 +237,7 @@ function devconnect_update_7426(){
  * code removal. Also disable node_export and its children.
  */
 function devconnect_update_7428() {
-  $disable_modules = array('devconnect_ui');
+  $disable_modules = array();
   foreach (array('devconnect_ui', 'node_export', 'node_export_dependency', 'node_export_features', 'node_export_feeds', 'node_export_relation') as $ne_module) {
     if (module_exists($ne_module)) {
       $disable_modules[] = $ne_module;
@@ -248,5 +249,54 @@ function devconnect_update_7428() {
   db_delete('system')
     ->condition('name', $disable_modules)
     ->execute();
+}
 
+/**
+ * Find API-providing contrib modules upon which no enabled module depends,
+ * and disable/uninstall/delete them.
+ */
+function devconnect_update_7429() {
+  $possible_modules = array('acl', 'bean', 'contentapi');
+  $api_modules = array();
+  foreach ($possible_modules as $possible_module) {
+    if (module_exists($possible_module)) {
+      $api_modules[] = $possible_module;
+    }
+  }
+  if (empty($api_modules)) {
+    return;
+  }
+  $extended_api_modules = array_merge($api_modules, array(
+    'acl_node_test',
+    'bean_admin_ui', 'bean_all', 'bean_entitycache', 'bean_usage', 'bean_uuid',
+    'contentapi_summary', 'contentapi_taxonomy_term', 'contentapi_taxonomy_vocab'
+  ));
+  $result = db_select('system', 's')
+    ->fields('info')
+    ->condition('status', 1)
+    ->condition('type', 'module')
+    ->condition('name', $extended_api_modules, 'NOT IN')
+    ->execute();
+  while ($info = $result->fetchCol()) {
+    $info = unserialize($info);
+    if (is_array($info) && array_key_exists('dependencies', $info)) {
+      foreach($api_modules as $i => $api_module) {
+        if (in_array($extended_api_modules, $info['dependencies'])) {
+          unset($extended_api_modules[$i]);
+          if (empty($extended_api_modules)) {
+            break 2;
+          }
+        }
+      }
+    }
+  }
+  if (!empty($extended_api_modules)) {
+    module_disable($extended_api_modules);
+    drupal_uninstall_modules($extended_api_modules);
+    db_delete('system')
+      ->condition('type', 'module')
+      ->condition('name', $extended_api_modules)
+      ->execute();
+  }
+  // TODO: prune cck_phone
 }

@@ -5,7 +5,7 @@ if (array_key_exists('HTTP_X_PANTHEON_SCREENSHOT', $_SERVER)) {
   exit();
 }
 
-require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
+require_once(DRUPAL_ROOT . '/profiles/apigee/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
 
 /**
  * Implements hook_install_tasks().

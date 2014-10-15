@@ -80,3 +80,7 @@ input#edit-top-up-amount,
 input#edit-amount {
     width: 100%;
 }
+
+#ui-datepicker-div {
+  z-index: 1000 !important;
+}

@@ -26,13 +26,13 @@ function devconnect_monetization_company_apps_edit_form($user, $app_name = NULL)
   return $form;
 }
 
-function devconnect_monetization_company_app_delete_form($user, $app_name) {
-  $args = array('devconnect_developer_app_delete_form');
+function devconnect_monetization_company_app_delete_form($user, $app_id) {
+  $args = array('devconnect_developer_app_delete_form', $user, $app_id);
   try {
     return _devconnect_monetization_impersonate_company_admin('drupal_get_form', $args);
   }
   catch (Exception $e) {
-    drupal_set_message('Your application can not be deleted, Perhaps one of its key has already been used', 'error');
+    drupal_set_message(t('Your application can not be deleted, Perhaps one of its key has already been used'), 'error');
   }
   return '';
 }

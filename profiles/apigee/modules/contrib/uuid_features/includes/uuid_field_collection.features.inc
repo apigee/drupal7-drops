@@ -114,7 +114,7 @@ function uuid_field_collection_features_rebuild($module) {
   uuid_node_features_rebuild($module);
   cache_clear_all();
 
-  $field_collections = module_invoke($module, 'uuid_features_default_field_collections');
+  $field_collections = features_get_default('uuid_field_collection', $module);
   if (!empty($field_collections)) {
     $entity_type = 'field_collection_item';
     foreach ($field_collections as $field_collection_item) {

@@ -22,20 +22,20 @@ function EXAMPLE_foo() {
  * Register additional classes, namespaces, autoload patterns, that are not
  * already registered by default.
  *
- * @param \xautoload_InjectedAPI_hookXautoload $api
+ * @param \Drupal\xautoload\Adapter\LocalDirectoryAdapter $adapter
  *   An adapter object that can register stuff into the class loader.
  */
-function hook_xautoload($api) {
+function hook_xautoload($adapter) {
 
   // Register a namespace with PSR-0.
-  $api->add(
+  $adapter->add(
     // Namespace of a 3rd party package included in the module directory.
     'Acme\GardenKit\\',
     // Path to the 3rd party package, relative to the module directory.
     'shrubbery/lib');
 
   // Register a namespace with PSR-4.
-  $api->absolute()->addPsr4(
+  $adapter->absolute()->addPsr4(
     // The namespace.
     'Acme\ShrubGardens\\',
     // Absolute path to the PSR-4 base directory.
@@ -43,7 +43,7 @@ function hook_xautoload($api) {
 
   // Scan sites/all/vendor/composer for Composer-generated autoload files, e.g.
   // 'sites/all/vendor/composer/autoload_namespaces.php', etc.
-  $api->absolute()->composerDir('sites/all/vendor/composer');
+  $adapter->absolute()->composerDir('sites/all/vendor/composer');
 }
 
 
@@ -58,7 +58,7 @@ function hook_xautoload($api) {
  *
  * X Autoload extends the capabilities of this hook, by adding an "xautoload"
  * key. This key takes a callback or closure function, which has the same
- * signature as hook_xautoload($api).
+ * signature as hook_xautoload($adapter).
  * This means, you can use the same methods on the $api object.
  *
  * @return array[]
@@ -72,23 +72,23 @@ function mymodule_libraries_info() {
       'vendor url' => 'http://www.example.com',
       'download url' => 'http://github.com/example/ruebenkraut',
       'version' => '1.0',
-      'xautoload' => function($api) {
+      'xautoload' => function($adapter) {
           /**
-           * @var \xautoload_InjectedAPI_hookXautoload $api
+           * @var \Drupal\xautoload\Adapter\LocalDirectoryAdapter $adapter
            *   An adapter object that can register stuff into the class loader.
            */
           // Register a namespace with PSR-0 root in
           // 'sites/all/libraries/ruebenkraut/src'.
-          $api->add('Rueben\Kraut\\', 'src');
+          $adapter->add('Rueben\Kraut\\', 'src');
         },
     ),
     'gurkentraum' => array(
       'name' => 'Gurkentraum library',
-      'xautoload' => function($api) {
-          /** @var \xautoload_InjectedAPI_hookXautoload $api */
+      'xautoload' => function($adapter) {
+          /** @var \Drupal\xautoload\Adapter\LocalDirectoryAdapter $adapter */
           // Scan sites/all/libraries/ruebenkraut/composer.json to look for
           // autoload information.
-          $api->composerJson('composer.json');
+          $adapter->composerJson('composer.json');
         }
     )
   );

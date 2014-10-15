@@ -20,8 +20,8 @@
   <table class="table table-bordered">
     <thead>
       <tr>
-        <th>Package Name</th>
-        <th>Products</th>
+        <th><?php print t('Package Name'); ?></th>
+        <th><?php print t('Products'); ?></th>
       </tr>
     </thead>
     <tbody>

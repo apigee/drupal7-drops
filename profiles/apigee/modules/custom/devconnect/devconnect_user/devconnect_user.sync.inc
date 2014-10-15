@@ -1,7 +1,15 @@
 <?php
 
 /**
- * Page callback for DevConnect Developer Sync.
+ * Confirm form for DevConnect Developer Sync.
+ */
+function devconnect_user_sync_confirm_form($form, $form_state){
+  $form['#submit'][] = 'devconnect_user_sync';
+  return confirm_form($form, t('Are you sure you want to sync users with Edge?'), 'admin/people');
+}
+
+/**
+ * Submit callback for DevConnect Developer Sync.
  *
  * Makes sure that all local users have a corresponding account in Edge;
  * likewise makes sure that all Edge users (other than those created by

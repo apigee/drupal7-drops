@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Monetization cache code.
+ */
+
 // @TODO Find a better way to register the autoloader
 require_once drupal_get_path('profile', 'apigee') . '/libraries/mgmt-api-php-sdk/vendor/autoload.php';
 

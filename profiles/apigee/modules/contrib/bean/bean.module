@@ -66,6 +66,9 @@ function bean_entity_info() {
           'class' => 'EntityTranslationBeanHandler',
           'base path' => 'block/%bean_delta',
           'path wildcard' => '%bean_delta',
+          'path schemes' => array(
+            'default' => array(),
+          ),
         ),
       ),
     ),
@@ -276,17 +279,19 @@ function bean_revision_title($bean) {
  * Implements hook_admin_paths().
  */
 function bean_admin_paths() {
-  $paths = array(
-    'block/*/edit' => TRUE,
-    'block/*/delete' => TRUE,
-    'block/*/revisions' => TRUE,
-    'block/*/revisions/*/edit' => TRUE,
-    'block/*/revisions/*/set-active' => TRUE,
-    'block/*/revisions/*/delete' => TRUE,
-    'block/add' => TRUE,
-    'block/add/*' => TRUE,
-  );
-  return $paths;
+  if (variable_get('node_admin_theme')) {
+    $paths = array(
+      'block/*/edit' => TRUE,
+      'block/*/delete' => TRUE,
+      'block/*/revisions' => TRUE,
+      'block/*/revisions/*/edit' => TRUE,
+      'block/*/revisions/*/set-active' => TRUE,
+      'block/*/revisions/*/delete' => TRUE,
+      'block/add' => TRUE,
+      'block/add/*' => TRUE,
+    );
+    return $paths;
+  }
 }
 
 /**
@@ -410,6 +415,24 @@ function bean_bean_cache_clear() {
 
   // Flush caches.
   cache_clear_all('bean_plugins', 'cache');
+
+  if (module_exists('block')) {
+    cache_clear_all(NULL, 'cache_block');
+  }
+  cache_clear_all(NULL, 'cache_page');
+}
+
+/**
+ * Clear out cache_block table
+ * @param  object $bean the bean object
+ */
+function bean_cache_clear_block($bean = null) {
+  if (isset($bean->delta)) {
+    cache_clear_all('bean:' . $bean->delta . ':', 'cache_block', TRUE);
+  }
+  else {
+    cache_clear_all('bean:', 'cache_block', TRUE);
+  }
 }
 
 /**
@@ -526,6 +549,11 @@ function bean_load_revision($bid, $vid, $reset = FALSE) {
  *   A fully-loaded $bean object or FALSE if it cannot be loaded.
  */
 function bean_load_delta($delta, $reset = FALSE, $revision = NULL) {
+  static $deltas = array();
+  if (!$reset && !$revision && isset($deltas[$delta])) {
+    return $deltas[$delta];
+  }
+
   $result = db_select('bean', 'b')
     ->fields('b', array('bid'))
     ->condition('delta', $delta)
@@ -535,7 +563,8 @@ function bean_load_delta($delta, $reset = FALSE, $revision = NULL) {
       return bean_load_revision($bid, $revision, $reset);
     }
     else {
-      return bean_load($bid, $reset);
+      $deltas[$delta] = bean_load($bid, $reset);
+      return $deltas[$delta];
     }
   }
   return FALSE;
@@ -585,7 +614,7 @@ function bean_permission() {
     ),
     'administer beans' => array(
       'title' => t('Administer beans'),
-      'description' => t('Edit and view all beans.'),
+      'description' => t('Delete, add, edit and view all beans.'),
     ),
     'access bean overview' => array(
       'title' => t('Access the Bean overview page'),
@@ -839,7 +868,7 @@ function bean_block_view($delta = '') {
 
   if (!empty($return['content']) && module_exists('contextual')) {
     $return['content']['#contextual_links']['bean'] = array(
-      'block', array($bean->Identifier())
+      'block', array($bean->Identifier(), 'edit')
     );
   }
 

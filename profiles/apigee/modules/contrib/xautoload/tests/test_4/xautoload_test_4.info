@@ -1,0 +1,10 @@
+name = X Autoload Test 4
+core = 7.x
+dependencies[] = xautoload
+
+; Information added by Drupal.org packaging script on 2014-09-10
+version = "7.x-5.0"
+core = "7.x"
+project = "xautoload"
+datestamp = "1410310136"
+

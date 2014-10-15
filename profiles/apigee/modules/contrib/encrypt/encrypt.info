@@ -1,0 +1,16 @@
+name = Encrypt
+description = Provides an API for two-way encryption
+core = 7.x
+configure = admin/config/system/encrypt
+package = Encryption
+
+files[] = encrypt.test
+
+dependencies[] = ctools
+
+; Information added by Drupal.org packaging script on 2014-10-01
+version = "7.x-2.0"
+core = "7.x"
+project = "encrypt"
+datestamp = "1412192667"
+

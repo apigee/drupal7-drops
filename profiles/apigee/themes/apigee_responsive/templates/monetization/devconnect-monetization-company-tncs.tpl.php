@@ -9,9 +9,9 @@
   <table class="table table-bordered">
     <thead>
       <tr>
-        <th>Effective Date</th>
-        <th>Terms &amp; Conditions</th>
-        <th>T&amp;C Acceptance Date</th>
+        <th><?php print t('Effective Date'); ?></th>
+        <th><?php print t('Terms & Conditions'); ?></th>
+        <th><?php print t('T&C Acceptance Date'); ?></th>
       </tr>
     </thead>
     <tbody>

@@ -2,12 +2,12 @@
 $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'] : NULL;
 ?>
 <div class="plan-details-comparison">
-  <h3>Plan Details &amp; Comparision</h3>
+  <h3><?php print t('Plan Details & Comparision'); ?></h3>
   <hr>
   <div class="tabbable">
     <ul class="nav nav-tabs">
       <?php foreach ($rate_plans as $rate_plan): ?>
-        <li<?php print $submitted_plan_id ==  $rate_plan->getId() ? ' class="active"' : ''?>>
+        <li<?php print $submitted_plan_id == $rate_plan->getId() ? ' class="active"' : ''?>>
           <a class="plan-tab" href="#tab_<?php echo preg_replace('/[^a-z0-9_-]/i', '_', $rate_plan->getId()); ?>" data-toggle="tab" plan-id="<?php print $rate_plan->getId(); ?>">
             <?php echo $rate_plan->getDisplayName(); ?>
             <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
@@ -24,7 +24,9 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
           <?php // Start Of Future Plan 1 ?>
           <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
 
-          <p style="color: #666;">This plan has a new version effective <?php print substr($rate_plan->getChildRatePlan()->getStartDate(), 0, 10); ?>. Toggle below to see the future rate plan.</p>
+          <p style="color: #666;">
+            <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => substr($rate_plan->getChildRatePlan()->getStartDate(), 0, 10))); ?>
+          </p>
           <div class="tabbable">
             <ul class="nav nav-tabs">
               <li class="active"><a plan-version="current" href="#current_<?php echo preg_replace('/[^a-z0-9_-]/i', '_', $rate_plan->getId()); ?>" data-toggle="tab">Current</a></li>
@@ -39,10 +41,10 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
                     <table class="table table-bordered">
                       <thead>
                       <tr>
-                        <?php if ($rate_plan->getContractDuration() > 0): ?><th>Renewal Period</th><?php endif; ?>
-                        <?php if ($rate_plan->getSetUpFee() > 0): ?><th>Set Up Fee</th><?php endif; ?>
-                        <?php if ($rate_plan->getRecurringFee() > 0): ?><th>Recurring Fees</th><?php endif; ?>
-                        <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th>Early Termination Fee</th><?php endif; ?>
+                        <?php if ($rate_plan->getContractDuration() > 0): ?><th><?php print t('Renewal Period'); ?> </th><?php endif; ?>
+                        <?php if ($rate_plan->getSetUpFee() > 0): ?><th><?php print t('Set Up Fee'); ?></th><?php endif; ?>
+                        <?php if ($rate_plan->getRecurringFee() > 0): ?><th><?php print t('Recurring Fees'); ?></th><?php endif; ?>
+                        <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th><?php print t('Early Termination Fee'); ?></th><?php endif; ?>
                       </tr>
                       </thead>
                       <tbody>
@@ -58,10 +60,10 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
                 <?php endif; ?>
                 <?php $rate_plant_free_quantity_message = _devconnect_monetization_get_free_quantity_text_for_rate_plan_level($rate_plan); ?>
                 <?php if ($rate_plant_free_quantity_message != NULL): ?>
-                  <br>
+                  <br />
                   <strong>Free Quantity:&nbsp;</strong><?php print $rate_plant_free_quantity_message; ?>
-                  <br>
-                  <br>
+                  <br />
+                  <br />
                 <?php endif; ?>
                 <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, isset($product_list) ? $product_list : NULL); ?>
                 <?php // End Of Future Plan 1 ?>
@@ -74,10 +76,10 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
                     <table class="table table-bordered">
                       <thead>
                       <tr>
-                        <?php if ($rate_plan->getContractDuration() > 0): ?><th>Renewal Period</th><?php endif; ?>
-                        <?php if ($rate_plan->getSetUpFee() > 0): ?><th>Set Up Fee</th><?php endif; ?>
-                        <?php if ($rate_plan->getRecurringFee() > 0): ?><th>Recurring Fees</th><?php endif; ?>
-                        <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th>Early Termination Fee</th><?php endif; ?>
+                        <?php if ($rate_plan->getContractDuration() > 0): ?><th><?php print t('Renewal Period'); ?></th><?php endif; ?>
+                        <?php if ($rate_plan->getSetUpFee() > 0): ?><th><?php print t('Set Up Fee'); ?></th><?php endif; ?>
+                        <?php if ($rate_plan->getRecurringFee() > 0): ?><th><?php print t('Recurring Fees'); ?></th><?php endif; ?>
+                        <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th><?php print t('Early Termination Fee'); ?></th><?php endif; ?>
                       </tr>
                       </thead>
                       <tbody>
@@ -93,10 +95,10 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
                 <?php endif; ?>
                 <?php $rate_plant_free_quantity_message = _devconnect_monetization_get_free_quantity_text_for_rate_plan_level($rate_plan); ?>
                 <?php if ($rate_plant_free_quantity_message != NULL): ?>
-                  <br>
+                  <br />
                   <strong>Free Quantity:&nbsp;</strong><?php print $rate_plant_free_quantity_message; ?>
-                  <br>
-                  <br>
+                  <br />
+                  <br />
                 <?php endif; ?>
                 <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, isset($product_list) ? $product_list : NULL); ?>
               </div>

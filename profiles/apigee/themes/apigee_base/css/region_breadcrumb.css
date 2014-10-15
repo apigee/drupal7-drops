@@ -1,0 +1,22 @@
+/* Breadcrumbs */
+.breadcrumb {
+  height: auto;
+  padding: 8px 0px;
+  font-style: italic;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.breadcrumb a {
+  font-weight: normal;
+}
+
+#breadcrumb-navbar {
+  padding-top: 30px;
+  background: #FAFAFA;
+  height: 30px;
+}
+
+#breadcrumb-navbar.no-top-padding {
+  padding-top: 0px;
+}

@@ -31,7 +31,7 @@ function uuid_fpp_features_export($data, &$export, $module_name = '') {
   $export['dependencies']['uuid_features'] = 'uuid_features';
 
   // Add extra dependencies so we don't lose track of bundles.
-  $fpp_modules = _uuid_fp_features_provides_bundle();
+  $fpp_modules = _uuid_fpp_features_dependencies($data);
   foreach ($fpp_modules as $module) {
     $export['dependencies'][$module] = $module;
   }
@@ -162,27 +162,84 @@ function uuid_fpp_features_rebuild($module) {
 }
 
 /**
- * Discovers modules which provide FPP bundles for dependency mapping.
- *
- * Same process as module_invoke_all().
+ * Discovers modules which affect the FPP bundle info for dependency mapping.
  */
-function _uuid_fp_features_provides_bundle() {
-
+function _uuid_fpp_features_dependencies($uuids) {
   $implements = array();
-  $entity_info = fieldable_panels_panes_entity_info();
 
-  // Discover all modules which implement entity_info_alter
+  $entity_info = array();
+  $bundles = array();
+  foreach (entity_uuid_load('fieldable_panels_pane', $uuids) as $entity) {
+    list(, , $bundle) = entity_extract_ids('fieldable_panels_pane', $entity);
+    $bundles[$bundle] = $bundle;
+  }
+
+  // Check for modules that affect the bundle info of the given entity's bundle.
+  foreach (module_implements('entity_info') as $module) {
+    $result = module_invoke($module, 'entity_info');
+    foreach ($bundles as $bundle) {
+      if (isset($result['fieldable_panels_pane']['bundles'][$bundle])) {
+        $implements[$module] = $module;
+      }
+
+      if (isset($result) && is_array($result)) {
+        $entity_info = array_merge_recursive($entity_info, $result);
+      }
+    }
+  }
+
+  foreach ($entity_info as $name => $data) {
+    $entity_info[$name] += array(
+      'fieldable' => FALSE,
+      'controller class' => 'DrupalDefaultEntityController',
+      'static cache' => TRUE,
+      'field cache' => TRUE,
+      'load hook' => $name . '_load',
+      'bundles' => array(),
+      'view modes' => array(),
+      'entity keys' => array(),
+      'translation' => array(),
+    );
+    $entity_info[$name]['entity keys'] += array(
+      'revision' => '',
+      'bundle' => '',
+    );
+    foreach ($entity_info[$name]['view modes'] as $view_mode => $view_mode_info) {
+      $entity_info[$name]['view modes'][$view_mode] += array(
+        'custom settings' => FALSE,
+      );
+    }
+    // If no bundle key is provided, assume a single bundle, named after
+    // the entity type.
+    if (empty($entity_info[$name]['entity keys']['bundle']) && empty($entity_info[$name]['bundles'])) {
+      $entity_info[$name]['bundles'] = array($name => array('label' => $entity_info[$name]['label']));
+    }
+    // Prepare entity schema fields SQL info for
+    // DrupalEntityControllerInterface::buildQuery().
+    if (isset($entity_info[$name]['base table'])) {
+      $entity_info[$name]['schema_fields_sql']['base table'] = drupal_schema_fields_sql($entity_info[$name]['base table']);
+      if (isset($entity_info[$name]['revision table'])) {
+        $entity_info[$name]['schema_fields_sql']['revision table'] = drupal_schema_fields_sql($entity_info[$name]['revision table']);
+      }
+    }
+  }
+
+  // Discover all modules which implement entity_info_alter.
   foreach (module_implements('entity_info_alter') as $module) {
     $function = $module . '_entity_info_alter';
     if (function_exists($function)) {
-
-      // Essentially we need to invoke the hook_alter() and see if our target
-      // entity had some values added.
+      // Keep a backup of the FPP entity info so we can compare it later.
+      $backup = $entity_info['fieldable_panels_pane']['bundles'];
       $function($entity_info);
 
-      // If we have a key for our entity, log the module.
-      if (isset($entity_info['fieldable_panels_pane'])) {
-        $implements[] = $module;
+      foreach ($bundles as $bundle) {
+        // Check if the module changes anything in the entity info.
+        if (isset($backup[$bundle]) && !isset($entity_info['fieldable_panels_pane']['bundles'][$bundle])) {
+          $implements[$module] = $module;
+        }
+        elseif ($backup[$bundle] != $entity_info['fieldable_panels_pane']['bundles'][$bundle]) {
+          $implements[$module] = $module;
+        }
       }
     }
   }

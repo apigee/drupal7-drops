@@ -2,7 +2,7 @@
 
 use Apigee\ManagementAPI\Developer;
 
-class MintTest extends DrupalWebTestCase{
+class MintTest extends DrupalWebTestCase {
 
   protected $privileged_user;
 

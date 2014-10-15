@@ -75,7 +75,7 @@ function uuid_current_search_configuration_features_revert($module) {
  * Implements hook_features_rebuild().
  */
 function uuid_current_search_configuration_features_rebuild($module) {
-  $block_current_search_configurations = module_invoke($module, 'uuid_features_default_current_search_configurations');
+  $block_current_search_configurations = features_get_default('uuid_current_search_configuration', $module);
   if (!empty($block_current_search_configurations)) {
     foreach ($block_current_search_configurations as $block_current_search_configuration) {
       db_delete('block_current_search')

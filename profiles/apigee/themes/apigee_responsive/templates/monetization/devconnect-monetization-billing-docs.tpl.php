@@ -10,11 +10,11 @@
   <table class="table table-bordered">
     <thead>
     <tr>
-      <th>Document Type</th>
-      <th>Reference</th>
-      <th>Products</th>
-      <th>Received Date</th>
-      <th>Download</th>
+      <th><?php print t('Document Type'); ?></th>
+      <th><?php print t('Reference'); ?></th>
+      <th><?php print t('Products'); ?></th>
+      <th><?php print t('Received Date'); ?></th>
+      <th><?php print t('Download'); ?></th>
     </tr>
     </thead>
     <tbody>

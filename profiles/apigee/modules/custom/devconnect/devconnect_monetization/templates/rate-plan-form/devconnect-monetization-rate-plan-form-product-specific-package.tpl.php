@@ -3,28 +3,32 @@
 ?>
 
 <div>
-  <h3>Plan Details</h3>
+  <h3><?php print t('Plan Details'); ?></h3>
+
   <strong><?php echo $rate_plan->getDisplayName(); ?></strong>
-  <?php if ($rate_plan->getChildRatePlan() != NULL): // Start Future Product Specific 1 ?>
-  <p style="color: #666;">This plan has a new version effective <?php print substr($rate_plan->getChildRatePlan()->getStartDate(), 0, 10); ?>. Toggle below to see the future rate plan.</p>
+  <?php // Start Future Product Specific 1. ?>
+  <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
+  <p style="color: #666;">
+    <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDate(), 0, 10)); ?>
+  </p>
   <div class="tabbable">
     <ul class="nav nav-pills">
-      <li class="active"><a href="#current" data-toggle="tab">Current</a></li>
-      <li class=""><a href="#future" data-toggle="tab">Future</a></li>
+      <li class="active"><a href="#current" data-toggle="tab"><?php print t('Current'); ?></a></li>
+      <li class=""><a href="#future" data-toggle="tab"><?php print t('Future'); ?></a></li>
     </ul>
     <div class="tab-content">
       <div id="current" class="tab-pane active">
         <?php // Start Future Product Specific 1 ?>
         <?php endif; ?>
-        <br>
+        <br />
         <?php if ($rate_plan->getContractDuration() > 0 || $rate_plan->getSetUpFee() > 0 || $rate_plan->getRecurringFee() > 0 || $rate_plan->getEarlyTerminationFee() > 0): ?>
           <table>
             <thead>
             <tr>
-              <?php if ($rate_plan->getContractDuration() > 0): ?><th>Renewal Period</th><?php endif; ?>
-              <?php if ($rate_plan->getSetUpFee() > 0): ?><th>Set Up Fee</th><?php endif; ?>
-              <?php if ($rate_plan->getRecurringFee() > 0): ?><th>Recurring Fees</th><?php endif; ?>
-              <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th>Early Termination Fee</th><?php endif; ?>
+                <?php if ($rate_plan->getContractDuration() > 0): ?><th><?php print t('Renewal Period'); ?></th><?php endif; ?>
+                <?php if ($rate_plan->getSetUpFee() > 0): ?><th><?php print t('Set Up Fee'); ?></th><?php endif; ?>
+                <?php if ($rate_plan->getRecurringFee() > 0): ?><th><?php print t('Recurring Fees'); ?></th><?php endif; ?>
+                <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th><?php print t('Early Termination Fee'); ?></th><?php endif; ?>
             </tr>
             </thead>
             <tbody>
@@ -42,16 +46,16 @@
         <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
       </div>
       <div id="future" class="tab-pane">
-        <br>
+        <br />
         <?php $rate_plan = $rate_plan->getChildRatePlan(); ?>
         <?php if ($rate_plan->getContractDuration() > 0 || $rate_plan->getSetUpFee() > 0 || $rate_plan->getRecurringFee() > 0 || $rate_plan->getEarlyTerminationFee() > 0): ?>
           <table>
             <thead>
             <tr>
-              <?php if ($rate_plan->getContractDuration() > 0): ?><th>Renewal Period</th><?php endif; ?>
-              <?php if ($rate_plan->getSetUpFee() > 0): ?><th>Set Up Fee</th><?php endif; ?>
-              <?php if ($rate_plan->getRecurringFee() > 0): ?><th>Recurring Fees</th><?php endif; ?>
-              <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th>Early Termination Fee</th><?php endif; ?>
+                <?php if ($rate_plan->getContractDuration() > 0): ?><th><?php print t('Renewal Period'); ?></th><?php endif; ?>
+                <?php if ($rate_plan->getSetUpFee() > 0): ?><th><?php print t('Set Up Fee'); ?></th><?php endif; ?>
+                <?php if ($rate_plan->getRecurringFee() > 0): ?><th><?php print t('Recurring Fees'); ?></th><?php endif; ?>
+                <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><th><?php print t('Early Termination Fee'); ?></th><?php endif; ?>
             </tr>
             </thead>
             <tbody>

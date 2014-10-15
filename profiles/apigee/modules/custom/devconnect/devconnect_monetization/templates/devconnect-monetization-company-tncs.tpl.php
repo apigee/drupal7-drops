@@ -1,16 +1,16 @@
 <?php
 /**
  * Variables
- *   $tncs_forms List of accepted and new Apigee\Mint\TermsAndCondition objects for the user
- *   to accept them
+ *   $tncs_forms List of accepted and new Apigee\Mint\TermsAndCondition objects
+ *   for the user to accept them.
  */
 ?>
 <table>
   <thead>
     <tr>
-      <th>Effective Date</th>
-      <th>Terms &amp; Conditions</th>
-      <th>T&amp;C Acceptance Date</th>
+        <th><?php print t('Effective Date'); ?></th>
+        <th><?php print t('Terms & Conditions'); ?></th>
+        <th><?php print t('T&C Acceptance Date'); ?></th>
     </tr>
   </thead>
   <tbody>

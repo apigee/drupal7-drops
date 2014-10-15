@@ -371,6 +371,10 @@ class Bean extends Entity {
     $return = parent::save();
     bean_reset(TRUE, TRUE);
 
+    if (module_exists('block')) {
+      bean_cache_clear_block($this);
+    }
+
     return $return;
   }
 

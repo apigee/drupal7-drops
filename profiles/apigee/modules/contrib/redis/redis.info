@@ -10,9 +10,9 @@ files[] = tests/cache_fixes.test
 files[] = tests/cache_flush.test
 files[] = tests/lock.test
 files[] = tests/queue.test
-; Information added by Drupal.org packaging script on 2014-07-03
-version = "7.x-2.11"
+; Information added by Drupal.org packaging script on 2014-09-11
+version = "7.x-2.12"
 core = "7.x"
 project = "redis"
-datestamp = "1404381532"
+datestamp = "1410458931"
 

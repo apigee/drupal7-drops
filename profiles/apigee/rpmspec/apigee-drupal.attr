@@ -1,3 +1,0 @@
-%__drupal7_provides  %{_prefix}/lib/rpm/apigee-drupal.prov %{version}
-%__drupal7_requires  %{_prefix}/lib/rpm/apigee-drupal.req
-%__drupal7_path      ^%{_datadir}/(modules|profiles|themes)/

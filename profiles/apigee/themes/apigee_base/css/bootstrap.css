@@ -1324,7 +1324,7 @@ legend + .control-group {
 }
 table {
   max-width: 100%;
-  border-collapse: collapse;
+  /* border-collapse: collapse; */
   border-spacing: 0;
   background-color: transparent;
 }
@@ -3013,7 +3013,7 @@ input[type="submit"].btn.btn-mini {
   margin-bottom: 0;
 }
 .navbar-search .search-query {
-  background: url(/profiles/apigee/themes/apigee_base/images/search-bg.png) no-repeat 145px 5px;
+  background: url("/profiles/apigee/themes/apigee_base/images/search-bg.png") no-repeat 145px 5px;
   padding: 4px 30px 4px 9px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 13px;
@@ -3989,8 +3989,11 @@ a.thumbnail:hover {
   background: none repeat scroll 0 0 #FAFAFA;
   border-top: medium none;
   box-shadow: 0 6px 6px -4px rgba(0, 0, 0, 0.05) inset;
+  color: #1d7ca7;
   opacity: 1;
-  padding: 18px 0px;
+}
+.footer .footer-inner a {
+  color: #FFF;
 }
 .footer .footer-inner .navbar {
   margin: 0;
@@ -4137,7 +4140,7 @@ ul.toolbar li {
   margin-bottom: 10px;
 }
 h3.apigee {
-  background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.svg);
+  background-image: url(/public/images/enterprise-sprites.svg);
   background-repeat: no-repeat;
   float: left;
   height: 20px;
@@ -4172,6 +4175,8 @@ h3.apigee {
   height: 10px;
   margin-bottom: -10px;
   position: absolute;
+  background-image: url(/public/images/enterprise-sprites.svg);
+  background-position: -70px 0px;
   bottom: 0px;
   left: -10px;
 }
@@ -4251,7 +4256,7 @@ footer .copyright-bar .container:before {
   height: 10px;
   margin-bottom: 10px;
   position: absolute;
-  background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.svg);
+  background-image: url(/public/images/enterprise-sprites.svg);
   background-position: -100px 0px;
   top: -10px;
   right: -20px;
@@ -4283,7 +4288,7 @@ footer .copyright-bar p {
 footer .copyright-bar .logo-apigee {
   display: inline-block;
   background-position: 0px -30px;
-  background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.svg);
+  background-image: url(/public/images/enterprise-sprites.svg);
   background-repeat: no-repeat;
   float: right;
   height: 20px;
@@ -4327,7 +4332,7 @@ footer .copyright-bar .logo-apigee path {
 }
 .iconbtn {
   display: inline-block;
-  background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.png);
+  background-image: url(/public/images/enterprise-sprites.png);
   background-repeat: no-repeat;
 }
 .iconbtn.smallpencil {
@@ -4345,7 +4350,7 @@ footer .copyright-bar .logo-apigee path {
 }
 .toggle {
   display: inline-block;
-  background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.png);
+  background-image: url(/public/images/enterprise-sprites.png);
   background-repeat: no-repeat;
   background-position: -150px 0px;
   width: 18px;
@@ -4356,7 +4361,7 @@ footer .copyright-bar .logo-apigee path {
 }
 .toggle.small {
   display: inline-block;
-  background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.png);
+  background-image: url(/public/images/enterprise-sprites.png);
   background-repeat: no-repeat;
   background-position: -130px -40px;
   width: 12px;
@@ -4446,7 +4451,7 @@ footer .copyright-bar .logo-apigee path {
   left: 0;
 }
 .page-header .headerbtns .btn > .iconbtn {
-  background-image: url(/profiles/apigee/themes/apigee_base/images/enterprise-sprites.png);
+  background-image: url(/public/images/enterprise-sprites.png);
   width: 30px;
   height: 30px;
   display: block;

@@ -1,2 +1,3 @@
-<h3>Products:<br><?php print implode(t(', '), $products); ?></h3>
+<h3><?php print t('Products:'); ?><br /><?php print implode(', ', $products); ?></h3>
+
 <hr>

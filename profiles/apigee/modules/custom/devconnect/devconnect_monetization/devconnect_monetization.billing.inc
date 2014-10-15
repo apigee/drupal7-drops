@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Billing methods.
+ */
+
 use Apigee\Mint\Types\BillingDocumentType;
 use Apigee\Mint\BillingDocument;
 use Apigee\Mint\Exceptions\MintApiException;
@@ -731,7 +736,7 @@ function devconnect_monetization_billing_document_form_submit(&$form, &$form_sta
       try {
         $billing_docs = $billing_document->searchBillingDoc($form_state['values']['search-billing-doc'], $developer_id);
       } catch (MintApiException $re) {
-        drupal_set_message($re->getMintMessage(TRUE, TRUE), 'warning');
+        drupal_set_message(t("Error: %error", array('%error' => $re->getMintMessage(TRUE, TRUE))), 'warning');
         return;
       }
     }

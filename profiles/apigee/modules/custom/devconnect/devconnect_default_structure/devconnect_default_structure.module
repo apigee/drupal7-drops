@@ -29,7 +29,14 @@ function devconnect_default_structure_block_info() {
  * Provides content back for the footer block
  */
 function _devconnect_default_structure_footer_content() {
-  $content = '';
+
+  $content_raw = variable_get('apigee_config_footer_content', '');
+  if (!empty($content_raw['value'])) {
+    return array('#markup' => $content_raw['value']);
+  }
+
+  $user = (array_key_exists('user', $GLOBALS) ? $GLOBALS['user'] : NULL);
+  $terms_path = ltrim(_devconnect_user_get_tnc_url($user), '/');
   $theme_path = base_path() . drupal_get_path('theme', 'apigee_responsive');
   $html = '<div class="navbar">
             <div class="navbar-inner">
@@ -42,7 +49,7 @@ function _devconnect_default_structure_footer_content() {
                 <ul class="footer-links nav span10">
                   <li class="first">' . l('Privacy Policy', 'privacy-policy') . '</li>
                   <li class="divider-vertical"></li>
-                  <li>' . l('Terms & Use', 'terms-use') . '</li>
+                  <li>' . l('Terms & Use', $terms_path) . '</li>
                   <li class="divider-vertical"></li>
                   <li class="last">' . l('Contact', 'contact-us') . '</li>
                 </ul>
@@ -52,13 +59,7 @@ function _devconnect_default_structure_footer_content() {
               </div>
             </div>
           </div>';
-
-  $content_raw = variable_get('apigee_config_footer_content', '');
-
-  $content = !empty($content_raw['value']) ?
-    array('#markup' => $content_raw['value']) : $html;
-
-  return $content;
+  return array('#markup' => $html);
 }
 
 

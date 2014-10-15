@@ -124,12 +124,10 @@ function _devconnect_admin_notify_get_receiver_mails() {
       $emails = explode(',', variable_get('devconnect_admin_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
     // There is no break here for a reason.
     case 'Role':
-      $roles = implode(',', variable_get('devconnect_admin_notify_roles', array()));
+      $roles = array_unique(variable_get('devconnect_admin_notify_roles', array()));
       if (!empty($roles)) {
-        $result = db_query("SELECT mail FROM {users} AS u INNER JOIN {users_roles} AS r ON u.uid = r.uid WHERE r.rid IN(:role) and u.status = '1' ", array(':role' => $roles));
-        while ($mail = $result->fetchObject()) {
-          $emails[] = $mail->mail;
-        }
+        $result = db_query("SELECT DISTINCT mail FROM {users} AS u INNER JOIN {users_roles} AS r ON u.uid = r.uid WHERE r.rid IN (:role) and u.status = '1' ", array(':role' => $roles));
+        $emails = array_merge($emails, $result->fetchCol());
       }
       break;
   }

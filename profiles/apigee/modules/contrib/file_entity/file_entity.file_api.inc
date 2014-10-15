@@ -485,6 +485,31 @@ function file_type_is_disabled($type) {
 }
 
 /**
+ * Returns an array of valid file extensions.
+ */
+function file_type_get_valid_extensions($type) {
+  include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
+  $mapping = file_mimetype_mapping();
+
+  $type_extensions = array();
+  $type_ext_keys = array();
+  if (!empty($type->mimetypes)) {
+    foreach ($mapping['mimetypes'] as $ext_key => $mimetype) {
+      if (file_entity_match_mimetypes($mimetype, $type->mimetypes)) {
+        $type_ext_keys[] = $ext_key;
+      }
+    }
+
+    if ($type_ext_keys) {
+      $type_extensions = array_intersect($mapping['extensions'], $type_ext_keys);
+      $type_extensions = array_keys($type_extensions);
+    }
+  }
+
+  return $type_extensions;
+}
+
+/**
  * Updates an existing file type or creates a new one.
  *
  * This function can be called on its own, or via the CTools exportables
@@ -596,6 +621,7 @@ function file_type_delete($type) {
  *   Type of the file_type to disable
  */
 function file_type_enable($type) {
+  ctools_include('export');
   ctools_export_crud_enable('file_type', $type);
 }
 
@@ -607,6 +633,7 @@ function file_type_enable($type) {
  *   Type of the file_type to disable
  */
 function file_type_disable($type) {
+  ctools_include('export');
   ctools_export_crud_disable('file_type', $type);
 }
 
@@ -699,7 +726,7 @@ function file_uri_to_object($uri, $use_existing = TRUE) {
   if (empty($file)) {
     $file = new stdClass();
     $file->uid = $GLOBALS['user']->uid;
-    $file->filename = basename($uri);
+    $file->filename = drupal_basename($uri);
     $file->uri = $uri;
     $file->filemime = file_get_mimetype($uri);
     // This is gagged because some uris will not support it.

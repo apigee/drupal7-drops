@@ -4,7 +4,7 @@
  * Implements hook_init().
  */
 function apigee_sso_ui_init() {
-  drupal_add_css(drupal_get_path('module', 'apigee_sso') . '/apigee_sso.css',
+  drupal_add_css(drupal_get_path('module', 'apigee_sso_ui') . '/apigee_sso.css',
     array('group' => CSS_THEME, 'every_page' => TRUE));
 }
 
@@ -17,7 +17,7 @@ function apigee_sso_ui_theme() {
   return array(
     'apigee_sso_ui_signin_block' => array(
       'template' => 'apigee-sso-ui-signin-block',
-      'path' => drupal_get_path('module', 'apigee_sso') . "/templates",
+      'path' => drupal_get_path('module', 'apigee_sso_ui') . "/templates",
       'variables' => array(
         'github' => null
       ),

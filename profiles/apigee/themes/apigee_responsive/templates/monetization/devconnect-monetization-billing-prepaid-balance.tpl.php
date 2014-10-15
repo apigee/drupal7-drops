@@ -10,20 +10,20 @@
  *   $previous_prepaid_statements_form Form to search previous prepaid statements
  */
 ?>
-  <h3>Current Prepaid Balance</h3>
+  <h3><?php print t('Current Prepaid Balance'); ?></h3>
   <hr>
   <div class="table-responsive">
     <table class="table table-bordered">
       <thead>
       <tr>
-        <th>Account Currency</th>
-        <th>Balance Brought Forward</th>
-        <th>Top Ups</th>
-        <th>Usage</th>
-        <th>Tax</th>
-        <th>Current Balance</th>
+        <th><?php print t('Account Currency'); ?></th>
+        <th><?php print t('Balance Brought Forward'); ?></th>
+        <th><?php print t('Top Ups'); ?></th>
+        <th><?php print t('Usage'); ?></th>
+        <th><?php print t('Tax'); ?></th>
+        <th><?php print t('Current Balance'); ?></th>
         <?php if ($top_up_balance_perm) : ?>
-          <th>Actions</th>
+          <th><?php print t('Actions'); ?></th>
         <?php endif; ?>
       </tr>
       </thead>
@@ -54,7 +54,7 @@
                 <td>
                   <a class="top-up trigger btn" balance-id="<?php print $balance->getId(); ?>"
                      current-balance="<?php print $balance->getCurrentBalance(); ?>"
-                     currency="<?php print $balance->getSupportedCurrency()->getName(); ?>" role="button">Top Up Balance</a>
+                     currency="<?php print $balance->getSupportedCurrency()->getName(); ?>" role="button"><?php print t('Top Up Balance'); ?></a>
                 </td>
               <?php else: ?>
                 <td>&nbsp;</td>
@@ -72,7 +72,7 @@
           <td>--</td>
           <td>--</td>
           <?php if ($top_up_balance_perm) : ?>
-            <td><a class="top-up trigger btn" role="button">Top Up Balance</a></td>
+            <td><a class="top-up trigger btn" role="button"><?php print t('Top Up Balance'); ?></a></td>
           <?php endif; ?>
         </tr>
       <?php endif; ?>
@@ -81,7 +81,7 @@
   </div>
 <?php if ($download_prepaid_report_perm) : ?>
   <div class="spacer">
-    <h3>Previous Prepaid Statements</h3>
+    <h3><?php print t('Previous Prepaid Statements'); ?></h3>
     <hr>
     <?php print $previous_prepaid_statements_form; ?>
   </div>

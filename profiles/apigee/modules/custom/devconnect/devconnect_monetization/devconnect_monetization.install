@@ -1,9 +1,14 @@
 <?php
 
+/**
+ * @file
+ * Drupal install file for monetization module.
+ */
+
 use Apigee\ManagementAPI\Organization;
 
 /**
- * Implements hook_install()
+ * Implements hook_install().
  */
 function devconnect_monetization_install() {
 

@@ -1,6 +1,5 @@
 <?php
-
-require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
+require_once(DRUPAL_ROOT . '/profiles/apigee/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
 // Make Crypto work properly with R23
 if (method_exists('Apigee\Util\Crypto', 'setKey')) {
   Apigee\Util\Crypto::setKey(hash('SHA256', 'w3-Love_ap|s', TRUE));
@@ -60,40 +59,41 @@ function apigee_install_configure_batch(&$install_state) {
   _apigee_manage_memory();
 
   return array(
-    "title" => t("Configuring your install..."),
-    "operations" => array(
-      array("apigee_install_configure_variables", array()),
-      array("apigee_install_pantheon_push_solr", array()),
-      array("apigee_install_configure_solr", array()),
-      array("apigee_install_configure_users", array()),
-      array("apigee_install_configure_themes", array()),
-      array("apigee_install_content_types", array()),
-      array("apigee_install_enable_blog_content_types", array()),
-      array("apigee_install_rebuild_permissions", array()),
-      array("apigee_install_create_homepage", array()),
-      array("apigee_install_base_ckeditor_settings", array()),
-      array("apigee_install_create_taxonomy_terms", array()),
-      array("apigee_install_create_tutorial_content", array()),
-      array("apigee_install_create_forum_content", array()),
-      array("apigee_install_create_page_content", array()),
-      array("apigee_install_create_audio_content", array()),
-      array("apigee_install_create_video_content", array()),
-      array("apigee_install_create_faq_content", array()),
-      array("apigee_install_create_environmental_indicators", array()),
-      array("apigee_install_clear_caches_flush", array()),
-      array("apigee_install_clear_caches_css", array()),
-      array("apigee_install_clear_caches_js", array()),
-      array("apigee_install_clear_caches_theme", array()),
-      array("apigee_install_clear_caches_entity", array()),
-      array("apigee_install_clear_caches_nodes", array()),
-      array("apigee_install_clear_caches_menu", array()),
-      array("apigee_install_clear_caches_actions", array()),
-      array("apigee_install_clear_caches_core_path", array()),
-      array("apigee_install_clear_caches_core_filter", array()),
-      array("apigee_install_clear_caches_core_bootstrap", array()),
-      array("apigee_install_clear_caches_core_page", array()),
-      array("apigee_install_clear_caches_core", array()),
-      array("apigee_install_bootstrap_status", array()),
+    'title' => t('Configuring your install...'),
+    'operations' => array(
+      array('apigee_install_configure_variables', array()),
+      array('apigee_install_pantheon_push_solr', array()),
+      array('apigee_install_configure_solr', array()),
+      array('apigee_install_configure_users', array()),
+      array('apigee_install_configure_themes', array()),
+      array('apigee_install_content_types', array()),
+      array('apigee_install_enable_blog_content_types', array()),
+      array('apigee_install_rebuild_permissions', array()),
+      array('apigee_install_create_homepage', array()),
+      array('apigee_install_base_ckeditor_settings', array()),
+      array('apigee_install_create_taxonomy_terms', array()),
+      array('apigee_install_create_tutorial_content', array()),
+      array('apigee_install_create_forum_content', array()),
+      array('apigee_install_create_page_content', array()),
+      array('apigee_install_create_audio_content', array()),
+      array('apigee_install_create_video_content', array()),
+      array('apigee_install_create_faq_content', array()),
+      array('apigee_install_create_environmental_indicators', array()),
+      array('apigee_install_clear_caches_flush', array()),
+      array('apigee_install_clear_caches_css', array()),
+      array('apigee_install_clear_caches_js', array()),
+      array('apigee_install_clear_caches_theme', array()),
+      array('apigee_install_clear_caches_entity', array()),
+      array('apigee_install_clear_caches_nodes', array()),
+      array('apigee_install_clear_caches_menu', array()),
+      array('apigee_install_clear_caches_actions', array()),
+      array('apigee_install_clear_caches_core_path', array()),
+      array('apigee_install_clear_caches_core_filter', array()),
+      array('apigee_install_clear_caches_core_bootstrap', array()),
+      array('apigee_install_clear_caches_core_page', array()),
+      array('apigee_install_clear_caches_core', array()),
+      array('apigee_install_bootstrap_status', array()),
+      array('apigee_install_configure_autologout', array()),
     ),
     'finished' => '_apigee_install_configure_task_finished',
   );
@@ -107,7 +107,7 @@ function apigee_install_configure_batch(&$install_state) {
  * @param $operations
  */
 function _apigee_install_configure_task_finished($success, $results, $operations) {
-  watchdog(__FUNCTION__, "Configure Task Finished", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Configure Task Finished', array(), WATCHDOG_INFO);
 
   $GLOBALS['install_state']['batch_configure_complete'] = install_verify_completed_task();
 }
@@ -118,16 +118,16 @@ function _apigee_install_configure_task_finished($success, $results, $operations
  * @param $context
  */
 function apigee_install_configure_variables(&$context) {
-  watchdog(__FUNCTION__, "Config Vars", array(), WATCHDOG_INFO);
-  if (array_key_exists("PRESSFLOW_SETTINGS", $_SERVER)) {
+  watchdog(__FUNCTION__, 'Config Vars', array(), WATCHDOG_INFO);
+  if (array_key_exists('PRESSFLOW_SETTINGS', $_SERVER)) {
     $pressflow = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
     $conf = $pressflow['conf'];
   }
   else {
     $conf = array(
-      "file_public_path" => "sites/default/files",
-      "file_private_path" => "sites/default/private",
-      "file_temporary_path" => "sites/default/tmp"
+      'file_public_path' => 'sites/default/files',
+      'file_private_path' => 'sites/default/private',
+      'file_temporary_path' => 'sites/default/tmp'
     );
   }
   try {
@@ -136,13 +136,13 @@ function apigee_install_configure_variables(&$context) {
     file_prepare_directory($conf['file_private_path'], FILE_CREATE_DIRECTORY);
   } catch (Exception $e) {
     drupal_set_message(t('unable to create the directories necessary for Drupal to write files: :error', array(
-      ":error" => $e->getMessage()
+      ':error' => $e->getMessage()
     )));
   }
   $crypt_key = drupal_random_bytes(64);
-  variable_set("file_public_path", $conf['file_public_path']);
-  variable_set("file_temporary_path", $conf['file_temporary_path']);
-  variable_set("file_private_path", $conf['file_private_path']);
+  variable_set('file_public_path', $conf['file_public_path']);
+  variable_set('file_temporary_path', $conf['file_temporary_path']);
+  variable_set('file_private_path', $conf['file_private_path']);
   variable_set('cache', 1);
   variable_set('block_cache', 1);
   variable_set('cache_lifetime', '0');
@@ -151,10 +151,10 @@ function apigee_install_configure_variables(&$context) {
   variable_set('preprocess_css', 0);
   variable_set('preprocess_js', 0);
   variable_set('clean_url', TRUE);
-  variable_set('site_name', "New Apigee Site");
-  variable_set('site_mail', "noreply@apigee.com");
-  variable_set('date_default_timezone', "America/Los_Angeles"); // Designed by Apigee in California
-  variable_set('site_default_country', "US");
+  variable_set('site_name', 'New Apigee Site');
+  variable_set('site_mail', 'noreply@apigee.com');
+  variable_set('date_default_timezone', 'America/Los_Angeles'); // Designed by Apigee in California
+  variable_set('site_default_country', 'US');
   variable_set('jquery_update_compression_type', 'none');
   variable_set('jquery_update_jquery_cdn', 'google');
   variable_set('jquery_update_jquery_version', '1.7');
@@ -170,7 +170,7 @@ function apigee_install_configure_variables(&$context) {
   variable_set('logintoboggan_immediate_login_on_register', 0); // Set immediate login to false by default
   variable_set('logintoboggan_override_destination_parameter', 0); // Set immediate login to false by default
   variable_set('apigee_crypt_key', $crypt_key);
-  $context['results'][] = "variables";
+  $context['results'][] = 'variables';
   $context['message'] = st('Default variables set.');
 }
 
@@ -180,17 +180,17 @@ function apigee_install_configure_variables(&$context) {
  * @param $context
  */
 function apigee_install_pantheon_push_solr(&$context) {
-  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && module_exists("pantheon_apachesolr")) {
-    watchdog(__FUNCTION__, "Pushing Solr", array(), WATCHDOG_INFO);
-    module_load_include("module", "pantheon_apachesolr");
-    pantheon_apachesolr_post_schema_exec("profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml");
-    $context['results'][] = "solr_push";
+  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && module_exists('pantheon_apachesolr')) {
+    watchdog(__FUNCTION__, 'Pushing Solr', array(), WATCHDOG_INFO);
+    module_load_include('module', 'pantheon_apachesolr');
+    pantheon_apachesolr_post_schema_exec('profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml');
+    $context['results'][] = 'solr_push';
     $context['message'] = st('Solr config pushed to pantheon solr server.');
   }
   else {
-    watchdog(__FUNCTION__, "SOLR not enabled.", array(), WATCHDOG_NOTICE);
-    $context['results'][] = "solr_push";
-    $context['message'] = st('Solr is not enabled, no need to push to solr server.');
+    watchdog(__FUNCTION__, 'Solr not enabled.', array(), WATCHDOG_NOTICE);
+    $context['results'][] = 'solr_push';
+    $context['message'] = st('Solr is not enabled, no need to push to Solr server.');
   }
 }
 
@@ -200,7 +200,7 @@ function apigee_install_pantheon_push_solr(&$context) {
  * @param $context
  */
 function apigee_install_configure_solr(&$context) {
-  watchdog(__FUNCTION__, "Configuring Solr", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Configuring Solr', array(), WATCHDOG_INFO);
   $search_default_module = 'apachesolr_search';
   if (module_exists('apachesolr')) {
     $search_active_modules = array(
@@ -221,7 +221,7 @@ function apigee_install_configure_solr(&$context) {
   user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('search content'));
   variable_set('search_active_modules', $search_active_modules);
   variable_set('search_default_module', $search_default_module);
-  $context['results'][] = "solr_push";
+  $context['results'][] = 'solr_push';
   $context['message'] = st('Search Configured.');
 }
 
@@ -231,7 +231,7 @@ function apigee_install_configure_solr(&$context) {
  * @param $context
  */
 function apigee_install_configure_users(&$context) {
-  watchdog(__FUNCTION__, "Configuring Default Users", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Configuring Default Users', array(), WATCHDOG_INFO);
   $admin_role = new stdClass();
   $admin_role->name = 'administrator';
   $admin_role->weight = 10;
@@ -241,7 +241,7 @@ function apigee_install_configure_users(&$context) {
     ->execute();
   $roles = array_keys(user_roles());
   foreach ($roles as $role) {
-    user_role_grant_permissions($role, array("node" => "access content"));
+    user_role_grant_permissions($role, array('node' => 'access content'));
   }
   variable_set('user_admin_role', $admin_role->rid);
   user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
@@ -253,12 +253,12 @@ function apigee_install_configure_users(&$context) {
   user_role_grant_permissions(2, $permissions);
   $roles = array(3 => TRUE, 4 => TRUE);
   $user = (object) array(
-    "uid" => 1,
-    "name" => "admin",
-    "pass" => md5(time()),
-    "mail" => "noreply@apigee.com",
-    'field_first_name' => array(LANGUAGE_NONE => array(array('value' => "drupal"))),
-    'field_last_name' => array(LANGUAGE_NONE => array(array('value' => "admin"))),
+    'uid' => 1,
+    'name' => 'admin',
+    'pass' => md5(time()),
+    'mail' => 'noreply@apigee.com',
+    'field_first_name' => array(LANGUAGE_NONE => array(array('value' => 'drupal'))),
+    'field_last_name' => array(LANGUAGE_NONE => array(array('value' => 'admin'))),
     'status' => 1,
     'access' => REQUEST_TIME,
     'roles' => $roles,
@@ -270,7 +270,7 @@ function apigee_install_configure_users(&$context) {
   else {
     drupal_set_message(t('Unable to create admin user.'));
   }
-  $context['results'][] = "admin_user";
+  $context['results'][] = 'admin_user';
   $context['message'] = st('Admin User Created.');
 }
 
@@ -280,7 +280,7 @@ function apigee_install_configure_users(&$context) {
  * @param $context
  */
 function apigee_install_configure_themes(&$context) {
-  watchdog(__FUNCTION__, "Configuring themes", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Configuring themes', array(), WATCHDOG_INFO);
   // activate admin theme when editing a node
   variable_set('node_admin_theme', '1');
   db_update('system')
@@ -301,9 +301,9 @@ function apigee_install_configure_themes(&$context) {
     }
     db_update('block')->fields(array('status' => 0, 'region' => -1))->condition('delta', 'main', '!=')->execute();
   } catch (Exception $e) {
-    watchdog_exception(__FUNCTION__, $e, "ERROR CONFIGURING THEMES %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
+    watchdog_exception(__FUNCTION__, $e, 'ERROR CONFIGURING THEMES %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
   }
-  $context['results'][] = "themes";
+  $context['results'][] = 'themes';
   $context['message'] = st('Default Apigee theme configured.');
 }
 
@@ -313,13 +313,13 @@ function apigee_install_configure_themes(&$context) {
  * @param $context
  */
 function apigee_install_content_types(&$context) {
-  watchdog(__FUNCTION__, "Creating default content types", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Creating default content types', array(), WATCHDOG_INFO);
   $types = array(
     array(
       'type' => 'page',
       'name' => st('Basic page'),
       'base' => 'node_content',
-      'description' => st("Use <em>basic pages</em> for your static content, such as an 'About us' page."),
+      'description' => st('Use <em>basic pages</em> for your static content, such as an \'About us\' page.'),
       'custom' => 1,
       'modified' => 1,
       'locked' => 0,
@@ -340,10 +340,10 @@ function apigee_install_content_types(&$context) {
     node_type_save($type);
     node_add_body_field($type);
   }
-  variable_set("pathauto_node_page_pattern", "[node:title]");
-  variable_set("pathauto_node_blog_pattern", "blog/[node:title]");
-  variable_set("pathauto_node_faq_pattern", "faqs/[node:title]");
-  $context['results'][] = "content_types";
+  variable_set('pathauto_node_page_pattern', '[node:title]');
+  variable_set('pathauto_node_blog_pattern', 'blog/[node:title]');
+  variable_set('pathauto_node_faq_pattern', 'faqs/[node:title]');
+  $context['results'][] = 'content_types';
   $context['message'] = st('Default content types created.');
 }
 
@@ -352,8 +352,8 @@ function apigee_install_content_types(&$context) {
  */
 function apigee_install_enable_blog_content_types() {
   //Needs to be done here not in the .info file
-  module_enable(array("devconnect_blog_content_types"));
-  $context['results'][] = "blog_content_types";
+  module_enable(array('devconnect_blog_content_types'));
+  $context['results'][] = 'blog_content_types';
   $context['message'] = st('Enabling DevConnect Blog Content Types!');
 }
 
@@ -361,7 +361,7 @@ function apigee_install_enable_blog_content_types() {
  * Installs the default homepage
  */
 function apigee_install_create_homepage() {
-  watchdog(__FUNCTION__, "Generating Homepage", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Generating Homepage', array(), WATCHDOG_INFO);
   $homepage = (object) array(
     'title' => 'home',
     'body' => array(),
@@ -374,12 +374,12 @@ function apigee_install_create_homepage() {
   try {
     node_save($homepage);
     variable_set("site_frontpage", "node/{$homepage->nid}");
-    $context['results'][] = "homepage_created";
+    $context['results'][] = 'homepage_created';
     $context['message'] = st('Default Homepage Generated!');
   } catch (Exception $e) {
-    watchdog_exception(__FUNCTION__, $e, "Error generating home page: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
-    $context['results'][] = "homepage_created";
-    $context['message'] = st('No need generating default homepage...');
+    watchdog_exception(__FUNCTION__, $e, 'Error generating home page: %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
+    $context['results'][] = 'homepage_created';
+    $context['message'] = st('No need to generate default homepage...');
   }
 }
 
@@ -389,12 +389,12 @@ function apigee_install_create_homepage() {
  * @param $context
  */
 function apigee_install_base_ckeditor_settings(&$context) {
-  if (!module_exists("filter")) {
-    module_enable("filter");
+  if (!module_exists('filter')) {
+    module_enable(array('filter'), TRUE);
   }
-  module_load_include("module", "filter");
+  module_load_include('module', 'filter');
   $filters = filter_get_filters();
-  if (!in_array("filtered_html", array_keys($filters))) {
+  if (!in_array('filtered_html', array_keys($filters))) {
     filter_format_save((object) array(
         'format' => 'filtered_html',
         'name' => 'Filtered HTML',
@@ -416,21 +416,152 @@ function apigee_install_base_ckeditor_settings(&$context) {
             'status' => 1,
             'settings' => array(),
           ),
+          'wysiwyg' => array(
+            'weight' => 0,
+            'status' => 1,
+            'settings' => array(
+              'valid_elements' => 'a[!href|target<_blank|title],
+div[align<center?justify?left?right],
+p[align<center?justify?left?right],
+br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
+              'allow_comments' => 0,
+              'nofollow_policy' => 'whitelist',
+              'nofollow_domains' => array(
+                0 => 'gitesh.loc',
+              ),
+              'style_color' => array(
+                'color' => 0,
+                'background' => 0,
+                'background-color' => 0,
+                'background-image' => 0,
+                'background-repeat' => 0,
+                'background-attachment' => 0,
+                'background-position' => 0,
+              ),
+              'style_font' => array(
+                'font' => 0,
+                'font-family' => 0,
+                'font-size' => 0,
+                'font-size-adjust' => 0,
+                'font-stretch' => 0,
+                'font-style' => 0,
+                'font-variant' => 0,
+                'font-weight' => 0,
+              ),
+              'style_text' => array(
+                'text-align' => 0,
+                'text-decoration' => 0,
+                'text-indent' => 0,
+                'text-transform' => 0,
+                'letter-spacing' => 0,
+                'word-spacing' => 0,
+                'white-space' => 0,
+                'direction' => 0,
+                'unicode-bidi' => 0,
+              ),
+              'style_box' => array(
+                'margin' => 0,
+                'margin-top' => 0,
+                'margin-right' => 0,
+                'margin-bottom' => 0,
+                'margin-left' => 0,
+                'padding' => 0,
+                'padding-top' => 0,
+                'padding-right' => 0,
+                'padding-bottom' => 0,
+                'padding-left' => 0,
+              ),
+              'style_border-1' => array(
+                'border' => 0,
+                'border-top' => 0,
+                'border-right' => 0,
+                'border-bottom' => 0,
+                'border-left' => 0,
+                'border-width' => 0,
+                'border-top-width' => 0,
+                'border-right-width' => 0,
+                'border-bottom-width' => 0,
+                'border-left-width' => 0,
+              ),
+              'style_border-2' => array(
+                'border-color' => 0,
+                'border-top-color' => 0,
+                'border-right-color' => 0,
+                'border-bottom-color' => 0,
+                'border-left-color' => 0,
+                'border-style' => 0,
+                'border-top-style' => 0,
+                'border-right-style' => 0,
+                'border-bottom-style' => 0,
+                'border-left-style' => 0,
+              ),
+              'style_dimension' => array(
+                'height' => 0,
+                'line-height' => 0,
+                'max-height' => 0,
+                'max-width' => 0,
+                'min-height' => 0,
+                'min-width' => 0,
+                'width' => 0,
+              ),
+              'style_positioning' => array(
+                'bottom' => 0,
+                'clip' => 0,
+                'left' => 0,
+                'overflow' => 0,
+                'right' => 0,
+                'top' => 0,
+                'vertical-align' => 0,
+                'z-index' => 0,
+              ),
+              'style_layout' => array(
+                'clear' => 0,
+                'display' => 0,
+                'float' => 0,
+                'position' => 0,
+                'visibility' => 0,
+              ),
+              'style_list' => array(
+                'list-style' => 0,
+                'list-style-image' => 0,
+                'list-style-position' => 0,
+                'list-style-type' => 0,
+              ),
+              'style_table' => array(
+                'border-collapse' => 0,
+                'border-spacing' => 0,
+                'caption-side' => 0,
+                'empty-cells' => 0,
+                'table-layout' => 0,
+              ),
+              'style_user' => array(
+                'cursor' => 0,
+                'outline' => 0,
+                'outline-width' => 0,
+                'outline-style' => 0,
+                'outline-color' => 0,
+                'zoom' => 0,
+              ),
+              'rule_valid_classes' => array(),
+              'rule_valid_ids' => array(),
+              'rule_style_urls' => array(),
+            ),
+          ),
         ),
       )
     );
-    db_insert("role_permission")->fields(array(
-      "rid" => 2,
-      "permission" => "use text format filtered_html",
-      "module" => "filter"
+    db_insert('role_permission')->fields(array(
+      'rid' => 2,
+      'permission' => 'use text format filtered_html',
+      'module' => 'filter'
     ))->execute();
-    db_insert("role_permission")->fields(array(
-      "rid" => 3,
-      "permission" => "use text format filtered_html",
-      "module" => "filter"
+    db_insert('role_permission')->fields(array(
+      'rid' => 3,
+      'permission' => 'use text format filtered_html',
+      'module' => 'filter'
     ))->execute();
   }
-  if (!in_array("full_html", array_keys($filters))) {
+  if (!in_array('full_html', array_keys($filters))) {
     // Exported format: Full HTML.
     filter_format_save((object) array(
         'format' => 'full_html',
@@ -452,10 +583,10 @@ function apigee_install_base_ckeditor_settings(&$context) {
         ),
       )
     );
-    db_insert("role_permission")->fields(array(
-      "rid" => 3,
-      "permission" => "use text format full_html",
-      "module" => "filter"
+    db_insert('role_permission')->fields(array(
+      'rid' => 3,
+      'permission' => 'use text format full_html',
+      'module' => 'filter'
     ))->execute();
   }
   $ckeditor_filtered = array(
@@ -479,7 +610,7 @@ function apigee_install_base_ckeditor_settings(&$context) {
     ['Format','Font','FontSize'],
     ['TextColor','BGColor'],
     ['Maximize','ShowBlocks']]",
-    'expand' => "t",
+    'expand' => 't',
     'width' => '100%',
     'lang' => 'en',
     'auto_lang' => 't',
@@ -948,20 +1079,20 @@ function apigee_install_base_ckeditor_settings(&$context) {
     ->execute();
   db_insert('ckeditor_settings')
     ->fields(array(
-      "name" => 'filtered',
-      "settings" => serialize($ckeditor_filtered),
+      'name' => 'filtered',
+      'settings' => serialize($ckeditor_filtered),
     ))
     ->execute();
   db_insert('ckeditor_settings')
     ->fields(array(
-      "name" => 'full',
-      "settings" => serialize($ckeditor_full),
+      'name' => 'full',
+      'settings' => serialize($ckeditor_full),
     ))
     ->execute();
   db_insert('ckeditor_settings')
     ->fields(array(
-      "name" => 'CKEditor Global Profile',
-      "settings" => serialize($ckeditor_global_settings),
+      'name' => 'CKEditor Global Profile',
+      'settings' => serialize($ckeditor_global_settings),
     ))
     ->execute();
   db_delete('ckeditor_input_format')
@@ -970,9 +1101,9 @@ function apigee_install_base_ckeditor_settings(&$context) {
   db_delete('ckeditor_input_format')
     ->condition('name', 'Advanced')
     ->execute();
-  db_insert('ckeditor_input_format')->fields(array("name" => 'filtered', "format" => 'filtered_html'))->execute();
-  db_insert('ckeditor_input_format')->fields(array("name" => 'full', "format" => 'full_html'))->execute();
-  $context['results'][] = "ckeditor_settings";
+  db_insert('ckeditor_input_format')->fields(array('name' => 'filtered', 'format' => 'filtered_html'))->execute();
+  db_insert('ckeditor_input_format')->fields(array('name' => 'full', 'format' => 'full_html'))->execute();
+  $context['results'][] = 'ckeditor_settings';
   $context['message'] = st('CKEditor Settings Built');
 }
 
@@ -988,7 +1119,7 @@ function apigee_install_create_taxonomy_terms(&$context) {
     $term->vid = taxonomy_vocabulary_machine_name_load('forums')->vid;
     taxonomy_term_save($term);
   }
-  $context['results'][] = "content_created";
+  $context['results'][] = 'content_created';
   $context['message'] = st('Example Taxonomy Terms Created!');
 }
 
@@ -1034,7 +1165,7 @@ function apigee_install_create_tutorial_content(&$context) {
     $fields['vid'] = taxonomy_vocabulary_machine_name_load('blog')->vid;
     _apigee_install_generate_node('article', $body, $fields);
   }
-  $context['results'][] = "content_created";
+  $context['results'][] = 'content_created';
   $context['message'] = st('Tutorial Content Generated!');
 }
 
@@ -1047,6 +1178,7 @@ function apigee_install_create_forum_content(&$context) {
   // 10 forum posts
   for ($i = 0; $i <= 7; $i++) {
     $body = array();
+    $body['title'] = _apigee_install_generate_greek(mt_rand(3, 10));
     $body['post'] = _apigee_install_generate_greek(mt_rand(2, 300), TRUE);
     $fields = array();
     $fields['type'] = 'forum';
@@ -1055,7 +1187,7 @@ function apigee_install_create_forum_content(&$context) {
     _apigee_install_generate_node('forum', $body, $fields);
   }
   user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('create forum content', 'edit own forum content'));
-  $context['results'][] = "content_created";
+  $context['results'][] = 'content_created';
   $context['message'] = st('10 Example Forum Posts Created!');
 }
 
@@ -1068,10 +1200,11 @@ function apigee_install_create_page_content(&$context) {
   // 5 pages
   for ($i = 0; $i <= 5; $i++) {
     $body = array();
+    $body['title'] = _apigee_install_generate_greek(mt_rand(3, 10));
     $body['post'] = _apigee_install_generate_greek(mt_rand(2, 300), TRUE);
     _apigee_install_generate_node('page', $body);
   }
-  $context['results'][] = "content_created";
+  $context['results'][] = 'content_created';
   $context['message'] = st('5 Example Pages Created!');
 }
 
@@ -1118,7 +1251,7 @@ function apigee_install_create_audio_content(&$context) {
     $path = array('source' => 'node/' . $node->nid, 'alias' => 'blog/drupalizeme-podcast-33');
     path_save($path);
   }
-  $context['results'][] = "content_created";
+  $context['results'][] = 'content_created';
   $context['message'] = st('Audio Content Created!');
 }
 
@@ -1167,7 +1300,7 @@ function apigee_install_create_video_content(&$context) {
     $path = array('source' => 'node/' . $node->nid, 'alias' => 'blog/your-api-sucks');
     path_save($path);
   }
-  $context['results'][] = "content_created";
+  $context['results'][] = 'content_created';
   $context['message'] = st('Video Content Created!');
 }
 
@@ -1181,7 +1314,7 @@ function apigee_install_create_faq_content(&$context) {
   for ($i = 0; $i <= 3; $i++) {
     _apigee_install_generate_node($type, $body = NULL, $fields = NULL);
   }
-  $context['results'][] = "content_created";
+  $context['results'][] = 'content_created';
   $context['message'] = st('FAQ Example Content Created!');
 }
 
@@ -1372,6 +1505,9 @@ function _apigee_install_generate_greek($word_count, $title = FALSE) {
     $greek = file(dirname(__FILE__) . '/greek.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $greek_flipped = array_flip($greek);
   }
+  if ($word_count > count($greek_flipped)) {
+    $word_count = count($greek_flipped);
+  }
 
   $greek_text = '';
   if (!$title) {
@@ -1399,26 +1535,14 @@ function _apigee_install_generate_greek($word_count, $title = FALSE) {
  * @param $context
  */
 function apigee_install_rebuild_permissions(&$context) {
-  watchdog(__FUNCTION__, "rebuilding permissions", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'rebuilding permissions', array(), WATCHDOG_INFO);
   try {
     node_access_rebuild(TRUE);
   } catch (Exception $e) {
-    watchdog_exception(__FUNCTION__, $e, "Error rebuilding node access: %message", array("%message" => $e->getMessage()), WATCHDOG_ERROR);
+    watchdog_exception(__FUNCTION__, $e, 'Error rebuilding node access: %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
   }
-  $context['results'][] = "content_permissions";
+  $context['results'][] = 'content_permissions';
   $context['message'] = st('Content Permissions Rebuilt');
-}
-
-/**
- * Reverts features on the site
- *
- * @param $context
- */
-function apigee_install_revert_features(&$context) {
-  module_enable(array("curate"));
-  features_revert(array('module' => array('curate')));
-  $context['results'][] = "features";
-  $context['message'] = st('Features reverted');
 }
 
 /**
@@ -1427,9 +1551,9 @@ function apigee_install_revert_features(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_flush(&$context) {
-  watchdog(__FUNCTION__, "Flushing CSS/JS", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Flushing CSS/JS', array(), WATCHDOG_INFO);
   _drupal_flush_css_js();
-  $context['results'][] = "cache_flush";
+  $context['results'][] = 'cache_flush';
   $context['message'] = st('CSS & JS flushed');
 }
 
@@ -1439,9 +1563,9 @@ function apigee_install_clear_caches_flush(&$context) {
  * @param $context
  */
 function apigee_install_rebuild_registry(&$context) {
-  watchdog(__FUNCTION__, "Rebuilding Registry", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Rebuilding Registry', array(), WATCHDOG_INFO);
   registry_rebuild();
-  $context['results'][] = "cache_registry";
+  $context['results'][] = 'cache_registry';
   $context['message'] = st('Registry Rebuilt');
 }
 
@@ -1451,9 +1575,9 @@ function apigee_install_rebuild_registry(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_css(&$context) {
-  watchdog(__FUNCTION__, "Clearing CSS Cache", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Clearing CSS Cache', array(), WATCHDOG_INFO);
   drupal_clear_css_cache();
-  $context['results'][] = "cache_css";
+  $context['results'][] = 'cache_css';
   $context['message'] = st('CSS Caches Cleared');
 }
 
@@ -1463,9 +1587,9 @@ function apigee_install_clear_caches_css(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_js(&$context) {
-  watchdog(__FUNCTION__, "Clearing JS Cache", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Clearing JS Cache', array(), WATCHDOG_INFO);
   drupal_clear_js_cache();
-  $context['results'][] = "cache_js";
+  $context['results'][] = 'cache_js';
   $context['message'] = st('JS Caches Cleared');
 }
 
@@ -1475,10 +1599,10 @@ function apigee_install_clear_caches_js(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_theme(&$context) {
-  watchdog(__FUNCTION__, "Rebuilding themes...", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Rebuilding themes...', array(), WATCHDOG_INFO);
   system_rebuild_theme_data();
   drupal_theme_rebuild();
-  $context['results'][] = "cache_theme";
+  $context['results'][] = 'cache_theme';
   $context['message'] = st('Theme Caches Cleared');
 }
 
@@ -1488,9 +1612,9 @@ function apigee_install_clear_caches_theme(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_entity(&$context) {
-  watchdog(__FUNCTION__, "Clearing Entity Cache...", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Clearing Entity Cache...', array(), WATCHDOG_INFO);
   entity_info_cache_clear();
-  $context['results'][] = "cache_entity";
+  $context['results'][] = 'cache_entity';
   $context['message'] = st('Entity Caches Cleared');
 }
 
@@ -1500,9 +1624,9 @@ function apigee_install_clear_caches_entity(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_nodes(&$context) {
-  watchdog(__FUNCTION__, "Rebuilding Node Types...", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Rebuilding Node Types...', array(), WATCHDOG_INFO);
   node_types_rebuild();
-  $context['results'][] = "cache_node";
+  $context['results'][] = 'cache_node';
   $context['message'] = st('Node Caches Cleared');
 }
 
@@ -1512,9 +1636,9 @@ function apigee_install_clear_caches_nodes(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_menu(&$context) {
-  watchdog(__FUNCTION__, "Rebuilding Menu...", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Rebuilding Menu...', array(), WATCHDOG_INFO);
   menu_rebuild();
-  $context['results'][] = "cache_menu";
+  $context['results'][] = 'cache_menu';
   $context['message'] = st('Menu Caches Cleared');
 }
 
@@ -1524,9 +1648,9 @@ function apigee_install_clear_caches_menu(&$context) {
  * @param $context
  */
 function apigee_install_clear_caches_actions(&$context) {
-  watchdog(__FUNCTION__, "Synchronizing Actions...", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Synchronizing Actions...', array(), WATCHDOG_INFO);
   actions_synchronize();
-  $context['results'][] = "cache_action";
+  $context['results'][] = 'cache_action';
   $context['message'] = st('Action Caches Cleared');
 }
 
@@ -1603,10 +1727,10 @@ function apigee_install_clear_caches_core_page(&$context) {
  * @param $context
  */
 function apigee_install_bootstrap_status(&$context) {
-  watchdog(__FUNCTION__, "Updating bootstrap status...", array(), WATCHDOG_INFO);
+  watchdog(__FUNCTION__, 'Updating bootstrap status...', array(), WATCHDOG_INFO);
   _system_update_bootstrap_status();
   drupal_get_messages();
-  $context['results'][] = "bootstrap_status";
+  $context['results'][] = 'bootstrap_status';
   $context['message'] = st('Bootstrap Status Reset.');
 }
 
@@ -1623,26 +1747,41 @@ function apigee_install_api_endpoint($form, &$form_state) {
   }
   else {
     if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
-      $org = str_replace($_SERVER['PANTHEON_ENVIRONMENT'] . "-", "", $_SERVER['HTTP_HOST']);
-      $org = str_replace(".devportal.apigee.com", "", $org);
+      $org = str_replace($_SERVER['PANTHEON_ENVIRONMENT'] . '-', '', $_SERVER['HTTP_HOST']);
+      $org = str_replace('.devportal.apigee.com', '', $org);
     }
     else {
-      $org = "";
+      $org = '';
     }
   }
   if (isset($_REQUEST['devconnect_endpoint'])) {
     $endpoint = $_REQUEST['devconnect_endpoint'];
   }
   else {
-    $endpoint = "https://api.enterprise.apigee.com/v1";
+    $endpoint = 'https://api.enterprise.apigee.com/v1';
   }
   $attributes = array(
-    "autocomplete" => "off",
-    "autocorrect" => "off",
-    "autocapitalize" => "off",
-    "spellcheck" => "false"
+    'autocomplete' => 'off',
+    'autocorrect' => 'off',
+    'autocapitalize' => 'off',
+    'spellcheck' => 'false'
   );
   $form = array();
+
+  $form['script'] = array(
+    '#type' => 'markup',
+    '#markup' => "<script>function togglePass(a) {
+  var i = a.parentNode.getElementsByTagName('input')[0];
+  if (i.type == 'password') {
+    a.innerHTML = 'Hide password';
+    i.type = 'text';
+  } else {
+    a.innerHTML = 'Show password';
+    i.type = 'password';
+  }
+}</script>"
+  );
+
   $form['org'] = array(
     '#type' => 'textfield',
     '#title' => t('Management API Organization'),
@@ -1674,7 +1813,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#default_value' => '',
     '#description' => t('Password used when authenticating with the endpoint.'),
     '#attributes' => $attributes,
-    '#post_render' => array('apigee_password_post_render')
+    '#post_render' => array('apigee_endpoint_password_post_render'),
   );
   $form['actions'] = array(
     '#weight' => 100,
@@ -1699,8 +1838,8 @@ function apigee_install_api_endpoint($form, &$form_state) {
     ),
 
   );
-  $form['#submit'][] = "apigee_install_api_endpoint_submit";
-  $form['#validate'][] = "apigee_install_api_endpoint_validate";
+  $form['#submit'][] = 'apigee_install_api_endpoint_submit';
+  $form['#validate'][] = 'apigee_install_api_endpoint_validate';
   return $form;
 }
 
@@ -1715,6 +1854,7 @@ function apigee_install_api_endpoint_validate($form, &$form_state) {
   $endpoint = $form_state['values']['endpoint'];
   $user = $form_state['values']['user'];
   $pass = $form_state['values']['pass'];
+  module_load_include('inc', 'devconnect', 'devconnect.admin');
   $return = _devconnect_test_kms_connection($org, $endpoint, $user, $pass);
   if (strpos($return, t('Connection Successful')) === FALSE) { //If connection is not successful
     form_set_error('form', $return);
@@ -1730,6 +1870,14 @@ function apigee_install_api_endpoint_validate($form, &$form_state) {
  */
 function apigee_password_post_render($content, $element) {
   return str_replace('type="text"', 'type="password"', $content);
+}
+
+function apigee_endpoint_password_post_render($content, $element) {
+  $content = str_replace('type="text"', 'type="password"', $content);
+  $toggle = '<a style="font-size:0.75em" href="#" onclick="togglePass(this); return false">Show password</a>';
+  $search = '<div class="description">';
+  $content = str_replace($search, $toggle . $search, $content);
+  return $content;
 }
 
 /**
@@ -1779,18 +1927,18 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
  */
 function apigee_install_settings_form($form, &$form_state, &$install_state) {
   $attributes = array(
-    "autocomplete" => "off",
-    "autocorrect" => "off",
-    "autocapitalize" => "off",
-    "spellcheck" => "false"
+    'autocomplete' => 'off',
+    'autocorrect' => 'off',
+    'autocapitalize' => 'off',
+    'spellcheck' => 'false'
   );
   $form = install_settings_form($form, $form_state, $install_state);
-  $form['settings']['mysql']['database']["#default_value"] = "drops7";
-  $form['settings']['mysql']['username']["#default_value"] = "root";
-  $form['settings']['mysql']['database']["#attributes"] = $attributes;
-  $form['settings']['mysql']['username']["#attributes"] = $attributes;
-  $form['settings']['mysql']['password']["#attributes"] = $attributes;
-  $form['actions']['save']["#validate"][] = "install_settings_form_validate";
+  $form['settings']['mysql']['database']['#default_value'] = 'drops7';
+  $form['settings']['mysql']['username']['#default_value'] = 'root';
+  $form['settings']['mysql']['database']['#attributes'] = $attributes;
+  $form['settings']['mysql']['username']['#attributes'] = $attributes;
+  $form['settings']['mysql']['password']['#attributes'] = $attributes;
+  $form['actions']['save']['#validate'][] = 'install_settings_form_validate';
   return $form;
 }
 
@@ -1833,7 +1981,7 @@ function apigee_generate_make_smartdocs_model($form, &$form_state) {
       'style' => 'float:left;',
     ),
   );
-  $form['#submit'][] = "apigee_generate_make_smartdocs_model_submit";
+  $form['#submit'][] = 'apigee_generate_make_smartdocs_model_submit';
   return $form;
 }
 
@@ -1870,7 +2018,7 @@ function apigee_generate_import_smartdocs_model_content() {
 
   if (isset($GLOBALS['apigee_smartdocs_skip'])) {
     $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
-    if ($endpoint_configured || $GLOBALS['apigee_smartdocs_skip'] == TRUE) {
+    if (!$endpoint_configured || $GLOBALS['apigee_smartdocs_skip']) {
       return;
     }
   }
@@ -1895,7 +2043,7 @@ function apigee_generate_import_smartdocs_model_content() {
   if (empty($model['latestRevisionNumber'])) {
     $entity = array();
     $entity['apiId'] = $model_name;
-    $entity['xml'] = file_get_contents(drupal_get_path('profile', 'apigee') . "/samples/smartdocs/weather.xml");
+    $entity['xml'] = file_get_contents(drupal_get_path('profile', 'apigee') . '/samples/smartdocs/weather.xml');
     $test = $controller->import($entity, 'wadl');
     if (is_array($test)) {
       drupal_set_message($test['message'], 'error');
@@ -1921,7 +2069,8 @@ function apigee_generate_render_smartdocs_model_template() {
   _apigee_manage_memory();
 
   if (isset($GLOBALS['apigee_smartdocs_skip'])) {
-    if ((!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip'] == TRUE)) {
+    $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
+    if (!$endpoint_configured || $GLOBALS['apigee_smartdocs_skip']) {
       return NULL;
     }
   }
@@ -1941,7 +2090,7 @@ function apigee_generate_render_smartdocs_model_content() {
   _apigee_manage_memory();
 
   if (isset($GLOBALS['apigee_smartdocs_skip'])) {
-    if ((!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip'] == TRUE)) {
+    if ((array_key_exists('apigee_api_endpoint_configured', $GLOBALS) && $GLOBALS['apigee_api_endpoint_configured']) || $GLOBALS['apigee_smartdocs_skip']) {
       return NULL;
     }
   }
@@ -1992,10 +2141,10 @@ function apigee_generate_render_smartdocs_model_content() {
  */
 function apigee_install_create_admin_user($form, &$form_state) {
   $attributes = array(
-    "autocomplete" => "off",
-    "autocorrect" => "off",
-    "autocapitalize" => "off",
-    "spellcheck" => "false"
+    'autocomplete' => 'off',
+    'autocorrect' => 'off',
+    'autocapitalize' => 'off',
+    'spellcheck' => 'false'
   );
   $form = array();
   $form['firstname'] = array(
@@ -2062,7 +2211,7 @@ function apigee_install_create_admin_user($form, &$form_state) {
     ),
 
   );
-  $form['#submit'][] = "apigee_install_create_admin_user_submit";
+  $form['#submit'][] = 'apigee_install_create_admin_user_submit';
   return $form;
 }
 
@@ -2199,10 +2348,7 @@ function apigee_install_smtp_credentials($form, &$form_state) {
  */
 function apigee_install_smtp_credentials_submit($form, &$form_state) {
   if (!module_exists('smtp')) {
-    $smtp = array(
-      'smtp'
-    );
-    module_enable($smtp, TRUE);
+    module_enable(array('smtp'), TRUE);
   }
   $values = $form_state['values'];
   // Make the site use SMTP
@@ -2331,4 +2477,18 @@ function apigee_install_create_environmental_indicators(&$context) {
 function _apigee_manage_memory() {
   ini_set('memory_limit', '1024M');
   ini_set('max_execution_time', 300);
+}
+
+/**
+ * Batch process callback to enable the autologout module and set the timeout.
+ * @param array $context
+ */
+function apigee_install_configure_autologout(&$context){
+  if(!module_exists('autologout')){
+    module_enable(array('autologout'), TRUE);
+  }
+  
+  variable_set('autologout_timeout', 3600);
+  
+  $context['message'] = st('Installed and configured autologout module');
 }

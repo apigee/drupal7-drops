@@ -1,7 +1,0 @@
-%drupal7            /var/www/html
-%drupal7_modules    %{drupal7}/modules
-%drupal7_themes     %{drupal7}/themes
-%drupal7_libraries  %{drupal7}/sites/all/libraries
-
-# No-op macro to allow spec compatibility with RPM < 4.9 (no fileattrs)
-%drupal7_find_provides_and_requires %{nil}

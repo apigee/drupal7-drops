@@ -5,7 +5,8 @@
  */
 function xautoload_install() {
   // Set module weight for xautoload to run before other modules.
-  db_query("UPDATE {system} SET weight = -90 WHERE name = 'xautoload' AND type = 'module'");
+  // This has to work in unit tests!
+  xautoload()->system->installSetModuleWeight(-90);
 }
 
 /**
@@ -13,25 +14,6 @@ function xautoload_install() {
  */
 function xautoload_uninstall() {
   variable_del('xautoload_cache_mode');
-}
-
-/**
- * Implements hook_enable()
- */
-function xautoload_enable() {
-  // This could be a process of enabling multiple modules.
-  // The database does not have these other modules as enabled yet.
-  // So we get them from the stack trace.
-  $trace = debug_backtrace(0);
-  if (1
-    && isset($trace[3]['function'])
-    && 'module_enable' === $trace[3]['function']
-    && is_array($trace[3]['args'][0])
-    && !empty($trace[3]['args'][0])
-  ) {
-    $modules = array_unique($trace[3]['args'][0]);
-    xautoload()->extensionRegistrationService->registerExtensionsByName($modules, 'module');
-  }
 }
 
 /**

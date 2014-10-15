@@ -44,12 +44,13 @@ function uuid_term_features_export($data, &$export, $module_name = '') {
   $export['dependencies']['uuid'] = 'uuid';
   $export['dependencies']['uuid_features'] = 'uuid_features';
 
-  foreach ($data as $uuid) {
-    uuid_term_features_get_dependencies($export, $uuid, $module_name);
+  $entity_type = 'taxonomy_term';
+  // Load all the terms at once by their uuid.
+  $terms = entity_uuid_load($entity_type, $data);
 
-    $entity_type = 'taxonomy_term';
-    $term = entity_uuid_load($entity_type, $data);
-    $term = reset($term);
+  foreach ($terms as $term) {
+    uuid_term_features_get_dependencies($export, $term->uuid, $module_name);
+
     $alter_data = &$export;
     $alter_data['__drupal_alter_by_ref']['pipe'] = &$pipe;
     drupal_alter('uuid_entity_features_export', $entity_type, $export, $term, $module_name);
@@ -178,7 +179,7 @@ function uuid_term_features_rebuild($module) {
   taxonomy_features_rebuild($module);
   field_features_rebuild($module);
 
-  $terms = module_invoke($module, 'uuid_features_default_terms');
+  $terms = features_get_default('uuid_term', $module);
   if (!empty($terms)) {
     // Verify that term objects is saved before any references are resolved.
     foreach ($terms as $data) {

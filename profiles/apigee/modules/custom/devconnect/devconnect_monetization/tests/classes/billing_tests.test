@@ -3,7 +3,7 @@
 use Apigee\ManagementAPI\Developer;
 
 class MonetizationBillingTestCases
-  //extends DrupalWebTestCase {
+  // Extends DrupalWebTestCase {
   extends BaseMintTest {
 
   public static function getInfo() {

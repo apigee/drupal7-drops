@@ -1,15 +1,14 @@
 <?php
 
 use Drupal\xautoload\ClassFinder\ClassFinderInterface;
-use Drupal\xautoload\ClassFinder\ExtendedClassFinderInterface;
 use Drupal\xautoload\ClassFinder\InjectedApi\LoadClassGetFileInjectedApi;
 use Drupal\xautoload\ClassFinder\InjectedApi\LoadClassInjectedAPI;
 use Drupal\xautoload\DIC\ServiceContainer;
 use Drupal\xautoload\DIC\ServiceFactory;
-use Drupal\xautoload\DirectoryBehavior\DefaultDirectoryBehavior;
 use Drupal\xautoload\Main;
 
 define('XAUTOLOAD_LIB_DIR', dirname(__FILE__) . '/lib');
+define('XAUTOLOAD_SRC_DIR', dirname(__FILE__) . '/src');
 
 
 // Public API functions.
@@ -60,8 +59,12 @@ function xautoload($key = 'main') {
 // -----------------------------------------------------------------------------
 
 /**
- * Create and register the xautoload class loader.
- * Register the xautoload prefix, but don't register any Drupal-specific stuff yet.
+ * Creates and registers the xautoload class loader.
+ *
+ * Registers the xautoload_ prefix and the Drupal\xautoload\\ namespace, but
+ * does not register any other Drupal-specific stuff yet. This is because this
+ * might be called from settings.php, while some parts of Drupal are not fully
+ * initialized yet.
  */
 function _xautoload_register() {
 
@@ -80,21 +83,14 @@ function _xautoload_register() {
   LoadClassGetFileInjectedApi::forceAutoload();
   \Drupal\xautoload\Util::forceAutoload();
 
-  /**
-   * @var ExtendedClassFinderInterface $finder
-   */
   $finder = xautoload()->finder;
   $finder->register();
 
   // Register the 'Drupal\xautoload\\' namespace.
-  $finder->addPsr4('Drupal\xautoload\\', XAUTOLOAD_LIB_DIR . '/');
+  $finder->addPsr4('Drupal\xautoload\\', XAUTOLOAD_SRC_DIR . '/');
 
-  // Register the "xautoload_" prefix.
-  $finder->getPrefixMap()->registerDeepPath(
-    'xautoload/',
-    __DIR__ . '/legacy/lib/',
-    new DefaultDirectoryBehavior())
-  ;
+  // Register the "xautoload_" prefix for legacy classes.
+  $finder->addPearFlat('xautoload_', __DIR__ . '/legacy/lib/');
 
   // Unregister the temporary loader.
   spl_autoload_unregister('_xautoload_autoload_temp');
@@ -113,7 +109,7 @@ function _xautoload_autoload_temp($name) {
 
   if ('Drupal\xautoload\\' === substr($name, 0, 17)) {
     // PSR-4 case
-    $file = XAUTOLOAD_LIB_DIR . '/' . str_replace('\\', '/', substr($name, 17)) . '.php';
+    $file = XAUTOLOAD_SRC_DIR . '/' . str_replace('\\', '/', substr($name, 17)) . '.php';
     require_once $file;
   }
   elseif ('xautoload_' === substr($name, 0, 10) && FALSE === strpos($name, '\\')) {

@@ -1,7 +1,0 @@
-name = Collection SPS Integration
-description = Integration with the Site Preview System
-package = "Site Preview System"
-core = 7.x
-
-dependencies[] = collection_field
-dependencies[] = sps

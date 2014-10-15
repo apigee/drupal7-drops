@@ -442,7 +442,7 @@ function path_save(&$path) {
     drupal_write_record('url_alias', $path, array('pid'));
     module_invoke_all('path_update', $path);
   }
-  if ($path['original']) {
+  if (!empty($path['original'])) {
     redis_path_backend_get()->deleteAlias($path['original']['source'], $path['original']['alias'], $path['original']['language']);
   }
   redis_path_backend_get()->saveAlias($path['source'], $path['alias'], $path['language']);

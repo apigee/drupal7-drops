@@ -132,7 +132,7 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
     if (!empty($resources)) {
       $form['resources'] = array(
         '#type' => 'fieldset',
-        '#title' => 'Resources',
+        '#title' => t('Resources'),
         '#collapsed' => FALSE,
         '#collapsible' => TRUE,
       );
@@ -265,7 +265,7 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
     }
     $form['methods'] = array(
       '#type' => 'fieldset',
-      '#title' => 'Methods',
+      '#title' => t('Methods'),
       '#collapsed' => FALSE,
       '#collapsible' => TRUE,
     );
@@ -283,13 +283,13 @@ function smartdocs_resource_detail($form, &$form_state, $mid, $rev) {
   } else {
     $form['resources'] = array(
       '#type' => 'fieldset',
-      '#title' => 'Resources',
+      '#title' => t('Resources'),
       '#collapsed' => FALSE,
       '#collapsible' => TRUE,
     );
     $form['methods'] = array(
       '#type' => 'fieldset',
-      '#title' => 'Methods',
+      '#title' => t('Methods'),
       '#collapsed' => FALSE,
       '#collapsible' => TRUE,
     );

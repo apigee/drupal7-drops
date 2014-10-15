@@ -19,7 +19,10 @@ _xautoload_test_3_early_boot_observations('early');
  * Test the current state, and remember it.
  */
 function _xautoload_test_3_early_boot_observations($phase = NULL) {
-  EnvironmentSnapshotMaker::takeSnapshot('xautoload_test_3', $phase, array('Drupal\xautoload_test_3\ExampleClass'));
+  EnvironmentSnapshotMaker::takeSnapshot(
+    'xautoload_test_3',
+    $phase,
+    array('Drupal\xautoload_test_3\ExampleClass'));
 }
 
 /**

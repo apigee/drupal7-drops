@@ -27,11 +27,11 @@
 		<div class="col-sm-12">
 			<?php if ((bool)variable_get('myapis')) { ?>
 				<h2 class="featurette-heading">These are your APIs!
-					<span class="text-muted">Add more, edit or delete them as you like.</span>
+					<span class="text-muted">Explore them!</span>
 				</h2>
 			<?php } else { ?>
 				<h2 class="featurette-heading">These are your apps!
-					<span class="text-muted">Add more, edit or delete them as you like.</span>
+					<span class="text-muted">Explore them!</span>
 				</h2>
 			<?php } ?>
 			<hr>
@@ -98,18 +98,22 @@
 				<?php print l('Analytics', $app['detail_url']); ?>
 			</li>
 		<?php } ?>
+    <?php if(user_access("edit developer apps")){ ?>
 		<li class="hidden-xs apigee-modal-link-edit">
 			<a href="/<?php print $app['edit_url']; ?>" data-toggle="modal" data-target="#<?php print $app['edit_url_id']; ?>">
 				<?php print t('Edit "%n"', array('%n' => $app['app_name'])); ?></a></li>
 		<li class="visible-xs apigee-modal-link-edit">
 			<a href="/<?php print $app['edit_url']; ?>" data-toggle="modal" data-target="#<?php print $app['edit_url_id']; ?>">
 				<?php print t('Edit'); ?></a></li>
+    <?php }?>
+    <?php if(user_access("delete developer apps")){ ?>
 		<li class="hidden-xs apigee-modal-link-delete">
 			<a href="/<?php print $app['delete_url']; ?>" data-toggle="modal" data-target="#<?php print $app['delete_url_id']; ?>">
 				<?php print t('Delete "%n"', array('%n' => $app['app_name'])); ?></a></li>
 		<li class="visible-xs apigee-modal-link-delete">
 			<a href="/<?php print $app['delete_url']; ?>" data-toggle="modal" data-target="#<?php print $app['delete_url_id']; ?>">
 				<?php print t('Delete'); ?></a></li>
+    <?php }?>
 	</ul>
 	<!-- Delete Modal -->
 	<div class="modal fade" id="<?php print $app['edit_url_id']; ?>" tabindex="-1">
@@ -323,11 +327,11 @@
 		<div class="col-sm-12">
 			<?php if ((bool)variable_get('myapis')) { ?>
 				<h2 class="featurette-heading">These are your APIs!
-					<span class="text-muted">Add more, edit or delete them as you like.</span>
+					<span class="text-muted">Explore them!</span>
 				</h2>
 			<?php } else { ?>
 				<h2 class="featurette-heading">These are your apps!
-					<span class="text-muted">Add more, edit or delete them as you like.</span>
+					<span class="text-muted">Explore them!</span>
 				</h2>
 			<?php } ?>
 		</div>

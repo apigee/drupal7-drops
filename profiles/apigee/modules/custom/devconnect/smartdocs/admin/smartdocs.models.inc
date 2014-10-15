@@ -423,17 +423,18 @@ function smartdocs_import_model_validate($form, &$form_state) {
     case 'swagger':
       if (isset($form_state['values']['swagger_model_import'])) {
         if (!(filter_var($form_state['values']['swagger_model_import'], FILTER_VALIDATE_URL))) {
-          form_set_error('swagger_model_import', 'The swagger URL is not a valid URL.');
+          form_set_error('swagger_model_import', 'The Swagger URL is not a valid URL.');
         }
       }
       break;
     default:
-      $wadl_type = (array_key_exists('wadl_type', $form_state['values']) ? $form_state['values']['wadl_type'] : NULL);
-      switch($wadl_type) {
+      $format = $form_state['values']['type'] == "apigee_json"? "SmartDocs JSON": "WADL";
+      $upload_type = (array_key_exists('upload_type', $form_state['values']) ? $form_state['values']['upload_type'] : NULL);
+      switch($upload_type) {
         case 'path':
-          if (isset($form_state['values']['wadl_path_model_import'])) {
-            if (!(filter_var($form_state['values']['wadl_path_model_import'], FILTER_VALIDATE_URL))) {
-              form_set_error('wadl_path_model_import', 'The WADL URL is not a valid URL.');
+          if (isset($form_state['values']['path_model_import'])) {
+            if (!(filter_var($form_state['values']['path_model_import'], FILTER_VALIDATE_URL))) {
+              form_set_error('path_model_import', "The $format URL is not a valid URL.");
             }
           }
           break;

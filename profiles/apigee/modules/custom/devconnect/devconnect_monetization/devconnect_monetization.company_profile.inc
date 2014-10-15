@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Company methods.
+ */
+
 use Apigee\Mint\DeveloperBalance;
 use Apigee\Mint\Provider;
 use Apigee\Util\CacheFactory;
@@ -799,7 +804,7 @@ function devconnect_monetization_user_remove_from_company($uid, \Apigee\Mint\Dev
     $me = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
     drupal_goto("users/$me/monetization/company/developers");
   } catch (Exception $e) {
-    drupal_set_message($e->getMessage(), 'error');
+    drupal_set_message(t("Error: %error", array('%error' => $e->getMessage())), 'error');
     if (!isset($child_entity)) {
       $child_entity = entity_load_single('user', $uid);
     }

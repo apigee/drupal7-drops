@@ -11,7 +11,7 @@ use Drupal\xautoload\Adapter\ClassFinderAdapter;
  * stuff.
  *
  * Most of the methods here are deprecated. You should use the methods inherited
- * from xautoload_Adapter_ClassFinderAdapter instead.
+ * from the base class, LocalDirectoryAdapter, instead.
  */
 class xautoload_InjectedAPI_hookXautoload extends LocalDirectoryAdapter {
 
@@ -21,9 +21,21 @@ class xautoload_InjectedAPI_hookXautoload extends LocalDirectoryAdapter {
   protected $finder;
 
   /**
+   * @param ExtendedClassFinderInterface $finder
+   *   The class finder object.
+   * @param string $localDirectory
+   *
+   * @return self
+   */
+  static function create($finder, $localDirectory) {
+    $adapter = ClassFinderAdapter::create($finder);
+    return new self($adapter, $localDirectory);
+  }
+
+  /**
    * @param ClassFinderAdapter $adapter
    *   The class finder object.
-   * @param string $localDirectory ;
+   * @param string $localDirectory
    */
   function __construct($adapter, $localDirectory) {
     parent::__construct($adapter, $localDirectory);
@@ -149,11 +161,7 @@ class xautoload_InjectedAPI_hookXautoload extends LocalDirectoryAdapter {
    * @param boolean $relative
    *   Whether or not the path is relative to the current extension dir.
    */
-  function namespaceDeep(
-    $namespace,
-    $namespace_deep_dir = NULL,
-    $relative = TRUE
-  ) {
+  function namespaceDeep($namespace, $namespace_deep_dir = NULL, $relative = TRUE) {
     $namespace_deep_dir = $this->processDir($namespace_deep_dir, $relative);
     $this->finder->registerNamespaceDeep($namespace, $namespace_deep_dir);
   }
@@ -226,6 +234,8 @@ class xautoload_InjectedAPI_hookXautoload extends LocalDirectoryAdapter {
 
   /**
    * Explicitly set the base for relative paths.
+   *
+   * Alias for LocalDirectoryAdapter::setLocalDirectory()
    *
    * @param string $dir
    *   New relative base path.

@@ -1,20 +1,20 @@
 <?php foreach ($products as $product): ?>
   <?php $price_points = $product->getPricePoints(); ?>
   <?php if (!empty($price_points)): ?>
-    <strong>Price Points for <?php echo $product->getDisplayName(); ?></strong>
-    <br>
-    <br>
+    <strong><?php print t('Price Points for @product', array('@product' => $product->getDisplayName())); ?></strong>
+    <br />
+    <br />
     <div class="table-responsive">
       <table class="table table-bordered">
         <thead>
         <tr>
-          <th>Operator</th>
-          <th>Country</th>
-          <th>Currency</th>
-          <th>Min Gross</th>
-          <th>Max Gross</th>
-          <th>Min Net</th>
-          <th>Max Net</th>
+          <th><?php print t('Operator'); ?></th>
+          <th><?php print t('Country'); ?></th>
+          <th><?php print t('Currency'); ?></th>
+          <th><?php print t('Min Gross'); ?></th>
+          <th><?php print t('Max Gross'); ?></th>
+          <th><?php print t('Min Net'); ?></th>
+          <th><?php print t('Max Net'); ?></th>
         </tr>
         </thead>
         <tbody>

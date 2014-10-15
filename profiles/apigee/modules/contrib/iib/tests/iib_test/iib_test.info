@@ -1,6 +1,0 @@
-name = IIB Test
-description = Used for IIB tests, does not need to be manually enabled.
-core = 7.x
-package = Site Preview System
-
-dependencies[] = iib

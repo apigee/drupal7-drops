@@ -143,7 +143,7 @@ function uuid_panelizer_features_revert($module) {
  * Rebuilds users based on UUID from code defaults.
  */
 function uuid_panelizer_features_rebuild($module) {
-  $panelizer_entity_displays = module_invoke($module, 'uuid_features_default_panelizer');
+  $panelizer_entity_displays = features_get_default('uuid_panelizer', $module);
 
   if (!empty($panelizer_entity_displays)) {
     foreach ($panelizer_entity_displays as $display) {

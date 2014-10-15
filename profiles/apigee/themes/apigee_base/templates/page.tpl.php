@@ -1,47 +1,7 @@
-<?php global $user; $current_path = implode("/", arg()); ?>
-<header id="navbar" role="banner" class="navbar navbar-fixed-top">
-  <div class="navbar-inner">
-    <div class="container">
-
-      <?php if ($logo): ?>
-        <a class="brand" href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>">
-          <img src="<?php print $logo; ?>" alt="<?php print t('Home'); ?>" />
-        </a>
-      <?php endif; ?>
-
-      <div class="nav-collapse">
-        <nav role="navigation">
-          <?php if ($primary_nav): ?>
-            <?php print $primary_nav; ?>
-          <?php endif; ?>
-        </nav>
-      </div>
-
-    </div>
-  </div>
-</header>
-
+<?php print render($page['header']); ?>
 <div class="master-container">
-  <!-- Header -->
-  <header role="banner" id="page-header">
-    <?php print render($page['header']); ?>
-  </header>
-
-  <!-- Breadcrumbs -->
-  <div id="breadcrumb-navbar">
-    <div class="container">
-      <div class="row">
-        <div class="span19">
-        <?php if ($breadcrumb): print $breadcrumb; endif;?>
-        </div>
-        <div class="span5 pull-right">
-        <?php if ($search): ?>
-          <?php if ($search): print render($search); endif; ?>
-        <?php endif; ?>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Breadcrumb -->
+  <?php print render($page['breadcrumb']); ?>
 
   <!-- Title -->
   <?php if ($title): ?>
@@ -100,15 +60,8 @@
   </div>
 </div>
 
-<!-- Footer  -->
-<footer class="footer">
-  <div class="footer-inner">
-    <div class="container">
-      <?php print render($page['footer']); ?>
-    </div>
-  </div>
-</footer>
+<!-- Bottom region with menu -->
+<?php print render($page['bottom']); ?>
 
-
-
-
+<!-- Footer with copyright statement -->
+<?php print render($page['footer']); ?>

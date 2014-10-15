@@ -1,8 +1,0 @@
-name = Collection Field
-description = A Field to attach a collection to an entity
-package = Administration
-core = 7.x
-
-dependencies[] = collection
-
-files[] = tests/*.test

@@ -72,6 +72,8 @@ function uuid_commerce_product_features_export_render($module, $data) {
   $code[] = '  $products = array();';
   $code[] = '';
   $product_ids = entity_get_id_by_uuid('commerce_product', $data);
+  // Always sort by the uuid to ensure the order is maintained.
+  ksort($product_ids);
   foreach ($product_ids as $uuid => $product_id) {
     // Only export the node if it exists.
     if ($product_id === FALSE) {
@@ -135,7 +137,7 @@ function uuid_commerce_product_features_rebuild($module) {
     uuid_term_features_rebuild($module);
   }
 
-  $products = module_invoke($module, 'uuid_features_default_commerce_product');
+  $products = features_get_default('uuid_commerce_product', $module);
   if (!empty($products)) {
     $return = uuid_commerce_product_features_rebuild_products($products, $module);
     $entity_type = 'commerce_product';

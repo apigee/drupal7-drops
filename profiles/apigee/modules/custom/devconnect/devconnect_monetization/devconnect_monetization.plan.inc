@@ -1,9 +1,11 @@
 <?php
+
 /**
  * @file
  * Code to manage monetization plans.
  *
  */
+
 use Apigee\Mint\Developer;
 use Apigee\Mint\DeveloperRatePlan;
 use Apigee\Mint\Exceptions\MintApiException;
@@ -203,6 +205,15 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     $form['plan_options']['#options'][$plan_id] = $plan->getDisplayName();
   }
 
+  // This logic is taken from rate-plan-from.js, used to tell if this is a purchase
+  // or cancel action.
+  if($plans['active_plan_id'] == null || $plans['active_plan_ends_today'] == TRUE) {
+    $plan_action = DEVCONNECT_MONETIZATION_PLAN_ACTION_PURCHASE;
+  }
+  else {
+    $plan_action = DEVCONNECT_MONETIZATION_PLAN_ACTION_CANCEL;
+  }
+
   $form['visible_form'] = array(
     'start_date' => array(
       '#title_display' => 'invisible',
@@ -223,13 +234,17 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
         '#value' => t('End This Plan'),
       ),
     ),
+    'plan_action' => array(
+      '#type' => 'hidden',
+      '#value' => $plan_action,
+    ),
     '#prefix' => '<div class="purchase-plan well">'
     . '<h3><span id="action_title_wrapper"></span>&nbsp;<span id="plan_name_wrapper"></span></h3>'
-    . '<p class="purchase">Any API products contained within this package will be available after the start date of your plan.</p>'
-    . '<p class="cancel">Ending a plan will result in loss of access to the API Products contained within this plan. All keys will be revoked to these API Products upon the end selected below.</p>'
+    . '<p class="purchase">'. t('Any API products contained within this package will be available after the start date of your plan.') . '</p>'
+    . '<p class="cancel">'. t('Ending a plan will result in loss of access to the API Products contained within this plan. All keys will be revoked to these API Products upon the end selected below.') . '</p>'
     . '<br/>'
-    . '<strong class="purchase">Select a start date for this plan</strong>'
-    . '<strong class="cancel">Select an end date</strong>'
+    . '<strong class="purchase">' . t('Select a start date for this plan') . '</strong>'
+    . '<strong class="cancel">' . t('Select an end date') . '</strong>'
     . '<br/>',
     '#suffix' => '</div>',
   );
@@ -254,8 +269,8 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     'active_plan_end_date'   => isset($plans['active_plan_end_date']) ? $plans['active_plan_end_date']->format('Y-m-d') : NULL,
     'active_plan_ends_today' => $plans['active_plan_ends_today'],
     'action_title_wrapper' => array(
-      'cancel' => 'End',
-      'purchase' => 'Purchase',
+      'cancel' => t('End'),
+      'purchase' => t('Purchase'),
     ),
     'select_date_tip' => array(
       'cancel' => t('Select an end date...'),
@@ -284,14 +299,14 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
 function devconnect_monetization_purchase_plan_form_validate(&$form, &$form_state) {
   // Make sure start date when purchasing a plan or end date when ending a plan
   // is not empty and is a valid date.
-  if ($form_state['values']['op'] == 'Purchase This Plan') {
+  if ($form_state['values']['plan_action'] == DEVCONNECT_MONETIZATION_PLAN_ACTION_PURCHASE) {
     $start_date = strtotime($form_state['values']['start_date']);
     if ($start_date === FALSE) {
       form_set_error('start_date', t('Invalid or blank start date. Please select a start date for this plan.'));
     }
   }
   else {
-    if ($form_state['values']['op'] == 'End This Plan') {
+    if ($form_state['values']['plan_action']  == DEVCONNECT_MONETIZATION_PLAN_ACTION_CANCEL) {
       $end_date = strtotime($form_state['values']['start_date']);
       if ($end_date === FALSE) {
         form_set_error('start_date', t('Invalid or blank end date. Please select an end date to end this plan.'));

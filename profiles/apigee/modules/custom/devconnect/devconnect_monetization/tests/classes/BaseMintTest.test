@@ -9,7 +9,7 @@ class BaseMintTest extends DrupalWebTestCase {
     module_load_include('module', 'devconnect');
     devconnect_init();
 
-    // The following line could conceivably throw an Exception
+    // The following line could conceivably throw an Exception.
     $config = devconnect_get_org_settings();
     $org = $config['org'];
     $endpoint = $config['endpoint'];

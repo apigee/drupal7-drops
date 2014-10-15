@@ -1,2 +1,0 @@
-#!/bin/sh
-wget -O - -q http://localhost/cron.php

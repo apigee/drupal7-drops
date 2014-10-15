@@ -376,6 +376,61 @@ items that are too long to process won't be released back and forth but will
 block the thread processing it instead. This is the only side effect I am
 aware of at the current time.
 
+Failover, sharding and partionning
+==================================
+
+Important notice
+----------------
+
+There are numerous support and feature request issues about client sharding,
+failover ability, multi-server connection, ability to read from slave and
+server clustering opened in the issue queue. Note that there is not one
+universally efficient solution for this: most of the solutions require that
+you cannot use the MULTI/EXEC command using more than one key, and that you
+cannot use complex UNION and intersection features anymore.
+
+This module does not implement any kind of client side key hashing or sharding
+and never intended to; We recommend that you read the official Redis
+documentation page about partionning.
+
+The best solution for clustering and sharding today seems to be the proxy
+assisted partionning using tools such as Twemproxy.
+
+Current components state
+------------------------
+
+As of now, provided components are simple enough so they never use WATCH or
+MULTI/EXEC transaction blocks on multiple keys : this means that you can use
+them in an environment doing data sharding/partionning.
+
+Lock
+----
+
+Lock backend works on a single key per lock, it theorically guarantees the
+atomicity of operations therefore is usable in a sharded environement. Note
+that this is still untested as of now. Feedback is welcome.
+
+Path
+----
+
+Path backend does not use on transactions, it is safe to use in a sharded
+environment. Note that this backend uses a single HASH key per language
+and per way (alias to source or source to alias) and therefore won't benefit
+greatly if not at all from being sharded.
+
+Cache
+-----
+
+Cache uses pipelined transactions but does not uses it to guarantee any kind
+of data consistency. If you use a smart sharding proxy it is supposed to work
+transparently without any hickups.
+
+Queue
+-----
+
+Queue is still in development. There might be problems in the long term for
+this component in sharded environments.
+
 Testing
 =======
 

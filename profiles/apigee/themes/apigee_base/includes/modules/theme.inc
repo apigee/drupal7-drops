@@ -61,7 +61,7 @@ function apigee_base_css_alter(&$css) {
     }
   }
 }
-
+ 
 
 /**
  * Implements hook_js_alter().
@@ -120,7 +120,7 @@ function apigee_base_theme_get_info($setting_name, $theme = NULL) {
  * the core implementation does not, and displays child menu links in a
  * dropdown.
  */
-function apigee_base_links($variables) {
+function apigee_base_apigee_base_links($variables) {
   $links = $variables['links'];
   $attributes = $variables['attributes'];
   $heading = $variables['heading'];
@@ -131,7 +131,7 @@ function apigee_base_links($variables) {
   if (count($links) > 0) {
     $output = '';
     $output .= '<ul' . drupal_attributes($attributes) . '>';
-
+    
     // Treat the heading first if it is present to prepend it to the
     // list of links.
     if (!empty($heading)) {
@@ -140,7 +140,7 @@ function apigee_base_links($variables) {
         // is a string.
         $heading = array(
           'text' => $heading,
-          // Set the default level of the heading.
+          // Set the default level of the heading. 
           'level' => 'li',
         );
       }
@@ -153,10 +153,9 @@ function apigee_base_links($variables) {
 
     $num_links = count($links);
     $i = 1;
-
+  
     foreach ($links as $key => $link) {
       $children = array();
-
       if (isset($link['below'])) {
         $children = $link['below'];
       }
@@ -170,8 +169,7 @@ function apigee_base_links($variables) {
       if ($i == $num_links) {
         $attributes['class'][] = 'last';
       }
-      if (isset($link['href']) && ($link['href'] == $_GET['q'] || ($link['href'] == '<front>' && drupal_is_front_page()))
-        && (empty($link['language']) || $link['language']->language == $language_url->language)) {
+      if (isset($link['href']) && ($link['href'] == $_GET['q'] || ($link['href'] == '<front>' && drupal_is_front_page())) && (empty($link['language']) || $link['language']->language == $language_url->language)) {
         $attributes['class'][] = 'active';
       }
 
@@ -185,23 +183,18 @@ function apigee_base_links($variables) {
         $link['attributes'] = array();
       }
 
-      $link['attributes'] = array_merge($link['attributes'], $attributes);
-
-      if (count($children) > 0) {
-        $link['attributes']['class'][] = 'dropdown';
-      }
-
-      $output .= '<li' . drupal_attributes($attributes) . '>';
+      $class = (count($children) > 0) ? 'dropdown' : NULL;
+      $output .= '<li' . drupal_attributes(array('class' => array($class))) . '>';
 
       if (isset($link['href'])) {
         if (count($children) > 0) {
           $link['html'] = TRUE;
-          $link['title'] .= ' <span class="caret"></span>';
-          $output .=  '<a' . drupal_attributes($link['attributes']) . ' href="#">'. $link['title'] .'</a>';
+          $link['title'] .= '<b class="caret"></b>';
+          $output .=  '<a' . drupal_attributes($link['attributes']) . ' href="#">' . $link['title'] . '</a>';
         }
-        else {
-          // Pass in $link as $options, they share the same keys.
-          $output .= l($link['title'], $link['href'], $link);
+        else{
+        // Pass in $link as $options, they share the same keys.
+         $output .= l($link['title'], $link['href'], $link);
         }
       }
       elseif (!empty($link['title'])) {
@@ -209,7 +202,6 @@ function apigee_base_links($variables) {
         if (empty($link['html'])) {
           $link['title'] = check_plain($link['title']);
         }
-
         $span_attributes = '';
         if (isset($link['attributes'])) {
           $span_attributes = drupal_attributes($link['attributes']);
@@ -219,7 +211,7 @@ function apigee_base_links($variables) {
 
       $i++;
 
-      if(count($children) > 0) {
+      if (count($children) > 0) {
         $attributes = array();
         $attributes['class'] = array('dropdown-menu');
 

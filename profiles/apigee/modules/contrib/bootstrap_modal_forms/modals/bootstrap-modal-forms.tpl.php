@@ -19,7 +19,7 @@ $label_element = ($version == 2 ? 'h3' : 'h4');
 <?php endif; ?>
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <<?php print $label_element; ?> id="<?php print $identifier; ?>Label"<?php if ($version == 3) { print ' class="modal-title"'; }?>><?php print $header; ?></<?php print $label_element?>
+    <<?php print $label_element; ?> id="<?php print $identifier; ?>Label"<?php if ($version == 3) { print ' class="modal-title"'; }?>><?php print $header; ?></<?php print $label_element?>>
   </div>
   <div class="modal-body">
     <?php print render($modal_form); ?>

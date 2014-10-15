@@ -11,13 +11,13 @@
 <table>
   <thead>
   <tr>
-    <th>Package</th>
-    <th>Products</th>
-    <th>Plan</th>
-    <th>Start Date</th>
-    <th>End Date</th>
-    <th>Renewal Date</th>
-    <th>Actions</th>
+      <th><?php print t('Package'); ?></th>
+      <th><?php print t('Products'); ?></th>
+      <th><?php print t('Plan'); ?></th>
+      <th><?php print t('Start Date'); ?></th>
+      <th><?php print t('End Date'); ?></th>
+      <th><?php print t('Renewal Date'); ?></th>
+      <th><?php print t('Actions'); ?></th>
   </tr>
   </thead>
   <tbody>

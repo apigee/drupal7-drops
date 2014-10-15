@@ -1,4 +1,0 @@
-<?php
-function file_entity_link_uninstall() {
-  variable_del('file_entity_link_settings');
-}

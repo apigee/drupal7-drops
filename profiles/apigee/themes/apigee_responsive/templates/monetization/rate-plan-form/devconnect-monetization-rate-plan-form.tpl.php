@@ -8,11 +8,11 @@
  */
 $form = $variables['form'];
 ?>
-<a href="/users/me/monetization/packages" class="back-to-catalog">Back to Catalog</a>
+<a href="/users/me/monetization/packages" class="back-to-catalog"><?php print t('Back to Catalog'); ?></a>
 <?php if (isset($form['#active_plan'])): ?>
 <span class="active-plan well"><strong>Active Plan:</strong>&nbsp;<?php print $form['#active_plan']; ?></span>
 <?php endif; ?>
-<h3>Package Name:&nbsp;<?php print $form['#package_name']; ?></h3>
+<h3><?php print t('Package Name: @package_name', array('@package_name' => $form['#package_name'])); ?></h3>
 <hr>
 
 <?php print drupal_render($form['product_list']); ?>

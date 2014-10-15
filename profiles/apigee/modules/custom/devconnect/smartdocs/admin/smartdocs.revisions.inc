@@ -323,7 +323,7 @@ function smartdocs_revision_auth($form, &$form_state, $mid, $rev) {
   foreach ($form_state['num_tokens'] as $uuid => $params) {
     if (is_array($params) && isset($params['name'])) {
       $form['token']['tokenMap'][$uuid] = array(
-        '#title' => t('Default Token Value #' . ($i + 1) . '(optional)'),
+        '#title' => t('Default Token Value #@num (optional)', array('@num' => ($i + 1))),
         '#type' => 'fieldset',
         '#collapsed' => FALSE,
         '#collapsible' => TRUE,

@@ -4,7 +4,7 @@
  * Implements hook_form_FORM_ID_alter()
  * with FORM_ID = "system_performance_settings"
  */
-function xautoload_form_system_performance_settings_alter(&$form, $form_state) {
+function xautoload_form_system_performance_settings_alter(&$form) {
 
   $form['xautoload'] = array(
     '#type' => 'fieldset',
@@ -13,19 +13,25 @@ function xautoload_form_system_performance_settings_alter(&$form, $form_state) {
 
   $cache_status = array(
     'apc' => (extension_loaded('apc') && function_exists('apc_store')),
+    'apcu' => (extension_loaded('apcu') && function_exists('apcu_store')),
     'wincache' => (extension_loaded('WinCache') && function_exists('wincache_ucache_get')),
     'xcache' => (extension_loaded('Xcache') && function_exists('xcache_get')),
+    'dbcache' => TRUE,
   );
   $cache_names = array(
     'apc' => 'APC',
+    'apcu' => 'APCu',
     'wincache' => 'WinCache',
     'xcache' => 'XCache',
+    'dbcache' => 'Smart database cache (experimental)',
   );
   $options = array();
   foreach ($cache_names as $key => $title) {
     $options[$key] = t('@cache_name (@status)', array(
       '@cache_name' => $title,
-      '@status' => $cache_status[$key] ? t('Running and available') : t('Not currently available'),
+      '@status' => $cache_status[$key]
+        ? t('Running and available')
+        : t('Not currently available'),
     ));
   }
 

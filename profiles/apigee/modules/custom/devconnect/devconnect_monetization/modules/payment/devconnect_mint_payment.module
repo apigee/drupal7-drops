@@ -6,7 +6,6 @@ use Apigee\Mint\Organization as Organization;
 use Apigee\Exceptions\ResponseException;
 
 /**
- *
  * Implement callback_submit_form
  *
  * This forms is shown to the user when they select the payment provider.
@@ -219,13 +218,13 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
     $response = json_decode($exception->getMessage());
     watchdog('devconnect_mint_payment', "Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription), WATCHDOG_EMERGENCY);
 
-    drupal_set_message('The WorldPay payment gateway is currently not available. Please select a different payment system or try again later.', 'error');
+    drupal_set_message(t('The WorldPay payment gateway is currently not available. Please select a different payment system or try again later.'), 'error');
     // Send the customer to the previous step of the checkout process, Worldpay is not working.
     commerce_payment_redirect_pane_previous_page($order, t("Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription)));
     drupal_goto(commerce_checkout_order_uri($order));
   }
   if (is_object($payment) && !$payment->getSuccess()) {
-    drupal_set_message('Could not create payment order. If problem persists please contact your administrator.', 'warning');
+    drupal_set_message(t('Could not create payment order. If problem persists please contact your administrator.'), 'warning');
     watchdog('devconnect_mint_payment', "Could not create payment order: @message", array('@message' => '<pre>' . print_r($payment, TRUE) . '</pre>'), WATCHDOG_WARNING);
     drupal_goto('<front>');
   }

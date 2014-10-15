@@ -13,7 +13,7 @@
 >
   <testsuites>
     <testsuite name="XAutoload Test Suite">
-      <directory>./tests/lib</directory>
+      <directory>./tests/src</directory>
     </testsuite>
   </testsuites>
 </phpunit>

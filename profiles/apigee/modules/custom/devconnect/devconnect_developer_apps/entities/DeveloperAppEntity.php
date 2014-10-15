@@ -150,7 +150,7 @@ class DeveloperAppEntity {
    *
    * Returns TRUE if successful, else FALSE.
    *
-   * @param $status
+   * @param mixed $status
    * @return bool
    */
   public function setKeyStatus($status) {
@@ -164,6 +164,56 @@ class DeveloperAppEntity {
         $this->$key = $value;
       }
     }
+  }
+
+  /**
+   * Returns a named attribute, if it exists; else returns null.
+   *
+   * @param string $name
+   * @return string|null
+   */
+  public function getAttribute($name) {
+    if (array_key_exists($name, $this->attributes)) {
+      return $this->attributes[$name];
+    }
+    return NULL;
+  }
+
+  /**
+   * Returns a named credential attribute, if it exists; else returns null.
+   *
+   * @param string $name
+   * @return string|null
+   */
+  public function getCredentialAttribute($name) {
+    if (array_key_exists($name, $this->credentialAttributes)) {
+      return $this->credentialAttributes[$name];
+    }
+    return NULL;
+  }
+
+  /**
+   * Deletes a named attribute from the app. Returns TRUE if successful, else
+   * FALSE. If Edge SDK is not recent enough to support this functionality,
+   * FALSE will consistently be returned.
+   *
+   * @param string $name
+   * @return bool
+   */
+  public function deleteAttribute($name) {
+    return \DeveloperAppController::deleteAttribute($this, $name);
+  }
+
+  /**
+   * Deletes a named attribute from the credential. Returns TRUE if successful,
+   * else FALSE. If Edge SDK is not recent enough to support this
+   * functionality, FALSE will consistently be returned.
+   *
+   * @param string $name
+   * @return bool
+   */
+  public function deleteCredentialAttribute($name) {
+    return \DeveloperAppController::deleteCredentialAttribute($this, $name);
   }
 
 }

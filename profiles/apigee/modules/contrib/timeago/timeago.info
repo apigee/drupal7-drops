@@ -1,7 +1,0 @@
-name = Timeago
-description = "Converts dynamic timetamps to a 'time ago' format using jQuery with graceful degredation."
-core = 7.x
-configure = admin/config/user-interface/timeago
-
-files[] = timeago.install
-files[] = timeago.module

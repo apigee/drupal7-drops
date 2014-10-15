@@ -16,9 +16,9 @@ dependencies[] = entity
 dependencies[] = ctools
 package = Bean
 
-; Information added by  packaging script on 2013-11-29
-version = "7.x-1.7"
+; Information added by Drupal.org packaging script on 2014-10-02
+version = "7.x-1.8"
 core = "7.x"
 project = "bean"
-datestamp = "1385749410"
+datestamp = "1412260740"
 

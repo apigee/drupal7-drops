@@ -265,9 +265,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $config->subscribers = array();
       }
 
-      if (isset($conditions['mail']) && empty($ids)) {
+      if (array_key_exists('mail', $conditions) && empty($ids)) {
         $dev_app = new DeveloperApp($config, $conditions['mail']);
-        if (isset($conditions['name'])) {
+        if (array_key_exists('name', $conditions)) {
           try {
             $dev_app->load($conditions['name']);
             $list += array($dev_app);
@@ -323,10 +323,11 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
 
     $uids = array();
     foreach ($list as $dev_app) {
-      /** @var Apigee\ManagementAPI\DeveloperApp $dev_app */
-      $email = $dev_app->getDeveloperMail();
-      if (!array_key_exists($email, $uids)) {
-        $uids[strtolower($email)] = NULL;
+      if ($dev_app instanceof Apigee\ManagementAPI\DeveloperApp) {
+        $email = $dev_app->getDeveloperMail();
+        if (!array_key_exists($email, $uids)) {
+          $uids[strtolower($email)] = NULL;
+        }
       }
     }
 
@@ -343,12 +344,14 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     $app_entities = array();
     $include_debug_data = (count($list) == 1);
     foreach ($list as $dev_app) {
-      $id = $dev_app->getAppId();
-      $mail = strtolower($dev_app->getDeveloperMail());
-      $array = $dev_app->toArray($include_debug_data);
-      $array['orgName'] = $dev_app->getConfig()->orgName;
-      $array['uid'] = (isset($uids[$mail]) ? $uids[$mail] : NULL);
-      $app_entities[$id] = new DeveloperAppEntity($array);
+      if ($dev_app instanceof Apigee\ManagementAPI\DeveloperApp) {
+        $id = $dev_app->getAppId();
+        $mail = strtolower($dev_app->getDeveloperMail());
+        $array = $dev_app->toArray($include_debug_data);
+        $array['orgName'] = $dev_app->getConfig()->orgName;
+        $array['uid'] = (isset($uids[$mail]) ? $uids[$mail] : NULL);
+        $app_entities[$id] = new DeveloperAppEntity($array);
+      }
     }
     return $app_entities;
   }
@@ -364,12 +367,86 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    */
   public static function setKeyStatus(DeveloperAppEntity &$entity, $status) {
     try {
+      $da = self::getAppFromEntity($entity);
+      if ($da) {
+        $da->setKeyStatus($status);
+        $entity = new DeveloperAppEntity($da->toArray());
+        return TRUE;
+      }
+      return FALSE;
+    } catch (ParameterException $e) {
+      return FALSE;
+    } catch (ResponseException $e) {
+      return FALSE;
+    }
+  }
+
+  /**
+   * Deletes a named attribute from an app. Returns TRUE if successful, else
+   * FALSE. Note that if the Edge SDK is not recent enough, this functionality
+   * may be missing; in such a case, FALSE will consistently be returned.
+   *
+   * @param DeveloperAppEntity $entity
+   * @param string $attr_name
+   * @return bool
+   */
+  public static function deleteAttribute(DeveloperAppEntity &$entity, $attr_name) {
+    if (!method_exists('Apigee\ManagementAPI\DeveloperApp', 'deleteAttribute')) {
+      return FALSE;
+    }
+    try {
+      $da = self::getAppFromEntity($entity);
+      if ($da) {
+        $success = $da->deleteAttribute($attr_name);
+        if ($success) {
+          $entity = new DeveloperAppEntity($da->toArray());
+        }
+        return TRUE;
+      }
+      return FALSE;
+    } catch (ParameterException $e) {
+      return FALSE;
+    } catch (ResponseException $e) {
+      return FALSE;
+    }
+  }
+
+  /**
+   * Deletes a named attribute from an app's credential. Returns TRUE if
+   * successful, else FALSE. Note that if the Edge SDK is not recent enough,
+   * this functionality may be missing; in such a case, FALSE will consistently
+   * be returned.
+   *
+   * @param DeveloperAppEntity $entity
+   * @param string $attr_name
+   * @return bool
+   */
+  public static function deleteCredentialAttribute(DeveloperAppEntity &$entity, $attr_name) {
+    if (!method_exists('Apigee\ManagementAPI\DeveloperApp', 'deleteCredentialAttribute')) {
+      return FALSE;
+    }
+    try {
+      $da = self::getAppFromEntity($entity);
+      if ($da) {
+        $success = $da->deleteCredentialAttribute($attr_name);
+        if ($success) {
+          $entity = new DeveloperAppEntity($da->toArray());
+        }
+        return TRUE;
+      }
+      return FALSE;
+    } catch (ParameterException $e) {
+      return FALSE;
+    } catch (ResponseException $e) {
+      return FALSE;
+    }
+  }
+  private static function &getAppFromEntity(DeveloperAppEntity $entity) {
+    try {
       $config = self::getConfig($entity);
       $da = new DeveloperApp($config, $entity->developer);
-      $da->fromArray((array)$entity);
-      $da->setKeyStatus($status);
-      $entity = new DeveloperAppEntity($da->toArray());
-      return TRUE;
+      $da->fromArray((array) $entity);
+      return $da;
     } catch (ParameterException $e) {
       return FALSE;
     } catch (ResponseException $e) {

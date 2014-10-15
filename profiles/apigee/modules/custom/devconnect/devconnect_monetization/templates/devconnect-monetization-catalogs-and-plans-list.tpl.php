@@ -4,9 +4,11 @@
  * Displays Packagaes and Purchased plans.
  *
  * Available vars:
- *   $was_plan_purchased - Indicates if the user is landing here right after purchasing a Plan
+ *   $was_plan_purchased - Indicates if the user is landing here right
+ *      after purchasing a Plan.
  *   $packages - An array of available packages for the user to purchase Plan(s)
- *   $purchased_plans - Array of associative key/value of Plans info in which the user has purchased a Plan(s)
+ *   $purchased_plans - Array of associative key/value of Plans info in which
+ *    the user has purchased a Plan(s).
  *     package - string package display name
  *     package_id - string package id
  *     products - string product names the plan owns
@@ -19,8 +21,8 @@
 <table>
   <thead>
     <tr>
-      <th>Package Name</th>
-      <th>Products</th>
+        <th><?php print t('Package Name'); ?></th>
+        <th><?php print t('Products'); ?></th>
     </tr>
   </thead>
   <tbody>

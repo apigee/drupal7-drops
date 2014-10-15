@@ -1,5 +1,12 @@
 Current API VERSION: 5.
 
+Bean 7.x-1.8, 2014-10-02
+---------------------------
+#2175309 by jeffam: Added Block add/edit pages can still use site theme when an admin theme is enabled.
+#2148923 by codeamatic, nielsdefeyter, lahode: Fixed Unable to translate bean blocks.
+#2201503 by jlyon, sherakama | ibotvinn: Fixed Block cache not flushed after editing a bean.
+#2337555 by catch: Add static caching to bean_load_delta().
+
 Bean 7.x-1.7, 2013-11-29
 ---------------------------
 #2145333 by chris.jichen: Fixed misspelling of entity_access in views plugin

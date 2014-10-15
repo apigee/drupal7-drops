@@ -4,7 +4,6 @@ namespace Drupal\xautoload\Tests;
 
 use Drupal\xautoload\ClassFinder\ClassFinder;
 use Drupal\xautoload\ClassFinder\InjectedApi\CollectFilesInjectedApi;
-use Drupal\xautoload\ClassLoader\AbstractCachedClassLoader;
 use Drupal\xautoload\ClassLoader\ClassLoaderInterface;
 use Drupal\xautoload\Util;
 

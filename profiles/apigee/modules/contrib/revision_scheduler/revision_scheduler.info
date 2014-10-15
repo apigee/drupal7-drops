@@ -1,4 +1,0 @@
-name = Revision operation scheduler
-description = Schedule operations of node revisions for future dates.
-core = 7.x
-dependencies[] = date_popup

@@ -9,13 +9,13 @@
         <div class="field-items">
           <div class="field-item even">
             <div class="addressfield-container-inline name-block">
-              <div class="name-block">Order Number: <?php print $order->order_number; ?></div>
+              <div class="name-block"><?php print t('Order Number: @order_number', array('@order_number' => $order->order_number));?></div>
             </div>
             <div class="addressfield-container-inline name-block">
-              <div class="name-block">API Provider: <?php print $api_provider; ?></div>
+              <div class="name-block"><?php print t('API Provider: @api_provider', array('@api_provider' => $api_provider)); ?></div>
             </div>
             <div class="addressfield-container-inline name-block">
-              <div class="name-block">Amount: <?php print commerce_currency_format($order->commerce_order_total[LANGUAGE_NONE][0]['amount'], $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code']); ?></div>
+              <div class="name-block"><?php print t('Amount: @amount', array('@amount' => commerce_currency_format($order->commerce_order_total[LANGUAGE_NONE][0]['amount'], $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code']))); ?></div>
             </div>
           </div>
         </div>

@@ -163,7 +163,7 @@ function hook_devconnect_developer_app_delete(array $results, array &$form_state
  *   May be one of the following: list, detail, delete, edit
  * @param mixed $arg1
  *   If $op is 'list', 'detail' or 'edit', this is a reference to the $user object.
- *   If $op is 'edit', this is a reference to the $u
+ *   If $op is 'edit', this is a reference to the $user object.
  *   Otherwise this is NULL
  * @param mixed $arg2
  *   If $op is 'edit', this is the app id (if set)

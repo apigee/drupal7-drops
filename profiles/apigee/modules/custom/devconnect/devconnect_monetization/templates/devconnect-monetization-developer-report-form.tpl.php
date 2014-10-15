@@ -3,13 +3,13 @@ $form = $variables['form'];
 ?>
 <div id="create-report">
   <div class="intro">
-    <p>Choose the following parameters below to generate a revenue report.</p>
+      <p><?php print t('Choose the following parameters below to generate a revenue report.'); ?></p>
   </div>
  <div class="report-section">
-    <h3>Date Range</h3>
+      <h3><?php print t('Date Range'); ?></h3>
     <div class="row">
       <div class="span8">
-        <p>Select a date range option.</p>
+          <p><?php print t('Select a date range option.'); ?></p>
       </div>
       <div class="span16">
         <?php print drupal_render($form['start_date']); ?>
@@ -18,10 +18,10 @@ $form = $variables['form'];
     </div>
   </div>
   <div class="report-section">
-    <h3>Reporting Level</h3>
+      <h3><?php print t('Reporting Level'); ?></h3>
     <div class="row">
       <div class="span8">
-        <p>Choose a Summary or Detailed report.</p>
+          <p><?php print t('Choose a Summary or Detailed report.'); ?></p>
       </div>
       <div class="span16">
         <?php print drupal_render($form['reporting_level']); ?>
@@ -30,10 +30,10 @@ $form = $variables['form'];
   </div>
   <?php if ($form['currency']['#type'] == 'radios'): ?>
   <div class="report-section">
-    <h3>Currency</h3>
+        <h3><?php print t('Currency'); ?></h3>
     <div class="row">
       <div class="span8">
-        <p>Select the currency in which to display<br>transactions in this report.</p>
+        <p><?php print t('Select the currency in which to display<br/>transactions in this report.'); ?></p>
       </div>
       <div class="span16">
         <?php print drupal_render($form['currency']); ?>

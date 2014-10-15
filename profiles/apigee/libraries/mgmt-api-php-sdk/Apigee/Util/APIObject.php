@@ -141,11 +141,16 @@ class APIObject
     {
         $start = microtime(true);
         $this->responseCode = 0;
-        $request->setAuth($this->config->user, $this->config->pass);
+        if (!empty($this->config->referer)) {
+            $request->setHeader('Referer', $this->config->referer);
+        }
+        // Get snapshot of request headers before adding auth.
+        $request_headers = $request->getRawHeaders();
+        $request->setAuth($this->config->user, $this->config->pass, $this->config->auth);
+        $request_headers .= "\r\nAuthorization: " . ucfirst($this->config->auth) . ' [**masked**]';
         try {
             $response = $request->send();
-        } // catch ClientErrorResponseException, ServerErrorResponseException
-        catch (\Guzzle\Http\Exception\BadResponseException $e) {
+        } catch (\Guzzle\Http\Exception\BadResponseException $e) {
             $response = $e->getResponse();
         } catch (\Guzzle\Http\Exception\CurlException $e) {
             // Timeouts etc.
@@ -154,26 +159,26 @@ class APIObject
             DebugData::$code_status = $e->getError();
             DebugData::$code_class = 0;
             DebugData::$exception = $e->getMessage();
-            DebugData::$opts = array('request_headers' => $request->getRawHeaders());
+            DebugData::$opts = array('request_headers' => $request_headers);
             DebugData::$data = null;
             $exception = new ResponseException($e->getError(), $e->getErrorNo(), $request->getUrl(), DebugData::$opts);
             $exception->requestObj = $request;
-          // Log Exception
-          $headers_array = $request->getHeaders();
-          unset($headers_array['Authorization']);
-          $header_string = "";
-          foreach ($headers_array as $value) {
-            $header_string .= $value->getName() . ': ' . $value . " ";
-          }
-          self::$logger->emergency('{code_status} ({code}) Request Details:[ {r_method} {r_resource} {r_scheme} {r_headers} ]',
-            array(
-              'code' => $e->getErrorNo(),
-              'code_status' => $e->getError(),
-              'r_method' => $request->getUrl(),
-              'r_resource' =>  $request->getRawHeaders(),
-              'r_scheme' => strtoupper(str_replace('https', 'http', $request->getScheme())) . $request->getProtocolVersion(),
-              'r_headers' => $header_string,
-            ));
+            // Log Exception
+            $headers_array = $request->getHeaders();
+            unset($headers_array['Authorization']);
+            $header_string = "";
+            foreach ($headers_array as $value) {
+                $header_string .= $value->getName() . ': ' . $value . " ";
+            }
+            $log_params = array(
+                'code' => $e->getErrorNo(),
+                'code_status' => $e->getError(),
+                'r_method' => $request->getUrl(),
+                'r_resource' =>  $request->getRawHeaders(),
+                'r_scheme' => strtoupper(str_replace('https', 'http', $request->getScheme())) . $request->getProtocolVersion(),
+                'r_headers' => $header_string,
+            );
+            self::$logger->emergency('{code_status} ({code}) Request Details:[ {r_method} {r_resource} {r_scheme} {r_headers} ]', $log_params);
             throw $exception;
         }
         $this->responseCode = $response->getStatusCode();
@@ -194,7 +199,7 @@ class APIObject
 
         DebugData::$raw = $this->responseText;
         DebugData::$opts = array(
-            'request_headers' => $request->getRawHeaders(),
+            'request_headers' => $request_headers,
             'response_headers' => $response->getRawHeaders()
         );
 

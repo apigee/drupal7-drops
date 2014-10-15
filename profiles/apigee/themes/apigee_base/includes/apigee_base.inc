@@ -12,15 +12,11 @@ function apigee_base_menu_navigation_links($tree, $lvl = 0) {
       if ($item['link']['hidden']) {
         continue;
       }
-      $new_item = array(
-        'title' => $item['link']['title'],
-        'link_path' => $item['link']['link_path'],
-        'href' => $item['link']['href']
-      );
+      $new_item = array('title' => $item['link']['title'], 'link_path' => $item['link']['link_path'], 'href' => $item['link']['href']);
 
-      // Don't do drugs and don't do any levels deeper than 1
+      // Dont do drugs and don't do any levels deeper then 1
       if ($lvl < 1) {
-        $new_item['below'] = apigee_base_menu_navigation_links($item['below'], $lvl + 1);
+        $new_item['below'] = apigee_base_menu_navigation_links($item['below'], $lvl+1);
       }
 
       $result['menu-' . $item['link']['mlid']] = $new_item;
@@ -48,7 +44,7 @@ function apigee_base_preprocess_apigee_base_btn_dropdown(&$variables) {
     $variables['links'] = theme('links', array(
       'links' => $variables['links'],
       'attributes' => array(
-        'class' => array('dropdown-menu'),
+      'class' => array('dropdown-menu'),
       ),
     ));
   }
@@ -68,14 +64,14 @@ function apigee_base_apigee_base_btn_dropdown($variables) {
   // Start markup
   $output = '<div' . drupal_attributes($variables['attributes']) . '>';
 
-  // Add as string if it's not a link
+  // Ad as string if its not a link
   if (is_array($variables['label'])) {
-    $output .= l($variables['label']['title'], $variables['label']['href'], $variables['label']);
+    $output .= l($variables['label']['title'], $$variables['label']['href'], $variables['label']);
   }
 
   $output .= '<a class="btn' . $type_class . ' dropdown-toggle" data-toggle="dropdown" href="#">';
 
-  // It's a link so create one
+  // Its a link so create one
   if (is_string($variables['label'])) {
     $output .= check_plain($variables['label']);
   }

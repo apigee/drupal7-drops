@@ -592,7 +592,7 @@
   });
 
   // Underscore methods that we want to implement on the Model.
-  var modelMethods = ['keys', 'values', 'pairs', 'invert', 'pick', 'omit', 'chain'];
+  var modelMethods = ['keys', 'values', 'pairs', 'invert', 'pick', 'omit', 'chain', 'isEmpty'];
 
   // Mix in each Underscore method as a proxy to `Model#attributes`.
   _.each(modelMethods, function(method) {
@@ -760,8 +760,10 @@
 
       // Unless silenced, it's time to fire all appropriate add/sort events.
       if (!options.silent) {
+        var addOpts = at != null ? _.clone(options) : options;
         for (var i = 0, length = toAdd.length; i < length; i++) {
-          (model = toAdd[i]).trigger('add', model, this, options);
+          if (at != null) addOpts.index = at + i;
+          (model = toAdd[i]).trigger('add', model, this, addOpts);
         }
         if (sort || (order && order.length)) this.trigger('sort', this, options);
       }
@@ -775,7 +777,7 @@
     // any granular `add` or `remove` events. Fires `reset` when finished.
     // Useful for bulk operations and optimizations.
     reset: function(models, options) {
-      options || (options = {});
+      options = options ? _.clone(options) : {};
       for (var i = 0, length = this.models.length; i < length; i++) {
         this._removeReference(this.models[i], options);
       }
@@ -824,6 +826,7 @@
 
     // Get the model at the given index.
     at: function(index) {
+      if (index < 0) index += this.length;
       return this.models[index];
     },
 

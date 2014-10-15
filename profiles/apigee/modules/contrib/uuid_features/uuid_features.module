@@ -37,12 +37,13 @@ function uuid_features_include() {
  * Implements hook_menu().
  */
 function uuid_features_menu() {
-  $items['admin/config/content/uuid_features'] = array(
+  $items['admin/structure/features/uuid_features'] = array(
     'access arguments' => array('administer site configuration'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('uuid_features_settings'),
-    'title' => 'UUID Features Integration',
+    'title' => 'UUID Export Settings',
     'description' => 'Configure the settings for UUID Features Integration.',
+    'weight' => 20,
   );
   return $items;
 }
@@ -59,6 +60,7 @@ function uuid_features_entity_info_alter(&$entity_info) {
     'taxonomy_term',
     'fieldable_panels_pane',
     'commerce_product',
+    'field_collection_item',
   );
   if (module_exists('file_entity')) {
     $entity_types[] = 'file';
@@ -308,13 +310,13 @@ function uuid_features_settings($form, &$form_state) {
         '#type' => 'checkboxes',
         '#title' => t('Exportable @label bundles', array('@label' => $info['label'])),
         '#default_value' => variable_get('uuid_features_entity_' . $type, array()),
-        '#options' => $bundles[$type],
+        '#options' => isset($bundles[$type]) ? $bundles[$type] : array(),
       );
       $form['file']['uuid_features_file_' . $type] = array(
         '#type' => 'checkboxes',
         '#title' => t('Files exported for @label bundles', array('@label' => $info['label'])),
         '#default_value' => variable_get('uuid_features_file_' . $type, array()),
-        '#options' => $bundles[$type],
+        '#options' => isset($bundles[$type]) ? $bundles[$type] : array(),
       );
     }
   }
@@ -723,8 +725,9 @@ function _uuid_features_file_field_import_file(&$file) {
  *   A filtered list of fields of the same type.
  */
 function uuid_features_get_field_items_iterator(&$export, $entity_type, $field_type) {
-  $fields = field_info_instances($entity_type, isset($export->type) ? $export->type : NULL);
-  if (!isset($export->type)) {
+  list($entity_id, $revision_id, $export_bundle) = entity_extract_ids($entity_type, $export);
+  $fields = field_info_instances($entity_type, $export_bundle);
+  if (!isset($export_bundle)) {
     $fields = reset($fields);
   }
   $return = array();
@@ -827,5 +830,25 @@ function uuid_features_fetch_uuid_references(&$fields, $entity_type, $map) {
         }
       }
     }
+  }
+}
+
+// As it's quite likely someone else will build this as well, create it
+// conditionally.
+if (!function_exists('entity_load_single_by_uuid')) {
+  /**
+   * Loads a single local entity by it's uuid.
+   *
+   * @param string $entity_type
+   *   The entity type.
+   * @param string $uuid
+   *   The uuid of the entity.
+   *
+   * @return object|FALSE
+   *   The entity or FALSE on failure.
+   */
+  function entity_load_single_by_uuid($entity_type, $uuid) {
+    $entity_id = current(entity_get_id_by_uuid($entity_type, array($uuid)));
+    return entity_load_single($entity_type, $entity_id);
   }
 }

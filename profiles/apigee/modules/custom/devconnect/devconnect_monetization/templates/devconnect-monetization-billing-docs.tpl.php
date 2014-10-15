@@ -2,7 +2,8 @@
 /**
  * Variables:
  *   $billing_documents_form Search and Filter form
- *   $billing_documents collection of object of type Apigee\Mint\BillingDocuements
+ *   $billing_documents collection of object of type
+ *    Apigee\Mint\BillingDocuements
  */
 ?>
 <div class="row">
@@ -11,11 +12,11 @@
 <table>
   <thead>
     <tr>
-      <th>Document Type</th>
-      <th>Reference</th>
-      <th>Products</th>
-      <th>Received Date</th>
-      <th>Download</th>
+      <th><?php print t('Document Type'); ?></th>
+      <th><?php print t('Reference'); ?></th>
+      <th><?php print t('Products'); ?></th>
+      <th><?php print t('Received Date'); ?></th>
+      <th><?php print t('Download'); ?></th>
     </tr>
   </thead>
   <tbody>

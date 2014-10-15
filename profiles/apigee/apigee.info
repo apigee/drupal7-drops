@@ -97,4 +97,5 @@ dependencies[] = views
 dependencies[] = views_ui
 dependencies[] = admin_views
 dependencies[] = webform
+dependencies[] = wysiwyg_filter
 

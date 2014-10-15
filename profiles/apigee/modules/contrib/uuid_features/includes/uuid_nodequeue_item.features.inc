@@ -106,7 +106,7 @@ function uuid_nodequeue_item_features_revert($module) {
  * Implements hook_features_rebuild().
  */
 function uuid_nodequeue_item_features_rebuild($module) {
-  $nodequeue_items = module_invoke($module, 'uuid_features_default_nodequeue_items');
+  $nodequeue_items = features_get_default('uuid_nodequeue_item', $module);
   if (!empty($nodequeue_items)) {
     foreach ($nodequeue_items as $nodequeue_item) {
       $queue = nodequeue_load_queue_by_name($nodequeue_item['queue_name']);
