@@ -388,33 +388,3 @@ function devconnect_update_projects_alter(&$projects) {
     unset($projects['jquery_update']);
   }
 }
-
-/**
- * Implements hook_theme_registry_alter().
- *
- * On Pantheon systems, register a preprocess callback for the status report.
- *
- * @param $theme_registry
- */
-function devconnect_theme_registry_alter(&$theme_registry) {
-  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && !module_exists('update')) {
-    $theme_registry['status_report']['preprocess functions'][] = 'devconnect_preprocess_status_report';
-  }
-}
-
-/**
- * Preprocess callback for status report.
- *
- * On Pantheon systems in which the Update module has not been explicitly
- * enabled, suppress the update-isn't-turned-on warning.
- *
- * @param $variables
- */
-function devconnect_preprocess_status_report(&$variables) {
-  foreach (array_keys($variables['requirements']) as $key) {
-    if ($variables['requirements'][$key]['title'] == t('Update notifications') && $variables['requirements'][$key]['severity'] == 1) {
-      unset($variables['requirements'][$key]);
-      break;
-    }
-  }
-}

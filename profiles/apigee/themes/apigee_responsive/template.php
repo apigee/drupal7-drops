@@ -366,8 +366,13 @@ function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
           unset($form['github_links']);
         }
       }
-      if (isset($form['userpasswordlink'])) {
-        $form['userpasswordlink']['#prefix'] = '<br>';
+      foreach ($form as $key => $name) {
+        if (strpos($key, 'openid') !== false) {
+          unset($form[$key]);
+          if (isset($form['userpasswordlink'])) {
+            $form['userpasswordlink']['#prefix'] = '<br>';
+          }
+        }
       }
       break;
     case 'devconnect_developer_app_list':

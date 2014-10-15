@@ -265,9 +265,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $config->subscribers = array();
       }
 
-      if (array_key_exists('mail', $conditions) && empty($ids)) {
+      if (isset($conditions['mail']) && empty($ids)) {
         $dev_app = new DeveloperApp($config, $conditions['mail']);
-        if (array_key_exists('name', $conditions)) {
+        if (isset($conditions['name'])) {
           try {
             $dev_app->load($conditions['name']);
             $list += array($dev_app);

@@ -105,22 +105,10 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#default_value' => $default_api_product,
   );
 
-  $form['cache'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Cache settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE
-  );
-  $form['cache']['devconnect_api_product_cache_enable'] = array(
+  $form['apiproduct']['devconnect_api_product_cache_enable'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable the API Product cache. <em>Unchecking this box will degrade performance. Do not disable the cache on a production instance.</em>'),
     '#default_value' => variable_get('devconnect_api_product_cache_enable', 1),
-    '#return_value' => 1,
-  );
-  $form['cache']['devconnect_developer_apps_cache_cron'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Rebuild API Product and Developer App caches every time cron runs.'),
-    '#default_value' => variable_get('devconnect_developer_apps_cache_cron', 1),
     '#return_value' => 1,
   );
 

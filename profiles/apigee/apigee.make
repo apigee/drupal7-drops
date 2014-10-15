@@ -59,6 +59,9 @@ projects[captcha][subdir] = "contrib"
 projects[cck_phone][type] = "module"
 projects[cck_phone][subdir] = "contrib"
 
+projects[chart][type] = "module"
+projects[chart][subdir] = "contrib"
+
 projects[ckeditor][type] = "module"
 projects[ckeditor][subdir] = "contrib"
 
@@ -102,6 +105,9 @@ projects[context_condition_theme][subdir] = "contrib"
 
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
+
+projects[date][type] = "module"
+projects[date][subdir] = "contrib"
 
 projects[devel][type] = "module"
 projects[devel][subdir] = "contrib"
@@ -178,6 +184,9 @@ projects[highcharts][subdir] = "contrib"
 
 projects[http_client][type] = "module"
 projects[http_client][subdir] = "contrib"
+
+projects[i18n][type] = "module"
+projects[i18n][subdir] = "contrib"
 
 projects[jquery_colorpicker][type] = "module"
 projects[jquery_colorpicker][subdir] = "contrib"
@@ -342,9 +351,6 @@ projects[views_slideshow][subdir] = "contrib"
 
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-
-projects[wysiwyg_filter][type] = "module"
-projects[wysiwyg_filter][subdir] = "contrib"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
