@@ -1,6 +1,13 @@
 .clearfix {
   clear: both;
 }
+.admin-menu .navbar-fixed-top {
+  position: fixed;
+  top: 26px;
+  right: 0;
+  left: 0;
+  z-index: 500;
+}
 #admin-menu {
   height: 26px;
   position: fixed;
@@ -39,14 +46,17 @@ table tr.error {
   font-weight: 600;
 }
 /* Homepage */
+.page-header {
+  margin-bottom: 0px;
+}
 .master-container {
-  background: #FFFFFF;
+  background: #f9f9f9;
   height: 100%;
   min-height: 100%;
 }
 .page-content {
   background: none repeat scroll 0 0 #FFFFFF;
-  /*border-bottom: 1px solid #E8E8E8;*/
+  border-bottom: 1px solid #E8E8E8;
   padding: 40px 0px 80px;
 }
 .not-front .page-content {
@@ -123,29 +133,26 @@ section#comments ul.links.inline li {
   margin: 0;
   padding: 0;
 }
-/* footer */
 
-#footer .menu.nav li:first-child {
-margin-left: 130px;
+/* Search box */
+#navbar .navbar-search .form-text{
+  border: 1px solid #a02d20;
+  background: #C53827 url("../images/search.png") no-repeat 171px 4px;
+  text-shadow: none;
+  width: 160px;
+  -webkit-border-radius: 14px;
+  -moz-border-radius: 14px;
+  border-radius: 14px;
+  transition: background-color 0.25s;
+  -moz-transition: background-color 0.25s;
+  -webkit-transition: background-color 0.25s;
+  -o-transition: background-color 0.25s;
+}
+#navbar .navbar-search .form-text:focus {
+  background-color: #fff;
+/*  border-color: #666;*/
 }
 
-#footer .span13 {
-width: 610px;
+.navbar-search .search-query:-moz-placeholder{
+  color: #e8afa9;
 }
-
-#footer #block-menu-menu-footer {
-margin-top: 6px;
-height: 42px;
-}
-
-/* DEVCHAN-152 */
-body.toolbar .navbar-fixed-top {
-    top:auto;
-}
-
-body.admin-menu .navbar-fixed-top {
-    top:0px;
-}
-
-/* from Marketing site */
-

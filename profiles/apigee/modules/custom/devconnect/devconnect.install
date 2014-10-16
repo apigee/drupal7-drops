@@ -72,6 +72,7 @@ function devconnect_requirements($phase) {
     $user = $config['user'];
     $pass = $config['pass'];
 
+    module_load_include('inc', 'devconnect', 'devconnect.admin');
     if ($pass && _devconnect_test_kms_connection($org, $endpoint, $user, $pass)) {
       $requirements['devconnect_connection'] = array(
         'severity' => REQUIREMENT_OK,

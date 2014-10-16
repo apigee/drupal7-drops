@@ -8,9 +8,7 @@ include_once($theme_path . '/includes/modules/menu.inc');
 include_once($theme_path . '/includes/modules/views.inc');
 
 /**
- * Implements hook_theme()
- *
- * @return array
+ * hook_theme()
  */
 function apigee_base_theme() {
   return array(
@@ -20,26 +18,7 @@ function apigee_base_theme() {
     'apigee_base_btn_dropdown' => array(
       'variables' => array('links' => array(), 'attributes' => array(), 'type' => NULL),
     ),
-    'menu_tree_top_main' => array(
-      'render element' => 'tree',
-    ),
   );
-}
-
-/**
- * Advanced menu theming function. Supports attributes.
- */
-function apigee_base_menu_tree_top_main(&$variables) {
-  $output = '';
-  $tree = $variables['tree'];
-
-  if (isset($tree['#attributes'])) {
-    $attributes = $tree['#attributes'];
-  }
-  // Add the default menu class.
-  $attributes['class'][] = 'menu';
-  $output .= '<ul ' . drupal_attributes($attributes) . '>' . $tree['#children'] . '</ul>';
-  return $output;
 }
 
 /**
@@ -47,31 +26,22 @@ function apigee_base_menu_tree_top_main(&$variables) {
  *
  * @see system_elements()
  * @see html.tpl.php
- *
- * @param array
  */
 function apigee_base_preprocess_html(&$variables) {
    // Try to load the library, if the apigee_base_ui module is in use.
   if (module_exists('apigee_base_ui')) {
-    $library = libraries_load('apigee_base', 'minified');
-  }
-  if (!theme_get_setting('toggle_secondary_menu') || !menu_secondary_menu()) {
-    $variables['classes_array'][] = 'no-subnav';
-  }
-  $variables['shiv'] = '<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>';
-  if ($_SERVER['HTTPS'] == 'on') {
-    $variables['shiv'] = '<script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>';
+    libraries_load('apigee_base', 'minified');
   }
 }
 
 /**
  * Override theme_breadrumb().
+ *
  */
 function apigee_base_breadcrumb($variables) {
   if (!theme_get_setting('toggle_breadcrumbs')) {
-    return;
+    return '';
   }
-
 
   $breadcrumb = $variables['breadcrumb'];
 
@@ -86,6 +56,7 @@ function apigee_base_breadcrumb($variables) {
     $output .= '<div class="breadcrumb">' . implode(' &nbsp;/&nbsp; ', $breadcrumb) . '</div>';
     return $output;
   }
+  return '';
 }
 
 /**
@@ -150,8 +121,8 @@ function apigee_base_preprocess_comment(&$variables) {
 
   if ($variables['comment_author'] > 0) {
     $author_details = user_load($variables['comment_author']);
-    $variables['author_first_name'] = $author_details->field_first_name[LANG][0]['safe_value'];
-    $variables['author_last_name'] = $author_details->field_last_name['und'][0]['safe_value'];
+    $variables['author_first_name'] = $author_details->field_first_name[LANGUAGE_NONE][0]['safe_value'];
+    $variables['author_last_name'] = $author_details->field_last_name[LANGUAGE_NONE][0]['safe_value'];
     $variables['author_email'] = check_plain($author_details->mail);
   }
   else {
@@ -178,22 +149,6 @@ function apigee_base_preprocess_block(&$variables, $hook) {
  * @see page.tpl.php
  */
 function apigee_base_preprocess_page(&$variables) {
-
-  $variables['user_reg_setting'] = variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL);
-
-  if (module_exists('apachesolr')) {
-    // todo: $searchTerm is undefined, so this parameter will always be empty
-    $search = drupal_get_form('search_form', NULL, (isset($searchTerm) ? $searchTerm : ''));
-    $search['basic']['keys']['#size'] = 20;
-    $search['basic']['keys']['#title'] = '';
-    unset($search['#attributes']);
-    //$search['#action'] = base_path() . 'search/site'; // breaks apachesolr searching
-    $search_form = drupal_render($search);
-    $find = array('type="submit"', 'type="text"');
-    $replace = array('type="hidden"', 'type="search" placeholder="search" autocapitalize="off" autocorrect="off"');
-    $vars['search_form'] = str_replace($find, $replace, $search_form);
-  }
-
   // Add information about the number of sidebars.
   if (!empty($variables['page']['sidebar_first']) && !empty($variables['page']['sidebar_second'])) {
     $variables['columns'] = 3;
@@ -208,11 +163,24 @@ function apigee_base_preprocess_page(&$variables) {
     $variables['columns'] = 1;
   }
 
-  // Custom Search
-  $variables['search'] = FALSE;
-  if (theme_get_setting('toggle_search') && module_exists('search')) {
-    $variables['search'] = drupal_get_form('search_form');
+  // Primary nav
+  $variables['primary_nav'] = FALSE;
+  if ($variables['main_menu']) {
+    // Build links
+    $variables['primary_nav'] = menu_tree(variable_get('menu_main_links_source', 'main-menu'));
+    // Provide default theme wrapper function
+    $variables['primary_nav']['#theme_wrappers'] = array('menu_tree__primary');
   }
+
+  // Secondary nav
+  $variables['secondary_nav'] = FALSE;
+  if ($variables['secondary_menu']) {
+    // Build links
+    $variables['secondary_nav'] = menu_tree(variable_get('menu_secondary_links_source', 'user-menu'));
+    // Provide default theme wrapper function
+    $variables['secondary_nav']['#theme_wrappers'] = array('menu_tree__secondary');
+  }
+
 }
 
 /**
@@ -297,6 +265,7 @@ function apigee_base_pager($variables) {
   $li_previous = theme('pager_previous', array('text' => (isset($tags[1]) ? $tags[1] : t('‹ previous')), 'element' => $element, 'interval' => 1, 'parameters' => $parameters));
   $li_next = theme('pager_next', array('text' => (isset($tags[3]) ? $tags[3] : t('next ›')), 'element' => $element, 'interval' => 1, 'parameters' => $parameters));
   $li_last = theme('pager_last', array('text' => (isset($tags[4]) ? $tags[4] : t('last »')), 'element' => $element, 'parameters' => $parameters));
+  $items = array();
 
   if ($pager_total[$element] > 1) {
     if ($li_first) {
@@ -350,6 +319,10 @@ function apigee_base_pager($variables) {
       );
     }
 
+    if (empty($items)) {
+      return '';
+    }
+
     return '<div class="pagination">' . theme('item_list', array(
       'items' => $items,
       // pager class is used for rounded, bubbly boxes in Bootstrap
@@ -378,12 +351,6 @@ function apigee_base_preprocess($vars, $hook) {
   }
 }
 
-/**
- * Implements hook_form_FORM_ID_alter() for search_form.
- *
- * @param array $form
- * @param array $form_state
- */
 function apigee_base_form_search_form_alter(&$form, &$form_state) {
   $form['#attributes']['class'][] = 'navbar-search';
   $form['#attributes']['class'][] = 'pull-right';
@@ -410,149 +377,13 @@ function apigee_base_form_search_form_alter(&$form, &$form_state) {
   }
 }
 
-/**
- * Implements hook_form_FORM_ID_alter() for search_block_form.
- *
- * @param array $form
- * @param array $form_state
- */
-function apigee_base_form_search_block_form_alter(&$form, &$form_state) {
-  $default_search = variable_get('search_default_module', 'site');
-  if ($default_search == 'apachesolr_search') {
-    $default_search = 'site';
-  }
-  if ($default_search == 'site') {
-    $form['#submit'] = array('apigee_base_search_form_submit');
-  }
-}
-
-/**
- * Custom submit handler for search_form and search_block_form.
- *
- * @param array $form
- * @param array $form_state
- */
 function apigee_base_search_form_submit($form, &$form_state) {
-  if (array_key_exists('keys', $form_state['values'])) {
-    $keys = $form_state['values']['keys'];
-  }
-  elseif (array_key_exists('search_block_form', $form_state['values'])) {
-    $keys = $form_state['values']['search_block_form'];
-  }
-  if (!empty($keys)) {
+  if (!empty($form_state['values']['keys'])) {
     $default_search = variable_get('search_default_module', 'site');
     if ($default_search == 'apachesolr_search') {
       $default_search = 'site';
     }
-    $form_state['redirect'] = 'search/' . $default_search . '/' . $keys;
+    $form_state['redirect'] = 'search/' . $default_search . '/' . $form_state['values']['keys'];
   }
-}
-
-/**
- * Implements hook_page_alter().
- *
- * Add specific regions even if they are empty so region templates are included.
- */
-function apigee_base_page_alter(&$page) {
-  // List of regions.
-  $regions = array('header', 'footer', 'bottom', 'breadcrumb', 'title_region');
-
-  foreach ($regions as $region) {
-    if (!isset($page[$region])) {
-      $page[$region] = array(
-        '#sorted' => TRUE,
-        '#markup' => '',
-        '#theme_wrappers' => array('region'),
-        '#region' => $region,
-      );
-    }
-  }
-}
-
-/**
- * Process function for page.tpl template.
- *
- * Save statically all variables passed to page template as we need to
- * pass them to regions.
- */
-function apigee_base_process_page(&$vars) {
-  $static_variables = &drupal_static(__FUNCTION__);
-  $static_variables = $vars;
-}
-
-/**
- * Process function for region.tpl template.
- *
- * Passthrough variables from page template.
- */
-function apigee_base_process_region(&$vars) {
-  $page_variables = drupal_static('apigee_base_process_page');
-
-  switch ($vars['region']) {
-
-    case 'header':
-
-      foreach (array('logo', 'front_page', 'main_menu', 'secondary_menu', 'search') as $key) {
-        $vars[$key] = '';
-        if (isset($page_variables[$key])) {
-          $vars[$key] = $page_variables[$key];
-        }
-      }
-
-      // Logo Link
-      if (theme_get_setting('logo_link_href')) {
-        $vars['logo_link'] = theme_get_setting('logo_link_href');
-      } else {
-        $vars['logo_link'] = $page_variables['front_page'];
-      }
-
-      global $base_url;
-      $current_path = urlencode($base_url . '/' . request_path());
-      $vars['show_sign_up'] = theme_get_setting('toggle_sign_up');
-      $vars['show_sign_in'] = theme_get_setting('toggle_sign_in');
-      if ($vars['show_sign_up']) {
-        $vars['sign_up_url'] = variable_get("sign_up_url", '/about/sign-up?origin=' . $current_path);
-      }
-      if ($vars['show_sign_in']) {
-        $vars['sign_in_url'] = variable_get("sign_in_url", '/about/sign-in?origin=' . $current_path);
-      }
-      break;
-
-    case 'breadcrumb':
-      $vars['content'] = $page_variables['breadcrumb'];
-      $vars['classes'] = '';
-      if (empty($vars['secondary_menu'])) {
-        $vars['classes'] = 'no-top-padding';
-      }
-      break;
-
-    case 'title_region':
-      $vars['content'] = $page_variables['title'];
-      $vars['region_theme_hook_suggestions'] = $page_variables['theme_hook_suggestions'];
-      foreach (array('title_prefix', 'title_suffix') as $key) {
-        $vars[$key] = '';
-        if (isset($page_variables[$key])) {
-          $vars[$key] = $page_variables[$key];
-        }
-      }
-      break;
-  }
-}
-
-/**
- * Preprocessor for search result.
- *
- * Strips hostname from result URL before display, to prevent edit.apigee.net from showing up.
- *
- * @param array $variables
- */
-function apigee_preprocess_search_result(&$variables) {
-  $replacements = array(
-    'http://edit.apigee.net/' => '//apigee.com/',
-    'https://edit.apigee.net/' => '//apigee.com/',
-    'http://blog.edit.apigee.net/' => '//blog.apigee.com/',
-    'https://blog.edit.apigee.net/' => '//blog.apigee.com/'
-  );  
-  $variables['url'] = strtr($variables['url'], $replacements);
 }
 

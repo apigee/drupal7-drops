@@ -1,5 +1,5 @@
 name = Apigee Base Theme
-description = A custom base theme built using Twitter Bootstrap
+description = A custom DevConnect base theme built using Twitter Bootstrap
 core = 7.x
 
 regions[header]         = 'Top Bar'
@@ -8,16 +8,10 @@ regions[help]           = 'Help'
 regions[content]        = 'Content'
 regions[sidebar_first]  = 'Primary'
 regions[sidebar_second] = 'Secondary'
-regions[bottom]         = 'Bottom'
 regions[footer]         = 'Footer'
 
 stylesheets[all][] = css/bootstrap.css
 stylesheets[all][] = css/apigee_base.css
-stylesheets[all][] = css/region_header.css
-stylesheets[all][] = css/region_breadcrumb.css
-stylesheets[all][] = css/region_title_region.css
-stylesheets[all][] = css/region_page_bottom.css
-stylesheets[all][] = css/region_footer.css
 
 scripts[] = js/global.js
 
