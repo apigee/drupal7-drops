@@ -272,7 +272,7 @@ function devconnect_update_7429() {
     'contentapi_summary', 'contentapi_taxonomy_term', 'contentapi_taxonomy_vocab'
   ));
   $result = db_select('system', 's')
-    ->fields('info')
+    ->fields('s', array('info'))
     ->condition('status', 1)
     ->condition('type', 'module')
     ->condition('name', $extended_api_modules, 'NOT IN')
