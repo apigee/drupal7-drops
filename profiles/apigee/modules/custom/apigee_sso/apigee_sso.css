@@ -1,9 +1,9 @@
 #user-login, #user-register-form { margin: 1em; position: relative;  }
 
-#apigee-sso-signin-block { width: 45%;position: absolute; top: 1em; right: 0; border-left: 1px solid #aaa;  }
+#apigee-sso-signin-block { width: 32%;position: absolute; top: 1.5em; right: 0; border-left: 1px solid #aaa;  }
 #apigee-sso-signin-block ul.federated-buttons { margin: 0 0 0 2em; list-style:none;  }
 #apigee-sso-signin-block ul.federated-buttons li { margin: 0; padding: .25em 0; }
-
+#login input{width: 385px !important;}
 /* Override gauth login css to remove google png */
 
 #edit-submit-google {

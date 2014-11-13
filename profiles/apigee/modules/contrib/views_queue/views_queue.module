@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * The Views Queue module main file.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function views_queue_views_api() {
+  return array(
+    'api' => 3,
+  );
+}

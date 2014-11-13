@@ -1,6 +1,5 @@
 <?php
-
-require_once(dirname(__FILE__) . '/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
+require_once(DRUPAL_ROOT . '/profiles/apigee/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
 // Make Crypto work properly with R23
 if (method_exists('Apigee\Util\Crypto', 'setKey')) {
   Apigee\Util\Crypto::setKey(hash('SHA256', 'w3-Love_ap|s', TRUE));
@@ -416,6 +415,137 @@ function apigee_install_base_ckeditor_settings(&$context) {
             'weight' => 0,
             'status' => 1,
             'settings' => array(),
+          ),
+          'wysiwyg' => array(
+            'weight' => 0,
+            'status' => 1,
+            'settings' => array(
+              'valid_elements' => 'a[!href|target<_blank|title],
+div[align<center?justify?left?right],
+p[align<center?justify?left?right],
+br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
+              'allow_comments' => 0,
+              'nofollow_policy' => 'whitelist',
+              'nofollow_domains' => array(
+                0 => 'gitesh.loc',
+              ),
+              'style_color' => array(
+                'color' => 0,
+                'background' => 0,
+                'background-color' => 0,
+                'background-image' => 0,
+                'background-repeat' => 0,
+                'background-attachment' => 0,
+                'background-position' => 0,
+              ),
+              'style_font' => array(
+                'font' => 0,
+                'font-family' => 0,
+                'font-size' => 0,
+                'font-size-adjust' => 0,
+                'font-stretch' => 0,
+                'font-style' => 0,
+                'font-variant' => 0,
+                'font-weight' => 0,
+              ),
+              'style_text' => array(
+                'text-align' => 0,
+                'text-decoration' => 0,
+                'text-indent' => 0,
+                'text-transform' => 0,
+                'letter-spacing' => 0,
+                'word-spacing' => 0,
+                'white-space' => 0,
+                'direction' => 0,
+                'unicode-bidi' => 0,
+              ),
+              'style_box' => array(
+                'margin' => 0,
+                'margin-top' => 0,
+                'margin-right' => 0,
+                'margin-bottom' => 0,
+                'margin-left' => 0,
+                'padding' => 0,
+                'padding-top' => 0,
+                'padding-right' => 0,
+                'padding-bottom' => 0,
+                'padding-left' => 0,
+              ),
+              'style_border-1' => array(
+                'border' => 0,
+                'border-top' => 0,
+                'border-right' => 0,
+                'border-bottom' => 0,
+                'border-left' => 0,
+                'border-width' => 0,
+                'border-top-width' => 0,
+                'border-right-width' => 0,
+                'border-bottom-width' => 0,
+                'border-left-width' => 0,
+              ),
+              'style_border-2' => array(
+                'border-color' => 0,
+                'border-top-color' => 0,
+                'border-right-color' => 0,
+                'border-bottom-color' => 0,
+                'border-left-color' => 0,
+                'border-style' => 0,
+                'border-top-style' => 0,
+                'border-right-style' => 0,
+                'border-bottom-style' => 0,
+                'border-left-style' => 0,
+              ),
+              'style_dimension' => array(
+                'height' => 0,
+                'line-height' => 0,
+                'max-height' => 0,
+                'max-width' => 0,
+                'min-height' => 0,
+                'min-width' => 0,
+                'width' => 0,
+              ),
+              'style_positioning' => array(
+                'bottom' => 0,
+                'clip' => 0,
+                'left' => 0,
+                'overflow' => 0,
+                'right' => 0,
+                'top' => 0,
+                'vertical-align' => 0,
+                'z-index' => 0,
+              ),
+              'style_layout' => array(
+                'clear' => 0,
+                'display' => 0,
+                'float' => 0,
+                'position' => 0,
+                'visibility' => 0,
+              ),
+              'style_list' => array(
+                'list-style' => 0,
+                'list-style-image' => 0,
+                'list-style-position' => 0,
+                'list-style-type' => 0,
+              ),
+              'style_table' => array(
+                'border-collapse' => 0,
+                'border-spacing' => 0,
+                'caption-side' => 0,
+                'empty-cells' => 0,
+                'table-layout' => 0,
+              ),
+              'style_user' => array(
+                'cursor' => 0,
+                'outline' => 0,
+                'outline-width' => 0,
+                'outline-style' => 0,
+                'outline-color' => 0,
+                'zoom' => 0,
+              ),
+              'rule_valid_classes' => array(),
+              'rule_valid_ids' => array(),
+              'rule_style_urls' => array(),
+            ),
           ),
         ),
       )
@@ -1048,6 +1178,7 @@ function apigee_install_create_forum_content(&$context) {
   // 10 forum posts
   for ($i = 0; $i <= 7; $i++) {
     $body = array();
+    $body['title'] = _apigee_install_generate_greek(mt_rand(3, 10));
     $body['post'] = _apigee_install_generate_greek(mt_rand(2, 300), TRUE);
     $fields = array();
     $fields['type'] = 'forum';
@@ -1069,6 +1200,7 @@ function apigee_install_create_page_content(&$context) {
   // 5 pages
   for ($i = 0; $i <= 5; $i++) {
     $body = array();
+    $body['title'] = _apigee_install_generate_greek(mt_rand(3, 10));
     $body['post'] = _apigee_install_generate_greek(mt_rand(2, 300), TRUE);
     _apigee_install_generate_node('page', $body);
   }
@@ -1373,6 +1505,9 @@ function _apigee_install_generate_greek($word_count, $title = FALSE) {
     $greek = file(dirname(__FILE__) . '/greek.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $greek_flipped = array_flip($greek);
   }
+  if ($word_count > count($greek_flipped)) {
+    $word_count = count($greek_flipped);
+  }
 
   $greek_text = '';
   if (!$title) {
@@ -1632,6 +1767,21 @@ function apigee_install_api_endpoint($form, &$form_state) {
     'spellcheck' => 'false'
   );
   $form = array();
+
+  $form['script'] = array(
+    '#type' => 'markup',
+    '#markup' => "<script>function togglePass(a) {
+  var i = a.parentNode.getElementsByTagName('input')[0];
+  if (i.type == 'password') {
+    a.innerHTML = 'Hide password';
+    i.type = 'text';
+  } else {
+    a.innerHTML = 'Show password';
+    i.type = 'password';
+  }
+}</script>"
+  );
+
   $form['org'] = array(
     '#type' => 'textfield',
     '#title' => t('Management API Organization'),
@@ -1663,7 +1813,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#default_value' => '',
     '#description' => t('Password used when authenticating with the endpoint.'),
     '#attributes' => $attributes,
-    '#post_render' => array('apigee_password_post_render')
+    '#post_render' => array('apigee_endpoint_password_post_render'),
   );
   $form['actions'] = array(
     '#weight' => 100,
@@ -1720,6 +1870,14 @@ function apigee_install_api_endpoint_validate($form, &$form_state) {
  */
 function apigee_password_post_render($content, $element) {
   return str_replace('type="text"', 'type="password"', $content);
+}
+
+function apigee_endpoint_password_post_render($content, $element) {
+  $content = str_replace('type="text"', 'type="password"', $content);
+  $toggle = '<a style="font-size:0.75em" href="#" onclick="togglePass(this); return false">Show password</a>';
+  $search = '<div class="description">';
+  $content = str_replace($search, $toggle . $search, $content);
+  return $content;
 }
 
 /**
@@ -1860,7 +2018,7 @@ function apigee_generate_import_smartdocs_model_content() {
 
   if (isset($GLOBALS['apigee_smartdocs_skip'])) {
     $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
-    if ($endpoint_configured || $GLOBALS['apigee_smartdocs_skip'] == TRUE) {
+    if (!$endpoint_configured || $GLOBALS['apigee_smartdocs_skip']) {
       return;
     }
   }
@@ -1911,7 +2069,8 @@ function apigee_generate_render_smartdocs_model_template() {
   _apigee_manage_memory();
 
   if (isset($GLOBALS['apigee_smartdocs_skip'])) {
-    if ((!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip'] == TRUE)) {
+    $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
+    if (!$endpoint_configured || $GLOBALS['apigee_smartdocs_skip']) {
       return NULL;
     }
   }
@@ -1931,7 +2090,7 @@ function apigee_generate_render_smartdocs_model_content() {
   _apigee_manage_memory();
 
   if (isset($GLOBALS['apigee_smartdocs_skip'])) {
-    if ((!$GLOBALS['apigee_api_endpoint_configured']) || ($GLOBALS['apigee_smartdocs_skip'] == TRUE)) {
+    if ((array_key_exists('apigee_api_endpoint_configured', $GLOBALS) && $GLOBALS['apigee_api_endpoint_configured']) || $GLOBALS['apigee_smartdocs_skip']) {
       return NULL;
     }
   }
@@ -2329,7 +2488,7 @@ function apigee_install_configure_autologout(&$context){
     module_enable(array('autologout'), TRUE);
   }
   
-  variable_set('autologout_timeout', 300);
+  variable_set('autologout_timeout', 3600);
   
   $context['message'] = st('Installed and configured autologout module');
 }

@@ -53,17 +53,19 @@
  *   The sub-categories faqs, recursively themed (by this template).
  */
 
-
+// @todo should be moved to better place.
+// @codingStandardsIgnoreStart
 if ($category_depth > 0) {
   $hdr = 'h4';
 }
 else {
   $hdr = 'h3';
 }
-
 $depth = 0;
+// @codingStandardsIgnoreEnd
+?>
 
-?><?php if ($display_answers): ?>
+<?php if ($display_answers): ?>
   <?php if ($answer_category_name): ?>
     <?php while ($depth < $category_depth): ?>
       <div class="faq-category-indent">
@@ -135,5 +137,4 @@ $depth = 0;
       </div> <!-- Close div: faq-category-indent -->
     <?php $depth--; endwhile; ?>
   <?php endif; ?>
-<?php
-endif; // if display_answers
+<?php endif; ?>

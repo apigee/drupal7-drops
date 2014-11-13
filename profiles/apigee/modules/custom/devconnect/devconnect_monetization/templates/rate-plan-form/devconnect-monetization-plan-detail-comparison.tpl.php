@@ -18,7 +18,10 @@
     </ul>
     <div class="tab-content plans-comparison">
       <?php foreach ($rate_plans as $rate_plan): ?>
-        <?php list($rate_plan_detail) = $rate_plan->getRatePlanDetails(); ?>
+        <?php 
+        $rate_plan_details = $rate_plan->getRatePlanDetails();
+        if(!empty($rate_plan_details)){list($rate_plan_detail) = $rate_plan_details;} 
+        ?>
         <div id="tab_<?php echo preg_replace('/[^a-z0-9_-]/i', '_', $rate_plan->getId()); ?>" class="tab-pane<?php print $submitted_plan_id ==  $rate_plan->getId() ? ' active' : ''?>">
           <?php // Start Of Future Plan 1 ?>
           <?php if ($rate_plan->getChildRatePlan() != NULL): ?>

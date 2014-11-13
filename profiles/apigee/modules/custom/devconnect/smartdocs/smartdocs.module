@@ -4,12 +4,28 @@
  * Implements hook_init().
  */
 function smartdocs_init() {
+  global $user;
   module_load_include('inc', 'smartdocs', 'admin/smartdocs.methods');
   module_load_include('inc', 'smartdocs', 'admin/smartdocs.models');
   module_load_include('inc', 'smartdocs', 'admin/smartdocs.resources');
   module_load_include('inc', 'smartdocs', 'admin/smartdocs.revisions');
   module_load_include('inc', 'smartdocs', 'smartdocs.theme');
   drupal_add_css(drupal_get_path('module', 'smartdocs') . '/css/smartdocs.css');
+  
+  //Set warning message for admin users if SSL is not enabled.
+  if (array_key_exists(3, $user->roles) && !isset($_SERVER['HTTPS']) && variable_get('disable_ssl_warning', 0) != 1) {
+    if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
+      $message = t("SmartDocs pages are not secured with SSL <em>(!learn_more)</em>. It is strongly advised to use SmartDocs with HTTPS.<br/> You can disable this message at the !settings_page.", array(
+        "!learn_more" => l("Learn More", 'http://apigee.com/docs/developer-services/content/using-ssl-portal', array('attributes' => array('target' => '_blank'))),
+        "!settings_page" => l("SmartDocs settings page", 'admin/smartdocs/settings', array('attributes' => array('target' => '_blank')))));
+    }
+    else {
+      $message = t("SmartDocs pages are not secured with SSL. It is strongly advised to use SmartDocs with HTTPS.<br/> You can disable this message at the !settings_page.", array(
+        "!settings_page" => l("SmartDocs settings page", 'admin/smartdocs/settings', array('attributes' => array('target' => '_blank')))));
+    }
+    drupal_set_message($message, 'warning', FALSE);
+  }
+  
 }
 
 /**
@@ -165,6 +181,12 @@ function smartdocs_menu() {
       'weight' => 100,
     );
   }
+  $items['smartdocs/oauth/callback'] = array(
+    'title' => 'Authorizing',
+    'page callback' => 'smartdocs_oauth_callback',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
@@ -172,12 +194,12 @@ function smartdocs_menu() {
  * Implements hook_permission().
  */
 function smartdocs_permission() {
-	return array(
-		'administer smartdocs content' => array(
-			'title' => t('Administer SmartDocs Content'),
-			'description' => t('Perform administration tasks for the SmartDocs module.'),
-		),
-	);
+  return array(
+    'administer smartdocs content' => array(
+      'title' => t('Administer SmartDocs Content'),
+      'description' => t('Perform administration tasks for the SmartDocs module.'),
+    ),
+  );
 }
 
 /**
@@ -189,6 +211,16 @@ function smartdocs_flush_caches() {
   return array('cache_smartdocs');
 }
 
+/**
+ * Implements the oauth callback
+ */
+function smartdocs_oauth_callback() {
+  $config =& devconnect_get_org_settings();
+  return theme('smartdocs_oauth_callback', array(
+    'proxy' => str_replace('v1/smartdocs','smartdocs/v1/sendrequest', variable_get('api_proxy_url', 'https://apiconsole-prod.apigee.net/v1/smartdocs')),
+    'endpoint' => $config['endpoint'],
+  ));
+}
 
 /**
  * SmartDocs Settings Form
@@ -199,6 +231,12 @@ function smartdocs_flush_caches() {
  * @return mixed
  */
 function smartdocs_settings($form, $form_state, $model = NULL) {
+  $form['disable_ssl_warning'] = array(
+    '#title' => t("Disable SSL warning message"),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('disable_ssl_warning', 0),
+    '#description' => t("Select this option if you would like the warning message shown, if SSL is not enabled.")
+  );
   $form['cache_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Cache Settings for SmartDocs'),
@@ -210,45 +248,45 @@ function smartdocs_settings($form, $form_state, $model = NULL) {
     '#value' => t('Clear SmartDocs HTML Caches'),
     '#submit' => array('smartdocs_flush_caches')
   );
-	$form['products'] = array(
-		'#type' => 'fieldset',
-		'#title' => t('API Products / SmartDocs Settings'),
-		'#collapsed' => TRUE,
-		'#collapsible' => TRUE,
-	);
-	$form['products']['info'] = array(
-		'#markup' => '<p>This section creates a correlation between your products and SmartDocs internally.</p><br/>'
-	);
-	$models = entity_load('smartdocs_model');
-	$options = array();
-	foreach($models as $model) {
-		$options[(isset($model['displayName'])) ? $model['displayName'] : $model['name']] = $model['name'];
-	}
-	$options = array_flip($options);
-	natcasesort($options);
+  $form['products'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('API Products / SmartDocs Settings'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+  $form['products']['info'] = array(
+    '#markup' => '<p>This section creates a correlation between your products and SmartDocs internally.</p><br/>'
+  );
+  $models = entity_load('smartdocs_model');
+  $options = array();
+  foreach ($models as $model) {
+    $options[(isset($model['displayName'])) ? $model['displayName'] : $model['name']] = $model['name'];
+  }
+  $options = array_flip($options);
+  natcasesort($options);
 
-	$api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
-	$products = array();
-	foreach($api_products as $product) {
-		$products[$product->displayName] = $product->name;
-	}
-	$products = array_flip($products);
-	natcasesort($products);
+  $api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+  $products = array();
+  foreach ($api_products as $product) {
+    $products[$product->displayName] = $product->name;
+  }
+  $products = array_flip($products);
+  natcasesort($products);
 
-	foreach ($products as $machine => $product) {
-		$form['products'][$machine . '_docs'] = array(
-			'#type' => 'select',
-			'#title' => t($product . ' Models'),
-			'#default_value' => variable_get($machine . '_docs', array()),
-			'#description' => t('Specify the SmartDocs model that relates to the product.'),
-			'#options' => $options,
-			'#multiple' => TRUE,
+  foreach ($products as $machine => $product) {
+    $form['products'][$machine . '_docs'] = array(
+      '#type' => 'select',
+      '#title' => t($product . ' Models'),
+      '#default_value' => variable_get($machine . '_docs', array()),
+      '#description' => t('Specify the SmartDocs model that relates to the product.'),
+      '#options' => $options,
+      '#multiple' => TRUE,
       '#attributes' => array(
         'style' => 'height:200px;',
       ),
-			'#suffix' => '<br/>',
-		);
-	}
+      '#suffix' => '<br/>',
+    );
+  }
   $form['settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Advanced Settings'),
@@ -263,6 +301,27 @@ function smartdocs_settings($form, $form_state, $model = NULL) {
     '#description' => t('By enabling this setting, you will override all node templates with model templates.'),
     '#suffix' => '<br/>',
   );
+  $form['settings']['custom_template_file'] = array(
+    '#title' => t("Upload customized model template"),
+    '#type' => 'managed_file',
+    '#description' => t('Upload a .hbr template file. This template file will be used to render the methods instead of the default template'),
+    '#upload_location' => 'public://smartdocs_templates',
+    '#upload_validators' => array(
+      'file_validate_extensions' => array('hbr')
+    ),
+    '#default_value' => variable_get('custom_template_file', 0),
+    '#suffix' => '<br/>',
+  );
+  $form['settings']['data_proxy_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Set custom Proxy URL'),
+    '#default_value' => variable_get('data_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1'),
+  );
+  $form['settings']['data_auth_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Set custom Auth URL'),
+    '#default_value' => variable_get('data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
+  );
   $form['settings']['api_proxy'] = array(
     '#type' => 'fieldset',
     '#title' => t('Management API Override Settings'),
@@ -276,18 +335,20 @@ function smartdocs_settings($form, $form_state, $model = NULL) {
     '#description' => t('By enabling this setting, you will use local assets hosted by DevPortal.'),
     '#suffix' => '<br/>',
   );
-	$form['settings']['api_proxy']['local_asset_version'] = array(
-		'#type' => 'select',
-		'#title' => t('Local SmartDocs JS/CSS Version'),
-		'#default_value' => variable_get('local_asset_version', '3'),
-		'#description' => t('By enabling this setting, you will use local assets hosted by DevPortal.'),
-		'#options' => array(
-			'1' => 'v1',
-			'2' => 'v2',
-			'3' => 'v3',
-		),
-		'#suffix' => '<br/>',
-	);
+  $form['settings']['api_proxy']['local_asset_version'] = array(
+    '#type' => 'select',
+    '#title' => t('Local SmartDocs JS/CSS Version'),
+    '#default_value' => variable_get('local_asset_version', '5'),
+    '#description' => t('By enabling this setting, you will use local assets hosted by DevPortal.'),
+    '#options' => array(
+      '1' => 'v1',
+      '2' => 'v2',
+      '3' => 'v3',
+      '4' => 'v4',
+      '5' => 'v5',
+    ),
+    '#suffix' => '<br/>',
+  );
   $form['settings']['api_proxy']['use_api_proxy_url'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use Management API URL Override'),
@@ -300,17 +361,49 @@ function smartdocs_settings($form, $form_state, $model = NULL) {
     '#title' => t('Management API URL Override'),
     '#default_value' => variable_get('api_proxy_url', 'https://api.enterprise.apigee.com/v1'),
   );
-	$url = l('SmartDocs Documentation', 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array(
-		'html' => TRUE,
-		'attributes' => array(
-			'target' => '_blank',
-		)
-	));
-	$learn = 'For more information, including configuration of the Management API URL Override, please consult: ';
-	$form['settings']['api_proxy']['api_proxy_info'] = array(
-		'#markup' => $learn . $url,
-	);
+  $url = l('SmartDocs Documentation', 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array(
+    'html' => TRUE,
+    'attributes' => array(
+      'target' => '_blank',
+    )
+  ));
+  $learn = 'For more information, including configuration of the Management API URL Override, please consult: ';
+  $form['settings']['api_proxy_info'] = array(
+    '#markup' => $learn . $url,
+  );
+  $form['#submit'][] = 'smartdocs_upload_template_submit';
   return system_settings_form($form);
+}
+
+/**
+ * Submit callback for the smartdocs_settings(). To handle the template file upload.
+ * 
+ * @param type $form
+ * @param type $form_state
+ * @return type
+ */
+function smartdocs_upload_template_submit($form, &$form_state) {
+
+  $current_template = variable_get('custom_template_file', NULL);
+  $template = $form_state['values']['custom_template_file'];
+  if ($template == $current_template) {
+    return;
+  }
+
+  if ($current_template != NULL) {
+    $current_file = file_load($current_template);
+    file_usage_delete($current_file, "smartdocs");
+    file_delete($current_file, TRUE);
+  }
+  if (!empty($template)) {
+    $file = file_load($template);
+    if ($file) {
+      $file->status = FILE_STATUS_PERMANENT;
+      file_save($file);
+      file_usage_add($file, 'smartdocs', 'smartdocs', 1);
+      variable_set('custom_template_file', $file->fid);
+    }
+  }
 }
 
 /**
@@ -341,6 +434,11 @@ function smartdocs_theme($existing, $type, $theme, $path) {
       'template' => 'smartdocs-method',
       'path' => $path . '/templates'
     ),
+    'smartdocs_oauth_callback' => array(
+      'variables' => NULL,
+      'template' => 'smartdocs-oauth-callback',
+      'path' => $path . '/templates'
+    )
   );
 }
 
@@ -358,7 +456,7 @@ function smartdocs_model_name($model) {
       '/-+/',
       '/^-+/',
       '/-+$/',
-    ), array('_', '_', '', ''), $model));
+            ), array('_', '_', '', ''), $model));
     $data = substr($mid, 0, 32);
     variable_set($model . '_content_type', $data);
   }
@@ -379,11 +477,12 @@ function smartdocs_field_name($model) {
       '/-+/',
       '/^-+/',
       '/-+$/',
-    ), array('_', '_', '', ''), $model));
+            ), array('_', '_', '', ''), $model));
     $hash = hash('md4', preg_replace('/[^a-zA-Z0-9]/', '', $mid));
     if (strlen($mid) > 8) {
       $data = substr($mid, 0, 4) . substr($hash, -4);
-    } else {
+    }
+    else {
       $data = substr($mid, 0, 8);
     }
     variable_set($model . '_field_type', $data);
@@ -461,18 +560,18 @@ function smartdocs_entity_info() {
  * @param $node
  */
 function smartdocs_node_delete($node) {
-	$nid = db_query('SELECT nid FROM {smartdata} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
-	if (!empty($nid)) {
-		$update = db_update('smartdata')->fields(array('nid' => null))
-			->condition('nid', $node->nid)
-			->execute();
-		if ($update) {
-			drupal_set_message(t('The node %title has also been unsynced from the %type model.', array(
-				'%title' => $node->title,
-				'%type' => $node->type,
-			)), 'warning');
-		}
-	}
+  $nid = db_query('SELECT nid FROM {smartdata} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+  if (!empty($nid)) {
+    $update = db_update('smartdata')->fields(array('nid' => null))
+        ->condition('nid', $node->nid)
+        ->execute();
+    if ($update) {
+      drupal_set_message(t('The node %title has also been unsynced from the %type model.', array(
+        '%title' => $node->title,
+        '%type' => $node->type,
+          )), 'warning');
+    }
+  }
 }
 
 /**
@@ -519,30 +618,32 @@ function _smartdocs_prettyprint($json) {
   $in_quotes = false;
   $in_escape = false;
   $ends_line_level = NULL;
-  $json_length = strlen( $json );
+  $json_length = strlen($json);
 
-  for( $i = 0; $i < $json_length; $i++ ) {
+  for ($i = 0; $i < $json_length; $i++) {
     $char = $json[$i];
     $new_line_level = NULL;
     $post = "";
-    if( $ends_line_level !== NULL ) {
+    if ($ends_line_level !== NULL) {
       $new_line_level = $ends_line_level;
       $ends_line_level = NULL;
     }
-    if ( $in_escape ) {
+    if ($in_escape) {
       $in_escape = false;
-    } else if( $char === '"' ) {
+    }
+    else if ($char === '"') {
       $in_quotes = !$in_quotes;
-    } else if( ! $in_quotes ) {
-      switch( $char ) {
+    }
+    else if (!$in_quotes) {
+      switch ($char) {
         case '}': case ']':
-        $level--;
-        $ends_line_level = NULL;
-        $new_line_level = $level;
-        break;
+          $level--;
+          $ends_line_level = NULL;
+          $new_line_level = $level;
+          break;
 
         case '{': case '[':
-        $level++;
+          $level++;
         case ',':
           $ends_line_level = $level;
           break;
@@ -552,18 +653,19 @@ function _smartdocs_prettyprint($json) {
           break;
 
         case " ": case "\t": case "\n": case "\r":
-        $char = "";
-        $ends_line_level = $new_line_level;
-        $new_line_level = NULL;
-        break;
+          $char = "";
+          $ends_line_level = $new_line_level;
+          $new_line_level = NULL;
+          break;
       }
-    } else if ( $char === '\\' ) {
+    }
+    else if ($char === '\\') {
       $in_escape = true;
     }
-    if( $new_line_level !== NULL ) {
-      $result .= "\n".str_repeat( "\t", $new_line_level );
+    if ($new_line_level !== NULL) {
+      $result .= "\n" . str_repeat("\t", $new_line_level);
     }
-    $result .= $char.$post;
+    $result .= $char . $post;
   }
 
   return $result;

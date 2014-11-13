@@ -105,10 +105,22 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#default_value' => $default_api_product,
   );
 
-  $form['apiproduct']['devconnect_api_product_cache_enable'] = array(
+  $form['cache'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cache settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE
+  );
+  $form['cache']['devconnect_api_product_cache_enable'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable the API Product cache. <em>Unchecking this box will degrade performance. Do not disable the cache on a production instance.</em>'),
     '#default_value' => variable_get('devconnect_api_product_cache_enable', 1),
+    '#return_value' => 1,
+  );
+  $form['cache']['devconnect_developer_apps_cache_cron'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Rebuild API Product and Developer App caches every time cron runs.'),
+    '#default_value' => variable_get('devconnect_developer_apps_cache_cron', 1),
     '#return_value' => 1,
   );
 
@@ -120,9 +132,14 @@ function devconnect_developer_apps_config($form, &$form_state) {
   );
 
   $form['ui_settings']['myapis'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use My APIs <em>instead of My Apps</em>'),
-    '#default_value' => variable_get('myapis'),
+    '#type' => 'radios',
+    '#title' => t('Text to use in the UI to refer to a Developer App'),
+    '#default_value' => variable_get('myapis', 0),
+    '#options' => array(
+      0 => 'App',
+      1 => 'API',
+      2 => 'Key'
+    )
   );
 
   $form['callback'] = array(
@@ -248,5 +265,13 @@ function devconnect_developer_apps_config_submit($form, &$form_state) {
     variable_set($key, $value);
   }
   variable_set('myapis', $form_state['values']['myapis']);
+  $myapis = _devconnect_developer_apps_get_app_label(TRUE);
+
+  db_update('menu_links')
+    ->fields(array('link_title' => 'My ' . $myapis))
+    ->condition('menu_name', 'main-menu')
+    ->condition('link_path', 'user/me/apps')
+    ->execute();
+  cache_clear_all(NULL, 'cache_menu');
   drupal_set_message(t('The configuration options have been saved.'));
 }

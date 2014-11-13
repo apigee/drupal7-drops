@@ -60,11 +60,13 @@
                         var value = $(this).maskMoney("unmasked")[0];
 
                         var currentBalance = unmaskCurrencyAmount($("span#topUpCurrentBalance", context).html(), currency) * 1.0;
-                        var newBalance = formatCurrencyAmount(value + currentBalance, currency);
+                        var newBalanceUnformatted = value + currentBalance;
+                        var newBalance = formatCurrencyAmount(newBalanceUnformatted, currency);
+
                         $("span#newBalance", context).html(newBalance);
 
                         if ($(this).attr("minimum") != undefined) {
-                            if (value < $(this).attr("minimum") * 1.0) {
+                            if (newBalanceUnformatted < $(this).attr("minimum") * 1.0) {
                                 $("#topup_alert_minimum_required", context).show();
                                 $("#topup_alert_minimum_required", context).removeClass("hide");
                             }
@@ -75,7 +77,7 @@
                         }
 
                         if ($(this).attr("maximum") != undefined) {
-                            if (value > $(this).attr("maximum") * 1.0) {
+                            if (newBalanceUnformatted > $(this).attr("maximum") * 1.0) {
                                 $("#topup_alert_maximum_required", context).show();
                                 $("#topup_alert_maximum_required", context).removeClass("hide");
                             }

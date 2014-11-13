@@ -83,7 +83,15 @@ function smartdocs_render($model, $verbose, $selected, $options, $render_templat
 function smartdocs_template($mid, &$context) {
   if (!in_array($mid, array_keys(node_type_get_names()))) {
     $context['message'] = t('Ensuring correct model template');
-    $html = file_get_contents(drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr');
+    
+    $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
+    $custom_template_file = variable_get('custom_template_file', NULL);
+    
+    if(!empty($custom_template_file)){
+      $file = file_load($custom_template_file);
+      $path = file_create_url($file->uri);
+    }
+    $html = file_get_contents($path);
     entity_get_controller('smartdocs_template')->updateTemplate($mid, 'method', $html);
   }
 }

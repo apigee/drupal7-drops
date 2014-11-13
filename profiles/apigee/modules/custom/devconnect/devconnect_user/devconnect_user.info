@@ -3,7 +3,7 @@ description = Additional developer-centric enhancements for the User object
 core = 7.x
 package = DevConnect
 php = 5.3
-version = 7.x-4.26
+version = 7.x-4.27
 
 files[] = tests/DeveloperEntityTestCase.test
 

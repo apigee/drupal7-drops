@@ -191,6 +191,14 @@ function devconnect_docgen_update_7002() {
 }
 
 /**
+ * Enable the new version of SmartDocs module and then disable the previous version.
+ */
+function devconnect_docgen_update_7003(){
+  module_enable(array('smartdocs'), TRUE);
+  module_disable(array('devconnect_docgen'));
+}
+
+/**
  * Implements hook_install().
  *
  * Sets pathauto settings to match Smartdocs requirements.

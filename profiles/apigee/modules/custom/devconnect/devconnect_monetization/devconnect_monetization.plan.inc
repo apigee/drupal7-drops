@@ -1058,13 +1058,11 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
     '#suffix' => '</strong></span>',
   );
 
-  // Decide how much the user needs to add in order to pay for plan.
-  $form_state['values']['required_balance'] = $form_state['values']['required_balance'] - $current_balance;
+  // The default topup amount is the required balance minus the current balance.
+  $default_topup_amount = $form_state['values']['required_balance'] - $current_balance;
 
-  // When the form is first rendered, the "Current Balance" and "Amount to Top
-  // Up" is displayed with default values, so the "New Balance" field is
-  // the "Current Balance" added to the "Amount to Top Up".
-  $new_balance = $form_state['values']['required_balance'] + $current_balance;
+  // The new balance is the default amount the user will add plus the current balance.
+  $new_balance = $default_topup_amount + $current_balance;
   $formatted_new_balance = commerce_currency_format($new_balance, $form_state['values']['currency'], NULL, FALSE);
 
   $formatted_required = commerce_currency_format($form_state['values']['required_balance'], $form_state['values']['currency'], NULL, FALSE);
@@ -1119,7 +1117,7 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
   $form['amount'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#default_value' => number_format($form_state['values']['required_balance'], $currencies[$form_state['values']['currency']]['decimals'], '.', ''),
+    '#default_value' => number_format($default_topup_amount, $currencies[$form_state['values']['currency']]['decimals'], '.', ''),
     '#maxlength' => 12,
     '#attributes' => array(
       'class' => array(

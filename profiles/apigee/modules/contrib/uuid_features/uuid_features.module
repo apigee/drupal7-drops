@@ -520,7 +520,7 @@ function uuid_features_file_export($file, $export_mode) {
   }
   // Remote export mode.
   elseif ($export_mode == 'remote') {
-    $export_data = url($file->uri, array('absolute' => TRUE));
+    $export_data = file_create_url($file->uri);
   }
   // Default is 'inline' export mode.
   else {

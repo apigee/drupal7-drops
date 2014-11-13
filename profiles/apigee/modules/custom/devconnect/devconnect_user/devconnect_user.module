@@ -126,15 +126,6 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       drupal_set_title(t('Edit Profile'));
       drupal_set_breadcrumb($breadcrumb);
 
-      if (array_key_exists('picture', $form)) {
-        $form['picture']['#weight'] = -99;
-      }
-      $form['field_first_name']['#weight'] = -98;
-      $form['field_last_name']['#weight'] = -97;
-      if (array_key_exists('field_company_name', $form)) {
-        $form['field_company_name']['#weight'] = -96;
-      }
-
       $tnc_url = _devconnect_user_get_tnc_url($form['#user']);
       if ($tnc_url == 'legal' && module_exists('legal')) {
         if (isset($form['field_terms_and_conditions'])) {
@@ -169,10 +160,6 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       drupal_add_css(drupal_get_path('module', 'devconnect_user') . '/devconnect_user.css',
         array('group' => CSS_THEME, 'every_page' => TRUE)
       );
-      $form['picture']['#weight'] = -99;
-      $form['field_first_name']['#weight'] = -98;
-      $form['field_last_name']['#weight'] = -97;
-      $form['field_company_name']['#weight'] = -96;
 
       $tnc_url = _devconnect_user_get_tnc_url($form['#user']);
       if ($tnc_url == 'legal' && module_exists('legal')) {
@@ -302,7 +289,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   }
   $config =& devconnect_get_org_settings();
   $org = $config['org'];
-  if (empty($org) || $org == 'fixme') {
+  if (empty($org) || $org == 'fixme' || (empty($account->mail) && empty($edit['mail']))) {
     return;
   }
 

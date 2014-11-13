@@ -57,6 +57,25 @@ function devconnect_user_schema() {
     'primary key' => array('developer_id', 'name')
   );
 
+  $schema['dc_dev_companies'] = array(
+    'description' => 'Caches developer-company affiliations',
+    'fields' => array(
+      'developer_id' => array(
+        'description' => 'Edge unique developer id',
+        'type' => 'char',
+        'length' => 16,
+        'not null' => TRUE,
+      ),
+      'company' => array(
+        'description' => 'Company unique name',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      )
+    ),
+    'primary key' => array('developer_id', 'company')
+  );
+
   return $schema;
 }
 
@@ -65,4 +84,14 @@ function devconnect_user_schema() {
  */
 function devconnect_user_update_7426() {
   drupal_install_schema('devconnect_user');
+}
+
+/**
+ * Install developer companies cache table if it does not yet exist
+ */
+function devconnect_user_update_7427() {
+  if (!db_table_exists('dc_dev_companies')) {
+    $schema = devconnect_user_schema();
+    db_create_table('dc_dev_companies', $schema['dc_dev_companies']);
+  }
 }

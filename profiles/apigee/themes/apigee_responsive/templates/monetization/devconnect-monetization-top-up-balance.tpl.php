@@ -1,9 +1,5 @@
 <?php
-/**
- * Author: isaias@apigee.com
- * Date: 12/27/13
- * Time: 8:33 AM
- */
+
 ?>
 <div id="topUpBalanceContainer" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="topUpBalanceContainerLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -12,11 +8,10 @@
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h3 id="topUpLabel"><?php print t('Top Up Prepaid Balance'); ?><span id="currency_title"></span></h3>
         <div id="topup_alert_minimum_required" class="alert alert-error hide">
-          <?php t('You have to top up your balance for at least @minimum_amount.', array('@minimum_amount' => '<span id="span-minimum-amount">0</span>')); ?>
-          You have to top up your balance to at least <span id="span-minimum-amount">0</span>.
+          <?php print t('You have to top up your balance for at least !minimum_amount.', array('!minimum_amount' => '<span id="span-minimum-amount">0</span>')); ?>
         </div>
         <div id="topup_alert_maximum_required" class="alert alert-error hide">
-          <?php t('You cannot top up your balance with more than @max_amount.', array('@max_amount' => '<span id="span-maximum-amount">0</span>')); ?>
+          <?php print t('You cannot top up your balance with more than !max_amount.', array('!max_amount' => '<span id="span-maximum-amount">0</span>')); ?>
         </div>
       </div>
       <div class="modal-body">

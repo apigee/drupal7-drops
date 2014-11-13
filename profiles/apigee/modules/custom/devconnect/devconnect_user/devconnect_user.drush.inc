@@ -14,6 +14,13 @@ function devconnect_user_drush_command() {
     'aliases' => array('dc-sync')
   );
 
+  $items['devconnect-user-process-queue'] = array(
+    'callback' => 'devconnect_user_process_queue',
+    'description' => dt('Processes the user-save queue.'),
+    'arguments' => array(),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+  );
+
   return $items;
 }
 

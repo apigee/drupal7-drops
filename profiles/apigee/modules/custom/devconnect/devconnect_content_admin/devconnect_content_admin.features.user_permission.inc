@@ -30,16 +30,6 @@ function devconnect_content_admin_user_default_permissions() {
     'module' => 'system',
   );
 
-  // Exported permission: access backup and migrate.
-  $permissions['access backup and migrate'] = array(
-    'name' => 'access backup and migrate',
-    'roles' => array(
-      0 => 'Content Admin',
-      1 => 'Drupal Administrator',
-    ),
-    'module' => 'backup_migrate',
-  );
-
   // Exported permission: access broken links report.
   $permissions['access broken links report'] = array(
     'name' => 'access broken links report',
@@ -823,16 +813,6 @@ function devconnect_content_admin_user_default_permissions() {
       0 => 'Drupal Administrator',
     ),
     'module' => 'googleanalytics',
-  );
-
-  // Exported permission: perform backup.
-  $permissions['perform backup'] = array(
-    'name' => 'perform backup',
-    'roles' => array(
-      0 => 'Content Admin',
-      1 => 'Drupal Administrator',
-    ),
-    'module' => 'backup_migrate',
   );
 
   // Exported permission: post comments.

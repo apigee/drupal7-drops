@@ -56,7 +56,7 @@ function devconnect_developer_apps_analytics_form() {
   }
   $from_text = gmdate('m/d/Y H:i', $from) . ' UTC';
 
-  drupal_add_library ('system', 'ui.tabs');
+  drupal_add_library('system', 'ui.tabs');
   drupal_add_library('system', 'ui.datepicker'); // need to add the library as the timepicker datemethod relies on classes within it.
   drupal_add_js(drupal_get_path('module', 'devconnect_developer_apps') . '/js/jquery-ui-timepicker-addon.js');
   drupal_add_js('jQuery(document).ready(function(){
@@ -151,6 +151,9 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
   $entity = reset($entities);
   $app_name = $entity->name;
   $my_data = _devconnect_developer_apps_analytics_get_datapoints($user, $app_name);
+  if ($my_data === FALSE) {
+    return '<p>' . t('An error occurred while fetching your data.') . '</p>';
+  }
   $datapoints = $my_data['datapoints'];
   $date_format = $my_data['date_format'];
   $default_datapoints = $my_data['default_datapoints'];
@@ -284,9 +287,7 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
   $dca = _devconnect_developer_apps_analytics_api_client();
 
   $metrics = _devconnect_developer_apps_analytics_metrics();
-  $units = array(
-    'second', 'minute', 'hour', 'day', 'week', 'month', 'year'
-  );
+  $units = array('second', 'minute', 'hour', 'day', 'week', 'month','year');
 
   if (isset($_GET['metric']) && isset($metrics[$_GET['metric']])) {
     $metric = $_GET['metric'];
@@ -389,22 +390,15 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
   try {
     $developer_id = devconnect_user_get_developer_id($user);
     $datapoints = $dca->getByAppName($developer_id, $app_name, $metric, $start, $end, $unit, $metric, $order);
-  }
-  catch (Apigee\Exceptions\EnvironmentException $e) {
-    drupal_set_message($e->getMessage(), 'error');
-    drupal_not_found();
-    exit;
-  }
-  catch (Apigee\Exceptions\ParameterException $e) {
-    drupal_set_message($e->getMessage(), 'error');
-    drupal_not_found();
-    exit;
-  }
-  catch (Exception $e) {
-    // TODO: this should be handled somewhat more elegantly.
-    drupal_set_message($e->getMessage(), 'error');
-    drupal_not_found();
-    exit;
+  } catch (Apigee\Exceptions\EnvironmentException $e) {
+    watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
+    return FALSE;
+  } catch (Apigee\Exceptions\ParameterException $e) {
+    watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
+    return FALSE;
+  } catch (Exception $e) {
+    watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
+    return FALSE;
   }
 
   return array(
@@ -426,12 +420,15 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
 }
 
 function devconnect_developer_analytics_performance_download($user, $appId, $format) {
-  
+
   $entities = entity_load('developer_app', array($appId), array('mail' => $user->mail));
   $entity = reset($entities);
   $app_name = $entity->name;
-  
+
   $my_data = _devconnect_developer_apps_analytics_get_datapoints($user, $app_name);
+  if ($my_data === FALSE) {
+    return '<p>' . t('An error occurred while fetching your data.') . '</p>';
+  }
   $datapoints = $my_data['datapoints'];
   $default_datapoints = $my_data['default_datapoints'];
 

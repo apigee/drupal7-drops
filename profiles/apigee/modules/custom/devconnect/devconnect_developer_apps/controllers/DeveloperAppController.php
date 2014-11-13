@@ -24,7 +24,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   /**
    * @var \Apigee\Util\OrgConfig
    */
-  private $orgConfig;
+  protected $orgConfig;
 
   /**
    * Implements DrupalEntityControllerInterface::__construct().
@@ -265,9 +265,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $config->subscribers = array();
       }
 
-      if (isset($conditions['mail']) && empty($ids)) {
+      if (array_key_exists('mail', $conditions) && empty($ids)) {
         $dev_app = new DeveloperApp($config, $conditions['mail']);
-        if (isset($conditions['name'])) {
+        if (array_key_exists('name', $conditions)) {
           try {
             $dev_app->load($conditions['name']);
             $list += array($dev_app);
@@ -462,7 +462,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @param array $list
    * @param array|bool $ids
    */
-  private function addListToCache(array &$list, $ids = array()) {
+  protected function addListToCache(array &$list, $ids = array()) {
     foreach ($list as $app) {
       /** @var Apigee\ManagementAPI\DeveloperApp $app */
       $key = $app->getAppId();

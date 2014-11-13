@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Provides the view implementation.
+ */
+
+/**
  * Implements hook_views_data().
  */
 function faq_views_data() {
@@ -8,8 +13,8 @@ function faq_views_data() {
   $data['faq_questions']['table']['group'] = t('FAQ');
   $data['faq_questions']['table']['join'] = array(
     'node' => array(
-      'left_field' => 'nid',
-      'field' => 'nid',
+      'left_field' => 'vid',
+      'field' => 'vid',
     ),
   );
   $data['faq_questions']['question'] = array(
@@ -40,7 +45,6 @@ function faq_views_data() {
       'handler' => 'views_handler_filter_string',
     ),
   );
-
 
   // faq_weights table.
   $data['faq_weights']['table']['group'] = t('FAQ');
@@ -124,4 +128,3 @@ function faq_views_data() {
 
   return $data;
 }
-

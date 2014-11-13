@@ -50,12 +50,15 @@
  *   The sub-categories faqs, recursively themed (by this template).
  */
 
+// @todo should be moved to better place.
+// @codingStandardsIgnoreStart
 if ($category_depth > 0) {
   $hdr = 'h4';
 }
 else {
   $hdr = 'h3';
 }
+// @codingStandardsIgnoreEnd
 
 ?><div class="faq-category-group">
   <!-- category header with title, link, image, description, and count of
@@ -130,7 +133,5 @@ else {
     <?php endforeach; ?>
   <?php endif; ?>
   </div> <!-- Close div: faq-dl-hide-answer -->
-
   </div> <!-- Close div: faq-qa / faq-qa-hide -->
-
 </div> <!-- Close div: faq-category-group -->

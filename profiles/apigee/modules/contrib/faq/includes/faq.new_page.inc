@@ -8,7 +8,7 @@
 /**
  * Create FAQ page if set to show the answer in a new page.
  *
- * @param &$variables
+ * @param array &$variables
  *   Array reference of arguments given to the theme() function.
  */
 function template_preprocess_faq_new_page(&$variables) {
@@ -23,16 +23,22 @@ function template_preprocess_faq_new_page(&$variables) {
   $variables['list_style'] = $list_style;
   $variables['list_items'] = $items;
 
-  $variables['list'] = theme('item_list', array('items' => $items, 'title' => NULL, 'type' => $list_style, 'attributes' => array("class" => "faq-question-listing")));
+  $variables['list'] = theme('item_list',
+    array(
+      'items' => $items,
+      'title' => NULL,
+      'type' => $list_style,
+      'attributes' => array("class" => "faq-question-listing"),
+    )
+  );
 }
 
 /**
  * Create categorized FAQ page if set to show answer in a new page.
  *
- * @param &$variables
+ * @param array &$variables
  *   Array reference of arguments given to the theme() function.
  */
-
 function template_preprocess_faq_category_new_page(&$variables) {
   $data = $variables['data'];
   $category_display = $variables['category_display'];
@@ -132,4 +138,3 @@ function template_preprocess_faq_category_new_page(&$variables) {
   $variables['question_list_style'] = variable_get('faq_question_listing', 'ul');
   $variables['question_count'] = $count;
 }
-

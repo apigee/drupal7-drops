@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Implements hook_views_data().
+ *
+ * @return array
+ */
 function devconnect_developer_apps_views_data() {
 
   $base_table = 'dc_dev_app';
@@ -307,4 +312,22 @@ function devconnect_developer_apps_views_data() {
   );
 
   return $data;
+}
+
+/**
+ * Implements hook_views_pre_execute().
+ *
+ * Ensures that caches are populated.
+ *
+ * @param $view
+ */
+function devconnect_developer_apps_views_pre_execute(&$view) {
+  if ($view->base_table == 'dc_dev_app') {
+    if (_cache_get_object('developer_app')->isEmpty()) {
+      devconnect_developer_apps_sync_apps('default');
+    }
+    if (_cache_get_object('api_product')->isEmpty()) {
+      devconnect_developer_apps_sync_products('default');
+    }
+  }
 }

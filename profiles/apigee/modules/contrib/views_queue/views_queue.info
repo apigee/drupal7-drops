@@ -1,0 +1,12 @@
+name = Views Queue
+description = "Views Queue exposes the Drupal SystemQueue in Views"
+core = 7.x
+dependencies[] = views
+package = Views
+
+; Information added by drupal.org packaging script on 2013-10-19
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "views_queue"
+datestamp = "1382165021"
+

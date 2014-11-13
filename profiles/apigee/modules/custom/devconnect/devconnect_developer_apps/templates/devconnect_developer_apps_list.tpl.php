@@ -13,50 +13,49 @@
  *  - delete_url
  */
 
-// Set Title
-if ($user->uid == $GLOBALS['user']->uid) {
-  if ((bool)variable_get('myapis')) {
-    $title = t('My APIs');
-  } else {
-    $title = t('My Apps');
-  }
+$singular = _devconnect_developer_apps_get_app_label(FALSE);
+$plural = _devconnect_developer_apps_get_app_label(TRUE);
+if ($singular == 'API') {
+  $singular_downcase = $singular;
+  $plural_downcase = $plural;
 }
 else {
-  if ((bool)variable_get('myapis')) {
-    $title = t('@name’s APIs', array('@name' => $user->name));
-  } else {
-    $title = t('@name’s Apps', array('@name' => $user->name));
-  }
+  $singular_downcase = strtolower($singular);
+  $plural_downcase = strtolower($plural);
+}
+
+// Set Title
+if ($user->uid == $GLOBALS['user']->uid) {
+  $title = t("My $plural");
+}
+else {
+  $title = t("@name’s $plural", array('@name' => $user->name));
 }
 drupal_set_title($title);
 
 // Build Breadcrumbs
 $breadcrumb = array();
-$breadcrumb[] = l('Home', '<front>');
+$breadcrumb[] = l(t('Home'), '<front>');
 
 // Set Breadcrumbs
 drupal_set_breadcrumb($breadcrumb);
 
+print l(t("Add a new $singular_downcase"), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app'))));
 ?>
-<?php if ((bool)variable_get('myapis')) { ?>
-  <?php print l(t('Add a new API'), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
-<?php } else { ?>
-  <?php print l(t('Add a new app'), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app')))); ?>
-<?php } ?>
 
 <form class="form-stacked">
 
   <?php if ($application_count) : ?>
 
-    <h2>These are your apps!</h2>
-    <h3>Add more, edit or delete them as you like.</h3>
+    <h2><?php print t("These are your $plural_downcase!"); ?></h2>
+    <h3><?php print t('Add more, edit or delete them as you like.'); ?></h3>
     <hr>
 
     <?php
     foreach ($applications as $app) {
       print '<div class="app-delete">';
       if (!empty($app['delete_url'])) {
-        print '<button class="btn primary action button-processed" title="' . t('Delete App') . '" data-url="' . $app['delete_url'] . '"></button>';
+        print '<button class="btn primary action button-processed" title="' . t("Delete $singular") . '" data-url="' . $app['delete_url'] . '"></button>';
       }
       print '</div>';
       print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], $app['detail_url']) . '</h4>';
@@ -68,7 +67,7 @@ drupal_set_breadcrumb($breadcrumb);
     }
     ?>
   <?php else: ?>
-    <h2>Looks like you don’t have any apps</h2>
-    <h3>Get started by adding one.</h3>
+    <h2><?php print t("Looks like you don’t have any $plural_downcase"); ?></h2>
+    <h3><?php print t('Get started by adding one.'); ?></h3>
   <?php endif; ?>
 </form>

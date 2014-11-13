@@ -58,7 +58,7 @@
   Backbone.emulateHTTP = false;
 
   // Turn on `emulateJSON` to support legacy servers that can't deal with direct
-  // `application/json` requests ... will encode the body as
+  // `application/json` requests ... this will encode the body as
   // `application/x-www-form-urlencoded` instead and will send the model in a
   // form param named `model`.
   Backbone.emulateJSON = false;
@@ -167,6 +167,31 @@
       return this;
     },
 
+    // Inversion-of-control versions of `on` and `once`. Tell *this* object to
+    // listen to an event in another object ... keeping track of what it's
+    // listening to.
+    listenTo: function(obj, name, callback) {
+      var listeningTo = this._listeningTo || (this._listeningTo = {});
+      var id = obj._listenId || (obj._listenId = _.uniqueId('l'));
+      listeningTo[id] = obj;
+      if (!callback && typeof name === 'object') callback = this;
+      obj.on(name, callback, this);
+      return this;
+    },
+
+    listenToOnce: function(obj, name, callback) {
+      if (typeof name === 'object') {
+        for (var event in name) this.listenToOnce(obj, event, name[event]);
+        return this;
+      }
+      var cb = _.once(function() {
+        this.stopListening(obj, name, cb);
+        callback.apply(this, arguments);
+      });
+      cb._callback = callback;
+      return this.listenTo(obj, name, cb);
+    },
+
     // Tell this object to stop listening to either specific events ... or
     // to every object it's currently listening to.
     stopListening: function(obj, name, callback) {
@@ -227,22 +252,6 @@
       default: while (++i < l) (ev = events[i]).callback.apply(ev.ctx, args); return;
     }
   };
-
-  var listenMethods = {listenTo: 'on', listenToOnce: 'once'};
-
-  // Inversion-of-control versions of `on` and `once`. Tell *this* object to
-  // listen to an event in another object ... keeping track of what it's
-  // listening to.
-  _.each(listenMethods, function(implementation, method) {
-    Events[method] = function(obj, name, callback) {
-      var listeningTo = this._listeningTo || (this._listeningTo = {});
-      var id = obj._listenId || (obj._listenId = _.uniqueId('l'));
-      listeningTo[id] = obj;
-      if (!callback && typeof name === 'object') callback = this;
-      obj[implementation](name, callback, this);
-      return this;
-    };
-  });
 
   // Aliases for backwards compatibility.
   Events.bind   = Events.on;
@@ -696,6 +705,7 @@
       var toAdd = [], toRemove = [], modelMap = {};
       var add = options.add, merge = options.merge, remove = options.remove;
       var order = !sortable && add && remove ? [] : false;
+      var orderChanged = false;
 
       // Turn bare objects into model references, and prevent invalid models
       // from being added.
@@ -726,7 +736,13 @@
         model = existing || model;
         if (!model) continue;
         id = this.modelId(model.attributes);
-        if (order && (model.isNew() || !modelMap[id])) order.push(model);
+        if (order && (model.isNew() || !modelMap[id])) {
+          order.push(model);
+
+          // Check to see if this is actually a new model at this index.
+          orderChanged = orderChanged || !this.models[i] || model.cid !== this.models[i].cid;
+        }
+
         modelMap[id] = true;
       }
 
@@ -739,7 +755,7 @@
       }
 
       // See if sorting is needed, update `length` and splice in new models.
-      if (toAdd.length || (order && order.length)) {
+      if (toAdd.length || orderChanged) {
         if (sortable) sort = true;
         this.length += toAdd.length;
         if (at != null) {
@@ -765,7 +781,7 @@
           if (at != null) addOpts.index = at + i;
           (model = toAdd[i]).trigger('add', model, this, addOpts);
         }
-        if (sort || (order && order.length)) this.trigger('sort', this, options);
+        if (sort || orderChanged) this.trigger('sort', this, options);
       }
 
       // Return the added (or merged) model (or models).
@@ -833,12 +849,9 @@
     // Return models with matching attributes. Useful for simple cases of
     // `filter`.
     where: function(attrs, first) {
-      if (_.isEmpty(attrs)) return first ? void 0 : [];
+      var matches = _.matches(attrs);
       return this[first ? 'find' : 'filter'](function(model) {
-        for (var key in attrs) {
-          if (attrs[key] !== model.get(key)) return false;
-        }
-        return true;
+        return matches(model.attributes);
       });
     },
 
@@ -1593,16 +1606,21 @@
       if (!History.started) return false;
       if (!options || options === true) options = {trigger: !!options};
 
-      var url = this.root + (fragment = this.getFragment(fragment || ''));
+      // Normalize the fragment.
+      fragment = this.getFragment(fragment || '');
+
+      // Don't include a trailing slash on the root.
+      var root = this.root;
+      if (fragment === '' || fragment.charAt(0) === '?') {
+        root = root.slice(0, -1) || '/';
+      }
+      var url = root + fragment;
 
       // Strip the hash and decode for matching.
       fragment = decodeURI(fragment.replace(pathStripper, ''));
 
       if (this.fragment === fragment) return;
       this.fragment = fragment;
-
-      // Don't include a trailing slash on the root.
-      if (fragment === '' && url !== '/') url = url.slice(0, -1);
 
       // If pushState is available, we use it to set the fragment as a real URL.
       if (this._hasPushState) {

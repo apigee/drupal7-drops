@@ -380,7 +380,7 @@ function smartdocs_render_confirmation_form($form, $form_state, $selected, $verb
     '#value' => $selected,
   );
   $form['verbose'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $verbose,
   );
   $form['model'] = array(

@@ -76,7 +76,7 @@ function devconnect_developer_apps_rules_action_info() {
   $parameters = array();
   $parameters['app_name'] = array(
     'type' => 'text',
-    'label' => ((bool)variable_get('myapis')) ? t('API Name') : t('App Name'),
+    'label' => t(_devconnect_developer_apps_get_app_label(FALSE) . ' Name'),
     'description' => t('Please provide a name to create an application with.'),
   );
   $parameters['developer_uid'] = array(

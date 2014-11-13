@@ -1706,6 +1706,10 @@ function devconnect_monetization_commerce_currency_info_alter(&$currencies, $lan
     'major_unit' => t(''),
   );
   $currencies['points'] = $currencies['POINTS'];
+
+  // Do not round CHF since we are not dealing with cash.
+  unset($currencies['CHF']['rounding_step']);
+
 }
 
 function devconnect_monetization_form_devconnect_admin_form_alter(&$form, &$form_state) {

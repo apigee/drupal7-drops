@@ -2,7 +2,7 @@ name = DevConnect Developer Apps
 description = CRUD Apps with REST interface to Apigee 4
 package = "DevConnect"
 core = 7.x
-version = "7.x-4.28"
+version = "7.x-4.30"
 php = 5.3
 
 dependencies[] = devconnect

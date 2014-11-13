@@ -77,18 +77,29 @@ class DeveloperEntity {
    */
   public $orgNames;
   /**
+   * @var array
+   */
+  public $companies;
+  /**
    * @var boolean
    */
   public $forceSync = FALSE;
 
   public function __construct(array $values = array()) {
     $this->orgNames = array();
+    $this->companies = array();
     // Populate values if available.
     foreach ($values as $key => $value) {
       if (property_exists($this, $key)) {
         $this->$key = $value;
       }
     }
+  }
+
+  public function toArray() {
+    $properties = get_object_vars($this);
+    unset($properties['debugData']);
+    return $properties;
   }
 
 }

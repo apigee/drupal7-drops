@@ -427,6 +427,8 @@ function smartdocs_preprocess_node(&$vars) {
               'isDrupal' => TRUE,
               'apiModelBaseUrl' => str_replace('/v1', '', $config['endpoint']),
               'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
+              'dataProxyUrl' =>  variable_get('data_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1'),
+              'dataAuthUrl' =>  variable_get('data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
             )
           ), 'setting');
       }
@@ -450,16 +452,16 @@ function smartdocs_preprocess_node(&$vars) {
       drupal_add_css(drupal_get_path('module', 'smartdocs') . '/css/smartdocs.css');
 
       if (!(bool) variable_get('use_local_assets', 0)) {
-        $def_css = 'https://smartdocs.apigee.com/3/static/css/main.css
-https://smartdocs.apigee.com/3/static/css/codemirror.css
-https://smartdocs.apigee.com/3/static/css/prism.css';
-        $def_js = "https://smartdocs.apigee.com/3/static/js/codemirror.js
-https://smartdocs.apigee.com/3/static/js/codemirror_javascript.js
-https://smartdocs.apigee.com/3/static/js/codemirror_xml.js
-https://smartdocs.apigee.com/3/static/js/prism.js
-https://smartdocs.apigee.com/3/static/js/base64_min.js
-https://smartdocs.apigee.com/3/static/js/model.js
-https://smartdocs.apigee.com/3/static/js/controller.js";
+        $def_css = 'https://smartdocs.apigee.com/5/static/css/main.css
+https://smartdocs.apigee.com/5/static/css/codemirror.css
+https://smartdocs.apigee.com/5/static/css/prism.css';
+        $def_js = "https://smartdocs.apigee.com/5/static/js/codemirror.js
+https://smartdocs.apigee.com/5/static/js/codemirror_javascript.js
+https://smartdocs.apigee.com/5/static/js/codemirror_xml.js
+https://smartdocs.apigee.com/5/static/js/prism.js
+https://smartdocs.apigee.com/5/static/js/base64_min.js
+https://smartdocs.apigee.com/5/static/js/model.js
+https://smartdocs.apigee.com/5/static/js/controller.js";
 
         $smart_mid = smartdocs_model_name($models[$vars['type']]);
 
@@ -487,7 +489,7 @@ https://smartdocs.apigee.com/3/static/js/controller.js";
         }
       }
       else {
-        $version = variable_get('local_asset_version', '3');
+        $version = variable_get('local_asset_version', '5');
         $path = drupal_get_path('module', 'smartdocs');
         $css = array(
           $path . '/local/css/v' . $version . '/main.css',

@@ -11,14 +11,14 @@
 function faq_views_default_views() {
   $export = array();
 
-  $view = new view;
+  $view = new view();
   $view->name = 'faq';
   $view->description = 'FAQ listings';
   $view->tag = 'default';
   $view->base_table = 'node';
   $view->human_name = 'FAQ';
   $view->core = 7;
-  $view->api_version = '3.0-alpha1';
+  $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 
   /* Display: Master */
@@ -76,6 +76,14 @@ function faq_views_default_views() {
   $handler->display->display_options['filters']['type']['value'] = array(
     'faq' => 'faq',
   );
+  /* Filter criterion: Content translation: Language */
+  $handler->display->display_options['filters']['language']['id'] = 'language';
+  $handler->display->display_options['filters']['language']['table'] = 'node';
+  $handler->display->display_options['filters']['language']['field'] = 'language';
+  $handler->display->display_options['filters']['language']['value'] = array(
+    '***CURRENT_LANGUAGE***' => '***CURRENT_LANGUAGE***',
+    'und' => 'und',
+  );
 
   /* Display: Block - Recent FAQs */
   $handler = $view->new_display('block', 'Block - Recent FAQs', 'faq_recent');
@@ -91,6 +99,7 @@ function faq_views_default_views() {
   $handler->display->display_options['pager']['options']['offset'] = '0';
   $handler->display->display_options['defaults']['style_plugin'] = FALSE;
   $handler->display->display_options['style_plugin'] = 'list';
+  $handler->display->display_options['style_options']['grouping'] = '';
   $handler->display->display_options['defaults']['style_options'] = FALSE;
   $handler->display->display_options['defaults']['row_plugin'] = FALSE;
   $handler->display->display_options['row_plugin'] = 'fields';
@@ -127,21 +136,6 @@ function faq_views_default_views() {
   /* Display: Page - Questions Inline */
   $handler = $view->new_display('page', 'Page - Questions Inline', 'page');
   $handler->display->display_options['enabled'] = FALSE;
-  $handler->display->display_options['defaults']['filters'] = FALSE;
-  /* Filter criterion: Content: Published */
-  $handler->display->display_options['filters']['status']['id'] = 'status';
-  $handler->display->display_options['filters']['status']['table'] = 'node';
-  $handler->display->display_options['filters']['status']['field'] = 'status';
-  $handler->display->display_options['filters']['status']['value'] = 1;
-  $handler->display->display_options['filters']['status']['group'] = 0;
-  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
-  /* Filter criterion: Content: Type */
-  $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'node';
-  $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = array(
-    'faq' => 'faq',
-  );
   $handler->display->display_options['path'] = 'faq-questions-inline';
 
   /* Display: Page - Questions Top */
@@ -230,21 +224,6 @@ function faq_views_default_views() {
   $handler->display->display_options['fields']['body']['empty_zero'] = 0;
   $handler->display->display_options['fields']['body']['hide_alter_empty'] = 0;
   $handler->display->display_options['fields']['body']['field_api_classes'] = 0;
-  $handler->display->display_options['defaults']['filters'] = FALSE;
-  /* Filter criterion: Content: Published */
-  $handler->display->display_options['filters']['status']['id'] = 'status';
-  $handler->display->display_options['filters']['status']['table'] = 'node';
-  $handler->display->display_options['filters']['status']['field'] = 'status';
-  $handler->display->display_options['filters']['status']['value'] = 1;
-  $handler->display->display_options['filters']['status']['group'] = 0;
-  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
-  /* Filter criterion: Content: Type */
-  $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'node';
-  $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = array(
-    'faq' => 'faq',
-  );
   $handler->display->display_options['path'] = 'faq-questions-top';
 
   /* Display: Attachment - Questions Top */
@@ -351,21 +330,6 @@ function faq_views_default_views() {
   $handler->display->display_options['fields']['title']['hide_empty'] = 0;
   $handler->display->display_options['fields']['title']['empty_zero'] = 0;
   $handler->display->display_options['fields']['title']['link_to_node'] = 1;
-  $handler->display->display_options['defaults']['filters'] = FALSE;
-  /* Filter criterion: Content: Published */
-  $handler->display->display_options['filters']['status']['id'] = 'status';
-  $handler->display->display_options['filters']['status']['table'] = 'node';
-  $handler->display->display_options['filters']['status']['field'] = 'status';
-  $handler->display->display_options['filters']['status']['value'] = 1;
-  $handler->display->display_options['filters']['status']['group'] = 0;
-  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
-  /* Filter criterion: Content: Type */
-  $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'node';
-  $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = array(
-    'faq' => 'faq',
-  );
   $handler->display->display_options['path'] = 'faq-new-page';
 
   /* Display: Page - Categories Inline - New Page */
@@ -422,24 +386,34 @@ function faq_views_default_views() {
   $handler->display->display_options['fields']['field_category']['hide_alter_empty'] = 0;
   $handler->display->display_options['fields']['field_category']['type'] = 'taxonomy_term_reference_plain';
   $handler->display->display_options['fields']['field_category']['field_api_classes'] = 0;
-  $handler->display->display_options['defaults']['filters'] = FALSE;
-  /* Filter criterion: Content: Published */
-  $handler->display->display_options['filters']['status']['id'] = 'status';
-  $handler->display->display_options['filters']['status']['table'] = 'node';
-  $handler->display->display_options['filters']['status']['field'] = 'status';
-  $handler->display->display_options['filters']['status']['value'] = 1;
-  $handler->display->display_options['filters']['status']['group'] = 0;
-  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
-  /* Filter criterion: Content: Type */
-  $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'node';
-  $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = array(
-    'faq' => 'faq',
-  );
   $handler->display->display_options['path'] = 'faq-categories-inline-new-page';
+  $translatables['faq'] = array(
+    t('Master'),
+    t('FAQ'),
+    t('View all FAQs'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('Items per page'),
+    t('- All -'),
+    t('Offset'),
+    t('Block - Recent FAQs'),
+    t('Recent FAQs'),
+    t('Block - Random FAQs'),
+    t('Random FAQs'),
+    t('Page - Questions Inline'),
+    t('more'),
+    t('Page - Questions Top'),
+    t('<h3><a id="n[nid]">[title]</a></h3>'),
+    t('Attachment - Questions Top'),
+    t('faq-questions-top#n[nid]'),
+    t('Page - New Page'),
+    t('Page - Categories Inline - New Page'),
+  );
+
   $export[$view->name] = $view;
 
   return $export;
 }
-

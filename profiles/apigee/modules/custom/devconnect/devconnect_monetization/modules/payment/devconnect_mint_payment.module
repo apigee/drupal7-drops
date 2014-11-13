@@ -215,12 +215,30 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   catch (ResponseException $exception) {
     // If this is a white listing error at WorldPay, throw error with
     // 'emergency' severity so that monetization monitor picks up error.
-    $response = json_decode($exception->getMessage());
-    watchdog('devconnect_mint_payment', "Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription), WATCHDOG_EMERGENCY);
+    $exception_message = $exception->getMessage();
+    $response = json_decode($exception->getResponse());
+    $error_code = 0;
+    $error_description = 'N/A';
+    if(is_object($response) && property_exists($response,'errorCode')) {
+      $error_code = $response->errorCode;
+    }
+    if(is_object($response) && property_exists($response,'errorDescription')) {
+      $error_description = $response->errorDescription;
+    }
+    if($error_code == 4) {
+      // WorldPay "Security violation" is errorCode 4, need to give
+      // admin more info on why this happened:
+      $more_details = "This error code usually indicates one of the following: (1) there is a difference between the merchant code used to set up the connection and that referred to in the XML message, (2) a connection has been attempted from an unregistered IP, or (3) the merchant is submitting to an inactive environment, usually because they have only activated the Test environment, but are attempting to submit to production.";
+      $more_details .= "If you have not added the IP of the Apigee Edge Management Server to your Worldpay, you will need to login to the Worldpay Gateway and add the proper IP(s) to the 'Merchant Environment' under the 'Profile' tab.";
+    }
+    else {
+      $more_details = '';
+    }
+    watchdog('devconnect_mint_payment', "%message Error Code: %error_code Error Description: %error_description !more_details", array('%message' => $exception_message, '%error_code' => $error_code, '%error_description' => $error_description, '!more_details' => $more_details), WATCHDOG_EMERGENCY);
 
     drupal_set_message(t('The WorldPay payment gateway is currently not available. Please select a different payment system or try again later.'), 'error');
     // Send the customer to the previous step of the checkout process, Worldpay is not working.
-    commerce_payment_redirect_pane_previous_page($order, t("Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription)));
+    commerce_payment_redirect_pane_previous_page($order, t("Could not create payment order: %error_code : %error_description", array('%error_code' => $error_code, '%error_description' => $error_description)));
     drupal_goto(commerce_checkout_order_uri($order));
   }
   if (is_object($payment) && !$payment->getSuccess()) {

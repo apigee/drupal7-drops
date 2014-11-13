@@ -552,6 +552,10 @@ ul.openid-links{
     margin: 0 0 10px 0;
 }
 
+.modal-body #apigee-sso-signin-block{
+  width: auto;  
+}
+
 /* User Edit Form */
 #edit-timezone a.fieldset-title,
 #edit-metatags,
@@ -768,4 +772,27 @@ a.back-to-catalog{
 .node-article .posted,
 .node-blog .posted {
   margin-bottom: 20px;
+}
+
+/***************Styles to fix the OpenID login Link*****************/
+div.form-item-openid-identifier {
+  display: block;
+}
+html.js #user-login-form div.form-item-openid-identifier,
+html.js #user-login--2 div.form-item-openid-identifier,
+html.js #user-login div.form-item-openid-identifier {
+  display: none;
+}
+
+#user-login-form .openid-links li,
+#user-login--2 .openid-links li,
+#user-login .openid-links li {
+  display: none;
+  list-style: none;
+}
+html.js #user-login-form li.openid-link,
+html.js #user-login--2 li.openid-link,
+html.js #user-login li.openid-link {
+  display: block;
+  margin-left: 0; /* LTR */
 }

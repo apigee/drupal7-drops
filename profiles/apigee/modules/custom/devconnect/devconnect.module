@@ -189,7 +189,26 @@ function devconnect_default_org_config($requested_org = 'default') {
     $settings = devconnect_get_org_settings();
     drupal_alter('devconnect_org_settings', $settings, $requested_org);
 
-    $info = system_get_info('module', 'devconnect');
+    $buildInfo = FALSE;
+    if (file_exists(DRUPAL_ROOT . '/buildInfo')) {
+      $buildInfo = DRUPAL_ROOT . '/buildInfo';
+    }
+    elseif (file_exists(DRUPAL_ROOT . '/profiles/apigee/buildInfo')) {
+      $buildInfo = DRUPAL_ROOT . '/profiles/apigee/buildInfo';
+    }
+    $user_agent = FALSE;
+    if ($buildInfo) {
+      $fp = fopen($buildInfo, 'r');
+      $line = trim(fgets($fp));
+      fclose($fp);
+      if (preg_match('!([0-9.]+)$!', $line, $matches)) {
+        $user_agent = 'DevPortal/' . $matches[1];
+      }
+    }
+    if (!$user_agent) {
+      $info = system_get_info('module', 'devconnect');
+      $user_agent = 'devconnect/' . $info['version'];
+    }
 
     $logger = new Apigee\Drupal\WatchdogLogger();
     $logger::setLogThreshold($settings['log_threshold']);
@@ -207,8 +226,9 @@ function devconnect_default_org_config($requested_org = 'default') {
         'connection_timeout' => intval($settings['connection_timeout']),
         'timeout' => intval($settings['request_timeout'])
       ),
-      'user_agent' => 'devconnect/' . $info['version'],
+      'user_agent' => $user_agent,
       'variable_store' => new Apigee\Drupal\VariableCache(),
+      'referer' => url($_GET['q'], array('absolute' => TRUE))
     );
     if (function_exists('devconnect_debug_register')) {
       $options['debug_callbacks'] = array('devconnect_debug_register');
@@ -386,5 +406,35 @@ function devconnect_devconnect_monitor_event_info() {
 function devconnect_update_projects_alter(&$projects) {
   if (array_key_exists('jquery_update', $projects)) {
     unset($projects['jquery_update']);
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * On Pantheon systems, register a preprocess callback for the status report.
+ *
+ * @param $theme_registry
+ */
+function devconnect_theme_registry_alter(&$theme_registry) {
+  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && !module_exists('update')) {
+    $theme_registry['status_report']['preprocess functions'][] = 'devconnect_preprocess_status_report';
+  }
+}
+
+/**
+ * Preprocess callback for status report.
+ *
+ * On Pantheon systems in which the Update module has not been explicitly
+ * enabled, suppress the update-isn't-turned-on warning.
+ *
+ * @param $variables
+ */
+function devconnect_preprocess_status_report(&$variables) {
+  foreach (array_keys($variables['requirements']) as $key) {
+    if ($variables['requirements'][$key]['title'] == t('Update notifications') && $variables['requirements'][$key]['severity'] == 1) {
+      unset($variables['requirements'][$key]);
+      break;
+    }
   }
 }

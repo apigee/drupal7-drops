@@ -8,9 +8,10 @@
 /**
  * Create the structure of the page, when the questions are to be shown on top.
  *
- * @param &$variables
+ * @param array &$variables
  *   Array reference of arguments given to the theme() function.
- * @return
+ *
+ * @return array
  *   A variable holding the HTML formatted page.
  */
 function template_preprocess_faq_questions_top(&$variables) {
@@ -51,13 +52,22 @@ function template_preprocess_faq_questions_top(&$variables) {
   $variables['use_teaser'] = $teaser;
   $variables['questions'] = $questions;
   $variables['answers'] = $answers;
-  $variables['questions_list'] = theme('item_list', array('items' => $questions, 'title' => NULL, 'type' => $list_style, 'attributes' => array("class" => "faq-ul-questions-top")));
+  $variables['questions_list'] = theme('item_list',
+    array(
+      'items' => $questions,
+      'title' => NULL,
+      'type' => $list_style,
+      'attributes' => array(
+        "class" => "faq-ul-questions-top",
+      ),
+    )
+  );
 }
 
 /**
  * Create categorized questions for FAQ page if set to show questions on top.
  *
- * @param &$variables
+ * @param array &$variables
  *   Array reference of arguments given to the theme() function.
  */
 function template_preprocess_faq_category_questions_top(&$variables) {
@@ -76,7 +86,7 @@ function template_preprocess_faq_category_questions_top(&$variables) {
   $show_term_page_children = variable_get('faq_show_term_page_children', FALSE);
   $group_questions_top = variable_get('faq_group_questions_top', FALSE);
   $default_sorting = variable_get('faq_default_sorting', 'DESC');
-  
+
   // Configure labels.
   $variables['question_label'] = '';
   $variables['answer_label'] = '';
@@ -199,7 +209,7 @@ function template_preprocess_faq_category_questions_top(&$variables) {
 /**
  * Create categorized answers for FAQ page if set to show the questions on top.
  *
- * @param &$variables
+ * @param array &$variables
  *   Array reference of arguments given to the theme() function.
  */
 function template_preprocess_faq_category_questions_top_answers(&$variables) {
@@ -271,7 +281,6 @@ function template_preprocess_faq_category_questions_top_answers(&$variables) {
     $variables['subcat_body_list'] = faq_get_child_categories_faqs($term, 'faq_category_questions_top_answers', $default_weight, $default_sorting, $category_display, $variables['class'], $parent_term);
   }
 
-
   $nodes = array();
   foreach ($data as $node) {
     $node_var = array();
@@ -290,4 +299,3 @@ function template_preprocess_faq_category_questions_top_answers(&$variables) {
     $variables['display_header'] = TRUE;
   }
 }
-

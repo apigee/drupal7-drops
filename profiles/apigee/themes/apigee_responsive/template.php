@@ -183,11 +183,7 @@ function apigee_responsive_preprocess_page(&$vars) {
   $vars['current_path'] = implode("/", arg());
 
   $user_url = 'user/' . $user->uid;
-  if ((bool)variable_get('myapis')) {
-    $vars['myappslink'] = l('<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp; My APIs', $user_url . '/apps', array('html' => TRUE));
-  } else {
-    $vars['myappslink'] = l('<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp; My Apps', $user_url . '/apps', array('html' => TRUE));
-  }
+  $vars['myappslink'] = l('<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp; ' . t('My ' . _devconnect_developer_apps_get_app_label(TRUE)), $user_url . '/apps', array('html' => TRUE));
   $vars['profilelink'] = l('<span class="glyphicon glyphicon-user"></span>&nbsp;&nbsp; Edit Profile', $user_url . '/edit', array('html' => TRUE));
   $vars['logoutlink'] = l('<span class="glyphicon glyphicon-off"></span>&nbsp;&nbsp; Logout','user/logout',array('html' => TRUE));
 
@@ -254,18 +250,10 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
   $user = (isset($vars['user']) ? $vars['user'] : $GLOBALS['user']);
   // Set Title.
   if ($user->uid == $GLOBALS['user']->uid) {
-    if ((bool)variable_get('myapis')) {
-      $title = t('My APIs');
-    } else {
-      $title = t('My Apps');
-    }
+    $title = t('My ' . _devconnect_developer_apps_get_app_label(TRUE));
   }
   else {
-    if ((bool)variable_get('myapis')) {
-      $title = t('@name’s APIs', array('@name' => $user->name));
-    } else {
-      $title = t('@name’s Apps', array('@name' => $user->name));
-    }
+    $title = t('@name’s ' . _devconnect_developer_apps_get_app_label(TRUE), array('@name' => $user->name));
   }
   drupal_set_title($title);
 
@@ -278,26 +266,9 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
   $vars['show_status'] = variable_get('devconnect_show_apiproduct_status', FALSE);
   
   if (user_access("create developer apps")) {
-    if ((bool) variable_get('myapis')) {
-      $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new API'), 'user/' . $user->uid . '/apps/add', array(
-        'html' => TRUE,
-        'attributes' => array('class' => array(
-            'add-app')
-        )
-          )
-      );
-    }
-    else {
-      $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new app'), 'user/' . $user->uid . '/apps/add', array(
-        'html' => TRUE,
-        'attributes' => array('class' => array(
-            'add-app')
-        )
-          )
-      );
-    }
+    $link_text = '<span class="glyphicon glyphicon-plus"></span> ' . t('Add a new ' . _devconnect_developer_apps_get_app_label(FALSE));
+    $vars['add_app'] = l($link_text, 'user/' . $user->uid . '/apps/add', array('html' => TRUE, 'attributes' => array('class' => array('add-app'))));
   }
-  
 
   $vars['i'] = 0;
 
@@ -309,8 +280,8 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
     else {
       $vars['applications'][$key]['new_status'] = 0;
     }
-    $vars['applications'][$key]['edit_url_id'] = preg_replace('/[^A-Za-z0-9\-]/', '',$detail['edit_url']);
-    $vars['applications'][$key]['delete_url_id'] = preg_replace('/[^A-Za-z0-9\-]/', '',$detail['delete_url']);
+    $vars['applications'][$key]['edit_url_id'] = preg_replace('/[^A-Za-z0-9\-]/', '', $detail['edit_url']);
+    $vars['applications'][$key]['delete_url_id'] = preg_replace('/[^A-Za-z0-9\-]/', '', $detail['delete_url']);
     if (empty($vars['applications'][$key]['credential']['apiProducts'])) {
       $vars['applications'][$key]['noproducts'] = TRUE;
     } else {
@@ -366,13 +337,8 @@ function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
           unset($form['github_links']);
         }
       }
-      foreach ($form as $key => $name) {
-        if (strpos($key, 'openid') !== false) {
-          unset($form[$key]);
-          if (isset($form['userpasswordlink'])) {
-            $form['userpasswordlink']['#prefix'] = '<br>';
-          }
-        }
+      if (isset($form['userpasswordlink'])) {
+        $form['userpasswordlink']['#prefix'] = '<br>';
       }
       break;
     case 'devconnect_developer_app_list':
@@ -637,4 +603,25 @@ function _apigee_responsive_search_form_submit($form, &$form_state) {
     }
     $form_state['redirect'] = 'search/' . $default_search . '/' . $form_state['values']['keys'];
   }
+}
+
+function apigee_responsive_app_status($app) {
+  $pending = $revoked = FALSE;
+  foreach($app['credential']['apiProducts'] as $product) {
+    switch ($product['status']) {
+      case 'pending':
+        $pending = TRUE;
+        break;
+      case 'revoked':
+        $revoked = TRUE;
+        break;
+    }
+  }
+  if ($revoked) {
+    return 'Revoked';
+  }
+  if ($pending) {
+    return 'Pending';
+  }
+  return 'Approved';
 }

@@ -1,5 +1,5 @@
-name = Apigee DevConnect Theme
-description = ..
+name = Apigee DevConnect Theme (Deprecated)
+description = .. This theme is deprecated in support for the Apigee Responsive theme. Please use the Apigee Responsive theme instead.
 core = 7.x
 base theme = apigee_base
 

@@ -2,6 +2,7 @@
 
 namespace Apigee\ManagementAPI;
 
+use Apigee\Exceptions\ResponseException;
 use Apigee\Exceptions\ParameterException as ParameterException;
 
 /**
@@ -38,7 +39,7 @@ class DeveloperApp extends AbstractApp
     }
 
     /**
-     * {@inheritDOc}
+     * {@inheritDoc}
      */
     public function getDeveloperMail()
     {
@@ -118,6 +119,12 @@ class DeveloperApp extends AbstractApp
         foreach ($response['app'] as $app_detail) {
             if (array_key_exists('developerId', $app_detail)) {
                 $owner_id = $this->getDeveloperMailById($app_detail['developerId']);
+                if (!isset($owner_id)) {
+                    // Anomalous condition: app exists but owner is deleted.
+                    // This occurs rarely.
+                    self::$logger->warning('Attempted to load an app owned by nonexistent Developer ' . $app_detail['developerId']);
+                    continue;
+                }
                 $app = new self($this->config, $owner_id);
             } else {
                 $owner_id = $app_detail['companyName'];
@@ -172,15 +179,41 @@ class DeveloperApp extends AbstractApp
         if ($reset_developer && $reset_eligible) {
             $this->setBaseUrl('/o/' . rawurlencode($this->config->orgName) . '/developers/' . rawurlencode($owner_id) . '/apps');
         }
+        return $obj;
     }
 
+    /**
+     * Attempts to fetch the email address associated with a developerId.
+     *
+     * If no such developer exists, null is returned. We turn off all logging,
+     * both by the main logger and by any subscribers. It is therefore the
+     * responsibility of any client of this method to handle appropriate
+     * logging.
+     *
+     * @param string $id
+     *   The developerId of the developer in question
+     *
+     * @return string|null
+     *   The email address of the developer, or null if no such developer
+     *   exists.
+     */
     private function getDeveloperMailById($id)
     {
         static $devs = array();
         if (!isset($devs[$id])) {
-            $dev = new Developer($this->config);
-            $dev->load($id);
-            $devs[$id] = $dev->getEmail();
+            $cached_logger = self::$logger;
+            $config = clone $this->config;
+            // Suppress all logging.
+            $config->logger = new \Psr\Log\NullLogger();
+            $config->subscribers = array();
+            $dev = new Developer($config);
+            try {
+                $dev->load($id);
+                $devs[$id] = $dev->getEmail();
+            } catch (ResponseException $e) {
+                $devs[$id] = null;
+            }
+            self::$logger = $cached_logger;
         }
         return $devs[$id];
     }

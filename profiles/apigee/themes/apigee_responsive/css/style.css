@@ -753,6 +753,12 @@ ul.openid-links {
     margin:0;
     padding:0;
 }
+ul.openid-links .user-link{
+    display: none;
+}
+.not-logged-in.page-user .form-item-openid-identifier{
+    display: none;
+}
 
 table.api-credentials-list {
     font: normal .8em/.9em "Helvetica Narrow","Arial Narrow", "Tahoma", sans-serif

@@ -5,6 +5,15 @@
  */
 function devconnect_developer_apps_install() {
   _devconnect_developer_apps_assign_perms();
+  _devconnect_developer_apps_register_cache_handlers();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function devconnect_developer_apps_uninstall() {
+  variable_del('cache_class_developer_app');
+  variable_del('cache_class_api_product');
 }
 
 /**
@@ -12,6 +21,14 @@ function devconnect_developer_apps_install() {
  */
 function devconnect_developer_apps_update_7424(&$sandbox) {
   _devconnect_developer_apps_assign_perms();
+}
+
+/**
+ * Registers custom cache handlers.
+ */
+function _devconnect_developer_apps_register_cache_handlers() {
+  variable_set('cache_class_developer_app', 'Drupal\devconnect_developer_apps\DeveloperAppCache');
+  variable_set('cache_class_api_product', 'Drupal\devconnect_developer_apps\ApiProductCache');
 }
 
 /**
@@ -140,7 +157,7 @@ function devconnect_developer_apps_schema() {
         'table' => 'users',
         'columns' => array('uid' => 'uid')
       )
-    )
+    ),
   );
 
   $schema['dc_api_product'] = array(
@@ -228,6 +245,12 @@ function devconnect_developer_apps_schema() {
         'length'      => 36, // UUID including hyphens
         'not null'    => TRUE,
       ),
+      'org_name'          => array(
+        'description' => 'Org name',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
       'name' => array(
         'description' => 'Attribute Name',
         'type' => 'varchar',
@@ -236,9 +259,9 @@ function devconnect_developer_apps_schema() {
       ),
       'value' => array(
         'description' => 'Attribute Value',
-        'type' => 'varchar',
-        'length' => 1024,
+        'type' => 'text',
         'not null' => TRUE,
+        'size' => 'big',
       ),
     ),
     'primary key' => array('app_id', 'name')
@@ -251,6 +274,12 @@ function devconnect_developer_apps_schema() {
         'description' => 'Primary key: unique App ID.',
         'type'        => 'char',
         'length'      => 36, // UUID including hyphens
+        'not null'    => TRUE,
+      ),
+      'org_name'          => array(
+        'description' => 'Org name',
+        'type'        => 'varchar',
+        'length'      => 255,
         'not null'    => TRUE,
       ),
       'status' => array(
@@ -269,10 +298,13 @@ function devconnect_developer_apps_schema() {
 /**
  * (Re-)install developer-apps and api-products cache tables
  */
-function devconnect_developer_apps_update_7428() {
+function devconnect_developer_apps_update_7430() {
   drupal_uninstall_schema('devconnect_developer_apps');
   drupal_install_schema('devconnect_developer_apps');
+
+  _devconnect_developer_apps_register_cache_handlers();
 }
+
 
 /**
  * Implements hook_requirements().

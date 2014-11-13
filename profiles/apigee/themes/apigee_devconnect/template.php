@@ -4,6 +4,7 @@
  * Implements hook_preprocess_html().
  */
 function apigee_devconnect_preprocess_html(&$variables) {
+  global $user;
   $header_bg_color         = theme_get_setting('header_bg_color');
   $header_txt_color        = theme_get_setting('header_txt_color');
   $header_hover_bg_color   = theme_get_setting('header_hover_bg_color');
@@ -15,6 +16,8 @@ function apigee_devconnect_preprocess_html(&$variables) {
   $footer_link_hover_color = theme_get_setting('footer_link_hover_color');
   $button_background_color = theme_get_setting('button_background_color');
   $button_text_color       = theme_get_setting('button_text_color');
+  $button_hover_background_color  = theme_get_setting('button_hover_background_color');
+  $button_hover_text_color        = theme_get_setting('button_hover_text_color');
 
   drupal_add_css(".navbar-inner {background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar .nav > li > a {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -30,6 +33,8 @@ function apigee_devconnect_preprocess_html(&$variables) {
 
   drupal_add_css(".btn {background: $button_background_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".btn {color: $button_text_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".btn:hover {background-color: $button_hover_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".btn:hover {color: $button_hover_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
 
   // Main menu expanded drop down colors.
   drupal_add_css(".navbar .nav .dropdown-toggle .caret, .navbar .nav .open.dropdown .caret {border-bottom-color: $header_txt_color; border-top-color: $header_txt_color; color: $header_txt_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -49,6 +54,18 @@ function apigee_devconnect_preprocess_html(&$variables) {
       break;
     default:
       break;
+  }
+  
+  /**
+   * Deprecation message that will be shown to the users of administrative role.
+   */
+  if  (array_key_exists(3, $user->roles) && !theme_get_setting('disable_deprecation_message')) {
+
+    $message = t("Apigee Devconnect theme is deprecated, in support for the Apigee Responsive theme. Please use the !apigee_reponsive. 
+                To disable this message please enable the <em>Disable deprecation message</em> option from !disable_this", array(
+      "!apigee_reponsive" => l("Apigee Responsive Theme", 'admin/appearance'),
+      "!disable_this" => l("here", "admin/appearance/settings/apigee_devconnect", array('query' => array('destination' => $_GET['q'])))));
+    drupal_set_message($message);
   }
 
 }

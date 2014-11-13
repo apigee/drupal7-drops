@@ -283,6 +283,7 @@ projects[redirect][subdir] = "contrib"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
+; see http://drupal.org/node/2369946
 
 projects[remote_stream_wrapper][type] = "module"
 projects[remote_stream_wrapper][subdir] = "contrib"
@@ -292,6 +293,9 @@ projects[rules][subdir] = "contrib"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
+; see http://drupal.org/node/2369946
+projects[services][patch][2369946] = "https://www.drupal.org/files/issues/services.spyc_make-2369946-2.patch"
+
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -346,11 +350,18 @@ projects[views_accordion][subdir] = "contrib"
 projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
 
+projects[views_queue][type] = "module"
+projects[views_queue][subdir] = "contrib"
+
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
 
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
+
+; Prevents XSS in Full HTML
+projects[wysiwyg_filter][type] = "module"
+projects[wysiwyg_filter][subdir] = "contrib"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"

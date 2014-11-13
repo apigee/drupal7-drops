@@ -240,7 +240,8 @@ use Apigee\Mint\Types\Country;
             <?php foreach ($revshare_rate_values as $rate_value): ?>
             <td><?php echo $rate_value->getRevshare(); ?>&nbsp;%</td>
             <?php endforeach; ?>
-            <?php foreach ($revshare_rate_values as $rate_value): ?>
+            <?php (isset($rate_values['RATECARD']))? $ratecard_rate_values = $rate_values['RATECARD'] : $ratecard_rate_values = array();  ?>
+            <?php foreach ($ratecard_rate_values as $rate_value): ?>
             <td><?php echo $rate_value->getRate(); ?></td>
             <?php endforeach; ?>
           </tr>

@@ -51,9 +51,18 @@ function devconnect_developer_apps_tokens($type, array $tokens, array $data = ar
     }
   }
 
+  $attributes_info = variable_get('app_attributes', array());
+
   if ($attribute_tokens = token_find_with_prefix($tokens, 'attributes')) {
     foreach ($attribute_tokens as $name => $original) {
       $value = (string)$app->getAttribute($name);
+      if(isset($attributes_info[$name]['options'])) {
+        $_arr = array();
+        foreach(explode(',', $value) as $v){
+          $_arr[] = isset($attributes_info[$name]['options'][$v]) ? $attributes_info[$name]['options'][$v] : $v;
+        }
+        $value = implode(',', $_arr);
+      }
       $replacements[$original] = $sanitize ? check_plain($value) : $value;
     }
   }

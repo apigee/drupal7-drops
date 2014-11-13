@@ -188,3 +188,16 @@ function hook_apiproduct_list_alter(array &$api_products, $account = NULL) {
     unset($api_products['worlds_greatest_api']);
   }
 }
+
+/**
+ * Alter the label by which Developer Apps are called.
+ *
+ * @param string $label
+ * @param mixed $form_value
+ * @param bool $plural
+ */
+function hook_devconnect_developer_app_label_alter(&$label, $form_value, $plural) {
+  if ($form_value == 3) {
+    $label = 'Chimpanzee' . ($plural ? 's' : '');
+  }
+}

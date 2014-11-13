@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * @file
+ * Views Queue Operations module main file.
+ */
+
+/**
+ * Implements hook_entity_info().
+ *
+ * The "queue" table hasn't been defined as a entity in Drupal 7
+ * so we need to wrap around to have it candidate for VBO.
+ */
+function views_queue_operations_entity_info() {
+  return array(
+    'queue' => array(
+      'label' => t('SystemQueue'),
+      'base table' => 'queue',
+      'entity keys' => array(
+        'id' => 'item_id',
+      ),
+      'label callback' => 'views_queue_operations_label',
+    ),
+  );
+}
+
+/**
+ * Label callback for "queue" entity.
+ */
+function views_queue_operations_label($item) {
+  return '#' . $item->item_id . ' [' . $item->name . ']';
+}
+
+/**
+ * Implements hook_action_info().
+ */
+function views_queue_operations_action_info() {
+  return array(
+    'views_queue_operations_item_delete_action' =>array(
+      'type' => 'entity',
+      'label' => t('Delete SystemQueue item'),
+      'configurable' => FALSE,
+    ),
+    'views_queue_operations_item_release_action' =>array(
+      'type' => 'entity',
+      'label' => t('Release SystemQueue item'),
+      'configurable' => FALSE,
+    ),
+  );
+}
+
+/**
+ * Action callback for "views_queue_operations_item_delete_action" action.
+ */
+function views_queue_operations_item_delete_action($item, $context) {
+  $queue = DrupalQueue::get($item->name);
+  $queue->createQueue();
+  $queue->deleteItem($item);
+}
+
+/**
+ * Action callback for "views_queue_operations_item_delete_action" action.
+ */
+function views_queue_operations_item_release_action($item, $context) {
+  $queue = DrupalQueue::get($item->name);
+  $queue->createQueue();
+  $queue->releaseItem($item);
+}
