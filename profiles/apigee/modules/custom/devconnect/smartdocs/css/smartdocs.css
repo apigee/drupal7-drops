@@ -17,6 +17,10 @@ body #method_content .resource_description,
     font-family: Helvetica,Arial,sans-serif;
 }
 
+body #method_content pre span {
+    font-family: monospace;
+}
+
 .modal[role="dialog"] .modal-body #user-login input,
 .modal[role="dialog"] .modal-body #user-register-form input {
     float: none;
