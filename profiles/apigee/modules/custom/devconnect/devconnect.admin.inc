@@ -57,9 +57,9 @@ function devconnect_admin_form($form, &$form_state) {
   $element['pass'] = array(
     '#type' => 'textfield',
     '#title' => t('Authenticated User’s Password'),
-    '#required' => TRUE,
-    '#default_value' => ($org_settings['pass'] == 'secret' ? '' : $org_settings['pass']),
-    '#description' => t('Password used when authenticating with the endpoint.'),
+    '#required' => FALSE,
+    '#default_value' => '',
+    '#description' => t('Password used when authenticating with the endpoint. (Only enter it if you want to change the existing password.)'),
     '#weight' => -3,
     '#post_render' => array('devconnect_password_post_render')
   );
@@ -145,6 +145,10 @@ function devconnect_admin_form($form, &$form_state) {
       'wrapper' => 'test-connect-result',
       'method' => 'replace',
       'effect' => 'fade',
+    ),
+    '#states' => array(
+      // Hide the settings when the cancel notify checkbox is disabled.
+      'disabled' => array(':input[name="org_settings[0][pass]"]' => array('empty' => TRUE)),
     ),
   );
   $form['connection_config_container']['connect_test']['test_connection_status'] = array(
@@ -259,7 +263,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
     $default_org = array();
   }
   foreach (array('org', 'endpoint', 'user', 'pass') as $field) {
-    if (array_key_exists($field, $default_org)) {
+    if (array_key_exists($field, $default_org) && (!($field == 'pass' && empty($default_org[$field])))) {
       $new_config[$field] = $default_org[$field];
     }
     else {
@@ -271,6 +275,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
       $changes["Default Connection: $field"] = array($old_value, $new_value);
     }
   }
+  $new_config['pass'] = Apigee\Util\Crypto::encrypt($new_config['pass']);
   variable_set('devconnect_org_settings', $new_config);
 
   if (isset($form_state['values']['devconnect_user_tnc_url'])) {
