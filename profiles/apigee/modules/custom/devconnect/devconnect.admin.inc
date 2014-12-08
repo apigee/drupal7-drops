@@ -48,10 +48,11 @@ function devconnect_admin_form($form, &$form_state) {
   $element['user'] = array(
     '#type' => 'textfield',
     '#title' => t('Endpoint Authenticated User'),
-    '#required' => TRUE,
-    '#default_value' => ($org_settings['user'] == 'fixme' ? '' : $org_settings['user']),
-    '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
-    '#weight' => -4
+    '#required' => FALSE,
+    '#default_value' => '',
+    '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.  (Only enter it if you want to change the existing user.)'),
+    '#weight' => -4,
+    '#attributes' => array('autocomplete' => 'off'),
   );
 
   $element['pass'] = array(
@@ -61,7 +62,8 @@ function devconnect_admin_form($form, &$form_state) {
     '#default_value' => '',
     '#description' => t('Password used when authenticating with the endpoint. (Only enter it if you want to change the existing password.)'),
     '#weight' => -3,
-    '#post_render' => array('devconnect_password_post_render')
+    '#post_render' => array('devconnect_password_post_render'),
+    '#attributes' => array('autocomplete' => 'off'),
   );
 
   if (array_key_exists('connection_timeout', $org_settings)) {
@@ -263,7 +265,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
     $default_org = array();
   }
   foreach (array('org', 'endpoint', 'user', 'pass') as $field) {
-    if (array_key_exists($field, $default_org) && (!($field == 'pass' && empty($default_org[$field])))) {
+    if (array_key_exists($field, $default_org) && (!(($field == 'pass' || $field == 'user') && empty($default_org[$field])))) {
       $new_config[$field] = $default_org[$field];
     }
     else {
