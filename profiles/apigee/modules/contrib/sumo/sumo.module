@@ -1,0 +1,272 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function sumo_menu() {
+  $items = array();
+  $items['admin/config/system/sumo'] = array(
+    'title' => 'Sumo Logic',
+    'description' => 'Sumo Logic logging configuration settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sumo_admin_form'),
+    'access arguments' => array('administer sumo settings'),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function sumo_permission() {
+  return array(
+    'administer sumo settings' => array(
+      'title' => 'Administer Sumo Logic settings',
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_watchdog().
+ */
+function sumo_watchdog(array $log_entry) {
+  $sumo_url = variable_get('sumo_watchdog_collector_uri');
+  if (empty($sumo_url)) {
+    return;
+  }
+
+  $severity = watchdog_severity_levels();
+
+  $payload = array(
+    'uid' => $log_entry['uid'],
+    'type' => $log_entry['type'],
+    'message' => strtr($log_entry['message'], $log_entry['variables']),
+    'severity' => $severity[$log_entry['severity']],
+    'link' => $log_entry['link'],
+    'request_uri' => $log_entry['request_uri'],
+    'referer' => $log_entry['referer'],
+    'hostname' => $log_entry['ip'],
+    'timestamp' => $log_entry['timestamp']
+  );
+
+  _sumo_post_async($sumo_url, json_encode($payload), _sumo_sitename());
+}
+
+/**
+ * POSTs a payload to a Sumo Logic collector URI. Ignores any return value.
+ *
+ * Because it releases the socket immediately after write and before the remote
+ * host responds, it is more or less asynchronous.
+ *
+ * @param string $uri
+ * @param string $payload
+ * @param string $name
+ * @return bool TRUE if socket was successfully opened, else FALSE.
+ */
+function _sumo_post_async($uri, $payload, $name) {
+  $compress = variable_get('sumo_compress', TRUE) && function_exists('gzencode');
+
+  if ($compress) {
+    $payload = gzencode($payload);
+  }
+  $parts = parse_url($uri);
+  $host = $parts['host'];
+  if ($parts['scheme'] == 'https') {
+    $host = 'ssl://' . $host;
+    $port = (isset($parts['port']) ? $parts['port'] : 443);
+  }
+  else {
+    $port = (isset($parts['port']) ? $parts['port'] : 80);
+  }
+  $fp = fsockopen($host, $port);
+  if (!$fp) {
+    return FALSE;
+  }
+  $out = 'POST ' . $parts['path'] . ' HTTP/1.1' . "\r\n"
+    . 'Host: ' . $host . "\r\n"
+    . 'Content-Type: text/plain' . "\r\n"
+    . 'Connection: close' . "\r\n"
+    . 'Content-Length: ' . strlen($payload) . "\r\n"
+    . 'X-Sumo-Name: ' . $name . "\r\n";
+  if ($compress) {
+    $out .= 'Content-Encoding: gzip' . "\r\n";
+  }
+  $out .= "\r\n" . $payload;
+  fwrite($fp, $out);
+  fclose($fp);
+  return TRUE;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function sumo_cron() {
+  $log_path = variable_get('sumo_web_access_log_path');
+  $uri = variable_get('sumo_web_access_collector_uri');
+  if (empty($log_path) || empty($uri)) {
+    return;
+  }
+  if (substr($log_path, 0, 1) != '/') {
+    $log_path = realpath(DRUPAL_ROOT . '/' . $log_path);
+  }
+  if (!is_file($log_path) || !is_readable($log_path)) {
+    return;
+  }
+  $log = file_get_contents($log_path);
+
+  // See if we need to chop the beginning off the log to avoid duplicates.
+  if ($last_timestamp = variable_get('sumo_web_access_last_timestamp')) {
+    $pos = strrpos($log, '[' . $last_timestamp . ']');
+    if ($pos !== FALSE) {
+      $i = strpos($log, "\n", $pos);
+      if ($i !== FALSE) {
+        $pos = $i;
+      }
+      $log = substr($log, $pos);
+    }
+  }
+
+  $newline_pos = strrpos($log, "\n", -2);
+  $last_line = substr($log, $newline_pos);
+  $timestamp = _sumo_get_timestamp($last_line);
+  variable_set('sumo_web_access_last_timestamp', $timestamp);
+
+  _sumo_post_async($uri, $log, _sumo_sitename());
+}
+
+/**
+ * Searches through a web access log file for the position of the last
+ * timestamp, and returns the offset of the next line.
+ *
+ * @param string $filename
+ * @param string $last_timestamp
+ * @return int
+ */
+function _sumo_truncate_log($log, $last_timestamp) {
+  $pos = strrpos($log, $last_timestamp);
+  if ($pos !== FALSE) {
+    $i = strpos($log, "\n", $pos);
+    if ($i !== FALSE) {
+      $pos = $i;
+    }
+    $log = substr($log, $pos);
+  }
+  return $log;
+}
+
+/**
+ * Finds a bracketed timestamp in a line from a web access log and returns it.
+ * Returns FALSE if no timestamp could be inferred.
+ *
+ * @param string $line
+ * @return bool|string
+ */
+function _sumo_get_timestamp($line) {
+  $start_pos = strpos($line, '[');
+  $end_pos = strpos($line, ']', $start_pos);
+  if ($start_pos === FALSE || $end_pos === FALSE) {
+    return FALSE;
+  }
+  $len = $end_pos - $start_pos;
+  return substr($line, $start_pos + 1, $len - 1);
+}
+
+/**
+ * Returns some site-identifier.
+ *
+ * If Pantheon site info is present, returns sitename.environment.
+ * Failing that, returns Host header if present.
+ * Failing that, returns Pantheon UUID if present.
+ * As a last line of defense, returns local Posix nodename.
+ *
+ * @return string
+ */
+function _sumo_sitename() {
+  $site_id = NULL;
+  if (array_key_exists('PANTHEON_SITE_NAME', $_SERVER) && array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+    $site_id = $_SERVER['PANTHEON_SITE_NAME'] . '.' . $_SERVER['PANTHEON_ENVIRONMENT'];
+  }
+  elseif (array_key_exists('HTTP_HOST', $_SERVER)) {
+    $site_id = $_SERVER['HTTP_HOST'];
+  }
+  elseif (array_key_exists('PRESSFLOW_SETTINGS', $_SERVER)) {
+    $config = @json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
+    if (is_array($config) && array_key_exists('conf', $config) && array_key_exists('pantheon_site_uuid', $config['conf'])) {
+      $site_id = $config['conf']['pantheon_site_uuid'];
+    }
+  }
+  if (empty($site_id)) {
+    if (function_exists('posix_uname')) {
+      $info = posix_uname();
+      $site_id = $info['nodename'];
+    }
+    else {
+      $site_id = @shell_exec('uname -n');
+    }
+  }
+  drupal_alter('sumo_site_id', $site_id);
+  return $site_id;
+}
+
+/**
+ * Form constructor for module admin.
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
+function sumo_admin_form($form, &$form_state) {
+
+  $form['sumo_web_access_log_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Web access log path'),
+    '#default_value' => variable_get('sumo_web_access_log_path', ''),
+    '#description' => t('The path to the web access log to send to Sumo Logic. Relative paths will be treated as relative to the Drupal root.'),
+  );
+
+  $form['sumo_web_access_collector_uri'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sumo Logic collector URI for web access log'),
+    '#default_value' => variable_get('sumo_web_access_collector_uri', ''),
+    '#description' => t('Full collector URI to which the web access log is to be POSTed. Must begin with https://.'),
+    '#maxlength' => 300,
+  );
+
+  $form['sumo_watchdog_collector_uri'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sumo Logic collector URI for watchdog entries'),
+    '#default_value' => variable_get('sumo_watchdog_collector_uri', ''),
+    '#description' => t('Full collector URI to which watchdog entries are to be POSTed. Must begin with https.'),
+    '#maxlength' => 300,
+  );
+
+  if (function_exists('gzencode')) {
+    $form['sumo_compress'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Compress data before sending.'),
+      '#default_value' => variable_get('sumo_compress', 1),
+      '#return_value' => 1
+    );
+  }
+
+  $form = system_settings_form($form);
+  $form['#validate'][] = 'sumo_admin_form_validate';
+  return $form;
+}
+
+/**
+ * Validator for sumo_admin_form.
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function sumo_admin_form_validate($form, &$form_state) {
+  if (!empty($form_state['values']['sumo_web_access_collector_uri']) && substr($form_state['values']['sumo_web_access_collector_uri'], 0, 8) != 'https://') {
+    form_set_error('sumo_web_access_collector_uri', t('Web access collector URI must begin with https://.'));
+  }
+  if (!empty($form_state['values']['sumo_watchdog_collector_uri']) && substr($form_state['values']['sumo_watchdog_collector_uri'], 0, 8) != 'https://') {
+    form_set_error('sumo_watchdog_collector_uri', t('Watchdog collector URI must begin with https://.'));
+  }
+}
+

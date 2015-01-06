@@ -21,7 +21,8 @@ use Apigee\Util\ErrorHandling;
 function devconnect_developer_apps_menu() {
   $items = array();
   $items['user/%user/apps'] = array(
-    'title' => t('My ' . _devconnect_developer_apps_get_app_label(TRUE)),
+    'title' => 'My !apps',
+    'title arguments' => array('!apps' => _devconnect_developer_apps_get_app_label(TRUE)),
     'page callback' => 'devconnect_developer_apps_getlist',
     'page arguments' => array(1),
     'access callback' => 'devconnect_developer_apps_access',
@@ -32,7 +33,8 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['user/%user/app-detail/%'] = array(
-    'title' => t(_devconnect_developer_apps_get_app_label(FALSE) . ' Detail'),
+    'title' => '!app Detail',
+    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE)),
     'page callback' => 'devconnect_developer_apps_detail',
     'page arguments' => array(1, 3),
     'access callback' => 'devconnect_developer_apps_access',
@@ -42,9 +44,10 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['user/%user/apps/add'] = array(
-    'title' => t('Add New ' . _devconnect_developer_apps_get_app_label(FALSE)),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('devconnect_developer_apps_edit_form', 1),
+    'title' => 'Add New !app',
+    'title arguments' => array('!apps' => _devconnect_developer_apps_get_app_label(FALSE)),
+    'page callback' => 'devconnect_developer_apps_show_edit_form',
+    'page arguments' => array(1),
     'access callback' => 'devconnect_developer_apps_access',
     'access arguments' => array(1, 'create'),
     'type' => MENU_LOCAL_TASK,
@@ -52,9 +55,10 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['user/%user/apps/%/edit-app'] = array(
-    'title' => t('Edit ' . _devconnect_developer_apps_get_app_label(FALSE)),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('devconnect_developer_apps_edit_form', 1, 3),
+    'title' => 'Edit !app',
+    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE)),
+    'page callback' => 'devconnect_developer_apps_show_edit_form',
+    'page arguments' => array(1, 3),
     'access callback' => 'devconnect_developer_apps_access',
     'access arguments' => array(1, 'edit'),
     'type' => MENU_CALLBACK,
@@ -62,9 +66,10 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['user/%user/apps/%/delete'] = array(
-    'title' => t('Delete ' . _devconnect_developer_apps_get_app_label(FALSE)),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('devconnect_developer_app_delete_form', 1, 3),
+    'title' => 'Delete !app',
+    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE)),
+    'page callback' => 'devconnect_developer_apps_show_delete_form',
+    'page arguments' => array(1, 3),
     'access callback' => 'devconnect_developer_apps_access',
     'access arguments' => array(1, 'delete'),
     'type' => MENU_CALLBACK,
@@ -72,7 +77,7 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['user/%user/app-performance/%/%'] = array(
-    'title' => t('Performance Data'),
+    'title' => 'Performance Data',
     'page callback' => 'devconnect_developer_analytics_performance_download',
     'page arguments' => array(1, 3, 4),
     'file' => 'analytics.inc',
@@ -82,7 +87,7 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['admin/config/devconnect/apps'] = array(
-    'title' => t('Dev Portal App Config'),
+    'title' => 'Dev Portal App Config',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_developer_apps_config'),
     'access arguments' => array('administer site configuration'),
@@ -443,6 +448,20 @@ function devconnect_developer_apps_getlist($user) {
 }
 
 /**
+ * Page callback to show edit-app form.
+ *
+ * @param stdClass $account
+ * @param null|string $app_id
+ * @return array
+ */
+function devconnect_developer_apps_show_edit_form($account, $app_id = NULL) {
+  if ($app_id) {
+    devconnect_developer_apps_check_uuid($app_id, 'user/:uid:/apps/:appId:/edit-app', $account);
+  }
+  return drupal_get_form('devconnect_developer_apps_edit_form', $account, $app_id);
+}
+
+/**
  * Form constructor for adding/editing apps. Built via a menu callback to drupal_get_form().
  *
  * Incoming URL: user/%user/apps/add
@@ -455,10 +474,6 @@ function devconnect_developer_apps_getlist($user) {
  * @return array
  */
 function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app_id = NULL) {
-  if ($app_id) {
-    devconnect_developer_apps_check_uuid($app_id, 'user/:uid:/apps/:appId:/edit-app', $account);
-  }
-
   module_invoke_all('devconnect_developer_apps_prerender', 'edit', $account, $app_id);
 
   $module_path = drupal_get_path('module', 'devconnect_developer_apps');
@@ -752,7 +767,8 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
         $api_product_default = empty($api_product_default) ? '' : $api_product_default[0];
         unset($form_state['input']['api_product']); //Need to unset this so that the right radios gets selected on ajax
         if (!isset($options[$api_product_default]) && count($options) > 1) {
-          $api_product_default = array_shift(array_keys($options));
+          $opt_keys = array_keys($options);
+          $api_product_default = $opt_keys[0];
         }
       }
     }
@@ -1068,19 +1084,31 @@ function devconnect_developer_apps_machine_name_exists($value, array $element, a
 }
 
 /**
- * Form constructor for deleting apps. This is called from a menu callback via drupal_get_form.
+ * Page callback to embed app-delete form.
  *
  * Incoming URL takes the following form:
  * - user/%user/apps/%/delete
  *
+ * @param stdClass $user
+ * @param string $appId
+ * @return array
+ */
+function devconnect_developer_apps_show_delete_form($user, $appId) {
+  devconnect_developer_apps_check_uuid($appId, 'user/:uid:/apps/:appId:/delete', $user);
+  return drupal_get_form('devconnect_developer_apps_delete_form', $user, $appId);
+}
+
+/**
+ * Form constructor for deleting apps.
+ *
  * @param array $form
  * @param array $form_state
+ * @param stdclass $user
+ * @param string $appId
  *
  * @return array
  */
-function devconnect_developer_app_delete_form($form, &$form_state, $user, $appId) {
-  devconnect_developer_apps_check_uuid($appId, 'user/:uid:/apps/:appId:/delete', $user);
-
+function devconnect_developer_apps_delete_form($form, &$form_state, $user, $appId) {
   module_invoke_all('devconnect_developer_apps_prerender', 'delete');
 
   if (user_is_logged_in()) {
@@ -1124,7 +1152,7 @@ function devconnect_developer_app_delete_form($form, &$form_state, $user, $appId
     '#type' => 'submit',
     '#value' => t('Delete ' . _devconnect_developer_apps_get_app_label(FALSE)),
     '#weight' => 10,
-    '#submit' => array('devconnect_developer_app_delete_form_submit'),
+    '#submit' => array('devconnect_developer_apps_delete_form_submit'),
   );
 
   $form['actions']['cancel'] = array(
@@ -1142,7 +1170,7 @@ function devconnect_developer_app_delete_form($form, &$form_state, $user, $appId
  * @param $form
  * @param $form_state
  */
-function devconnect_developer_app_delete_form_submit(&$form, &$form_state) {
+function devconnect_developer_apps_delete_form_submit(&$form, &$form_state) {
   // Invoke hook_devconnect_developer_app_predelete on all implementing modules.
   // If any module returns FALSE, abort.
   $continue = devconnect_developer_apps_hook('predelete', $form_state);
@@ -1234,7 +1262,16 @@ function devconnect_developer_apps_detail($user, $app_id) {
   return _devconnect_developer_apps_detail($entity, $user);
 }
 
-function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
+/**
+ * Does actual heavy lifting to build page displaying app detail.
+ *
+ * @param Drupal\devconnect_developer_apps\DeveloperAppEntity $entity
+ * @param stdClass $user
+ * @param bool $page
+ *
+ * @return string
+ */
+function _devconnect_developer_apps_detail(Drupal\devconnect_developer_apps\DeveloperAppEntity $entity, stdClass $user, $page = TRUE) {
   $breadcrumb = array();
   if ($page) {
     // Build Breadcrumbs
@@ -1466,6 +1503,31 @@ function devconnect_developer_apps_hook($hook, &$values, $kms_result = NULL) {
 }
 
 /**
+ * Implements hook_module_implements_alter().
+ *
+ * Makes sure devconnect_developer_apps_cron is invoked after system_cron, so
+ * system_cron won't delete all the data we just added to our cache tables.
+ */
+function devconnect_developer_apps_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'cron') {
+    if (array_key_exists('devconnect_developer_apps', $implementations)) {
+      $new_impl = array();
+      foreach ($implementations as $key => $val) {
+        if ($key == 'devconnect_developer_apps') {
+          continue;
+        }
+        $new_impl[$key] = $val;
+        if ($key == 'system') {
+          // Make our cron implementation run immediately after system_cron().
+          $new_impl['devconnect_developer_apps'] = FALSE;
+        }
+      }
+      $implementations = $new_impl;
+    }
+  }
+}
+
+/**
  * Takes $form_state['values'] and populates a DeveloperApp object with the
  * contents.
  *
@@ -1600,6 +1662,11 @@ function devconnect_developer_apps_write_to_cache($entity, $ensure_clean = TRUE)
  */
 function devconnect_developer_apps_sync_products($org, $truncate = FALSE, $set_messages = FALSE) {
 
+  static $already_ran = FALSE;
+  if ($already_ran) {
+    return;
+  }
+
   $has_drush = function_exists('drush_print');
 
   if ($org == 'default') {
@@ -1633,6 +1700,7 @@ function devconnect_developer_apps_sync_products($org, $truncate = FALSE, $set_m
       }
     }
   }
+  $already_ran = TRUE;
 }
 
 /**
@@ -1812,11 +1880,11 @@ function _devconnect_developer_apps_flush_api_products() {
  */
 function devconnect_developer_apps_admin_menu_cache_info() {
   $caches['api_product'] = array(
-    'title' => t('API Products'),
+    'title' => t('API products'),
     'callback' => '_devconnect_developer_apps_flush_api_products',
   );
   $caches['developer_app'] = array(
-    'title' => t('Developer Apps'),
+    'title' => t('Developer apps'),
     'callback' => '_devconnect_developer_apps_flush_developer_apps',
   );
   return $caches;

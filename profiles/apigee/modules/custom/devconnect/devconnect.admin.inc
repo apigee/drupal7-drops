@@ -4,6 +4,8 @@ use Apigee\Exceptions\ResponseException;
 use Apigee\Util\OrgConfig;
 use Apigee\ManagementAPI\Organization;
 
+define('DEVCONNECT_SHOW_CONFIG_FIELDS', FALSE);
+
 function devconnect_admin_form($form, &$form_state) {
   if (isset($form_state['input']['org_settings'])) {
     $org_settings = $form_state['input']['org_settings'][0];
@@ -28,43 +30,71 @@ function devconnect_admin_form($form, &$form_state) {
     )
   );
   $element =& $form['connection_config_container']['org_settings'][0];
-  $element['org'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Management API Organization'),
-    '#required' => TRUE,
-    '#default_value' => $org_settings['org'],
-    '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
-    '#weight' => -6
-  );
-  $element['endpoint'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Management API Endpoint URL'),
-    '#required' => TRUE,
-    '#default_value' => $org_settings['endpoint'],
-    '#description' => t('URL to which to make Edge REST calls.'),
-    '#weight' => -5
-  );
+  if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
+    $element['org'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Management API Organization'),
+      '#required' => TRUE,
+      '#default_value' => $org_settings['org'],
+      '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
+      '#weight' => -6
+    );
+    $element['endpoint'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Management API Endpoint URL'),
+      '#required' => TRUE,
+      '#default_value' => $org_settings['endpoint'],
+      '#description' => t('URL to which to make Edge REST calls.'),
+      '#weight' => -5
+    );
 
-  $element['user'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Endpoint Authenticated User'),
-    '#required' => FALSE,
-    '#default_value' => '',
-    '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.  (Only enter it if you want to change the existing user.)'),
-    '#weight' => -4,
-    '#attributes' => array('autocomplete' => 'off'),
-  );
+    $element['user'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Endpoint Authenticated User'),
+      '#required' => FALSE,
+      '#default_value' => '',
+      '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.  (Only enter it if you want to change the existing user.)'),
+      '#weight' => -4,
+      '#attributes' => array('autocomplete' => 'off'),
+    );
 
-  $element['pass'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Authenticated User’s Password'),
-    '#required' => FALSE,
-    '#default_value' => '',
-    '#description' => t('Password used when authenticating with the endpoint. (Only enter it if you want to change the existing password.)'),
-    '#weight' => -3,
-    '#post_render' => array('devconnect_password_post_render'),
-    '#attributes' => array('autocomplete' => 'off'),
-  );
+    $element['pass'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Authenticated User’s Password'),
+      '#required' => FALSE,
+      '#default_value' => '',
+      '#description' => t('Password used when authenticating with the endpoint. (Only enter it if you want to change the existing password.)'),
+      '#weight' => -3,
+      '#post_render' => array('devconnect_password_post_render'),
+      '#attributes' => array('autocomplete' => 'off'),
+    );
+  }
+  else {
+    $element['org'] = array(
+      '#type' => 'item',
+      '#title' => t('Management API Organization'),
+      '#markup' => (empty($org_settings['org']) ? '<span style="color:red">' . t('No value') . '</span>' : $org_settings['org']),
+    );
+    $element['endpoint'] = array(
+      '#type' => 'item',
+      '#title' => t('Management API Endpoint URL'),
+      '#markup' => (empty($org_settings['endpoint']) ? '<span style="color:red">' . t('No value') . '</span>' : $org_settings['endpoint']),
+    );
+    if (empty($org_settings['user'])) {
+      $element['user'] = array(
+        '#type' => 'item',
+        '#title' => t('Endpoint Authenticated User'),
+        '#markup' => '<span style="color:red">' . t('No value') . '</span>',
+      );
+    }
+    if (empty($org_settings['pass'])) {
+      $element['user'] = array(
+        '#type' => 'item',
+        '#title' => t('Authenticated User’s Password'),
+        '#markup' => '<span style="color:red">' . t('No value') . '</span>',
+      );
+    }
+  }
 
   if (array_key_exists('connection_timeout', $org_settings)) {
     $conn_timeout = intval($org_settings['connection_timeout']);
@@ -128,36 +158,50 @@ function devconnect_admin_form($form, &$form_state) {
 
   $status = _devconnect_test_kms_connection($org_settings['org'], $org_settings['endpoint'], $org_settings['user'], $org_settings['pass'], $conn_timeout);
 
-  $form['connection_config_container']['connect_test'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Test Configuration'),
-    '#weight' => 9,
-    '#prefix' => '<br><br>',
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
+  if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
+    $form['connection_config_container']['connect_test'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Test Configuration'),
+      '#weight' => 9,
+      '#prefix' => '<br><br>',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
 
-  $form['connection_config_container']['connect_test']['test_connection'] = array(
-    '#name' => 'test_connection',
-    '#type' => 'button',
-    '#limit_validation_errors' => array(),
-    '#value' => t('Test Connection'),
-    '#ajax' => array(
-      'callback' => '_devconnect_test_management_connection_ajax',
-      'wrapper' => 'test-connect-result',
-      'method' => 'replace',
-      'effect' => 'fade',
-    ),
-    '#states' => array(
-      // Hide the settings when the cancel notify checkbox is disabled.
-      'disabled' => array(':input[name="org_settings[0][pass]"]' => array('empty' => TRUE)),
-    ),
-  );
-  $form['connection_config_container']['connect_test']['test_connection_status'] = array(
-    '#prefix' => '<div id="test-connect-result"><br>',
-    '#suffix' => '</div>',
-    '#markup' => $status,
-  );
+    $form['connection_config_container']['connect_test']['test_connection'] = array(
+      '#name' => 'test_connection',
+      '#type' => 'button',
+      '#limit_validation_errors' => array(),
+      '#value' => t('Test Connection'),
+      '#ajax' => array(
+        'callback' => '_devconnect_test_management_connection_ajax',
+        'wrapper' => 'test-connect-result',
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+      '#states' => array(
+        // Hide the settings when the cancel notify checkbox is disabled.
+        'disabled' => array(
+          ':input[name="org_settings[0][pass]"]' => array('empty' => TRUE),
+        ),
+      ),
+    );
+    $form['connection_config_container']['connect_test']['test_connection_status'] = array(
+      '#prefix' => '<div id="test-connect-result"><br>',
+      '#suffix' => '</div>',
+      '#markup' => $status,
+    );
+  }
+  else {
+    $form['connection_config_container']['test_connection_status'] = array(
+      '#weight' => 9,
+      //'#prefix' => '<div id="test-connect-result">',
+      //'#suffix' => '</div>',
+      '#type' => 'item',
+      '#title' => t('Connection Status'),
+      '#markup' => $status
+    );
+  }
 
   $modules = module_implements('variable_info');
   sort($modules); // sort by name.
@@ -173,8 +217,6 @@ function devconnect_admin_form($form, &$form_state) {
   $form['devconnect_config_container'] = array(
     '#title' => t('Dev Portal Configuration'),
     '#type' => 'fieldset',
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
   );
 
   foreach ($my_variables as $name => $info) {
@@ -265,15 +307,33 @@ function devconnect_admin_form_submit($form, &$form_state) {
     $default_org = array();
   }
   foreach (array('org', 'endpoint', 'user', 'pass') as $field) {
-    if (array_key_exists($field, $default_org) && (!(($field == 'pass' || $field == 'user') && empty($default_org[$field])))) {
-      $new_config[$field] = $default_org[$field];
+    $hide_field_in_log = FALSE;
+    if ($field == 'user' || $field == 'pass') {
+      if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
+        // Use value from $form_state only if non-blank
+        if (array_key_exists($field, $default_org) && !empty($default_org[$field])) {
+          $new_config[$field] = $default_org[$field];
+        }
+        // Otherwise, pull from existing config.
+        else {
+          $new_config[$field] = $existing_config[$field];
+        }
+        if ($field == 'pass') {
+          $hide_field_in_log = TRUE;
+        }
+      }
+      else {
+        $new_config[$field] = $existing_config[$field];
+        $hide_field_in_log = TRUE;
+      }
     }
     else {
       $new_config[$field] = $existing_config[$field];
     }
+
     if ($new_config[$field] != $existing_config[$field]) {
-      $old_value = (empty($existing_config[$field]) ? '*empty*' : ($field == 'pass' ? '*encrypted*' : $existing_config[$field]));
-      $new_value = (empty($new_config[$field]) ? '*empty*' : ($field == 'pass' ? '*encrypted*' : $new_config[$field]));
+      $old_value = (empty($existing_config[$field]) ? '*empty*' : ($hide_field_in_log ? '*hidden*' : $existing_config[$field]));
+      $new_value = (empty($new_config[$field]) ? '*empty*' : ($hide_field_in_log ? '*hidden*' : $new_config[$field]));
       $changes["Default Connection: $field"] = array($old_value, $new_value);
     }
   }

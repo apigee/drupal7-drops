@@ -43,9 +43,11 @@
                     $("#edit-amount", context).focus();
 
                     var currency = Drupal.settings.devconnect_monetization.currencies[$("#edit-amount", context).attr("currency")];
-                    $("#edit-amount", context).maskMoney(getMaskMoneyOptions(currency));
-                    $("#edit-amount", context).maskMoney("mask");
-                    $("#edit-amount", context).focus();
+                    if(currency) {
+                      $("#edit-amount", context).maskMoney(getMaskMoneyOptions(currency));
+                      $("#edit-amount", context).maskMoney("mask");
+                      $("#edit-amount", context).focus();
+                    }
 
                     if ($("input#edit-amount[minimum]", context).length) {
                         $("span#span-minimum-amount").html(formatCurrencyAmount($("input#edit-amount", context).attr("minimum"), currency));

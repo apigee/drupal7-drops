@@ -49,12 +49,18 @@ class LibrariesFinderPlugin implements FinderPluginInterface {
    *   FALSE or NULL, otherwise.
    */
   function findFile($api, $logical_base_path, $relative_path) {
+
     // Prevent recursion if this is called from libraries_info().
-    foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) as $call) {
+    // @todo Find a better way to do this?
+    $backtrace = defined('DEBUG_BACKTRACE_IGNORE_ARGS')
+      ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
+      : debug_backtrace(FALSE);
+    foreach ($backtrace as $call) {
       if ('libraries_info' === $call['function']) {
         return FALSE;
       }
     }
+
     $this->finder->getNamespaceMap()->unregisterDeepPath('', '');
     $this->finder->getPrefixMap()->unregisterDeepPath('', '');
     $this->registerAllLibraries();

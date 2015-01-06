@@ -161,18 +161,22 @@ body.page-admin-smartdocs .api-model-table-operations {
 .node-teaser p.post,
 .node-teaser p.put,
 .node-teaser p.delete,
+.node-teaser p.patch,
 .node-teaser p.GET,
 .node-teaser p.POST,
 .node-teaser p.PUT,
 .node-teaser p.DELETE,
+.node-teaser p.PATCH,
 .view p.get,
 .view p.post,
 .view p.put,
 .view p.delete,
+.view p.patch,
 .view p.GET,
 .view p.POST,
 .view p.PUT,
-.view p.DELETE {
+.view p.DELETE,
+.view p.PATCH {
     border-radius: 3px 3px 3px 3px;
     color: #FFFFFF;
     float: left;
@@ -214,6 +218,11 @@ body.page-admin-smartdocs .api-model-table-operations {
 .node-teaser p.post, .node-teaser p.POST,
 .view p.post, .view p.POST {
     background-color: #15B946;
+}
+
+.node-teaser p.patch, .node-teaser p.PATCH,
+.view p.patch, .view p.PATCH {
+    background-color: #D38042;
 }
 
 .node-teaser .method_details .title p.resource_path,

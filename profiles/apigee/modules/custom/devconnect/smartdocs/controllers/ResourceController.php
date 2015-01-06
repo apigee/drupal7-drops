@@ -5,7 +5,7 @@ class SmartDocsResourceController extends DrupalDefaultEntityController {
   private $SmartDocsResource;
 
   public function __construct($entity_type) {
-    $config = devconnect_default_api_client();
+    $config = devconnect_default_org_config();
     $this->SmartDocsResource = new Apigee\DocGen\DocGenResource($config);
   }
 
@@ -13,7 +13,7 @@ class SmartDocsResourceController extends DrupalDefaultEntityController {
 
   }
 
-  public function load($ids = array(), $conditions = array('show_private' => FALSE)) {
+  public function load($ids = array(), $conditions = array()) {
 
   }
 

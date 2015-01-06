@@ -265,8 +265,18 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $config->subscribers = array();
       }
 
-      if (array_key_exists('mail', $conditions) && empty($ids)) {
-        $dev_app = new DeveloperApp($config, $conditions['mail']);
+      if (array_key_exists('mail', $conditions)) {
+        $identifier = $conditions['mail'];
+      }
+      elseif (array_key_exists('developerId', $conditions)) {
+        $identifier = $conditions['developerId'];
+      }
+      else {
+        $identifier = NULL;
+      }
+
+      if (isset($identifier) && empty($ids)) {
+        $dev_app = new DeveloperApp($config, $identifier);
         if (array_key_exists('name', $conditions)) {
           try {
             $dev_app->load($conditions['name']);
@@ -349,7 +359,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $mail = strtolower($dev_app->getDeveloperMail());
         $array = $dev_app->toArray($include_debug_data);
         $array['orgName'] = $dev_app->getConfig()->orgName;
-        $array['uid'] = (isset($uids[$mail]) ? $uids[$mail] : NULL);
+        $array['uid'] = (array_key_exists($mail, $uids) ? $uids[$mail] : NULL);
         $app_entities[$id] = new DeveloperAppEntity($array);
       }
     }

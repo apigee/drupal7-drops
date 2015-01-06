@@ -7,6 +7,16 @@ namespace Drupal\xautoload\Libraries;
 class LibrariesInfoAlter {
 
   /**
+   * Empty constructor.
+   *
+   * Required for versions of PHP under 5.3.3, to prevent fallback to
+   * librariesInfoAlter() as the default constructor.
+   */
+  function __construct() {
+
+  }
+
+  /**
    * @param array $info
    *
    * @see hook_libraries_info_alter()

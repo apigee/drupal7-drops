@@ -566,22 +566,20 @@ function commerce_worldpay_bg_submit_form($payment_method, $pane_values, $checko
  * Payment method callback: submit form validation.
  */
 function commerce_worldpay_bg_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
-  if ($payment_method['settings']['payment_parameters']['pm_select_localy']) {
-    // Make sure "Please select" is not selected
-    if ($pane_values['paymentType'] == 'not_selected') {
-      form_set_error(implode('][', array_merge($form_parents, array('paymentType'))), t('You must select a payment method.'));
+  // Make sure "Please select" is not selected
+  if ($pane_values['paymentType'] == 'not_selected') {
+    form_set_error(implode('][', array_merge($form_parents, array('paymentType'))), t('You must select a payment method.'));
 
-      return FALSE;
-    }
-    // Check if it is a value we allow
-    if (!array_key_exists($pane_values['paymentType'], _commerce_worldpay_bg_payment_card_types())) {
-      form_set_error(implode('][', array_merge($form_parents, array('paymentType'))), t('An invalid WorldPay payment method choice was recived. Please try choosing a payment method again.'));
+    return FALSE;
+  }
+  // Check if it is a value we allow
+  if (!array_key_exists($pane_values['paymentType'], _commerce_worldpay_bg_payment_card_types())) {
+    form_set_error(implode('][', array_merge($form_parents, array('paymentType'))), t('An invalid WorldPay payment method choice was recived. Please try choosing a payment method again.'));
 
-      // Even though the form error is enough to stop the submission of the form,
-      // it's not enough to stop it from a Commerce standpoint because of the
-      // combined validation / submission going on per-pane in the checkout form.
-      return FALSE;
-    }
+    // Even though the form error is enough to stop the submission of the form,
+    // it's not enough to stop it from a Commerce standpoint because of the
+    // combined validation / submission going on per-pane in the checkout form.
+    return FALSE;
   }
 }
 

@@ -85,7 +85,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
               $email_lookup[] = $email;
             }
           }
-        } catch (ResponseException $e) {}
+        } catch (ResponseException $e) {
+        }
       }
       else {
         foreach ($ids as $id) {
@@ -101,7 +102,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
               if (!in_array($mail, $this->emailCache)) {
                 $email_lookup[] = $mail;
               }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
           }
           else {
             $list[] = $this->devCache[$id];
@@ -262,7 +264,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     }
     $default_config = devconnect_default_org_config();
 
-    $old_entity = (array)$entity;
+    $old_entity = (array) $entity;
     if (empty($entity->orgNames)) {
       $entity->orgNames = array('default');
     }
@@ -370,7 +372,9 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   public function updateEmail(DeveloperEntity $entity, $new_email) {
     $saved = FALSE;
     foreach ($entity->orgNames as $org) {
-      $org = devconnect_multiorg_find_requested_org($org);
+      if (module_exists('devconnect_multiorg')) {
+        $org = devconnect_multiorg_find_requested_org($org);
+      }
       $config = devconnect_default_org_config($org);
       try {
         $dev = new Developer($config);

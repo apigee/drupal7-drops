@@ -1,9 +1,5 @@
 html { 
-  background: url(images/apigee1.jpg) no-repeat bottom center fixed; 
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
-  background-size: cover;
+
 }
 body.maintenance-page.in-maintenance { background-color:transparent; }
 body.maintenance-page.in-maintenance #page { background-color:transparent; }

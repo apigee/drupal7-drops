@@ -1,21 +1,6 @@
-name = SmartDocs (beta)
-description = "Provides integration to Apigee Modeling API"
+name = SmartDocs alpha (DEPRECATED)
+description = "This module is deprecated. Please enable SmartDocs instead."
 package = "DevConnect"
 core = 7.x
 version = "7.x-14.03.24-beta"
-
-dependencies[] = devconnect
-dependencies[] = entity
-dependencies[] = node
-dependencies[] = views
-dependencies[] = taxonomy
-dependencies[] = pathauto
-
-files[] = includes/devconnect_docgen.batch_import.inc
-files[] = includes/templates/views/default_view.template.inc
-files[] = controllers/ModelController.php
-files[] = controllers/MethodController.php
-files[] = controllers/ResourceController.php
-files[] = controllers/RevisionController.php
-files[] = controllers/TemplateController.php
-files[] = controllers/DocController.php
+hidden = TRUE

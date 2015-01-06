@@ -1,17 +1,20 @@
 <?php
 /**
+ * @file
+ * Contains drush functionality for devconnect_user module
+ */
+
+/**
  * Implements hook_drush_command().
- *
- * @return array
  */
 function devconnect_user_drush_command() {
   $items = array();
 
   $items['devconnect-user-sync'] = array(
     'callback' => 'devconnect_user_drush_user_sync',
-    'description' => dt('Synchronizes Drupal users and KMS developers.'),
+    'description' => dt('Synchronizes Drupal users and Edge developers.'),
     'arguments' => array(),
-    'aliases' => array('dc-sync')
+    'aliases' => array('dc-sync'),
   );
 
   $items['devconnect-user-process-queue'] = array(
@@ -27,17 +30,14 @@ function devconnect_user_drush_command() {
 
 /**
  * Implements hook_drush_help().
- *
- * @param $section
- * @return null|string
  */
 function devconnect_user_drush_help($section) {
   switch ($section) {
     case 'drush:devconnect-user-sync':
-      return dt('This command synchronizes Drupal users and KMS developers.
-        In situations in which a developer exists in KMS with no corresponding
+      return dt('This command synchronizes Drupal users and Edge developers.
+        In situations in which a developer exists in Edge with no corresponding
         Drupal account, the Drupal account is created. In situations in which
-        a Drupal account exists with no corresponding developer in KMS, the
+        a Drupal account exists with no corresponding developer in Edge, the
         developer entry is created.');
   }
 }

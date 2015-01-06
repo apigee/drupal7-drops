@@ -47,6 +47,7 @@ projects[bootstrap_modal_forms][type] = "module"
 projects[bootstrap_modal_forms][subdir] = "contrib"
 projects[bootstrap_modal_forms][download][type] = "git"
 projects[bootstrap_modal_forms][download][url] = "http://git.drupal.org/sandbox/bhasselbeck/2167991.git"
+projects[bootstrap_modal_forms][download][branch] = "7.x-1.x"
 projects[bootstrap_modal_forms][directory_name] = "bootstrap_modal_forms"
 
 projects[bugherd][type] = "module"
@@ -84,8 +85,6 @@ projects[commerce_worldpay_business_gateway][download][type] = "git"
 projects[commerce_worldpay_business_gateway][download][url] = "http://git.drupal.org/sandbox/magicmyth/1433370.git"
 projects[commerce_worldpay_business_gateway][download][branch] = "7.x-1.x"
 projects[commerce_worldpay_business_gateway][directory_name] = "commerce_worldpay_business_gateway"
-; see http://drupal.org/node/1569386
-projects[commerce_worldpay_business_gateway][patch][1569386] = "https://drupal.org/files/DRAFT-Issue-1569386.patch"
 
 projects[connector][type] = "module"
 projects[connector][subdir] = "contrib"
@@ -225,7 +224,7 @@ projects[mediaelement][subdir] = "contrib"
 
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-alpha3"
+projects[media][version] = "2.0-alpha4"
 ; see http://drupal.org/node/2232703
 projects[media][patch][2232703] = "https://drupal.org/files/issues/media-views-2232703-5.patch"
 
@@ -283,7 +282,6 @@ projects[redirect][subdir] = "contrib"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-; see http://drupal.org/node/2369946
 
 projects[remote_stream_wrapper][type] = "module"
 projects[remote_stream_wrapper][subdir] = "contrib"
@@ -293,9 +291,6 @@ projects[rules][subdir] = "contrib"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-; see http://drupal.org/node/2369946
-projects[services][patch][2369946] = "https://www.drupal.org/files/issues/services.spyc_make-2369946-2.patch"
-
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -313,6 +308,12 @@ projects[special_menu_items][subdir] = "contrib"
 
 projects[strongarm][type] = "module"
 projects[strongarm][subdir] = "contrib"
+
+projects[sumo][type] = "module"
+projects[sumo][subdir] = "contrib"
+projects[sumo][download][type] = "git"
+projects[sumo][download][url] = "http://git.drupal.org/sandbox/daniel_j/2390985.git"
+projects[sumo][directory_name] = "sumo"
 
 projects[syntaxhighlighter][type] = "module"
 projects[syntaxhighlighter][subdir] = "contrib"

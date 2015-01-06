@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Tests functionality of the Developer entity.
+ */
 
 class DeveloperEntityTestCase extends DrupalWebTestCase {
 
@@ -20,8 +24,7 @@ class DeveloperEntityTestCase extends DrupalWebTestCase {
     if (is_array($this->developer)) {
       try {
         entity_delete('developer', $this->developer['email']);
-      }
-      catch (Exception $e) {
+      } catch (Exception $e) {
         $this->verbose('Exception while deleting developer: ' . $e->getMessage());
       }
     }
@@ -43,12 +46,10 @@ class DeveloperEntityTestCase extends DrupalWebTestCase {
       $edit['field_last_name'][LANGUAGE_NONE][0]['value'] = $this->randomName();
 
       $user = user_save(drupal_anonymous_user(), $edit);
-    }
-    catch (Apigee\Exceptions\ResponseException $e) {
+    } catch (Apigee\Exceptions\ResponseException $e) {
       $this->fail('ResponseException while creating user: ' . $e->getResponse() . "\n" . $e->getUri());
       return;
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
       $this->fail('Exception while creating user: ' . $e->getMessage());
       return;
     }
@@ -62,12 +63,10 @@ class DeveloperEntityTestCase extends DrupalWebTestCase {
 
     try {
       $developer = entity_load('developer', array($user->mail), array(), TRUE);
-    }
-    catch (Apigee\Exceptions\ResponseException $e) {
+    } catch (Apigee\Exceptions\ResponseException $e) {
       $this->fail('ResponseException while fetching developer: ' . $e->getResponse() . "\n" . $e->getUri());
       return;
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
       $this->fail('Exception while fetching developer: ' . $e->getMessage());
       return;
     }
@@ -87,8 +86,7 @@ class DeveloperEntityTestCase extends DrupalWebTestCase {
 
     try {
       $developer = entity_load('developer', array($user->mail), array(), TRUE);
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
       $this->fail('Exception while re-fetching developer: ' . $e->getMessage());
       return;
     }
@@ -113,20 +111,17 @@ class DeveloperEntityTestCase extends DrupalWebTestCase {
         $this->verbose(print_r($this->developer, TRUE));
       }
       entity_delete('developer', $this->developer['email']);
-    }
-    catch (Apigee\Exceptions\ResponseException $e) {
+    } catch (Apigee\Exceptions\ResponseException $e) {
       $this->fail('ResponseException while deleting developer: ' . $e->getResponse() . "\n" . $e->getUri());
       return;
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
       $this->fail('Exception while deleting developer: ' . $e->getMessage());
       return;
     }
 
     try {
       $developer = entity_load('developer', array($user->mail), array(), TRUE);
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
       $developer = NULL;
     }
     $this->developer = NULL;

@@ -245,6 +245,8 @@ function devconnect_monetization_menu() {
     'access arguments' => array('edit mint company profile'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -9,
+    'file' => 'devconnect_monetization.company_profile.inc',
+    'file path' => drupal_get_path('module', 'devconnect_monetization'),
   );
 
   $items['users/%devconnect_monetization_developer/monetization/company/bank-details'] = array(
@@ -648,10 +650,21 @@ function devconnect_monetization_purchased_plans(\Apigee\Mint\Developer $develop
     $start_date = DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan->getStartDate(), $utc_timezone)
       ->setTimezone($org_timezone);
 
-    $end_date = is_null($developer_rate_plan->getEndDate()) ? '--' : DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan->getEndDate(), $utc_timezone)
-      ->setTimezone($org_timezone);
-
     $today = new DateTime('today', $org_timezone);
+
+    if(is_null($developer_rate_plan->getEndDate())) {
+      $end_date = '--';
+      $plan_has_ended = FALSE;
+    }
+    else {
+      $end_date = DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan->getEndDate(), $utc_timezone)->setTimezone($org_timezone);
+      // If the plan has ended, set a var so we can remove link to the plan details.
+      if($end_date < $today) {
+        $plan_has_ended = TRUE;
+      } else {
+        $plan_has_ended = FALSE;
+      }
+    }
 
     if ($start_date > $today) {
       $action = l(t('Cancel'), 'users/' . $GLOBALS['user']->uid . '/monetization/packages/' . rawurlencode($rate_plan
@@ -672,6 +685,7 @@ function devconnect_monetization_purchased_plans(\Apigee\Mint\Developer $develop
       'renewal_date' => strlen($developer_rate_plan->getRenewalDate()) ? DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan->getRenewalDate(), $utc_timezone)
           ->setTimezone($org_timezone)->format('m-d-Y') : '--',
       'products' => array(),
+      'has_ended' => $plan_has_ended,
     );
 
     foreach ($rate_plan->getMonetizationPackage()->getProducts() as $product) {
@@ -931,13 +945,10 @@ function _devconnect_monetization_build_limit_text(Limit $product_limit, $pricin
   }
   else {
     if ($product_limit->getApplication() != NULL) {
-      $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-      $app = new DeveloperApp(devconnect_monetization_default_org_config(), $developer_id);
-      $apps = $app->getListDetail();
-      foreach ($apps as $app) {
-        if ($app->getAppId() == $product_limit->getApplication()) {
-          $limit_text .= ' ' . t('for') . ' ' . $app->getName();
-        }
+      // TODO: try pulling from cache first
+      $app = entity_load_single('developer_app', $product_limit->getApplication());
+      if ($app) {
+        $limit_text .= ' ' . t('for @name', array('@name' => $app->name));
       }
     }
   }
@@ -1194,9 +1205,11 @@ function devconnect_monetization_form_devconnect_developer_apps_edit_form_alter(
     drupal_set_message(t("Error: %error", array('%error' => $form_state['rebuild_info']['remove-api_message'])), 'error');
     foreach ($form_state['rebuild_info']['remove-api_products'] as $product_id) {
       $composed_product_id = 'prod-' . $product_id;
-      if (($index = array_search($composed_product_id, $form_state['input']['api_product'])) !== FALSE) {
+      if (array_key_exists('api_product', $form_state['input']) && ($index = array_search($composed_product_id, $form_state['input']['api_product'])) !== FALSE) {
         unset($form_state['input']['api_product'][$index]);
-        unset($form_state['values']['api_product'][$composed_product_id]);
+        if (isset($form_state['values']['api_product'][$composed_product_id])) {
+          unset($form_state['values']['api_product'][$composed_product_id]);
+        }
       }
     }
     unset($form_state['rebuild_info']['remove-api_message']);
@@ -1213,7 +1226,12 @@ function devconnect_monetization_form_devconnect_developer_apps_edit_form_alter(
 function devconnect_monetization_form_devconnect_developer_apps_edit_form_validate(&$form, &$form_state) {
   $monetized_products = array();
   $developer = devconnect_monetization_developer_load($GLOBALS['user']->uid);
-  foreach ($form_state['values']['api_product'] as $product_key => $composed_product_id) {
+
+  $product_list = $form_state['values']['api_product'];
+  if (is_scalar($product_list)) {
+    $product_list = array($product_list);
+  }
+  foreach ($product_list as $composed_product_id) {
     $product_id = substr($composed_product_id, 5);
     if (!devconnect_monetization_allowed_product($product_id, $developer)) {
       $monetized_products[] = $product_id;
@@ -1572,7 +1590,7 @@ function devconnect_monetization_commerce_checkout_router($order, $checkout_page
 /**
  * Implementation of hook_user_delete()
  *
- * If user is admin company, set its childreen developers company id to NULL
+ * If user is admin company, set its children developers company id to NULL
  * thus they are free to be added to another company
  *
  * @param $account
@@ -1590,8 +1608,7 @@ function devconnect_monetization_user_delete($account) {
     ->fieldCondition('field_mint_company_id', 'value', $account->mail, '=')
     ->execute();
 
-  $child_ids = array_keys($child_developers['user']);
-  $developers = !empty($child_ids) ? entity_load('user', $child_ids) : array();
+  $developers = !empty($child_developers) ? entity_load('user', array_keys($child_developers['user'])) : array();
 
   if (!empty($developers)) {
     foreach ($developers as $developer) {

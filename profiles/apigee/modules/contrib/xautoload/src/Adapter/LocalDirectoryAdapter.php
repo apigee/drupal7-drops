@@ -111,7 +111,7 @@ class LocalDirectoryAdapter implements ClassFinderAdapterInterface {
    */
   function addMultiplePsr0(array $prefixes, $relative = TRUE) {
     $relative && $this->prependMultiple($prefixes);
-    $this->master->addMultiplePsr4($prefixes);
+    $this->master->addMultiplePsr0($prefixes);
   }
 
   /**

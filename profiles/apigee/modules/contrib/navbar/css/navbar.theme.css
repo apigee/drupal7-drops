@@ -86,10 +86,10 @@
 #navbar-administration .navbar-tray-horizontal .menu {
   background-color: #ffffff;
 }
-#navbar-administration .navbar-tray-horizontal .menu li + li {
+#navbar-administration .navbar-tray-horizontal .menu .navbar-level-1 + .navbar-level-1 {
   border-left: 1px solid #dddddd; /* LTR */
 }
-#navbar-administration .navbar-tray-horizontal .menu li:last-child {
+#navbar-administration .navbar-tray-horizontal .menu .navbar-level-1:last-child {
   border-right: 1px solid #dddddd; /* LTR */
 }
 #navbar-administration .navbar-tray-vertical .menu li + li {

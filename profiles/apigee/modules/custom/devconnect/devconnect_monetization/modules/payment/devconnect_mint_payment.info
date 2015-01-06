@@ -3,17 +3,10 @@ description = Common commerce features between Payment Provides and Mint module
 core = 7.x
 package = DevConnect Mint
 php = 5.3
-version = 7.x-4.24-payment
-project = devconnect
+version = 7.x-4.24
 
 dependencies[] = devconnect_monetization
 dependencies[] = commerce
 dependencies[] = commerce_payment
-
-; Information added by drush on 2013-09-16
-version = "7.x-4.24"
-core = "7.x"
-project = "devconnect-mint"
-datestamp = "1383067632"
 
 configure = admin/config/devconnect

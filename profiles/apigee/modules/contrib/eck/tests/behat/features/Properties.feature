@@ -4,8 +4,8 @@ Feature: CRUD
   I want to be able to forge my entities with custom attributes (properties)
   so my content will do exactly what it needs to do
 
-  Background: 
-    Given I am logged in as a user with the "administrator" role
+  Background:
+    Given I am logged in as a user with the "Use the administration pages and help,Administer Entity Types,Administer Bundles,Administer Entities" permissions
 
   @setup
   Scenario: Setting up for the tests
@@ -26,9 +26,9 @@ Feature: CRUD
     And I press the "edit-property-add" button
     And I check the box <checkbox>
     And I press the "Save" button
-    
+
     Given I visit "admin/structure/entity-type/vehicle/car/add"
-    And I fill in <label> with <value>
+    And I fill in <id> with <value>
     And I press the "Save" button
     Then I should see the text <value>
 
@@ -36,13 +36,13 @@ Feature: CRUD
     And I uncheck the box <checkbox>
     And I press the "Save" button
 
-    Examples: 
-      | type               | label | name | checkbox                   | value          |
-      | "text"             | "T"   | "t"  | "new_properties_table[t]"  | "Toyota Prius" |
-      | "integer"          | "I"   | "i"  | "new_properties_table[i]"  | "-123456"      |
-      | "decimal"          | "D"   | "d"  | "new_properties_table[d]"  | "45.98"        |
-      | "positive_integer" | "PI"  | "pi" | "new_properties_table[pi]" | "987"          |
-      | "language"         | "L"   | "l"  | "new_properties_table[l]"  | "en"           |
+    Examples:
+      | type               | label | name | id        | checkbox                   | value          |
+      | "text"             | "T"   | "t"  | "edit-t"  | "new_properties_table[t]"  | "Toyota Prius" |
+      | "integer"          | "I"   | "i"  | "edit-i"  | "new_properties_table[i]"  | "-123456"      |
+      | "decimal"          | "D"   | "d"  | "edit-d"  | "new_properties_table[d]"  | "45.98"        |
+      | "positive_integer" | "PI"  | "pi" | "edit-pi" | "new_properties_table[pi]" | "987"          |
+      | "language"         | "L"   | "l"  | "edit-l"  | "new_properties_table[l]"  | "en"           |
 
   @cleanup
   Scenario: This is a clean up step

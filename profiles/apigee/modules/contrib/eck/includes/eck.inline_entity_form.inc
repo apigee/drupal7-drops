@@ -16,6 +16,13 @@ class EckInlineEntityFormController extends EntityInlineEntityFormController {
       'singular' => $entity_info['label'],
       'plural' => $entity_info['label'],
     );
+    // The admin has specified the exact labels that should be used.
+    if ($this->settings['override_labels']) {
+      $labels = array(
+        'singular' => $this->settings['label_singular'],
+        'plural' => $this->settings['label_plural'],
+      );
+    }
     return $labels;
   }
 

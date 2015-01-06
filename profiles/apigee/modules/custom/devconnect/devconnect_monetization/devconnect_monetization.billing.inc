@@ -39,7 +39,22 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
     // Decide what API call to use to get the report data for Billing and
     // Reports page.
     if (variable_get('devconnect_monetization_balance_report_type', BILLING_AND_REPORTS_USE_PREPAID_API_CALL) == BILLING_AND_REPORTS_USE_PREPAID_API_CALL) {
-      $balances = $developer->getPrepaidBalance();
+      try {
+        $balances = $developer->getPrepaidBalance();
+      }
+      catch(\Apigee\Exceptions\ResponseException $e) {
+        drupal_set_message(t('There was an error retrieving your balance. If the problem persists please contact your administrator.'), 'error');
+        global $user;
+        $message_vars = array(
+          '%user_name' => $user->name,
+          '%user_email' => $user->mail,
+          '%error_code' => $e->getCode(),
+          '%error_message' => $e->getMessage(),
+        );
+        watchdog('devconnect_monetization', "Could not retrieve balance from Edge server for user %user_name (%user_email).  Error Code: %error_code Message: %error_message", $message_vars, WATCHDOG_ERROR);
+
+        $balances = array();
+      }
     }
     else {
       $developer_balance = new DeveloperBalance($developer->getEmail(), $config);
@@ -766,16 +781,16 @@ function devconnect_monetization_billing_get_billing_document($doc_id, \Apigee\M
     $doc->load($doc_id);
     $report = $doc->getFile();
 
-    drupal_add_http_header('Content-Disposition', 'filename="Billing_Document-' . $doc->getDocumentNumber() . '_' . time() . '.pdf');
+    drupal_add_http_header('Content-Disposition', 'filename="Billing_Document-' . $doc->getDocumentNumber() . '_' . time() . '.html');
     drupal_add_http_header('Content-Type', 'application/octet-stream');
-    drupal_add_http_header('Content-Length', $report['lenght']);
+    drupal_add_http_header('Content-Length', $report['length']);
     drupal_add_http_header('Connection', 'close');
     echo $report['content'];
     drupal_exit();
   } catch (Exception $e) {
     drupal_set_message(t('Error while trying to serve your Billing Document. Please try again later.'), 'error');
     $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-    devconnect_default_api_client()->logger->error($message);
+    devconnect_default_org_config()->logger->error($message);
   }
   return "";
 }

@@ -6,30 +6,12 @@ description = "We ♥ APIs"
 exclusive = "1"
 core = "7.x"
 
-; Modules no longer listed as dependencies in 14.08:
-; acl
-; apigee_sso - No longer functions
-; bean - "soft" dependency of uuid_features which we do not enable by default (see below)
-; content_access
-; contextual - has no 7.x release
-; dashboard
-; devconnect_docgen - enabled manually when appropriate during install
-; devel, devel_generate
-; diff
-; ftools
-; gravatar
-; logintoboggan
-; markdown
-; metatag
-; openid - all modules that depend on this have been disabled
-; rest_server
-; remote_stream_wrapper
-
 ; ----------
 ; Dependencies
 ; ----------
 dependencies[] = admin_menu
 dependencies[] = admin_menu_toolbar
+dependencies[] = admin_views
 dependencies[] = advanced_forum
 dependencies[] = apigee_account
 dependencies[] = block
@@ -87,6 +69,7 @@ dependencies[] = pathauto
 dependencies[] = rdf
 dependencies[] = redirect
 dependencies[] = search
+dependencies[] = sumo
 dependencies[] = system
 dependencies[] = taxonomy
 dependencies[] = text
@@ -94,8 +77,8 @@ dependencies[] = token
 dependencies[] = user
 dependencies[] = uuid
 dependencies[] = views
+dependencies[] = views_queue
 dependencies[] = views_ui
-dependencies[] = admin_views
 dependencies[] = webform
 dependencies[] = wysiwyg_filter
 

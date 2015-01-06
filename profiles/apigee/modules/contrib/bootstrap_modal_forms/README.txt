@@ -10,3 +10,8 @@ Features
 * Login form as bootstrap modal
 * Register form as bootstrap modal
 * Forgot Password form as bootstrap modal
+
+Configuration
+=============
+
+Settings can be configured at admin/config/user-interface/bootstrap_modal_forms

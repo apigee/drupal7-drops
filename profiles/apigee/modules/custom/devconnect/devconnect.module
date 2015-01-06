@@ -410,31 +410,109 @@ function devconnect_update_projects_alter(&$projects) {
 }
 
 /**
- * Implements hook_theme_registry_alter().
+ * Finds a useable cli version of PHP, of at least version 5.3.
  *
- * On Pantheon systems, register a preprocess callback for the status report.
+ * Special magic is required on Pantheon because PHP is outside the path.
+ * Ditto for MAMP users.
  *
- * @param $theme_registry
+ * @return bool
  */
-function devconnect_theme_registry_alter(&$theme_registry) {
-  if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && !module_exists('update')) {
-    $theme_registry['status_report']['preprocess functions'][] = 'devconnect_preprocess_status_report';
+function devconnect_php_cli() {
+  static $php_cli;
+
+  if (!isset($php_cli)) {
+    $php_cli = FALSE;
+    // Note: safe_mode is deprecated in PHP 5.3 and removed in 5.4.
+    // It is here largely as a fallback for OPDK installs who have ported
+    // their php.ini from a 5.2 or earlier install.
+    $safe_mode = strtolower(ini_get('safe_mode'));
+    $safe_mode = ($safe_mode == '1' || $safe_mode == 'on');
+    if (substr(php_uname(), 0, 7) == 'Windows' || $safe_mode) {
+      goto standard_exit;
+    }
+
+    if (is_dir('/opt/pantheon')) {
+      $php_dirs = array();
+      if ($dh = opendir('/opt/pantheon')) {
+        while (($file = readdir($dh)) !== FALSE) {
+          if (is_dir('/opt/pantheon/' . $file) && substr($file, 0, 4) == 'php-' && is_executable("/opt/pantheon/$file/php")) {
+            $php_dirs[] = $file;
+          }
+        }
+        closedir($dh);
+      }
+      if (count($php_dirs) > 0) {
+        // Get highest-versioned PHP.
+        rsort($php_dirs);
+        $php_cli = '/opt/pantheon/' . $php_dirs[0] . '/php';
+      }
+    }
+
+    // OSX developers using MAMP.
+    if (!$php_cli && is_dir('/Applications/MAMP/bin')) {
+      $php_dirs = array();
+      if ($dh = opendir('/Applications/MAMP/bin')) {
+        while (($file = readdir($dh)) !== FALSE) {
+          if (is_dir('/Applications/MAMP/bin/' . $file) && substr($file, 0, 4) == 'php5' && is_executable("/Applications/MAMP/bin/$file/bin/php")) {
+            $php_dirs[] = $file;
+          }
+        }
+        closedir($dh);
+      }
+      if (count($php_dirs) > 0) {
+        // Get highest-versioned PHP.
+        rsort($php_dirs);
+        $php_cli = '/Applications/MAMP/bin/' . $php_dirs[0] . '/bin/php';
+      }
+    }
+
+    // Presumably not on Pantheon.
+    if (!$php_cli) {
+      $path_elements = explode(PATH_SEPARATOR, $_SERVER['PATH']);
+      // /usr/local/bin may not be in Apache's path, but homebrew users
+      // might be using the PHP found there.
+      array_unshift($path_elements, '/usr/local/bin');
+      $versions = array('56', '55', '54', '53', '');
+      $suffixes = array('-cli', '');
+      foreach ($suffixes as $suffix) {
+        foreach ($versions as $version) {
+          foreach ($path_elements as $path) {
+            if (is_executable("$path/php$version$suffix")) {
+              $php_cli = "$path/php$version$suffix";
+              break 3; // breaks out of outermost foreach
+            }
+          }
+        }
+      }
+    }
   }
+  // If we have an unversioned PHP executable, make sure its version is
+  // high enough for our purposes.
+  if (!empty($php_cli)) {
+    $php_base = basename($php_cli);
+    if ($php_base == 'php' || $php_base == 'php-cli') {
+      $output = shell_exec($php_cli . ' --version 2>&1');
+      list($line) = @explode(PHP_EOL, $output, 2);
+      $parts = @explode(' ', $line);
+      if (count($parts) < 2 || (substr($parts[1], 0, 1) != '5' && substr($parts[1], 0, 1) != '7') || !version_compare($parts[1], '5.3.0', '>')) {
+        $php_cli = FALSE;
+      }
+    }
+  }
+
+standard_exit:
+  return $php_cli;
 }
 
 /**
- * Preprocess callback for status report.
+ * Implements hook_sumo_site_id_alter().
  *
- * On Pantheon systems in which the Update module has not been explicitly
- * enabled, suppress the update-isn't-turned-on warning.
- *
- * @param $variables
+ * Appends org name to the end of the X-Sumo-Name header value when logging
+ * to Sumo Logic.
  */
-function devconnect_preprocess_status_report(&$variables) {
-  foreach (array_keys($variables['requirements']) as $key) {
-    if ($variables['requirements'][$key]['title'] == t('Update notifications') && $variables['requirements'][$key]['severity'] == 1) {
-      unset($variables['requirements'][$key]);
-      break;
-    }
+function devconnect_sumo_site_id_alter(&$site_id) {
+  $config = devconnect_default_org_config();
+  if (!empty($config->orgName)) {
+    $site_id .= '.' . $config->orgName;
   }
 }

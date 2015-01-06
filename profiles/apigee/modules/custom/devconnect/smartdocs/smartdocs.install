@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Implements hook_schema
+ * Implements hook_schema().
  */
 function smartdocs_schema() {
   $schema['cache_smartdocs'] = drupal_get_schema_unprocessed('system', 'cache');
@@ -60,10 +60,7 @@ function smartdocs_schema() {
 
 
 /**
- * Implements hook_requirements
- *
- * @param $phase
- * @return array
+ * Implements hook_requirements().
  */
 function smartdocs_requirements($phase) {
   $result = array();
@@ -74,7 +71,7 @@ function smartdocs_requirements($phase) {
         $result['smartdocs_docgen'] = array(
           'severity' => REQUIREMENT_ERROR,
           'title' => 'SmartDocs',
-          'value' => $t(' (beta).  Please disable SmartDocs (beta) before enabling the full version.'),
+          'value' => $t(' (alpha).  Please disable SmartDocs (alpha) before enabling the full version.'),
         );
         return $result;
       }
@@ -91,31 +88,38 @@ function smartdocs_requirements($phase) {
 /**
  * Implements hook_install().
  *
- * Sets pathauto settings to match Smartdocs requirements.
+ * Migrates devconnect_docgen data if present. Disables devconnect_docgen if
+ * enabled and drops related tables. Sets pathauto settings to match Smartdocs
+ * requirements.
  */
 function smartdocs_install() {
-	if (db_table_exists('smartdocs')) {
-		$query = db_select('smartdocs', 's');
-		$query->fields('s', array('sid', 'nid', 'revision', 'resource', 'method', 'model', 'synced', 'mpid'));
-		$result = $query->execute();
-		foreach ($result as $row) {
-			$record = array (
-				'nid' =>  $row->nid,
-				'revision' => $row->revision,
-				'resource' => $row->resource,
-				'method' => $row->method,
-				'model' => $row->model,
-				'synced' => $row->synced,
-				'mpid' => $row->mpid,
-			);
-			drupal_write_record('smartdata', $record);
-		}
-	}
-	if (module_exists('devconnect_docgen')) {
-		module_disable(array('devconnect_docgen'));
-		db_drop_table('smartdocs');
-		db_drop_table('cache_docgen');
-	}
+  if (db_table_exists('smartdocs')) {
+    $query = db_select('smartdocs', 's');
+    $query->fields('s', array('sid', 'nid', 'revision', 'resource', 'method', 'model', 'synced', 'mpid'));
+    $result = $query->execute();
+    foreach ($result as $row) {
+      $record = array (
+        'nid' =>  $row->nid,
+        'revision' => $row->revision,
+        'resource' => $row->resource,
+        'method' => $row->method,
+        'model' => $row->model,
+        'synced' => $row->synced,
+        'mpid' => $row->mpid,
+      );
+      drupal_write_record('smartdata', $record);
+    }
+  }
+  if (module_exists('devconnect_docgen')) {
+    module_disable(array('devconnect_docgen'));
+  }
+  if (db_table_exists('smartdocs')) {
+    db_drop_table('smartdocs');
+  }
+  if (db_table_exists('cache_docgen')) {
+    db_drop_table('cache_docgen');
+  }
+
   variable_set('pathauto_max_length', 255);
   variable_set('pathauto_max_component_length', 255);
   variable_set('pathauto_punctuation_left_curly', 2);

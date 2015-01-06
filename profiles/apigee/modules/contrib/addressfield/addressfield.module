@@ -42,9 +42,13 @@ function addressfield_views_api() {
  */
 function addressfield_module_implements_alter(&$implementations, $hook) {
   if ($hook == 'token_info_alter') {
-    $group = $implementations['addressfield'];
-    unset($implementations['addressfield']);
-    $implementations['addressfield'] = $group;
+    // Make sure that the $implementations list is populated before altering it,
+    // to work around a crash experienced by some people (#2181001).
+    if (isset($implementations['addressfield'])) {
+      $group = $implementations['addressfield'];
+      unset($implementations['addressfield']);
+      $implementations['addressfield'] = $group;
+    }
   }
 }
 
@@ -142,7 +146,10 @@ function addressfield_generate($address, array $handlers, array $context = array
 
   ctools_include('plugins');
   $format = array();
-  $format['#handlers'] = $handlers;
+  // Add the handlers, ordered by weight.
+  $plugins = addressfield_format_plugins();
+  $format['#handlers'] = array_intersect(array_keys($plugins), $handlers);
+
   foreach ($format['#handlers'] as $handler) {
     if ($callback = ctools_plugin_load_function('addressfield', 'format', $handler, 'format callback')) {
       $callback($format, $address, $context);
@@ -156,7 +163,6 @@ function addressfield_generate($address, array $handlers, array $context = array
   if ($context['mode'] == 'form') {
     $format['#addressfield'] = TRUE;
     $format['#process'][] = 'addressfield_process_format_form';
-    $format['#required'] = FALSE;
   }
   elseif ($context['mode'] == 'render') {
     $format['#pre_render'][] = 'addressfield_render_address';
@@ -247,13 +253,14 @@ function _addressfield_render_address(&$format, $address) {
       // If the element instructs us to render the option value instead of the
       // raw address element value and its #options array has a matching key,
       // swap it out for the option value now.
-      $child['#children'] = '';
-
-      if (!empty($child['#render_option_value']) && isset($child['#options'][$address[$key]])) {
+      if (!empty($child['#render_option_value']) && isset($address[$key]) && isset($child['#options'][$address[$key]])) {
         $child['#children'] = check_plain($child['#options'][$address[$key]]);
       }
       elseif (isset($address[$key])) {
         $child['#children'] = check_plain($address[$key]);
+      }
+      else {
+        $child['#children'] = '';
       }
 
       // Skip empty elements.
@@ -294,8 +301,12 @@ function addressfield_theme() {
  */
 function theme_addressfield_container($variables) {
   $element = $variables['element'];
-
   $element['#children'] = trim($element['#children']);
+  // Remove the autocomplete attributes because the W3C validator complains.
+  // They are only used on forms anyway.
+  unset($element['#attributes']['autocomplete']);
+  unset($element['#attributes']['x-autocompletetype']);
+
   if (strlen($element['#children']) > 0) {
     $output = '<' . $element['#tag'] . drupal_attributes($element['#attributes']) . '>';
     $output .= $element['#children'];
@@ -418,7 +429,7 @@ function addressfield_field_presave($entity_type, $entity, $field, $instance, $l
     // Trim whitespace from all of the address components and convert any double
     // spaces to single spaces.
     foreach ($item as $key => &$value) {
-      if (!in_array($key, array('element_key', 'data')) && is_string($value)) {
+      if (!in_array($key, array('data')) && is_string($value)) {
         $value = trim(str_replace('  ', ' ', $value));
       }
     }
@@ -479,34 +490,18 @@ function addressfield_field_widget_settings_form($field, $instance) {
 function addressfield_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $settings = $instance['widget']['settings'];
 
-  // Generate a specific key used to identify this element to restore a default
-  // value upon AJAX submission regardless of where this element is in the
-  // $form array.
-  $element_key = implode('|', array($element['#entity_type'], $element['#bundle'], $element['#field_name'], $element['#language'], $element['#delta']));
-
-  // Store the key in the element array as a value so it can be easily retrieved
-  // in context in the $form_state['values'] array in the element validator.
-  $element['element_key'] = array(
-    '#type' => 'value',
-    '#value' => $element_key,
-  );
-
-  // Get the default address used to build the widget form elements, looking
-  // first in the form state, then in the stored value for the field, and then
-  // in the default values of the instance.
   $address = array();
-
-  if (!empty($form_state['addressfield'][$element_key])) {
-    // Use the value from the form_state if available.
-    $address = $form_state['addressfield'][$element_key];
+  // If the form has been rebuilt via AJAX, use the form state values.
+  // $form_state['values'] is empty because of #limit_validation_errors, so
+  // $form_state['input'] needs to be used instead.
+  $parents = array_merge($element['#field_parents'], array($element['#field_name'], $langcode, $delta));
+  $input_address = drupal_array_get_nested_value($form_state['input'], $parents);
+  if (!empty($input_address)) {
+    $address = $input_address;
   }
   elseif (!empty($items[$delta]['country'])) {
     // Else use the saved value for the field.
     $address = $items[$delta];
-  }
-  else {
-    // Otherwise use the instance default.
-    $address = (array) $instance['default_value'][0];
   }
 
   // Determine the list of available countries, and if the currently selected
@@ -516,8 +511,16 @@ function addressfield_field_widget_form(&$form, &$form_state, $field, $instance,
     unset($address['country']);
   }
 
-  // Merge in default values to provide a value for every expected array key.
-  $address += addressfield_default_values($countries);
+  // Merge in default values.
+  // Skip the country default if the field is optional, in which case it might
+  // not have a country selected, causing the whole field to be treated as empty.
+  // The same logic applies if the field allows multiple values, in which case
+  // only the first delta is required.
+  $default_values = addressfield_default_values($countries);
+  if (empty($instance['required']) || $delta > 0) {
+    $default_values['country'] = '';
+  }
+  $address += $default_values;
 
   // Add the form elements for the standard widget, which includes a country
   // select list at the top that reloads the available address elements when the
@@ -527,6 +530,17 @@ function addressfield_field_widget_form(&$form, &$form_state, $field, $instance,
     // but it's the only wrapper available in Drupal we can properly use
     // in that context, and it is overridable if necessary.
     $element['#type'] = 'fieldset';
+
+    if (!empty($instance['description'])) {
+      // Checkout panes convert the fieldset into a container, causing
+      // #description to not be rendered. Hence, a real element is added.
+      $element['element_description'] = array(
+        '#markup' =>  $instance['description'],
+        '#prefix' => '<div class="fieldset-description">',
+        '#suffix' => '</div>',
+        '#weight' => -999,
+      );
+    }
 
     // Generate the address form.
     $context = array(
@@ -538,32 +552,37 @@ function addressfield_field_widget_form(&$form, &$form_state, $field, $instance,
     );
     $element += addressfield_generate($address, $settings['format_handlers'], $context);
 
-    // Mark the form element as required if necessary.
-    $element['#required'] = $delta == 0 && $instance['required'];
+    // If #required is set to FALSE, _addressfield_process_format_form() strips
+    // it from all child elements. This is only needed on the field edit form.
+    $element['#required'] = ($form_state['build_info']['form_id'] != 'field_ui_field_edit_form');
   }
 
   return $element;
 }
 
 /**
- * Element validate callback: rebuilds the form on country change and stores the
- * current address value in the $form_state for retrieval on rebuild.
+ * Element validate callback: rebuilds the form on country change.
  */
 function addressfield_standard_country_validate($element, &$form_state) {
-  // If the country was changed, rebuild the form.
   if ($element['#default_value'] != $element['#value']) {
+    $parents = $element['#parents'];
+    array_pop($parents);
+    $address = drupal_array_get_nested_value($form_state['values'], $parents);
+
+    // Clear the country-specific field values.
+    $country_specific_data = array(
+      'dependent_locality' => '',
+      'locality' => '',
+      'administrative_area' => '',
+      'postal_code' => '',
+    );
+    $address = array_diff_key($address, $country_specific_data);
+
+    drupal_array_set_nested_value($form_state['values'], $parents, $address);
+    drupal_array_set_nested_value($form_state['input'], $parents, $address);
+
     $form_state['rebuild'] = TRUE;
   }
-
-  $parents = $element['#parents'];
-  array_pop($parents);
-
-  // Search through the form values to find the current address.
-  $address = drupal_array_get_nested_value($form_state['values'], $parents);
-
-  // Store the present address values in the form state for retrieval by the
-  // widget form regardless of where the widget sits in the $form array.
-  $form_state['addressfield'][$address['element_key']] = array_diff_key($address, array('element_key' => ''));
 }
 
 /**
@@ -593,6 +612,9 @@ function addressfield_standard_widget_refresh($form, $form_state) {
   // new country select list.
   $commands[] = ajax_command_replace(NULL, render($element));
   $commands[] = ajax_command_invoke('#' . $element['country']['#id'], 'focus');
+  // Add the status messages inside the new addressfield's wrapper element,
+  // just like core does.
+  $commands[] = ajax_command_prepend(NULL, theme('status_messages'));
 
   // Allow other modules to add arbitrary AJAX commands on the refresh.
   drupal_alter('addressfield_standard_widget_refresh', $commands, $form, $form_state);
@@ -791,6 +813,9 @@ function addressfield_data_property_info($name = NULL) {
     ),
     'premise' => array(
       'label' => t('Premise (i.e. Apartment / Suite number)'),
+    ),
+    'sub_premise' => array(
+      'label' => t('Sub Premise (i.e. Suite, Apartment, Floor, Unknown.'),
     ),
   );
 

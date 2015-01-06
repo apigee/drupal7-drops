@@ -196,7 +196,8 @@ function devconnect_default_structure_update_7003() {
     ),
   );
   menu_link_save($menu_link);
-  /**** Create the base fields ****/
+  // Create the base fields
+  drupal_load('module', 'devconnect_default_structure');
   if ($fields = _devconnect_default_structure_field_bases()) {
     field_info_cache_clear();
 
@@ -730,4 +731,14 @@ function devconnect_default_structure_update_7005() {
     ->execute();
   db_insert('ckeditor_input_format')->fields(array("name" => 'full', "format" => 'filtered_html'))->execute();
   db_insert('ckeditor_input_format')->fields(array("name" => 'full', "format" => 'full_html'))->execute();
+}
+
+/**
+ * Disable apigee_sso_ui if apigee_account and apigee_sso are disabled.
+ */
+function devconnect_default_structure_update_7425() {
+  if (!module_exists('apigee_account') && !module_exists('apigee_sso') && module_exists('apigee_sso_ui')) {
+    module_disable(array('apigee_sso_ui'));
+    drupal_uninstall_modules(array('apigee_account', 'apigee_sso', 'apigee_sso_ui'));
+  }
 }

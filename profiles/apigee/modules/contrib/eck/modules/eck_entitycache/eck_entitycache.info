@@ -7,9 +7,9 @@ core = 7.x
 dependencies[] = eck
 dependencies[] = entitycache
 
-; Information added by Drupal.org packaging script on 2014-07-24
-version = "7.x-2.0-rc4"
+; Information added by Drupal.org packaging script on 2014-12-17
+version = "7.x-2.0-rc6"
 core = "7.x"
 project = "eck"
-datestamp = "1406213356"
+datestamp = "1418843597"
 

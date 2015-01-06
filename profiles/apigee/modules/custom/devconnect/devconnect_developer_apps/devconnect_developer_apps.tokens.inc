@@ -174,7 +174,7 @@ function devconnect_developer_apps_token_info() {
  * @param $data
  */
 function devconnect_developer_apps_token_info_alter(&$data) {
-  if (array_key_exists('uid', $data['tokens']['developer_app'])) {
+  if (array_key_exists('developer_app', $data['tokens']) && array_key_exists('uid', $data['tokens']['developer_app'])) {
     unset($data['tokens']['developer_app']['uid']);
   }
 }

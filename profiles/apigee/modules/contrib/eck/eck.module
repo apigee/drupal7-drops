@@ -46,9 +46,9 @@ function eck_views_api() {
  */
 function eck_flush_caches() {
   // Reload all ECK entity types.
-  EntityType::loadAll(NULL, TRUE);
+  EntityType::loadAll(TRUE);
   // Reload all Bundles.
-  Bundle::loadAll(NULL, TRUE);
+  Bundle::loadAll(TRUE);
 }
 
 /**
@@ -85,6 +85,14 @@ function eck_eck_default_properties() {
     'type' => "language",
     'behavior' => 'language',
   );
+  // Include uuid as default property if module_exists.
+  if (module_exists('uuid')) {
+    $default_properties['uuid'] = array(
+      'label' => "UUID",
+      'type' => "text",
+      'behavior' => 'uuid',
+    );
+  }
 
   return $default_properties;
 }
@@ -652,6 +660,20 @@ function entity_table_select($form, &$state, $entity_type, $bundle, $header, $ro
 class ECKEntity extends Entity {}
 
 /**
+ * Implements hook_entity_presave().
+ */
+function eck_entity_presave($entity, $entity_type) {
+  $entity_type = EntityType::loadByName($entity_type);
+
+  // This is an eck entity.
+  if ($entity_type) {
+    eck_property_behavior_invoke_plugin($entity_type, 'entity_save',
+      array('entity' => $entity)
+    );
+  }
+}
+
+/**
  * Implements hook_entity_insert().
  */
 function eck_entity_insert($entity, $entity_type) {
@@ -882,13 +904,34 @@ function eck_clean_up() {
  * Implements hook_system_info_alter().
  *
  * If there are entity types created, let's not let the user disable the module.
+ * If the eck_entity_cache module is installed, eck can not be disabled.
  */
 function eck_system_info_alter(&$info, $file, $type) {
   if ($type == "module" && array_key_exists("name", $info) && $info['name'] == "Entity Construction Kit") {
+    $done = FALSE;
     $entity_types = EntityType::loadAll();
     if (!empty($entity_types)) {
       $info['required'] = TRUE;
       $info['explanation'] = "Entity types created by ECK are still present in the system.";
+      $done = TRUE;
+    }
+
+    // If ECK EntityCache is installed, we can not disable or uninstall ECK.
+    if (!$done) {
+      $query = db_select("system", "s");
+      $query->fields('s', array('schema_version'));
+      $query->condition('s.name', 'eck_entitycache', '=');
+      $query->condition('s.type', 'module', '=');
+
+      $result = $query->execute();
+
+      foreach ($result as $row) {
+        $schema_version = $row->schema_version;
+        if ($schema_version == 0) {
+          $info['required'] = TRUE;
+          $info['explanation'] = "ECK EntityCache must be uninstalled before you can disable/uninstall ECK";
+        }
+      }
     }
   }
 }

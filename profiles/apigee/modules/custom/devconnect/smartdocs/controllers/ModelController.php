@@ -5,7 +5,7 @@ class SmartDocsModelController extends DrupalDefaultEntityController {
   private $SmartDocsModel;
 
   public function __construct($entity_type) {
-    $config = devconnect_default_api_client();
+    $config = devconnect_default_org_config();
     $this->SmartDocsModel = new Apigee\DocGen\DocGenModel($config);
   }
 

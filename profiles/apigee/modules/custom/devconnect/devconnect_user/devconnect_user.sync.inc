@@ -1,9 +1,13 @@
 <?php
+/**
+ * @file
+ * Handles developer-sync functionality
+ */
 
 /**
  * Confirm form for DevConnect Developer Sync.
  */
-function devconnect_user_sync_confirm_form($form, $form_state){
+function devconnect_user_sync_confirm_form($form, $form_state) {
   $form['#submit'][] = 'devconnect_user_sync';
   return confirm_form($form, t('Are you sure you want to sync users with Edge?'), 'admin/people');
 }
@@ -22,27 +26,26 @@ function devconnect_user_sync_confirm_form($form, $form_state){
  * from Dev Portal and the other from Edge to Dev Portal respectively.
  *
  * Each batch process works with 10 developers per iteration.
- *
  */
 function devconnect_user_sync() {
 
-  // Fetch list of developers on Edge
+  // Fetch list of developers on Edge.
   $kms_developers_orig = entity_load('developer');
   $kms_developers = array();
   foreach ($kms_developers_orig as $email => $data) {
     $kms_developers[strtolower($email)] = $data;
   }
-  // Fetch list of users in Drupal
+  // Fetch list of users in Drupal.
   $stmt = db_select('users', 'u')
     ->fields('u', array('mail', 'uid'))
     ->condition('u.uid', 1, '>')
     ->execute();
   $drupal_users = array();
   while ($user_data = $stmt->fetchAssoc()) {
-    $drupal_users[strtolower($user_data['mail'])] = (object)$user_data;
+    $drupal_users[strtolower($user_data['mail'])] = (object) $user_data;
   }
 
-  // Get a case-insensitive diff of developer emails
+  // Get a case-insensitive diff of developer emails.
   $not_in_kms = array();
   foreach ($drupal_users as $key => $value) {
     if (!array_key_exists($key, $kms_developers) || $kms_developers[$key]->forceSync) {
@@ -53,11 +56,23 @@ function devconnect_user_sync() {
   $offset = 10;
   $operations = array();
   for ($i = 0, $len = count($not_in_drupal); $i < $len; $i += $offset) {
-    $operations[] = array('_devconnect_user_sync_from_kms', array(array_slice($not_in_drupal, $i, $offset, TRUE), array('total' => $len, 'offset' => $offset)));
+    $operations[] = array(
+      '_devconnect_user_sync_from_kms',
+      array(
+        array_slice($not_in_drupal, $i, $offset, TRUE),
+        array('total' => $len, 'offset' => $offset)
+      )
+    );
   }
 
   for ($i = 0, $len = count($not_in_kms); $i < $len; $i += $offset) {
-    $operations[] = array('_devconnect_user_sync_to_kms', array(array_slice($not_in_kms, $i, $offset, TRUE), array('total' => $len, 'offset' => $offset)));
+    $operations[] = array(
+      '_devconnect_user_sync_to_kms',
+      array(
+        array_slice($not_in_kms, $i, $offset, TRUE),
+        array('total' => $len, 'offset' => $offset)
+      )
+    );
   }
 
   $devconnect_user_sync_batch = array(
@@ -70,7 +85,7 @@ function devconnect_user_sync() {
   );
   batch_set($devconnect_user_sync_batch);
 
-  // Check if not run by drush
+  // Check if not run by drush.
   if (!drupal_is_cli()) {
     batch_process('admin/people');
   }
@@ -82,7 +97,12 @@ function devconnect_user_sync() {
 }
 
 /**
- * Batch callback to save developer from Edge to Dev Portal
+ * Batch callback to save developer from Edge to Dev Portal.
+ *
+ * @param array $developers
+ *   List of developers to be synced from Edge.
+ * @param array $counters
+ * @param array $context
  */
 function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
   if (!isset($context['sandbox']['progress'])) {
@@ -97,9 +117,9 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
   }
 
   // For each developer in Edge that is not in Drupal, create user in Drupal.
-  foreach ($developers  as $email => $developer) {
-    // Skip any cruft users left over from failed simpletests
-    if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $developer->email)) {
+  foreach ($developers as $email => $developer) {
+    // Skip any cruft users left over from failed simpletests.
+    if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $developer->email) || substr($developer->email, 0, 7) == 'phpunit') {
       $context['results'][0]['simpletest_dc']++;
       $context['sandbox']['progress']++;
       continue;
@@ -123,20 +143,20 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
       $drupal_name = $kms_user_name . $extra++;
     } while (TRUE);
 
-    $account = (object)array('is_new' => TRUE);
+    $account = (object) array('is_new' => TRUE);
 
     $edit = array(
       'name' => $drupal_name,
       'mail' => $developer->email,
       'field_first_name' => array(
         LANGUAGE_NONE => array(
-          0 => array('value' => $developer->firstName)
-        )
+          0 => array('value' => $developer->firstName),
+        ),
       ),
       'field_last_name' => array(
         LANGUAGE_NONE => array(
-          0 => array('value' => $developer->lastName)
-        )
+          0 => array('value' => $developer->lastName),
+        ),
       ),
       'status' => ($developer->status == 'active' ? 1 : 0),
       'pass' => user_password(),
@@ -145,10 +165,15 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
     $drupal_user = user_save($account, $edit);
     if ($drupal_user) {
       $is_admin = devconnect_user_is_org_admin($drupal_user->mail);
-      $context['results'][] = t('@type Drupal user @name (@mail) created with uid @uid', array('@type' => ($is_admin ? t('Administrative') : t('Ordinary')), '@name' => $drupal_user->name, '@mail' => $drupal_user->mail, '@uid' => $drupal_user->uid));
+      $context['results'][] = t('@type Drupal user @name (@mail) created with uid @uid', array(
+          '@type' => ($is_admin ? t('Administrative') : t('Ordinary')),
+          '@name' => $drupal_user->name,
+          '@mail' => $drupal_user->mail,
+          '@uid' => $drupal_user->uid
+        ));
       $context['results'][0]['processed_dc']++;
       if ($is_admin) {
-        // Assign all administrator roles to this user
+        // Assign all administrator roles to this user.
         $admin_rids = devconnect_user_get_admin_rids();
         if (!empty($admin_rids)) {
           $query = db_insert('users_roles')->fields(array('uid', 'rid'));
@@ -173,7 +198,12 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
 }
 
 /**
- * Batch callback to save developer from Dev Portal to Edge
+ * Batch callback to save developer from Dev Portal to Edge.
+ *
+ * @param array $developers
+ *   List of developers to be saved from Dev Portal to Edge.
+ * @param array $counters
+ * @param array $context
  */
 function _devconnect_user_sync_to_kms($developers, $counters, &$context) {
   if (!isset($context['sandbox']['progress'])) {
@@ -183,7 +213,7 @@ function _devconnect_user_sync_to_kms($developers, $counters, &$context) {
     $context['results'][] = array(
       'message' => t('from Dev Portal to Edge.'),
       'processed_kms' => 0,
-      'simpletest_kms' => 0
+      'simpletest_kms' => 0,
     );
   }
   foreach ($developers as $email => $developer) {
@@ -206,7 +236,11 @@ function _devconnect_user_sync_to_kms($developers, $counters, &$context) {
 }
 
 /**
- * Finish batch callback to sync developers
+ * Finish batch callback to sync developers.
+ *
+ * @param bool $success
+ * @param array $results
+ * @param array $operations
  */
 function _devconnect_user_sync_finished($success, $results, $operations) {
   if ($success) {
@@ -234,14 +268,21 @@ function _devconnect_user_sync_finished($success, $results, $operations) {
 
     if (strlen($message) > 0) {
       array_shift($results);
-      $results = array_filter($results, function($item) { return !is_array($item) && trim($item) != ''; });
+      $results = array_filter($results, function ($item) {
+          return !is_array($item) && trim($item) != '';
+        });
       foreach (array_keys($results) as $key) {
         $results[$key] = array(
           'id' => 'Item' . $key,
           'data' => $results[$key]
         );
       }
-      $message .= theme_item_list(array('items' => $results, 'title' => t('Synced Developers'), 'type' => 'ul', 'attributes' => array()));
+      $message .= theme_item_list(array(
+          'items' => $results,
+          'title' => t('Synced Developers'),
+          'type' => 'ul',
+          'attributes' => array()
+        ));
     }
     else {
       $message = t('All developer accounts are in sync.');
@@ -250,7 +291,10 @@ function _devconnect_user_sync_finished($success, $results, $operations) {
   }
   else {
     $error_operation = reset($operations);
-    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array('%error_operation' => $error_operation[0], '@arguments' => print_r($error_operation[1], TRUE)));
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array(
+        '%error_operation' => $error_operation[0],
+        '@arguments' => print_r($error_operation[1], TRUE)
+      ));
     drupal_set_message($message, 'error');
   }
 }

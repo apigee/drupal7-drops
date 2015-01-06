@@ -17,10 +17,10 @@ use Behat\Gherkin\Node\PyStringNode,
 class FeatureContext extends Drupal\DrupalExtension\Context\DrupalContext {
   /**
    * Initializes context.
-   * 
+   *
    * Every scenario gets its own context object.
    *
-   * @param array $parameters 
+   * @param array $parameters
    *   Context parameters (set them up through behat.yml)
    */
   public function __construct(array $parameters) {}

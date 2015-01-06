@@ -24,7 +24,7 @@
         <td><?php print $doc['ref']; ?></td>
         <td><?php print $doc['prods']; ?></td>
         <td><?php print $doc['rec_date'] ?></td>
-        <td><?php print l(t('Download'), 'users/me/monetization/billing-document/' . rawurlencode($doc['ref']), array('attributes' => array('class' => array('btn')))); ?></td>
+        <td><?php print l(t('Download'), 'users/me/monetization/billing/billing-document/' . rawurlencode($doc['ref']), array('attributes' => array('class' => array('btn')))); ?></td>
       </tr>
     <?php endforeach; ?>
     </tbody>

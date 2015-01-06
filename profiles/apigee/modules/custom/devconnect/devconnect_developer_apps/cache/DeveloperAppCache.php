@@ -197,6 +197,14 @@ class DeveloperAppCache implements \DrupalCacheInterface {
       'app_family' => (string) $entity->appFamily,
       'org_name' => (string) $entity->orgName,
     );
+    if (strlen($fields['access_type']) > 5) {
+      if ($fields['access_type'] == 'readonly') {
+        $fields['access_type'] = 'read';
+      }
+      else {
+        $fields['access_type'] = substr($fields['access_type'], 0, 5);
+      }
+    }
 
     db_insert('dc_dev_app')->fields($fields)->execute();
     foreach ($entity->attributes as $name => $value) {
@@ -275,8 +283,6 @@ class DeveloperAppCache implements \DrupalCacheInterface {
   }
 
   public function clear($cid = NULL, $wildcard = FALSE) {
-    // DEVSOL-670: Cron runs not kicking off Rules when App changes states
-//    static $tables = array('dc_dev_app', 'dc_dev_app_attributes', 'dc_dev_app_api_products', 'dc_dev_app_previous_status');
     static $tables = array('dc_dev_app', 'dc_dev_app_attributes', 'dc_dev_app_api_products');
 
     if (empty($cid) || ($wildcard && $cid == '*')) {

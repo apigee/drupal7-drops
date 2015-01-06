@@ -1,5 +1,9 @@
 <?php
 
+// Due to https://www.drupal.org/node/2228825, it can happen that
+// xautoload.module is not included yet, so xautoload() would not work.
+require_once __DIR__ . '/xautoload.module';
+
 /**
  * Implements hook_install()
  */

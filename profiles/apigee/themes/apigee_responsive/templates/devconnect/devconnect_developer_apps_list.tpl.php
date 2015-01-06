@@ -94,6 +94,7 @@ $label_callback = function ($status, $pull_right = FALSE) {
               <li class="visible-xs apigee-modal-link-delete"><a href="<?php print base_path() . $app['delete_url']; ?>" data-toggle="modal" data-target="#<?php print $app['delete_url_id']; ?>"><?php print t('Delete'); ?></a></li>
     <?php endif; // delete developer apps ?>
             </ul>
+    <?php if (user_access('edit developer apps')): ?>
     <!-- Edit Modal -->
             <div class="modal fade" id="<?php print $app['edit_url_id']; ?>" tabindex="-1">
               <div class="modal-dialog">
@@ -109,7 +110,9 @@ $label_callback = function ($status, $pull_right = FALSE) {
                 </div>
               </div>
             </div>
+    <?php endif; ?>
     <!-- Delete Modal -->
+    <?php if (user_access('delete developer apps')): ?>
             <div class="modal fade" id="<?php print $app['delete_url_id']; ?>" tabindex="-1">
               <div class="modal-dialog">
                 <div class="modal-content">
@@ -122,6 +125,7 @@ $label_callback = function ($status, $pull_right = FALSE) {
                 </div>
               </div>
             </div>
+    <?php endif; ?>
             <div class="tab-content" id="myTabContent">
               <div id="keys<?php print $i; ?>" class="tab-pane fade in active">
                 <hr>
@@ -129,9 +133,7 @@ $label_callback = function ($status, $pull_right = FALSE) {
                   <div class="panel-heading"><strong><?php print t('@name’s Keys', array('@name' => $app['app_name'])); ?></strong></div>
         <?php if ($app['new_status'] && !$app['noproducts']) : ?>
                   <div class="panel-body">
-                    <p><?php print t('Below are keys you can use to access the API products associated with this application <em><span class="text-muted">(@name)</span></em>.
-                      The actual keys need to be approved <em>and</em> approved for an <em>API product</em> to be capable of accessing any of the URIs defined in the API
-                      product.', array('@name' => $app['app_name'])); ?></p>
+                    <p><?php print t('Below are keys you can use to access the API products associated with this application <em><span class="text-muted">(@name)</span></em>. The actual keys need to be approved <em>and</em> approved for an <em>API product</em> to be capable of accessing any of the URIs defined in the API product.', array('@name' => $app['app_name'])); ?></p>
                   </div>
         <?php endif; // new_status && !noproducts ?>
                   <div class="table-responsive">

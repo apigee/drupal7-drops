@@ -376,7 +376,7 @@ function devconnect_mint_worldpay_is_payment_method_enabled() {
     $payment_method_settings = array();
 
     if (!$rule) {
-      $message_writer('Cannot check if payment method for Worlpay Corporate Gateway is enabled in 4G. This might happen in initial module setup.');
+      $message_writer('Cannot check if payment method for Worldpay Corporate Gateway is enabled in 4G. This might happen in initial module setup.');
       return TRUE;
     }
     else {
@@ -431,7 +431,7 @@ function devconnect_mint_worldpay_form_commerce_checkout_form_review_alter(&$for
 
 function devconnect_mint_worldpay_payment_method_title() {
   $args = array(
-    '!worldpay_logo' => '<a href="http://www.worldpay.com/" target="_blank" title="Payment Processing - WorldPay - Opens in new browser window"><img src="//www.worldpay.com/images/poweredByWorldPay.gif" style="border:none" alt="WorldPay Payments Processing" class="worlpay-payment-logo"></a>',
+    '!worldpay_logo' => '<a href="http://www.worldpay.com/" target="_blank" title="Payment Processing - WorldPay - Opens in new browser window"><img src="//www.worldpay.com/images/poweredByWorldPay.gif" style="border:none" alt="WorldPay Payments Processing" class="worldpay-payment-logo"></a>',
     '!refund_policy' => variable_get('devconnect_mint_worldpay_refound_policy', l('Refund Policy', 'worldpay-refund-policy')),
     '!cards' => '<img src="//www.worldpay.com/images/cardlogos/VISA.gif" style="border:none" alt="Visa Credit payments supported by WorldPay">' .
                 '<img src="//www.worldpay.com/images/cardlogos/visa_debit.gif" style="border:none" alt="Visa Debit payments supported by WorldPay">' .

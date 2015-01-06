@@ -1,5 +1,23 @@
 ### Version History
 
+*2.16.4 (progress)*
+
+* Removed reference to jQuery/$ in froogaloop code (https://github.com/johndyer/mediaelement/pull/1394) [staylor]
+* Ensure screen reader text is hidden on long pages (https://github.com/johndyer/mediaelement/pull/1388) [bradyvercher]
+
+*2.16.3 (2014/12/10)*
+
+* Fix for calculating rail width with horizontal volume bar (all audio controls)
+* Insert the accessible player title span and container div separately (https://github.com/johndyer/mediaelement/pull/1385) [bradyvercher]
+* Fixes for YouTube on iOS and Android (https://github.com/johndyer/mediaelement/pull/1383/files) [ OwenEdwards ]
+Fix startvolume parsing in Silverlight fallback (https://github.com/johndyer/mediaelement/pull/1378) [fixedmachine ]
+* Add configurable initVars for JavaScript init and event callback functions (https://github.com/johndyer/mediaelement/pull/1362) []
+* Flash no longer sends timeupdate events before it starts playing
+
+*2.16.2 (2014/11/15)*
+
+* Fixed broken swf files because of new problem with binary [OwenEdwards]		
+
 *2.16.1 (2014/11/07)*
 
 * Fixed strict `undefined` check for posterUrl issue (https://github.com/johndyer/mediaelement/pull/1348)

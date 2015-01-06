@@ -24,7 +24,7 @@ $label_element = ($version == 2 ? 'h3' : 'h4');
   <div class="modal-body">
     <?php print render($modal_form); ?>
   </div>
-  <div class=modal-footer">
+  <div class="modal-footer">
     <button type="button" class="btn<?php if ($version == 2) { print ' btn-default'; } ?>" data-dismiss="modal"><?php print t('Close'); ?></button>
   </div>
 <?php if ($version == 3): // Close the modal-dialog wrappers ?>

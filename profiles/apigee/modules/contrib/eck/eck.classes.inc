@@ -430,25 +430,28 @@ class EntityType extends DBObject {
    *   The name of the entity type.
    *
    * @return EntityType
-   *   The entity type object.
+   *   The entity type object, or Null.
    */
   public static function loadByName($name) {
-    return EntityType::loadAll($name);
+    $entity_types = EntityType::loadAll();
+
+    if (array_key_exists($name, $entity_types)) {
+      return $entity_types[$name];
+    }
+
+    return NULL;
   }
 
   /**
    * Load all entity types.
    *
-   * @param string $entity_type_name
-   *   The name of a specific EntityType.
    * @param bool $reset
    *   Use data from the cache, or not.
    *
-   * @return mixed
-   *   If a name is given, the specific EntityType, else and array of
-   *   EntityTypes.
+   * @return array
+   *   An array of entity types keyed by entity type name.
    */
-  public static function loadAll($entity_type_name = '', $reset = FALSE) {
+  public static function loadAll($reset = FALSE) {
     $entity_types = array();
 
     global $_eck_entity_types_cache;
@@ -480,16 +483,7 @@ class EntityType extends DBObject {
         $_eck_entity_types_cache->set($entity_types);
       }
     }
-
-    if (!$entity_type_name) {
-      return $entity_types;
-    }
-    elseif (array_key_exists($entity_type_name, $entity_types)) {
-      return $entity_types[$entity_type_name];
-    }
-    else {
-      return array();
-    }
+    return $entity_types;
   }
 }
 
@@ -609,23 +603,30 @@ class Bundle extends DBObject {
    * @param string $machine_name
    *   A string composed of the entity type name and the bundle name.
    *   "{$entity_type_name}_{$bundle_name}"
+   *
+   * @return mixed
+   *   A Bundle object or Null.
    */
   public static function loadByMachineName($machine_name) {
-    return Bundle::loadAll($machine_name);
+    $bundles = Bundle::loadAll();
+
+    if (array_key_exists($machine_name, $bundles)) {
+      return $bundles[$machine_name];
+    }
+
+    return NULL;
   }
 
   /**
    * Load all bundles.
    *
-   * @param string $machine_name
-   *   The machine name of a specific bundle.
    * @param bool $reset
    *   Retrive from cache if availabe or not.
    *
-   * @return mixed
-   *   If given a machine name, a bundle object, otherwise an array of Bundles.
+   * @return array
+   *   An array of Bundles.
    */
-  public static function loadAll($machine_name = NULL, $reset = FALSE) {
+  public static function loadAll($reset = FALSE) {
     $bundles = array();
 
     global $_eck_bundles_cache;
@@ -659,15 +660,7 @@ class Bundle extends DBObject {
       }
     }
 
-    if (!$machine_name) {
-      return $bundles;
-    }
-    elseif (array_key_exists($machine_name, $bundles)) {
-      return $bundles[$machine_name];
-    }
-    else {
-      return array();
-    }
+    return $bundles;
   }
 
   /**

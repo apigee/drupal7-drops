@@ -3,10 +3,10 @@
 /**
  * Batch API Function to import nodes.
  *
- * @param $model
- * @param $verbose
- * @param $selected
- * @param $options
+ * @param array $model
+ * @param array $verbose
+ * @param array $selected
+ * @param array $options
  * @param bool $render_template
  * @return array
  */
@@ -970,6 +970,7 @@ function smartdocs_views($mid, $smart_mid, $smart_field, $display, &$context) {
     file_save_data($view, $url_base . $smart_mid . '_listing.view', FILE_EXISTS_REPLACE);
   }
   cache_clear_all('*', 'cache_views', TRUE);
+  menu_rebuild();
   module_invoke_all('views_invalidate_cache');
 }
 

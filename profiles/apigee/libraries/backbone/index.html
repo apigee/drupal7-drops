@@ -864,7 +864,7 @@ view.stopListening(model);
       <li><b>"destroy"</b> (model, collection, options) &mdash; when a model is <a href="#Model-destroy">destroyed</a>. </li>
       <li><b>"request"</b> (model_or_collection, xhr, options) &mdash; when a model or collection has started a request to the server. </li>
       <li><b>"sync"</b> (model_or_collection, resp, options) &mdash; when a model or collection has been successfully synced with the server.</li>
-      <li><b>"error"</b> (model_or_collection, resp, options) &mdash; when model's or collection's request to remote server has failed. </li>
+      <li><b>"error"</b> (model_or_collection, resp, options) &mdash; when a model's or collection's request to the server has failed. </li>
       <li><b>"invalid"</b> (model, error, options) &mdash; when a model's <a href="#Model-validate">validation</a> fails on the client. </li>
       <li><b>"route:[name]"</b> (params) &mdash; Fired by the router when a specific route is matched.</li>
       <li><b>"route"</b> (route, params) &mdash; Fired by the router when <i>any</i> route has been matched.</li>
@@ -2443,7 +2443,7 @@ $(function(){
     </p>
 
     <p>
-      The <b>sync</b> function may be overriden globally as <tt>Backbone.sync</tt>,
+      The <b>sync</b> function may be overridden globally as <tt>Backbone.sync</tt>,
       or at a finer-grained level, by adding a <tt>sync</tt> function to a Backbone
       collection or to an individual model.
     </p>
@@ -3070,7 +3070,7 @@ inbox.messages.fetch({reset: true});
       extend and enhance it in the ways you see fit &mdash; the entire source
       code is <a href="docs/backbone.html">annotated</a> to make this easier
       for you. You'll find that there's very little there apart from core
-      functions, and most of those can be overriden or augmented should you find
+      functions, and most of those can be overridden or augmented should you find
       the need. If you catch yourself adding methods to <tt>Backbone.Model.prototype</tt>,
       or creating your own base subclass, don't worry &mdash; that's how things are
       supposed to work.

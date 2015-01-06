@@ -123,6 +123,7 @@ function eck_entity_type_features_rebuild($module) {
 
       $entity_type->save();
     }
+    variable_set('eck_clear_caches', TRUE);
   }
 }
 

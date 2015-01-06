@@ -1,7 +1,14 @@
 <?php
+/**
+ * @file
+ * Contains admin functionality for devconnect_user module
+ */
 
 /**
- * Page Callback for admin/config/people/devconnect/settings
+ * Page Callback for admin/config/people/devconnect/settings.
+ *
+ * @param array $form
+ * @param array $form_state
  */
 function devconnect_user_settings_form($form, &$form_state) {
   $form = array();
@@ -22,20 +29,87 @@ function devconnect_user_settings_form($form, &$form_state) {
     '#title' => t('Redirect Path'),
     '#default_value' => variable_get('apigee_user_redirect_path', ''),
   );
+
+  if (!module_exists('devconnect_monetization')) {
+    $form['devconnect_user_enable_async'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable asynchronous saving of user data to Edge (EXPERIMENTAL).'),
+      '#default_value' => variable_get('devconnect_developer_apps_cache_cron', 0),
+      '#return_value' => 1,
+    );
+
+    $form['async_fail_email'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('User-save failure notification'),
+      '#weight' => 1,
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#states' => array(
+        'invisible' => array(
+          ':input[name="devconnect_user_enable_async"]' => array('checked' => FALSE),
+        ),
+      ),
+    );
+
+    $user_notify_opts = array(
+      'Custom' => t('Send to a custom email address'),
+      'Role' => t('Send to a specific role(s)'),
+      'Both' => t('Send to Both a custom email address and a specific role(s)'),
+    );
+    $form['async_fail_email']['async_fail_notify_type'] = array(
+      '#type' => 'radios',
+      '#options' => $user_notify_opts,
+      '#title' => t('Send by Role or Custom Email address?'),
+      '#default_value' => variable_get('async_fail_notify_type', 'Custom'),
+      '#prefix' => '<div class="user-register-notify-user-notify">',
+      '#suffix' => '</div>',
+    );
+    $form['async_fail_email']['async_fail_notify_mailto'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Send notifications to this custom email address'),
+      '#description' => t('Please specify multiple email ids with comma(,) separated values, e.g. (%mailto,%mailto). If you leave this blank, the site email address, %mailto, will be used.', array('%mailto' => variable_get('site_mail', ini_get('sendmail_from')))),
+      '#default_value' => variable_get('async_fail_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))),
+      '#states' => array(
+        'invisible' => array(
+          ':input[name="async_fail_notify_type"]' => array('value' => 'Role')
+        ),
+      ),
+    );
+    $user_roles = user_roles(TRUE);
+    if (count($user_roles) > 1) {
+      unset($user_roles[DRUPAL_AUTHENTICATED_RID]);
+    }
+    $form['async_fail_email']['async_fail_notify_roles'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Send to a specific role(s)'),
+      '#options' => $user_roles,
+      '#description' => t('All users with these checked roles will receive a notification email when selected.'),
+      '#default_value' => variable_get('async_fail_notify_roles', array()),
+      '#states' => array(
+        'invisible' => array(
+          ':input[name="async_fail_notify_type"]' => array('value' => 'Custom')
+        ),
+      ),
+    );
+  }
+
   $form['submit'] = array(
     '#type' => 'submit',
-    '#weight' => 1,
-    '#value' => t('Save Configuration')
+    '#weight' => 9999,
+    '#value' => t('Save Configuration'),
   );
   return $form;
 }
 
 /**
  * Validate handler for devconnect_user_settings_form.
+ *
+ * @param array $form
+ * @param array $form_state
  */
 function devconnect_user_settings_form_validate($form, &$form_state) {
   $path = $form_state['values']['apigee_user_redirect_path'];
-  if (!drupal_valid_path(drupal_get_normal_path($path), TRUE)) {
+  if ($form_state['values']['apigee_enable_redirect_path'] && !drupal_valid_path(drupal_get_normal_path($path), TRUE)) {
     form_set_error('apigee_user_redirect_path', t("The path '@link_path' is either invalid or you do not have access to it.", array('@link_path' => $path)));
   }
 }
@@ -44,15 +118,25 @@ function devconnect_user_settings_form_validate($form, &$form_state) {
  * Submit hander for devconnect_user_settings_form.
  */
 function devconnect_user_settings_form_submit($form, &$form_state) {
-  variable_set('apigee_user_redirect_path', $form_state['values']['apigee_user_redirect_path']);
-  variable_set('apigee_enable_redirect_path', $form_state['values']['apigee_enable_redirect_path']);
+  $vars = array(
+    'apigee_user_redirect_path',
+    'apigee_enable_redirect_path',
+    'async_fail_notify_type',
+    'async_fail_notify_mailto',
+    'async_fail_notify_roles',
+  );
+  foreach ($vars as $var) {
+    variable_set($var, $form_state['values'][$var]);
+  }
+  drupal_set_message(t('Your changes have been saved.'));
 }
 
 /**
- * Form constructor to administer user attributes persisted to KMS
+ * Form constructor to administer user attributes persisted to Edge.
  *
- * @param $form
- * @param $form_state
+ * @param array $form
+ * @param array $form_state
+ *
  * @return array
  */
 function devconnect_user_attributes_form($form, &$form_state) {
@@ -69,7 +153,7 @@ function devconnect_user_attributes_form($form, &$form_state) {
       '#type' => 'markup',
       '#markup' => t('There are no configured user attributes that can be persisted to KMS.'),
       '#prefix' => '<p>',
-      '#suffix' => '</p>'
+      '#suffix' => '</p>',
     );
     return $form;
   }
@@ -91,7 +175,7 @@ function devconnect_user_attributes_form($form, &$form_state) {
       '#type' => 'fieldset',
       '#title' => $field_data['label'],
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE
+      '#collapsed' => TRUE,
     );
 
     $form['kms_persisted_user_attribute'][$field_name]["kms_internal_attribute_selected_$field_name"] = array(
@@ -140,8 +224,8 @@ function devconnect_user_attributes_form($form, &$form_state) {
  * This doesn't actually validate the form, but rather converts the array
  * to a sensible numeric array prior to saving in the database.
  *
- * @param $form
- * @param $form_state
+ * @param array $form
+ * @param array $form_state
  */
 function devconnect_user_attributes_form_validate($form, &$form_state) {
   $default_values = array();
@@ -171,4 +255,30 @@ function devconnect_user_attributes_form_validate($form, &$form_state) {
     }
   }
   $form_state['values']['devconnect_user_attributes_to_persist_in_kms'] = $default_values;
+}
+
+
+/**
+ * Implements hook_admin_paths_alter().
+ *
+ * Treat all user pages as not administrative.
+ */
+function devconnect_user_admin_paths_alter(&$paths) {
+  $paths['user/*'] = FALSE;
+}
+
+
+/**
+ * Implements hook_variable_info().
+ */
+function devconnect_user_variable_info($options = array()) {
+  $variables['devconnect_user_tnc_url'] = array(
+    'type' => 'string',
+    'title' => t('Terms & Conditions URL'),
+    'default' => _devconnect_user_get_tnc_url(),
+    'description' => t('The URL of the Terms & Conditions page. Omit hostname and leading slash.'),
+    'required' => TRUE,
+    'group' => 'devconnect',
+  );
+  return $variables;
 }

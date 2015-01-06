@@ -110,7 +110,7 @@ function file_entity_uuid_entity_features_rebuild_alter($entity_type, &$entity, 
 
   // Ensure the file entity import was run first. The function has a static
   // cache to avoid multiple runs in the same feature module.
-  module_load_include('inc', 'uuid_features', 'uuid_file_entity.features');
+  module_load_include('inc', 'uuid_features', 'includes/uuid_file_entity.features');
   uuid_file_entity_features_rebuild($module);
 
   // Handle referenced file entities in fields.

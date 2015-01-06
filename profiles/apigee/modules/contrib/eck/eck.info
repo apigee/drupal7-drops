@@ -14,9 +14,9 @@ files[] = views/handlers/eck_views_handler_field_link_delete.inc
 
 ; Inline entity form integration
 files[] = includes/eck.inline_entity_form.inc
-; Information added by Drupal.org packaging script on 2014-07-24
-version = "7.x-2.0-rc4"
+; Information added by Drupal.org packaging script on 2014-12-17
+version = "7.x-2.0-rc6"
 core = "7.x"
 project = "eck"
-datestamp = "1406213356"
+datestamp = "1418843597"
 

@@ -278,7 +278,9 @@ function devconnect_update_7429() {
     ->condition('name', $extended_api_modules, 'NOT IN')
     ->execute();
   while ($info = $result->fetchCol()) {
-    $info = unserialize($info);
+    if (is_string($info)) {
+      $info = @unserialize($info);
+    }
     if (is_array($info) && array_key_exists('dependencies', $info)) {
       foreach($api_modules as $i => $api_module) {
         if (in_array($extended_api_modules, $info['dependencies'])) {

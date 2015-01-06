@@ -93,7 +93,6 @@ function apigee_install_configure_batch(&$install_state) {
       array('apigee_install_clear_caches_core_page', array()),
       array('apigee_install_clear_caches_core', array()),
       array('apigee_install_bootstrap_status', array()),
-      array('apigee_install_configure_autologout', array()),
     ),
     'finished' => '_apigee_install_configure_task_finished',
   );
@@ -2477,18 +2476,4 @@ function apigee_install_create_environmental_indicators(&$context) {
 function _apigee_manage_memory() {
   ini_set('memory_limit', '1024M');
   ini_set('max_execution_time', 300);
-}
-
-/**
- * Batch process callback to enable the autologout module and set the timeout.
- * @param array $context
- */
-function apigee_install_configure_autologout(&$context){
-  if(!module_exists('autologout')){
-    module_enable(array('autologout'), TRUE);
-  }
-  
-  variable_set('autologout_timeout', 3600);
-  
-  $context['message'] = st('Installed and configured autologout module');
 }

@@ -1860,39 +1860,48 @@ function devconnect_monetization_remove_navigation_menu() {
  * Verify that mint is enabled for the customer organization
  */
 function devconnect_monetization_requirements($phase) {
-  $result = NULL;
+  $t = get_t();
+  $requirements = array();
+
   switch ($phase) {
     case 'install':
     case 'runtime':
+      // Raise warning if Monetization features are not available in the Edge
+      // backend org.
       require_once dirname(__FILE__) . '/devconnect_monetization.module';
+
       try {
         $client = devconnect_monetization_default_org_config();
         $organization = new Organization($client);
         $organization->load(NULL);
         $is_mint_enabled = $organization->getProperty('features.isMonetizationEnabled');
         if ($is_mint_enabled === TRUE || $is_mint_enabled === 'true') {
-          $result = array(
-            'title' => t('Monetization features.'),
+          $requirements['devconnect_monetization_requirements'] = array(
+            'title' => $t('Apigee Dev Portal Monetization'),
             'severity' => REQUIREMENT_OK,
+            'value' => $t('Enabled'),
           );
         }
         else {
-          $result = array(
-            'title' => 'Monetization features.',
-            'description' => t('Monetization features are not available, please contact Apigee support.'),
+          $requirements['devconnect_monetization_requirements'] = array(
+            'title' => $t('Dev Portal Monetization'),
+            'description' => $t('Monetization features are not available in your Edge organization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
+
             'severity' => REQUIREMENT_ERROR,
+            'value' => $t('Invalid Configuration'),
           );
         }
       } catch (Exception $e) {
-        $result = array(
-          'title' => t('Monetization features.'),
-          'description' => t('Monetization features are not available, please contact Apigee support.'),
+        $requirements['devconnect_monetization_requirements'] = array(
+          'title' => $t('Dev Portal Monetization'),
+          'description' => $t('Monetization features are not available in your Edge organization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
           'severity' => REQUIREMENT_ERROR,
+          'value' => $t('Invalid Configuration'),
         );
       }
       break;
   }
-  return array('mint_requirements' => $result);
+  return $requirements;
 }
 
 /**

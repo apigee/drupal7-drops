@@ -30,7 +30,7 @@ function devconnect_admin_notify_help($path, $arg) {
  */
 function devconnect_admin_notify_menu() {
   $items['admin/config/people/admin_notify'] = array(
-    'title' => t('Admin Notification'),
+    'title' => 'Admin Notification',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_admin_notify_settings'),
     'description' => 'Configure the DevConnect admin notification module.',

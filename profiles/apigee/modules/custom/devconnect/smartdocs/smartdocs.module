@@ -34,7 +34,7 @@ function smartdocs_init() {
 function smartdocs_menu() {
   $items = array();
   $items['admin/smartdocs'] = array(
-    'title' => t('SmartDocs'),
+    'title' => 'SmartDocs',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_models'),
     'access arguments' => array('administer smartdocs content'),
@@ -42,21 +42,21 @@ function smartdocs_menu() {
     'weight' => -100,
   );
   $items['admin/smartdocs/settings'] = array(
-    'title' => t('Settings'),
+    'title' => 'Settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_settings'),
     'access arguments' => array('administer smartdocs content'),
     'weight' => 100,
   );
   $items['admin/smartdocs/models'] = array(
-    'title' => t('Models'),
+    'title' => 'Models',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_models'),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'admin/smartdocs.models.inc',
   );
   $items['admin/smartdocs/models/add'] = array(
-    'title' => t('Add Model'),
+    'title' => 'Add Model',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_add_model'),
     'access arguments' => array('administer smartdocs content'),
@@ -64,6 +64,10 @@ function smartdocs_menu() {
     'weight' => -100,
   );
   $models = entity_load('smartdocs_model');
+  $rows = array();
+  if (empty($models)) {
+    $models = array();
+  }
   foreach ($models as $model) {
     $rows[$model['displayName']] = $model;
   }
@@ -78,7 +82,7 @@ function smartdocs_menu() {
       'weight' => 94,
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/import'] = array(
-      'title' => t('Import'),
+      'title' => 'Import',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_import_model', 3),
       'access arguments' => array('administer smartdocs content'),
@@ -86,7 +90,7 @@ function smartdocs_menu() {
       'weight' => 95,
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/revisions'] = array(
-      'title' => t('API Revisions'),
+      'title' => 'API Revisions',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_revision_detail', 3),
       'access arguments' => array('administer smartdocs content'),
@@ -94,7 +98,7 @@ function smartdocs_menu() {
       'weight' => 96,
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/add'] = array(
-      'title' => t('Add API Revision'),
+      'title' => 'Add API Revision',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_add_revision', 3),
       'access arguments' => array('administer smartdocs content'),
@@ -102,7 +106,7 @@ function smartdocs_menu() {
       'weight' => 97,
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/export'] = array(
-      'title' => t('Export'),
+      'title' => 'Export',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_model_export', 3),
       'access arguments' => array('administer smartdocs content'),
@@ -110,14 +114,14 @@ function smartdocs_menu() {
       'weight' => 98,
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/export/%'] = array(
-      'title' => t('Export'),
+      'title' => 'Export',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_model_export', 3, 5),
       'access arguments' => array('administer smartdocs content'),
       'file' => 'admin/smartdocs.models.inc',
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/settings'] = array(
-      'title' => t('Settings'),
+      'title' => 'Settings',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_model_settings', 3),
       'access arguments' => array('administer smartdocs content'),
@@ -131,14 +135,14 @@ function smartdocs_menu() {
       'file' => 'admin/smartdocs.resources.inc',
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/resource/add/%'] = array(
-      'title' => t('Add Resource'),
+      'title' => 'Add Resource',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_resource_add', 3, 6),
       'access arguments' => array('administer smartdocs content'),
       'file' => 'admin/smartdocs.resources.inc',
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/resource/edit/%/%'] = array(
-      'title' => t('Add Resource'),
+      'title' => 'Add Resource',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_resource_edit', 3, 6, 7),
       'access arguments' => array('administer smartdocs content'),
@@ -152,28 +156,28 @@ function smartdocs_menu() {
       'file' => 'admin/smartdocs.methods.inc',
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/method/edit/%/%/%'] = array(
-      'title' => t('Edit Method'),
+      'title' => 'Edit Method',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_method_edit', 3, 6, 7, 8),
       'access arguments' => array('administer smartdocs content'),
       'file' => 'admin/smartdocs.methods.inc',
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/revisions/%/auth'] = array(
-      'title' => t('Authentication Settings'),
+      'title' => 'Authentication Settings',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_revision_auth', 3, 5),
       'access arguments' => array('administer smartdocs content'),
       'file' => 'admin/smartdocs.revisions.inc',
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/revisions/%/edit'] = array(
-      'title' => t('Edit Revision'),
+      'title' => 'Edit Revision',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_edit_revision', 3, 5),
       'access arguments' => array('administer smartdocs content'),
       'file' => 'admin/smartdocs.revisions.inc',
     );
     $items['admin/smartdocs/models/' . $model['name'] . '/delete'] = array(
-      'title' => t('Delete'),
+      'title' => 'Delete',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('smartdocs_model_delete', 3),
       'access arguments' => array('administer smartdocs content'),
@@ -204,8 +208,6 @@ function smartdocs_permission() {
 
 /**
  * Implements hook_flush_caches().
- *
- * @return array
  */
 function smartdocs_flush_caches() {
   return array('cache_smartdocs');
@@ -225,12 +227,11 @@ function smartdocs_oauth_callback() {
 /**
  * SmartDocs Settings Form
  *
- * @param $form
- * @param $form_state
- * @param null $model
- * @return mixed
+ * @param array $form
+ * @param array $form_state
+ * @return array
  */
-function smartdocs_settings($form, $form_state, $model = NULL) {
+function smartdocs_settings($form, $form_state) {
   $form['disable_ssl_warning'] = array(
     '#title' => t("Disable SSL warning message"),
     '#type' => 'checkbox',
@@ -378,9 +379,8 @@ function smartdocs_settings($form, $form_state, $model = NULL) {
 /**
  * Submit callback for the smartdocs_settings(). To handle the template file upload.
  * 
- * @param type $form
- * @param type $form_state
- * @return type
+ * @param array $form
+ * @param array $form_state
  */
 function smartdocs_upload_template_submit($form, &$form_state) {
 
@@ -408,12 +408,6 @@ function smartdocs_upload_template_submit($form, &$form_state) {
 
 /**
  * Implements hook_theme().
- *
- * @param $existing
- * @param $type
- * @param $theme
- * @param $path
- * @return array
  */
 function smartdocs_theme($existing, $type, $theme, $path) {
   $path = drupal_get_path('module', 'smartdocs');
@@ -445,7 +439,7 @@ function smartdocs_theme($existing, $type, $theme, $path) {
 /**
  * Makes model name usable across the system.
  *
- * @param $model
+ * @param string $model
  * @return string
  */
 function smartdocs_model_name($model) {
@@ -466,7 +460,7 @@ function smartdocs_model_name($model) {
 /**
  * Makes model name usable across fields with one way hash
  *
- * @param $model
+ * @param string $model
  * @return string
  */
 function smartdocs_field_name($model) {
@@ -492,8 +486,6 @@ function smartdocs_field_name($model) {
 
 /**
  * Implements hook_entity_info().
- *
- * @return array
  */
 function smartdocs_entity_info() {
   $info = array();
@@ -555,9 +547,7 @@ function smartdocs_entity_info() {
 }
 
 /**
- * Implements hook_node_delete()
- *
- * @param $node
+ * Implements hook_node_delete().
  */
 function smartdocs_node_delete($node) {
   $nid = db_query('SELECT nid FROM {smartdata} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
@@ -576,19 +566,15 @@ function smartdocs_node_delete($node) {
 
 /**
  * Implements hook_views_api().
- *
- * @return array
  */
 function smartdocs_views_api() {
   return array(
-    'api' => 2.0,
+    'api' => 3.0,
   );
 }
 
 /**
  * Implements hook_views_default_views().
- *
- * @return array
  */
 function smartdocs_views_default_views() {
   $wrappers = stream_get_wrappers();
@@ -607,12 +593,16 @@ function smartdocs_views_default_views() {
 }
 
 /**
- * Forms JSON into pretty format for editing
+ * Forms JSON into pretty format for editing.
  *
- * @param $json
+ * @param string $json
  * @return string
  */
 function _smartdocs_prettyprint($json) {
+  if (defined('JSON_PRETTY_PRINT') && ($obj = @json_decode($json))) {
+    return json_encode($obj, JSON_PRETTY_PRINT);
+  }
+
   $result = '';
   $level = 0;
   $in_quotes = false;

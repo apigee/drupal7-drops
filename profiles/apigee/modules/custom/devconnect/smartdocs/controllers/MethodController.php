@@ -5,7 +5,7 @@ class SmartDocsMethodController extends DrupalDefaultEntityController {
   private $SmartDocsMethod;
 
   public function __construct($entity_type) {
-    $config = devconnect_default_api_client();
+    $config = devconnect_default_org_config();
     $this->SmartDocsMethod = new Apigee\DocGen\DocGenMethod($config);
   }
 
@@ -13,7 +13,7 @@ class SmartDocsMethodController extends DrupalDefaultEntityController {
 
   }
 
-  public function load($ids = array(), $conditions = array('show_private' => FALSE)) {
+  public function load($ids = array(), $conditions = array()) {
 
   }
 

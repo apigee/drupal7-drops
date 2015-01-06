@@ -77,10 +77,10 @@ function eck__entity_type__list() {
       "eck administer {$entity_type->name} bundles",
       "eck list {$entity_type->name} bundles",
     ))) {
-      $label = l(t("{$entity_type->label}"), "{$path}/{$entity_type->name}");
+      $label = l(t("@el", array("@el" => $entity_type->label)), "{$path}/{$entity_type->name}");
     }
     else {
-      $label = t("{$entity_type->label}");
+      $label = t("@el", array("@el" => $entity_type->label));
     }
 
     $rows[] = array($label, $allowed_operations);
@@ -97,11 +97,15 @@ function eck__entity_type__list() {
 
 /**
  * Entity type form callback.
+ *
+ * @param string $entity_type_name
+ *   (optional) The machine name of the entity type to edit. If omitted, the
+ *   form is presented for adding a new entity type.
  */
 function eck__entity_type__form($form, &$state, $entity_type_name = NULL) {
 
-  // If this form is being called on a new entity, create a new entity object,
-  // otherwise load the corresponding entity.
+  // If this form is being called on a new entity, create a new entity type
+  // object, otherwise load the corresponding entity type.
   if (!isset($entity_type_name)) {
     $entity_type = new EntityType();
   }
@@ -228,15 +232,17 @@ function eck__entity_type__form_submit($form, &$state) {
     // Lets handle the default properties.
     eck__default_properties__form_submit($form, $state, $entity_type);
 
-    $entity_type->save();
-
     if ($entity_type->isNew) {
-      drupal_set_message(t('Entity type %entity_type has been created.', array('%entity_type' => $entity_type->label)));
+      drupal_set_message(t('The entity type %entity_type has been created.', array('%entity_type' => $entity_type->label)));
     }
     else {
-      drupal_set_message(t('Entity type %entity_type has been updated.', array('%entity_type' => $entity_type->label)));
+      drupal_set_message(t('The entity type %entity_type has been updated.', array('%entity_type' => $entity_type->label)));
     }
+
+    $entity_type->save();
   }
+
+  $state['redirect'] = 'admin/structure/entity-type/' . $entity_type->name;
 }
 
 /**
@@ -249,10 +255,8 @@ function eck__entity_type__form_submit($form, &$state) {
  * @see eck.classes.inc
  */
 function eck__entity_type__delete($entity_type) {
-
   $entity_type->delete();
-
-  drupal_set_message("Entity type '{$entity_type->name}' has been deleted");
+  drupal_set_message(t('The entity type %entity_type has been deleted.', array('%entity_type' => $entity_type->label)));
 }
 
 /**
@@ -271,8 +275,8 @@ function eck__entity_type__delete_form($form, &$state, $entity_type_name) {
     '#value' => $path,
   );
 
-  $message = t("Are you sure that you want to delete the entity type '@entity_type_name'",
-    array("@entity_type_name" => $entity_type->name));
+  $message = t("Are you sure that you want to delete the entity type %entity_type?",
+    array("%entity_type" => $entity_type->label));
 
   $caption = t("All of the data (entities and bundles) from this entity type will be deleted. This action cannot be undone.");
 
@@ -345,7 +349,7 @@ function eck__entity_type__info($entity_type) {
   $controller_class = "EntityAPIController";
 
   $info[$entity_type->name] = array(
-    'label' => t($entity_type_label),
+    'label' => t("@etl", array("@etl" => $entity_type_label)),
     'base table' => "eck_{$entity_type->name}",
     'entity class' => $entity_class,
     'controller class' => $controller_class,
@@ -369,6 +373,10 @@ function eck__entity_type__info($entity_type) {
     // I guess we need at least one view mode for entity_view_modes (the module)
     // to work.
     'view modes' => array(
+      'full' => array(
+        'label' => t('Full'),
+        'custom settings' => FALSE,
+      ),
       'teaser' => array(
         'label' => t('Teaser'),
         'custom settings' => TRUE,
@@ -376,6 +384,7 @@ function eck__entity_type__info($entity_type) {
     ),
     // Inline entity form module integration.
     'inline entity form' => array('controller' => 'EckInlineEntityFormController'),
+    'view callback' => 'eck__entity__view_callback',
   );
 
   $eck_path = eck__entity_type__path();

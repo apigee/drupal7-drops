@@ -1,2 +1,347 @@
 <?php
 
+/**
+ * Implements hook_menu().
+ *
+ * @return array
+ */
+function apigee_sso_menu() {
+  $items = array();
+  $items['apigee_sso'] = array(
+    'title' => 'Authenticate with Google',
+    'page callback' => 'apigee_sso_do_sso',
+    'access callback' => 'user_is_anonymous',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Page callback
+ */
+function apigee_sso_do_sso() {
+  // Set default values for these, which may be overridden by other modules.
+  $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ? 'https' : 'http');
+  $destination = (isset($_GET['destination']) ? $_GET['destination'] : variable_get('site_frontpage', 'node'));
+  $server_name = NULL;
+  if (array_key_exists('SERVER_NAME', $_SERVER)) {
+    $server_name = $_SERVER['SERVER_NAME'];
+  }
+  // SERVER_NAME is blank on Pantheon.
+  if (empty($server_name) && array_key_exists('HTTP_HOST', $_SERVER)) {
+    $server_name = $_SERVER['HTTP_HOST'];
+  }
+
+  $params = array(
+    'scheme' => $scheme,
+    'destination' => $destination,
+    'openid_identifier' => 'https://www.google.com/accounts/o8/id'
+  );
+  // Invoke hook_apigee_sso_alter in any implementing module
+  drupal_alter('apigee_sso', $params);
+  // Construct the return_to based on the destination.
+  $params['return_to'] = $params['scheme'] . '://' . $server_name . base_path() . 'openid/authenticate?destination=' . $params['destination'];
+
+  $form_values = array(
+    'openid_identifier' => $params['openid_identifier'],
+    'openid.return_to' => $params['return_to'],
+    'op' => 'Log in',
+    'form_id' => 'user_login_block'
+  );
+
+  openid_begin($params['openid_identifier'], $params['return_to'], $form_values);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @param $form
+ * @param $form_state
+ */
+function apigee_sso_form_user_register_form_alter(&$form, &$form_state) {
+  $email = $identity = NULL;
+  $first_name = $last_name = NULL;
+  $language = NULL;
+  $user_name = NULL;
+  if (isset($_SESSION['openid']['response']) && $_SESSION['openid']['response']['status'] == 'success') {
+    // Clean up any stale accounts.apigee.com sessions.
+    if (isset($_SESSION['aac_session'])) {
+      unset ($_SESSION['aac_session']);
+    }
+
+    // For the moment, we ignore the test for identity == claimed_id
+    // so that when SERVER_NAME changes, openid logins don't fail.
+    $response =& $_SESSION['openid']['response'];
+    $identity = $response['openid.identity'];
+
+    // Find email from one of many possible fields
+    $mail_fields = array('email', 'mail_son', 'mail_ao');
+    foreach ($mail_fields as $field) {
+      $full_field = 'openid.ext1.value.' . $field;
+      if (array_key_exists($full_field, $response)) {
+        $email = $response[$full_field];
+        break;
+      }
+    }
+    $name_fields = array('first_name' => array('firstName', 'firstname'), 'last_name' => array('lastName', 'lastname'));
+
+    foreach ($name_fields as $field_name => $field_options) {
+      foreach ($field_options as $field) {
+        $full_field = 'openid.ext1.value.' . $field;
+        if (array_key_exists($full_field, $response)) {
+          $$field_name = $response[$full_field];
+          break;
+        }
+      }
+    }
+    if (empty($first_name) && empty($last_name)) {
+      $name_fields = array('fullname', 'fullName', 'nickname');
+      foreach ($name_fields as $field) {
+        $full_field = 'openid.ext1.value.' . $field;
+        if (array_key_exists($full_field, $response)) {
+          $name_parts = preg_split('!\s+!', $response[$full_field], 2);
+          if (count($name_parts) == 1) {
+            $name_parts[] = '';
+          }
+          list($first_name, $last_name) = $name_parts;
+          break;
+        }
+      }
+    }
+
+    // Use user_id as username, if it isn't just made up of digits
+    // (as Google's user_id is).
+    if (array_key_exists('openid.ext1.value.user_id', $response) && !ctype_digit($response['openid.ext1.value.user_id'])) {
+      $user_name = $response['openid.ext1.value.user_id'];
+    }
+
+    // Set user's default language if it is available.
+    if (array_key_exists('openid.ext1.value.language', $response)) {
+      $language = strtolower(substr($response['openid.ext1.value.language'], 0, 2));
+      if (!in_array($language, language_list())) {
+        $language = NULL;
+      }
+    }
+  }
+
+  if (!empty($identity) && !empty($email)) {
+    $u = user_load_by_mail($email);
+    $mail_parts = explode('@', strtolower($email), 2);
+    // On no mail match, $u will be FALSE. If mail was empty, $u->uid is 0.
+    if ($u && $u->uid) {
+      //user already exists but open ID is different because it's a different URL
+      user_set_authmaps($u, array('authname_openid' => $identity));
+      if (function_exists('devconnect_user_is_org_admin') && devconnect_user_is_org_admin($email) && $u->status == 0) {
+        $u->status = 1;
+        user_save($u);
+      }
+      // If the developer exists on the KMS side and is not marked inactive,
+      // activate their Drupal account.
+      if ($u->status == 0 && module_exists('devconnect_user')) {
+        $developer = entity_load_single('developer', $email);
+        if (is_object($developer) && $developer->status != 'inactive') {
+          $u->status = 1;
+          user_save($u);
+        }
+      }
+
+      if (apigee_sso_is_registration_complete($form)) {
+        if (!array_key_exists('values', $form_state)) {
+          $form_state['values'] = array();
+        }
+        user_login_finalize($form_state['values']);
+      }
+    }
+    else {
+      if (empty($user_name)) {
+        $user_name = $mail_parts[0];
+      }
+      $create_user = FALSE;
+      // See if user exists in KMS. If so, draw properties from KMS response
+      // rather than from OpenID response.
+      if (module_exists('devconnect_user')) {
+        $developer = entity_load_single('developer', $email);
+        if (is_object($developer) && $developer->status != 'inactive') {
+          $user_name = $developer->userName;
+          $first_name = $developer->firstName;
+          $last_name = $developer->lastName;
+          $email = $developer->developer;
+          // Flag that this user is to be auto-created.
+          $create_user = TRUE;
+        }
+      }
+
+      $form['account']['name']['#default_value'] = $user_name;
+      $form['account']['mail']['#default_value'] = $email;
+
+      if (!is_array($form['account']['roles']['#default_value'])) {
+        $form['account']['roles']['#default_value'] = array();
+      }
+      if (function_exists('devconnect_user_is_org_admin') && devconnect_user_is_org_admin($email)) {
+        $form['account']['status']['#access'] = TRUE;
+        $form['account']['status']['#default_value'] = TRUE;
+        $form['account']['roles']['#access'] = TRUE;
+        $form['account']['roles']['#default_value'] = array_unique(array_merge($form['account']['roles']['#default_value'], devconnect_user_get_admin_rids()));
+      }
+      // Fill in first/last name settings if we were able to read them from openid extensions
+      if (isset($form['field_first_name'][LANGUAGE_NONE][0]) && !empty($first_name)) {
+        $form['field_first_name'][LANGUAGE_NONE][0]['#default_value'] = $first_name;
+      }
+      if (isset($form['field_last_name'][LANGUAGE_NONE][0]) && !empty($last_name)) {
+        $form['field_last_name'][LANGUAGE_NONE][0]['#default_value'] = $last_name;
+      }
+      if (isset($form['locale']['language']) && !empty($language)) {
+        $form['locale']['language']['#default_value'] = $language;
+      }
+      $form['#after_build'][] = 'apigee_sso_set_field_defaults';
+
+      // If we authenticated the user with KMS above, see if all required
+      // fields are filled in. If so, create the user and log them in.
+      if ($create_user && apigee_sso_is_registration_complete($form)) {
+        $form_state['values'] = array(
+          'name' => $user_name,
+          'pass' => user_pass(),
+          'mail' => $email,
+          'status' => TRUE,
+          'field_first_name' => array(LANGUAGE_NONE => array(0 => $first_name)),
+          'field_last_name' => array(LANGUAGE_NONE => array(0 => $last_name)),
+          'roles' => $form['account']['roles']['#default_value']
+        );
+        if (!empty($language)) {
+          $form_state['values']['language'] = $language;
+        }
+        $user = new stdClass;
+        $user = user_save($user, $form_state['values']);
+        if ($user) {
+          user_login_finalize($form_state['values']);
+        }
+      }
+    }
+  }
+  else {
+    $block = apigee_sso_ui_block_view();
+    $form['sign_in_with_google_apps'] = array(
+      '#type' => 'markup',
+      '#markup' => $block['content'],
+      '#weight' => -99
+    );
+
+  }
+}
+
+/**
+ * After_build callback for registration form to populate default values for
+ * user profile fields.
+ *
+ * @param $form
+ * @return mixed
+ */
+function apigee_sso_set_field_defaults($form) {
+  foreach ($form as $key => $value) {
+    if (substr($key, 0, 6) == 'field_') {
+      if (!@empty($form[$key][LANGUAGE_NONE][0]['#default_value'])) {
+        $form[$key][LANGUAGE_NONE][0]['value']['#value'] = $form[$key][LANGUAGE_NONE][0]['#default_value'];
+      }
+    }
+  }
+  return $form;
+}
+
+/**
+ * Request fields
+ *
+ * @param $op
+ * @param $request
+ * @return mixed
+ */
+function apigee_sso_openid($op, $request) {
+  if ($op == 'request') {
+    // Google fields
+    $request['openid.sreg.required'] = 'nickname,email,firstname,lastname';
+    $request['openid.ax.required'] = 'email,firstname,language,lastname,country,name_son,mail_son,mail_ao,name_ao,user_id';
+
+    $request['openid.ax.type.language'] = 'http://axschema.org/pref/language';
+    $request['openid.ax.type.country'] = 'http://axschema.org/contact/country/home';
+
+    $request['openid.ax.type.firstname'] = 'http://axschema.org/namePerson/first';
+    $request['openid.ax.type.lastname'] = 'http://axschema.org/namePerson/last';
+    $request['openid.ax.type.email'] = 'http://axschema.org/contact/email';
+
+    $request['openid.ax.type.user_id'] = 'http://schemas.openid.net/ax/api/user_id';
+  }
+  return $request;
+}
+
+/**
+ * Recursively parses the registration $form to see if all required form fields
+ * have been filled in.
+ *
+ * This is just a kludge to determine if a user should be finalized when they
+ * see the form, as happens in apigee_sso_form_user_register_form_alter()
+ * above.
+ *
+ * @param array $element
+ * @return bool
+ */
+function apigee_sso_is_registration_complete($element) {
+  static $parseable_types = array(
+    'textfield',
+    'textarea',
+    'select',
+    'radios',
+    'checkbox',
+    'checkboxes',
+    'password_confirm'
+  );
+
+  foreach ($element as $key => $val) {
+    // skip non-elements and inaccessible elements
+    if (substr($key, 0, 1) == '#' || !is_array($val) || (isset($val['#access']) && $val['#access'] === FALSE)) {
+      continue;
+    }
+    // skip captcha; it is irrelevant.
+    if ($key == 'captcha_response') {
+      continue;
+    }
+    // For form-field types, if required and empty, registration is NOT complete
+    if (isset($val['#type']) && in_array($val['#type'], $parseable_types)) {
+      if (isset($val['#required']) && $val['#required'] && empty($val['#default_value'])) {
+        return FALSE;
+      }
+    }
+    // Recursively check children. If failure occurs, bubble the fail up to the next level.
+    if (!apigee_sso_is_registration_complete($val)) {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function apigee_sso_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'user_login' || $form_id == 'user_login_block') {
+    if (module_exists('gauth_login')) {
+      $form['submit_google']['#value'] = t('Authenticate with Google');
+    }
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param $implementations
+ * @param $hook
+ */
+function apigee_sso_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter' && isset($implementations['apigee_sso'])) {
+    $group = $implementations['apigee_sso'];
+    unset($implementations['apigee_sso']);
+    $implementations['apigee_sso'] = $group;
+  }
+}

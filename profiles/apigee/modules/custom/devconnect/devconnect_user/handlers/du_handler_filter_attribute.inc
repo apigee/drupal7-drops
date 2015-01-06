@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Views handler for attribute filtering.
+ */
 
 /**
  * Filter by attribute name/value.
@@ -6,8 +10,6 @@
  * @ingroup views_filter_handlers
  */
 class du_handler_filter_attribute extends views_handler_filter_many_to_one {
-  // Stores the exposed input for this filter.
-  var $validated_exposed_input = NULL;
 
   function init(&$view, &$options) {
     parent::init($view, $options);
@@ -16,9 +18,13 @@ class du_handler_filter_attribute extends views_handler_filter_many_to_one {
     }
   }
 
-  function has_extra_options() { return TRUE; }
+  function has_extra_options() {
+    return TRUE;
+  }
 
-  function get_value_options() { /* don't overwrite the value options */ }
+  function get_value_options() {
+    // don't overwrite the value options.
+  }
 
   function option_definition() {
     $options = parent::option_definition();
@@ -60,7 +66,7 @@ class du_handler_filter_attribute extends views_handler_filter_many_to_one {
     );
 
     if (empty($form_state['exposed'])) {
-      // Retain the helper option
+      // Retain the helper option.
       $this->helper->options_form($form, $form_state);
     }
   }

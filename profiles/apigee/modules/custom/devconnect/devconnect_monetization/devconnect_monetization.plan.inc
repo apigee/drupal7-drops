@@ -343,8 +343,11 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
     $org_timezone = new DateTimeZone($rate_plan->getOrganization()->getTimezone());
     $utc_timezone = new DateTimeZone('UTC');
     $separator = strpos($values['start_date'], '/') > 0 ? '/' : '-';
+    // Take the date selected, and set submitted start date to midnight that day.
     $submitted_start_date = $values['start_date'] . ' 00:00:00';
+    // Create the date time.
     $start_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $submitted_start_date, $org_timezone);
+    // Set the timezone to UTC.
     $start_date->setTimezone($utc_timezone);
 
     $developer_rate_plan->setId($dev_plan_id);
@@ -1035,7 +1038,23 @@ function devconnect_monetization_build_js_date_widget_construct_param(array $pla
 function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \Apigee\Mint\Developer $developer) {
 
   $current_balance = 0;
-  $balances = $developer->getPrepaidBalance();
+  try {
+    $balances = $developer->getPrepaidBalance();
+  }
+  catch(\Apigee\Exceptions\ResponseException $e) {
+    global $user;
+    $message_vars = array(
+      '%user_name' => $user->name,
+      '%user_email' => $user->mail,
+      '%error_code' => $e->getCode(),
+      '%error_message' => $e->getMessage(),
+    );
+    watchdog('devconnect_monetization', "Could not retrieve balance from Edge server for user %user_name (%user_email).  Error Code: %error_code Message: %error_message", $message_vars, WATCHDOG_ERROR);
+    $form['#theme'] = 'devconnect_monetization_insuffient_funds_top_up_balance';
+    form_set_error('', t('There was an error retrieving your balance. If the problem persists please contact your administrator.'));
+    return $form;
+  }
+
   foreach ($balances as $balance) {
     if ($balance->getSupportedCurrency()->getName() == $form_state['values']['currency']) {
       $current_balance = $balance->getCurrentBalance();

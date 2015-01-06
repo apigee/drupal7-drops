@@ -46,11 +46,13 @@ function eck_language_property_entity_save($property, $vars) {
  * Extending property's info default information.
  */
 function eck_language_property_property_info($property, $vars) {
-  $vars['properties'][$property] += array(
-    'type' => 'token',
-    'options list' => 'entity_metadata_language_list',
-    'description' => t('Entity language.'),
-  );
+  if (isset($vars['properties'][$property])) {
+    $vars['properties'][$property] += array(
+      'type' => 'token',
+      'options list' => 'entity_metadata_language_list',
+      'description' => t('Entity language.'),
+    );
+  }
   return $vars;
 }
 

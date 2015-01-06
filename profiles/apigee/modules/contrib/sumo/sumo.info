@@ -1,0 +1,5 @@
+name = Sumo Logic logging
+description = Sends web access logs and/or watchdog output to defined Sumo collector URLs
+core = 7.x
+package = Logging
+version = "7.x-1.x-dev"

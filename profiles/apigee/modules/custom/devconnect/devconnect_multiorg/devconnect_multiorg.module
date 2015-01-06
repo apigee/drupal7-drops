@@ -16,14 +16,13 @@ function devconnect_multiorg_devconnect_org_settings_alter(array &$config, $requ
   }
   $my_config = $config['secondary_orgs'][$requested_org];
   try {
-    $pass = Apigee\Util\Crypto::decrypt($my_config['pass']);
+    $my_config['pass'] = Apigee\Util\Crypto::decrypt($my_config['pass']);
   } catch (Exception $e) {
-    $pass = '';
   }
   $config['org'] = $my_config['org'];
   $config['endpoint'] = $my_config['endpoint'];
   $config['user'] = $my_config['user'];
-  $config['pass'] = $pass;
+  $config['pass'] = $my_config['pass'];
 }
 
 /**

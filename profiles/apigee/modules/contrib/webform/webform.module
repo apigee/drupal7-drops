@@ -130,8 +130,8 @@ function webform_menu() {
     'title' => 'Webform',
     'page callback' => 'webform_components_page',
     'page arguments' => array(1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'weight' => 1,
     'type' => MENU_LOCAL_TASK,
@@ -141,8 +141,8 @@ function webform_menu() {
     'title' => 'Form components',
     'page callback' => 'webform_components_page',
     'page arguments' => array(1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'weight' => 0,
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -151,8 +151,8 @@ function webform_menu() {
     'title' => 'Conditionals',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_conditionals_form', 1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.conditionals.inc',
     'weight' => 1,
     'type' => MENU_LOCAL_TASK,
@@ -161,8 +161,8 @@ function webform_menu() {
     'title' => 'Form settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_configure_form', 1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.pages.inc',
     'weight' => 5,
     'type' => MENU_LOCAL_TASK,
@@ -173,8 +173,8 @@ function webform_menu() {
     'title' => 'E-mails',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_emails_form', 1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.emails.inc',
     'weight' => 4,
     'type' => MENU_LOCAL_TASK,
@@ -182,24 +182,24 @@ function webform_menu() {
   $items['node/%webform_menu/webform/emails/%webform_menu_email'] = array(
     'load arguments' => array(1),
     'page arguments' => array('webform_email_edit_form', 1, 4),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.emails.inc',
     'type' => MENU_CALLBACK,
   );
   $items['node/%webform_menu/webform/emails/%webform_menu_email/clone'] = array(
     'load arguments' => array(1),
     'page arguments' => array('webform_email_edit_form', 1, 4, TRUE),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.emails.inc',
     'type' => MENU_CALLBACK,
   );
   $items['node/%webform_menu/webform/emails/%webform_menu_email/delete'] = array(
     'load arguments' => array(1),
     'page arguments' => array('webform_email_delete_form', 1, 4),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'type' => MENU_CALLBACK,
   );
 
@@ -208,8 +208,8 @@ function webform_menu() {
     'load arguments' => array(1, 5),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_component_edit_form', 1, 4, FALSE),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -217,8 +217,8 @@ function webform_menu() {
     'load arguments' => array(1, 5),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_component_edit_form', 1, 4, TRUE),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -226,8 +226,8 @@ function webform_menu() {
     'load arguments' => array(1, 5),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_component_delete_form', 1, 4),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'includes/webform.components.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -236,8 +236,8 @@ function webform_menu() {
   $items['webform/ajax/options/%webform_menu'] = array(
     'load arguments' => array(3),
     'page callback' => 'webform_select_options_ajax',
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 3),
+    'access callback' => 'webform_node_update_access',
+    'access arguments' => array(1),
     'file' => 'components/select.inc',
     'type' => MENU_CALLBACK,
   );
@@ -444,6 +444,30 @@ function webform_menu_load($nid) {
 }
 
 /**
+ * Menu LOADERNAME_to_arg callback. Determines the arguments used to generate a
+ * menu link.
+ *
+ * This is implemented only to give the webform_localization modules an
+ * opportunity to link to the orignial webform from the localized one. See
+ * issue 2097277.
+ *
+ * @param string $arg
+ *   The argument supplied by the caller.
+ * @param array $map
+ *   Array of path fragments (e.g. e.g. array('node','123','edit') for
+ *   'node/123/edit').
+ * @param integer $index
+ *   Which element of $map corresponds to $arg.
+ * @return string
+ *   The $arg, modified as desired.
+ */
+function webform_menu_to_arg($arg, $map, $index) {
+  return function_exists('webform_localization_webform_menu_to_arg')
+          ? webform_localization_webform_menu_to_arg($arg, $map, $index)
+          : $arg;
+}
+
+/**
  * Menu loader callback. Load a webform submission if the given sid is a valid.
  */
 function webform_menu_submission_load($sid, $nid) {
@@ -606,6 +630,10 @@ function webform_results_access($node, $account = NULL) {
   return node_access('view', $node, $account) && ($module_access || user_access('access all webform results', $account) || (user_access('access own webform results', $account) && $account->uid == $node->uid));
 }
 
+/**
+ * Menu access callback. Ensure a user has both results access and permission
+ * to clear submissions.
+ */
 function webform_results_clear_access($node, $account = NULL) {
   global $user;
   $account = isset($account) ? $account : $user;
@@ -613,6 +641,33 @@ function webform_results_clear_access($node, $account = NULL) {
   $module_access = count(array_filter(module_invoke_all('webform_results_clear_access', $node, $account))) > 0;
 
   return webform_results_access($node, $account) && ($module_access || user_access('delete all webform submissions', $account));
+}
+
+/**
+ * Menu access callback. Ensure a sure has access to update a webform node.
+ *
+ * Unlike webform_results_access and webform_results_clear_access, access is
+ * completely overridden by the any implmentation of hook_webform_update_access.
+ *
+ * If hook_webform_update_access is implemented by one or more other modules,
+ * the results must be unanimously TRUE for access to be granted; otherwise it
+ * is denied if even one implementation returns FALSE, regardless of node_access
+ * and the 'edit webform components' permission. This allows implementors
+ * complete flexibility.
+ *
+ * hook_webform_update_access should return TRUE if access should absolutely
+ * be granted, FALSE if it should absolutely be denied, or NULL if node_access
+ * and 'edit webform components' permission should determine access.
+ *
+ * @see hook_webform_update_access().
+ */
+function webform_node_update_access($node, $account = NULL) {
+  global $user;
+  $account = isset($account) ? $account : $user;
+  $module_access = module_invoke_all('webform_update_access', $node, $account);
+  return empty($module_access)
+            ? node_access('update', $node, $account) && user_access('edit webform components')
+            : count(array_filter($module_access)) == count($module_access);
 }
 
 /**
@@ -659,6 +714,10 @@ function webform_permission() {
     ),
     'delete own webform submissions' => array(
       'title' => t('Delete own webform submissions'),
+    ),
+    'edit webform components' => array(
+      'title' => t('Content authors: access and edit webform components and settings'),
+      'description' => t('Grants additional access to the webform components and settings to users who can edit the content. Generally an authenticated user permission.'),
     ),
   );
 }
@@ -1820,13 +1879,15 @@ function webform_node_view($node, $view_mode) {
   }
 
   // Check if this page is cached or not.
-  $cached = $user->uid == 0 && (variable_get('cache', 0) || drupal_page_is_cacheable() === FALSE);
+  $cached = drupal_page_is_cacheable();
 
-  // Check if the user can add another submission.
+  // Check if the user can add another submission based on the individual submission limit.
   if ($node->webform['submit_limit'] != -1) { // -1: Submissions are never throttled.
     module_load_include('inc', 'webform', 'includes/webform.submissions');
 
-    // Disable the form if the limit is exceeded and page cache is not active.
+    // Disable the form if the limit is exceeded and page cache is not active. This prevent
+    // One anonymous user from generated a disabled webform page for the cache, which would
+    // be shown to other anonymous users who have not exceeded the limit.
     if (($user_limit_exceeded = webform_submission_user_limit_check($node)) && !$cached) {
       $enabled = FALSE;
     }
@@ -1837,8 +1898,10 @@ function webform_node_view($node, $view_mode) {
   if ($node->webform['total_submit_limit'] != -1) { // -1: Submissions are never throttled.
     module_load_include('inc', 'webform', 'includes/webform.submissions');
 
-    // Disable the form if the limit is exceeded and page cache is not active.
-    if (($total_limit_exceeded = webform_submission_total_limit_check($node)) && !$cached) {
+    // Disable the form if the limit is exceeded. The cache is irrelevant for the total
+    // submission limit; when it is exceeded for one user, it is exceeded for any other
+    // user.
+    if (($total_limit_exceeded = webform_submission_total_limit_check($node))) {
       $enabled = FALSE;
     }
   }
@@ -2327,7 +2390,7 @@ function webform_client_form($form, &$form_state, $node, $submission = FALSE, $i
 
     // Add the preview if needed.
     if ($preview && $page_num === $page_count) {
-      $preview_submission = webform_submission_create($node, $user, $form_state, TRUE);
+      $preview_submission = $submission ? $submission : webform_submission_create($node, $user, $form_state, TRUE);
       $preview_message = $node->webform['preview_message'];
       $submit_button_text = empty($node->webform['submit_text']) ? t('Submit') : t($node->webform['submit_text']);
       if (strlen(trim(strip_tags($preview_message))) === 0) {
@@ -2670,7 +2733,8 @@ function _webform_client_form_add_component($node, $component, $component_value,
     $data = empty($input_values[$cid]) ? NULL : $input_values[$cid];
     if ($display_element = webform_component_invoke($component['type'], 'display', $component, $data, $format)) {
       // Set access based on the private property.
-      $display_element['#access'] = $component_access;
+      $display_element += array('#access' => TRUE);
+      $display_element['#access'] = $display_element['#access'] && $component_access;
 
       // Ensure the component is added as a property.
       $display_element['#webform_component'] = $component;
@@ -2702,7 +2766,8 @@ function _webform_client_form_add_component($node, $component, $component_value,
     // Add this user-defined field to the form (with all the values that are always available).
     if ($element = webform_component_invoke($component['type'], 'render', $component, $component_value, $filter)) {
       // Set access based on the private property.
-      $element['#access'] = $component_access;
+      $element += array('#access' => TRUE);
+      $element['#access'] = $element['#access'] && $component_access;
 
       // Ensure the component is added as a property.
       $element['#webform_component'] = $component;
@@ -3991,6 +4056,9 @@ function webform_variable_get($variable) {
     case 'webform_progressbar_label_confirmation':
       $result = variable_get('webform_progressbar_label_confirmation', t('Complete'));
       break;
+    case 'webform_table':
+      $result = variable_get('webform_table', FALSE);
+      break;
   }
   return $result;
 }
@@ -4004,36 +4072,36 @@ function webform_variable_get($variable) {
  */
 function theme_webform_token_help($variables) {
   $groups = $variables['groups'];
-
-  // If token supports dialogs, display simply as a link.
   module_load_include('inc', 'token', 'token.pages');
-  if (module_exists('token') && function_exists('token_page_output_tree')) {
-    return theme('token_tree', array('token_types' => $groups, 'dialog' => TRUE));
-  }
 
-  // If dialogs are not supported, show as a fieldset.
-  $fieldset = array(
+  // Assume dialogs are not supported, show as a fieldset.
+  $help = array(
     '#title' => t('Token values'),
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#attributes' => array('class' => array('collapsible', 'collapsed')),
+    'help' => array(
+      '#markup' => '<p>' . t('This field supports dynamic token values. Common values might be [current-user:mail] or [node:title].') . '</p>',
+    ),
+    'token_tree' => array(
+      '#theme' => 'token_tree',
+      '#token_types' => $groups,
+    ),
   );
 
-  $help = '<p>' . t('This field supports dynamic token values. Common values might be [current-user:mail] or [node:title].') . '</p>';
   if (!module_exists('token')) {
-    $help .= '<p>' . t('A full listing of tokens may be listed here by installing the <a href="http://drupal.org/project/token">Token module</a>.') . '</p>';
+    // No token module at all. Display a simple suggestion to enable it.
+    $help['help']['#markup'] .= '<p>' . t('A full listing of tokens may be listed here by installing the <a href="http://drupal.org/project/token">Token module</a>.') . '</p>';
+    unset($help['token_tree']);
   }
-  $fieldset['help'] = array(
-    '#markup' => $help,
-  );
+  elseif (function_exists('token_page_output_tree')) {
+    // Token supports dialogs: display simply as a link.
+    $help = $help['token_tree'];
+    $help['#dialog'] = TRUE;
+  }
 
-  $fieldset['token_tree'] = array(
-    '#theme' => 'token_tree',
-    '#token_types' => $groups,
-  );
-
-  return render($fieldset);
+  return render($help);
 }
 
 function _webform_safe_name($name) {
@@ -4589,6 +4657,9 @@ function webform_email_html_capable() {
     $systems[] = 'HTMLMailSystem';
     $systems[] = 'HTMLMailSystem__SmtpMailSystem';
   }
+  if (module_exists('mailsystem')) {
+    $systems[] = 'MailsystemDelegateMailSystem';
+  }
   // Allow other modules to alter the list.
   drupal_alter('webform_html_capable_mail_systems', $systems);
 
@@ -4618,9 +4689,21 @@ function webform_email_html_capable() {
  */
 function webform_views_api() {
   return array(
-    'api' => 2.0,
+    'api' => 3.0,
     'path' => drupal_get_path('module', 'webform') . '/views',
   );
+}
+
+/**
+ * Implements hook_views_default_views().
+ */
+function webform_views_default_views() {
+  $path = './' . drupal_get_path('module', 'webform') . '/views/default_views/*.inc';
+  $views = array();
+  foreach (glob($path) as $views_filename) {
+    require_once($views_filename);
+  }
+  return $views;
 }
 
 /**
@@ -4736,17 +4819,16 @@ function webform_date_views_extra_tables() {
 }
 
 /**
- * Returns the next serial number for a given node and optionally increment the serial number.
+ * Returns the next serial number for a given node and increments the serial
+ * number.
  *
  * @param int $nid
  *   The nid of the node.
- * @paran bool $increment
- *   Whether to increment the serial number.
  *
- * @return int|null
- *   The next value of the serial number or NULL if no form at this nid.
+ * @return int
+ *   The next value of the serial number.
  */
-function _webform_submission_serial_next_value($nid, $do_increment = TRUE) {
+function _webform_submission_serial_next_value($nid) {
   // Use a transaction with SELECT ... FOR UPDATE to lock the row between
   // the SELECT and the UPDATE, ensuring that multiple Webform submissions
   // at the same time do not have duplicate numbers. FOR UPDATE must be inside
@@ -4758,21 +4840,63 @@ function _webform_submission_serial_next_value($nid, $do_increment = TRUE) {
   // Get the next_serial value.
   $next_serial = db_select('webform', 'w')
     // Only add FOR UPDATE when incrementing.
-    ->forUpdate($do_increment)
+    ->forUpdate()
     ->fields('w', array('next_serial'))
     ->condition('nid', $nid)
     ->execute()
     ->fetchField();
 
-  // Otherwise, no number was found, no form at this nid, return the NULL.
-  if ($next_serial && $do_increment) {
-    // Increment the next_value.
-    $increment_amount = 1;
-    db_update('webform')
-      ->fields(array('next_serial' => $next_serial + $increment_amount))
-      ->condition('nid', $nid)
-      ->execute();
-  }
+  // $next_serial must be greater than any existing serial number.
+  $next_serial = max($next_serial, _webform_submission_serial_next_value_used($nid));
+
+  // Increment the next_value.
+  db_update('webform')
+    ->fields(array('next_serial' => $next_serial + 1))
+    ->condition('nid', $nid)
+    ->execute();
 
   return $next_serial;
+}
+
+/**
+ * Returns the next serial number to be used, based upon actual submissions in
+ * the database.
+ *
+ * @param int $nid
+ *   The Node ID of the Webform.
+ *
+ * $return int
+ *   The largest serial number used by a submission for a given node, 1 when no
+ *   submissions.
+ */
+function _webform_submission_serial_next_value_used($nid) {
+  $max_serial = db_select('webform_submissions');
+  $max_serial->addExpression('MAX(serial)');
+  $max_serial = $max_serial
+    ->condition('nid', $nid)
+    ->execute()
+    ->fetchField();
+  // $max_serial will be a numeric string or NULL.
+  return $max_serial + 1;
+}
+
+/**
+ * Alter the node before saving a clone.
+ *
+ * @param $node
+ *   Reference to the fully loaded node object being saved (the clone) that
+ *   can be altered as needed.
+ * @param array $context
+ *   An array of context describing the clone operation. The keys are:
+ *   - 'method' : Can be either 'prepopulate' or 'save-edit'.
+ *   - 'original_node' : The original fully loaded node object being cloned.
+ *
+ * @see clone_node_save()
+ * @see drupal_alter()
+ */
+function webform_clone_node_alter(&$node, $context) {
+  if (isset($node->webform)) {
+    $defaults = webform_node_defaults();
+    $node->webform['next_serial'] = $defaults['next_serial'];
+  }
 }

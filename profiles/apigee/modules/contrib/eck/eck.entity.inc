@@ -194,9 +194,18 @@ function eck__entity__list($entity_type_name, $bundle_name) {
 
   // Check that the user has permissions to add an entity:
   if (eck__entity_menu_access('add', $entity_type->name, $bundle->name)) {
-    $build['add'] = array(
-      '#markup' => "+ " . l(t("Add @bundle_label", array("@bundle_label" => $bundle->label)), $crud_info['add']['path'],
-         array('query' => $destination)),
+    $build['actions'] = array(
+      '#theme' => 'links',
+      '#links' => array(
+        array(
+          'title' => t("Add") . " $bundle->label",
+          'href' => $crud_info['add']['path'],
+          'query' => $destination,
+        ),
+      ),
+      '#attributes' => array(
+        'class' => array('action-links'),
+      ),
     );
   }
 
@@ -376,7 +385,8 @@ function eck__entity__form($form, &$form_state, $entity) {
     }
   }
 
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#weight' => 10000,
     '#value' => t('Save'),
@@ -434,7 +444,11 @@ function eck__entity__form_submit($form, &$state) {
     }
   }
 
-  // Let the behaviors to modify the entity.
+  // Let the behaviors modify the entity.
+  // @todo Why do we need to pass form information to the save behavior.
+  // This is related to eck_revisions. Is there a danger that the current
+  // eck_revision logic will not apply when entities are manipulated from
+  // code and not the UI?
   eck_property_behavior_invoke_plugin($entity_type, 'entity_save',
     array('entity' => $entity, 'form' => $form, 'form_state' => $state));
 
@@ -474,27 +488,40 @@ function eck__entity__view($entity_type_name, $bundle_name, $id) {
     $entity = entity_load_single($entity_type_name, $id);
   }
 
-  $entity_type = entity_type_load($entity_type_name);
-  $properties = $entity_type->properties;
-  $bundle = bundle_load($entity_type_name, $bundle_name);
+  return entity_view($entity_type_name, array($entity));
+}
 
+/**
+ * Entity view callback.
+ */
+function eck__entity__view_callback($entities, $view_mode = 'full', $langcode = NULL) {
   $build = array();
-  $entity_view = eck__entity__build($entity_type, $bundle, $id);
-  $property_view = array();
 
-  $formatters = eck_property_behavior_invoke_plugin($entity_type, 'default_formatter',
-    array('entity' => $entity));
+  foreach ($entities as $entity) {
+    $entity_type_name = $entity->entityType();
+    $bundle_name = $entity->type;
 
-  foreach ($formatters as $property => $formatter) {
-    $property_view[$property] = $formatter;
+    $entity_type = entity_type_load($entity_type_name);
+    $bundle = bundle_load($entity_type_name, $bundle_name);
+
+    $build = array();
+    $entity_view = eck__entity__build($entity_type, $bundle, $entity);
+    $property_view = array();
+
+    $formatters = eck_property_behavior_invoke_plugin($entity_type, 'default_formatter',
+      array('entity' => $entity));
+
+    foreach ($formatters as $property => $formatter) {
+      $property_view[$property] = $formatter;
+    }
+
+    $entity_view[$entity->entityType()][$entity->id] = array_merge($property_view, $entity_view[$entity->entityType()][$entity->id]);
+
+    eck_property_behavior_invoke_plugin($entity_type, 'entity_view',
+      array('entity' => $entity));
+
+    $build["{$entity_type->name}_{$bundle->name}_page"] = $entity_view;
   }
-
-  $entity_view[$entity->entityType()][$entity->id] = array_merge($property_view, $entity_view[$entity->entityType()][$entity->id]);
-
-  eck_property_behavior_invoke_plugin($entity_type, 'entity_view',
-    array('entity' => $entity));
-
-  $build["{$entity_type->name}_{$bundle->name}_page"] = $entity_view;
 
   return $build;
 }

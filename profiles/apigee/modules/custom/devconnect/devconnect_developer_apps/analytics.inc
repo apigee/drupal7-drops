@@ -283,7 +283,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
 
 }
 
-function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
+function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name, $params = array()) {
   $dca = _devconnect_developer_apps_analytics_api_client();
 
   $metrics = _devconnect_developer_apps_analytics_metrics();
@@ -292,12 +292,18 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
   if (isset($_GET['metric']) && isset($metrics[$_GET['metric']])) {
     $metric = $_GET['metric'];
   }
+  else if(isset($params['metric']) && isset($metrics[$params['metric']])) {
+    $metric = $params['metric'];
+  }
   else {
     $metric = 'total_response_time';
   }
 
   if (isset($_GET['to'])) {
     $end = $_GET['to'];
+  }
+  else if(isset($params['to'])) {
+    $end = $params['to'];
   }
   else {
     $end = time();
@@ -306,12 +312,18 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
   if (isset($_GET['from']) && $_GET['from'] < $end) {
     $start = $_GET['from'];
   }
+  else if(isset($params['from'])) {
+    $start = $params['from'];
+  }
   else {
     $start = strtotime('-24 hours', $end);
   }
 
   if (isset($_GET['unit']) && in_array($_GET['unit'], $units)) {
     $unit = $_GET['unit'];
+  }
+  else if(isset($params['unit'])) {
+    $unit = $params['unit'];
   }
   else {
     $unit = 'hour';

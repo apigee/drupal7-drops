@@ -97,7 +97,6 @@ global $user;
       </button>
     </div>
 
-    <?php if (!empty($primary_nav) || !empty($secondary_nav) || !empty($page['navigation'])): ?>
       <div class="navbar-collapse collapse">
         <nav role="navigation">
           <?php if (!empty($primary_nav)): print render($primary_nav); endif; ?>
@@ -119,7 +118,6 @@ global $user;
           <?php if (!empty($page['navigation'])): print render($page['navigation']); endif; ?>
         </nav>
       </div>
-    <?php endif; ?>
   </div>
 </header>
 <!-- Breadcrumbs -->

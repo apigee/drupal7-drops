@@ -89,9 +89,11 @@ class DeveloperEntity {
     $this->orgNames = array();
     $this->companies = array();
     // Populate values if available.
-    foreach ($values as $key => $value) {
-      if (property_exists($this, $key)) {
-        $this->$key = $value;
+    if (is_array($values)) {
+      foreach ($values as $key => $value) {
+        if (property_exists($this, $key)) {
+          $this->$key = $value;
+        }
       }
     }
   }
@@ -102,4 +104,10 @@ class DeveloperEntity {
     return $properties;
   }
 
+  public function getAttribute($name) {
+    if (!is_array($this->attributes) || !array_key_exists($name, $this->attributes)) {
+      return NULL;
+    }
+    return $this->attributes[$name];
+  }
 }

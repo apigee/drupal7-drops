@@ -5,7 +5,7 @@ class SmartDocsDocController extends DrupalDefaultEntityController {
   private $SmartDocsDoc;
 
   public function __construct($entity_type) {
-    $config = devconnect_default_api_client();
+    $config = devconnect_default_org_config();
     $this->SmartDocsDoc = new Apigee\DocGen\DocGenDoc($config);
   }
 
@@ -17,7 +17,7 @@ class SmartDocsDocController extends DrupalDefaultEntityController {
 
   }
 
-  public function loadOperation($data, $mid, $name,  $drupal_update = NULL) {
+  public function loadOperation($data, $mid, $name, $drupal_update = NULL) {
     $flush = (isset($_GET['flush']) && is_numeric($_GET['flush']) && (strlen($_GET['flush']) == 1)) ? $_GET['flush'] : 0;
     if ((bool)$flush) {
       try {

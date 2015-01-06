@@ -1,17 +1,24 @@
 <?php
+/**
+ * @file
+ * Defines developer-based views.
+ */
 
+/**
+ * Implements hook_views_data().
+ */
 function devconnect_user_views_data() {
 
   $base_table = 'dc_dev';
   $attrib_table = 'dc_dev_attributes';
 
-  $data[$base_table]= array(
+  $data[$base_table] = array(
     'table' => array(
       'group' => t('Developers'),
       'base' => array(
         'field' => 'developer_id', // primary key
         'title' => t('Developers'),
-        'help' => t('Contains cached data related to developers.')
+        'help' => t('Contains cached data related to developers.'),
       )
     ),
     'developer_id' => array(
@@ -49,7 +56,7 @@ function devconnect_user_views_data() {
         'label' => t('Developer Apps'),
         'title' => t('Developer Apps'),
         'help' => t('Relates developers to their apps'),
-      )
+      ),
     ),
     'status' => array(
       'title' => t('Status'),
@@ -57,7 +64,7 @@ function devconnect_user_views_data() {
       'field' => array('handler' => 'views_handler_field_boolean'),
       'sort' => array('handler' => 'views_handler_sort'),
       'filter' => array('handler' => 'views_handler_filter_boolean_operator'),
-      'argument' => array('handler' => 'views_handler_argument_numeric')
+      'argument' => array('handler' => 'views_handler_argument_numeric'),
     ),
   );
 
@@ -70,8 +77,7 @@ function devconnect_user_views_data() {
       'field' => array('handler' => 'views_handler_field'),
       'sort' => array('handler' => 'views_handler_sort'),
       'filter' => array('handler' => 'views_handler_filter_string'),
-      'argument' => array('handler' => 'views_handler_argument_string')
-
+      'argument' => array('handler' => 'views_handler_argument_string'),
     ),
     'attribute_value' => array(
       'real field' => 'value',
@@ -80,20 +86,64 @@ function devconnect_user_views_data() {
       'field' => array('handler' => 'views_handler_field'),
       'sort' => array('handler' => 'views_handler_sort'),
       'filter' => array('handler' => 'views_handler_filter_string'),
-      'argument' => array('handler' => 'views_handler_argument_string')
+      'argument' => array('handler' => 'views_handler_argument_string'),
     ),
     'attribute_filter' => array(
       'real field' => 'value',
       'title' => t('Attribute'),
       'help' => t('Value for a named attribute'),
-      'filter' => array('handler' => 'du_handler_filter_attribute')
-    )
+      'filter' => array('handler' => 'du_handler_filter_attribute'),
+    ),
   );
 
   $data[$attrib_table]['table']['join'][$base_table] = array(
     'left_field' => 'developer_id',
-    'field' => 'developer_id'
+    'field' => 'developer_id',
   );
 
   return $data;
+}
+
+/**
+ * Implements hook_views_pre_render().
+ *
+ * This heinous abomination makes the developer_save_queue view present much
+ * more meaningful data.
+ */
+function devconnect_user_views_post_render(&$view, &$output, &$cache) {
+  if ($view->name == 'developer_save_queue') {
+    $dom = new DOMDocument();
+    $dom->loadHTML($output);
+    $list = $dom->getElementsByTagName('td');
+    foreach ($list as $elem) {
+      if ($elem->hasAttribute('class')) {
+        $classes = explode(' ', $elem->getAttribute('class'));
+        $class = end($classes);
+        $text = trim($elem->nodeValue);
+        switch ($class) {
+          case 'views-field-username': // username
+
+            $uid = db_select('users', 'u')->fields('u', array('uid'))->condition('name', $text)->execute()->fetchField();
+            if ($uid) {
+              $a = $dom->createElement('a');
+              $a->setAttribute('href', url('user/' . $uid));
+              $t = $dom->createTextNode($text);
+              $a->appendChild($t);
+              $elem->nodeValue = '';
+              $elem->appendChild($a);
+            }
+
+            break;
+
+          case 'views-field-retries': // retry count
+            if (is_numeric($text)) {
+              $elem->nodeValue = (string) variable_get('developer_queue_retries_' . $text, 0);
+            }
+            break;
+        }
+      }
+    }
+
+    $output = $dom->saveHTML();
+  }
 }

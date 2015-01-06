@@ -12,40 +12,40 @@ function devconnect_app_attributes_menu() {
   $items = array();
 
   $items[APP_ATTRIBUTES_ADMIN_PATH] = array(
-    'title' => t('Dev Portal App Attributes'),
+    'title' => 'Dev Portal App Attributes',
     'page callback' => 'devconnect_app_attributes_list',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/add'] = array(
-    'title' => t('Add Dev Portal App Attribute'),
+    'title' => 'Add Dev Portal App Attribute',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_edit'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/import'] = array(
-    'title' => t('Import App Attributes'),
+    'title' => 'Import App Attributes',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_import'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/export'] = array(
-    'title' => t('Export App Attributes'),
+    'title' => 'Export App Attributes',
     'page callback' => 'devconnect_app_attributes_export',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/edit/%'] = array(
-    'title' => t('Edit Dev Portal App Attribute'),
+    'title' => 'Edit Dev Portal App Attribute',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_edit', APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/delete/%'] = array(
-    'title' => t('Delete Dev Portal App Attribute'),
+    'title' => 'Delete Dev Portal App Attribute',
     'page callback' => 'devconnect_app_attributes_delete',
     'page arguments' => array(APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
     'access arguments' => array('administer site configuration'),
@@ -65,7 +65,7 @@ function devconnect_app_attributes_list() {
 
   if (count($attributes) > 0) {
     $form = drupal_get_form('devconnect_app_attributes_listing', $attributes);
-    $output = theme('devconnect_app_attributes_listing', $form);
+    $output = render($form);
   }
   else {
     $output = '<h4>' . t('No app attributes have been defined yet.') . '</h4>';
@@ -109,7 +109,7 @@ function devconnect_app_attributes_edit($form, &$form_state, $machine_name = NUL
     '#maxlength' => 64,
     '#default_value' => (isset($machine_name) ? $machine_name : ''),
     '#element_validate' => array('devconnect_app_attributes_validate_machine_name'),
-    '#description' => t('This is the attribute name as it is stored in KMS. It must be unique to this Dev Portal instance.')
+    '#description' => t('This is the attribute name as it is stored in Edge. It must be unique to this Dev Portal instance.')
   );
 
   $form['title'] = array(
@@ -580,6 +580,7 @@ function devconnect_app_attributes_listing($form, &$form_state, $attributes = ar
       '#value' => t('Save Changes'),
     )
   );
+  $form['#theme'] = 'devconnect_app_attributes_listing';
 
   return $form;
 }
@@ -638,32 +639,34 @@ function devconnect_app_attributes_theme() {
  * @param $form
  * @return string
  */
-function theme_devconnect_app_attributes_listing($form) {
-  $variables = array('element' => $form);
+function theme_devconnect_app_attributes_listing($vars) {
+  $form = $vars['form'];
 
-  if (count($form) == 1 && array_key_exists('form', $form)) {
+  if (array_key_exists('form', $form)) {
     $form = $form['form'];
   }
 
   $table_rows = array();
-  foreach ($form['attributes'] as $machine_name => $row) {
-    if (substr($machine_name, 0, 1) == '#') {
-      continue;
+  if (array_key_exists('attributes', $form)) {
+    foreach ($form['attributes'] as $machine_name => $row) {
+      if (substr($machine_name, 0, 1) == '#') {
+        continue;
+      }
+
+      $table_row = array(
+        drupal_render($row['name']),
+        drupal_render($row['widget']),
+        drupal_render($row['required']),
+        drupal_render($row['display']),
+        drupal_render($row['action']),
+        drupal_render($row['weight'])
+      );
+
+      $table_rows[] = array(
+        'data' => $table_row,
+        'class' => array('draggable')
+      );
     }
-
-    $table_row = array(
-      drupal_render($row['name']),
-      drupal_render($row['widget']),
-      drupal_render($row['required']),
-      drupal_render($row['display']),
-      drupal_render($row['action']),
-      drupal_render($row['weight'])
-    );
-
-    $table_rows[] = array(
-      'data' => $table_row,
-      'class' => array('draggable')
-    );
   }
   $header = array(
     t('Name'),

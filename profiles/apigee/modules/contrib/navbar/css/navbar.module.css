@@ -25,7 +25,6 @@
   -moz-box-shadow: none;
   box-shadow: none;
   -moz-box-sizing: border-box;
-  -o-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
   bottom: auto;
@@ -33,7 +32,6 @@
   content: normal;
   counter-increment: none;
   counter-reset: none;
-  cursor: auto;
   direction: ltr;
   float: none;
   font-style: normal;
@@ -74,6 +72,7 @@
   width: auto;
   word-spacing: normal;
 }
+
 /* These styles will cascade. There is no need to star-select child elements. */
 #navbar-administration {
   font-family: sans-serif;
@@ -267,6 +266,7 @@ body.navbar-tray-open.navbar-fixed.navbar-vertical #navbar-administration.navbar
   position: fixed;
   top: 0;
   width: 240px;
+  height: auto;
   z-index: -1;
 }
 /* Hide secondary menus when the tray is horizontal. */

@@ -163,11 +163,7 @@ function devconnect_drush_set_authentication() {
   }
 
   $old_user = $config['user'];
-  try {
-    $old_pass = Apigee\Util\Crypto::decrypt($config['pass']);
-  } catch (Apigee\Exceptions\ParameterException $e) {
-    $old_pass = '';
-  }
+  $old_pass = $config['pass'];
   $changes = array();
   if ($username != $old_user) {
     $changes[] = "user changed from “$old_user” to “$username”";
@@ -199,14 +195,7 @@ function devconnect_drush_test_connection() {
     return;
   }
   $user = $config['user'];
-  $pass_encrypted = $config['pass'];
-  $pass = FALSE;
-  if ($pass_encrypted) {
-    try {
-      $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
-    }
-    catch (Apigee\Exceptions\ParameterException $e) {}
-  }
+  $pass = $config['pass'];
   if (empty($user) || $user == 'fixme' || empty($pass) || $pass == 'secret') {
     drush_print(dt('Username/password have not yet been set.'));
     return;
@@ -245,14 +234,7 @@ function devconnect_drush_get_authentication() {
     return;
   }
   $user = $config['user'];
-  $pass_encrypted = $config['pass'];
-  $pass = FALSE;
-  if ($pass_encrypted) {
-    try {
-      $pass = Apigee\Util\Crypto::decrypt($pass_encrypted);
-    }
-    catch (Apigee\Exceptions\ParameterException $e) {}
-  }
+  $pass = $config['pass'];
   if (empty($user) || $user == 'fixme' || empty($pass) || $pass == 'secret') {
     drush_print(dt('Username/password have not yet been set.'));
   }

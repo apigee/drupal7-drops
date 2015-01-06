@@ -5,7 +5,7 @@ class SmartDocsRevisionController extends DrupalDefaultEntityController {
   private $SmartDocsRevision;
 
   public function __construct($entity_type) {
-    $config = devconnect_default_api_client();
+    $config = devconnect_default_org_config();
     $this->SmartDocsRevision = new Apigee\DocGen\DocGenRevision($config);
   }
 
@@ -13,7 +13,7 @@ class SmartDocsRevisionController extends DrupalDefaultEntityController {
 
   }
 
-  public function load($ids = array(), $conditions = array('show_private' => FALSE)) {
+  public function load($ids = array(), $conditions = array()) {
 
   }
 

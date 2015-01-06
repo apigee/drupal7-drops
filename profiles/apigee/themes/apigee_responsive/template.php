@@ -356,6 +356,21 @@ function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @param $form
+ *   The form.
+ * @param $form_state
+ *   The form state.
+ */
+function apigee_responsive_form_devconnect_monetization_plan_form_alter(&$form, &$form_state) {
+  if (isset($form['comparisons'])) {
+    // Add comparison template javascript
+    $form['#attached']['js'][] = drupal_get_path('theme', 'apigee_responsive') . '/js/monetization/devconnect_monetization_plan_detail_comparison.js';
+  }
+}
+
+/**
  * Implements theme_developer_app_tabs().
  */
 function apigee_responsive_developer_app_tabs(&$vars, $apps = NULL) {

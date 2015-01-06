@@ -44,7 +44,7 @@ define('DEVPORTAL_UPDATE_SEVERITY_ERROR', 2);
 function devportal_updates_menu() {
   $items = array();
   $items['admin/config/devconnect/devportal_updates'] = array(
-    'title' => t('Dev Portal updates'),
+    'title' => 'Dev Portal updates',
     'description' => 'Administer Dev Portal Updates.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devportal_updates_admin_settings'),
@@ -53,7 +53,7 @@ function devportal_updates_menu() {
   );
 
   $items['admin/config/devconnect/devportal_updates/check'] = array(
-    'title' => t('Check for Dev Portal updates'),
+    'title' => 'Check for Dev Portal updates',
     'description' => 'Manually check for Dev Portal updates.',
     'page callback' => 'devportal_updates_force_check',
     'access arguments' => array('administer site configuration'),

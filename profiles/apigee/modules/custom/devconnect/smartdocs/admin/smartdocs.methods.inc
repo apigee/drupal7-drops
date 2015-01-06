@@ -3,10 +3,10 @@
 /**
  * Adds a method to a given resource
  *
- * @param $form
- * @param $form_state
- * @param $mid
- * @param $rev
+ * @param array $form
+ * @param array $form_state
+ * @param int $mid
+ * @param int $rev
  * @param $res
  * @return mixed
  */
@@ -30,15 +30,15 @@ function smartdocs_method_add($form, $form_state, $mid, $rev, $res) {
   drupal_set_breadcrumb($breadcrumb);
 
   $form['model'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $model,
   );
   $form['rev'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $rev,
   );
   $form['res'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $res,
   );
   $form['display_name'] = array(
@@ -244,9 +244,19 @@ function smartdocs_method_edit($form, $form_state, $mid, $rev, $res, $methodId) 
   $model = entity_get_controller('smartdocs_model')->loadSingle($mid);
   drupal_set_title('Edit Method in ‘' . $model['displayName'] . '’ model');
   $version = variable_get('local_asset_version', '3');
-  drupal_add_js(drupal_get_path('module', 'smartdocs') . '/local/js/v' . $version . '/codemirror.js');
-  drupal_add_js(drupal_get_path('module', 'smartdocs') . '/local/js/v' . $version . '/codemirror_javascript.js');
-  drupal_add_css(drupal_get_path('module', 'smartdocs') . '/local/css/v' . $version . '/codemirror.css');
+
+  $my_path = drupal_get_path('module', 'smartdocs');
+  $form['#attached'] = array(
+    'css' => array(
+      $my_path . '/local/css/v' . $version . '/codemirror.css',
+    ),
+    'js' => array(
+      $my_path . '/local/js/v' . $version . '/codemirror.js',
+      $my_path . '/local/js/v' . $version . '/codemirror_javascript.js',
+      $my_path . '/js/smartdocs.js',
+    ),
+  );
+
   $resource = entity_get_controller('smartdocs_resource')->loadResource($mid, $rev, $res);
   $method = entity_get_controller('smartdocs_method')->getMethod($mid, $rev, $res, $methodId);
 
@@ -261,28 +271,32 @@ function smartdocs_method_edit($form, $form_state, $mid, $rev, $res, $methodId) 
   drupal_set_breadcrumb($breadcrumb);
 
   // We need to evaluate if there is node information.
-  $nid = db_query('SELECT nid FROM {smartdata} WHERE method = :method', array(':method' => $method['id']))->fetchField();
+  $nid = db_select('smartdata', 's')
+    ->fields('s', array('nid'))
+    ->condition('method', $method['id'])
+    ->execute()
+    ->fetchField();
 
   if (isset($nid)) {
     $form['node'] = array(
-      '#type' => 'hidden',
+      '#type' => 'value',
       '#value' => node_load($nid)
     );
   }
   $form['model'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $model
   );
   $form['rev'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $rev
   );
   $form['res'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $res
   );
   $form['method'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $method
   );
   if (isset($method['displayName'])) {
@@ -379,12 +393,16 @@ function smartdocs_method_edit($form, $form_state, $mid, $rev, $res, $methodId) 
         break;
       case 'body-example':
         $output = (isset($method['body']['sample'])) ? $method['body']['sample'] : '';
+
         $form['field_' . $type][$type] = array(
           '#type' => 'textarea',
           '#title' => $display,
           '#default_value' => $output,
         );
-        drupal_add_js(array('smartdocs' => array($type => strtolower($type))), 'setting');
+        $form['field_' . $type][$type]['#attached']['js'][] = array(
+          'data' => array('smartdocs' => array($type => strtolower($type))),
+          'type' => 'setting',
+        );
         break;
       default:
         if ($type == 'parameters') {
@@ -408,7 +426,10 @@ function smartdocs_method_edit($form, $form_state, $mid, $rev, $res, $methodId) 
           '#title' => $display,
           '#default_value' => $output,
         );
-        drupal_add_js(array('smartdocs' => array($type => strtolower($type))), 'setting');
+        $form['field_' . $type][$type]['#attached']['js'][] = array(
+          'data' => array('smartdocs' => array($type => strtolower($type))),
+          'type' => 'setting',
+        );
         break;
     }
     $example = smartdocs_method_examples($type);
@@ -429,8 +450,6 @@ function smartdocs_method_edit($form, $form_state, $mid, $rev, $res, $methodId) 
     '#submit' => array('smartdocs_method_edit_submit'),
     '#value' => t('Update Method'),
   );
-
-  drupal_add_js(drupal_get_path('module', 'smartdocs') . '/js/smartdocs.js');
 
   return $form;
 }
@@ -585,7 +604,7 @@ function smartdocs_update_method_node($method, $mid, $smart_mid, $smart_field, $
   $tag_vid = taxonomy_vocabulary_machine_name_load($smart_mid . '_tags')->vid;
 
   // create tag if it doesn't exist
-  if (is_array($method['tags']) && !empty($method['tags'])) {
+  if (array_key_exists('tags', $method) && is_array($method['tags']) && !empty($method['tags'])) {
     foreach ($method['tags'] as $tag) {
       $tags[] = $tag;
       $term = taxonomy_get_term_by_name($tag, $smart_mid . '_tags');
@@ -667,7 +686,7 @@ function smartdocs_update_method_node($method, $mid, $smart_mid, $smart_field, $
     $tags = array();
     $auths = array();
 
-    if (is_array($method['tags']) && !empty($method['tags'])) {
+    if (array_key_exists('tags', $method) && is_array($method['tags']) && !empty($method['tags'])) {
       foreach ($method['tags'] as $tag) {
         $terms = taxonomy_get_term_by_name($tag, $smart_mid . '_tags');
         foreach ($terms as $term) {
@@ -677,7 +696,7 @@ function smartdocs_update_method_node($method, $mid, $smart_mid, $smart_field, $
         }
       }
     }
-    if (is_array($method['authSchemes']) && !empty($method['authSchemes'])) {
+    if (array_key_exists('authSchemes', $method) && is_array($method['authSchemes']) && !empty($method['authSchemes'])) {
       foreach ($method['authSchemes'] as $scheme) {
         $terms = taxonomy_get_term_by_name($scheme, $smart_mid . '_auth_schemes');
         foreach ($terms as $term) {

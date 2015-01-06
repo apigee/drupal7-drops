@@ -4,9 +4,9 @@ core = 7.x
 
 dependencies[] = libraries (>=2.0)
 
-; Information added by Drupal.org packaging script on 2014-01-23
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2014-12-23
+version = "7.x-1.5"
 core = "7.x"
 project = "navbar"
-datestamp = "1390444729"
+datestamp = "1419363481"
 

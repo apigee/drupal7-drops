@@ -51,7 +51,7 @@ function apigee_responsive_analytics_form($form, $form_state, $app) {
     '#type' => 'textfield',
     '#title' => t('From'),
     '#size' => 20,
-    '#default_value' => '07/02/2013 00:00 UTC',
+    '#default_value' => gmdate('m/d/Y H:i', strtotime("-1 day")) . ' UTC',
     '#attributes' => array(
       'class' => array(
         'pickadate',
@@ -91,7 +91,7 @@ function apigee_responsive_analytics_form($form, $form_state, $app) {
   );
   $values = array(
     'metric' => 'total_response_time',
-    'end' => gmdate('m/d/Y H:i', time()) . ' UTC',
+    'end' => $form['header']['date_to']['#default_value'],
     'start' => $form['header']['date_from']['#default_value'],
     'unit' => 'hour',
   );
@@ -147,17 +147,18 @@ function _apigee_responsive_render_analytics_json($form, $form_state, $values) {
     'series' => array(),
   );
 
-  $series = $my_data['default_datapoints'];
+
   $app = $form['header']['submit']['#data']['app_name'];
   $envs = array();
 
   foreach($my_data['datapoints'][$app] as $env => $data) {
+    $_series = $my_data['default_datapoints'];
     $envs[] = $env;
     foreach($data as $time => $point) {
-      $series[$time] = $point;
+      $_series[$time] = $point;
     }
+    $series[] = array('name' => $app, 'data'=>array_values($_series));
   }
-
   // Step across X-axis labels if there are too many.
   $step = 1;
   if (count($my_data['time_points']) > DEVCONNECT_ANALYTICS_MAX_XAXIS_LINES) {

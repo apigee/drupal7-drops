@@ -1,48 +1,48 @@
 <?php
 /**
  * @file
- *  Augments Drupal's basic user functionality to handle extra
- *  API-interfacing functionality.
+ * Augments Drupal's basic user functionality to handle extra
+ * API-interfacing functionality.
  */
 
-module_load_include('php', 'devconnect_user', 'controllers/DeveloperController');
-module_load_include('php', 'devconnect_user', 'entities/DeveloperEntity');
-module_load_include('inc', 'devconnect_user', 'devconnect_user.sync');
+require_once(__DIR__ . '/controllers/DeveloperController.php');
+require_once(__DIR__ . '/entities/DeveloperEntity.php');
 
-use Apigee\Util\ErrorHandling;
+require_once(__DIR__ . '/devconnect_user.sync.inc');
+require_once(__DIR__ . '/devconnect_user.admin.inc');
+require_once(__DIR__ . '/devconnect_user.tokens.inc');
+require_once(__DIR__ . '/devconnect_user.user.inc');
+
+define('DEVCONNECT_USER_ASYNC_MAX_RETRIES', 5);
 
 /**
  * Implements hook_permission().
- *
- * @return array
  */
 function devconnect_user_permission() {
   return array(
     "administer devconnect_user settings" => array(
       "title" => t("Administer DevConnect Developers."),
-      "description" => t("Perform administration tasks for Apigee DevConnect Developers.")
-    )
+      "description" => t("Perform administration tasks for Apigee DevConnect Developers."),
+    ),
   );
 }
 
 /**
  * Implements hook_menu().
- *
- * @return array
  */
 function devconnect_user_menu() {
   $items = array();
   $items['admin/people/sync'] = array(
-    'title' => t('Dev Portal Developer Sync'),
+    'title' => 'Dev Portal Developer Sync',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_sync_confirm_form'),
     'access arguments' => array('administer users'),
     'type' => MENU_LOCAL_TASK,
     'menu_name' => 'api_products',
-    'file' => 'devconnect_user.sync.inc'
+    'file' => 'devconnect_user.sync.inc',
   );
   $items['admin/config/devconnect/user-settings'] = array(
-    'title' => t('Dev Portal User Settings'),
+    'title' => 'Dev Portal User Settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_settings_form'),
     'access arguments' => array('administer site configuration'),
@@ -50,31 +50,50 @@ function devconnect_user_menu() {
     'file' => 'devconnect_user.admin.inc',
   );
   $items['admin/config/devconnect/user-attributes'] = array(
-    'title' => t('Dev Portal User Attributes'),
+    'title' => 'Dev Portal User Attributes',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_attributes_form'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'devconnect_user.admin.inc',
   );
+
+  $items['developer-queue/retry/%'] = array(
+    'title' => 'Retry Queue Item',
+    'page callback' => 'devconnect_user_queue_retry',
+    'page arguments' => array(2),
+    'access arguments' => array('administer devconnect_user settings'),
+    'type' => MENU_CALLBACK
+  );
+
+  $items['developer-queue/delete/%'] = array(
+    'title' => 'Delete Queue Item',
+    'page callback' => 'devconnect_user_queue_delete',
+    'page arguments' => array(2),
+    'access arguments' => array('administer devconnect_user settings'),
+    'type' => MENU_CALLBACK
+  );
+
+
   return $items;
 }
 
 /**
- * Implements hook_user_login
+ * Implements hook_module_implements_alter().
+ *
+ * Removes logintoboggan's implementation of hook_form_FORM_ID_alter()
+ * for user_register_form, which causes all kinds of issues.
+ *
+ * @see devconnect_user_form_alter for further comments on this bizarre dance.
  */
-function devconnect_user_user_login(&$edit, $account) {
-  if (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset') {
-    if ((bool) variable_get('apigee_enable_redirect_path', 0)) {
-      drupal_goto(variable_get('apigee_user_redirect_path', ''));
-    }
+function devconnect_user_module_implements_alter(&$implementations, $hook) {
+  if (($hook == 'form_user_register_form_alter' || $hook == 'form_alter') && array_key_exists('logintoboggan', $implementations)) {
+    unset($implementations['logintoboggan']);
   }
 }
 
 /**
- * Implements hook_entity_info();
- *
- * @return array
+ * Implements hook_entity_info().
  */
 function devconnect_user_entity_info() {
   $info = array(
@@ -89,27 +108,34 @@ function devconnect_user_entity_info() {
 
 /**
  * Implements hook_form_alter().
- *
- * @param $form
- * @param $form_state
- * @param $form_id
  */
 function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
+
+  // In hook_module_implements_alter() above, we removed
+  // logintoboggan_form_alter() so that we could also remove
+  // logintoboggan_form_user_register_form_alter(). (This is due to the way
+  // Drupal handles drupal_alter() with multiple hooks.) We must now reinstate
+  // logintoboggan_form_alter() if it exists.
+  if (function_exists('logintoboggan_form_alter')) {
+    logintoboggan_form_alter($form, $form_state, $form_id);
+  }
+
   switch ($form_id) {
     case 'user_login':
       $form['name']['#attributes']['autocomplete'] = 'off';
       $form['pass']['#attributes']['autocomplete'] = 'off';
       break;
+
     case 'user_profile_form':
 
       if ($form['#user_category'] != 'account' && $form['#user_category'] != 'register') {
         return;
       }
 
-      // Breadcrumb navigation
+      // Breadcrumb navigation.
       $user = $form['#user'];
-      // Determine nicely-displayable user name
-      $user_name = $user->name; // default value
+      // Determine nicely-displayable user name.
+      $user_name = $user->name; // default value.
       if (property_exists($user, 'field_first_name') && property_exists($user, 'field_last_name')) {
         if (isset($user->field_first_name[LANGUAGE_NONE][0]['value']) && isset($user->field_last_name[LANGUAGE_NONE][0]['value'])) {
           $first_name = $user->field_first_name[LANGUAGE_NONE][0]['value'];
@@ -121,7 +147,7 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       }
       $breadcrumb = array(
         t('Home') => NULL,
-        $user_name => 'user'
+        $user_name => 'user',
       );
       drupal_set_title(t('Edit Profile'));
       drupal_set_breadcrumb($breadcrumb);
@@ -129,12 +155,12 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       $tnc_url = _devconnect_user_get_tnc_url($form['#user']);
       if ($tnc_url == 'legal' && module_exists('legal')) {
         if (isset($form['field_terms_and_conditions'])) {
-          unset ($form['field_terms_and_conditions']);
+          unset($form['field_terms_and_conditions']);
         }
       }
 
       // Email address is now immutable, to keep it in line with
-      // KMS product requirements.
+      // Edge product requirements.
       $form['account']['mail']['#disabled'] = TRUE;
       $form['account']['mail']['#description'] = t('All emails from the system will be sent to this address.');
       $form['account']['mail']['#title'] = str_replace('E-mail', 'Email', $form['account']['mail']['#title']);
@@ -157,6 +183,10 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       break;
 
     case 'user_register_form':
+      $account_weight = (array_key_exists('#weight', $form['account']) ? $form['account']['#weight'] : -10);
+      $form['field_first_name']['#weight'] = $account_weight - 2;
+      $form['field_last_name']['#weight'] = $account_weight - 1;
+
       drupal_add_css(drupal_get_path('module', 'devconnect_user') . '/devconnect_user.css',
         array('group' => CSS_THEME, 'every_page' => TRUE)
       );
@@ -164,7 +194,7 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       $tnc_url = _devconnect_user_get_tnc_url($form['#user']);
       if ($tnc_url == 'legal' && module_exists('legal')) {
         if (isset($form['field_terms_and_conditions'])) {
-          unset ($form['field_terms_and_conditions']);
+          unset($form['field_terms_and_conditions']);
         }
       }
       else {
@@ -173,25 +203,13 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
         $form['field_terms_and_conditions'][LANGUAGE_NONE]['#title'] = t('I agree to the <a href="@url" target="_blank">Terms of Use</a>', array('@url' => $tnc_url));
       }
       break;
-  }
-}
 
-/**
- * Implements hook_variable_info().
- *
- * @param array $options
- * @return array
- */
-function devconnect_user_variable_info($options = array()) {
-  $variables['devconnect_user_tnc_url'] = array(
-    'type' => 'string',
-    'title' => t('Terms & Conditions URL'),
-    'default' => _devconnect_user_get_tnc_url(),
-    'description' => t('The URL of the Terms & Conditions page. Omit hostname and leading slash.'),
-    'required' => TRUE,
-    'group' => 'devconnect'
-  );
-  return $variables;
+    case 'logintoboggan_main_settings':
+      // Since we bypass logintoboggan's user-registration handling, it makes
+      // no sense to display its options, so we hide them here.
+      $form['registration']['#access'] = FALSE;
+      break;
+  }
 }
 
 /**
@@ -201,8 +219,8 @@ function devconnect_user_variable_info($options = array()) {
  * If not, checks to see if any custom modules implement hook_tnc_url().
  * Finally, if neither of the above is true, pulls value from Drupal variable.
  *
- * @param null|stdClass $user
- * @return string
+ * @param null|stdClass $user User account to check for, if any.
+ * @return string URL of terms-and-conditions page.
  */
 function _devconnect_user_get_tnc_url($user = NULL) {
   $tnc_url = NULL;
@@ -224,7 +242,16 @@ function _devconnect_user_get_tnc_url($user = NULL) {
   return $tnc_url;
 }
 
-
+/**
+ * Determines a user entity value for a given field key.
+ *
+ * @param string $field Field key to search for.
+ * @param array $edit Array of submitted form values.
+ * @param stdClass $account Fully-populated User object.
+ * @param mixed $default Default value to be returned if field does not exist.
+ *
+ * @return mixed
+ */
 function _devconnect_user_get_field_value($field, array $edit, stdClass $account, $default = '') {
 
   $edit_value = $default;
@@ -271,140 +298,26 @@ function _devconnect_user_get_field_value($field, array $edit, stdClass $account
   return $edit_value == $default ? $account_value : $edit_value;
 }
 
+
 /**
- * Implements hook_user_presave().
+ * Guarantees that a given field value is displayable as a string.
  *
- * @param $edit
- * @param $account
- * @param $category
+ * @param mixed $field_value Value to be stringified.
+ *
+ * @return string String representation of field value.
  */
-function devconnect_user_user_presave(&$edit, $account, $category) {
-  if (isset($edit['already_in_kms']) && $edit['already_in_kms'] === TRUE) {
-    unset($edit['already_in_kms']);
-    return;
-  }
-  // Don't update user 1
-  if (is_object($account) && property_exists($account, 'uid') && $account->uid == 1) {
-    return;
-  }
-  $config =& devconnect_get_org_settings();
-  $org = $config['org'];
-  if (empty($org) || $org == 'fixme' || (empty($account->mail) && empty($edit['mail']))) {
-    return;
-  }
-
-  $first_name = _devconnect_user_get_field_value('field_first_name', $edit, $account);
-  $last_name = _devconnect_user_get_field_value('field_last_name', $edit, $account);
-  $mail = _devconnect_user_get_field_value('mail', $edit, $account);
-  $name = _devconnect_user_get_field_value('name', $edit, $account);
-  $orig_mail = (empty($account->mail) ? $edit['mail'] : $account->mail);
-
-  /** @var Drupal\devconnect_user\DeveloperEntity $entity */
-  $entity = entity_get_controller('developer')->loadIfExists($orig_mail);
-  if ($entity) {
-    $action = 'update';
-  }
-  else {
-    $entity = entity_create('developer', array());
-    $action = 'create';
-  }
-  $entity->email = $mail;
-  $entity->userName = $name;
-  $entity->firstName = $first_name;
-  $entity->lastName = $last_name;
-
-  $fields = variable_get('devconnect_user_attributes_to_persist_in_kms', array());
-  foreach ($fields as $field_name => $field_specs) {
-    $field_full_name = 'field_' . $field_name;
-    if ($field_specs['selected']) {
-      $att_name = $field_specs['kms_internal_attribute_name'];
-
-      $field_value = _devconnect_user_get_field_value($field_full_name, $edit, $account, NULL);
-
-      if (strlen($field_value) === 0) {
-        $set_value = TRUE;
-        $att_value = NULL;
-        switch ($field_specs['empty_action']) {
-          case 'null':
-            break;
-          case 'empty':
-            $att_value = '';
-            break;
-          case 'default':
-            $field = field_info_instance('user', $field_full_name, 'user');
-            $default_value = isset($field['default_value'][0]['value']) ? $field['default_value'][0]['value'] : NULL;
-            if ($field_specs['convert_to_boolean_string_value']) {
-              $default_value = (bool) $default_value;
-            }
-            $att_value = _devconnect_user_scrub_attribute($default_value);
-            break;
-          case 'avoid': //Attribute is not to be sent
-          default:
-            $set_value = FALSE;
-            break;
-        }
-        if ($set_value) {
-          $entity->attributes[$att_name] = $att_value;
-        }
-      }
-      else {
-        $entity->attributes[$att_name] = _devconnect_user_scrub_attribute($field_value);
-      }
-    }
-  }
-
-  // Bring in any attributes that were defined by other hook_user_presave() implementations
-  foreach ($edit as $key => $field_value) {
-    if (substr($key, 0, 10) == 'attribute_') {
-      $entity->attributes[substr($key, 10)] = _devconnect_user_scrub_attribute($field_value);
-    }
-  }
-
-  if (array_key_exists('status', $edit)) {
-    $status = (bool) $edit['status'];
-  }
-  elseif (property_exists($account, 'status')) {
-    $status = (bool) $account->status;
-  }
-  else {
-    $status = FALSE;
-  }
-  $entity->status = $status ? 'active' : 'inactive';
-
-  $saved = entity_save('developer', $entity);
-  $results = devconnect_get_debug_data();
-  if (!$saved) {
-    devconnect_default_org_config()->logger->error(print_r($results, TRUE));
-
-    if (user_access('view devconnect errors')) {
-      $summary = t('An error occurred while trying to @action this user. Please try again later.', array('@action' => $action));
-      $detail = t('Status: @code @status', array(
-          '@code' => $results['code'],
-          '@status' => $results['code_status']
-        )) . "\n" . print_r($results, TRUE);
-      devconnect_notify(ErrorHandling::CODE_USER_CANNOT_BE_SAVED, $summary, $detail);
-    }
-  }
-
-  foreach (module_implements('devconnect_user_save') as $module) {
-    $function = $module . '_devconnect_user_save';
-    $function($results, $edit, $account);
-  }
-  devconnect_default_org_config()->logger->debug(print_r($results, TRUE));
-}
-
 function _devconnect_user_scrub_attribute($field_value) {
   if (is_object($field_value) || is_array($field_value)) {
     $field_value = json_encode($field_value);
   }
-  // Booleans are saved as their string value
+  // Booleans are saved as their string value.
   elseif ($field_value === TRUE) {
     $field_value = 'true';
   }
   elseif ($field_value === FALSE) {
     $field_value = 'false';
   }
-  // Force ints/floats to string too
+  // Force ints/floats to string too.
   else {
     $field_value = (string) $field_value;
   }
@@ -412,69 +325,13 @@ function _devconnect_user_scrub_attribute($field_value) {
 }
 
 /**
- * Implements hook_user_delete().
+ * Returns DeveloperID for a user.
  *
- * @param $account
- */
-function devconnect_user_user_delete($account) {
-  // Don't try to delete users from KMS if org hasn't been configured yet.
-  $config =& devconnect_get_org_settings();
-  if (empty($config['org']) || $config['org'] == 'fixme') {
-    return;
-  }
-  // Don't update anonymous or user 1
-  if (property_exists($account, 'uid') && $account->uid < 2) {
-    return;
-  }
-
-  $log_level = 'debug';
-  try {
-    entity_delete('developer', $account->mail);
-  } catch (Exception $e) {
-    $log_level = 'error';
-  }
-  $results = devconnect_get_debug_data();
-  devconnect_default_org_config()->logger->$log_level(print_r($results, TRUE));
-  module_invoke_all('devconnect_user_delete', $results, $account);
-}
-
-
-/**
- * Treat all user pages as not administrative
- *
- * @param array $paths
- */
-function devconnect_user_admin_paths_alter(&$paths) {
-  $paths['user/*'] = FALSE;
-}
-
-/**
- * Implements hook_redirect_alter
- *
- * @param stdClass $redirect
- */
-function devconnect_user_redirect_alter(&$redirect) {
-  global $user;
-  // Only act if user token in redirect path
-  if (!empty($redirect->redirect) && strpos($redirect->redirect, '[user') !== FALSE) {
-    if (!user_is_logged_in()) {
-      // Bounce via login back to source path
-      $redirect->redirect = 'user/login';
-      $redirect->redirect_options['query'] = array('destination' => $redirect->source);
-    }
-    else {
-      // Apply user tokens to redirect path
-      $redirect->redirect = token_replace($redirect->redirect, array('user' => $user));
-    }
-  }
-}
-
-/**
  * Checks to see if developer_id has been set in $_SESSION. If not, we look
  * it up (in local cache or in Edge) and set it.
  *
- * @param stdClass $user
- * @return string|bool
+ * @param stdClass $user User to query for DeveloperID
+ * @return string|bool DeveloperID for user, or FALSE if not found.
  */
 function devconnect_user_get_developer_id($user) {
   $developer_id = FALSE;
@@ -484,7 +341,7 @@ function devconnect_user_get_developer_id($user) {
 
   if ($_SESSION['developer_id'] === NULL) {
     $mail = $user->mail;
-    // First, check local cache
+    // First, check local cache.
     $query = db_select('dc_dev', 'd');
     $query->innerJoin('users', 'u', 'u.uid = d.uid');
     $developer_id = $query->condition('u.mail', $mail)
@@ -492,7 +349,7 @@ function devconnect_user_get_developer_id($user) {
       ->execute()
       ->fetchField();
     if (empty($developer_id)) {
-      // Not found in local cache,
+      // Not found in local cache.
       $controller = entity_get_controller('developer');
       $entity = $controller->loadIfExists($mail);
       if (!empty($entity)) {
@@ -505,17 +362,21 @@ function devconnect_user_get_developer_id($user) {
 }
 
 /**
- * Implement hook_form_FORM_ID_alter() for user_admin_account.
- *
- * @param array $form
- * @param array $form_state
+ * Implements hook_form_FORM_ID_alter() for user_admin_account().
  */
 function devconnect_user_form_user_admin_account_alter(&$form, &$form_state) {
-  // Add selectable developers to synch up to KMS
+  // Add selectable developers to synch up to Edge.
   $form['options']['operation']['#options']['synchup_devconnect'] = t('Sync Developer With DevConnect');
   $form['#submit'][] = 'devconnect_user_form_user_admin_account_alter_submit';
 }
 
+/**
+ * Submit handler for Developer Sync.
+ *
+ * @param array $form
+ * @param array $form_state
+ * @throws Exception
+ */
 function devconnect_user_form_user_admin_account_alter_submit(&$form, &$form_state) {
 
   switch ($form_state['values']['operation']) {
@@ -555,7 +416,7 @@ function devconnect_user_form_user_admin_account_alter_submit(&$form, &$form_sta
         'items' => $list_items,
         'title' => NULL,
         'type' => 'ul',
-        'attributes' => array()
+        'attributes' => array(),
       );
 
       drupal_set_message(theme('item_list', $list_params), 'status');
@@ -564,126 +425,11 @@ function devconnect_user_form_user_admin_account_alter_submit(&$form, &$form_sta
 }
 
 /**
- * Implements hook_token_info().
- *
- * @return array
- */
-function devconnect_user_token_info() {
-  $type = array(
-    'name' => t('Developer'),
-    'description' => t('Tokens related to developers'),
-    'needs-data' => 'developer'
-  );
-  $dev['apps'] = array(
-    'name' => t('Apps'),
-    'description' => t('List of all Apps owned by this developer.')
-  );
-  $dev['uid'] = array(
-    'name' => t('Developer User ID'),
-    'description' => t('Drupal User ID (uid) of this developer.')
-  );
-  $dev['email'] = array(
-    'name' => t('Developer Email'),
-    'description' => t('Email address associated with this developer.')
-  );
-  $dev['developerId'] = array(
-    'name' => t('Developer ID'),
-    'description' => t('Developer ID (internal to KMS) for this developer.')
-  );
-  $dev['firstName'] = array(
-    'name' => t('First Name'),
-    'description' => t('Developer’s first name.')
-  );
-  $dev['lastName'] = array(
-    'name' => t('Last Name'),
-    'description' => t('Developer’s last name.')
-  );
-  $dev['userName'] = array(
-    'name' => t('User Name'),
-    'description' => t('Developer’s Drupal username.')
-  );
-  $dev['status'] = array(
-    'name' => t('Status'),
-    'description' => t('Status of this developer.')
-  );
-  /*
-  $dev['attributes'] = array(
-    'name' => t('Attributes'),
-    'description' => t('Custom attributes for this developer.')
-  );
-  */
-  $dev['createdAt'] = array(
-    'name' => t('Created At'),
-    'description' => t('Timestamp at which the developer profile was created in KMS.')
-  );
-  $dev['modifiedAt'] = array(
-    'name' => t('Modified At'),
-    'description' => t('Timestamp at which the developer profile was modified in KMS.')
-  );
-  $dev['devUrl'] = array(
-    'name' => t('Developer Profile URL'),
-    'description' => t('URL on this site where the developer’s profile may be viewed.')
-  );
-
-  return array(
-    'types' => array('developer' => $type),
-    'tokens' => array('developer' => $dev),
-  );
-}
-
-/**
- * Implements hook_tokens().
- *
- * @param string $type
- * @param array $tokens
- * @param array $data
- * @param array $options
- *
- * @return array
- */
-function devconnect_user_tokens($type, array $tokens, array $data = array(), array $options = array()) {
-  if ($type != 'developer' || empty($data['developer'])) {
-    return array();
-  }
-  $url_options = array('absolute' => TRUE);
-  if (isset($options['language'])) {
-    $url_options['language'] = $options['language'];
-    $language_code = $options['language']->language;
-  }
-  else {
-    $language_code = NULL;
-  }
-  $sanitize = !empty($options['sanitize']);
-  $dev = $data['developer'];
-  $replacements = array();
-  foreach ($tokens as $name => $original) {
-    switch ($name) {
-      case 'devUrl':
-        $replacements[$original] = url('user/' . $dev['uid'], $url_options);
-        break;
-      // Timestamps
-      case 'createdAt':
-      case 'modifiedAt':
-        $replacements[$original] = format_date(floor($dev[$name] / 1000), 'medium', '', NULL, $language_code);;
-        break;
-      // Arrays of strings
-      case 'apps':
-        $replacements[$original] = $sanitize ? check_plain(join(', ', $dev[$name])) : join(', ', $dev[$name]);
-        break;
-      default:
-        $replacements[$original] = $sanitize ? check_plain($dev[$name]) : $dev[$name];
-        break;
-    }
-  }
-
-  return $replacements;
-}
-
-/**
  * Given a Drupal user object, saves the corresponding developer entity.
  *
- * @param stdClass $user
- * @return string
+ * @param stdClass $user User to be saved as a Developer entity.
+ *
+ * @return string Message indicating success or failure.
  */
 function _devconnect_user_save_entity($user) {
   $account = user_load($user->uid);
@@ -691,7 +437,7 @@ function _devconnect_user_save_entity($user) {
     'email' => $account->mail,
     'userName' => $account->name,
     'status' => ($account->status ? 'active' : 'inactive'),
-    'attributes' => array()
+    'attributes' => array(),
   );
   if (property_exists($account, 'field_first_name') && array_key_exists(LANGUAGE_NONE, $account->field_first_name) && array_key_exists(0, $account->field_first_name[LANGUAGE_NONE]) && array_key_exists('value', $account->field_first_name[LANGUAGE_NONE][0])) {
     $values['firstName'] = $account->field_first_name[LANGUAGE_NONE][0]['value'];
@@ -709,13 +455,21 @@ function _devconnect_user_save_entity($user) {
   try {
     entity_save('developer', $entity);
     $message = 'User ' . $account->name . ' created on server';
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     $message = 'User ' . $account->name . ' not created on server. ' . $e->getMessage()
-      . (function_exists('kpr') ? kpr(devconnect_get_debug_data(), TRUE) : '<pre>' . print_r(devconnect_get_debug_data(), TRUE) . '</pre>');
+      . (function_exists('kprint_r') ? kprint_r(devconnect_get_debug_data(), TRUE) : '<pre>' . print_r(devconnect_get_debug_data(), TRUE) . '</pre>');
   }
   return $message;
 }
 
+/**
+ * Determines if a given email is owned by an org or ops administrator.
+ *
+ * @param string $email Email address to be checked
+ *
+ * @return bool TRUE if email is configured as an org/ops admin.
+ */
 function devconnect_user_is_org_admin($email) {
   static $admins = array();
   if (empty($admins)) {
@@ -740,13 +494,19 @@ function devconnect_user_is_org_admin($email) {
         if (in_array(strtolower($email), $admins)) {
           return TRUE;
         }
-      } catch (Apigee\Exceptions\ResponseException $e) {
+      }
+      catch (Apigee\Exceptions\ResponseException $e) {
       }
     }
   }
   return FALSE;
 }
 
+/**
+ * Finds all role IDs pertaining to administrative roles.
+ *
+ * @return array List of Role IDs
+ */
 function devconnect_user_get_admin_rids() {
   static $rids = NULL;
 
@@ -778,7 +538,8 @@ function devconnect_user_views_api() {
  *
  * Also removes cached references to any of this developer's apps.
  *
- * @param $entity
+ * @param Drupal\devconnect_user\DeveloperEntity $entity
+ *   Developer entity to be deleted from cache.
  */
 function devconnect_user_delete_from_cache(Drupal\devconnect_user\DeveloperEntity $entity) {
   $developer_ids = $uid = NULL;
@@ -797,10 +558,12 @@ function devconnect_user_delete_from_cache(Drupal\devconnect_user\DeveloperEntit
     $developer_ids = array($entity->developerId);
   }
   if (!empty($developer_ids)) {
-    db_delete('dc_dev_attributes')->condition('developer_id', $developer_ids)->execute();
+    db_delete('dc_dev_attributes')
+      ->condition('developer_id', $developer_ids)
+      ->execute();
     db_delete('dc_dev')->condition('developer_id', $developer_ids)->execute();
 
-    // Now delete developer's apps as well
+    // Now delete developer's apps as well.
     if (!empty($uid)) {
       $app_ids = array();
       $result = db_select('dc_dev_app', 'a')
@@ -820,6 +583,50 @@ function devconnect_user_delete_from_cache(Drupal\devconnect_user\DeveloperEntit
   }
 }
 
+function devconnect_user_read_from_cache($criteria = array(), $retrying = FALSE) {
+  $query = db_select('dc_dev', 'd')->fields('d');
+  foreach ($criteria as $name => $value) {
+    $query->condition($name, $value);
+  }
+  $developers = array();
+  $result = $query->execute();
+  while ($row = $result->fetchAssoc()) {
+    $dev = new Drupal\devconnect_user\DeveloperEntity();
+    $dev->developerId = $row['developer_id'];
+    $dev->uid = $row['uid'];
+    $dev->status = $row['status'];
+    $developers[$dev->developerId] = $dev;
+  }
+  if (empty($developers)) {
+    if (!$retrying) {
+      $devs = entity_load('developer');
+      if (count($devs) > 0) {
+        foreach ($devs as $dev) {
+          devconnect_user_write_to_cache($dev);
+        }
+        return devconnect_user_read_from_cache($criteria, TRUE);
+      }
+    }
+    return array();
+  }
+
+  $result = db_select('dc_dev_attributes', 'd')
+    ->fields('d')
+    ->condition('developer_id', array_keys($developers))
+    ->execute();
+  foreach ($result as $row) {
+    $developers[$row->developer_id]->attributes[$row->name] = $row->value;
+  }
+  $result = db_select('dc_dev_companies', 'd')
+    ->fields('d')
+    ->condition('developer_id', array_keys($developers))
+    ->execute();
+  foreach ($result as $row) {
+    $developers[$row->developer_id]->companies[] = $row->company;
+  }
+  return $developers;
+}
+
 /**
  * Writes a developer entity to our internal cache.
  *
@@ -827,8 +634,10 @@ function devconnect_user_delete_from_cache(Drupal\devconnect_user\DeveloperEntit
  * writing, but when $ensure_clean is set to FALSE we can skip this step.
  * In real life this occurs when the table has been freshly truncated.
  *
- * @param $entity
+ * @param Drupal\devconnect_user\DeveloperEntity $entity
+ *   Entity to be written to cache
  * @param bool $ensure_clean
+ *   If TRUE, entity is expunged from cache before writing.
  */
 function devconnect_user_write_to_cache(Drupal\devconnect_user\DeveloperEntity $entity, $ensure_clean = TRUE) {
   if ($ensure_clean) {
@@ -837,12 +646,12 @@ function devconnect_user_write_to_cache(Drupal\devconnect_user\DeveloperEntity $
   $fields = array(
     'developer_id' => $entity->developerId,
     'uid' => intval($entity->uid),
-    'status' => intval($entity->status == 'active')
+    'status' => intval($entity->status == 'active'),
   );
   db_insert('dc_dev')->fields($fields)->execute();
   foreach ($entity->attributes as $name => $value) {
-    // @TODO: Decide either to accept NULL values or skip them
-    // Temporary fix for NULL values not being accepted in DB 
+    // @TODO: Decide either to accept NULL values or skip them.
+    // Temporary fix for NULL values not being accepted in DB.
     if (!isset($value)) {
       continue;
     }
@@ -850,7 +659,7 @@ function devconnect_user_write_to_cache(Drupal\devconnect_user\DeveloperEntity $
       ->fields(array(
         'developer_id' => $entity->developerId,
         'name' => $name,
-        'value' => $value
+        'value' => $value,
       ))
       ->execute();
   }
@@ -898,6 +707,8 @@ function devconnect_user_cron() {
     }
     lock_release(__FUNCTION__ . '_developers');
   }
+
+  devconnect_user_process_queue();
 }
 
 
@@ -905,10 +716,6 @@ function devconnect_user_cron() {
  * Implements hook_menu_local_tasks_alter().
  *
  * Removes the OpenID identities tab
- *
- * @param array $data
- * @param $router_item
- * @param $root_path
  */
 function devconnect_user_menu_local_tasks_alter(&$data, $router_item, $root_path) {
   if (arg(0) == 'user' && array_key_exists('tabs', $data) && is_array($data['tabs'])) {
@@ -922,6 +729,7 @@ function devconnect_user_menu_local_tasks_alter(&$data, $router_item, $root_path
                 unset($data['tabs'][$i]['output'][$j]);
                 $data['tabs'][$i]['count']--;
                 break;
+
               case 'user/%/edit':
                 $data['tabs'][$i]['output'][$j]['#link']['title'] = 'Edit User Profile';
                 break;
@@ -931,4 +739,279 @@ function devconnect_user_menu_local_tasks_alter(&$data, $router_item, $root_path
       }
     }
   }
+}
+
+/**
+ * Kicks off the queue processing for submitting developer info.
+ *
+ * If we are on a non-Windows box and a PHP executable is in the path, we start
+ * an async job to process the queue. Otherwise we attempt to do the job
+ * in-process.
+ *
+ * Monetization requires that users are processed in Edge in realtime, so we
+ * cannot do this asynchronously when that module is enabled.
+ */
+function devconnect_user_start_queue_process() {
+  if (variable_get('devconnect_user_enable_async', 0) && !module_exists('devconnect_monetization') && ($cli = devconnect_php_cli())) {
+    // Do things asynchronously.
+    if (isset($_SERVER['PRESSFLOW_SETTINGS'])) {
+      $arg = '"' . addslashes($_SERVER['PRESSFLOW_SETTINGS']) . '"';
+      if (isset($_SERVER['PANTHEON_SITE_NAME']) && isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
+        $arg = ' ' . $_SERVER['PANTHEON_SITE_NAME'] . ' ' . $_SERVER['PANTHEON_ENVIRONMENT'];
+      }
+    }
+    else {
+      $arg = '';
+    }
+
+    $path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'devconnect_user') . '/async/developer-queue.php';
+    $command = "$cli $path $arg > /dev/null 2>&1 &";
+    exec($command);
+  }
+  else {
+    // Sigh. Must do things in-process.
+    devconnect_user_process_queue();
+  }
+}
+
+/**
+ * Go through the developer queue and process each pending item.
+ */
+function devconnect_user_process_queue() {
+  $queue = DrupalQueue::get('developer');
+  while (($item = $queue->claimItem(15)) !== FALSE) {
+    $success = devconnect_user_process_queue_item($item);
+    if ($success === TRUE) {
+      $queue->deleteItem($item);
+    }
+    else {
+      $retries = variable_get('developer_queue_retries_' . $item->item_id, 0);
+      if (function_exists('drush_log')) {
+        if ($retries == 0) {
+          $which = 'first attempt';
+        }
+        else {
+          $which = 'retry #' . $retries;
+        }
+        drush_log(dt('Failed saving developer to Edge (@which)', array('@which' => $which)), 'warning');
+      }
+      if ($retries >= DEVCONNECT_USER_ASYNC_MAX_RETRIES) {
+        variable_del('developer_queue_retries_' . $item->item_id);
+        $queue->deleteItem($item);
+        // Fire off an email.
+        devconnect_user_notify_async_fail($item->data);
+      }
+      else {
+        variable_set('developer_queue_retries_' . $item->item_id, $retries + 1);
+        // Do not release the item, so that retries won't happen for another
+        // 15 seconds.
+      }
+    }
+  }
+}
+
+/**
+ * Menu callback to remove a save request from the queue.
+ *
+ * @param int $item_id
+ */
+function devconnect_user_queue_delete($item_id) {
+  variable_del('developer_queue_retries_' . $item_id);
+  $num_rows = db_delete('queue')->condition('item_id', $item_id)->execute();
+  if ($num_rows) {
+    drupal_set_message(t('Queued developer save request deleted!'));
+  }
+  else {
+    drupal_set_message(t('Queued developer save request not deleted.'), 'warning');
+  }
+  drupal_goto('admin/config/people/developer-save-queue');
+}
+
+/**
+ * Menu callback to retry a queued developer save request.
+ *
+ * @param int $item_id
+ */
+function devconnect_user_queue_retry($item_id) {
+
+  $item = db_select('queue', 'q')
+    ->fields('q')
+    ->condition('name', 'developer')
+    ->condition('item_id', $item_id)
+    ->execute()
+    ->fetchObject();
+
+  if (!$item) {
+    drupal_set_message(t('This queued developer has already been processed.'), 'warning');
+  }
+  elseif ($item->expires != 0) {
+    drupal_set_message(t('This queued developer may already be claimed by another process.'), 'warning');
+  }
+  else {
+    db_update('queue')->fields(array('expire' => time() + 15))->condition('item_id', $item_id)->execute();
+
+    $result = devconnect_user_process_queue_item($item);
+    if ($result === TRUE) {
+      db_delete('queue')->condition('item_id', $item_id)->execute();
+      drupal_set_message(t('Developer was successfully saved to Edge.'));
+    }
+    else {
+      db_update('queue')->fields(array('expire' => 0))->condition('item_id', $item_id)->execute();
+
+      $retries = variable_get('developer_queue_retries_' . $item_id, 0);
+      if ($retries == 0) {
+        $which = t('first attempt');
+      }
+      elseif ($retries >= DEVCONNECT_USER_ASYNC_MAX_RETRIES) {
+        $which = t('final attempt');
+      }
+      else {
+        $which = t('retry #@retries', array('@retries' => $retries));
+      }
+
+      if ($retries >= DEVCONNECT_USER_ASYNC_MAX_RETRIES) {
+        variable_del('developer_queue_retries_' . $item_id);
+        db_delete('queue')->condition('item_id', $item_id)->execute();
+        // Fire off an email.
+        devconnect_user_notify_async_fail($item->data);
+      }
+      else {
+        variable_set('developer_queue_retries_' . $item_id, $retries + 1);
+      }
+      drupal_set_message(t('Failed to save developer to Edge (@which)', array('@which' => $which)), 'error');
+    }
+  }
+  drupal_goto('admin/config/people/developer-save-queue');
+}
+
+/**
+ * Process individual developer queue item, saving it to Edge.
+ *
+ * Returns TRUE for success or array of data for failure. This is a standalone
+ * function here so that it can also be a cron queue callback.
+ *
+ * @param array $item
+ *
+ * @return array|bool TRUE if successful, data array if not.
+ */
+function devconnect_user_process_queue_item($item) {
+  if (is_object($item)) {
+    if (is_array($item->data)) {
+      $item = $item->data;
+    }
+    else {
+      $item = @unserialize($item->data);
+    }
+  }
+  $entity = new Drupal\devconnect_user\DeveloperEntity($item);
+  $saved = entity_save('developer', $entity);
+  $results = devconnect_get_debug_data();
+  if (!$saved) {
+    devconnect_default_org_config()->logger->error(print_r($results, TRUE));
+    return $results;
+  }
+
+  foreach (module_implements('devconnect_user_save') as $module) {
+    $function = $module . '_devconnect_user_save';
+    $function($results, $item['#edit'], $item['#account']);
+  }
+  devconnect_default_org_config()->logger->debug(print_r($results, TRUE));
+  return TRUE;
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ *
+ * Defines the developer queue so that cron can pick up any orphaned tasks.
+ */
+function devconnect_user_cron_queue_info() {
+  $queues['developer'] = array(
+    'worker callback' => 'devconnect_user_process_queue_item',
+    'time' => 15,
+    'skip on cron' => TRUE
+  );
+  return $queues;
+}
+
+/**
+ * Generates the receiver mail addresses.
+ *
+ * @return array Array of email addresses to which notification mails are sent.
+ */
+function _devconnect_user_get_receiver_mails() {
+  $notify_type = variable_get('async_fail_notify_type', 'Custom');
+  $emails = array();
+  $valid_emails = array();
+  switch ($notify_type) {
+    case 'Custom':
+      $emails = explode(',', variable_get('async_fail_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
+      break;
+
+    case 'Both':
+      $emails = explode(',', variable_get('async_fail_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
+      // There is no break here for a reason.
+    case 'Role':
+      $roles = array_unique(variable_get('async_fail_notify_roles', array()));
+      if (!empty($roles)) {
+        $query = db_select('users', 'u');
+        $query->innerJoin('users_roles', 'r', 'u.uid = r.uid');
+        $role_emails = $query->condition('rid', $roles)
+          ->condition('status', 1)
+          ->distinct()
+          ->execute()
+          ->fetchCol();
+        $emails = array_merge($emails, $role_emails);
+      }
+      break;
+  }
+  $emails = array_unique($emails);
+  foreach ($emails as $email) {
+    if (valid_email_address($email) && !preg_match('!^noreply@!', $email)) {
+      $valid_emails[] = $email;
+    }
+  }
+  return $valid_emails;
+}
+
+/**
+ * Implements hook_mail().
+ */
+function devconnect_user_mail($key, &$message, $params) {
+  if ($key == 'async-fail-notify-admin') {
+    $message['subject'] = t('User failed to sync with Edge after @retries retries', array('@retries' => DEVCONNECT_USER_ASYNC_MAX_RETRIES));
+    $body = t('User details as follows:') . "\n\n";
+
+    $body .= "Email: " . $params['email'] . "\n"
+      . "Name: " . $params['firstName'] . ' ' . $params['lastName'] . "\n"
+      . "Username: " . $params['userName'] . "\n"
+      . "Status: " . $params['active'] . "\n"
+      . "User ID: " . $params['#user']['uid'];
+    $message['body'][] = $body;
+  }
+}
+
+/**
+ * Generates the email.
+ */
+function devconnect_user_notify_async_fail($params) {
+  if (function_exists('drush_log')) {
+    drush_log(dt('Sending notification email'));
+  }
+  $emails = _devconnect_user_get_receiver_mails();
+  if (empty($emails)) {
+    if (function_exists('drush_log')) {
+      drush_log(dt('No valid email addresses configured'), 'warning');
+    }
+    return;
+  }
+  $to = implode(', ', $emails);
+  drupal_mail(
+    'devconnect_user',
+    'async-fail-notify-admin',
+    $to,
+    language_default(),
+    $params,
+    variable_get('site_mail', NULL),
+    TRUE
+  );
 }

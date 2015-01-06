@@ -45,11 +45,12 @@ function webform_submission_create($node, $account, $form_state, $is_preview = F
   $submission = (object) array(
     'nid' => $node->nid,
     'uid' => $account->uid,
+    'sid' => NULL,
     'submitted' => REQUEST_TIME,
     'remote_addr' => ip_address(),
     'is_draft' => TRUE,
     'preview' => $is_preview,
-    'serial' => _webform_submission_serial_next_value($node->nid, !$is_preview),
+    'serial' => NULL,
     'data' => webform_submission_data($node, $form_state['values']['submitted']),
   );
   drupal_alter('webform_submission_create', $submission, $node, $account, $form_state);
@@ -121,6 +122,9 @@ function webform_submission_insert($node, $submission) {
       $function($node, $submission);
     }
     $submission->nid = $node->webform['nid'];
+    if (empty($submission->serial)) {
+      $submission->serial = _webform_submission_serial_next_value($node->nid);
+    }
     drupal_write_record('webform_submissions', $submission);
     $is_new = TRUE;
   }
@@ -571,7 +575,7 @@ function theme_webform_submission_resend($variables) {
     $rows[] = array(array('data' => t('This webform is currently not setup to send emails.'), 'colspan' => 3));
   }
   $output = '';
-  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'webform-emails')));
+  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'sticky' => FALSE, 'attributes' => array('id' => 'webform-emails')));
   $output .= drupal_render_children($form);
   return $output;
 }
@@ -642,6 +646,12 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
   if (isset($filters['uid'])) {
     $filters['u.uid'] = $filters['uid'];
     unset($filters['uid']);
+  }
+
+  // If the sid is specified, but there are none, force the query to fail
+  // rather than query on an empty array
+  if (isset($filters['sid']) && empty($filters['sid'])) {
+    $filters['sid'] = 0;
   }
 
   // Build the list of submissions and load their basic information.
@@ -762,17 +772,19 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
  *   The node ID for which submissions are being fetched.
  * @param $uid
  *   Optional; the user ID to filter the submissions by.
+ * @param $is_draft
+ *   Optional; NULL for all, truthy for drafts only, falsy for completed only.
+ *   The default is completed submissions only.
  * @return
  *   An integer value of the number of submissions.
  */
-function webform_get_submission_count($nid, $uid = NULL) {
+function webform_get_submission_count($nid, $uid = NULL, $is_draft = 0) {
   $counts = &drupal_static(__FUNCTION__);
 
   if (!isset($counts[$nid][$uid])) {
     $query = db_select('webform_submissions', 'ws')
       ->addTag('webform_get_submission_count')
-      ->condition('ws.nid', $nid)
-      ->condition('ws.is_draft', 0);
+      ->condition('ws.nid', $nid);
     $arguments = array($nid);
     if ($uid !== NULL) {
       $query->condition('ws.uid', $uid);
@@ -787,6 +799,9 @@ function webform_get_submission_count($nid, $uid = NULL) {
         // submissions.
         $query->condition('ws.sid', 0);
       }
+    }
+    if (isset($is_draft)) {
+      $query->condition('ws.is_draft', $is_draft);
     }
 
     $counts[$nid][$uid] = $query->countQuery()->execute()->fetchField();

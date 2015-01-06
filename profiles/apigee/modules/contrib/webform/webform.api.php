@@ -680,6 +680,41 @@ function hook_webform_results_clear_access($node, $account) {
   return user_access('my additional access', $account);
 }
 
+/**
+ * Overrides the node_access and user_access permission to access and edit
+ * webform components, e-mails, conditions, and form settings.
+ *
+ * Return NULL to defer to other modules. If all implementations defer, then
+ * access to the node's EDIT tab plus 'edit webform components' permission
+ * determines access. To grant access, return TRUE; to deny access, return
+ * FALSE. If more than one implementation return TRUE/FALSE, all must be TRUE
+ * to grant access.
+ *
+ * In this way, access to the EDIT tab of the node may be decoupled from
+ * access to the WEBFORM tab. When returning TRUE, consider all aspects of
+ * access as this will be the only test. For example, 'return TRUE;' would grant
+ * annonymous access to creating webform components, which seldom be desired.
+ *
+ * @see webform_node_update_access().
+ *
+ * @param $node object
+ *   The Webform node to check access on.
+ * @param $account object
+ *   The user account to check access on.
+ * @return boolean|NULL
+ *   TRUE or FALSE if the user can access the webform results, or NULL if
+ *   access should be deferred to other implementations of this hook or
+ *   node_access('update') plus user_access('edit webform components').
+ */
+function hook_webform_update_access($node, $account) {
+  // Allow anyone who can see webform_editable_by_user nodes and who has
+  // 'my webform component edit access' permission to see, edit, and delete the
+  // webform components, e-mails, conditionals, and form settings.
+  if ($node->type == 'webform_editable_by_user') {
+    return node_access('view', $node, $account) && user_access('my webform component edit access', $account);
+  }
+}
+
 
 /**
  * Return an array of files associated with the component.
@@ -1218,6 +1253,61 @@ function _webform_csv_data_component($component, $export_options, $value) {
     $return[] = isset($value[$key]) ? $value[$key] : '';
   }
   return $return;
+}
+
+/**
+ * Adjusts the view field(s) that are automatically generated for number
+ * components.
+ *
+ * Provides each component the opportunity to adjust how this component is
+ * displayed in a view as a field in a view table. For example, a component may
+ * modify how it responds to click-sorting. Or it may add additional fields,
+ * such as a grid component having a column for each question.
+ *
+ * @param array $component
+ *   A Webform component array
+ * @param array $fields
+ *   An array of field-definition arrays. Will be passed one field definition,
+ *   which may be modified. Additional fields may be added to the array.
+ * @return array
+ *   The modified $fields array.
+ */
+function _webform_view_field_component($component, $fields) {
+  foreach ($fields as &$field) {
+    $field['webform_datatype'] = 'number';
+  }
+  return $fields;
+}
+
+/**
+ * Modify the how a view was expanded to show all the components.
+ *
+ * This alter function is only called when the view is actually modified. It
+ * provides modules an opportunity to alter the changes that webform made to
+ * the view.
+ *
+ * This hook is called from webform_views_pre_view. If another module also
+ * changes views by implementing this same views hook, the relative order of
+ * execution of the two implementations will depend upon the module weights of
+ * the two modules. Using hook_webform_view_alter instead guarantees an
+ * opportuinty to modify the view AFTER webform.
+ *
+ * @param object $view
+ *   The view object.
+ * @param string $display_id
+ *   The display_id that was expanded by webform.
+ * @param array $args
+ *   The argumentst that were passed to the view.
+ */
+function hook_webform_view_alter($view, $display_id, $args) {
+  // Don't show component with cid == 4
+  $fields = $view->get_items('field', $display_id);
+  foreach ($fields as $id => $field) {
+    if (isset($field['webform_cid']) && $field['webform_cid'] == 4) {
+      unset($fields[$id]);
+    }
+  }
+  $view->display[$display_id]->handler->set_option('fields', $fields);
 }
 
 /**

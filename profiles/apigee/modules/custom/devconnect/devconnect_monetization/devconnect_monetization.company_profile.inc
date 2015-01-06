@@ -46,8 +46,15 @@ function devconnect_monetization_company_users_forms(\Apigee\Mint\Developer $dev
  */
 function devconnect_monetization_company_details_form($form, &$form_state, \Apigee\Mint\Developer $developer) {
 
-  $dev = new \Apigee\ManagementAPI\Developer(devconnect_monetization_default_org_config());
-  $dev->load($developer->getEmail());
+  /** @var Drupal\devconnect_user\DeveloperEntity $dev */
+  $devs = entity_load('developer', array('mail' => $developer->getEmail()));
+  if (count($devs)) {
+    $dev = reset($devs);
+  }
+  else {
+    $dev = new Drupal\devconnect_user\DeveloperEntity();
+  }
+
   $form = array();
   $form['#attributes']['class'][] = 'form-horizontal';
 
@@ -152,8 +159,8 @@ function devconnect_monetization_company_details_form($form, &$form_state, \Apig
     '#type' => 'item',
     '#title' => t('Contact Name'),
     '#markup' => t('@first_name @last_name', array(
-      '@first_name' => $dev->getFirstName(),
-      '@last_name' => $dev->getLastName()
+      '@first_name' => $dev->firstName,
+      '@last_name' => $dev->lastName
     )),
   );
 
@@ -306,14 +313,20 @@ function devconnect_monetization_company_details_form_submit(&$form, &$form_stat
     drupal_set_message(t('Your Company Profile Info has been saved.'), 'status');
     module_invoke_all('devconnect_monetization_developer_upgraded_to_company', $account);
     if (isset($_SESSION['return_here'])) {
-      list($url, $fragment) = explode("#", $_SESSION['return_here']);
+      if (strpos('#', $_SESSION['return_here']) !== FALSE) {
+        list($url, $fragment) = explode("#", $_SESSION['return_here']);
+      }
+      else {
+        $url = $_SESSION['return_here'];
+        $fragment = '';
+      }
       $form_state['redirect'] = array($url, array('fragment' => rawurldecode($fragment)));
       unset($_SESSION['return_here']);
     }
   } catch (\Exception $e) {
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
     $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-    devconnect_default_api_client()->logger->critical($message);
+    devconnect_default_org_config()->logger->critical($message);
   }
 }
 
@@ -774,12 +787,12 @@ function devconnect_monetization_users_add_to_company_form_submit($form, &$form_
  * @param \Apigee\Mint\Developer $developer
  */
 function devconnect_monetization_users_autocomplete($string, \Apigee\Mint\Developer $developer) {
-  $developer = new \Apigee\ManagementAPI\Developer(devconnect_monetization_default_org_config());
-  $developers = $developer->listDevelopers();
+
+  $developers = entity_load('developer');
   $emails = array();
   foreach ($developers as $developer_item) {
-    if (stripos($developer_item, $string) !== FALSE) {
-      $emails[$developer_item] = $developer_item;
+    if (stripos($developer_item->email, $string) !== FALSE) {
+      $emails[$developer_item->email] = $developer_item->email;
     }
   }
   drupal_json_output($emails);
