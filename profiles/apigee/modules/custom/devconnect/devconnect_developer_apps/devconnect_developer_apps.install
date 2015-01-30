@@ -305,6 +305,21 @@ function devconnect_developer_apps_update_7430() {
   _devconnect_developer_apps_register_cache_handlers();
 }
 
+/**
+ * Rebuild developer app cache to make sure org-name is properly set.
+ */
+function devconnect_developer_apps_update_7431() {
+  $tables = array_keys(devconnect_developer_apps_schema());
+  foreach ($tables as $table) {
+    if (substr($table, 0, 9) == 'dc_dev_app') {
+      db_truncate($table)->execute();
+    }
+  }
+  drupal_load('module', 'devconnect');
+  $client = devconnect_default_org_config();
+  drupal_load('module', 'devconnect_developer_apps');
+  devconnect_developer_apps_sync_apps($client->orgName, TRUE, TRUE);
+}
 
 /**
  * Implements hook_requirements().

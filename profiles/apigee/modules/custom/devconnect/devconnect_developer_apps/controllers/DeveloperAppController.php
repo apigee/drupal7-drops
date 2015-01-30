@@ -141,6 +141,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     // Copy incoming UID to outgoing UID
     $dev_app_array['uid'] = $entity['uid'];
     $last_app = new DeveloperAppEntity($dev_app_array);
+    $last_app->orgName = $config->orgName;
 
     devconnect_developer_apps_write_to_cache($last_app);
 
