@@ -15,7 +15,6 @@ $plugin = array(
   'entity_view' => 'eck_title_property_entity_view',
   'entity_info' => 'eck_title_property_entity_info',
   'default_widget' => 'eck_title_property_widget',
-  'default_formatter' => 'eck_title_property_formatter',
 );
 
 /**
@@ -33,15 +32,6 @@ function eck_title_property_widget($property, $vars) {
 }
 
 /**
- * Display the title as an h1.
- */
-function eck_title_property_formatter($property, $vars) {
-  $entity = $vars['entity'];
-  $title = _eck_title_property_extract_title($entity, $property);
-  return array('#markup' => "<h1>{$title}</h1>");
-}
-
-/**
  * When we are viewing the entity, set the pages title.
  */
 function eck_title_property_entity_view($property, $vars) {
@@ -52,7 +42,10 @@ function eck_title_property_entity_view($property, $vars) {
     $tile = "{$entity->entityType()} : {$entity->id}";
   }
 
-  drupal_set_title($title);
+  $uri = entity_uri($entity->entityType(), $entity);
+  if ($uri['path'] == current_path()) {
+    drupal_set_title($title);
+  }
 }
 
 /**

@@ -90,7 +90,7 @@ being run for each site.
 
    define command{
      command_name  check_drupal
-     command_line  /usr/lib/nagios/plugins/check_drupal -H $HOSTADDRESS$ -u $ARG1$ -T $ARG2$
+     command_line  /usr/lib/nagios/plugins/check_drupal -H $HOSTADDRESS$ -U $ARG1$ -t $ARG2$
    }
 
    Nagios 3.x:
@@ -176,7 +176,7 @@ Here is a basic example of checking cron is running.
 
 1. Edit the NRPE cfg file on the web server (normally /etc/nagios/nrpe.cfg) and add:
 
-     command[drupal_check_cron]=/path/to/drush -r /path/to/drupal nrpe cron
+     command[drupal_check_cron]=/path/to/drush -r /path/to/drupal nagios cron
 
 2. Add an NRPE check to the Nagios server to check for "drupal_check_cron".
 

@@ -57,7 +57,7 @@ function uuid_fpp_features_export($data, &$export, $module_name = '') {
     // for the hook_*_alter() implementations.  The hook_alter signature is
     // hook_uuid_fpp_features_export_alter(&$export, &$pipe, $fpp).
     $data = &$export;
-    $data['__drupal_alter_by_ref'] = array(&$pipe);
+    $data['__drupal_alter_by_ref']['pipe'] = array(&$pipe);
     drupal_alter('uuid_fpp_features_export', $data, $fpp);
   }
 
@@ -82,6 +82,9 @@ function uuid_fpp_features_export_render($module, $data) {
 
     $first_fpp = reset($fpps);
     $export = clone $first_fpp;
+
+    $entity_type = 'fieldable_panels_pane';
+    drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $first_fpp, $module);
 
     // Do not export ids.
     unset($export->vid);
@@ -183,7 +186,7 @@ function _uuid_fpp_features_dependencies($uuids) {
       }
 
       if (isset($result) && is_array($result)) {
-        $entity_info = array_merge_recursive($entity_info, $result);
+        $entity_info = array_replace_recursive($entity_info, $result);
       }
     }
   }
@@ -244,4 +247,50 @@ function _uuid_fpp_features_dependencies($uuids) {
     }
   }
   return $implements;
+}
+
+/**
+ * If the PHP version is < 5.3.0 we need to create array_replace_recursive().
+ */
+if (!function_exists('array_replace_recursive')) {
+  /**
+   * Replaces elements from passed arrays into the first array recursively.
+   *
+   * @link http://php.net/manual/en/function.array-replace-recursive.php
+   *
+   * @param array $array
+   *   The array in which elements are replaced.
+   * @param array $array1
+   *   The array from which elements will be extracted.
+   *
+   * @return array|NULL
+   *   An array, or NULL if an error occurs.
+   */
+  function array_replace_recursive(array $array, array $array1) {
+    // Get array arguments.
+    $arrays = func_get_args();
+
+    // Define the original array.
+    $original = array_shift($arrays);
+
+    // Loop through arrays.
+    foreach ($arrays as $array) {
+      // Loop through array key/value pairs.
+      foreach ($array as $key => $value) {
+        // Value is an array.
+        if (is_array($value)) {
+          // Traverse the array; replace or add result to original array.
+          $original[$key] = array_replace_recursive($original[$key], $array[$key]);
+        }
+        // Value is not an array.
+        else {
+          // Replace or add current value to original array.
+          $original[$key] = $value;
+        }
+      }
+    }
+
+    // Return the joined array.
+    return $original;
+  }
 }

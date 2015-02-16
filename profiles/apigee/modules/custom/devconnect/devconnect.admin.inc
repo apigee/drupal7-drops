@@ -7,11 +7,18 @@ use Apigee\ManagementAPI\Organization;
 define('DEVCONNECT_SHOW_CONFIG_FIELDS', FALSE);
 
 function devconnect_admin_form($form, &$form_state) {
+  $original_org_settings = devconnect_get_org_settings();
   if (isset($form_state['input']['org_settings'])) {
     $org_settings = $form_state['input']['org_settings'][0];
+    if (empty($org_settings['user']) && !empty($original_org_settings['user'])) {
+      $org_settings['user'] = $original_org_settings['user'];
+    }
+    if (empty($org_settings['pass']) && !empty($original_org_settings['pass'])) {
+      $org_settings['pass'] = $original_org_settings['pass'];
+    }
   }
   else {
-    $org_settings = devconnect_get_org_settings();
+    $org_settings = $original_org_settings;
   }
 
   $form['original_org_settings'] = array(
@@ -180,9 +187,8 @@ function devconnect_admin_form($form, &$form_state) {
         'effect' => 'fade',
       ),
       '#states' => array(
-        // Hide the settings when the cancel notify checkbox is disabled.
         'disabled' => array(
-          ':input[name="org_settings[0][pass]"]' => array('empty' => TRUE),
+          ':input[name="org_settings[0][org]"]' => array('empty' => TRUE),
         ),
       ),
     );
@@ -195,8 +201,6 @@ function devconnect_admin_form($form, &$form_state) {
   else {
     $form['connection_config_container']['test_connection_status'] = array(
       '#weight' => 9,
-      //'#prefix' => '<div id="test-connect-result">',
-      //'#suffix' => '</div>',
       '#type' => 'item',
       '#title' => t('Connection Status'),
       '#markup' => $status
@@ -308,27 +312,26 @@ function devconnect_admin_form_submit($form, &$form_state) {
   }
   foreach (array('org', 'endpoint', 'user', 'pass') as $field) {
     $hide_field_in_log = FALSE;
-    if ($field == 'user' || $field == 'pass') {
-      if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
-        // Use value from $form_state only if non-blank
-        if (array_key_exists($field, $default_org) && !empty($default_org[$field])) {
-          $new_config[$field] = $default_org[$field];
-        }
-        // Otherwise, pull from existing config.
-        else {
-          $new_config[$field] = $existing_config[$field];
-        }
-        if ($field == 'pass') {
-          $hide_field_in_log = TRUE;
-        }
+    if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
+      // Pull user/pass values from existing config if fields are empty.
+      if (($field == 'user' || $field == 'pass') && empty($default_org[$field])) {
+        $new_config[$field] = $existing_config[$field];
       }
+      // Use value from $form_state only if non-blank
+      elseif (array_key_exists($field, $default_org) && !empty($default_org[$field])) {
+        $new_config[$field] = $default_org[$field];
+      }
+      // Otherwise, pull from existing config.
       else {
         $new_config[$field] = $existing_config[$field];
+      }
+      if ($field == 'pass') {
         $hide_field_in_log = TRUE;
       }
     }
     else {
       $new_config[$field] = $existing_config[$field];
+      $hide_field_in_log = TRUE;
     }
 
     if ($new_config[$field] != $existing_config[$field]) {

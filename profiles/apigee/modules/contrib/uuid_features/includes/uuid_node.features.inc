@@ -68,7 +68,7 @@ function uuid_node_features_export($data, &$export, $module_name = '') {
  * Implements hook_features_export_render().
  */
 function uuid_node_features_export_render($module, $data) {
-  $translatables = $code = array();
+  $translatables = $code = $files = $return = array();
 
   $code[] = '  $nodes = array();';
   $code[] = '';
@@ -95,13 +95,13 @@ function uuid_node_features_export_render($module, $data) {
     // node_object_prepare().
     $export->date = format_date($export->created, 'custom', 'Y-m-d H:i:s O');
 
-    // Don't cause conflicts with nid/vid/revision_timestamp/changed fields.
-    uuid_features_file_field_export($export, 'node');
+    $files = uuid_features_file_field_export($export, 'node');
 
     $entity_type = 'node';
     drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $node, $module);
     drupal_alter('uuid_node_features_export_render', $export, $node, $module);
 
+    // Don't cause conflicts with nid/vid/revision_timestamp/changed fields.
     unset($export->revision_uid);
     unset($export->revision_timestamp);
     unset($export->nid);
@@ -115,6 +115,13 @@ function uuid_node_features_export_render($module, $data) {
     unset($export->cid);
 
     $code[] = '  $nodes[] = ' . features_var_export($export) . ';';
+
+    // Add packaged files, if any.
+    if (!empty($files)) {
+      foreach ($files as $filename => $src_path) {
+        $return[$filename] = $src_path;
+      }
+    }
   }
 
   if (!empty($translatables)) {
@@ -122,7 +129,9 @@ function uuid_node_features_export_render($module, $data) {
   }
   $code[] = '  return $nodes;';
   $code = implode("\n", $code);
-  return array('uuid_features_default_content' => $code);
+  $return['uuid_features_default_content'] = $code;
+
+  return $return;
 }
 
 /**
@@ -217,7 +226,7 @@ function uuid_node_features_rebuild_nodes($nodes, $module, $max_nesting = 5, $ne
       drupal_alter('uuid_node_features_rebuild', $node, $module);
 
       $node = node_submit($node);
-      uuid_features_file_field_import($node, 'node');
+      uuid_features_file_field_import($node, 'node', $module);
       entity_uuid_save('node', $node);
     }
     catch (Exception $e) {

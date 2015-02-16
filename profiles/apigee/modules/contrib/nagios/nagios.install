@@ -33,7 +33,7 @@ function nagios_requirements($phase) {
       $requirements['nagios'] = array(
         'title' => t('Nagios module'),
         'value' => t('Not configured'),
-        'description' => t('Nagios module has not been configured yet. Please configure its settings from the <a href="@url">Nagios settings page</a>.', array('@url' => url('admin/settings/nagios'))),
+        'description' => t('Nagios module has not been configured yet. Please configure its settings from the <a href="@url">Nagios settings page</a>.', array('@url' => url('admin/config/system/nagios'))),
         'severity' => REQUIREMENT_WARNING,
       );
     }

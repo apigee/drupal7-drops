@@ -316,9 +316,11 @@ function devconnect_developer_apps_update_7431() {
     }
   }
   drupal_load('module', 'devconnect');
-  $client = devconnect_default_org_config();
-  drupal_load('module', 'devconnect_developer_apps');
-  devconnect_developer_apps_sync_apps($client->orgName, TRUE, TRUE);
+  $config = devconnect_default_org_config();
+  if (!empty($config->orgName)) {
+    drupal_load('module', 'devconnect_developer_apps');
+    devconnect_developer_apps_sync_apps($config->orgName, TRUE, TRUE);
+  }
 }
 
 /**

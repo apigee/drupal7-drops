@@ -55,7 +55,7 @@ class DeveloperApp extends AbstractApp
     public function __construct(\Apigee\Util\OrgConfig $config, $developer)
     {
         $this->ownerIdentifierField = 'developerId';
-        if ($developer instanceof DeveloperInterface) {
+        if ($developer instanceof Developer) {
             $this->developer = $developer->getEmail();
         } else {
             // $developer may be either an email or a developerId.
@@ -122,7 +122,7 @@ class DeveloperApp extends AbstractApp
                 if (!isset($owner_id)) {
                     // Anomalous condition: app exists but owner is deleted.
                     // This occurs rarely.
-                    self::$logger->warning('Attempted to load an app owned by nonexistent Developer ' . $app_detail['developerId']);
+                    self::$logger->warning('Attempted to load an app owned by nonexistent Developer ' . $app_detail['developerId'] . ' for App ' . $app_detail['appId'] . ' (' . $app_detail['name'] . ')');
                     continue;
                 }
                 $app = new self($this->config, $owner_id);

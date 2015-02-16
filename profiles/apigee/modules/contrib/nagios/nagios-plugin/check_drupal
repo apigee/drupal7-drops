@@ -13,7 +13,7 @@ CP="/bin/cp"
 WGET="/usr/bin/wget"
 SSL=/bin/false
 
-PROGNAME=`/usr/bin/basename $0`
+PROGNAME=`basename $0`
 PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
 REVISION=`echo '$Revision$' | sed -e 's/[^0-9.]//g'`
 

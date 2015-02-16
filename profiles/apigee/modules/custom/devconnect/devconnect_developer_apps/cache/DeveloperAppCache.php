@@ -179,6 +179,18 @@ class DeveloperAppCache implements \DrupalCacheInterface {
     $cid = $entity->orgName . ':' . $entity->appId;
     $this->clear($cid);
 
+    // Avoid rare duplicate-key errors
+    $cached_app_id = db_select('dc_dev_app', 'd')
+      ->fields('d', array('app_id'))
+      ->condition('uid', $entity->uid)
+      ->condition('org_name', $entity->orgName)
+      ->condition('name', $entity->name)
+      ->execute()
+      ->fetchCol();
+    if ($cached_app_id) {
+      $this->clear($entity->orgName . ':' . $cached_app_id);
+    }
+
     $fields = array(
       'app_id' => $entity->appId,
       'uid' => intval($entity->uid),

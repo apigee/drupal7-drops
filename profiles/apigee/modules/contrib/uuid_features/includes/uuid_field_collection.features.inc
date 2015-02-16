@@ -57,7 +57,7 @@ function uuid_field_collection_features_export($data, &$export, $module_name = '
  * Implements hook_features_export_render().
  */
 function uuid_field_collection_features_export_render($module, $data) {
-  $translatables = $code = array();
+  $translatables = $code = $return = array();
 
   $code[] = '  $field_collections = array();';
   $code[] = '';
@@ -75,17 +75,19 @@ function uuid_field_collection_features_export_render($module, $data) {
     unset($export->item_id);
     unset($export->revision_id);
 
-    uuid_features_file_field_export($export, 'field_collection_item');
+    $files = uuid_features_file_field_export($export, 'field_collection_item');
 
     $entity_type = 'field_collection_item';
     drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $field_collection, $module);
 
-    $export_output = features_var_export($export, '  ');
-    $export_output = str_replace("entity_import('field_collection_item', '", "", $export_output);
-    $export_output = str_replace("}')", "}", $export_output);
-    $export_output = json_decode($export_output, TRUE);
+    $code[] = '  $field_collections[] = ' . features_var_export(get_object_vars($export), '  ') . ';';
 
-    $code[] = '  $field_collections[] = ' . features_var_export($export_output, '  ') . ';';
+    // Add packaged files, if any.
+    if (!empty($files)) {
+      foreach ($files as $filename => $src_path) {
+        $return[$filename] = $src_path;
+      }
+    }
   }
 
   if (!empty($translatables)) {
@@ -94,7 +96,8 @@ function uuid_field_collection_features_export_render($module, $data) {
   $code[] = '  return $field_collections;';
   $code = implode("\n", $code);
 
-  return array('uuid_features_default_field_collections' => $code);
+  $return['uuid_features_default_field_collections'] = $code;
+  return $return;
 }
 
 /**
@@ -153,7 +156,7 @@ function uuid_field_collection_features_rebuild($module) {
 
         drupal_alter('uuid_entity_features_rebuild', $entity_type, $entity, $field_collection_item, $module);
 
-        uuid_features_file_field_import($entity, 'field_collection_item');
+        uuid_features_file_field_import($entity, 'field_collection_item', $module);
 
         $entity->save(TRUE);
       }

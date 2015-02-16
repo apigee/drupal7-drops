@@ -9,6 +9,10 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
     unset($edit['already_in_kms']);
     return;
   }
+  // Don't try to save a user with no configured email.
+  if (empty($account->mail) && empty($edit['mail'])) {
+    return;
+  }
   // Don't update user 1.
   if (is_object($account) && property_exists($account, 'uid') && $account->uid == 1) {
     return;

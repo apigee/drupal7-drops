@@ -4,6 +4,7 @@
  * Field handler to present a link to the entity content.
  */
 
+// @codingStandardsIgnoreStart
 class eck_views_handler_field_link extends views_handler_field_entity {
 
   public function option_definition() {
@@ -35,11 +36,12 @@ class eck_views_handler_field_link extends views_handler_field_entity {
   }
 
   function render_link($entity, $values) {
-    $crud_info = get_bundle_crud_info($entity->entityType(), $entity->bundle());
     $this->options['alter']['make_link'] = TRUE;
-    $this->options['alter']['path'] = str_replace('%eckentity', $entity->id, $crud_info['view']['path']);
+    $uri = entity_uri($entity->entityType(), $entity);
+    $this->options['alter']['path'] = $uri['path'];
     $text = !empty($this->options['text']) ? $this->options['text'] : t('view');
 
     return $text;
   }
 }
+// @codingStandardsIgnoreEnd

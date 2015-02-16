@@ -252,14 +252,14 @@ function eck__entity__add($entity_type_name, $bundle_name) {
  *   loaded entity but there are some workflows where an object is passed.
  *   So this function handles that case as well.
  */
-function eck__entity__build($entity_type, $bundle, $id) {
+function eck__entity__build($entity_type, $bundle, $id, $view_mode = "full") {
 
   if (is_object($id) && $id->entityType() == $entity_type->name && $id->bundle() == $bundle->name) {
-    return $id->view();
+    return $id->view($view_mode);
   }
   elseif (is_numeric($id)) {
     $entity = entity_load_single($entity_type->name, $id);
-    return $entity->view();
+    return $entity->view($view_mode);
   }
 
   drupal_not_found();
@@ -460,7 +460,7 @@ function eck__entity__form_submit($form, &$state) {
       "@entity_label" => entity_label($form['#entity_type'], $entity),
     )));
 
-  $uri = eck__entity__uri($entity);
+  $uri = entity_uri($entity->entityType(), $entity);
   $state['redirect'] = $uri['path'];
 }
 
@@ -504,8 +504,7 @@ function eck__entity__view_callback($entities, $view_mode = 'full', $langcode = 
     $entity_type = entity_type_load($entity_type_name);
     $bundle = bundle_load($entity_type_name, $bundle_name);
 
-    $build = array();
-    $entity_view = eck__entity__build($entity_type, $bundle, $entity);
+    $entity_view = eck__entity__build($entity_type, $bundle, $entity, $view_mode);
     $property_view = array();
 
     $formatters = eck_property_behavior_invoke_plugin($entity_type, 'default_formatter',
@@ -515,12 +514,12 @@ function eck__entity__view_callback($entities, $view_mode = 'full', $langcode = 
       $property_view[$property] = $formatter;
     }
 
-    $entity_view[$entity->entityType()][$entity->id] = array_merge($property_view, $entity_view[$entity->entityType()][$entity->id]);
+    $entity_view = array_merge($property_view, $entity_view[$entity_type_name][$entity->id]);
 
     eck_property_behavior_invoke_plugin($entity_type, 'entity_view',
       array('entity' => $entity));
 
-    $build["{$entity_type->name}_{$bundle->name}_page"] = $entity_view;
+    $build[$entity_type_name][$entity->id] = $entity_view;
   }
 
   return $build;

@@ -58,9 +58,20 @@ function nagios_menu() {
     'title' => 'Nagios status page',
     'page callback' => $callback,
     'access callback' => 'variable_get',
-    'access arguments' => array('nagios_enable_status_page', TRUE),
+    'access arguments' => array('nagios_enable_status_page', FALSE),
   );
   return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function nagios_permission() {
+  $permission['administer nagios ignore'] = array(
+    'title' => t('Administer nagios ignore'),
+    'description' => t('Select modules to be ignored by nagios.'),
+  );
+  return $permission;
 }
 
 /**
@@ -92,7 +103,7 @@ function nagios_settings($form, &$form_state) {
   $form['nagios_status_page']['nagios_enable_status_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable status page?'),
-    '#default_value' => variable_get('nagios_enable_status_page', TRUE),
+    '#default_value' => variable_get('nagios_enable_status_page', FALSE),
   );
   $form['nagios_status_page']['nagios_page_path'] = array(
     '#type' => 'textfield',
@@ -105,6 +116,12 @@ function nagios_settings($form, &$form_state) {
     '#title' =>   t('Nagios page callback'),
     '#description' => t('Enter the name of the callback function to be used by the Nagios status page. Take care and be sure this function exists before clearing the menu cache!'),
     '#default_value' => variable_get('nagios_page_callback', 'nagios_status_page'),
+  );
+  $form['nagios_status_page']['nagios_enable_status_page_get'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Unique ID checking via URL on status page?'),
+    '#default_value' => variable_get('nagios_enable_status_page_get', FALSE),
+    '#description' => t('If enabled the $_GET variable "unique_id" is used for checking the correct Unique ID instead of "User Agent" ($_SERVER[\'HTTP_USER_AGENT\']). This alternative checking is only working if the URL is containing the value like "/nagios?unique_id=*****". This feature is useful to avoid webserver stats with the Unique ID as "User Agent" and helpful for human testing.'),
   );
 
   $form['nagios_error_levels'] = array(
@@ -189,9 +206,18 @@ function nagios_status_page() {
 
   $codes = nagios_status();
 
-  // Check the unique ID string and access permissions first
+  // Check the unique ID string and access permissions first.
   $ua = variable_get('nagios_ua', '');
-  if (user_access('administer site configuration') || $_SERVER['HTTP_USER_AGENT'] == $ua) {
+  $request_code = $_SERVER['HTTP_USER_AGENT'];
+
+  // Check if HTTP GET variable "unique_id" is used and the usage is allowed.
+  if (isset($_GET['unique_id'])) {
+    if (variable_get('nagios_enable_status_page_get', FALSE) == TRUE) {
+      $request_code = $_GET['unique_id'];
+    }
+  }
+
+  if (user_access('administer site configuration') || ($request_code == $ua)) {
     // Authorized so calling other modules
     if ($module) {
       // A specific module has been requested.
@@ -221,7 +247,7 @@ function nagios_status_page() {
 
   foreach ($nagios_data as $module_name => $module_data) {
     foreach ($module_data as $key => $value) {
-      if ($value['status'] >= $min_severity) {
+      if (is_array($value) && array_key_exists('status', $value) && $value['status'] >= $min_severity) {
         $severity = max($severity, $value['status']);
       }
     }
@@ -255,28 +281,30 @@ function nagios_status_page() {
             $value['text'] == 'Module and theme update status'
             ) {
             $tmp_projects = update_calculate_project_data(update_get_projects());
+            $nagios_ignored_modules = variable_get('nagios_ignored_modules', array());
             $outdated_count = 0;
             foreach ($tmp_projects as $projkey => $projval) {
-              if ($projval['status'] < UPDATE_CURRENT && $projval['status'] >= UPDATE_NOT_SECURE) {
-                switch ($projval['status']) {
-                  case UPDATE_NOT_SECURE:
-                    $tmp_projstatus = t('NOT SECURE');
-                    break;
-                  case UPDATE_REVOKED:
-                    $tmp_projstatus = t('REVOKED');
-                    break;
-                  case UPDATE_NOT_SUPPORTED:
-                    $tmp_projstatus = t('NOT SUPPORTED');
-                    break;
-                  case UPDATE_NOT_CURRENT:
-                    $tmp_projstatus = t('NOT CURRENT');
-                    break;
-                  default:
-                    $tmp_projstatus = $projval['status'];
+              if (!isset($nagios_ignored_modules[$projkey])) {
+                if ($projval['status'] < UPDATE_CURRENT && $projval['status'] >= UPDATE_NOT_SECURE) {
+                  switch ($projval['status']) {
+                    case UPDATE_NOT_SECURE:
+                      $tmp_projstatus = t('NOT SECURE');
+                      break;
+                    case UPDATE_REVOKED:
+                      $tmp_projstatus = t('REVOKED');
+                      break;
+                    case UPDATE_NOT_SUPPORTED:
+                      $tmp_projstatus = t('NOT SUPPORTED');
+                      break;
+                    case UPDATE_NOT_CURRENT:
+                      $tmp_projstatus = t('NOT CURRENT');
+                      break;
+                    default:
+                      $tmp_projstatus = $projval['status'];
+                  }
+                  $tmp_modules .= ' ' . $projkey . ':' . $tmp_projstatus;
+                  $outdated_count++;
                 }
-
-                $tmp_modules .= ' ' . $projkey . ':' . $tmp_projstatus;
-                $outdated_count++;
               }
             }
             if ($outdated_count > 0) {
@@ -297,10 +325,9 @@ function nagios_status_page() {
 
   $output .= implode(', ', $output_state) . ' | ' . implode(';', $output_perf) . "\n";
 
-  // Print the output, so we test the theme
-  // TODO Please change this theme call as discussed at http://drupal.org/node/224333#theme_page.
-  // print theme('page', $output);
-  return $output;
+  // Output the status page directly with no theming for speed.
+  // If people want a themed status page they can write their own and alter the callback in admin.
+  echo $output;
 
   // Exit early so we do not cache the data, nor do we wrap the result in a theme
   exit();
@@ -314,6 +341,11 @@ function nagios_invoke_all($hook = 'nagios') {
   $return = array();
   $args = func_get_args();
   foreach (module_implements($hook) as $module) {
+    // if we're running the checks, see if the checks for that module
+    // are enabled, otherwise just continue
+    if ($hook == 'nagios' && !variable_get('nagios_enable_' . $module, 0)) {
+      continue;
+    }
     $function = $module . '_' . $hook;
     $result = call_user_func_array($function, $args);
     $return[$module] = $result;
@@ -373,6 +405,65 @@ function nagios_nagios_settings() {
   return $form;
 }
 
+
+/**
+ * Implements hook_form_FORMID_alter().
+ *
+ * Modify the module display view by adding a nagios ignore link to every module
+ * description.
+ */
+function nagios_form_system_modules_alter(&$form, &$form_state, $form_id) {
+  if (!user_access('administer nagios ignore') || isset($form['confirm'])) {
+    return;
+  }
+
+  $nagios_ignored_modules = variable_get('nagios_ignored_modules', array());
+  $projects_data = update_get_projects();
+  foreach ($form['modules'] as $package_name => &$package) {
+    if ($package_name[0] != '#') {
+      foreach ($package as $module_name => &$module) {
+        if ($module_name[0] != '#') {
+          if (isset($module['enable']['#default_value']) && $module['enable']['#default_value'] == TRUE && array_key_exists($module_name, $projects_data)) {
+            $module['links']['nagios_ignore'] = array(
+              '#type' => 'checkbox',
+              '#title' => t('Ignore from Nagios'),
+              '#default_value' => isset($nagios_ignored_modules[$module_name]) && $nagios_ignored_modules[$module_name] ? TRUE : FALSE,
+            );
+            if (!module_exists('coder_review')) {
+              $package['#theme'] = 'nagios_modules_fieldset';
+            }
+          }
+        }
+      }
+    }
+  }
+  $form['#submit'][] = 'nagios_system_modules_form_submit';
+}
+
+/**
+ * Additional system modules form submit handler.
+ *
+ * Saves the modules that have been selected to be ignored from Nagios
+ * reporting to the 'nagios_ignored_modules' variable.
+ * Variable contains an array of module names to be ignored in the form
+ * 'module_machine_name' => TRUE
+ */
+function nagios_system_modules_form_submit(&$form, &$form_state) {
+  $nagios_ignored_modules = array();
+  foreach ($form_state['values']['modules'] as $package_name => $package) {
+    if ($package_name[0] != '#') {
+      foreach ($package as $module_name => $module) {
+        if ($module_name[0] != '#') {
+          if (isset($module['links']['nagios_ignore']) && $module['links']['nagios_ignore']) {
+            $nagios_ignored_modules[$module_name] = TRUE;
+          }
+        }
+      }
+    }
+  }
+  variable_set('nagios_ignored_modules', $nagios_ignored_modules);
+}
+
 /**
  * Implements hook_nagios().
  */
@@ -399,10 +490,90 @@ function nagios_nagios() {
 function nagios_check_requirements() {
   // Load .install files
   include_once DRUPAL_ROOT . '/' . './includes/install.inc';
+  module_load_include('inc', 'update', 'update.compare');
+
   drupal_load_updates();
 
   // Get the run-time requirements and status information.
-  $reqs = module_invoke_all('requirements', 'runtime');
+
+  // module_invoke_all('requirements', 'runtime') returns an array that isn't
+  // keyed by the module name, eg we might get a key 'ctools_css_cache'.
+  // We have no way of knowing which module set this, and we can't guess based
+  // on the name, as removing everything that begins with 'ctools_' might remove
+  // data from other ctools sub-modules that we want to still monitor.
+  // The only safe way is to use module_invoke, calling each module in turn.
+
+  $project_data = update_get_projects();
+  $nagios_ignored_modules = variable_get('nagios_ignored_modules', array());
+
+  $enabled_modules = array();
+
+  foreach ($project_data as $project) {
+    foreach($project['includes'] as $key => $val) {
+      if (!isset($nagios_ignored_modules[$key])) {
+        $enabled_modules[] = $key;
+      }
+    }
+  }
+
+  // Copied from update_requirements(). Get available update data for projects.
+  $data = array();
+  // TODO: The TRUE param should be made configurable when writing a drush
+  // command, so we don't rely on cached data.
+  if ($available = update_get_available(TRUE)) {
+    module_load_include('inc', 'update', 'update.compare');
+    $data = update_calculate_project_data($available);
+  }
+  // Remove from the update data array the projects ignored.
+  foreach ($nagios_ignored_modules as $key => $value) {
+    unset($data[$key]);
+  }
+
+  // Cycle through enabled modules for requirements checks.
+  $reqs = array();
+  $core_modules = array_keys($project_data['drupal']['includes']);
+  foreach ($enabled_modules as $module_name) {
+
+    $requirements_data = module_invoke($module_name, 'requirements', 'runtime');
+    if (count($requirements_data)) {
+      // Intercept the Update Status module to respect our Ignore behaviour.
+      // Note, if $data is empty then there's no available update data and Update Status will handle that for us.
+      if ($module_name == 'update' && !empty($data)) {
+        // Don't want the 'update_contrib' section reported by 'update' module,
+        // because that one contains *ALL* modules, even the ones ignored by
+        // nagios module.
+        unset($requirements_data['update_contrib']);
+        // Now we need to loop through all modules again to reset 'update_contrib'.
+        foreach ($enabled_modules as $module_name) {
+          // Double check we're not processing a core module.
+          if (!in_array($module_name, array_keys($project_data['drupal']['includes']))) {
+            // If the module is a sub-module (eg views_ui) then we need to set the status key.
+            // Without this,  _update_requirement_check() will return severity = 2.
+            if (isset($data[$module_name]['status']) && is_numeric($data[$module_name]['status'])) {
+              // Within this clause, only contrib modules are processed. Get update
+              // status for the current one, and store data as it would be left
+              // by update_requirements() function.
+              $contrib_req = _update_requirement_check($data[$module_name], 'contrib');
+              $contrib_req['name'] = $module_name;
+              // If module up to date, set a severity of -1 for sorting purposes.
+              if (!isset($contrib_req['severity'])) {
+                $contrib_req['severity'] = -1;
+              }
+              // Build an array of required contrib updates.
+              if ($contrib_req) {
+                $module_data[] = $contrib_req;
+              }
+            }
+          }
+        }
+        // Sort our finished array by severity so we can set Nagios status accordingly.
+        usort($module_data, '_nagios_updates_sort_by_severity');
+        // Add the 'worst case' to requirements.
+        $requirements_data['update_contrib'] = array_pop($module_data);
+      }
+      $reqs += $requirements_data;
+    }
+  }
 
   // Check the requirements as to the most severe status
   $descriptions = array();
@@ -638,4 +809,96 @@ function nagios_check_themes() {
     'key' => 'THM',
     'data' => $data,
   );
+}
+
+/**
+ * @{ Theme functions.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function nagios_theme() {
+  return array(
+    'nagios_modules_fieldset' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Returns HTML for the modules form.
+ *
+ * This was copied from coder_review.admin.inc which was in turn
+ * copied from theme_system_modules_fieldset() and modified to handle
+ * additional links.
+ *
+ * @param array $variables
+ *   An associative array containing the key:
+ *   - form: A render element representing the form.
+ *
+ * @ingroup themeable
+ *
+ * @todo Create an issue for this and get this function into D8.
+ */
+function theme_nagios_modules_fieldset($variables) {
+  $form = $variables['form'];
+
+  // Individual table headers.
+  $rows = array();
+  // Iterate through all of the modules to Determine the available operations.
+  $children = element_children($form);
+  $operations = drupal_map_assoc(array('help', 'permissions', 'configure'));
+  foreach ($children as $key) {
+    $links = array_filter(array_keys($form[$key]['links']), function ($var) {
+      return $var && $var[0] != '#';
+    });
+    if ($links) {
+      $operations += drupal_map_assoc($links);
+    }
+  }
+  // Iterate through all the modules.
+  foreach ($children as $key) {
+    // Stick it into $module for easier accessing.
+    $module = $form[$key];
+    $row = array();
+    unset($module['enable']['#title']);
+    $row[] = array('class' => array('checkbox'), 'data' => drupal_render($module['enable']));
+    $label = '<label';
+    if (isset($module['enable']['#id'])) {
+      $label .= ' for="' . $module['enable']['#id'] . '"';
+    }
+    $row[] = $label . '><strong>' . drupal_render($module['name']) . '</strong></label>';
+    $row[] = drupal_render($module['version']);
+    // Add the description, along with any modules it requires.
+    $description = drupal_render($module['description']);
+    if ($module['#requires']) {
+      $description .= '<div class="admin-requirements">' . t('Requires: !module-list', array('!module-list' => implode(', ', $module['#requires']))) . '</div>';
+    }
+    if ($module['#required_by']) {
+      $description .= '<div class="admin-requirements">' . t('Required by: !module-list', array('!module-list' => implode(', ', $module['#required_by']))) . '</div>';
+    }
+    $row[] = array('data' => $description, 'class' => array('description'));
+    // Display links (such as help or permissions) in their own columns.
+    foreach ($operations as $key) {
+      $row[] = array('data' => drupal_render($module['links'][$key]), 'class' => array($key));
+    }
+    $form['#header'][4]['colspan'] = count($operations);
+    $rows[] = $row;
+  }
+
+  return theme('table', array('header' => $form['#header'], 'rows' => $rows));
+}
+
+/**
+ * Helper function to sort modules by severity with usort().
+ */
+function _nagios_updates_sort_by_severity($a, $b) {
+  if (isset($a['severity']) && isset($b['severity'])) {
+    if ($a['severity'] == $b['severity']) {
+      return 0;
+    }
+    return ($a['severity'] < $b['severity']) ? -1 : 1;
+  }
+  return 0;
 }

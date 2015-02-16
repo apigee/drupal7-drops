@@ -275,6 +275,9 @@ class views_accordion_style_plugin extends views_plugin_style {
       $view_settings['header'] = '.views-accordion-header';
     }
 
+    // Use new options format if jquery_update has installed a version >= 1.9.
+    $view_settings['newoptions'] = version_compare(variable_get('jquery_update_jquery_version', '0.0'), '1.9', '>=');
+
     drupal_add_js(array('views_accordion' => array($accordion_id => $view_settings)), 'setting');
 
     return $output;

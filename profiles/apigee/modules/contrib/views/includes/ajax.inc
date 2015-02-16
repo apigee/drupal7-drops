@@ -53,11 +53,9 @@ function views_ajax() {
       // Overwrite the destination.
       // @see drupal_get_destination()
       $origin_destination = $path;
-      $query = $_REQUEST;
-      unset($query['q']);
-      $query_string = drupal_http_build_query($query);
-      if ($query_string != '') {
-        $origin_destination .= '?' . $query_string;
+      $query = drupal_http_build_query(drupal_get_query_parameters());
+      if ($query != '') {
+        $origin_destination .= '?' . $query;
       }
       $destination = &drupal_static('drupal_get_destination');
       $destination = array('destination' => $origin_destination);
@@ -171,12 +169,16 @@ function views_ajax_command_scroll_top($selector) {
 /**
  * Shows Save and Cancel buttons.
  *
+ * @param bool $changed
+ *   Whether of not the view has changed.
+ *
  * @return
  *   An array suitable for use with the ajax_render() function.
  */
-function views_ajax_command_show_buttons() {
+function views_ajax_command_show_buttons($changed) {
   $command = array(
     'command' => 'viewsShowButtons',
+    'changed' => (bool) $changed,
   );
   return $command;
 }

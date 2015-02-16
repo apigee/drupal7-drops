@@ -4,6 +4,7 @@
  * Field handler to present a link to editt the entity content.
  */
 
+// @codingStandardsIgnoreStart
 class eck_views_handler_field_link_edit extends eck_views_handler_field_link {
 
   function render_link($entity, $values) {
@@ -27,3 +28,4 @@ class eck_views_handler_field_link_edit extends eck_views_handler_field_link {
     }
   }
 }
+// @codingStandardsIgnoreEnd

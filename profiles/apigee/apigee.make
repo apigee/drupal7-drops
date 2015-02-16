@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; DO NOT DIRECTLY EDIT THIS FILE.        ;;;
-;;; Edit apigee.make.json instead          ;;;
+;;;     DO NOT DIRECTLY EDIT THIS FILE.    ;;;
+;;;      Edit apigee.make.json instead     ;;;
 ;;; and then run scripts/make_makefile.php ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -127,8 +127,8 @@ projects[encrypt][subdir] = "contrib"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
-; see http://drupal.org/node/2170193
-projects[entityreference][patch][2170193] = "https://drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
+; see https://www.drupal.org/node/2170193
+projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
 
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
@@ -163,14 +163,14 @@ projects[gauth][subdir] = "contrib"
 
 projects[github_connect][type] = "module"
 projects[github_connect][subdir] = "contrib"
-; see http://drupal.org/node/2150767
-projects[github_connect][patch][2150767] = "https://drupal.org/files/issues/administer-github-connect-2150767-2.patch"
-; see http://drupal.org/node/1895544
-projects[github_connect][patch][1895544] = "https://drupal.org/files/issues/1895544-github-connect-return-user-5.patch"
-; see http://drupal.org/node/2266675
-projects[github_connect][patch][2266675] = "https://drupal.org/files/issues/github_connect-email-api-change-2266675-1.patch"
-; see http://drupal.org/node/2292767
-projects[github_connect][patch][2292767] = "https://drupal.org/files/issues/github_connect-2292767-openid-dependency.patch"
+; see https://www.drupal.org/node/2150767
+projects[github_connect][patch][2150767] = "https://www.drupal.org/files/issues/administer-github-connect-2150767-2.patch"
+; see https://www.drupal.org/node/1895544
+projects[github_connect][patch][1895544] = "https://www.drupal.org/files/issues/1895544-github-connect-return-user-5.patch"
+; see https://www.drupal.org/node/2266675
+projects[github_connect][patch][2266675] = "https://www.drupal.org/files/issues/github_connect-email-api-change-2266675-1.patch"
+; see https://www.drupal.org/node/2292767
+projects[github_connect][patch][2292767] = "https://www.drupal.org/files/issues/github_connect-2292767-openid-dependency.patch"
 
 projects[google_analytics][type] = "module"
 projects[google_analytics][subdir] = "contrib"
@@ -225,11 +225,13 @@ projects[mediaelement][subdir] = "contrib"
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
 projects[media][version] = "2.0-alpha4"
-; see http://drupal.org/node/2232703
-projects[media][patch][2232703] = "https://drupal.org/files/issues/media-views-2232703-5.patch"
+; see https://www.drupal.org/node/2232703
+projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
+; see https://www.drupal.org/node/1823376
+projects[media_youtube][patch][1823376] = "https://www.drupal.org/files/issues/provide-access-wrapper-1823376-6.patch"
 
 projects[menu_attributes][type] = "module"
 projects[menu_attributes][subdir] = "contrib"
@@ -340,10 +342,10 @@ projects[variable][subdir] = "contrib"
 
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-; see http://drupal.org/node/1809958
-projects[views][patch][1809958] = "http://drupal.org/files/issues/fix-views-missing-dom-id-1809958-7.patch"
-; see http://drupal.org/node/1036962
-projects[views][patch][1036962] = "http://drupal.org/files/views-fix-destination-link-for-ajax-1036962-29.patch"
+; see https://www.drupal.org/node/1809958
+projects[views][patch][1809958] = "https://www.drupal.org/files/issues/fix-views-missing-dom-id-1809958-21.patch"
+; see https://www.drupal.org/node/1036962
+projects[views][patch][1036962] = "https://www.drupal.org/files/issues/views-ajax-nginx-1036962-71.patch"
 
 projects[views_accordion][type] = "module"
 projects[views_accordion][subdir] = "contrib"
@@ -386,7 +388,7 @@ projects[tao][type] = "theme"
 libraries[backbone][destination] = "libraries"
 libraries[backbone][directory_name] = "backbone"
 libraries[backbone][download][type] = "git"
-libraries[backbone][download][url] = "git://github.com/jashkenas/backbone.git"
+libraries[backbone][download][url] = "https://github.com/jashkenas/backbone.git"
 
 libraries[ckeditor][destination] = "libraries"
 libraries[ckeditor][directory_name] = "ckeditor"
@@ -657,14 +659,14 @@ libraries[colorpicker][download][url] = "http://www.eyecon.ro/colorpicker/colorp
 ; Used by gauth
 libraries[google-api-php-client][destination] = "libraries"
 libraries[google-api-php-client][directory_name] = "google-api-php-client"
-libraries[google-api-php-client][download][type] = "file"
-libraries[google-api-php-client][download][url] = "https://google-api-php-client.googlecode.com/files/google-api-php-client-0.6.0.tar.gz"
+libraries[google-api-php-client][download][type] = "git"
+libraries[google-api-php-client][download][url] = "https://github.com/google/google-api-php-client.git"
 
-; Used by devconnect_developer_apps
+; Used by devconnect_developer_apps. Can we update to the 4.0.x branch?
 libraries[highcharts][destination] = "libraries"
 libraries[highcharts][directory_name] = "highcharts"
 libraries[highcharts][download][type] = "file"
-libraries[highcharts][download][url] = "http://code.highcharts.com/zips/Highcharts-3.0.7.zip"
+libraries[highcharts][download][url] = "http://code.highcharts.com/zips/Highcharts-3.0.10.zip"
 
 ; Used by views_slideshow
 libraries[jquery_cycle][destination] = "libraries"
@@ -682,25 +684,25 @@ libraries[jquery_selectlist][download][url] = "http://odyniec.net/projects/selec
 libraries[json2][destination] = "libraries"
 libraries[json2][directory_name] = "json2"
 libraries[json2][download][type] = "git"
-libraries[json2][download][url] = "git://github.com/douglascrockford/JSON-js.git"
+libraries[json2][download][url] = "https://github.com/douglascrockford/JSON-js.git"
 
 ; Used by devconnect_monetization
 libraries[maskmoney][destination] = "libraries"
 libraries[maskmoney][directory_name] = "maskmoney"
 libraries[maskmoney][download][type] = "file"
-libraries[maskmoney][download][url] = "https://raw.github.com/plentz/jquery-maskmoney/master/src/jquery.maskMoney.js"
+libraries[maskmoney][download][url] = "https://raw.githubusercontent.com/plentz/jquery-maskmoney/master/src/jquery.maskMoney.js"
 
 ; Used by mediaelement
 libraries[mediaelement][destination] = "libraries"
 libraries[mediaelement][directory_name] = "mediaelement"
 libraries[mediaelement][download][type] = "git"
-libraries[mediaelement][download][url] = "git://github.com/johndyer/mediaelement.git"
+libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement.git"
 
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "git"
-libraries[mgmt-api-php-sdk][download][url] = "git://github.com/apigee/edge-php-sdk.git"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk.git"
 
 ; Used by navbar
 libraries[modernizr][destination] = "libraries"
@@ -713,7 +715,7 @@ libraries[modernizr][filename] = "modernizr.js"
 libraries[plupload][destination] = "libraries"
 libraries[plupload][directory_name] = "plupload"
 libraries[plupload][download][type] = "file"
-libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/archive/v2.0.0.zip"
+libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/archive/v2.1.2.zip"
 
 ; Used by apachesolr
 libraries[SolrPhpClient][destination] = "libraries"
