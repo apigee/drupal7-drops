@@ -65,6 +65,27 @@ function navbar_theme($existing, $type, $theme, $path) {
   $items['navbar_tray_heading_wrapper'] = array(
     'render element' => 'element',
   );
+
+  // Core menu theming overrides.
+  $items['menu_tree__management'] = array(
+    'render element' => 'tree',
+    'function' => 'theme_navbar_menu_tree',
+    'preprocess functions' => array('template_preprocess_navbar_menu_tree'),
+  );
+  if (module_exists('shortcut')) {
+    // Shortcut module assigns an incrementing set_name to every shortcut set and
+    // menu_tree_output() does not add any useful wildcard suggestion.
+    $shortcut_sets = db_query('SELECT set_name FROM {shortcut_set}');
+    foreach ($shortcut_sets as $shortcut_set) {
+      // Override theming for every single shortcut set.
+      $items['menu_tree__' . strtr($shortcut_set->set_name, '-', '_')] = array(
+        'render element' => 'tree',
+        'function' => 'theme_navbar_menu_tree',
+        'preprocess functions' => array('template_preprocess_navbar_menu_tree'),
+      );
+    }
+  }
+
   return $items;
 }
 
@@ -80,6 +101,20 @@ function navbar_menu() {
     'type' => MENU_CALLBACK,
   );
   return $items;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function navbar_page_alter(&$page) {
+  $current_path = current_path();
+  $current_path_is_admin = FALSE;
+
+  // The function path_is_admin() is not available on update.php pages.
+  if (!defined('MAINTENANCE_MODE')) {
+    $current_path_is_admin = path_is_admin($current_path);
+  }
+  drupal_add_js(array('currentPath' => $current_path, 'currentPathIsAdmin' => $current_path_is_admin), 'setting');
 }
 
 /**
@@ -351,6 +386,13 @@ function navbar_pre_render_item($element) {
 }
 
 /**
+ * Implements template_preprocess_HOOK() for theme_navbar_menu_tree().
+ */
+function template_preprocess_navbar_menu_tree(&$variables) {
+  $variables['tree'] = $variables['tree']['#children'];
+}
+
+/**
  * Implements template_preprocess_HOOK().
  */
 function template_preprocess_navbar_tab_wrapper(&$variables) {
@@ -376,6 +418,20 @@ function template_preprocess_navbar_tab_wrapper(&$variables) {
  */
 function theme_navbar_item(&$variables) {
   return drupal_render($variables['element']['tab']);
+}
+
+/**
+ * Returns HTML for a wrapper for a navbar menu sub-tree.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - tree: An HTML string containing the tree's items.
+ *
+ * @see template_preprocess_navbar_menu_tree()
+ * @ingroup themeable
+ */
+function theme_navbar_menu_tree($variables) {
+  return '<ul class="navbar-menu">' . $variables['tree'] . '</ul>';
 }
 
 /**
@@ -457,13 +513,21 @@ function navbar_system_info_alter(&$info, $file, $type) {
  */
 function navbar_get_menu_tree() {
   $tree = array();
-  $admin_link = db_query('SELECT * FROM {menu_links} WHERE menu_name = :menu_name AND module = :module AND link_path = :path', array(':menu_name' => 'management', ':module' => 'system', ':path' => 'admin'))->fetchAssoc();
-  if ($admin_link) {
-    $tree = menu_tree_all_data('management');
+  $admin_mlid = db_query('SELECT mlid FROM {menu_links} WHERE menu_name = :menu_name AND module = :module AND link_path = :path', array(':menu_name' => 'management', ':module' => 'system', ':path' => 'admin'))->fetchField();
+  if ($admin_mlid) {
+    // Only return top 3 menu levels.
+    $tree = menu_tree_all_data('management', NULL, 5);
   }
+
   // Return the sub-menus of the management menu root.
   foreach ($tree as $key => $menu) {
-    return (!empty($tree[$key]['below'])) ? $tree[$key]['below'] : array();
+    if ($menu['link']['mlid'] == $admin_mlid) {
+      return (!empty($menu['below'])) ? $menu['below'] : array();
+    }
+    else {
+      // Any extra menu link can break the navbar. Skip them.
+      continue;
+    }
   }
   return array();
 }
@@ -587,6 +651,7 @@ function navbar_library() {
       array('navbar', 'navbar.displace'),
       array('navbar', 'navbar.menu'),
       array('navbar', 'navbar.tableheader'),
+      array('navbar', 'navbar.escape_admin'),
     ),
   );
 
@@ -594,6 +659,18 @@ function navbar_library() {
   if (module_exists('overlay')) {
     $libraries['navbar']['dependencies'][] = array('navbar', 'navbar.overlay');
   }
+
+  $libraries['navbar.escape_admin'] = array(
+    'title' => 'Provides a button to escape the administration area.',
+    'version' => VERSION,
+    'js' => array(
+      $path . '/js/escape-admin.js' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'jquery'),
+      array('system', 'jquery.once'),
+    ),
+  );
 
   $libraries['navbar.menu'] = array(
     'title' => 'Navbar nested accordion menus.',

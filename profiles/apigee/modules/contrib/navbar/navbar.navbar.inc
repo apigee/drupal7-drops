@@ -13,17 +13,22 @@ function navbar_navbar() {
 
   $items = array();
 
-  // The 'Home' tab is a simple link, with no corresponding tray.
+  // Provides a simple link to escape the administration area.
   $items['home'] = array(
     '#type' => 'navbar_item',
     'tab' => array(
       '#type' => 'link',
-      '#title' => t('Home'),
+      '#title' => t('Back to site'),
       '#href' => '<front>',
       '#options' => array(
         'attributes' => array(
-          'title' => t('Home page'),
-          'class' => array('navbar-icon', 'navbar-icon-home'),
+          'title' => t('Return to site content'),
+          'class' => array(
+            'navbar-icon',
+            'navbar-icon-escape-admin',
+            'element-hidden'
+          ),
+          'data-navbar-escape-admin' => NULL,
         ),
       ),
     ),
@@ -126,7 +131,7 @@ function navbar_navbar() {
           '#theme' => 'links__navbar_user',
           '#links' => $links,
           '#attributes' => array(
-            'class' => array('menu', 'navbar-menu-user'),
+            'class' => array('navbar-menu', 'navbar-menu-user'),
           ),
         ),
       ),

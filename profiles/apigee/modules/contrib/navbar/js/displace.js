@@ -137,12 +137,12 @@
       // plus their size.
       case 'top':
         // Total displacment is the sum of the elements placement and size.
-        displacement = placement + $el.outerHeight();
+        displacement = placement + $el.outerHeight(true);
         break;
 
       case 'left':
         // Total displacment is the sum of the elements placement and size.
-        displacement = placement + $el.outerWidth();
+        displacement = placement + $el.outerWidth(true);
         break;
 
       // Right and bottom elements displace according to their left and

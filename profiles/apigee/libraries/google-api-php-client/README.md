@@ -26,7 +26,7 @@ See the examples/ directory for examples of the key client features.
 ```PHP
 <?php
 
-  require_once 'google-api-php-client/autoload.php'; // or wherever autoload.php is located
+  require_once 'google-api-php-client/src/Google/autoload.php'; // or wherever autoload.php is located
   
   $client = new Google_Client();
   $client->setApplicationName("Client_Library_Examples");
@@ -85,6 +85,10 @@ $opt_params = array(
 To avoid clashes with the autoloader, its best to update the function inside autoload.php to `google_api_php_client_autoload_MyProject`.
 
 ## Code Quality ##
+
+Run the PHPUnit tests with PHPUnit. You can configure and API key and token in BaseTest.php to run all calls, but this will require some setup on the Google Developer Console.
+
+    phpunit tests/
 
 Copy the ruleset.xml in style/ into a new directory named GAPI/ in your
 /usr/share/php/PHP/CodeSniffer/Standards (or appropriate equivalent directory),
