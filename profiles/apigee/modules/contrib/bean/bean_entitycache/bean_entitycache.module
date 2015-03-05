@@ -13,6 +13,9 @@ function bean_entitycache_entity_info_alter(&$entity_info) {
   $entity_info['bean']['entity cache'] = TRUE;
   // Which means that we don't need to cache the fields.
   $entity_info['bean']['field cache'] = FALSE;
+  // Provide bean entitycache controller so other modules using entitycache can
+  // work with beans.
+  $entity_info['bean']['controller class'] = 'BeanEntityCacheAPIController';
 }
 
 /**

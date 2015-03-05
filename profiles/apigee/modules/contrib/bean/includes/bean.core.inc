@@ -499,6 +499,18 @@ class BeanEntityAPIController extends EntityAPIControllerExportable {
     parent::delete($ids, $transaction);
   }
 
+  /**
+   * Overridden to add Rules integration back in.
+   */
+  public function invoke($hook, $entity) {
+    parent::invoke($hook, $entity);
+
+    // Invoke rules.
+    if (module_exists('rules')) {
+      rules_invoke_event($this->entityType . '_' . $hook, $entity);
+    }
+  }
+
   protected function saveRevision($entity) {
     global $user;
 

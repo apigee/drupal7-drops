@@ -37,8 +37,8 @@ function bean_usage_settings() {
  * @return array
  */
 function bean_usage_filters() {
-  $params = drupal_get_query_parameters();
-  $filters = empty($params['filter']) ? '' : explode(',', $params['filter']);
+  $filters = drupal_get_query_parameters();
+  $filters['type'] = empty($filters['type']) ? '' : explode(',', $filters['type']);
 
   $form = array();
 
@@ -68,7 +68,21 @@ function bean_usage_filters() {
     '#title' => t('Filter type'),
     '#description' => t('Choose the bean types to filter the list of results.'),
     '#options' => $options,
-    '#default_value' => $filters,
+    '#default_value' => $filters['type'],
+  );
+  $form['bean_usage_filter']['bean_usage_filter_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#prefix' => '<div style="margin-right:10px; position:relative; float:left;">',
+    '#suffix' => '</div>',
+    '#default_value' => $filters['title'],
+  );
+  $form['bean_usage_filter']['bean_usage_filter_label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label'),
+    '#prefix' => '<div style="margin-right:10px; position:relative; float:left;">',
+    '#suffix' => '</div>',
+    '#default_value' => $filters['label'],
   );
 
   $form['bean_usage_filter']['actions'] = array(
@@ -102,14 +116,24 @@ function bean_usage_filters_submit(&$form, &$form_state) {
   // Get the query string parameters minus the drupal url and filter param
   $params = drupal_get_query_parameters($_GET, array('q', 'filter'));
 
-  // add the filter to the query string
-  $filters = $form_state['values']['bean_usage_filter_type'];
-  if (!empty($filters)) {
-    switch (strtolower($form_state['values']['op'])) {
-      case 'apply':
-        $params['filter'] = join(',', $filters);
-        break;
-    }
+  // add the filters to the query string
+  $filters = array(
+    'type' => join(',', $form_state['values']['bean_usage_filter_type']),
+    'title' => $form_state['values']['bean_usage_filter_title'],
+    'label' => $form_state['values']['bean_usage_filter_label'],
+  );
+
+  switch (strtolower($form_state['values']['op'])) {
+    case 'apply':
+      foreach ($filters as $filter_name => $filter_value) {
+        if (!empty($filter_value)) {
+          $params[$filter_name] = $filter_value;
+        }
+      }
+      break;
+    case 'reset':
+      $params = array();
+      break;
   }
 
   // Redirect back to bean usage view with added filter query string param

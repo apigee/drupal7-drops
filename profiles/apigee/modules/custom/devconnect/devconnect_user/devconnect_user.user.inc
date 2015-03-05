@@ -100,12 +100,23 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   }
   $entity->status = $status ? 'active' : 'inactive';
 
-  $queue = DrupalQueue::get('developer');
-  $queue->createItem($entity->toArray() + array(
-      '#edit' => $edit,
-      '#user' => $account
-    ));
-  devconnect_user_start_queue_process();
+  $saved = entity_save('developer', $entity);
+  $results = devconnect_get_debug_data();
+
+  if ($results === NULL) {
+    drupal_set_message('results are null');
+  }
+
+  if (!$saved) {
+    devconnect_default_org_config()->logger->error(print_r($results, TRUE));
+  }
+  else {
+    foreach (module_implements('devconnect_user_save') as $module) {
+      $function = $module . '_devconnect_user_save';
+      $function($results, $edit, $account);
+    }
+    devconnect_default_org_config()->logger->debug(print_r($results, TRUE));
+  }
 }
 
 

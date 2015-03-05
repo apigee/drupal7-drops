@@ -84,12 +84,13 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
             self::$lastException = $e;
           } catch (ParameterException $e) {
             $dev_app = NULL;
-             self::$lastException = $e;
+            self::$lastException = $e;
           }
         }
         if (isset($dev_app)) {
           try {
             $entity = new DeveloperAppEntity($dev_app->toArray());
+            $entity->orgName = $config->orgName;
             $dev_app->delete();
             devconnect_developer_apps_delete_from_cache($entity);
             $deleted_count++;
@@ -120,6 +121,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @param $entity
    */
   public function save($entity) {
+
     $config = self::getConfig($entity);
     // Make a copy so we can remove irrelevant members
     $entity = (array)$entity;
@@ -140,6 +142,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     $dev_app_array = $dev_app->toArray();
     // Copy incoming UID to outgoing UID
     $dev_app_array['uid'] = $entity['uid'];
+    $dev_app_array['orgName'] = $config->orgName;
     $last_app = new DeveloperAppEntity($dev_app_array);
     $last_app->orgName = $config->orgName;
 

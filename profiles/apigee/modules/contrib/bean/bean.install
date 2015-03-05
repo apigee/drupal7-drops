@@ -22,8 +22,8 @@ function bean_schema() {
         'type' => 'int',
         'not null' => TRUE,
         'description' => 'Revision ID',
-        'default' => 0,
         'unsigned' => TRUE,
+        'default' => 0,
       ),
       'delta' => array(
         'description' => "The bean's {block}.delta.",
@@ -94,7 +94,7 @@ function bean_schema() {
       'bean_revision' => array(
         'table' => 'bean_revision',
         'columns' => array('vid' => 'vid'),
-      )
+      ),
     ),
     'primary key' => array('bid'),
     'unique keys' => array(
@@ -103,35 +103,27 @@ function bean_schema() {
     ),
   );
 
-  $schema['bean_revision'] =  array(
+  $schema['bean_revision'] = array(
     'description' => 'Stores bean items.',
     'fields' => array(
       'bid' => array(
-        'description' => 'The {bean} this version belongs to.',
         'type' => 'int',
-        'unsigned' => TRUE,
         'not null' => TRUE,
+        'description' => 'The {bean} this version belongs to.',
+        'unsigned' => TRUE,
         'default' => 0,
       ),
       'vid' => array(
-        'description' => 'The primary identifier for this version.',
         'type' => 'serial',
-        'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
-      'uid' => array(
-        'description' => 'The author of the revision.',
-        'type' => 'int',
+        'description' => 'The primary identifier for this version.',
         'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
       ),
       'delta' => array(
         'description' => "The bean's {block}.delta.",
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
-        'default' => 0,
       ),
       'label' => array(
         'description' => 'The Displays in the Admin page.',
@@ -168,10 +160,12 @@ function bean_schema() {
         'serialize' => TRUE,
         'description' => 'A serialized array of additional data related to this bean.',
       ),
-      'log' => array(
-        'description' => t('A log message associated with the revision.'),
-        'type' => 'text',
-        'size' => 'big',
+      'uid' => array(
+        'description' => 'The author of the revision.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'created' => array(
         'description' => 'The Unix timestamp when the entity was created.',
@@ -185,6 +179,11 @@ function bean_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'log' => array(
+        'description' => 'A log message associated with the revision.',
+        'type' => 'text',
+        'size' => 'big',
+      ),
     ),
     'foreign keys' => array(
       'type' => array(
@@ -194,7 +193,7 @@ function bean_schema() {
       'version_bean' => array(
         'table' => 'bean',
         'columns' => array('bid' => 'bid'),
-      )
+      ),
     ),
     'primary key' => array('vid'),
     'indexes' => array(
@@ -225,6 +224,22 @@ function bean_uninstall() {
       }
     }
   }
+
+  // Remove all variables used by the module.
+  variable_del('bean_ctools_separate');
+  variable_del('bean_ctools_prefix');
+  variable_del('bean_usage_results_per_page');
+  // Remove all variables for field bundle settings.
+  db_delete('variable')
+    ->condition('name', 'field_bundle_settings_bean%', 'LIKE')
+    ->execute();
+  // Remove all variables for blacklisting modules.
+  // Note: it is not possible to list them here because the variable names are
+  // generated dynamically and are not defined upfront.
+  db_delete('variable')
+    ->condition('name', 'bean_all_blacklist%', 'LIKE')
+    ->execute();
+
 }
 
 /**
@@ -451,3 +466,14 @@ function bean_update_7012() {
   return t('Registry has been rebuilt');
 }
 
+/**
+ * Remove default for bean_revision.delta.
+ */
+function bean_update_7013() {
+  db_change_field('bean_revision', 'delta', 'delta', array(
+    'description' => "The bean's {block}.delta.",
+    'type' => 'varchar',
+    'length' => 32,
+    'not null' => TRUE,
+  ));
+}

@@ -97,10 +97,10 @@ function devconnect_user_update_7427() {
 }
 
 /**
- * Ensure that views_queue module is enabled.
+ * Clean up unused variables.
  */
-function devconnect_user_update_7428() {
-  if (!module_exists('views_queue')) {
-    module_enable(array('views_queue'), TRUE);
-  }
+function devconnect_user_update_7429() {
+  variable_del('async_fail_notify_type');
+  variable_del('async_fail_notify_mailto');
+  variable_del('async_fail_notify_roles');
 }

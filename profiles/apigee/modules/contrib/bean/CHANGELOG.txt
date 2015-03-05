@@ -1,5 +1,22 @@
 Current API VERSION: 5.
 
+Bean 7.x-1.9, 2015-03-03
+-------------------
+#1821136 by stefan.r, delzhand, vflirt, rsmylski, recrit, ultimateboy, kris84: Integration with Inline Entity Form
+#2008252 by diarmy: Error in admin/workbench/create when using Bean with Workbench and Commerce Kickstart
+#2240815 by topsitemakers: Variables not deleted on hook_uninstall()
+#2161535 by acrollet, DamienMcKenna, jwilson3: Panelizer support for Bean
+#2148099 by ultimateboy, pgrond: Access issue on block/add page<
+#1942558 by davidwbarratt: Unable to create beans on install
+#2365597 by gabesullice: More robust entitycache support
+#2427029 by hswong3i: bean_revision.delta is type varchar but its default 0 is PHP type integer
+#2442937 by acorso: Add Bean Title and Label Filters for Bean Usage
+#1912354 by stefan.r: Add warninging to bean all module
+2338913 by steve.stotter: Fixed Token should be used instead of bean_type as type property in entityPropertyInfo / BeanMetadataController.
+#2324575 by Steven Jones: Fixed Static cache in bean_block_info unclearable.
+#2344929 by jeffam: Fixed Bean Usage doesn't show all usages.
+#2325077 by Deciphered: Fixed Bean entity controller skips Rules integration.
+
 Bean 7.x-1.8, 2014-10-02
 ---------------------------
 #2175309 by jeffam: Added Block add/edit pages can still use site theme when an admin theme is enabled.

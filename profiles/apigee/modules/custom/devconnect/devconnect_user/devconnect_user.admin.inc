@@ -30,69 +30,6 @@ function devconnect_user_settings_form($form, &$form_state) {
     '#default_value' => variable_get('apigee_user_redirect_path', ''),
   );
 
-  if (!module_exists('devconnect_monetization')) {
-    $form['devconnect_user_enable_async'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Enable asynchronous saving of user data to Edge (EXPERIMENTAL).'),
-      '#default_value' => variable_get('devconnect_developer_apps_cache_cron', 0),
-      '#return_value' => 1,
-    );
-
-    $form['async_fail_email'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('User-save failure notification'),
-      '#weight' => 1,
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#states' => array(
-        'invisible' => array(
-          ':input[name="devconnect_user_enable_async"]' => array('checked' => FALSE),
-        ),
-      ),
-    );
-
-    $user_notify_opts = array(
-      'Custom' => t('Send to a custom email address'),
-      'Role' => t('Send to a specific role(s)'),
-      'Both' => t('Send to Both a custom email address and a specific role(s)'),
-    );
-    $form['async_fail_email']['async_fail_notify_type'] = array(
-      '#type' => 'radios',
-      '#options' => $user_notify_opts,
-      '#title' => t('Send by Role or Custom Email address?'),
-      '#default_value' => variable_get('async_fail_notify_type', 'Custom'),
-      '#prefix' => '<div class="user-register-notify-user-notify">',
-      '#suffix' => '</div>',
-    );
-    $form['async_fail_email']['async_fail_notify_mailto'] = array(
-      '#type' => 'textarea',
-      '#title' => t('Send notifications to this custom email address'),
-      '#description' => t('Please specify multiple email ids with comma(,) separated values, e.g. (%mailto,%mailto). If you leave this blank, the site email address, %mailto, will be used.', array('%mailto' => variable_get('site_mail', ini_get('sendmail_from')))),
-      '#default_value' => variable_get('async_fail_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))),
-      '#states' => array(
-        'invisible' => array(
-          ':input[name="async_fail_notify_type"]' => array('value' => 'Role')
-        ),
-      ),
-    );
-    $user_roles = user_roles(TRUE);
-    if (count($user_roles) > 1) {
-      unset($user_roles[DRUPAL_AUTHENTICATED_RID]);
-    }
-    $form['async_fail_email']['async_fail_notify_roles'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('Send to a specific role(s)'),
-      '#options' => $user_roles,
-      '#description' => t('All users with these checked roles will receive a notification email when selected.'),
-      '#default_value' => variable_get('async_fail_notify_roles', array()),
-      '#states' => array(
-        'invisible' => array(
-          ':input[name="async_fail_notify_type"]' => array('value' => 'Custom')
-        ),
-      ),
-    );
-  }
-
   $form['submit'] = array(
     '#type' => 'submit',
     '#weight' => 9999,
@@ -121,9 +58,6 @@ function devconnect_user_settings_form_submit($form, &$form_state) {
   $vars = array(
     'apigee_user_redirect_path',
     'apigee_enable_redirect_path',
-    'async_fail_notify_type',
-    'async_fail_notify_mailto',
-    'async_fail_notify_roles',
   );
   foreach ($vars as $var) {
     variable_set($var, $form_state['values'][$var]);

@@ -112,7 +112,7 @@ function bean_usage_output($bean = NULL) {
 
   // If we have something to work with
   if (!empty($fields)) {
-    $filters = empty($_GET['filter']) ? '' : $_GET['filter'];
+    $filters = drupal_get_query_parameters();
 
     if ($delta_specific) {
       $delta_found = FALSE;
@@ -177,10 +177,10 @@ function bean_usage_output($bean = NULL) {
             break;
         }
 
-        $content[$bean_data->label][$bean_data->entity_type][$bean_data->delta]['bean_title'] = $bean_data->title;
-        $content[$bean_data->label][$bean_data->entity_type][$bean_data->delta]['bean_type'] = $bean_data->type;
-        $content[$bean_data->label][$bean_data->entity_type][$bean_data->delta]['entity_id'] = $bean_data->entity_id;
-        $content[$bean_data->label][$bean_data->entity_type][$bean_data->delta]['entity_title'] = $entity_title;
+        $content[$bean_data->label][$bean_data->entity_type][$bean_data->entity_id]['bean_title'] = $bean_data->title;
+        $content[$bean_data->label][$bean_data->entity_type][$bean_data->entity_id]['bean_type'] = $bean_data->type;
+        $content[$bean_data->label][$bean_data->entity_type][$bean_data->entity_id]['entity_id'] = $bean_data->entity_id;
+        $content[$bean_data->label][$bean_data->entity_type][$bean_data->entity_id]['entity_title'] = $entity_title;
 
         if ($delta_specific) {
           $delta_found = TRUE;
@@ -416,8 +416,7 @@ function _bean_usage_entity_display($table, $value, $key, $column) {
  *
  * @return SelectQuery
  */
-function _bean_usage_field_data( $data_table, $i, $field_name, $entity_types, $bundles, $filter = NULL, $delta_specific = FALSE, $bean = NULL) {
-  $filters = explode(',', $filter);
+function _bean_usage_field_data( $data_table, $i, $field_name, $entity_types, $bundles, $filters = NULL, $delta_specific = FALSE, $bean = NULL) {
   $query = db_select($data_table, 'fd'. $i);
   $query->leftJoin('block', 'bl', 'fd'. $i . '.' . $field_name . '_bid = bl.bid');
   $query->join('bean', 'b', 'b.delta = bl.delta');
@@ -430,8 +429,16 @@ function _bean_usage_field_data( $data_table, $i, $field_name, $entity_types, $b
   $query_and->condition('fd'. $i . '.entity_type', $entity_types, 'IN');
   $query_and->condition('fd'. $i . '.bundle', $bundles, 'IN');
 
-  if (!empty($filter)) {
-    $query_and->condition('b.type', $filters, 'IN');
+  if (!empty($filters['type'])) {
+    $query_and->condition('b.type', array($filters['type']), 'IN');
+  }
+
+  if (!empty($filters['title'])) {
+    $query_and->condition('b.title', ('%' .$filters['title'] . '%'), 'LIKE');
+  }
+
+  if (!empty($filters['label'])) {
+    $query_and->condition('b.label', ('%' . $filters['label'] . '%'), 'LIKE');
   }
 
   if ($delta_specific && !empty($bean)) {
