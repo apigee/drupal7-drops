@@ -17,7 +17,7 @@
     <tbody>
       <?php foreach ($tncs_forms as $tnc) : ?>
       <tr>
-        <td><?php print $tnc['tnc']->getFormattedStartDate('M d Y'); ?></td>
+        <td><?php print $tnc['tnc']->getFormattedStartDate(variable_get('devconnect_monetization_date_format')); ?></td>
         <td><a href="<?php print $tnc['tnc']->getUrl(); ?>"><?php print $tnc['tnc']->getUrl(); ?></a></td>
         <?php if (!isset($tnc['accepted'])) : ?>
         <td><?php print $tnc['form']; ?></td>

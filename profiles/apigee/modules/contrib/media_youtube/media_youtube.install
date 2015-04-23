@@ -156,3 +156,13 @@ function media_youtube_update_7203() {
     variable_del("media_youtube__{$setting}");
   }
 }
+
+/**
+ * Update the Media YouTube browser's access check.
+ *
+ * Check your permissions; after this update the Media YouTube browser will be
+ * available to users with the "administer files" or "add media from remote
+ * sources" permissions only.
+ */
+function media_youtube_update_7204() {
+}

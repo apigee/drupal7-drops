@@ -1,7 +1,7 @@
 name = Apigee SSO
 description = Slingshot to Google Apps to verify identity
 core = 7.x
-package = "apigee.com"
+package = "Apigee"
 version = "7.x-4.27"
 hidden = TRUE
 

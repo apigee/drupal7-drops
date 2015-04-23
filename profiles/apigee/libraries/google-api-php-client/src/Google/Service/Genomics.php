@@ -55,6 +55,7 @@ class Google_Service_Genomics extends Google_Service
   public $references;
   public $references_bases;
   public $referencesets;
+  public $streamingReadstore;
   public $variants;
   public $variantsets;
   
@@ -590,6 +591,20 @@ class Google_Service_Genomics extends Google_Service
           )
         )
     );
+    $this->streamingReadstore = new Google_Service_Genomics_StreamingReadstore_Resource(
+        $this,
+        $this->serviceName,
+        'streamingReadstore',
+        array(
+          'methods' => array(
+            'streamreads' => array(
+              'path' => 'streamingReadstore/streamreads',
+              'httpMethod' => 'POST',
+              'parameters' => array(),
+            ),
+          )
+        )
+    );
     $this->variants = new Google_Service_Genomics_Variants_Resource(
         $this,
         $this->serviceName,
@@ -800,7 +815,7 @@ class Google_Service_Genomics_AnnotationSets_Resource extends Google_Service_Res
   }
 
   /**
-   * Searches for annotation sets which match the given criteria. Results are
+   * Searches for annotation sets that match the given criteria. Results are
    * returned in a deterministic order. Caller must have READ permission for the
    * queried datasets. (annotationSets.search)
    *
@@ -931,10 +946,10 @@ class Google_Service_Genomics_Annotations_Resource extends Google_Service_Resour
   }
 
   /**
-   * Searches for annotations which match the given criteria. Results are returned
-   * ordered by start position. Annotations which have matching start positions
-   * are ordered deterministically. Caller must have READ permission for the
-   * queried annotation sets. (annotations.search)
+   * Searches for annotations that match the given criteria. Results are returned
+   * ordered by start position. Annotations that have matching start positions are
+   * ordered deterministically. Caller must have READ permission for the queried
+   * annotation sets. (annotations.search)
    *
    * @param Google_SearchAnnotationsRequest $postBody
    * @param array $optParams Optional parameters.
@@ -1117,7 +1132,7 @@ class Google_Service_Genomics_Datasets_Resource extends Google_Service_Resource
   }
 
   /**
-   * Lists all datasets. (datasets.listDatasets)
+   * Lists datasets within a project. (datasets.listDatasets)
    *
    * @param array $optParams Optional parameters.
    *
@@ -1126,7 +1141,7 @@ class Google_Service_Genomics_Datasets_Resource extends Google_Service_Resource
    * parameter to the value of nextPageToken from the previous response.
    * @opt_param string projectNumber The project to list datasets for.
    * @opt_param int pageSize The maximum number of results returned by this
-   * request.
+   * request. If unspecified, defaults to 50.
    * @return Google_Service_Genomics_ListDatasetsResponse
    */
   public function listDatasets($optParams = array())
@@ -1656,6 +1671,41 @@ class Google_Service_Genomics_Referencesets_Resource extends Google_Service_Reso
     $params = array('postBody' => $postBody);
     $params = array_merge($params, $optParams);
     return $this->call('search', array($params), "Google_Service_Genomics_SearchReferenceSetsResponse");
+  }
+}
+
+/**
+ * The "streamingReadstore" collection of methods.
+ * Typical usage is:
+ *  <code>
+ *   $genomicsService = new Google_Service_Genomics(...);
+ *   $streamingReadstore = $genomicsService->streamingReadstore;
+ *  </code>
+ */
+class Google_Service_Genomics_StreamingReadstore_Resource extends Google_Service_Resource
+{
+
+  /**
+   * Gets a stream of reads for one or more read group sets. Reads search operates
+   * over a genomic coordinate space of reference sequence & position defined over
+   * the reference sequences to which the requested read group sets are aligned.
+   *
+   * If a target positional range is specified, all reads whose alignment to the
+   * reference genome overlap the range are returned.
+   *
+   * All reads returned are ordered by genomic coordinate (reference sequence &
+   * position). Reads with equivalent genomic coordinates are returned in a
+   * deterministic order. (streamingReadstore.streamreads)
+   *
+   * @param Google_StreamReadsRequest $postBody
+   * @param array $optParams Optional parameters.
+   * @return Google_Service_Genomics_StreamReadsResponse
+   */
+  public function streamreads(Google_Service_Genomics_StreamReadsRequest $postBody, $optParams = array())
+  {
+    $params = array('postBody' => $postBody);
+    $params = array_merge($params, $optParams);
+    return $this->call('streamreads', array($params), "Google_Service_Genomics_StreamReadsResponse");
   }
 }
 
@@ -4995,6 +5045,70 @@ class Google_Service_Genomics_SearchVariantsResponse extends Google_Collection
   public function getVariants()
   {
     return $this->variants;
+  }
+}
+
+class Google_Service_Genomics_StreamReadsRequest extends Google_Collection
+{
+  protected $collection_key = 'readGroupSetIds';
+  protected $internal_gapi_mappings = array(
+  );
+  public $end;
+  public $readGroupSetIds;
+  public $referenceName;
+  public $start;
+
+
+  public function setEnd($end)
+  {
+    $this->end = $end;
+  }
+  public function getEnd()
+  {
+    return $this->end;
+  }
+  public function setReadGroupSetIds($readGroupSetIds)
+  {
+    $this->readGroupSetIds = $readGroupSetIds;
+  }
+  public function getReadGroupSetIds()
+  {
+    return $this->readGroupSetIds;
+  }
+  public function setReferenceName($referenceName)
+  {
+    $this->referenceName = $referenceName;
+  }
+  public function getReferenceName()
+  {
+    return $this->referenceName;
+  }
+  public function setStart($start)
+  {
+    $this->start = $start;
+  }
+  public function getStart()
+  {
+    return $this->start;
+  }
+}
+
+class Google_Service_Genomics_StreamReadsResponse extends Google_Collection
+{
+  protected $collection_key = 'alignments';
+  protected $internal_gapi_mappings = array(
+  );
+  protected $alignmentsType = 'Google_Service_Genomics_Read';
+  protected $alignmentsDataType = 'array';
+
+
+  public function setAlignments($alignments)
+  {
+    $this->alignments = $alignments;
+  }
+  public function getAlignments()
+  {
+    return $this->alignments;
   }
 }
 

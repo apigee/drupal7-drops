@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * Implements hook_install().
+ *
+ * Performs all devportal-related updates from 15.01.30.00 to 15.02.xx.xx
+ */
+function apigee_profile_updates_install() {
+  // See if the credential directory is defined. If all is normal, it shouldn't
+  // be defined yet.
+  $credential_dir = variable_get('apigee_credential_dir');
+  if (empty($credential_dir)) {
+    // Detect private dir if it is configured already
+    $credential_dir = variable_get('file_private_path', NULL);
+    // Make sure private dir exists and is writable.
+    if (!empty($credential_dir)) {
+      if (!is_dir(DRUPAL_ROOT . '/' . $credential_dir) || !is_writable(DRUPAL_ROOT . '/' . $credential_dir)) {
+        unset($credential_dir);
+      }
+    }
+    // Do we need to guess where to store?
+    if (!isset($credential_dir)) {
+      foreach (array(
+                 'sites/default/files/private',
+                 'sites/default/private'
+               ) as $private_dir) {
+        if (is_dir(DRUPAL_ROOT . '/' . $private_dir) && is_writable(DRUPAL_ROOT . '/' . $private_dir)) {
+          $credential_dir = $private_dir;
+          break;
+        }
+      }
+    }
+    if (!isset($credential_dir)) {
+      $credential_dir = variable_get('file_public_path', 'sites/default/files') . '/private';
+      if (!file_exists(DRUPAL_ROOT . '/' . $credential_dir)) {
+        @mkdir($credential_dir);
+      }
+    }
+    variable_set('apigee_credential_dir', $credential_dir);
+  }
+
+  // This should actually perform the migration for us.
+  drupal_load('module', 'devconnect');
+  devconnect_get_org_settings();
+
+  // Migrate key to the filesystem
+  $key = devconnect_get_crypt_key();
+  if (is_dir($credential_dir) && is_writable($credential_dir)) {
+    $result = file_put_contents($credential_dir . '/.apigee.key', $key);
+    if ($result !== FALSE) {
+      variable_del('apigee_crypt_key');
+    }
+  }
+}
+
+/**
+ * Enable Apigee Google Tag Manager and Update modules where appropriate.
+ */
+function apigee_profile_updates_update_7101(){
+  $modules = array();
+  if (!module_exists('update')) {
+    $modules[] = 'update';
+  }
+  if (isset($_ENV['PANTHEON_ENVIRONMENT']) && !module_exists('apigee_gtm')) {
+    $modules[] = 'apigee_gtm';
+  }
+  if (!empty($modules)) {
+    module_enable($modules);
+  }
+}

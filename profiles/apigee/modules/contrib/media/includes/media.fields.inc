@@ -15,9 +15,13 @@ function media_field_widget_info() {
       'label' => t('Media browser'),
       'field types' => array('file', 'image'),
       'settings' => array(
-        'allowed_types' => array('image'),
+        'allowed_types' => array(
+          'image' => 'image',
+        ),
         'browser_plugins' => array(),
-        'allowed_schemes' => array('public', 'private'),
+        'allowed_schemes' => array(
+          'public' => 'public',
+        ),
       ),
       'behaviors' => array(
         'multiple values' => FIELD_BEHAVIOR_CUSTOM,
@@ -543,9 +547,62 @@ function media_field_formatter_info() {
     'media_large_icon' => array(
       'label' => t('Large filetype icon'),
       'field types' => array('file'),
+      'settings' => array(
+        'image_style' => '',
+      ),
     ),
   );
+
   return $formatters;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ *
+ * Legacy support for the "Large filetype icon" file field formatter.
+ * @see media_field_formatter_info()
+ */
+function media_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $image_styles = image_style_options(FALSE, PASS_THROUGH);
+  $element['image_style'] = array(
+    '#title' => t('Image style'),
+    '#type' => 'select',
+    '#default_value' => $settings['image_style'],
+    '#empty_option' => t('None (original image)'),
+    '#options' => $image_styles,
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ *
+ * Legacy support for the "Large filetype icon" file field formatter.
+ * @see media_field_formatter_info()
+ */
+function media_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  $image_styles = image_style_options(FALSE, PASS_THROUGH);
+  // Unset possible 'No defined styles' option.
+  unset($image_styles['']);
+  // Styles could be lost because of enabled/disabled modules that defines
+  // their styles in code.
+  if (isset($image_styles[$settings['image_style']])) {
+    $summary[] = t('Image style: @style', array('@style' => $image_styles[$settings['image_style']]));
+  }
+  else {
+    $summary[] = t('Original image');
+  }
+
+  return implode('<br />', $summary);
 }
 
 /**
@@ -558,12 +615,11 @@ function media_field_formatter_view($entity_type, $entity, $field, $instance, $l
   $element = array();
 
   if ($display['type'] == 'media_large_icon') {
-    // Use the media_thumbnail image style so that the output in media browser
-    // is consistent.
     foreach ($items as $delta => $item) {
       $element[$delta] = array(
         '#theme' => 'media_formatter_large_icon',
         '#file' => (object) $item,
+        '#style_name' => $display['settings']['image_style'],
       );
     }
   }

@@ -18,7 +18,7 @@
                 $("#devconnect-monetization-download-prepaid-report-form select:last").html(divHtml);
             };
 
-            $("#donwload_previous_prepaid_statements_anchor").click(function(e) {
+            $("#download_previous_prepaid_statements_anchor").click(function(e) {
                 jQuery("#download_previous_prepaid_statements_error_div").hide();
                 var currency = jQuery("select[name='account']").val();
                 var year = jQuery("select[name='year']").val();
@@ -36,7 +36,7 @@
                 if (message == "") {
                     jQuery("#download_previous_prepaid_statements_error_div p").html("");
                     var href = settings.download_url + '/' + currency + '/' + month + "-" + year;
-                    $("#donwload_previous_prepaid_statements_anchor").attr("href", href);
+                    $("#download_previous_prepaid_statements_anchor").attr("href", href);
                 } else {
                     e.preventDefault();
                     message = "<ul>" + message + "</ul>";

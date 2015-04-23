@@ -1,0 +1,20 @@
+smartdocs 7.x-4.3
+=================
+DEVSOL-736: Smartdocs breadcrumbs are not correct
+DEVSOL-776: Undefined index: tags in smartdocs_update_method_node
+
+smartdocs 7.x-4.2
+=================
+DEVSOL-588: Allow portal admins to upload default SmartDocs template that new models will use.
+DEVSOL-612: Smartdocs oauth callback URL missing in the new Smartdocs module
+DEVSOL-627: SmartDocs Module Showing Error after rendering
+DEVSOL-633: SmartDocs should show a warning if https is not used and defaulted
+DEVSOL-716: Rendering nodes from the revision #2 of swagger import breaks the method listing view
+DEVSOL-737: Cache not flushed after rendering SmartDocs
+DEVSOL-437: Address SmartDocs customers who may not want to expose the mgmt server outside their network
+DEVSOL-431: Remove devconnect_docgen
+
+
+smartdocs 7.x-4.1
+=================
+DEVSOL-601: Smartdocs import form does not validate the urls for WADL and Smartdocs Json

@@ -1,0 +1,251 @@
+<?php
+
+define('HEALTHCHECK_UNSET', '(NOT SET)');
+
+/**
+ * Implements hook_cron().
+ */
+function apigee_checklist_cron() {
+
+  //$_ENV['PANTHEON_SITE_NAME'] = 'localhost';
+  //$_ENV['PANTHEON_SERVICE_LEVEL'] = 'free';
+  //$_ENV['PANTHEON_ENVIRONMENT'] = 'dev';
+
+  $messages = array();
+  $env = _apigee_checklist_pantheon_environment();
+  if ($env == 'live') {
+    if (_apigee_checklist_pantheon_service_level() == 'free') {
+      $messages[] = 'You are running a Live environment on a Sandbox Pantheon instance.';
+    }
+    $smtp_host = _apigee_checklist_smtp_host();
+    if (empty($smtp_host)) {
+      $messages[] = 'You need to configure either the SMTP module (preferred) or the SwiftMailer module.';
+    }
+  }
+  variable_set('apigee_checklist_messages', $messages);
+
+  apigee_checklist_heartbeat();
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function apigee_checklist_preprocess_page(&$vars) {
+  if (user_access('administer site configuration')) {
+    $messages = variable_get('apigee_checklist_messages');
+    if (!empty($messages)) {
+      foreach ($messages as $message) {
+        drupal_set_message(t($message), 'warning', FALSE);
+      }
+    }
+  }
+}
+
+/**
+ * Returns the name of the environment (live, test, dev) on a Pantheon instance.
+ * If we are not on Pantheon, returns FALSE.
+ *
+ * @return bool|string
+ */
+function _apigee_checklist_pantheon_environment() {
+  if (!array_key_exists('PANTHEON_ENVIRONMENT', $_ENV)) {
+    return FALSE;
+  }
+  return $_ENV['PANTHEON_ENVIRONMENT'];
+}
+
+/**
+ * Returns a string representing the service level on Pantheon.
+ *
+ * @TODO: Make this actually work when/if Pantheon makes it available in an
+ *        _ENV variable.
+ *
+ * @return string
+ */
+function _apigee_checklist_pantheon_service_level() {
+  if (!array_key_exists('PANTHEON_SERVICE_LEVEL', $_ENV)) {
+    return '';
+  }
+  return $_ENV['PANTHEON_SERVICE_LEVEL'];
+}
+
+/**
+ * Returns SMTP host if SMTP or SwiftMailer is configured, otherwise FALSE.
+ *
+ * @return bool|string
+ */
+function _apigee_checklist_smtp_host() {
+  $host = FALSE;
+  if (module_exists('smtp') && variable_get('smtp_on', 0)) {
+    $host = variable_get('smtp_host', FALSE);
+  }
+  elseif (module_exists('swiftmailer') && variable_get('swiftmailer_transport') == 'smtp') {
+    $host = variable_get('swiftmailer_smtp_host', FALSE);
+  }
+  return $host;
+}
+
+/**
+ * Gets the ancestor theme of the current default theme, drilling down until
+ * either the theme name begins with "apigee_" or we get to the end of the list
+ * of base themes.
+ *
+ * @return string
+ */
+function _apigee_checklist_get_base_theme($current_theme) {
+  $themes = list_themes();
+
+  if (!array_key_exists($current_theme, $themes)) {
+    return $current_theme; // should never happen
+  }
+  if (substr($current_theme, 0, 7) != 'apigee_') {
+    $my_theme = $themes[$current_theme];
+    if (property_exists($my_theme, 'base_themes')) {
+      $base_themes = array_keys($my_theme->base_themes);
+      $base_theme = NULL;
+      foreach ($base_themes as $theme_name) {
+        if (substr($theme_name, 0, 7) == 'apigee_') {
+          $base_theme = $theme_name;
+          break;
+        }
+      }
+      if (!isset($base_theme)) {
+        $base_theme = end($base_themes);
+      }
+      $current_theme = $base_theme;
+    }
+  }
+  return $current_theme;
+}
+
+/**
+ * If we are on a Pantheon host, posts statistics about the site to a Usergrid
+ * URI for logging and analytics.
+ */
+function apigee_checklist_heartbeat($skip_time_check = FALSE) {
+  if (!array_key_exists('PANTHEON_SITE_NAME', $_ENV)) {
+    if (function_exists('drush_log')) {
+      drush_log('You are not on Pantheon! Skipping site-status healthcheck.', 'warning');
+    }
+    return;
+  }
+
+  if (!$skip_time_check) {
+    // Only run once per day
+    $last_run = variable_get('apigee_checklist_last_run', 0);
+    // 82800 seconds is 23 hours, so we have an hour of wiggle room.
+    if (time() - $last_run < 82800) {
+      if (function_exists('drush_log')) {
+        drush_log('Skipping site-status healthcheck');
+      }
+      return;
+    }
+  }
+
+  if (module_exists('devconnect')) {
+    $config = devconnect_default_org_config();
+    $org_name = $config->orgName;
+    $org_user = $config->user;
+    $release_ver = devconnect_get_build_version();
+  }
+  else {
+    $org_name = $org_user = $release_ver = '';
+  }
+  $smtp_host = (string)_apigee_checklist_smtp_host();
+
+  $query = db_select('users', 'u');
+  $query->addExpression('MAX(access)');
+  $last_access = $query->execute()->fetchField();
+  $name = $_ENV['PANTHEON_SITE_NAME'] . '.' . $_ENV['PANTHEON_ENVIRONMENT'];
+
+  $apigee_modules = new stdClass;
+  $contrib_modules = new stdClass;
+  $site_modules = new stdClass;
+  $result = db_select('system', 's')
+    ->fields('s', array('name', 'filename', 'info'))
+    ->condition('type', 'module')
+    ->condition('status', 1)
+    ->execute();
+  foreach ($result as $row) {
+    $module_name = $row->name;
+    $info = @unserialize($row->info);
+    if (is_array($info) && array_key_exists('version', $info) && !empty($info['version'])) {
+      $version = $info['version'];
+    }
+    else {
+      $version = HEALTHCHECK_UNSET;
+    }
+    if (substr($row->filename, 0, 30) == 'profiles/apigee/modules/custom') {
+      $apigee_modules->$module_name = $version;
+    }
+    elseif (substr($row->filename, 0, 31) == 'profiles/apigee/modules/contrib') {
+      $contrib_modules->$module_name = $version;
+    }
+    elseif (substr($row->filename, 0, 7) != 'modules' && $module_name != 'apigee') {
+      $site_modules->$module_name = $version;
+    }
+  }
+
+  $service_level = _apigee_checklist_pantheon_service_level();
+  $current_theme = variable_get('theme_default', HEALTHCHECK_UNSET);
+
+  $blocked_users = db_query('SELECT COUNT(*) FROM {users} WHERE status = 0 AND uid > 1')->fetchField();
+  $active_users = db_query('SELECT COUNT(*) FROM {users} WHERE status = 1 AND uid > 1')->fetchField();
+
+  $unpublished_nodes = db_query('SELECT COUNT(*) FROM {node} WHERE status = 0')->fetchField();
+  $published_nodes = db_query('SELECT COUNT(*) FROM {node} WHERE status = 1')->fetchField();
+
+  if (version_compare(VERSION, '7.32', '>=')) {
+    $sa_core_2014_005_patched = TRUE;
+  }
+  else {
+    $sa_core_2014_005_patched = (bool) strpos('array_values', file_get_contents(DRUPAL_ROOT . '/includes/database/database.inc'));
+  }
+
+  $checklist = array(
+    'name' => $name,
+    'release' => (empty($release_ver) ? HEALTHCHECK_UNSET : $release_ver),
+    'org' => (empty($org_name) ? HEALTHCHECK_UNSET : $org_name),
+    'org_user' => (empty($org_user) ? HEALTHCHECK_UNSET : $org_user),
+    'smtp_host' => (empty($smtp_host) ? HEALTHCHECK_UNSET : $smtp_host),
+    'theme' => $current_theme,
+    'base_theme' => _apigee_checklist_get_base_theme($current_theme),
+    'last_access' => ($last_access ? gmdate('r', $last_access) : HEALTHCHECK_UNSET),
+    'blocked_users' => $blocked_users,
+    'unblocked_users' => $active_users,
+    'unpublished_nodes' => $unpublished_nodes,
+    'published_nodes' => $published_nodes,
+    'php_version' => PHP_VERSION,
+    'apigee_modules' => $apigee_modules,
+    'contrib_modules' => $contrib_modules,
+    'site_modules' => $site_modules,
+    'sa-core-2014-005-patched' => $sa_core_2014_005_patched,
+  );
+  // Don't overwrite previously-known service level if we currently don't know.
+  if (!empty($service_level)) {
+    $checklist['service_level'] = $service_level;
+  }
+
+  $options = array(
+    'headers' => array(
+      'Content-Type' => 'application/json; charset=utf-8',
+      'Accept' => 'application/json; charset=utf-8'
+    ),
+    'method' => 'PUT',
+    'data' => json_encode($checklist),
+  );
+
+  $response = drupal_http_request('https://api.usergrid.com/devportal/healthcheck/sites/' . $name, $options);
+  $success = (floor($response->code / 100) == 2);
+  if ($success) {
+    variable_set('apigee_checklist_last_run', time());
+  }
+  if (function_exists('drush_log')) {
+    if ($success) {
+      drush_log('Site-status healthcheck successful.', 'success');
+    }
+    else {
+      drush_log('Site-status healthcheck failed.', 'warning');
+    }
+  }
+}

@@ -4,5 +4,4 @@ package = "DevConnect"
 core = "7.x"
 version = "7.x-4.24"
 
-; Depend on devconnect for Symfony YAML support
 dependencies[] = devconnect

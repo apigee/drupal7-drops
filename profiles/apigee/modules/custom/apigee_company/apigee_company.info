@@ -1,0 +1,14 @@
+name = Apigee Company
+description = Provides the company feature integration with Apigee Edge.
+package = Devconnect Mint
+core = 7.x
+version = 7.x-1.0
+
+
+; Module includes
+files[] = controllers/apigee_company_controller.inc
+files[] = controllers/apigee_company_invitation_controller.inc
+files[] = controllers/apigee_company_app_controller.inc
+files[] = entities/apigee_company_entity.inc
+files[] = entities/apigee_company_invitation_entity.inc
+files[] = entities/apigee_company_app_entity.inc

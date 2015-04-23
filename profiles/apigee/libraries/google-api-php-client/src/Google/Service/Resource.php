@@ -33,7 +33,6 @@ class Google_Service_Resource
       'fields' => array('type' => 'string', 'location' => 'query'),
       'trace' => array('type' => 'string', 'location' => 'query'),
       'userIp' => array('type' => 'string', 'location' => 'query'),
-      'userip' => array('type' => 'string', 'location' => 'query'),
       'quotaUser' => array('type' => 'string', 'location' => 'query'),
       'data' => array('type' => 'string', 'location' => 'body'),
       'mimeType' => array('type' => 'string', 'location' => 'header'),
@@ -42,14 +41,14 @@ class Google_Service_Resource
       'prettyPrint' => array('type' => 'string', 'location' => 'query'),
   );
 
-  /** @var Google_Service $service */
-  private $service;
-
   /** @var Google_Client $client */
   private $client;
 
   /** @var string $serviceName */
   private $serviceName;
+
+  /** @var string $servicePath */
+  private $servicePath;
 
   /** @var string $resourceName */
   private $resourceName;
@@ -59,8 +58,8 @@ class Google_Service_Resource
 
   public function __construct($service, $serviceName, $resourceName, $resource)
   {
-    $this->service = $service;
     $this->client = $service->getClient();
+    $this->servicePath = $service->servicePath;
     $this->serviceName = $serviceName;
     $this->resourceName = $resourceName;
     $this->methods = isset($resource['methods']) ?
@@ -173,8 +172,6 @@ class Google_Service_Resource
       }
     }
 
-    $servicePath = $this->service->servicePath;
-
     $this->client->getLogger()->info(
         'Service Call',
         array(
@@ -186,7 +183,7 @@ class Google_Service_Resource
     );
 
     $url = Google_Http_REST::createRequestUri(
-        $servicePath,
+        $this->servicePath,
         $method['path'],
         $parameters
     );

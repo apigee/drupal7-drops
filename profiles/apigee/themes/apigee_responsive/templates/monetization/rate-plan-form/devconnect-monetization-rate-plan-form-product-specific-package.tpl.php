@@ -8,7 +8,7 @@
   <strong><?php echo $rate_plan->getDisplayName(); ?></strong>
   <?php if ($rate_plan->getChildRatePlan() != NULL): // Start Future Product Specific 1 ?>
   <p style="color: #666;">
-    <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDate(), 0, 10)); ?>
+    <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDateTime()->format('m-d-Y'))); ?>
   </p>
   <div class="tabbable">
     <ul class="nav nav-pills">

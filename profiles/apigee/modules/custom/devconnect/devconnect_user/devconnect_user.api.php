@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Allows modules to do something immediately after a user is saved to KMS.
+ * Allows modules to do something immediately after a user is saved to Edge.
  *
  * @param array $results
  *              Fields coming back from Edge
@@ -9,11 +9,11 @@
  *              Fields that were sent to user_save
  * @param stdClass|null $account
  *              If this is a user edit, contains the user object. If it is a user
- *              create, it is NULL.
+ *        save, it is NULL.
  */
 function hook_devconnect_user_save(array $results, array &$edit, $account) {
   $action = ($account->uid ? 'created' : 'updated');
-  $user_name = $edit['name'];
+  $user_name = $edit['data']['name'];
   drupal_set_message("User $user_name was $action in KMS.");
 }
 

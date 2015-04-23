@@ -12,40 +12,41 @@ function devconnect_app_attributes_menu() {
   $items = array();
 
   $items[APP_ATTRIBUTES_ADMIN_PATH] = array(
-    'title' => 'Dev Portal App Attributes',
+    'title' => 'Application attributes',
+    'description' => 'Add and configure attributes for developer application.',
     'page callback' => 'devconnect_app_attributes_list',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/add'] = array(
-    'title' => 'Add Dev Portal App Attribute',
+    'title' => 'Add attribute',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_edit'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/import'] = array(
-    'title' => 'Import App Attributes',
+    'title' => 'Import attributes',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_import'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/export'] = array(
-    'title' => 'Export App Attributes',
+    'title' => 'Export attributes',
     'page callback' => 'devconnect_app_attributes_export',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/edit/%'] = array(
-    'title' => 'Edit Dev Portal App Attribute',
+    'title' => 'Edit application attribute',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_app_attributes_edit', APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
   );
   $items[APP_ATTRIBUTES_ADMIN_PATH . '/delete/%'] = array(
-    'title' => 'Delete Dev Portal App Attribute',
+    'title' => 'Delete application attribute',
     'page callback' => 'devconnect_app_attributes_delete',
     'page arguments' => array(APP_ATTRIBUTES_ADMIN_PATH_COUNT + 1),
     'access arguments' => array('administer site configuration'),
@@ -714,10 +715,12 @@ function devconnect_app_attributes_import_validate($form, &$form_state) {
     $form_state['storage']['parsed_attributes'] = array();
     return;
   }
-  try {
-    $obj = Symfony\Component\Yaml\Yaml::parse($app_attributes, TRUE);
+  if (!module_exists('libraries')) {
+    module_load_include('module', 'libraries');
   }
-  catch (Symfony\Component\Yaml\Exception\ParseException $e) {
+  require_once libraries_get_path('spyc') . '/Spyc.php';
+  $obj = spyc_load($app_attributes);
+  if (!$obj) {
     form_set_error('app_attributes', t('The text you supplied is not valid YAML.'));
     return;
   }
@@ -789,7 +792,11 @@ function devconnect_app_attributes_import_submit($form, &$form_state) {
 
 function devconnect_app_attributes_export() {
   $attributes = variable_get('app_attributes', array());
-  $yaml = \Symfony\Component\Yaml\Yaml::dump($attributes, 4, 2);
+  if (!module_exists('libraries')) {
+    module_load_include('module', 'libraries');
+  }
+  require_once libraries_get_path('spyc') . '/Spyc.php';
+  $yaml = spyc_dump($attributes);
   drupal_set_title(t('Export App Attributes'));
   drupal_add_css('pre.app-attributes-dump{background-color:#e0e0e0;border:1px solid #999999;border-radius:4px;padding:1em;}', array('type' => 'inline'));
 

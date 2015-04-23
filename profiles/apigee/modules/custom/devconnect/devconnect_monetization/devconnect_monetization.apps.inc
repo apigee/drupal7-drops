@@ -27,7 +27,7 @@ function devconnect_monetization_company_apps_edit_form($user, $app_name = NULL)
 }
 
 function devconnect_monetization_company_app_delete_form($user, $app_id) {
-  $args = array('devconnect_developer_app_delete_form', $user, $app_id);
+  $args = array('devconnect_developer_apps_delete_form', $user, $app_id);
   try {
     return _devconnect_monetization_impersonate_company_admin('drupal_get_form', $args);
   }
@@ -47,13 +47,16 @@ function _devconnect_monetization_impersonate_company_admin($callback, $args = a
   global $user;
 
   $account = entity_load_single('user', $GLOBALS['user']->uid);
-  $company_id = !empty($account->field_mint_company_id[LANGUAGE_NONE][0]['value']) ? $account->field_mint_company_id[LANGUAGE_NONE][0]['value'] : NULL;
-  if (valid_email_address($company_id)) {
+  $email = !empty($account->field_mint_company_id[LANGUAGE_NONE][0]['value']) ? $account->field_mint_company_id[LANGUAGE_NONE][0]['value'] : NULL;
+  if($email == null) {
+    $email = $account->mail;
+  }
+  if (valid_email_address($email)) {
 
     $original_user = $user;
     $old_state = drupal_save_session();
     drupal_save_session(FALSE);
-    $user = user_load_by_mail($company_id);
+    $user = user_load_by_mail($email);
     $user_arg_index = array_search('user_arg', $args);
     if ($user_arg_index !== FALSE) {
       $args[$user_arg_index] = $user;

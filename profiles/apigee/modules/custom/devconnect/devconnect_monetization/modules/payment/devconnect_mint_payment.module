@@ -184,6 +184,9 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
 
   $provider = module_invoke($payment_method['module'], 'mint_provider_id');
 
+  $headers = array(
+    'source' => $user->mail,
+  );
   $parameters = array(
     'supportedCurrencyId' => $currency_code,
     'provider' => $provider,
@@ -208,9 +211,11 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   }
   $payload = devconnect_mint_payment_build_address_payload($address);
 
+  // Do not send the company ID, but instead sent the developer's email address
+  // which is making this purchase.
   $developer = devconnect_monetization_developer_load();
   try {
-    $payment = $developer->createPayment($parameters, $payload);
+    $payment = $developer->createPayment($parameters, $payload, $headers, $developer->getEmail());
   }
   catch (ResponseException $exception) {
     // If this is a white listing error at WorldPay, throw error with
@@ -277,8 +282,6 @@ function devconnect_mint_payment_form_commerce_checkout_form_checkout_alter(&$fo
   $country_callback['effect'] = 'slide';
   $country_callback['prevent'] = 'click';
 
-  $form['#attributes']['class'][] = 'form-horizontal';
-
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
   $user = user_load_by_mail($developer_id);
 
@@ -286,26 +289,46 @@ function devconnect_mint_payment_form_commerce_checkout_form_checkout_alter(&$fo
   $account = $account[$user->uid];
 
   $developer = devconnect_monetization_developer_load();
-  $address = NULL;
-  foreach ($developer->getAddresses() as $address_item) {
-    if ((is_array($address_item) && $address_item['isPrimary']) || (is_object($address_item) && $address_item->isPrimary())) {
-      $address = is_array($address_item) ? (object) $address_item : $address_item;
-      break;
-    }
-  }
 
-  if (is_object($address)) {
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $address = json_decode($company->attributes['MINT_DEVELOPER_ADDRESS']);
+
     $address_profile = &$form['customer_profile_billing']['commerce_customer_address'][LANGUAGE_NONE][0]['#address'];
-    $address_profile['name_line'] = $developer->getLegalName();
-    $address_profile['thoroughfare'] = $address->getAddress1();
-    $address_profile['premise'] = $address->getAddress2();
-    $address_profile['locality'] = $address->getCity();
+    $address_profile['name_line'] = $company->displayName;
+    $address_profile['thoroughfare'] = $address->address1;
+    $address_profile['premise'] = $address->address2;
+    $address_profile['locality'] = $address->city;
     $address_profile['first_name'] = isset($account->field_first_name[LANGUAGE_NONE][0]['value']) ? $account->field_first_name[LANGUAGE_NONE][0]['value'] : '';
     $address_profile['last_name'] = isset($account->field_last_name[LANGUAGE_NONE][0]['value']) ? $account->field_last_name[LANGUAGE_NONE][0]['value'] : '';
     $address_profile['organisation_name'] = $developer->getConfig()->orgName;
-    $address_profile['administrative_area'] = $address->getState();
-    $address_profile['postal_code'] = $address->getZip();
-    drupal_add_js(array('devconnect_mint_payment' => array('initial_address_country' => $address->getCountry())), 'setting');
+    $address_profile['administrative_area'] = $address->state;
+    $address_profile['postal_code'] = $address->zip;
+    drupal_add_js(array('devconnect_mint_payment' => array('initial_address_country' => $address->country)), 'setting');
+
+  }
+  else {
+    $address = NULL;
+    foreach ($developer->getAddresses() as $address_item) {
+      if ((is_array($address_item) && $address_item['isPrimary']) || (is_object($address_item) && $address_item->isPrimary())) {
+        $address = is_array($address_item) ? (object) $address_item : $address_item;
+        break;
+      }
+    }
+
+    if (is_object($address)) {
+      $address_profile = &$form['customer_profile_billing']['commerce_customer_address'][LANGUAGE_NONE][0]['#address'];
+      $address_profile['name_line'] = $developer->getLegalName();
+      $address_profile['thoroughfare'] = $address->getAddress1();
+      $address_profile['premise'] = $address->getAddress2();
+      $address_profile['locality'] = $address->getCity();
+      $address_profile['first_name'] = isset($account->field_first_name[LANGUAGE_NONE][0]['value']) ? $account->field_first_name[LANGUAGE_NONE][0]['value'] : '';
+      $address_profile['last_name'] = isset($account->field_last_name[LANGUAGE_NONE][0]['value']) ? $account->field_last_name[LANGUAGE_NONE][0]['value'] : '';
+      $address_profile['organisation_name'] = $developer->getConfig()->orgName;
+      $address_profile['administrative_area'] = $address->getState();
+      $address_profile['postal_code'] = $address->getZip();
+      drupal_add_js(array('devconnect_mint_payment' => array('initial_address_country' => $address->getCountry())), 'setting');
+    }
   }
 }
 

@@ -17,14 +17,20 @@ projects[acl][subdir] = "contrib"
 projects[addressfield][type] = "module"
 projects[addressfield][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[admin_menu][type] = "module"
 projects[admin_menu][subdir] = "contrib"
+projects[admin_menu][version] = "3.0-rc5"
 
+; Enabled during profile install.
 projects[admin_views][type] = "module"
 projects[admin_views][subdir] = "contrib"
+projects[admin_views][version] = "1.4"
 
+; Enabled during profile install.
 projects[advanced_forum][type] = "module"
 projects[advanced_forum][subdir] = "contrib"
+projects[advanced_forum][version] = "2.5"
 
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
@@ -32,7 +38,6 @@ projects[apachesolr][subdir] = "contrib"
 projects[apachesolr_stats][type] = "module"
 projects[apachesolr_stats][subdir] = "contrib"
 
-; Enabled during profile install
 projects[autologout][type] = "module"
 projects[autologout][subdir] = "contrib"
 
@@ -40,14 +45,17 @@ projects[autologout][subdir] = "contrib"
 projects[bean][type] = "module"
 projects[bean][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[block_class][type] = "module"
 projects[block_class][subdir] = "contrib"
+projects[block_class][version] = "2.1"
 
+; Enabled during profile install.
 projects[bootstrap_modal_forms][type] = "module"
 projects[bootstrap_modal_forms][subdir] = "contrib"
+projects[bootstrap_modal_forms][download][branch] = "7.x-1.x"
 projects[bootstrap_modal_forms][download][type] = "git"
 projects[bootstrap_modal_forms][download][url] = "http://git.drupal.org/sandbox/bhasselbeck/2167991.git"
-projects[bootstrap_modal_forms][download][branch] = "7.x-1.x"
 projects[bootstrap_modal_forms][directory_name] = "bootstrap_modal_forms"
 
 projects[bugherd][type] = "module"
@@ -60,11 +68,12 @@ projects[captcha][subdir] = "contrib"
 projects[cck_phone][type] = "module"
 projects[cck_phone][subdir] = "contrib"
 
-projects[chart][type] = "module"
-projects[chart][subdir] = "contrib"
-
+; Enabled during profile install.
 projects[ckeditor][type] = "module"
 projects[ckeditor][subdir] = "contrib"
+projects[ckeditor][version] = "1.16"
+; see https://www.drupal.org/node/2454933
+projects[ckeditor][patch][2454933] = "https://www.drupal.org/files/issues/Issue_2454933.patch"
 
 projects[ckeditor_bootstrap][type] = "module"
 projects[ckeditor_bootstrap][subdir] = "contrib"
@@ -79,12 +88,9 @@ projects[commerce][subdir] = "contrib"
 projects[commerce_custom_line_items][type] = "module"
 projects[commerce_custom_line_items][subdir] = "contrib"
 
-projects[commerce_worldpay_business_gateway][type] = "module"
-projects[commerce_worldpay_business_gateway][subdir] = "contrib"
-projects[commerce_worldpay_business_gateway][download][type] = "git"
-projects[commerce_worldpay_business_gateway][download][url] = "http://git.drupal.org/sandbox/magicmyth/1433370.git"
-projects[commerce_worldpay_business_gateway][download][branch] = "7.x-1.x"
-projects[commerce_worldpay_business_gateway][directory_name] = "commerce_worldpay_business_gateway"
+; Deprecated
+projects[commerce_worldpay][type] = "module"
+projects[commerce_worldpay][subdir] = "contrib"
 
 projects[connector][type] = "module"
 projects[connector][subdir] = "contrib"
@@ -96,14 +102,20 @@ projects[contentapi][subdir] = "contrib"
 projects[content_access][type] = "module"
 projects[content_access][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[context][type] = "module"
 projects[context][subdir] = "contrib"
+projects[context][version] = "3.6"
 
+; Enabled during profile install.
 projects[context_condition_theme][type] = "module"
 projects[context_condition_theme][subdir] = "contrib"
+projects[context_condition_theme][version] = "1.0"
 
+; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
+projects[ctools][version] = "1.7"
 
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
@@ -130,30 +142,42 @@ projects[entityreference][subdir] = "contrib"
 ; see https://www.drupal.org/node/2170193
 projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
 
+; Enabled during profile install.
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
+projects[entity][version] = "1.6"
 
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
 projects[environment_indicator][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[faq][type] = "module"
 projects[faq][subdir] = "contrib"
+projects[faq][version] = "1.0"
 
+; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
+projects[features][version] = "2.4"
 
 projects[features_extra][type] = "module"
 projects[features_extra][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[field_group][type] = "module"
 projects[field_group][subdir] = "contrib"
+projects[field_group][version] = "1.4"
 
+; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
+projects[file_entity][version] = "2.0-beta1"
 
+; Enabled during profile install.
 projects[flood_control][type] = "module"
 projects[flood_control][subdir] = "contrib"
+projects[flood_control][version] = "1.0"
 
 projects[ftools][type] = "module"
 projects[ftools][subdir] = "contrib"
@@ -187,8 +211,10 @@ projects[http_client][subdir] = "contrib"
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[jquery_colorpicker][type] = "module"
 projects[jquery_colorpicker][subdir] = "contrib"
+projects[jquery_colorpicker][version] = "1.1"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
@@ -201,17 +227,23 @@ projects[ldap][subdir] = "contrib"
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[libraries][type] = "module"
 projects[libraries][subdir] = "contrib"
+projects[libraries][version] = "2.2"
 
 projects[linkchecker][type] = "module"
 projects[linkchecker][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[link][type] = "module"
 projects[link][subdir] = "contrib"
+projects[link][version] = "1.3"
 
+; Enabled during profile install.
 projects[logintoboggan][type] = "module"
 projects[logintoboggan][subdir] = "contrib"
+projects[logintoboggan][version] = "1.4"
 
 projects[mailsystem][type] = "module"
 projects[mailsystem][subdir] = "contrib"
@@ -222,19 +254,22 @@ projects[markdown][subdir] = "contrib"
 projects[mediaelement][type] = "module"
 projects[mediaelement][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-alpha4"
+projects[media][version] = "2.x-dev"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
+; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
-; see https://www.drupal.org/node/1823376
-projects[media_youtube][patch][1823376] = "https://www.drupal.org/files/issues/provide-access-wrapper-1823376-6.patch"
+projects[media_youtube][version] = "2.0-rc5"
 
+; Enabled during profile install.
 projects[menu_attributes][type] = "module"
 projects[menu_attributes][subdir] = "contrib"
+projects[menu_attributes][version] = "1.0-rc3"
 
 projects[message][type] = "module"
 projects[message][subdir] = "contrib"
@@ -242,8 +277,10 @@ projects[message][subdir] = "contrib"
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
 
+; Enabled during profile install.
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
+projects[me][version] = "1.1"
 
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"
@@ -251,8 +288,10 @@ projects[migrate][subdir] = "contrib"
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
 
+; Enabled on install.
 projects[module_filter][type] = "module"
 projects[module_filter][subdir] = "contrib"
+projects[module_filter][version] = "2.0"
 
 projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
@@ -270,8 +309,10 @@ projects[oauth][subdir] = "contrib"
 projects[oauthconnector][type] = "module"
 projects[oauthconnector][subdir] = "contrib"
 
+; Enabled on install.
 projects[pathauto][type] = "module"
 projects[pathauto][subdir] = "contrib"
+projects[pathauto][version] = "1.2"
 
 projects[readonlymode][type] = "module"
 projects[readonlymode][subdir] = "contrib"
@@ -279,14 +320,18 @@ projects[readonlymode][subdir] = "contrib"
 projects[recaptcha][type] = "module"
 projects[recaptcha][subdir] = "contrib"
 
+; Enabled on install.
 projects[redirect][type] = "module"
 projects[redirect][subdir] = "contrib"
+projects[redirect][version] = "1.0-rc1"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
 
+; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
 projects[remote_stream_wrapper][subdir] = "contrib"
+projects[remote_stream_wrapper][version] = "1.0-rc1"
 
 projects[rules][type] = "module"
 projects[rules][subdir] = "contrib"
@@ -320,8 +365,10 @@ projects[sumo][directory_name] = "sumo"
 projects[syntaxhighlighter][type] = "module"
 projects[syntaxhighlighter][subdir] = "contrib"
 
+; Enabled on install.
 projects[token][type] = "module"
 projects[token][subdir] = "contrib"
+projects[token][version] = "1.6"
 
 projects[translation_overview][type] = "module"
 projects[translation_overview][subdir] = "contrib"
@@ -329,8 +376,10 @@ projects[translation_overview][subdir] = "contrib"
 projects[util][type] = "module"
 projects[util][subdir] = "contrib"
 
+; Enabled on install.
 projects[uuid][type] = "module"
 projects[uuid][subdir] = "contrib"
+projects[uuid][version] = "1.0-alpha6"
 
 ; Deprecated
 projects[uuid_features][type] = "module"
@@ -340,8 +389,10 @@ projects[uuid_features][version] = "1.x-dev"
 projects[variable][type] = "module"
 projects[variable][subdir] = "contrib"
 
+; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
+projects[views][version] = "3.10"
 ; see https://www.drupal.org/node/1809958
 projects[views][patch][1809958] = "https://www.drupal.org/files/issues/fix-views-missing-dom-id-1809958-21.patch"
 ; see https://www.drupal.org/node/1036962
@@ -353,18 +404,23 @@ projects[views_accordion][subdir] = "contrib"
 projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
 
+; Enabled on install.
 projects[views_queue][type] = "module"
 projects[views_queue][subdir] = "contrib"
+projects[views_queue][version] = "1.x-dev"
 
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
 
+; Enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
+projects[webform][version] = "4.7"
 
-; Prevents XSS in Full HTML
+; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
 projects[wysiwyg_filter][subdir] = "contrib"
+projects[wysiwyg_filter][version] = "1.6-rc2"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
@@ -373,10 +429,13 @@ projects[xautoload][subdir] = "contrib"
 
 ; --- THEMES ---
 
+; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
+projects[bootstrap][version] = "3.0"
 
+; Enabled during profile install for admin screens.
 projects[rubik][type] = "theme"
-projects[rubik][version] = "4.1"
+projects[rubik][version] = "4.2"
 
 projects[tao][type] = "theme"
 
@@ -683,8 +742,8 @@ libraries[jquery_selectlist][download][url] = "http://odyniec.net/projects/selec
 ; Used by views_slideshow
 libraries[json2][destination] = "libraries"
 libraries[json2][directory_name] = "json2"
-libraries[json2][download][type] = "git"
-libraries[json2][download][url] = "https://github.com/douglascrockford/JSON-js.git"
+libraries[json2][download][type] = "file"
+libraries[json2][download][url] = "https://raw.githubusercontent.com/douglascrockford/JSON-js/master/json2.js"
 
 ; Used by devconnect_monetization
 libraries[maskmoney][destination] = "libraries"
@@ -695,12 +754,13 @@ libraries[maskmoney][download][url] = "https://raw.githubusercontent.com/plentz/
 ; Used by mediaelement
 libraries[mediaelement][destination] = "libraries"
 libraries[mediaelement][directory_name] = "mediaelement"
-libraries[mediaelement][download][type] = "git"
-libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement.git"
+libraries[mediaelement][download][type] = "file"
+libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement/archive/2.16.4.tar.gz"
 
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
+libraries[mgmt-api-php-sdk][download][tag] = "1.1.0"
 libraries[mgmt-api-php-sdk][download][type] = "git"
 libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk.git"
 

@@ -1,7 +1,9 @@
 <?php
 
 function devconnect_debug_boot() {
-  register_shutdown_function('devconnect_debug_dump');
+  if ($_GET['q'] != 'batch') {
+    register_shutdown_function('devconnect_debug_dump');
+  }
 }
 
 function devconnect_debug_dump() {

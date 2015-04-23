@@ -152,7 +152,7 @@ function devconnect_mint_worldpay_mint_dispatch_redirect_form($form, $form_state
 }
 
 function devconnect_mint_worldpay_success() {
-  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $data = devconnect_mint_worldpay_read_request();
   $order = commerce_order_load($data['query.params']['orderid']);
   $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
 
@@ -191,9 +191,15 @@ function devconnect_mint_worldpay_success() {
     );
 
     $developer = devconnect_monetization_developer_load();
-
+    $developer_or_company_id = NULL;
+    // If there is a company in the context then update the developer email to
+    // the company name so that the balance is updated for the company.
+    $company = apigee_company_get_current_context_company();
+    if (!empty($company)) {
+      $developer_or_company_id = $company->name;
+    }
     try {
-      $developer->topUpPrepaidBalance($new_balance);
+      $developer->topUpPrepaidBalance($new_balance, $developer_or_company_id);
       module_invoke_all('devconnect_monetization_developer_topped_up', $developer, $order);
     }
     catch (Exception $tue) {
@@ -231,7 +237,7 @@ function devconnect_mint_worldpay_success() {
 }
 
 function devconnect_mint_worldpay_pending() {
-  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $data = devconnect_mint_worldpay_read_request();
   $order = commerce_order_load($data['query.params']['orderid']);
   if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
     return '';
@@ -245,7 +251,7 @@ function devconnect_mint_worldpay_pending() {
 }
 
 function devconnect_mint_worldpay_failure() {
-  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $data = devconnect_mint_worldpay_read_request();
   $order = commerce_order_load($data['query.params']['orderid']);
   if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
     return '';
@@ -264,7 +270,7 @@ function devconnect_mint_worldpay_failure() {
 }
 
 function devconnect_mint_worldpay_cancel() {
-  $data = \Apigee\Util\RequestInputReader::readRequest();
+  $data = devconnect_mint_worldpay_read_request();
   $order = commerce_order_load($data['query.params']['orderid']);
   if (isset($order->data['processed']) && $order->data['processed'] == TRUE) {
     return '';
@@ -345,11 +351,10 @@ function devconnect_mint_worldpay_transaction_process($order, $payment_method, &
   commerce_payment_transaction_save($transaction);
   $data['transaction_id'] = $transaction->transaction_id;
 
-
   $order->data['processed'] = TRUE;
   commerce_order_save($order);
 
-  watchdog('devconnect_mint_worldpay', 'Payment Response processed for Order @order_number with ID @txn_id.', array('@txn_id' => $data['transId'], '@order_number' => $order->order_number), WATCHDOG_INFO);
+  watchdog('devconnect_mint_worldpay', 'Payment Response processed for Order @order_number with ID @txn_id.', array('@txn_id' => $data['transaction_id'], '@order_number' => $order->order_number), WATCHDOG_INFO);
 }
 
 /**
@@ -445,4 +450,31 @@ function devconnect_mint_worldpay_payment_method_title() {
                 '<img src="//www.worldpay.com/images/cardlogos/ELV.gif" style="border:none" alt="ELV payments supported by WorldPay">'
   );
   return t('<div>!worldpay_logo (!refund_policy)</div><div class="payment-worldpay-cards">!cards</div>', $args);
+}
+
+function devconnect_mint_worldpay_read_request() {
+  static $request;
+  if (!isset($request)) {
+    $headers = array();
+    foreach ($_SERVER as $name => $value) {
+      if (substr($name, 0, 5) == 'HTTP_') {
+        $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+      }
+    }
+    $request['headers'] = $headers;
+    $handle = fopen('php://input', 'r');
+    $buffer = NULL;
+    $chunk_size = isset($request['headers']['Content-Length']) ? $request['headers']['Content-Length'] : 1025;
+    while (!feof($handle)) {
+      $chunk = fread($handle, $chunk_size);
+      $buffer = isset($buffer) ? $buffer . $chunk : $chunk;
+    }
+    fclose($handle);
+    $request['data'] = $buffer;
+    $request['url'] = isset($_SERVER['SCRIPT_URL']) ? $_SERVER['SCRIPT_URL'] : '';
+    $request['query.params'] = $_GET;
+    $request['query.string'] = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
+    $request['http.method'] = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';
+  }
+  return $request;
 }

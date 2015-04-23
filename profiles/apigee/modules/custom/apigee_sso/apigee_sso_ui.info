@@ -1,5 +1,5 @@
 name = Apigee SSO UI
 description = User-interface elements for various types of Apigee Single-Sign-On
 core = 7.x
-package = "apigee.com"
+package = "Apigee"
 version = "7.x-4.26"

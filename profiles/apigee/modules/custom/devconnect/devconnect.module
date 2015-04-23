@@ -1,5 +1,10 @@
 <?php
 
+use Drupal\devconnect\Crypto;
+use Drupal\devconnect\ErrorHandling;
+use Drupal\devconnect\VariableCache;
+use Drupal\devconnect\WatchdogLogger;
+
 /**
  * Implements hook_init().
  *
@@ -18,12 +23,15 @@ function devconnect_init() {
       $lib_dir = 'profiles/apigee/libraries/mgmt-api-php-sdk';
     }
     require_once $lib_dir . '/vendor/autoload.php';
+
+    require_once __DIR__ . '/lib/Crypto.php';
+    require_once __DIR__ . '/lib/ErrorHandling.php';
+    require_once __DIR__ . '/lib/VariableCache.php';
+    require_once __DIR__ . '/lib/WatchdogLogger.php';
+
     $already_booted = TRUE;
-    $key = variable_get('apigee_crypt_key', NULL);
-    if (empty($key)) {
-      $key = hash('SHA256', 'w3-Love_ap|s', TRUE);
-    }
-    Apigee\Util\Crypto::setKey($key);
+
+    Crypto::setKey(devconnect_get_crypt_key());
   }
 }
 
@@ -181,7 +189,7 @@ function devconnect_default_api_client() {
  * @return Apigee\Util\OrgConfig
  */
 function devconnect_default_org_config($requested_org = 'default') {
-  static $configs = array();
+  $configs = &drupal_static(__FUNCTION__, array());
 
   if (!array_key_exists($requested_org, $configs)) {
     // Make sure autoloader is run.
@@ -189,28 +197,7 @@ function devconnect_default_org_config($requested_org = 'default') {
     $settings = devconnect_get_org_settings();
     drupal_alter('devconnect_org_settings', $settings, $requested_org);
 
-    $buildInfo = FALSE;
-    if (file_exists(DRUPAL_ROOT . '/buildInfo')) {
-      $buildInfo = DRUPAL_ROOT . '/buildInfo';
-    }
-    elseif (file_exists(DRUPAL_ROOT . '/profiles/apigee/buildInfo')) {
-      $buildInfo = DRUPAL_ROOT . '/profiles/apigee/buildInfo';
-    }
-    $user_agent = FALSE;
-    if ($buildInfo) {
-      $fp = fopen($buildInfo, 'r');
-      $line = trim(fgets($fp));
-      fclose($fp);
-      if (preg_match('!([0-9.]+)$!', $line, $matches)) {
-        $user_agent = 'DevPortal/' . $matches[1];
-      }
-    }
-    if (!$user_agent) {
-      $info = system_get_info('module', 'devconnect');
-      $user_agent = 'devconnect/' . $info['version'];
-    }
-
-    $logger = new Apigee\Drupal\WatchdogLogger();
+    $logger = new WatchdogLogger();
     $logger::setLogThreshold($settings['log_threshold']);
     $user_mail = user_is_logged_in() ? $GLOBALS['user']->mail : NULL;
 
@@ -223,11 +210,11 @@ function devconnect_default_org_config($requested_org = 'default') {
       'user_mail' => $user_mail,
       'subscribers' => array($guzzle_log_plugin),
       'http_options' => array(
-        'connection_timeout' => intval($settings['connection_timeout']),
+        'connect_timeout' => intval($settings['connection_timeout']),
         'timeout' => intval($settings['request_timeout'])
       ),
-      'user_agent' => $user_agent,
-      'variable_store' => new Apigee\Drupal\VariableCache(),
+      'user_agent' => devconnect_get_build_version(),
+      'variable_store' => new VariableCache(),
       'referer' => url($_GET['q'], array('absolute' => TRUE))
     );
     if (function_exists('devconnect_debug_register')) {
@@ -236,6 +223,39 @@ function devconnect_default_org_config($requested_org = 'default') {
     $configs[$requested_org] = new Apigee\Util\OrgConfig($settings['org'], $settings['endpoint'], $settings['user'], $settings['pass'], $options);
   }
   return $configs[$requested_org];
+}
+
+/**
+ * Gets the version of the current release from the buildInfo file if present,
+ * or else from the version of the devconnect module.
+ *
+ * @return string
+ */
+function devconnect_get_build_version() {
+  static $build_version;
+  if (!isset($build_version)) {
+    $buildInfo = FALSE;
+    if (file_exists(DRUPAL_ROOT . '/buildInfo')) {
+      $buildInfo = DRUPAL_ROOT . '/buildInfo';
+    }
+    elseif (file_exists(DRUPAL_ROOT . '/profiles/apigee/buildInfo')) {
+      $buildInfo = DRUPAL_ROOT . '/profiles/apigee/buildInfo';
+    }
+    $build_version = FALSE;
+    if ($buildInfo) {
+      $fp = fopen($buildInfo, 'r');
+      $line = trim(fgets($fp));
+      fclose($fp);
+      if (preg_match('!([0-9.]{2,})$!', $line, $matches)) {
+        $build_version = 'DevPortal/' . $matches[1];
+      }
+    }
+    if (!$build_version) {
+      $info = system_get_info('module', 'devconnect');
+      $build_version = 'devconnect/' . $info['version'];
+    }
+  }
+  return $build_version;
 }
 
 /**
@@ -288,14 +308,14 @@ function _devconnect_warn_deprecated() {
  * @param int $display
  * @return bool|string
  */
-function devconnect_notify($error_code, $summary, $details, $severity = Apigee\Util\ErrorHandling::SEVERITY_ERROR, $display = Apigee\Util\ErrorHandling::DISPLAY_MESSAGE) {
+function devconnect_notify($error_code, $summary, $details, $severity = ErrorHandling::SEVERITY_ERROR, $display = ErrorHandling::DISPLAY_MESSAGE) {
   drupal_alter('devconnect_error', $error_code, $summary, $details, $severity, $display);
 
   switch ($severity) {
-    case Apigee\Util\ErrorHandling::SEVERITY_STATUS:
+    case ErrorHandling::SEVERITY_STATUS:
       $message_type = 'status';
       break;
-    case Apigee\Util\ErrorHandling::SEVERITY_WARNING:
+    case ErrorHandling::SEVERITY_WARNING:
       $message_type = 'warning';
       break;
     default:
@@ -305,7 +325,7 @@ function devconnect_notify($error_code, $summary, $details, $severity = Apigee\U
   if (!user_access('view devconnect errors')) {
     $details = NULL;
   }
-  if ($display == Apigee\Util\ErrorHandling::DISPLAY_MESSAGE) {
+  if ($display == ErrorHandling::DISPLAY_MESSAGE) {
     $formatted_message = theme('devconnect_error_message', array('summary' => $summary, 'detail' => $details));
     drupal_set_message($formatted_message, $message_type);
     return FALSE;
@@ -321,23 +341,96 @@ function devconnect_get_debug_data() {
   return Apigee\Util\DebugData::toArray();
 }
 
+function devconnect_get_crypt_key() {
+  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
+  if (is_file(DRUPAL_ROOT . '/' . $private_dir . '/.apigee.key')) {
+    $key = file_get_contents(DRUPAL_ROOT . '/' . $private_dir . '/.apigee.key');
+  }
+  if (empty($key)) {
+    $key = variable_get('apigee_crypt_key', NULL);
+  }
+  if (empty($key)) {
+    $key = hash('SHA256', 'w3-Love_ap|s', TRUE);
+  }
+  return $key;
+}
+
+/**
+ * Fetches Edge configuration settings.
+ *
+ * If settings have been saved encrypted in the .apigee file in the private
+ * filesystem, use those. If they exist in the database, use those. If they
+ * exist in a YAML file from a legacy Dev Portal install, use those.
+ *
+ * If settings were not read from the .apigee file, we then save them to the
+ * .apigee file and delete them from the database (we also try to delete the
+ * YAML file if it is present).
+ *
+ * @return array
+ */
 function &devconnect_get_org_settings() {
   devconnect_init();
-  $custom_vars = variable_get('devconnect_org_settings', NULL);
-  $settings_saved = !empty($custom_vars);
-  if (!$settings_saved) {
-    $possible_paths = array('sites/default/private', 'sites/default/files/private');
-    $private_filesystem = variable_get('file_private_path', NULL);
-    if ($private_filesystem) {
-      array_unshift($possible_paths, $private_filesystem);
-    }
-    foreach ($possible_paths as $config_path) {
-      if (file_exists("$config_path/config/active/devconnect.settings.yml")) {
-        $custom_vars = Symfony\Component\Yaml\Yaml::parse("$config_path/config/active/devconnect.settings.yml");
-        break;
+
+  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
+  $key = devconnect_get_crypt_key();
+  Crypto::setKey($key);
+
+  $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+  $got_results = FALSE;
+  $has_mcrypt = defined('MCRYPT_RIJNDAEL_128');
+  $yaml_file = NULL;
+  if (file_exists($config_file)) {
+    $encrypted = file_get_contents($config_file);
+    if ($encrypted && $has_mcrypt) {
+      try {
+        $decrypted = Crypto::decrypt($encrypted);
+        if ($decrypted) {
+          $custom_vars = @unserialize($decrypted);
+          if (!is_array($custom_vars) || empty($custom_vars)) {
+            $custom_vars = NULL;
+          }
+          else {
+            $got_results = TRUE;
+          }
+        }
+      }
+      catch (Exception $e) {
       }
     }
   }
+  if (!$got_results) {
+    $custom_vars = variable_get('devconnect_org_settings', NULL);
+    $got_results = !empty($custom_vars);
+    if (!$got_results) {
+      $possible_paths = array('sites/default/private', 'sites/default/files/private');
+      $private_filesystem = variable_get('file_private_path', NULL);
+      if ($private_filesystem) {
+        array_unshift($possible_paths, $private_filesystem);
+      }
+      foreach ($possible_paths as $config_path) {
+        $yaml_file = "$config_path/config/active/devconnect.settings.yml";
+        if (file_exists($yaml_file)) {
+          if (!module_exists('libraries')) {
+            module_load_include('module', 'libraries');
+          }
+          require_once libraries_get_path('spyc') . '/Spyc.php';
+          $custom_vars = spyc_load_file($yaml_file);
+          if (array_key_exists('pass', $custom_vars) && $has_mcrypt) {
+            try {
+              $pass = Crypto::decrypt($custom_vars['pass']);
+              if ($pass) {
+                $custom_vars['pass'] = $pass;
+              }
+            } catch (Exception $e) {
+            }
+          }
+          $got_results = TRUE;
+          break;
+        }
+      }
+    }
+  }
+
   if (empty($custom_vars)) {
     $custom_vars = array(
       'org' => '',
@@ -349,17 +442,26 @@ function &devconnect_get_org_settings() {
       'request_timeout' => 4
     );
   }
-  elseif (array_key_exists('pass', $custom_vars) && defined('MCRYPT_RIJNDAEL_128')) {
+  elseif (array_key_exists('pass', $custom_vars) && $has_mcrypt) {
     try {
-      $pass = Apigee\Util\Crypto::decrypt($custom_vars['pass']);
+      $pass = Crypto::decrypt($custom_vars['pass']);
       if ($pass) {
         $custom_vars['pass'] = $pass;
       }
     } catch (Exception $e) {
     }
   }
-  if (!$settings_saved) {
-    variable_set('devconnect_org_settings', $custom_vars);
+
+  if ($got_results && $has_mcrypt) {
+    if (!file_exists($config_file)) {
+      file_put_contents($config_file, Crypto::encrypt(serialize($custom_vars)));
+      // Let drush touch this file
+      @chmod($config_file, 0666);
+      variable_del('devconnect_org_settings');
+    }
+    if (isset($yaml_file) && file_exists(DRUPAL_ROOT . '/' . $yaml_file)) {
+      @unlink(DRUPAL_ROOT . '/' . $yaml_file);
+    }
   }
   return $custom_vars;
 }

@@ -36,6 +36,12 @@ class Google_Service_Gmail extends Google_Service
   /** Manage drafts and send emails. */
   const GMAIL_COMPOSE =
       "https://www.googleapis.com/auth/gmail.compose";
+  /** Insert mail into your mailbox. */
+  const GMAIL_INSERT =
+      "https://www.googleapis.com/auth/gmail.insert";
+  /** Manage mailbox labels. */
+  const GMAIL_LABELS =
+      "https://www.googleapis.com/auth/gmail.labels";
   /** View and modify but not delete your email. */
   const GMAIL_MODIFY =
       "https://www.googleapis.com/auth/gmail.modify";

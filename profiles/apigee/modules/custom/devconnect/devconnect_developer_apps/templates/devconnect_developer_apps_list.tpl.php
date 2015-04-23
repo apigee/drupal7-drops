@@ -4,43 +4,27 @@
  * Default theme implementation to display list of developer apps.
  *
  * Available variables:
- * $user - fully-populated user object (stdClass)
+ * $add_app - link to add an app if user has permission, otherwise FALSE.
  * $application_count - number of applications registered to the user
  * $applications - array of arrays, each of which has the following keys:
  *  - app_name
  *  - callback_url
  *  - credential (each member has apiproduct, status, displayName keys)
  *  - delete_url
+ *  - created (Unix timestamp)
+ *  - new_status (TRUE if app created in last 24 hrs, FALSE otherwise)
+ *  - noproducts (TRUE if there are no API Products for this app, else FALSE)
+ * $user - fully-populated user object (stdClass)
+ * $show_status - bool indicating whether APIProduct status should be shown.
+ * $show_analytics - bool indicating whether analytics link should be shown.
+ * $singular - label for an app. Usually App or API. First letter is uppercase.
+ * $singular_downcase - label for an app, with first letter lowercased unless
+ *                      it is an acronym.
+ * $plural - label for more than one app. First letter uppercase.
+ * $plural_downcase - label for more than one app, downcased as above.
  */
 
-$singular = _devconnect_developer_apps_get_app_label(FALSE);
-$plural = _devconnect_developer_apps_get_app_label(TRUE);
-if ($singular == 'API') {
-  $singular_downcase = $singular;
-  $plural_downcase = $plural;
-}
-else {
-  $singular_downcase = strtolower($singular);
-  $plural_downcase = strtolower($plural);
-}
-
-// Set Title
-if ($user->uid == $GLOBALS['user']->uid) {
-  $title = t("My $plural");
-}
-else {
-  $title = t("@name’s $plural", array('@name' => $user->name));
-}
-drupal_set_title($title);
-
-// Build Breadcrumbs
-$breadcrumb = array();
-$breadcrumb[] = l(t('Home'), '<front>');
-
-// Set Breadcrumbs
-drupal_set_breadcrumb($breadcrumb);
-
-print l(t("Add a new $singular_downcase"), 'user/' . $user->uid . '/apps/add', array('attributes' => array('class' => array('add-app'))));
+print $add_app;
 ?>
 
 <form class="form-stacked">

@@ -6,6 +6,11 @@
 
             // Initialize datepicket widget
             $("input.date").datepicker();
+            if(settings.date_format === 'd-m-Y') {
+                $("input.date").datepicker("option", "dateFormat", "dd-mm-yy");
+            } else {
+                $("input.date").datepicker("option", "dateFormat", "mm/dd/yy");
+            }
 
             // Listen for the user to switch between tabs
             if ($(".tabbable .nav-tabs a.plan-tab[data-toggle='tab']").length == 0) {

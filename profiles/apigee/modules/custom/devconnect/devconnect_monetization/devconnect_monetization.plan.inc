@@ -9,6 +9,7 @@
 use Apigee\Mint\Developer;
 use Apigee\Mint\DeveloperRatePlan;
 use Apigee\Mint\Exceptions\MintApiException;
+use Apigee\Mint\Exceptions\InsufficientFundsException;
 use Apigee\Mint\Limit;
 use Apigee\Mint\MonetizationPackage;
 use Apigee\Mint\Organization;
@@ -17,6 +18,7 @@ use Apigee\Mint\SuborgProduct;
 use Apigee\Mint\Types\QuotaType;
 use Apigee\Util\OrgConfig;
 use Apigee\Util\CacheFactory;
+use Apigee\Mint\Types\BillingType;
 
 /**
  * Drupal form for monetization plan.
@@ -63,8 +65,10 @@ function devconnect_monetization_plan_form(array $form, array &$form_state, Deve
  * Drupal Form.
  */
 function devconnect_monetization_purchase_plan_form($form, &$form_state) {
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
+  /** @var Apigee\Mint\Developer $developer */
   $developer = $form_state['#developer'];
+  /** @var Apigee\Mint\MonetizationPackage $package */
   $package = $form_state['#package'];
 
   $org_timezone = new DateTimeZone($package->getOrganization()->getTimezone());
@@ -72,6 +76,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
   $js_settings = array();
 
   $products_names = array();
+  /** @var Apigee\Mint\Product $product */
   foreach ($package->getProducts() as $product) {
     $products_names['products'][] = $product->getDisplayName();
   }
@@ -102,12 +107,27 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
 
   // See if there is something that keeps user from purchasing a plan from this
   // package.
-  $cannot_purchase_messages = module_invoke_all('purchase_plan_requirements', $developer, $package);
+
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $cannot_purchase_messages = module_invoke_all('purchase_plan_requirements', $company, $package);
+  }
+  else {
+    $cannot_purchase_messages = module_invoke_all('purchase_plan_requirements', $developer, $package);
+  }
+
   foreach (array_keys($cannot_purchase_messages) as $message_key) {
     $cannot_purchase_messages[$message_key] += array('#weight' => 0);
   }
   uasort($cannot_purchase_messages, "element_sort");
-  drupal_alter('purchase_plan_requirements', $cannot_purchase_messages, $developer, $package);
+
+  if (!empty($company)) {
+    drupal_alter('purchase_plan_requirements', $cannot_purchase_messages, $company, $package);
+  }
+  else {
+    drupal_alter('purchase_plan_requirements', $cannot_purchase_messages, $developer, $package);
+  }
+
   $cannot_purchase_message = end($cannot_purchase_messages);
 
   // Get products that this monetization package includes.
@@ -120,6 +140,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     $sub_org_object = new SuborgProduct($product_id, $config);
     $sub_org_list = $sub_org_object->getList();
     $sub_org_strings = array();
+    /** @var Apigee\Mint\SuborgProduct $sub_org */
     foreach ($sub_org_list as $sub_org) {
       if ($sub_org->getOrganization()->getParent() != NULL
         && !in_array($sub_org->getOrganization()
@@ -151,6 +172,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
 
     case 1:
       list($rate_plan) = array_values($plans['rate_plans']);
+      /** @var Apigee\Mint\RatePlan $rate_plan */
       $form['comparisons'] = array(
         '#type'     => 'container',
         '#children' => theme(
@@ -202,6 +224,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     if (isset($form['plan_options']['#default_value'])) {
       $form['plan_options']['#default_value'] = $plan_id;
     }
+    /** @var Apigee\Mint\RatePlan $plan */
     $form['plan_options']['#options'][$plan_id] = $plan->getDisplayName();
   }
 
@@ -272,6 +295,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
       'cancel' => t('End'),
       'purchase' => t('Purchase'),
     ),
+    'date_format' => variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT),
     'select_date_tip' => array(
       'cancel' => t('Select an end date...'),
       'purchase' => t('Select a start date...'),
@@ -323,11 +347,24 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
   $values = $form_state['values'];
   $plan_id = $values['plan_options'];
 
+  $package = $form_state['#package'];
+
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $developer_or_company_id = $company->name;
+  }
+  else {
+    $developer_or_company_id = _devconnect_monetization_get_developer_id(TRUE);
+  }
+
+  // Get DeveloperRatePlans.
+  $config = devconnect_monetization_default_org_config();
+  $developer_rate_plan = new DeveloperRatePlan($developer_or_company_id, $config);
+
+  // Is this a purchase or end of a plan?
   if ($values['action'] == 'purchase') {
-    $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-    $config = devconnect_monetization_default_org_config();
-    $developer_rate_plan = new DeveloperRatePlan($developer_id, $config);
-    $rate_plan = new RatePlan($form_state['#package']->getId(), $config);
+
+    $rate_plan = new RatePlan($package->getId(), $config);
     $rate_plan->load($plan_id);
     $developer_rate_plan->setRatePlan($rate_plan);
 
@@ -342,11 +379,10 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
 
     $org_timezone = new DateTimeZone($rate_plan->getOrganization()->getTimezone());
     $utc_timezone = new DateTimeZone('UTC');
-    $separator = strpos($values['start_date'], '/') > 0 ? '/' : '-';
     // Take the date selected, and set submitted start date to midnight that day.
     $submitted_start_date = $values['start_date'] . ' 00:00:00';
     // Create the date time.
-    $start_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $submitted_start_date, $org_timezone);
+    $start_date = DateTime::createFromFormat(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT) . " H:i:s", $submitted_start_date, $org_timezone);
     // Set the timezone to UTC.
     $start_date->setTimezone($utc_timezone);
 
@@ -359,7 +395,27 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
         '@plan' => $rate_plan->getDisplayName(),
       );
       drupal_set_message(t('@package, @plan has been purchased.', $vars), 'status');
-      CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_id);
+
+      // Display warning while purchasing a future plan if there is no sufficient balance
+      // if the developer is a prepaid developer.
+      $plan_start_date = $developer_rate_plan->getStartDateTime();
+      $today = new DateTime('today', $org_timezone);
+      if($plan_start_date > $today) {
+        $company = apigee_company_get_current_context_company();
+        if (!empty($company)) {
+          if($company->attributes['MINT_BILLING_TYPE'] == BillingType::PREPAID) {
+            drupal_set_message(t('Make sure you have a sufficient prepaid balance in your account on your plan\'s start date.'), 'warning');
+          }
+        }
+        else {
+          $developer = devconnect_monetization_developer_load();
+          if($developer->getBillingType() == BillingType::PREPAID) {
+            drupal_set_message(t('Make sure you have a sufficient prepaid balance in your account on your plan\'s start date.'), 'warning');
+          }
+        }
+      }
+
+      CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_or_company_id);
       module_invoke_all('devconnect_monetization_plan_purchased', $developer_rate_plan);
 
       $modules = module_implements('redirect_after_purchase_plan');
@@ -379,6 +435,32 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
       drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
       $config->logger->critical($re);
     }
+    catch (\Apigee\Mint\Exceptions\InsufficientFundsException $ife) {
+      if ($rate_plan->getCurrency()->getName() != 'POINTS') {
+        $currencies = commerce_currencies();
+        $cost_total = devconnect_monetization_round_up_amount($ife->getTotalCost(), $currencies[$rate_plan->getCurrency()->getName()]['decimals']);
+        $cost_tax = devconnect_monetization_round_up_amount($ife->getTaxCost(), $currencies[$rate_plan->getCurrency()->getName()]['decimals']);
+        $cost_rateplan = devconnect_monetization_round_up_amount($ife->getRatePlanCost(), $currencies[$rate_plan->getCurrency()->getName()]['decimals']);
+
+        $form_state['top_up'] = array(
+          'not_enough_balance' => TRUE,
+          'required_currency' => $rate_plan->getCurrency()->getName(),
+          'package_id' => $form_state['#package']->getId(),
+          'plan_id' => $plan_id,
+          'plan_name' => $rate_plan->getDisplayName(),
+          'start_date' => str_replace('-', '/', $values['start_date']),
+          'overlap' => 'false',
+          'required_balance' => $cost_total,
+          'cost_tax' => $cost_tax,
+          'cost_rateplan' => $cost_rateplan,
+          'has_cost_details' => $ife->hasCostDetails(),
+        );
+        $form_state['rebuild'] = TRUE;
+      }
+      else {
+        drupal_set_message(t('You do not have enough points to purchase this plan.'), 'status');
+      }
+    }
     catch (\Apigee\Mint\Exceptions\MintApiException $ce) {
       // If overlaps any rate plan, redirect to confirm override.
       if ($ce->getMintCode() == MintApiException::DEVELOPER_HAS_FOLLOWING_OVERLAP_RATE_PLANS) {
@@ -390,9 +472,7 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
         return;
       }
       else {
-        if ($ce->getMintCode() == MintApiException::INSUFFICIENT_FUNDS
-          || $ce->getMintCode() == MintApiException::PREPAID_DEVELOPER_HAS_NO_BALANCE
-        ) {
+        if ($ce->getMintCode() == MintApiException::PREPAID_DEVELOPER_HAS_NO_BALANCE) {
           if ($rate_plan->getCurrency()->getName() != 'POINTS') {
             $message = $ce->getMintMessage(TRUE);
             $amount_starts_at = strpos($message, '[') + 1;
@@ -435,23 +515,18 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
     }
   }
   else {
-    $developer_id = _devconnect_monetization_get_developer_id(TRUE);
     $config = devconnect_monetization_default_org_config();
-
-    // Get DeveloperRatePlans.
-    $developer_rate_plan = new DeveloperRatePlan($developer_id, $config);
     $developer_rate_plans = $developer_rate_plan->getList();
 
-    // Reload RatePlan.
-    $rate_plan = new RatePlan($form_state['#package']->getId(), $config);
+    $rate_plan = new RatePlan($package->getId(), $config);
     $rate_plan->load($plan_id);
     $developer_rate_plan->setRatePlan($rate_plan);
 
     $developer_rate_plan = NULL;
     foreach ($developer_rate_plans as $dev_rate_plan) {
+      /** @var Apigee\Mint\DeveloperRatePlan $dev_rate_plan */
       if ($dev_rate_plan->getRatePlan()->getId() == $rate_plan->getId()
-        && $dev_rate_plan->getRatePlan()->getMonetizationPackage()->getId() == $rate_plan->getMonetizationPackage()
-                                                                               ->getId()
+        && $dev_rate_plan->getRatePlan()->getMonetizationPackage()->getId() == $rate_plan->getMonetizationPackage()->getId()
       ) {
         $developer_rate_plan = $dev_rate_plan;
         break;
@@ -466,16 +541,15 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
     $org_timezone = new DateTimeZone($org->getTimezone());
     $utc_timezone = new DateTimeZone('UTC');
 
-    $separator = strpos($form_state['values']['start_date'], '/') > 0 ? '/' : '-';
     $submitted_end_date = $form_state['values']['start_date'] . ' 00:00:00';
-    $end_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $submitted_end_date, $org_timezone);
+    $end_date = DateTime::createFromFormat(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT) . " H:i:s", $submitted_end_date, $org_timezone);
     $end_date->setTimezone($utc_timezone);
 
     $developer_rate_plan->setEndDate($end_date->format('Y-m-d H:i:s'));
     try {
       $developer_rate_plan->save('update');
       drupal_set_message(t('Plan is scheduled to end at the end of @date, and any refunds will be triggered at that point', array('@date' => $form_state['values']['start_date'])), 'status');
-      CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
+      CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_or_company_id, FALSE);
       module_invoke_all('devconnect_monetization_plan_ended', $developer_rate_plan);
     }
     catch (\Apigee\Exceptions\ResponseException $re) {
@@ -520,11 +594,14 @@ function devconnect_monetization_overlap_plan_confirm_form($form, &$form_state) 
     return $values;
   }, $overlaps);
 
+  /** @var Apigee\Mint\MonetizationPackage $package */
   $package = $form_state['#package'];
+  /** @var Apigee\Mint\RatePlan $rate_plan */
   $rate_plan = $form_state['rate_plan'];
 
   // Process products in attempted purchased plan.
   $products = array();
+  /** @var Apigee\Mint\Product $product */
   foreach ($package->getProducts() as $product) {
     $products[$product->getId()] = $product;
   }
@@ -612,20 +689,27 @@ function theme_devconnect_monetization_conflicting_products($products) {
  */
 function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_state) {
 
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
 
-  $config = devconnect_monetization_default_org_config();
-  $developer_rate_plan = new DeveloperRatePlan($developer_id, $config);
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $developer_or_company_id = $company->name;
+  }
+  else {
+    $developer_or_company_id = _devconnect_monetization_get_developer_id(TRUE);
+  }
+
+  $config = devconnect_default_org_config();
+  $developer_rate_plan = new DeveloperRatePlan($developer_or_company_id, $config);
 
   $rate_plan = $form_state['rate_plan'];
+  $package = $form_state['#package'];
 
   $developer_rate_plan->setRatePlan($rate_plan);
 
   $org_timezone = new DateTimeZone($rate_plan->getOrganization()->getTimezone());
   $utc_timezone = new DateTimeZone('UTC');
-  $separator = strpos($form_state['values']['start_date'], '/') > 0 ? '/' : '-';
   $submitted_start_date = $form_state['values']['start_date'] . ' 00:00:00';
-  $start_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $submitted_start_date, $org_timezone);
+  $start_date = DateTime::createFromFormat(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT) . " H:i:s", $submitted_start_date, $org_timezone);
   $start_date->setTimezone($utc_timezone);
   $developer_rate_plan->setStartDate($start_date->format('Y-m-d H:i:s'));
   try {
@@ -635,7 +719,7 @@ function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_
       '@plan' => $rate_plan->getDisplayName(),
     );
     drupal_set_message(t('@package, @plan has been purchased.', $vars), 'status');
-    CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
+    CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_or_company_id, FALSE);
     module_invoke_all('devconnect_monetization_plan_purchased', $developer_rate_plan);
 
     $modules = module_implements('redirect_after_override_plan');
@@ -659,37 +743,30 @@ function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_
     }
   }
   catch (MintApiException $ce) {
-    if ($ce->getMintCode() == MintApiException::INSUFFICIENT_FUNDS
-      || $ce->getMintCode() == MintApiException::PREPAID_DEVELOPER_HAS_NO_BALANCE
-    ) {
-      if ($ce->getMintCode() == MintApiException::INSUFFICIENT_FUNDS
-        || $ce->getMintCode() == MintApiException::PREPAID_DEVELOPER_HAS_NO_BALANCE
-      ) {
-        if ($rate_plan->getCurrency()->getName() != 'POINTS') {
-          $message = $ce->getMintMessage(TRUE);
-          $amount_starts_at = strpos($message, '[') + 1;
-          $required = str_replace(',', '', substr($message, $amount_starts_at, strlen($message) - $amount_starts_at - 1));
-          $currencies = commerce_currencies();
-          $required = devconnect_monetization_round_up_amount($required, $currencies[$rate_plan->getCurrency()->getName()]['decimals']);
-          $form_state['top_up'] = array(
-            'not_enough_balance' => TRUE,
-            'required_balance' => $required,
-            'required_currency' => $rate_plan->getCurrency()->getName(),
-            'package_id' => $form_state['#package']->getId(),
-            'plan_id' => $rate_plan->getId(),
-            'plan_name' => $rate_plan->getDisplayName(),
-            'start_date' => $form_state['values']['start_date'],
-            'overlap' => 'true',
-          );
-          $form_state['rebuild'] = TRUE;
-        }
-        else {
-          drupal_set_message(t('You do not have enough points to purchase this plan.'), 'status');
-        }
-        return;
+    $message = $ce->getMintMessage(TRUE);
+    if ($ce instanceof InsufficientFundsException || $ce->getMintCode() == MintApiException::PREPAID_DEVELOPER_HAS_NO_BALANCE) {
+      if ($rate_plan->getCurrency()->getName() != 'POINTS') {
+        $amount_starts_at = strpos($message, '[') + 1;
+        $required = str_replace(',', '', substr($message, $amount_starts_at, strlen($message) - $amount_starts_at - 1));
+        $currencies = commerce_currencies();
+        $required = devconnect_monetization_round_up_amount($required, $currencies[$rate_plan->getCurrency()->getName()]['decimals']);
+        $form_state['top_up'] = array(
+          'not_enough_balance' => TRUE,
+          'required_balance' => $required,
+          'required_currency' => $rate_plan->getCurrency()->getName(),
+          'package_id' => $package->getId(),
+          'plan_id' => $rate_plan->getId(),
+          'plan_name' => $rate_plan->getDisplayName(),
+          'start_date' => $form_state['values']['start_date'],
+          'overlap' => 'true',
+        );
+        $form_state['rebuild'] = TRUE;
       }
+      else {
+        drupal_set_message(t('You do not have enough points to purchase this plan.'), 'status');
+      }
+      return;
     }
-    $message = $ce->getMintMessage();
     if ($message !== NULL) {
       drupal_set_message(t($message), 'error');
     }
@@ -719,7 +796,17 @@ function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_
 function devconnect_monetization_get_developer_limits(Apigee\Mint\Developer $developer, Apigee\Mint\MonetizationPackage $package, Apigee\Util\OrgConfig $config) {
 
   $limit = new Limit($config);
-  $limits = $limit->getDeveloperLimits($developer->getEmail(), $package->getId(), TRUE);
+
+  // Load the company name for developer email if there is a company in context.
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $email = $company->name;
+  }
+  else {
+    $email = $developer->getEmail();
+  }
+  $limits = $limit->getDeveloperLimits($email, $package->getId(), TRUE);
+
   $dev_limits = array();
   // Loop through developer limits and exclude those where developer is ALL and
   // haltExecution is true.
@@ -742,15 +829,13 @@ function devconnect_monetization_get_developer_limits(Apigee\Mint\Developer $dev
   foreach ($dev_limits as $limit) {
     // Exclude limits with QuotaType equals to either Balance or CreditLimit.
     if ($limit->getQuotaType() != QuotaType::BALANCE && $limit->getQuotaType() != QuotaType::CREDIT_LIMIT) {
-      /* Is limit a product level limit? */
+      // Is limit a product level limit?
       if ($limit->isPublished() && array_key_exists($limit->getProduct(), $included_products)) {
         $product_limits[$included_products[$limit->getProduct()]][] = _devconnect_monetization_build_limit_text($limit, NULL);
       }
-      /************************************************************************
-       * Else it may be a package level limit. If limit is implicit (quotaTyte
-       * is either Balance or CreditLimt) then it is excluded. Values of this
-       * limits are concatenated in $package_limits for later display.
-       ***********************************************************************/
+      // Else it may be a package level limit. If limit is implicit (quotaTyte
+      // is either Balance or CreditLimt) then it is excluded. Values of this
+      // limits are concatenated in $package_limits for later display.
       else {
         if ($limit->isPublished() && $limit->getProduct() == 'ALL') {
           $limit_text = _devconnect_monetization_build_limit_text($limit);
@@ -797,8 +882,18 @@ function devconnect_monetization_get_developer_limits(Apigee\Mint\Developer $dev
  */
 function devconnect_monetization_get_plans(Developer $developer, MonetizationPackage $package, OrgConfig $config) {
 
+
+  // Load the company name for developer email if there is a company in context.
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $email = $company->name;
+  }
+  else {
+    $email = $developer->getEmail();
+  }
+
   // Retrieve developer accepted plans.
-  $developer_rate_plan = new DeveloperRatePlan($developer->getEmail(), $config);
+  $developer_rate_plan = new DeveloperRatePlan($email, $config);
   $developer_rate_plans = $developer_rate_plan->getList();
 
   // Initialize the organization timezone.
@@ -826,49 +921,28 @@ function devconnect_monetization_get_plans(Developer $developer, MonetizationPac
     'can_end'      => array(),
   );
 
-  /*************************************************************************
-   * Loop accepted rate plans for building the purchase/end plan forms     *
-   * also to detect the active plan id/name if any                         *
-   *************************************************************************/
+  // Loop accepted rate plans for building the purchase/end plan forms.
+  // Also to detect the active plan id/name if any.
+
   foreach ($developer_rate_plans as $developer_rate_plan) {
 
-    /*************************************************************************
-     * Skip plans that do not belong to to monetization package in question. *
-     *************************************************************************/
+    //Skip plans that do not belong to to monetization package in question.
     if ($developer_rate_plan->getRatePlan()->getMonetizationPackage()
         ->getId() != $package->getId()
     ) {
       continue;
     }
 
-    /***************************************************************************
-     * Convert time strings with org timezone to DateTime objects for friendly
-     * usage. *
-     **************************************************************************/
-    $dev_rate_plan_start_date = DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan->getStartDate(), $utc_timezone);
-    $dev_rate_plan_end_date = DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan->getEndDate(), $utc_timezone);
-    $rate_plan_start_date = DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan
-                                                                      ->getRatePlan()
-                                                                      ->getStartDate(), $utc_timezone);
-    $rate_plan_end_date = DateTime::createFromFormat('Y-m-d H:i:s', $developer_rate_plan
-                                                                    ->getRatePlan()
-                                                                    ->getEndDate(), $utc_timezone);
+    $dev_rate_plan_start_date = $developer_rate_plan->getStartDateTime();
+    $dev_rate_plan_end_date = $developer_rate_plan->getEndDateTime();
+    $rate_plan_start_date = $developer_rate_plan->getRatePlan()->getStartDateTime();
+    $rate_plan_end_date = $developer_rate_plan->getRatePlan()->getEndDateTime();
 
-    // Convert UTC datetimes to ORG's timezone.
-    $dev_rate_plan_start_date->setTimezone($org_timezone);
-    $dev_rate_plan_end_date = $dev_rate_plan_end_date !== FALSE ? $dev_rate_plan_end_date->setTimezone($org_timezone) : FALSE;
-    $rate_plan_start_date = $rate_plan_start_date !== FALSE ? $rate_plan_start_date->setTimezone($org_timezone) : FALSE;
-    $rate_plan_end_date = $rate_plan_end_date !== FALSE ? $rate_plan_end_date->setTimezone($org_timezone) : FALSE;
+    //Test either this plan has ended before today or may end today.
+    if (is_object($dev_rate_plan_end_date) && $dev_rate_plan_end_date < $tomorrow) {
 
-    /******************************************************************
-     * Test either this plan has ended before today or may end today. *
-     ******************************************************************/
-    if ($dev_rate_plan_end_date !== FALSE && $dev_rate_plan_end_date < $tomorrow) {
-
-      /********************************************************************
-       * Does this plan end today? If so then this plan will be available *
-       * for purchasing tomorrow or whenever the plan starts again.       *
-       *********************************************************************/
+      // Does this plan end today? If so then this plan will be available for
+      // purchasing tomorrow or whenever the plan starts again.
       if ($dev_rate_plan_end_date >= $today) {
 
         $plans_dates['can_purchase'][$developer_rate_plan->getRatePlan()->getId()] = array(
@@ -876,11 +950,9 @@ function devconnect_monetization_get_plans(Developer $developer, MonetizationPac
           'available_until' => $rate_plan_end_date,
         );
 
-        /*******************************************************************
-         * Since plan is active for today and no other plan has claimed    *
-         * to be active for today, then this is the active plan. It may be *
-         * replaced as active plan if other plan starts today.             *
-         *******************************************************************/
+        // Since plan is active for today and no other plan has claimed to be
+        // active for today, then this is the active plan. It may be replaced
+        // as active plan if other plan starts today.
         if (is_null($active_plan_id)) {
           $active_plan_id = $developer_rate_plan->getRatePlan()->getId();
           $active_plan_name = $developer_rate_plan->getRatePlan()->getDisplayName();
@@ -889,11 +961,8 @@ function devconnect_monetization_get_plans(Developer $developer, MonetizationPac
           }
         }
       }
-      /**********************************************************************
-       * Since this plan ended before today then it is available for
-       * purchasing
-       * at this moment or whenever the plan starts again.
-       **********************************************************************/
+      // Since this plan ended before today then it is available for purchasing
+      // at this moment or whenever the plan starts again.
       else {
         $plans_dates['can_purchase'][$developer_rate_plan->getRatePlan()->getId()] = array(
           'available_since' => $today < $rate_plan_start_date ? $rate_plan_start_date : $today,
@@ -901,32 +970,24 @@ function devconnect_monetization_get_plans(Developer $developer, MonetizationPac
         );
       }
     }
-    /***********************************************************************
-     * Plan is still active now and in the future, therfore this plan      *
-     * can be ended at any time as long the end date is not ahead of date  *
-     * when the plan ends.                                                 *
-     ***********************************************************************/
+    // Plan is still active now and in the future, therfore this plan can be
+    // ended at any time as long the end date is not ahead of date when the
+    // plan ends.
     else {
       $plans_dates['can_end'][$developer_rate_plan->getRatePlan()->getId()] = array(
         'can_end_since' => $today < $dev_rate_plan_start_date ? $dev_rate_plan_start_date : $today,
         'can_end_until' => $rate_plan_end_date,
       );
-      /***********************************************************************
-       * If plan has already started or starts today, then this is the active
-       * plan.
-       * It also replaces any active plan that ends today.
-       ***********************************************************************/
+      // If plan has already started or starts today, then this is the active
+      // plan. It also replaces any active plan that ends today.
       if ($dev_rate_plan_start_date <= $today) {
         $active_plan_id = $developer_rate_plan->getRatePlan()->getId();
-        $active_plan_name = $developer_rate_plan->getRatePlan()
-                            ->getDisplayName();
+        $active_plan_name = $developer_rate_plan->getRatePlan()->getDisplayName();
       }
     }
   }
 
-  /**********************************************************************
-   * Remove plans that are to be ended but still remain as purchasable  *
-   **********************************************************************/
+  // Remove plans that are to be ended but still remain as purchasable.
   foreach (array_keys($plans_dates['can_end']) as $can_end_plan_id) {
     if (array_key_exists($can_end_plan_id, $plans_dates['can_purchase'])) {
       unset($plans_dates['can_purchase'][$can_end_plan_id]);
@@ -934,56 +995,58 @@ function devconnect_monetization_get_plans(Developer $developer, MonetizationPac
   }
 
   $rate_plan = new RatePlan($package->getId(), $config);
-  $rate_plan->setDeveloper($developer);
 
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $developer_id = $company->name;
+  }
+  else {
+    $developer_id = $developer->getEmail();
+  }
+
+  $rate_plan->setDeveloperId($developer_id);
   // Get current rate plans.
   $rate_plans = $rate_plan->getList(0, 0);
 
-  /************************************************************** **************
-   * Get current rate plans plus future rate plans. Notice that parent plan is
-   * actually the current plan therefore the plan we get from the list is the
-   * future one.
-   * To make things easier and understandable in the list the parent rate plan
-   * replaces  the plan in the list and future plan is accessed as the child
-   * plan.
-   * A little bit  tricky even to explain.
-   ****************************************************************************/
+  // Get current rate plans plus future rate plans. Notice that parent plan is
+  // actually the current plan therefore the plan we get from the list is the
+  // future one.
+  // To make things easier and understandable in the list the parent rate plan
+  // replaces  the plan in the list and future plan is accessed as the child
+  // plan.
+  // A little bit tricky even to explain.
   $all_rate_plans = $rate_plan->getList(0, 0, FALSE, TRUE);
 
   // Loop rate plans to find out which ones have future plans.
   for ($i = 0, $len = count($rate_plans); $i < $len; $i++) {
+    /** @var Apigee\Mint\RatePlan $rate_plan_item */
     $rate_plan_item = $rate_plans[$i];
 
     // Assigned the rate plans for future plans.
+    /** @var Apigee\Mint\RatePlan $all_rate_plan_item */
     foreach ($all_rate_plans as $all_rate_plan_item) {
       if ($all_rate_plan_item->getParentRatePlan() != NULL
-        && $rate_plan_item->getId() == $all_rate_plan_item->getParentRatePlan()
-                                       ->getId()
+        && $rate_plan_item->getId() == $all_rate_plan_item->getParentRatePlan()->getId()
       ) {
         $rate_plans[$i] = $all_rate_plan_item->getParentRatePlan();
         break;
       }
     }
 
-    /**************************************************************************
-     * Replace plan in the list for parent rate plan. The replaced plan will
-     * be later accessed by parent rate plan ->getChildRatePlan()
-     **************************************************************************/
+    // Replace plan in the list for parent rate plan. The replaced plan will
+    // be later accessed by parent rate plan ->getChildRatePlan()
     $rate_plan_item = $rate_plans[$i];
 
-    /*************************************************************************
-     * Assigned the minimum and maximum purchasing dates for the remaining
-     * plans that are not accepted by the developer
-     *************************************************************************/
+    // Assigned the minimum and maximum purchasing dates for the remaining
+    // plans that are not accepted by the developer.
     if (!array_key_exists($rate_plan_item->getId(), $plans_dates['can_end'])
       && !array_key_exists($rate_plan_item->getId(), $plans_dates['can_purchase'])
     ) {
-      $start_date = DateTime::createFromFormat('Y-m-d H:i:s', $rate_plan_item->getStartDate(), $utc_timezone)
-                    ->setTimezone($org_timezone);
-      $end_date = DateTime::createFromFormat('Y-m-d H:i:s', $rate_plan_item->getEndDate(), $utc_timezone);
+      $start_date = $rate_plan_item->getStartDateTime();
+      $end_date = $rate_plan_item->getEndDateTime();
       $plans_dates['can_purchase'][$rate_plan_item->getId()] = array(
         'available_since' => $start_date > $today ? $start_date : $today,
-        'available_until' => $end_date !== FALSE ? $end_date->setTimezone($org_timezone) : FALSE,
+        'available_until' => is_object($end_date) ? $end_date->setTimezone($org_timezone) : FALSE,
       );
     }
   }
@@ -994,6 +1057,7 @@ function devconnect_monetization_get_plans(Developer $developer, MonetizationPac
   }
 
   $keyed_rate_plans = array();
+  /** @var Apigee\Mint\RatePlan $rate_plan */
   foreach ($rate_plans as $rate_plan) {
     $keyed_rate_plans[$rate_plan->getId()] = $rate_plan;
   }
@@ -1055,6 +1119,7 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
     return $form;
   }
 
+  /** @var Apigee\Mint\DeveloperBalance $balance */
   foreach ($balances as $balance) {
     if ($balance->getSupportedCurrency()->getName() == $form_state['values']['currency']) {
       $current_balance = $balance->getCurrentBalance();
@@ -1091,6 +1156,29 @@ function devconnect_monetization_insufficient_top_up_form($form, &$form_state, \
     '#prefix' => '<strong>',
     '#suffix' => '</strong>',
   );
+
+  // Newer versions of Edge mgmt server give us the breakdown of tax and rate plan for display.
+  if($form_state['values']['has_cost_details'] != 'false') {
+    $form['#has_cost_details'] = TRUE;
+    $formatted_cost_tax = commerce_currency_format($form_state['values']['cost_tax'], $form_state['values']['currency'], NULL, FALSE);
+    $form['cost_tax_display'] = array(
+      '#type' => 'markup',
+      '#markup' => $formatted_cost_tax,
+      '#prefix' => '<strong>',
+      '#suffix' => '</strong>',
+    );
+    $formatted_cost_rateplan = commerce_currency_format($form_state['values']['cost_rateplan'], $form_state['values']['currency'], NULL, FALSE);
+    $form['cost_rateplan_display'] = array(
+      '#type' => 'markup',
+      '#markup' => $formatted_cost_rateplan,
+      '#prefix' => '<strong>',
+      '#suffix' => '</strong>',
+    );
+  }
+  else {
+    $form['#has_cost_details'] = FALSE;
+  }
+
   $form['current_balance_display'] = array(
     '#type' => 'markup',
     '#markup' => $formatted_current_balance,
@@ -1183,10 +1271,9 @@ function devconnect_monetization_insufficient_top_up_form_submit($form, &$form_s
 /**
  * Drupal form.
  */
-function devconnect_monetization_ajax_insufficient_top_up_form(\Apigee\Mint\Developer $developer, \Apigee\Mint\MonetizationPackage $package, \Apigee\Mint\RatePlan $plan, $params
-) {
+function devconnect_monetization_ajax_insufficient_top_up_form(\Apigee\Mint\Developer $developer, \Apigee\Mint\MonetizationPackage $package, \Apigee\Mint\RatePlan $plan, $params) {
 
-  list($required_balance, $start_date, $overlap) = explode('|', rawurldecode($params));
+  list($required_balance, $start_date, $overlap, $has_cost_details,$cost_tax, $cost_rateplan ) = explode('|', rawurldecode($params));
   $form_state = array(
     'values' => array(
       'package_id' => $package->getId(),
@@ -1196,6 +1283,9 @@ function devconnect_monetization_ajax_insufficient_top_up_form(\Apigee\Mint\Deve
       'required_balance' => rawurldecode($required_balance),
       'start_date' => str_replace('-', '/', rawurldecode($start_date)),
       'overlap' => rawurldecode($overlap),
+      'has_cost_details' => rawurldecode($has_cost_details),
+      'cost_tax' => rawurldecode($cost_tax),
+      'cost_rateplan' => rawurldecode($cost_rateplan),
     ),
     'build_info' => array(
       'args' => array($developer, $package),
@@ -1208,7 +1298,7 @@ function devconnect_monetization_ajax_insufficient_top_up_form(\Apigee\Mint\Deve
  * Delivery function to output only a rendered form.
  */
 function devconnect_monetization_insufficient_top_up_form_output($form) {
-  print render($form);
+    print render($form);
 }
 
 /**
@@ -1224,13 +1314,12 @@ function devconnect_monetization_remove_plan_from_user($package, $dev_rate_plan_
     $dev_rate_plan = new DeveloperRatePlan($developer_id, $config);
     $dev_rate_plans = $dev_rate_plan->getList();
 
+    /** @var Apigee\Mint\DeveloperRatePlan $dev_rate_plan */
     foreach ($dev_rate_plans as $dev_rate_plan) {
       if ($dev_rate_plan->getId() == $dev_rate_plan_id) {
         $org_timezone = new DateTimeZone($dev_rate_plan->getRatePlan()->getOrganization()->getTimezone());
-        $utc_timezone = new DateTimeZone('UTC');
         $today = new DateTime('today', $org_timezone);
-        $start_date = DateTime::createFromFormat('Y-m-d H:i:s', $dev_rate_plan->getStartDate(), $utc_timezone)
-                      ->setTimezone($org_timezone);
+        $start_date = $dev_rate_plan->getStartDateTime();
         if ($start_date > $today) {
           $dev_rate_plan->delete($dev_rate_plan_id);
           drupal_set_message(t('Your plan has been removed.'), 'status');

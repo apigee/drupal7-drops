@@ -353,7 +353,7 @@ function faq_update_7002(&$sandbox) {
     $node = node_load($nid);
 
     // Load the detailed question.
-    $dq = $node->detailed_question;
+    $dq = isset($node->detailed_question) ? $node->detailed_question : '';
     if ($dq == '') {
       $select = db_select('faq_questions', 'f');
       $dq = $select->condition('f.nid', $node->nid)->fields('f', array('detailed_question'))->execute()->fetchField();
@@ -361,7 +361,9 @@ function faq_update_7002(&$sandbox) {
 
     // Get the default text filter format from DB as this might be integer if upgraded site or tekststring if new D7 site.
     // Default filter format: Filtered HTML.
-    $filter_format = reset(array_keys(filter_formats()));
+    $filter_formats = filter_formats();
+    $filter_formats_keys = array_keys($filter_formats);
+    $filter_format = reset($filter_formats_keys);
 
     // Get the language(s) from the body, making sure we have the same set for detailed question too.
     $langs = array_keys($node->body);

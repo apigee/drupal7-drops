@@ -45,10 +45,6 @@ span.active-plan {
     float: right;
 }
 
-div#edit-registered-for-tax-vat {
-    display: -moz-inline-box;
-}
-
 .plan-details-comparison li.active .future-plan {
     background-color: #FFFFFF;
     color: #0098D6;

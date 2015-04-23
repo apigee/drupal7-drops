@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * Implements hook_requirements().
+ */
+function apigee_checklist_requirements($phase) {
+  if ($phase != 'runtime') {
+    return array();
+  }
+  drupal_load('module', 'apigee_checklist');
+
+  $requirements = array();
+  $t = get_t();
+
+  $env = _apigee_checklist_pantheon_environment();
+  if ($env) {
+    $requirements['pantheon-environment'] = array(
+      'description' => '',
+      'severity' => REQUIREMENT_OK,
+      'value' => ucfirst($env),
+      'title' => $t('Pantheon Environment'),
+    );
+    $service_level = _apigee_checklist_pantheon_service_level();
+    if (!empty($service_level)) {
+      $requirements['pantheon-service-level'] = array(
+        'description' => '',
+        'severity' => REQUIREMENT_OK,
+        'value' => ($service_level == 'free' ? 'Sandbox' : ucfirst($service_level)),
+        'title' => $t('Pantheon service level'),
+      );
+    }
+    if ($env == 'live') {
+      if ($service_level == 'free') {
+        $requirements['pantheon-sandbox'] = array(
+          'title' => $t('Pantheon sandbox service plan'),
+          'description' => '',
+          'value' => $t('You are running a Live environment on a Sandbox Pantheon instance. For better performance, contact your Apigee sales representative to upgrade this instance to a Business or Professional service plan.'),
+          'severity' => REQUIREMENT_WARNING
+        );
+      }
+      $smtp_host = _apigee_checklist_smtp_host();
+      if (!empty($smtp_host)) {
+        $requirements['pantheon-smtp'] = array(
+          'title' => $t('SMTP configuration'),
+          'description' => '',
+          'value' => $t('SMTP appears to be correctly configured.'),
+          'severity' => REQUIREMENT_OK,
+        );
+      }
+      else {
+        if (module_exists('SMTP')) {
+          $value = $t('Please <a href="@configure_link">configure</a> the “SMTP Authentication Support” module.', array('@configure_link' => url('admin/system/config/smtp')));
+        }
+        else {
+          $value = $t('SMTP is not configured. You should <a href="@enable_link">enable</a> and <a href="@configure_link">configure</a> the “SMTP Authentication Support” module.', array('@enable_link' => url('admin/modules', array('fragment' => 'mail')), '@configure_link' => url('admin/system/config/smtp')));
+        }
+        $requirements['pantheon-smtp'] = array(
+          'title' => $t('SMTP configuration'),
+          'description' => '',
+          'value' => $value,
+          'severity' => REQUIREMENT_WARNING,
+        );
+      }
+    }
+    if (version_compare(PHP_VERSION, '5.5.0') == -1) {
+      $requirements['pantheon-php'] = array(
+        'title' => $t('Pantheon PHP Version'),
+        'value' => $t('The version of PHP configured with your environment is an older version.'),
+        'severity' => REQUIREMENT_WARNING,
+        'description' => $t('For best performance, go to your Pantheon dashboard, select “Settings,” and select PHP 5.5 as the Site Default PHP version.'),
+      );
+    }
+    else {
+      $requirements['pantheon-php'] = array(
+        'title' => $t('Pantheon PHP Version'),
+        'value' => $t('Pantheon’s PHP version (@version) is sufficiently up-to-date.', array('@version' => PHP_VERSION)),
+        'severity' => REQUIREMENT_OK,
+        'description' => '',
+      );
+    }
+  }
+
+  return $requirements;
+}

@@ -1,0 +1,164 @@
+<?php
+
+use Apigee\SmartDocs\Model;
+use Apigee\SmartDocs\Method;
+use Apigee\Exceptions\ResponseException;
+use Apigee\Exceptions\ParameterException;
+
+/**
+ * Implements hook_block_info().
+ */
+function smartdocs_index_block_info() {
+  return array(
+    'smartdocs_model_index' => array(
+      'info' => t('SmartDocs model index'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+    )
+  );
+}
+
+/**
+ * Returns a list of all relevant models keyed by name, each with its UUID
+ * and display name.
+ *
+ * We return all models we know about from caching. If there are models that
+ * are not present in the cache, but which have applicable nodes in the
+ * smartdata table, we fetch those from Edge.
+ *
+ * This allows us to construct menu blocks with a minimum of cache misses.
+ *
+ * @return array
+ */
+function _smartdocs_index_list_models() {
+  $models = variable_get('smartdocs_model_info', array());
+  $result = db_select('smartdata', 's')
+    ->fields('s', array('model'))
+    ->distinct()
+    ->execute();
+  $needs_update = FALSE;
+  foreach ($result as $row) {
+    if (!array_key_exists($row->model, $models)) {
+      $model = new Model(devconnect_default_org_config());
+      try {
+        $model->load($row->model);
+      } catch (ResponseException $e) {
+        continue;
+      } catch (ParameterException $e) {
+        continue;
+      }
+      $models[$row->model] = array('uuid' => $model->getUuid(), 'name' => $model->getDisplayName());
+      $needs_update = TRUE;
+    }
+  }
+  uasort($models, function(array $a, array $b) {
+    $an = strtolower($a['name']);
+    $bn = strtolower($b['name']);
+    if ($an == $bn) {
+      return 0;
+    }
+    return $an < $bn ? -1 : 1;
+  });
+
+  if ($needs_update) {
+    variable_set('smartdocs_model_info', $models);
+  }
+  return $models;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function smartdocs_index_block_view($delta = 'smartdocs_model_index') {
+  $block = array('subject' => NULL, 'content' => NULL);
+  if ($delta == 'smartdocs_model_index') {
+    $active_nid = NULL;
+    $node = menu_get_object();
+    if ($node) {
+      $active_nid = $node->nid;
+    }
+    $models = _smartdocs_index_list_models();
+
+    $vars['models'] = array();
+    /** @var Apigee\SmartDocs\Model $model */
+    foreach ($models as $model_item) {
+      $model = smartdocs_load_model_hierarchy($model_item['uuid']);
+      $revision = $model->getActiveRevision();
+      if (!$revision) {
+        continue;
+      }
+      $has_nodes = FALSE;
+      $m_item = array(
+        'name' => $model->getDisplayName(),
+        'resources' => array(),
+        'active_trail' => FALSE,
+      );
+      /** @var Apigee\SmartDocs\Resource $resource */
+      foreach ($revision->getResources() as $resource) {
+        $r_item = array(
+          'path' => $resource->getBaseUrl() . $resource->getPath(),
+          'methods' => array(),
+          'active_trail' => FALSE,
+        );
+        $methods = $resource->getMethods();
+        usort($methods, function (Method $a, Method $b) {
+          $an = strtolower($a->getDisplayName());
+          $bn = strtolower($b->getDisplayName());
+          if ($an == $bn) {
+            return 0;
+          }
+          return $an < $bn ? -1 : 1;
+        });
+        /** @var Apigee\SmartDocs\Method $method */
+        foreach ($methods as $method) {
+          if ($method->getMetadata('status')) {
+            $method_item = array(
+              'nid' => $method->getMetadata('nid'),
+              'verb' => $method->getVerb(),
+              'name' => $method->getDisplayName(),
+            );
+            if ($method_item['nid'] === $active_nid) {
+              $method_item['active'] = TRUE;
+              $r_item['active_trail'] = TRUE;
+              $m_item['active_trail'] = TRUE;
+            }
+            $r_item['methods'][] = $method_item;
+            $has_nodes = TRUE;
+          }
+        }
+
+        if ($has_nodes) {
+          $m_item['resources'][] = $r_item;
+        }
+      }
+      if ($has_nodes) {
+        $vars['models'][] = $m_item;
+      }
+    }
+    if (count($vars['models'])) {
+      $block['content'] = theme('smartdocs_index_block', $vars);
+    }
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function smartdocs_index_theme() {
+  return array(
+    'smartdocs_index_block' => array(
+      'variables' => array('models' => NULL),
+      'template' => 'smartdocs-index-block',
+      'path' => drupal_get_path('module', 'smartdocs_index') . '/templates',
+    ),
+  );
+}
+
+/**
+ * Implements hook_smartdocs_model_update().
+ *
+ * When model cache is invalidated, also invalidate all menu block caches.
+ */
+function smartdocs_index_smartdocs_model_update($model_uuid) {
+  cache_clear_all('smartdocs_index:*', 'cache_block', TRUE);
+}

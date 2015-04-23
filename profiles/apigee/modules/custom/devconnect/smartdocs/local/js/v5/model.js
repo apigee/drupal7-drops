@@ -1922,7 +1922,17 @@ jQuery(this).siblings("textarea").val(jQuery.trim(jQuery(this).html())).height(j
         if(currentEdiatableElement) {
             currentEdiatableElement.removeClass("editing");
         }
-        if (currentEdiatableElementValue != "" && jQuery("body").children("[role='dialog'].modal").is(":visible") == false) {
+        var previousValue = "";
+        if (currentEdiatableElement) {
+            if (currentEdiatableElement.hasClass("resource_description") || currentEdiatableElement.attr('data-role') == "request-payload-docs" || currentEdiatableElement.attr('data-role') == "response-payload-docs") {
+                previousValue = jQuery.trim(currentEdiatableElement.siblings("textarea").val());
+            }
+            else {
+                previousValue = jQuery.trim(currentEdiatableElement.text());
+            }
+        }
+
+        if (currentEdiatableElementValue != "" && currentEdiatableElementValue != previousValue && jQuery("body").children("[role='dialog'].modal").is(":visible") == false) {
             jQuery("[data-role='confirm_modal']").modal('show');
             Apigee.APIModel.initInlineEditAdminAuthEvents();
         }

@@ -12,15 +12,13 @@ function devconnect_requirements($phase) {
   $requirements = array();
   $t = get_t();
 
-  $has_mcrypt = TRUE;
   if (!defined('MCRYPT_RIJNDAEL_128')) {
     $requirements['mcrypt'] = array(
-      'description' => 'PHP must have the mcrypt library for DevConnect to work.',
+      'description' => 'PHP must have the mcrypt extension for DevConnect to work.',
       'severity' => REQUIREMENT_ERROR,
       'value' => $t('Please install the PHP mcrypt extension.'),
       'title' => $t('Missing library'),
     );
-    $has_mcrypt = FALSE;
   }
 
   module_load_include('module', 'libraries');
@@ -34,7 +32,7 @@ function devconnect_requirements($phase) {
   $sdk_ok = TRUE;
   if (!is_dir($lib_dir)) {
     $requirements['mgmt-api-php-sdk'] = array(
-      'description' => 'The Edge SDK must be installed in ' . $lib_dir . '. It can be downloaded from ' . l('https://packagist.org/packages/apigee/edge', 'https://packagist.org/packages/apigee/edge') . '.',
+      'description' => 'The Edge SDK must be installed in <code>' . $lib_dir . '</code>. It can be downloaded from ' . l('https://packagist.org/packages/apigee/edge', 'https://packagist.org/packages/apigee/edge') . '.',
       'severity' => REQUIREMENT_ERROR,
       'value' => $t('Please install the Edge SDK library.'),
       'title' => $t('Missing library'),
@@ -66,14 +64,15 @@ function devconnect_requirements($phase) {
     // Make sure all autoloaders are registered
     devconnect_init();
 
+    // The following will NOT fail if mcrypt is not installed, but it will
+    // return an array of blank/default values.
     $config = devconnect_get_org_settings();
     $org = $config['org'];
     $endpoint = $config['endpoint'];
     $user = $config['user'];
     $pass = $config['pass'];
 
-    module_load_include('inc', 'devconnect', 'devconnect.admin');
-    if ($pass && _devconnect_test_kms_connection($org, $endpoint, $user, $pass)) {
+    if ($pass && module_load_include('inc', 'devconnect', 'devconnect.admin') && _devconnect_test_kms_connection($org, $endpoint, $user, $pass)) {
       $requirements['devconnect_connection'] = array(
         'severity' => REQUIREMENT_OK,
         'title' => 'Dev Portal Connection',
@@ -224,12 +223,6 @@ function devconnect_update_7426(){
   db_delete('system')
     ->condition('name', 'd8cmi')
     ->execute();
-  drupal_load('module', 'devconnect');
-  $config = devconnect_get_org_settings();
-  if (!array_key_exists('org_settings', $config)) {
-    $config['org_settings'] = array($config);
-    variable_set('devconnect_org_settings', $config);
-  }
 }
 
 /**
@@ -302,3 +295,15 @@ function devconnect_update_7429() {
   }
   // TODO: prune cck_phone
 }
+
+/**
+ * Migrate encryption key to the filesystem
+ */
+function devconnect_update_7431() {
+  if (!module_exists('apigee_profile_updates')) {
+    module_enable(array('apigee_profile_updates'));
+  }
+}
+
+// From now on, all update rules enabling/disabling dependencies should be done
+// in apigee_profile_updates.install instead.

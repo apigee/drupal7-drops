@@ -13,9 +13,6 @@
     <div class="modal-header">
       <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
       <h3 id="topUpLabel"><?php print t('Insufficient !currency_title Prepaid Balance', array('!currency_title' => drupal_render($form['currency_title']))); ?></h3>
-        <h3 id="topUpLabel"><?php print t('Insufficient !currency_title Prepaid Balance', array('!currency_title' => drupal_render($form['currency_title']))); ?></h3>
-    <div id="topup_alert_minimum_required" class="alert alert-error hide">
-          <?php print t('You have to top up your balance for at least !minimum_amount.', array('!minimum_amount' => '<span id="span-minimum-amount">0</span>')); ?>
     </div>
     <div class="modal-body">
       <?php foreach($errors as $error_key => $error): ?>
@@ -41,10 +38,17 @@
     </div>
     <div class="modal-body">
           <p><?php print t('You have insufficient funds to purchase plan !plan_name.', array('!plan_name' => drupal_render($form['plan_name']))); ?></p>
-          <p><?php print t('To purchase this plan you are required to top up your prepaid balance with at least !req_display.', array('!req_display' => drupal_render($form['required_display']))); ?><br />
-            <?php print t('Please enter the desired balance amount below.'); ?></p>
+          <p>
+            <?php if(!isset($form['#has_cost_details']) || $form['#has_cost_details'] == false): ?>
+              <?php print t('To purchase this plan you are required to top up your prepaid balance with at least !req_display.', array('!req_display' => drupal_render($form['required_display']))); ?>
+          <?php else: ?>
+              <?php print t('To purchase this plan you are required to top up your prepaid balance with at least !req_display ', array('!req_display' => drupal_render($form['required_display']))); ?>
+              <?php print t('(!cost_rateplan plan cost + !cost_tax tax).', array('!cost_rateplan' => drupal_render($form['cost_rateplan_display']), '!cost_tax' => drupal_render($form['cost_tax_display']))); ?>
+          <?php endif; ?>
+          </p>
+          <p><?php print t('Please enter the desired balance amount below.'); ?></p>
       <div style="margin-bottom: 10px;">
-            <span class="topup-modal-label"><?php print t('Current Balance:'); ?></span>
+        <span class="topup-modal-label"><?php print t('Current Balance:'); ?></span>
         <span id="topUpCurrentBalance"><?php print drupal_render($form['current_balance_display']); ?></span>
       </div>
       <div style="margin-bottom: 10px;">

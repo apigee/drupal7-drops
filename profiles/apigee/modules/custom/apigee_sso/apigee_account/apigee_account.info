@@ -1,7 +1,7 @@
 name = Accounts.apigee.com login
 description = Slingshot to accounts.apigee.com to verify identity
 core = 7.x
-package = "apigee.com"
+package = "Apigee"
 version = "7.x-4.26"
 
 dependencies[] = apigee_sso_ui

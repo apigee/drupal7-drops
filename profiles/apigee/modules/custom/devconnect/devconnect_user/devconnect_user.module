@@ -40,7 +40,8 @@ function devconnect_user_menu() {
     'file' => 'devconnect_user.sync.inc',
   );
   $items['admin/config/devconnect/user-settings'] = array(
-    'title' => 'Dev Portal User Settings',
+    'title' => 'Developer settings',
+    'description' => 'Configure developer settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_settings_form'),
     'access arguments' => array('administer site configuration'),
@@ -48,7 +49,8 @@ function devconnect_user_menu() {
     'file' => 'devconnect_user.admin.inc',
   );
   $items['admin/config/devconnect/user-attributes'] = array(
-    'title' => 'Dev Portal User Attributes',
+    'title' => 'Developer attributes',
+    'description' => 'Configure developer attibutes, options to persist developer attributes to KMS, the default attribute values to be sent to KMS.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_user_attributes_form'),
     'access arguments' => array('administer site configuration'),
@@ -99,6 +101,12 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
   // logintoboggan_form_alter() if it exists.
   if (function_exists('logintoboggan_form_alter')) {
     logintoboggan_form_alter($form, $form_state, $form_id);
+  }
+  // Since the hook_module_implements_alter() above removes all the form alter implementations
+  // logintoboggan_form_logintoboggan_main_settings_alter is not called which is required for 
+  // the logintoboggan setting form to work correctly. So we call it again below.
+  if(function_exists('logintoboggan_form_logintoboggan_main_settings_alter')){
+    logintoboggan_form_logintoboggan_main_settings_alter($form, $form_state);
   }
 
   switch ($form_id) {
@@ -718,4 +726,3 @@ function devconnect_user_menu_local_tasks_alter(&$data, $router_item, $root_path
     }
   }
 }
-

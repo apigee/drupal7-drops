@@ -16,6 +16,7 @@
       <th><?php print t('Plan'); ?></th>
       <th><?php print t('Start Date'); ?></th>
       <th><?php print t('End Date'); ?></th>
+      <th><?php print t('Plan End Date'); ?></th>
       <th><?php print t('Renewal Date'); ?></th>
       <th><?php print t('Actions'); ?></th>
     </tr>
@@ -32,6 +33,7 @@
         <?php endif; ?>
         <td><?php echo $rate_plan['start_date']; ?></td>
         <td><?php echo $rate_plan['end_date']; ?></td>
+        <td><?php echo $rate_plan['plan_end_date']; ?></td>
         <td><?php echo $rate_plan['renewal_date']; ?></td>
         <td><?php echo $rate_plan['action']; ?></td>
       </tr>

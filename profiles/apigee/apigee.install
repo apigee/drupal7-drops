@@ -1,6 +1,6 @@
 <?php
 
-require_once(DRUPAL_ROOT . '/profiles/apigee/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
+require_once(DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php');
 
 /**
  * Implements hook_install_tasks().
@@ -15,7 +15,7 @@ function apigee_install_tasks(&$install_state) {
   drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css', array('weight' => 9999));
   return array(
     'apigee_install_api_endpoint' => array(
-      'display_name' => t('Configure the Apigee Endpoint'),
+      'display_name' => t('Configure the Edge Endpoint'),
       'type' => 'form',
     ),
     'apigee_generate_make_smartdocs_model' => array(

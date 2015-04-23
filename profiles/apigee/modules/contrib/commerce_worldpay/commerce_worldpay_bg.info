@@ -1,0 +1,13 @@
+name = WorldPay Business Gateway Integration
+description = Provides Integration with the WorldPay Payment Gateway (http://www.worldpay.com)
+package = Commerce (contrib)
+dependencies[] = commerce
+dependencies[] = commerce_payment
+core = 7.x
+
+; Information added by drupal.org packaging script on 2013-06-12
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "commerce_worldpay"
+datestamp = "1371024351"
+

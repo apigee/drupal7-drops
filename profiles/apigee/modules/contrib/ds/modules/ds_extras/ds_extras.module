@@ -1027,4 +1027,16 @@ function ds_extras_preprocess_field(&$variables) {
       $variables['theme_hook_suggestions'][] = $suggestion . '__' . $field_name . '__' . $variables['element']['#bundle'];
     }
   }
+
+  // Sanitize the output of field templates
+  $fields = array(
+    'prefix',
+    'suffix',
+  );
+
+  foreach ($fields as $field) {
+    if (isset($variables['ds-config'][$field])) {
+      $variables['ds-config'][$field] = filter_xss($variables['ds-config'][$field]);
+    }
+  }
 }

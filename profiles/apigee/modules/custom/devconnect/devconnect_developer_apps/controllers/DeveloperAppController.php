@@ -118,7 +118,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   /**
    * Implements EntityAPIControllerInterface::save().
    *
-   * @param $entity
+   * @param Drupal\devconnect_developer_apps\DeveloperAppEntity $entity
    */
   public function save($entity) {
 
@@ -131,6 +131,12 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     unset ($entity['apiProductCache']);
     $dev_app->fromArray($entity);
     $dev_app->setApiProductCache($product_cache);
+
+    // If Edge SDK is recent enough, support setting key expiry.
+//    if (method_exists($dev_app, 'setKeyExpiry')) {
+//      $dev_app->setKeyExpiry($entity['keyExpiresIn'] * 86400);
+//    }
+
     try {
       $dev_app->save($is_update);
       $this->appCache[$dev_app->getAppId()] = $dev_app;

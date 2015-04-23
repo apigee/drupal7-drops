@@ -63,6 +63,7 @@ function uuid_features_entity_info_alter(&$entity_info) {
     'fieldable_panels_pane',
     'commerce_product',
     'field_collection_item',
+    'paragraphs',
   );
   if (module_exists('file_entity')) {
     $entity_types[] = 'file';
@@ -211,6 +212,16 @@ function uuid_features_features_api() {
     }
   }
 
+  if (module_exists('paragraphs')) {
+    $components['uuid_paragraphs'] = array(
+      'name' => t('Paragraphs'),
+      'feature_source' => TRUE,
+      'default_hook' => 'uuid_features_default_paragraphs',
+      'default_file' => FEATURES_DEFAULTS_INCLUDED,
+      'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_paragraphs.features.inc',
+    );
+  }
+
   return $components;
 }
 
@@ -310,7 +321,9 @@ function uuid_features_settings($form, &$form_state) {
 
   foreach ($entity_info as $type => $info) {
     foreach ($info['bundles'] as $bundle => $bundle_info) {
-      $bundles[$type][$bundle] = $bundle_info['label'];
+      if (isset($bundle_info['label'])) {
+        $bundles[$type][$bundle] = $bundle_info['label'];
+      }
     }
     if (isset($info['uuid features']) && $info['uuid features'] === TRUE) {
       $form['entity']['uuid_features_entity_' . $type] = array(

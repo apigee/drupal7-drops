@@ -3,7 +3,7 @@ description = Provides connection to Apigee's monetization services API
 core = 7.x
 package = DevConnect Mint
 php = 5.3
-version = 7.x-4.27
+version = 7.x-4.28
 project = devconnect-mint
 
 dependencies[] = devconnect
@@ -23,6 +23,7 @@ dependencies[] = special_menu_items
 dependencies[] = me
 dependencies[] = menu
 dependencies[] = field_group
+dependencies[] = apigee_company
 
 features[ctools][] = "field_group:field_group:1"
 

@@ -1160,9 +1160,7 @@ function media_update_7225() {
 }
 
 /**
- * Accommodate the introduction of a new permission which restricts access to
- * the media browser by granting it to existing users who were able to access
- * it.
+ * Grant existing user access to new media browser permission.
  */
 function media_update_7226() {
   $roles = user_roles(FALSE, 'create files');

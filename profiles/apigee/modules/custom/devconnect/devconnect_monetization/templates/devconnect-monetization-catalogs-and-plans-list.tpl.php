@@ -26,11 +26,18 @@
     </tr>
   </thead>
   <tbody>
-  <?php foreach ($packages as $package_id => $package) : ?>
+  <?php if (empty($packages)): ?>
     <tr>
-      <td><?php echo l($package['displayName'], 'users/me/monetization/packages/' . rawurlencode($package_id) . '/view', array('attributes' => array('title'=>$package['description']))); ?>
-      <td><?php echo implode(', ', $package['products']); ?></td>
+      <td><?php echo t('No plans available.'); ?></td>
+      <td></td>
     </tr>
-  <?php endforeach; ?>
+  <?php else: ?>
+    <?php foreach ($packages as $package_id => $package) : ?>
+      <tr>
+        <td><?php echo l($package['displayName'], 'users/me/monetization/packages/' . rawurlencode($package_id) . '/view', array('attributes' => array('title'=>$package['description']))); ?>
+        <td><?php echo implode(', ', $package['products']); ?></td>
+      </tr>
+    <?php endforeach; ?>
+  <?php endif; ?>
   </tbody>
 </table>

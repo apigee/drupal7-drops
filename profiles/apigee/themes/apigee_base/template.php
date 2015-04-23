@@ -181,6 +181,19 @@ function apigee_base_preprocess_page(&$variables) {
     $variables['secondary_nav']['#theme_wrappers'] = array('menu_tree__secondary');
   }
 
+  //add support for SmartDocs
+  if (isset($variables['node'])) {
+    $models = array();
+    $types = db_query('SELECT model FROM {smartdata} WHERE nid = :nid', array(':nid' => $variables['node']->nid));
+    foreach ($types as $type) {
+      $models[smartdocs_model_name($type->model)] = $type->model;
+    }
+    if (in_array($variables['node']->type, array_keys($models))) {
+      drupal_add_css(drupal_get_path('theme', 'bootstrap') . '/css/overrides.css', array('group' => CSS_SYSTEM));
+      drupal_add_css(drupal_get_path('theme', 'apigee_responsive') . '/css/bootstrap.min.css', array('group' => CSS_SYSTEM));
+      drupal_add_js(drupal_get_path('theme', 'apigee_responsive') . '/js/bootstrap.min.js', array('group' => CSS_SYSTEM));
+    }
+  }
 }
 
 /**

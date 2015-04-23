@@ -162,9 +162,8 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
 
             $org_timezone = new DateTimeZone($rate_plan->getOrganization()->getTimezone());
             $utc_timezone = new DateTimeZone('UTC');
-            $separator = strpos($submited_start_date, '/') > 0 ? '/' : '-';
             $submited_start_date .= ' 00:00:00';
-            $start_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $submited_start_date, $org_timezone);
+            $start_date = DateTime::createFromFormat(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT) . " H:i:s", $submited_start_date, $org_timezone);
             $start_date->setTimezone($utc_timezone);
 
             try {

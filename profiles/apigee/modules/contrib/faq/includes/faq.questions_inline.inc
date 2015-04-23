@@ -114,7 +114,7 @@ function template_preprocess_faq_category_questions_inline(&$variables) {
   // Configure header.
   $variables['category_depth'] = $term->depth;
   if ($category_display == 'hide_qa') {
-    $variables['header_title'] = l(faq_tt("taxonomy:term:$term->tid:name", $term->name), "faq/$term->tid");
+    $variables['header_title'] = l(faq_tt("taxonomy:term:$term->tid:name", $term->name), "faq-page/$term->tid");
   }
   else {
     $variables['header_title'] = check_plain(faq_tt("taxonomy:term:$term->tid:name", $term->name));

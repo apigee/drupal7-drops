@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\devconnect\ErrorHandling;
+
 /**
  * Implements hook_rules_event_info().
  *
@@ -74,10 +76,16 @@ function devconnect_developer_apps_rules_event_info_alter(&$events) {
 function devconnect_developer_apps_rules_action_info() {
   $actions = array();
   $parameters = array();
+  $parameters['DisplayName_customattr'] = array(
+    'type' => 'text',
+    'label' => t(_devconnect_developer_apps_get_app_label(FALSE) . ' Display Name'),
+    'description' => t('Please provide a human-readable name for the new application.'),
+  );
+
   $parameters['app_name'] = array(
     'type' => 'text',
-    'label' => t(_devconnect_developer_apps_get_app_label(FALSE) . ' Name'),
-    'description' => t('Please provide a name to create an application with.'),
+    'label' => t(_devconnect_developer_apps_get_app_label(FALSE) . ' Internal Name'),
+    'description' => t('Please provide a name to create an application with. Valid characters are letters, numbers, underscores, dollars, percent, or hyphens.'),
   );
   $parameters['developer_uid'] = array(
     'type' => 'text',
@@ -219,6 +227,6 @@ function devconnect_developer_apps_create_app($parameters) {
       );
       $detail = t($message, $args);
     }
-    devconnect_notify(Apigee\Util\ErrorHandling::CODE_APP_CREATED, $summary, $detail, Apigee\Util\ErrorHandling::SEVERITY_STATUS);
+    devconnect_notify(ErrorHandling::CODE_APP_CREATED, $summary, $detail, ErrorHandling::SEVERITY_STATUS);
   }
 }

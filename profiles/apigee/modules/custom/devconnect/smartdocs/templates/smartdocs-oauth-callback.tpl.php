@@ -12,7 +12,7 @@
         //cache: false,
         type: "get",
         success:function(data, textStatus, jqXHR) {
-          var responseContent = unescape(data.responseContent);
+          var responseContent = decodeURIComponent(data.responseContent);
           responseContent = jQuery.parseJSON(responseContent);
           var accessTokenUrl = proxyUrl+"?targeturl=";
           accessTokenUrl += encodeURIComponent(responseContent.accessTokenUrl+"?code="+code+"&grant_type=authorization_code&client_id="+responseContent.clientId+"&client_secret="+responseContent.clientSecret+"&redirect_uri="+windowLocation.split("code=")[0]);
@@ -21,7 +21,7 @@
             //cache: false,
             type: "get",
             success:function(data, textStatus, jqXHR) {
-              var accessTokenContent = unescape(data.responseContent);
+              var accessTokenContent = decodeURIComponent(data.responseContent);
               accessTokenContent = jQuery.parseJSON(accessTokenContent);
               if(accessTokenContent.access_token) {
                 window.opener.setAccessTokenAndLocation("", "", accessTokenContent.access_token, responseContent.accessTokenType, responseContent.accessTokenParamName, proxyUrl);

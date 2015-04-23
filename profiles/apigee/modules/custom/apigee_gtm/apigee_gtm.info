@@ -1,0 +1,6 @@
+name = Apigee Google Tag Manager
+description = Adds google tag manager scripts to the administration pages.
+package = DevConnect
+version = "7.x-4.0"
+core = 7.x
+

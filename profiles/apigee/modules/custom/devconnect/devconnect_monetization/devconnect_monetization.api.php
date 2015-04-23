@@ -77,12 +77,12 @@ function hook_devconnect_monetization_developer_topped_up(\Apigee\Mint\Developer
  *
  * Only the element with the heaviest #weight will be rendered.
  *
- * @param \Apigee\Mint\Developer $developer
+ * @param $developer Either a \Apigee\Mint\Developer or \Apigee\Mint\Company
  * @param Apigee\Mint\MonetizationPackage $package
  *
  * @return array()
  */
-function hook_devconnect_monetization_purchase_plan_requirements(\Apigee\Mint\Developer $developer, \Apigee\Mint\MonetizationPackage $package) {
+function hook_devconnect_monetization_purchase_plan_requirements($developer_or_company, \Apigee\Mint\MonetizationPackage $package) {
   return array(
     'my_requirement' => array(
       '#markup' => t('This is my requirement ') . url('my/requirement'),
@@ -96,10 +96,10 @@ function hook_devconnect_monetization_purchase_plan_requirements(\Apigee\Mint\De
  * Alter messages defined by
  * hook_devconnect_monetization_purchase_plan_requirement.
  * @param array $messages
- * @param \Apigee\Mint\Developer $developer
+ *  @param $developer Either a \Apigee\Mint\Developer or \Apigee\Mint\Company
  * @param Apigee\Mint\MonetizationPackage $package
  */
-function hook_devconnect_monetization_purchase_plan_requirements_alter(array $messages, \Apigee\Mint\Developer $developer, Apigee\Mint\MonetizationPackage $package) {
+function hook_devconnect_monetization_purchase_plan_requirements_alter(array $messages, $developer_or_company, Apigee\Mint\MonetizationPackage $package) {
   unset($messages['my_requirement']);
 }
 

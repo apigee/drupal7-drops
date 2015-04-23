@@ -186,6 +186,20 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#collapsed' => TRUE
   );
 
+  $form['credential_lifetime'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Credential Lifetime'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['credential_lifetime']['devconnect_developer_apps_key_expiry'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default API key lifetime in days'),
+    '#description' => t('When an app is newly-created, this is the default number of days until its API Key expires. A value of -1 indicates no set expiry.'),
+    '#default_value' => variable_get('devconnect_developer_apps_key_expiry', -1),
+    '#post_render' => array('_devconnect_developer_apps_number_postrender')
+  );
 
   $form['analytics']['devconnect_show_analytics'] = array(
     '#type' => 'checkbox',
@@ -247,6 +261,10 @@ function devconnect_developer_apps_config($form, &$form_state) {
 function _devconnect_developer_apps_render_apiproducts($form, &$form_state) {
   return $form['apiproduct']['devconnect_default_api_product'];
 }
+
+function _devconnect_developer_apps_number_postrender($content, $element) {
+  return str_replace('type="text"', 'type="number" style="width:7em !important" min="-1"', $content);
+};
 
 function devconnect_developer_apps_config_submit($form, &$form_state) {
   foreach ($form_state['values'] as $key => $value) {

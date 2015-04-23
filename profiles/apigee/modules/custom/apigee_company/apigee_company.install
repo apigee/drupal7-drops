@@ -1,0 +1,18 @@
+<?php
+/**
+ * @file
+ * Intall tasks for the apigee company module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function apigee_company_install() {
+
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'apigee_company')
+    ->execute();
+
+}

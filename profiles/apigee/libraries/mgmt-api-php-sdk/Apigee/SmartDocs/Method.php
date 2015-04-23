@@ -83,6 +83,9 @@ class Method extends APIObject
     /** @var string */
     protected $apiId;
 
+    /** @var array */
+    protected $metadata;
+
     /**
      * Returns this object's member vars to their pristine state.
      */
@@ -101,6 +104,7 @@ class Method extends APIObject
         $this->parameterGroups = array();
         $this->customAttributes = array();
         $this->tags = array();
+        $this->metadata = array();
 
         $this->createdTime = 0;
         $this->modifiedTime = 0;
@@ -300,6 +304,17 @@ class Method extends APIObject
         return $this->apiId;
     }
 
+    public function setMetadata($name, $value)
+    {
+        $this->metadata[$name] = $value;
+    }
+    public function getMetadata($name)
+    {
+        if (array_key_exists($name, $this->metadata)) {
+            return $this->metadata[$name];
+        }
+        return NULL;
+    }
 
     /**
      * Takes values from an array and populates a Method with them.
@@ -337,11 +352,12 @@ class Method extends APIObject
         $payload_keys = array(
             'name', 'verb', 'authSchemes', 'body', 'response', 'samples',
             'displayName', 'description', 'parameters', 'parameterGroups',
-            'customAttributes', 'tags'
+            'customAttributes', 'tags', 'path'
         );
         if ($verbose) {
             $payload_keys = array_merge($payload_keys, array(
-                'id', 'createdTime', 'modifiedTime', 'createdBy', 'modifiedBy'
+                'id', 'createdTime', 'modifiedTime', 'createdBy', 'modifiedBy',
+                'metadata'
             ));
         }
         $payload = array();

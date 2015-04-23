@@ -1,0 +1,7 @@
+name = Apigee Profile Updates
+description = Makes sure that already-existing installs of Apigee Drupal have up-to-date configuration
+core = 7.x
+package = Apigee
+version = 7.x-1.0
+
+dependencies[] = apigee_checklist

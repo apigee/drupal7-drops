@@ -14,22 +14,16 @@ class BaseMintTest extends DrupalWebTestCase {
     $org = $config['org'];
     $endpoint = $config['endpoint'];
     $username = $config['user'];
-    $pass_encrypted = $config['pass'];
+    $password = $config['pass'];
 
     if ($org == 'fixme' || $org == '') {
       throw new Exception(t('Your Endpoint info has not been set yet.'));
     }
 
-    try {
-      $password = Apigee\Util\Crypto::decrypt($pass_encrypted);
-    } catch (Exception $e) {
-      $password = '';
-    }
-
     $options = array(
       'subscribers' => array(),
       'http_options' => array(
-        'connection_timeout' => intval($config['connection_timeout']),
+        'connect_timeout' => intval($config['connection_timeout']),
         'timeout' => intval($config['request_timeout'])
       )
     );
@@ -37,8 +31,6 @@ class BaseMintTest extends DrupalWebTestCase {
   }
 
   public function setUp() {
-
-    $key = variable_get('apigee_crypt_key', NULL);
 
     $this->profile = 'apigee';
     $modules = array(
@@ -57,12 +49,6 @@ class BaseMintTest extends DrupalWebTestCase {
     $method = $parent_class->getMethod('setUp');
     $method->setAccessible(TRUE);
     $method->invokeArgs($this, $modules);
-
-    $original_file_config = DRUPAL_ROOT . '/' . $this->originalFileDirectory . '/private/config/active/devconnect.settings.yml';
-    $temp_file_config = DRUPAL_ROOT . '/' . $this->private_files_directory . '/config/active/devconnect.settings.yml';
-    copy($original_file_config, $temp_file_config);
-    $this->refreshVariables();
-    variable_set('apigee_crypt_key', $key);
 
     $perms = func_get_arg(0);
     $this->privileged_user = $this->drupalCreateUser($perms);

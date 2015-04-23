@@ -1,3 +1,10 @@
+devconnect_monetization 7.x-4.28
+================================
+DEVSOL-890: Display only purchasable Mint API products on add/create apps form
+DEVSOL-605: Dev Portal Insufficient Prepaid Balance modal should display cost and tax.
+DEVSOL-903: Purchased Plans Page: Display plans grouped by status in a sortable table.
+DEVSOL-773: Purchased Plans Page: Expired Rate plans are no longer hyperlinked, "Plan End Date" column is not displayed.
+
 devconnect_monetization 7.x-4.27
 ================================
 DEVSOL-288: Edge Server Connection Timeout should be set to ~30s

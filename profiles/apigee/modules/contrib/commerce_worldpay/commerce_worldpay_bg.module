@@ -1,0 +1,1055 @@
+<?php
+
+/**
+ * @file
+ * Provides a Worldpay Business Gateway payment method for Drupal Commerce.
+ */
+
+// Transaction mode definitions.
+define('C_WORLDPAY_BG_TXN_MODE_LIVE', 'live');
+define('C_WORLDPAY_BG_TXN_MODE_TEST', 'live_test');
+// define('WORLDPAY_TXN_MODE_SIMULATION', 'developer');
+
+// Default URLs for WorldPay transaction.
+define('C_WORLDPAY_BG_DEF_SERVER_LIVE', 'https://secure.wp3.rbsworldpay.com/wcc/purchase');
+define('C_WORLDPAY_BG_DEF_SERVER_TEST', 'https://secure-test.worldpay.com/wcc/purchase');
+// define('WORLDPAY_SERVER_SIMULATION', 'https://test.sagepay.com/Simulator/VSPFormGateway.asp');
+
+// This is WorldPay custom variable name, used to hold the repsone URL.
+define('C_WORLDPAY_BG_RESPONSE_URL_TOKEN', 'MC_callback');
+
+/**
+ * Utility function holding Worldpay MAC sig codes.
+ *
+ * Defines what post fields should be used in the Worldpay MD5 signature.
+ *
+ * @todo Decide if this is worth making configurable.
+ * @see http://www.worldpay.com/support/kb/bg/htmlredirect/rhtml5802.html
+ *
+ * @return array
+ *   An array consisting of the name of fields that will be use.
+ */
+function _commerce_worldpay_bg_md5_signature_fields() {
+  return array(
+    'instId',
+    'amount',
+    'currency',
+    'cartId',
+    'MC_orderId',
+    C_WORLDPAY_BG_RESPONSE_URL_TOKEN,
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_worldpay_bg_menu() {
+  // The page WorldPay sends response messages to.
+  $items['commerce_worldpay/bg/response'] = array(
+    'title' => 'Worldpay response page',
+    'page callback' => 'commerce_worldpay_bg_response_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_worldpay_bg.page.inc',
+  );
+
+  $items['commerce_worldpay/bg/response/%commerce_payment_method_instance'] = array(
+    'title' => 'Worldpay response page',
+    'page callback' => 'commerce_worldpay_bg_response_page',
+    'page arguments' => array(3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_worldpay_bg.page.inc',
+  );
+
+  // Debuging pages
+  $items['commerce_worldpay/bg/response/debug_me'] = array(
+    'title' => 'Worldpay response page',
+    'page callback' => 'commerce_worldpay_bg_debug_response_page',
+    'access arguments' => array('administer payment methods'),
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_worldpay_bg.debug_page.inc',
+  );
+  $items['commerce_worldpay/bg/response/%commerce_payment_method_instance/debug_me'] = array(
+    'title' => 'Worldpay response page',
+    'page callback' => 'commerce_worldpay_bg_debug_response_page',
+    'page arguments' => array(3),
+    'access arguments' => array('administer payment methods'),
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_worldpay_bg.debug_page.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_worldpay_bg_theme() {
+  $common_vars = array(
+    'installation_id' => NULL,
+    'order' => NULL,
+    'order_id' => NULL,
+    'order_no' => NULL,
+    'wp_txn_id' => NULL,
+    'settings' => NULL,
+  );
+  return array(
+    'commerce_worldpay_bg_html' => array(
+      'variables' => $common_vars += array('page' => NULL),
+      'template' => 'theme/commerce-worldpay-bg-html',
+      'file' => 'includes/commerce_worldpay_bg.theme.inc',
+    ),
+    'commerce_worldpay_bg_page' => array(
+      'variables' => $common_vars += array('content' => NULL),
+      'template' => 'theme/commerce-worldpay-bg-page',
+      'file' => 'includes/commerce_worldpay_bg.theme.inc',
+    ),
+    'commerce_worldpay_bg_success' => array(
+      'variables' => $common_vars,
+      'template' => 'theme/commerce-worldpay-bg-success',
+      'file' => 'includes/commerce_worldpay_bg.theme.inc',
+    ),
+    'commerce_worldpay_bg_cancel' => array(
+      'variables' => $common_vars,
+      'template' => 'theme/commerce-worldpay-bg-cancel',
+      'file' => 'includes/commerce_worldpay_bg.theme.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_worldpay_bg_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['commerce_worldpay_bg'] = array(
+    'title' => t('Payment via Worldpay'),
+    'description' => t('Integration with Worldpay\'s Business Gateway method.'),
+    'active' => TRUE,
+    'offsite' => TRUE,
+    'offsite_autoredirect' => TRUE,
+    'callbacks' => array(),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Settings form for Worldpay payment method.
+ *
+ * Used to set vendor name and secret key within Rules settings.
+ */
+function commerce_worldpay_bg_settings_form($settings = NULL) {
+  $form = array();
+
+  // Merge default settings into the stored settings array.
+  $settings = (array) $settings + array(
+    'installation_id' => '',
+    'txn_mode' => C_WORLDPAY_BG_TXN_MODE_TEST,
+    'txn_type' => COMMERCE_CREDIT_AUTH_CAPTURE,
+    'debug' => 'log',
+    'payment_response_logging' => 'full_wppr',
+    'site_id' => substr(drupal_clean_css_identifier($_SERVER['HTTP_HOST']), 0, 10),
+    'payment_choices' => array_keys(_commerce_worldpay_bg_payment_card_types()),
+    'confirmed_setup' => FALSE,
+    'payment_parameters' => array(
+      'test_mode' => TRUE,
+      'test_result' => 'AUTHORISED',
+      'pm_select_localy' => FALSE,
+      'cart_in_desc' => FALSE,
+      'cancel_order' => FALSE,
+      'edit_contact' => TRUE,
+      'show_contact' => TRUE,
+      'lang' => 'en-GB',
+    ),
+    'payment_security' => array(
+      'use_password' => TRUE,
+      'password' => '',
+      'md5_salt' => '',
+    ),
+    'payment_urls' => array(
+      'live' => C_WORLDPAY_BG_DEF_SERVER_LIVE,
+      'test' => C_WORLDPAY_BG_DEF_SERVER_TEST,
+      'use_ssl' => FALSE,
+      'force_non_ssl_links' => FALSE,
+    ),
+  );
+
+  $url = url('commerce/worldpay/bg/response', array());
+  // Remove language prefixes.
+  if (!empty($GLOBALS['language']->prefix) && drupal_multilingual()) {
+    $url = str_replace('/' . $GLOBALS['language']->prefix, '', $url);
+  }
+  $form['help_text']['worldpay_settings'] = array(
+    '#type' => 'item',
+    '#markup' => t(
+      '<h4>Installation instructions</h4>
+      <p>For this module to work properly you must configure a few specific options in your RBS WorldPay account under <em>Installation Administration</em> settings:</p>
+      <ul>
+        <li><strong>Payment Response URL</strong> must be set to: <em>@response_url</em></li>
+        <li><strong>Payment Response enabled?</strong> must be <em>enabled</em></li>
+        <li><strong>Enable the Shopper Response</strong> should be <em>enabled</em> to get the Commerce response page.</li>
+        <li><strong>Shopper Redirect URL</strong> and set the value to be <em>MC_callback</em>. !link.</li>
+        <li><strong>SignatureFields must be set to</strong>: <em>@sig</em></li>
+      </ul>',
+      array(
+        '@response_url' => '<wpdisplay item=' . C_WORLDPAY_BG_RESPONSE_URL_TOKEN . '-ppe empty="' . $url . '">',
+        '@sig' => join(':', _commerce_worldpay_bg_md5_signature_fields()),
+        '!link' => l(t('Worldpay help document'), 'http://www.worldpay.com/support/kb/bg/paymentresponse/pr5502.html', array('absolute' => TRUE, 'external' => TRUE)),
+      )
+    ),
+    '#tree' => FALSE,
+  );
+
+  $form['help_text']['confirmed_setup'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('I have completed the WorldPay installation setup (above).'),
+    '#default_value' => $settings['confirmed_setup'],
+    '#required' => TRUE,
+    '#tree' => TRUE,
+    // Make it more convieniant to access.
+    '#parents' => array(
+      'parameter',
+      'payment_method',
+      'settings',
+      'payment_method',
+      'settings',
+      'confirmed_setup',
+    ),
+  );
+
+  $form['installation_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Installation ID'),
+    '#size' => 16,
+    '#default_value' => $settings['installation_id'],
+    '#required' => TRUE,
+  );
+
+  $form['debug'] = array(
+    '#type' => 'select',
+    '#title' => t('Debug mode'),
+    '#multiple' => FALSE,
+    '#options' => array(
+      'log' => t('Log'),
+      'screen' => t('Screen'),
+      'both' => t('Both'),
+      'none' => t('None'),
+    ),
+    '#default_value' => $settings['debug'],
+  );
+
+  $form['payment_response_logging'] = array(
+    '#type' => 'radios',
+    '#title' => t('Payment Response/Notificaton logging'),
+    '#options' => array(
+      'notification' => t('Log notifications during WorldPay Payment Notifications validation and processing.'),
+      'full_wppr' => t('Log notifications with the full WorldPay Payment Notifications during validation and processing (used for debugging).'),
+    ),
+    '#default_value' => $settings['payment_response_logging'],
+  );
+  
+  $form['site_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site ID'),
+    '#description' => t('A custom identifier that will be passed to WorldPay. This is useful for using one WorldPay account for multiple web sites.'),
+    '#size' => 10,
+    '#default_value' => $settings['site_id'],
+    '#required' => FALSE,
+  );
+
+  $form['payment_methods_container'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Payment methods'),
+    '#description' => t('Select the payment methods to display in checkout.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['payment_methods_container']['payment_choices'] = array(
+    '#type' => 'checkboxes',
+    '#default_value' => $settings['payment_choices'],
+    '#options' => _commerce_worldpay_bg_payment_card_types(),
+    '#parents' => array(
+      'parameter',
+      'payment_method',
+      'settings',
+      'payment_method',
+      'settings',
+      'payment_choices',
+    ),
+  );
+
+  $form['payment_parameters'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Payment parameters'),
+    '#description' => t('These options control what parameters are sent to RBS WorldPay when the customer submits the order.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['payment_parameters']['pm_select_localy'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Select payment method locally'),
+    '#default_value' => $settings['payment_parameters']['pm_select_localy'],
+    '#description' => t('When checked the payment methods will be chosen on this website instead of on WorldPay\'s server.'),
+  );
+
+  $form['payment_parameters']['test_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable test mode'),
+    '#default_value' => $settings['payment_parameters']['test_mode'],
+  );
+
+  $form['payment_parameters']['test_result'] = array(
+    '#type' => 'select',
+    '#title' => t('Test mode result'),
+    '#description' => t('Specify the required transaction result when working in test mode.'),
+    '#default_value' => $settings['payment_parameters']['test_result'],
+    '#options' => array(
+      'AUTHORISED' => 'Authorised',
+      'REFUSED' => 'Refused',
+      'ERROR' => 'Error',
+      'CAPTURED' => 'Captured',
+    ),
+    '#disabled' => (!$settings['payment_parameters']['test_mode']) ? TRUE : FALSE,
+  );
+
+  $form['payment_parameters']['cart_in_desc'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Submit the cart contents as the order description'),
+    '#description' => t('Setting this option to true will display the cart contents on the payment page. This could help to reassure customers of exactly what they are paying for.'),
+    '#default_value' => $settings['payment_parameters']['cart_in_desc'],
+  );
+
+  $form['payment_parameters']['cancel_order'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Cancel order in Commerce if cancelled during payment'),
+    '#description' => t("If the customer cancels out of payment processing whilst on the RBS WorldPay server, remove the items from their cart and cancel their order in Commerce. N.B. This option is greyed out if it's not available."),
+    '#default_value' => $settings['payment_parameters']['cancel_order'],
+  );
+
+  $form['payment_parameters']['edit_contact'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable editing of contact details on the WorldPay\'s payment page.'),
+    '#default_value' => $settings['payment_parameters']['edit_contact'],
+  );
+
+  $form['payment_parameters']['show_contact'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show the contact details on the payment page.'),
+    '#default_value' => $settings['payment_parameters']['show_contact'],
+    // @todo Should this be disabled and always true if edit contact is FALSE?
+    // '#disabled' => variable_get('wpbg_show_contact', TRUE),
+  );
+
+  $form['payment_parameters']['lang'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Payment page language'),
+    '#description' => t('Specify the payment page language. Enter a 2-character ISO 639 language code, with optional regionalisation using 2-character country code separated by hyphen. For example "en-GB" specifies UK English.'),
+    '#size' => 8,
+    '#maxlength' => 6,
+    '#default_value' => $settings['payment_parameters']['lang'],
+  );
+
+  $form['payment_security'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Security'),
+    '#description' => t('These options are for insuring a secure transaction to RBS WorldPay when the customer submits the order.'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['payment_security']['use_password'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use WorldPay installation password?'),
+    '#description' => t('It is recomended that you set a password in your Worldpay Merchant Interface > Installation. Once done check this and enter the password.'),
+    '#default_value' => $settings['payment_security']['use_password'],
+  );
+
+  $form['payment_security']['password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Installation password'),
+    '#description' => t('This will only be used if you have checked "Use WorldPay installation password?".'),
+    '#size' => 16,
+    '#maxlength' => 16,
+    '#default_value' => $settings['payment_security']['password'],
+    '#element_validate' => array('_commerce_worldpay_bg_validate_password'),
+  );
+
+  $form['payment_security']['md5_salt'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Secret key'),
+    '#description' => t('This is the key used to hash some of the content for verification between Worldpay and this site".'),
+    '#size' => 16,
+    '#maxlength' => 16,
+    '#default_value' => $settings['payment_security']['md5_salt'],
+    '#required' => TRUE,
+  );
+
+  $form['payment_urls'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Payment URLs'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['payment_urls']['test'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Test URL'),
+    '#description' => t('The WorldPay test environment URL.'),
+    '#default_value' => $settings['payment_urls']['test'],
+    '#element_validate' => array('commerce_worldpay_bg_valid_url'),
+    '#required' => TRUE,
+  );
+
+  $form['payment_urls']['live'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Live URL'),
+    '#description' => t('The WorldPay live environment URL.'),
+    '#default_value' => $settings['payment_urls']['live'],
+    '#element_validate' => array('commerce_worldpay_bg_valid_url'),
+    '#required' => TRUE,
+  );
+
+  $form['payment_urls']['use_ssl'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use SSL for payment notifications'),
+    '#description' => t('If checked, when WorldPay passes information, it will be done over SSL for greater security. Use in combination with callback password to prevent spoofing.'),
+    '#default_value' => $settings['payment_urls']['use_ssl'],
+  );
+
+  $form['payment_urls']['force_non_ssl_links'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Force http (non-ssl) return links'),
+    '#description' => t('This is needed if "Use SSL" is checked and you want your buyers to return to the non-ssl site.'),
+    '#default_value' => $settings['payment_urls']['force_non_ssl_links'],
+  );
+
+  // @todo what is the reason for not showing those fields?
+  /*
+  $form['txn_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Transaction mode'),
+    '#description' => t('Adjust to live transactions when you are ready to start processing actual payments.'),
+    '#options' => array(
+      C_WORLDPAY_BG_TXN_MODE_LIVE => t('Live transactions in a live account'),
+      C_WORLDPAY_BG_TXN_MODE_TEST => t('Test transactions in a test account'),
+      WORLDPAY_TXN_MODE_SIMULATION => t('Simulation Account'),
+    ),
+    '#default_value' => $settings['txn_mode'],
+  );
+
+  $form['txn_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Default credit card transaction type'),
+    '#description' => t('The default will be used to process transactions during checkout.'),
+    '#options' => array(
+      COMMERCE_CREDIT_AUTH_CAPTURE => t('Authorisation and capture'),
+      COMMERCE_CREDIT_AUTH_ONLY => t('Authorisation only (requires manual or automated capture after checkout)'),
+    ),
+    '#default_value' => $settings['txn_type'],
+  );
+
+  $form['apply_avs_cv2'] = array(
+    '#type' => 'radios',
+    '#title' => t('AVS / CV2 Mode'),
+    '#description' => t('CV2 validation mode used by default on all transactions.'),
+    '#options' => array(
+      '0' => t('If AVS/CV2 enabled then check them. If rules apply, use rules. (default)'),
+      '1' => t('Force AVS/CV2 checks even if not enabled for the account. If rules apply, use rules.'),
+      '2' => t('Force NO AVS/CV2 checks even if enabled on account.'),
+      '3' => t('Force AVS/CV2 checks even if not enabled for the account but DO NOT apply any rules.'),
+    ),
+    '#default_value' => $settings['apply_avs_cv2'],
+  );
+
+  $form['apply_3d_secure'] = array(
+    '#type' => 'radios',
+    '#title' => t('3D Secure Mode'),
+    '#description' => t('3D Secure mode used by default on all transactions.'),
+    '#options' => array(
+      '0' => t('If 3D-Secure checks are possible and rules allow, perform the checks and apply the authorisation rules. (default)'),
+      '1' => t('Force 3D-Secure checks for this transaction if possible and apply rules for authorisation.'),
+      '2' => t('Do not perform 3D-Secure checks for this transaction and always authorise.'),
+      '3' => t('Force 3D-Secure checks for this transaction if possible but ALWAYS obtain an auth code, irrespective of rule base.'),
+    ), 
+    '#default_value' => $settings['apply_3d_secure'],
+  );
+  */
+
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form.
+ *
+ * This is the form the user sees when they choose the payment provider in
+ * checkout.
+ *
+ * Here we add the card selection stuff if it is enabled.
+ *
+ * @todo
+ * Attach a help box for aiding the user in payment method choice.
+ */
+function commerce_worldpay_bg_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  $form = array();
+
+  // Merge in values from the order.
+  if (!empty($order->data['commerce_worldpay_bg'])) {
+    $pane_values += $order->data['commerce_worldpay_bg'];
+  }
+
+  // Merge in default values.
+  $pane_values += array(
+    'paymentType' => 'not_selected',
+  );
+
+  $card_options = array('not_selected' => '-- Please select a payment method --');
+  $cards = _commerce_worldpay_bg_payment_card_types();
+  foreach ($payment_method['settings']['payment_choices'] as $card_code) {
+    if ($card_code) {
+      $card_options[$card_code] = $cards[$card_code];
+    }
+  }
+
+  // Card selection
+  if ($payment_method['settings']['payment_parameters']['pm_select_localy']) {
+    $form['paymentType'] = array(
+      '#type' => 'select',
+      '#title' => t('Pay using'),
+      '#options' => $card_options,
+      '#required' => TRUE,
+      '#default_value' => $pane_values['paymentType'],
+    );
+  }
+
+  if (!$payment_method['settings']['payment_parameters']['edit_contact']) {
+    $form['bill_address_help'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array(
+          'commerce-worldpay-bg-bill-address-help',
+          'messages',
+          'warning',
+        ),
+      ),
+      'content' => array(
+        '#markup' => t('Before proceeding to the next step, please verify that the billing address is the one that belongs to your chosen payment method.'),
+      ),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_worldpay_bg_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // Make sure "Please select" is not selected
+  if ($pane_values['paymentType'] == 'not_selected') {
+    form_set_error(implode('][', array_merge($form_parents, array('paymentType'))), t('You must select a payment method.'));
+
+    return FALSE;
+  }
+  // Check if it is a value we allow
+  if (!array_key_exists($pane_values['paymentType'], _commerce_worldpay_bg_payment_card_types())) {
+    form_set_error(implode('][', array_merge($form_parents, array('paymentType'))), t('An invalid WorldPay payment method choice was received. Please try choosing a payment method again.'));
+
+    // Even though the form error is enough to stop the submission of the form,
+    // it's not enough to stop it from a Commerce point of view because of the
+    // combined validation / submission going on per-pane in the checkout form.
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function commerce_worldpay_bg_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  $order->data['commerce_worldpay_bg'] = $pane_values;
+}
+
+/**
+ * Build the form to be submitted to WorldPay.
+ *
+ * @see commerce_worldpay_bg_redirect_form()
+ */
+function commerce_worldpay_bg_order_form($form, &$form_state, $order, $settings) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $currency_code = $order_wrapper->commerce_order_total->currency_code->value();
+  $amount = $order_wrapper->commerce_order_total->amount->value();
+  // @todo Find out which should really be used for the ammount or are they the same?
+  // $amount = commerce_line_items_total($order_wrapper->commerce_line_items);
+
+  // Ensure a default value for the payment_method setting.
+  $settings += array('payment_method' => '');
+
+  // Load customer profile.
+  $profile = commerce_customer_profile_load($order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id']);
+
+  // Get user billing address.
+  $address = $profile->commerce_customer_address[LANGUAGE_NONE][0];
+
+  // Necessary for country_get_list() so we can get the country name. Is this
+  // how the Drupal include files should be loaded?
+  require_once DRUPAL_ROOT . '/includes/locale.inc';
+  $countries = country_get_list();
+  $country = !empty($countries[$address['country']]) ? $countries[$address['country']] : '';
+
+  // Build the data array that will be translated into hidden form values.
+  $data = array();
+  if ($settings['payment_parameters']['test_mode']) {
+    $worldpay_name = $settings['payment_parameters']['test_result'];
+    $data = array(
+      'testMode' => '100',
+    );
+  }
+  else {
+    // Not sure if this would ever happen but hay
+    if (!empty($address['name_line'])) {
+      $worldpay_name = drupal_substr($address['name_line'], 0, 128);
+    }
+    elseif (!empty($address['first_name']) && !empty($address['last_name'])) {
+      $worldpay_name = drupal_substr($address['first_name'] . ' ' . $address['last_name'], 0, 128);
+    }
+    elseif (isset($address['organisation_name'])) {
+      $worldpay_name = substr($address['organisation_name'], 0, 128);
+    }
+  }
+
+  // @todo provide a hook to override address_post in order to give other modules a chance to provide this info from elsewhere.
+  // @todo Look into producing a formatter for addressfield.
+  $address_post = (!empty($address['thoroughfare']) ? $address['thoroughfare'] . "\n" : '') .
+    (!empty($address['premise']) ? $address['premise'] . "\n" : '') .
+    (!empty($address['sub_premise']) ? $address['sub_premise'] . "\n" : '') .
+    (!empty($address['locality']) ? $address['locality'] . "\n" : '') .
+    (!empty($address['dependent_locality']) ? $address['dependent_locality'] . "\n" : '') .
+    (!empty($address['sub_administrative_area']) ? $address['sub_administrative_area'] . "\n" : '') .
+    (!empty($address['administrative_area']) ? $address['administrative_area'] . "\n" : '');
+
+  // Separate post fields.
+  if (!empty($address['thoroughfare'])) $data['address1'] = $address['thoroughfare'];
+  if (!empty($address['premise'])) $data['address2'] = $address['premise'];
+  if (!empty($address['locality'])) $data['town'] = $address['locality'];
+  if (!empty($address['administrative_area'])) $data['region'] = $address['administrative_area'];
+  if (!empty($address['country'])) $data['country'] = $address['country'];
+
+  $response_url = commerce_worldpay_bg_response_url($settings['payment_method'], $settings['payment_urls']['use_ssl']);
+  $salt = $settings['payment_security']['md5_salt'];
+
+  // Invoke the extra post field hook. We do this first so that we can
+  // overwrite fields that should not be set by this hook.
+  $extra_data = module_invoke_all('commerce_worldpay_bg_post_data', $order, $profile, $settings);
+  if (!is_array($extra_data)) {
+    $extra_data = array();
+  }
+
+  if (!empty($GLOBALS['language']->prefix) && drupal_multilingual()) {
+    $http_host = $_SERVER['HTTP_HOST'] . '/' . !empty($GLOBALS['language']->prefix);
+  }
+  else {
+    $http_host = $_SERVER['HTTP_HOST'];
+  }
+  // @todo wouldn't it be easier to add those values to $data and then do a drupal_alter?
+  $data += array_replace($extra_data, array(
+    'instId' => $settings['installation_id'],
+    'amount' => round(commerce_currency_amount_to_decimal($amount, $currency_code), 2),
+    'cartId' => $order->order_number,
+    'currency' => $currency_code,
+    'name' => $worldpay_name,
+    'address' => $address_post,
+    'postcode' => $address['postal_code'],
+    'countryString' => $country,
+    'email' => $order->mail,
+    // @todo make it possible to select a field to be used for the telephone data
+    // 'tel' => $profile->field_telephone,
+    'MC_orderId' => $order->order_id,
+    'lang' => $settings['payment_parameters']['lang'],
+    'M_http_host' => $http_host,
+    // @see http://www.worldpay.com/support/kb/bg/htmlredirect/rhtml.html
+    'signatureFields' => join(':', _commerce_worldpay_bg_md5_signature_fields()),
+    'signature' => commerce_worldpay_bg_build_md5(
+      _commerce_worldpay_bg_build_sig_array(
+        $order_wrapper,
+        $settings['installation_id'],
+        $response_url),
+      $salt),
+    // The path WorldPay should send its Payment Response to
+    'MC_callback' => $response_url,
+    // Used in WorldPay custom pages
+    'C_siteTitle' => variable_get('site_name', 'Drupal Commerce'),
+  ));
+
+  // Allows for generating some unique information that can be used
+  // for CSS selectors and folder names. Allowing one WorldPay
+  // account to serve multiple sites with each altering its
+  // presentation.
+  if (isset($settings['site_id'])) {
+    $data['C_siteId'] = $settings['site_id'];
+  }
+
+  if (isset($order->data['commerce_worldpay_bg']) && isset($order->data['commerce_worldpay_bg']['paymentType'])) {
+    $data['paymentType'] = $order->data['commerce_worldpay_bg']['paymentType'];
+  }
+
+  // @todo
+  // Implement support for authValidFrom and authValidTo in order to prevent
+  // purchases on limited time offers.
+
+  // Get the product line item count and build cart description.
+  $order_post = '';
+  $commerce_line_items = field_get_items('commerce_order', $order, 'commerce_line_items');
+  $prod_count = 0;
+  foreach ($commerce_line_items as $item) {
+    $line_item = commerce_line_item_load($item['line_item_id']);
+    $description = $line_item->line_item_label;
+    $quantity = $line_item->quantity;
+    //$item_total = $line_item->commerce_unit_price[LANGUAGE_NONE][0]['amount'] / 100;
+    $item_total = commerce_currency_format(
+      $line_item->commerce_unit_price[LANGUAGE_NONE][0]['amount'],
+      $line_item->commerce_unit_price[LANGUAGE_NONE][0]['currency_code']);
+    $line_total = commerce_currency_format(
+      $line_item->commerce_total[LANGUAGE_NONE][0]['amount'],
+      $line_item->commerce_total[LANGUAGE_NONE][0]['currency_code']);
+
+    $order_post .= "$description ($item_total) x $quantity: $line_total\n";
+
+    if ($line_item->type == 'product') {
+      $prod_count++;
+    }
+  }
+
+  // Worldpay allows up to 255 characters but appends "FuturePay" to recurring payments.
+  $order_post = substr($order_post, 0, 244);
+
+  // Add a summary of content to the description.
+  if ($settings['payment_parameters']['cart_in_desc']) {
+    $data += array(
+      'desc' => t("Cart contents: \n@cart", array('@cart' => $order_post)),
+    );
+  }
+
+  // Add a custom WorldPay param for product count.
+  $data['C_productCount'] = $prod_count;
+  $data['C_lineItemCount'] = count($commerce_line_items);
+
+  if (!$settings['payment_parameters']['edit_contact']) {
+    $data += array(
+      'fixContact' => 'true',
+    );
+  }
+
+  if (!$settings['payment_parameters']['show_contact']) {
+    $data += array(
+      'hideContact' => 'true',
+    );
+  }
+
+  $form['#action'] = $settings['payment_parameters']['test_mode'] ? $settings['payment_urls']['test'] : $settings['payment_urls']['live'];
+
+  foreach ($data as $name => $value) {
+    if (!empty($value)) {
+      $form[$name] = array('#type' => 'hidden', '#value' => $value);
+    }
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Proceed to WorldPay to make your payment'),
+    '#name' => 'wp-sub',
+  );
+
+  if ($settings['debug'] != 'none') {
+    if ($settings['debug'] == 'screen' || $settings['debug'] == 'both') {
+      debug($data, 'Post data');
+    }
+    if ($settings['debug'] == 'log' || $settings['debug'] == 'both') {
+      watchdog(
+        'commerce_worldpay_bg', "Data to be posted for order !order_id:\n <pre>!log</pre>.",
+        array(
+          '!order_id' => $order->order_id,
+          '!log' => print_r($data, TRUE)
+        ),
+        WATCHDOG_NOTICE);
+    }
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_redirect_form().
+ *
+ * @see http://www.drupalcommerce.org/specification/info-hooks/payment
+ *
+ * Returns form elements that should be submitted to the redirected payment
+ * service; because of the array merge that happens upon return, the service's
+ * URL that should receive the POST variables should be set in the #action
+ * property of the returned form array
+ **/
+function commerce_worldpay_bg_redirect_form($form, &$form_state, $order, $payment_method) {
+  // Return an error if the enabling action's settings haven't been configured.
+  if (empty($payment_method['settings']['installation_id'])) {
+    drupal_set_message(t('WorldPay Integration is not configured for use. Installation ID has not been specified.'), 'error');
+    return array();
+  }
+
+  if (empty($payment_method['settings']['confirmed_setup'])) {
+    drupal_set_message(t('Please complete the setup steps on Worldpay then check <em>I have completed the WorldPay installation setup</em>.'), 'error');
+    return array();
+  }
+
+  if (empty($payment_method['settings']['payment_security']['md5_salt'])) {
+    drupal_set_message(t('WorldPay Business Gateway Integration is not configured for use. Encryption salt key has not been specified.'), 'error');
+    return array();
+  }
+
+  // Disable redirect if debugging.
+  // @todo This is a bit of a HACK, find a better way for that.
+  if ($payment_method['settings']['debug'] == 'screen' || $payment_method['settings']['debug'] == 'both' ) {
+    drupal_add_js(';(function($) {Drupal.behaviors.commercePayment = {attach: function (context, settings) {}}})(jQuery);', array('type' => 'inline', 'weight' => 5));
+  }
+
+  $settings = array(
+    // Specify the current payment method instance ID in the MC_callback URL
+    'payment_method' => $payment_method['instance_id'],
+  );
+
+  return commerce_worldpay_bg_order_form($form, $form_state, $order, $payment_method['settings'] + $settings);
+}
+
+/**
+ * Implements hook_redirect_form_validate
+ *
+ * This fires when the user is sent back to our site. E.g. 
+ * 'checkout/' . $order->order_id . '/payment/return/'
+ */
+function commerce_worldpay_bg_redirect_form_validate($order, $payment_method) {
+  if (!empty($payment_method['settings']['payment_response_logging']) &&
+    $payment_method['settings']['payment_response_logging'] == 'full_wppr') {
+    watchdog('commerce_worldpay_bg', 'Customer returned from WorldPay with the following POST data:<pre>' . check_plain(print_r($_POST, TRUE)) . '</pre>', array(), WATCHDOG_NOTICE);
+  }
+
+  // This may be an unnecessary step, but if for some reason the user does end
+  // up returning at the success URL with a Failed payment, go back.
+  if (!empty($_POST['transStatus']) && $_POST['transStatus'] == 'C') {
+    return FALSE;
+  }
+}
+
+/**
+ * Validates a supplied URL using valid_url().
+ */
+function commerce_worldpay_bg_valid_url($element, &$form_state, $form) {
+  if ($form_state['triggering_element']['#value'] == t('Save')) {
+    if (!valid_url($element['#value'], TRUE)) {
+      form_set_error(
+        $element['#name'],
+        t('The URL @url for @title is invalid. Enter a fully-qualified URL, such as https://secure.worldpay.com/example.',
+          array('@url' => $element['#value'], '@title' => $element['#title'])
+        )
+      );
+    }
+  }
+}
+
+/**
+ * Returns the Payment Response URL.
+ *
+ * @param $method_id
+ *   Optionally specify a payment method ID to include in the URL.
+ * @param $https
+ *   Return the URL using SSL protocal (https://)
+ *
+ * @return
+ *   The absolute path to the callback page
+ */
+function commerce_worldpay_bg_response_url($method_id = NULL, $https = FALSE) {
+  if ($https) {
+    // URL will fail if https is not of type BOOL
+    $https = TRUE;
+  }
+  else {
+    $https = FALSE;
+  }
+  $parts = array(
+    'commerce_worldpay',
+    'bg',
+    'response',
+  );
+
+  if (!empty($method_id)) {
+    $parts[] = $method_id;
+  }
+
+  return url(implode('/', $parts), array('absolute' => TRUE, 'https' => $https));
+}
+
+/**
+ * Makes sure a password is set if the "use password" option is checked.
+ */
+function _commerce_worldpay_bg_validate_password($element, &$form_state, $form) {
+  $values = $form_state['values']['parameter']['payment_method']['settings']['payment_method']['settings'];
+  if ($values['payment_security']['use_password']) {
+    if (empty($element['#value'])) {
+      form_set_error(
+        'parameter][payment_method][settings][payment_method][settings][payment_security][password',
+        t('Please set a password or uncheck "Use WorldPay installation password?" if you don\'t use one.')
+      );
+    }
+  }
+}
+
+/**
+ * Creates the encrypted md5 string.
+ */
+function commerce_worldpay_bg_build_md5($wp_sig_fields, $salt) {
+  return md5($salt . ':' . join(':', $wp_sig_fields));
+}
+
+/**
+ * @todo document this function
+ *
+ * @param $order_wrapper
+ * @param $installation_id
+ * @param $response_url
+ * @return array
+ */
+function _commerce_worldpay_bg_build_sig_array($order_wrapper, $installation_id, $response_url) {
+  // Current fields are: instId, amount, currency, cartId, MC_orderId, C_WORLDPAY_BG_RESPONSE_URL_TOKEN
+  $currency_code = $order_wrapper->commerce_order_total->currency_code->value();
+  $amount = round(
+    commerce_currency_amount_to_decimal(
+      $order_wrapper->commerce_order_total->amount->value(),
+      $currency_code),
+    2);
+  return array(
+    $installation_id,
+    $amount,
+    $currency_code,
+    $order_wrapper->order_number->value(),
+    $order_wrapper->order_id->value(),
+    $response_url
+  );
+}
+
+/**
+ * Returns the supported payment card types.
+ *
+ * @return
+ *   An array of supported card types.
+ */
+function _commerce_worldpay_bg_payment_card_types() {
+  return array(
+    'VISA' => t('Visa Credit'),
+    'VISD' => t('Visa Debit'),
+    'VIED' => t('Visa Electron'),
+    'VISP' => t('Visa Purchasing'),
+    'SOLO' => t('Solo'),
+    'MSCD' => t('Mastercard'),
+    'DMC' => t('Mastercard Debit'),
+    'MAES' => t('Maestro'),
+    'AMEX' => t('American Express'),
+    'JCB' => t('JCB'),
+    'DINS' => t('Diners Card'),
+    'ELV' => t('ELV'),
+  );
+}
+
+/**
+ * Loads a stored WPPR by ID.
+ *
+ * @param $id
+ *   The ID of the WPPR to load.
+ * @param $type
+ *   The type of ID you've specified, either the serial numeric txn_id or the
+ *     actual WorldPay wp_txn_id. Defaults to wp_txn_id.
+ * @param $pre
+ *   Load only if it is before comunication with WorldPay - NOT FUNCTIONAL.
+ *
+ * @return
+ *   The current stored record of details on communications with with WorldPay
+ *   for this transaction.
+ */
+function commerce_worldpay_bg_txn_load($id, $type = 'wp_txn_id', $pre = FALSE) {
+  return db_select('commerce_worldpay_bg_txn', 'cwbt')
+    ->fields('cwbt')
+    ->condition('cwbt.' . $type, $id)
+    ->execute()
+    ->fetchAssoc();
+}
+
+/**
+ * Saves information on the Worldpay transaction with some meta data related to
+ * local processing.
+ *
+ * @param $wp_tx
+ *   The values to write to the table in an array format of col => value.
+ *
+ * @return
+ *   The operation performed by drupal_write_record() on save; since $wp_tx is
+ *   received by reference, it will also contain the serial numeric txn_id
+ *   used locally.
+ */
+function commerce_worldpay_bg_txn_save(&$wp_tx) {
+  if (!empty($wp_tx['txn_id']) && commerce_worldpay_bg_txn_load($wp_tx['wp_txn_id'])) {
+    $wp_tx['changed'] = REQUEST_TIME;
+
+    return drupal_write_record('commerce_worldpay_bg_txn', $wp_tx, 'txn_id');
+  }
+  else {
+    $wp_tx['created'] = REQUEST_TIME;
+    $wp_tx['changed'] = REQUEST_TIME;
+
+    return drupal_write_record('commerce_worldpay_bg_txn', $wp_tx);
+  }
+}
+
+/**
+ * This maps the posted data from WorldPay to the local record structure.
+ *
+ * @param $wppr
+ *   WorldPay payment response post data.
+ *
+ * @return array
+ */
+function commerce_worldpay_bg_convert_wppr_to_record($wppr) {
+  return array(
+    'wp_txn_id' => (int) $wppr['transId'],
+    'authmode' => $wppr['authMode'],
+    'transaction_status' => $wppr['transStatus'],
+    'name' => $wppr['name'],
+    'shoppers_email' => $wppr['email'],
+    'company_name' => isset($wppr['companyName']) ? $wppr['companyName'] : '',
+    'currency' => $wppr['currency'],
+    'amount' => $wppr['amount'],
+    'auth_amount' => $wppr['authAmount'],
+    'auth_currency' => $wppr['authCurrency'],
+    'raw_auth_message' => $wppr['rawAuthMessage'],
+    'waf_merch_message' => isset($wppr['wafMerchMessage']) ? $wppr['wafMerchMessage'] : '',
+    'avs' => $wppr['AVS'],
+    'authentication' => isset($wppr['authentication']) ? $wppr['authentication'] : '',
+    'ip_address' => $wppr['ipAddress'],
+    'transaction_time' => round($wppr['transTime'] / 1000),
+    'test_mode' => isset($wppr['testMode']) && $wppr['testMode'] > 0 ? 1 : 0,
+  );
+}
+
+/**
+ * Deletes a stored WPPR by ID.
+ *
+ * @param $id
+ *   The ID of the WPPR to delete.
+ * @param $type
+ *   The type of ID you've specified, either the serial numeric txn_id or the
+ *   actual PayPal txn_id. Defaults to txn_id.
+ */
+function commerce_worldpay_bg_txn_delete($id, $type = 'txn_id') {
+  db_delete('commerce_worldpay_bg_txn')
+    ->condition($type, $id)
+    ->execute();
+}

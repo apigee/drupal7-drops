@@ -1,5 +1,5 @@
 name = Apigee Responsive
-description = Makes the apigee theme responsive with a new up to date UI.
+description = Makes the Apigee theme responsive with a new up to date UI.
 core = 7.x
 base theme = bootstrap
 

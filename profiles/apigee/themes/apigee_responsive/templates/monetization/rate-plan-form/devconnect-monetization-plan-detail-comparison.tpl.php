@@ -30,7 +30,7 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
           <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
 
           <p style="color: #666;">
-            <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => substr($rate_plan->getChildRatePlan()->getStartDate(), 0, 10))); ?>
+            <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDate()->format('m-d-Y'))); ?>
           </p>
           <div class="tabbable">
             <ul class="nav nav-tabs">

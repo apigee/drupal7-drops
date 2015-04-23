@@ -101,8 +101,9 @@ function hook_devconnect_developer_app_details_alter(array &$tabs, array &$panes
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form
  * @return bool
- *   If any value other than FALSE is returned (including NULL or no value at
- *   all), further processing in saving the developer app is aborted.
+ *   If the boolean value of FALSE is returned, further processing in saving the
+ *   developer app is aborted. Any other value (including NULL, zero or the
+ *   empty string) will allow save to continue.
  */
 function hook_devconnect_developer_app_presave(array &$form_state) {
   $form_state['values']['attribute_drupal_uid'] = $form_state['values']['uid'];
@@ -181,7 +182,9 @@ function hook_devconnect_developer_apps_prerender($op, $arg1 = NULL, $arg2 = NUL
  * Alter the list of available API Products.
  *
  * @param array $api_products
+ *   An Array of ApiProductEntity objects keyed by API Product "name" attribute.
  * @param stdClass|null $account
+ *   The developer account.
  */
 function hook_apiproduct_list_alter(array &$api_products, $account = NULL) {
   if ($account->uid == 1) {

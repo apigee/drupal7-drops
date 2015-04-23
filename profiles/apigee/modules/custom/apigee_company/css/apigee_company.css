@@ -1,0 +1,39 @@
+.create-company-container{
+    float: right;
+    clear: both;
+}
+
+.accept-invite-btn,
+.modify-role-btn{
+    margin: 0 10px 0 0;
+}
+
+.cancel-developer-request-btn{
+    margin: 0 0 0 50px;
+}
+
+#apigee-company-invite-user-form h3{
+    margin: 10px 0;
+}
+
+#apigee-company-invite-user-form .form-item-developer-email{
+    width: 400px;
+}
+
+.apigee-company-switcher-container {
+    margin: 10px 0;
+    padding: 0 0 0 10px;
+}
+
+#apigee-company-remove-developer > div, 
+#apigee-company-developer-leave > div,
+#apigee-company-cancel-invitation > div{
+    border: 1px solid #ccc;
+    margin: 15px 0;
+    padding: 10px;
+}
+
+.page-users-monetization-company-developers #modalContent,
+.page-users-me-monetization-company-developers #modalContent{
+    overflow: visible !important;
+}

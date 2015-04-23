@@ -39,6 +39,7 @@ global $user;
  * - $myappslink: provides a link for the users my apps page (with glyphicon)
  * - $profilelink: provides a link for the user profile page (with glyphicon)
  * - $logoutlink: provides a link for the user to log out (with glyphicon)
+ * - $company_switcher: Provides the dropdown to switch companies if apigee_company module is enabled.
  *
  * Page content (in order of occurrence in the default page.tpl.php):
  * - $title_prefix (array): An array containing additional output populated by
@@ -124,7 +125,12 @@ global $user;
 <?php if (!empty($search_form)): ?>
   <div class="container search-container">
     <div class="row">
-      <div class="col-md-3 pull-right">
+      <?php if(!empty($company_switcher)):?>
+        <div class="col-xs-6">
+          <div class="apigee-company-switcher-container"><?php print $company_switcher; ?></div>
+        </div>
+      <?php endif;?>
+      <div class="col-xs-6 pull-right">
         <?php print render($search_form);?>
       </div>
     </div>
@@ -132,21 +138,28 @@ global $user;
 <?php elseif (!empty($search)): ?>
   <div class="container search-container">
     <div class="row">
-      <div class="col-md-3 pull-right">
+      <?php if(!empty($company_switcher)):?>
+        <div class="col-xs-6">
+            <div class="apigee-company-switcher-container"><?php print $company_switcher; ?></div>
+        </div>
+      <?php endif;?>
+      <div class="col-xs-6 pull-right">
         <?php print render($search);?>
       </div>
     </div>
   </div>
 <?php endif; ?>
 <!-- Breadcrumbs -->
+<?php if($breadcrumb) : ?>
 <div class="container" id="breadcrumb-navbar">
   <div class="row">
     <br/>
     <div class="col-md-12">
-      <?php if (!empty($breadcrumb)): print $breadcrumb; endif;?>
+      <?php print $breadcrumb;?>
     </div>
   </div>
 </div>
+<?php endif; ?>
 <div class="master-container">
   <?php if (drupal_is_front_page()) { ?>
     <section class="page-header">
@@ -224,6 +237,7 @@ global $user;
           <?php if (!empty($action_links)): ?>
             <ul class="action-links"><?php print render($action_links); ?></ul>
           <?php endif; ?>
+
           <?php print render($page['content']); ?>
         </section>
 

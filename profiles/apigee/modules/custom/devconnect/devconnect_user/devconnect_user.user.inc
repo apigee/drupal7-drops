@@ -106,7 +106,6 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   if ($results === NULL) {
     drupal_set_message('results are null');
   }
-
   if (!$saved) {
     devconnect_default_org_config()->logger->error(print_r($results, TRUE));
   }

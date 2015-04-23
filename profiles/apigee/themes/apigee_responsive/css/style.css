@@ -812,6 +812,17 @@ div#analytics-highchart {
     font-weight: normal;
 }
 
+#devconnect-developer-apps-edit-form div.form-checkboxes div.error.form-type-checkbox label{
+    margin: 0 0 0 10px
+}
+
+#devconnect-developer-apps-edit-form div.form-checkboxes div.error.form-type-checkbox input[type="checkbox"]{
+    margin-left: 0px;
+}
+#devconnect-developer-apps-edit-form div.form-checkboxes div.error.form-type-checkbox .apiproduct-description {
+    margin-left: 22px;
+}
+    
 .panel-heading {
     background-color: #F5F5F5;
     border-color: #DDDDDD;
@@ -956,6 +967,25 @@ a.author-pane-link:visited {
     clear: both;
     width: 100%;
 
+}
+
+.apigee-home-default-blocks{
+    min-height: 410px;
+    margin-bottom: 10px;
+}
+
+/** Monetization styles */
+.rate-plan-form-product-label {
+  font-size: 16px;
+  float: left;
+  margin: 0 10px 0 0;
+}
+.rate-plan-form-product-list {
+  float: left;
+}
+.rate-plan-form-product-label label{
+    font-weight: normal;
+    margin-bottom: 0;
 }
 
 
@@ -1552,4 +1582,40 @@ Analytics styles
     div.region-sidebar-second .block:first-child h2.block-title {
         margin-top:0px;
     }
+}
+
+input#edit-registered-for-tax-vat-0[type="radio"], input#edit-registered-for-tax-vat-1[type="radio"] {
+    margin: 0;
+
+}
+
+.radio label {
+    margin-left: 4px;
+}
+
+.form-item label.option {
+    text-transform: none;
+}
+
+.ui-autocomplete {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: default;
+}
+
+.ui-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: block;
+    outline: none;
+}
+
+.ui-menu .ui-menu-item {
+    position: relative;
+    margin: 0;
+    padding: 3px 1em 3px .8em;
+    cursor: pointer;
+    min-height: 0;
 }

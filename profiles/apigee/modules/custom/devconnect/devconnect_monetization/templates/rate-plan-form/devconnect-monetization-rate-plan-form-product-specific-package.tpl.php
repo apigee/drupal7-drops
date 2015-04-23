@@ -9,7 +9,7 @@
   <?php // Start Future Product Specific 1. ?>
   <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
   <p style="color: #666;">
-    <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDate(), 0, 10)); ?>
+    <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDateTime()->format('m-d-Y'))); ?>
   </p>
   <div class="tabbable">
     <ul class="nav nav-pills">
@@ -36,7 +36,7 @@
               <?php if ($rate_plan->getContractDuration() > 0): ?><td><?php echo $rate_plan->getContractDuration() . '&nbsp;' . strtolower($rate_plan->getContractDurationType()) . ($rate_plan->getContractDuration() > 1 ? 's' : ''); ?></td><?php endif; ?>
               <?php if ($rate_plan->getSetUpFee() > 0): ?><td><?php echo $rate_plan->getCurrency()->getName() . '&nbsp;' . sprintf('%.2f', $rate_plan->getSetUpFee()); ?></td><?php  endif; ?>
               <?php if ($rate_plan->getRecurringFee() > 0): ?><td><?php echo _devconnect_monetization_get_frequency_fee_text($rate_plan); ?></td><?php endif; ?>
-              <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><td><?php echo $rate_plan->getCurrency()->getName() . '&nbsp;' . $rate_plan->getEarlyTerminationFee(); ?></td><?php endif; ?>
+              <?php if ($rate_plan->getEarlyTerminationFee() > 0): ?><td><?php echo $rate_plan->getCurrency()->getName() . '&nbsp;' . sprintf('%.2f', $rate_plan->getEarlyTerminationFee()); ?></td><?php endif; ?>
             </tr>
             </tbody>
           </table>

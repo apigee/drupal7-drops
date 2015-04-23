@@ -37,7 +37,7 @@ function devconnect_admin_form($form, &$form_state) {
     )
   );
   $element =& $form['connection_config_container']['org_settings'][0];
-  if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
+  if (DEVCONNECT_SHOW_CONFIG_FIELDS || empty($org_settings['org'])) {
     $element['org'] = array(
       '#type' => 'textfield',
       '#title' => t('Management API Organization'),
@@ -340,8 +340,11 @@ function devconnect_admin_form_submit($form, &$form_state) {
       $changes["Default Connection: $field"] = array($old_value, $new_value);
     }
   }
-  $new_config['pass'] = Apigee\Util\Crypto::encrypt($new_config['pass']);
-  variable_set('devconnect_org_settings', $new_config);
+  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
+  $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+
+  file_put_contents($config_file, Drupal\devconnect\Crypto::encrypt(serialize($new_config)));
+  @chmod($config_file, 0666);
 
   if (isset($form_state['values']['devconnect_user_tnc_url'])) {
     $old_url = _devconnect_user_get_tnc_url();

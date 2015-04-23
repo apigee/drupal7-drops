@@ -21,6 +21,17 @@
 <br>
 <br>
 <div class="master-container">
+  <header id="navbar" role="banner" class="<?php print $navbar_classes; ?>">
+  <div class="container">
+    <div class="navbar-header">
+      <?php if ($logo): ?>
+        <a class="logo navbar-btn pull-left" href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>">
+          <img src="<?php print $logo; ?>" alt="<?php print $site_name; ?>" />
+        </a>
+      <?php endif; ?>
+    </div> 
+  </div>
+</header>
   <section class="page-header">
     <div class="container">
       <div class="row">
@@ -32,9 +43,8 @@
           <br>
           <h1>Updates coming soon!</h1>
           <hr>
-          <h3><span class="text-muted">We're working to make our site more awesome for you.</span></h3>
+          <h3><span class="text-muted"><?php print $content; ?></span></h3>
           <hr>
-          <p class="text-muted">Thanks for visiting, we're wrapping things up and we'll be back online shortly!</p>
         </div>
       </div>
     </div>

@@ -13,5 +13,15 @@ function devconnect_multiorg_install() {
     ->condition('type', 'module')
     ->condition('name', 'devconnect_multiorg')
     ->execute();
+}
 
+function devconnect_multiorg_requirements($phase) {
+  $t = get_t();
+  $requirements['devconnect-multiorg'] = array(
+    'description' => t('The “@module” module is deprecated and probably will not function as expected.', array('@module' => 'DevConnect Multi-Org')),
+    'severity' => REQUIREMENT_WARNING,
+    'value' => $t('If the “@module” module is in active use, please file a bug to have it fixed.', array('@module' => 'DevConnect Multi-Org')),
+    'title' => $t('Deprecated module'),
+  );
+  return $requirements;
 }

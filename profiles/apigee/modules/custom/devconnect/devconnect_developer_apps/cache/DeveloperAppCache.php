@@ -229,7 +229,14 @@ class DeveloperAppCache implements \DrupalCacheInterface {
         ))
         ->execute();
     }
+    $products = array();
     foreach ($entity->credentialApiProducts as $product) {
+      // Work around rare Edge bug in which an app may have the same apiproduct
+      // listed twice for the same credential.
+      if (in_array($product['apiproduct'], $products)) {
+        continue;
+      }
+      $products[] = $product['apiproduct'];
       switch ($product['status']) {
         case 'revoked':
           $cred_apiproduct_status = -1;

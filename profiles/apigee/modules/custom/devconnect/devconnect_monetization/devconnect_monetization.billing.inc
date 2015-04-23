@@ -24,6 +24,7 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
   $config = devconnect_monetization_default_org_config();
   $organization = new Organization($config);
   $currencies = $organization->listSupportedCurrencies();
+  $top_up_form = NULL;
 
   $access_prepaid_reports = user_access('access mint prepaid reports');
   if ($access_prepaid_reports) {
@@ -36,11 +37,20 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
     if ($download_prepaid_report_perm) {
       $previous_prepaid_statements_form = drupal_get_form('devconnect_monetization_download_prepaid_report_form');
     }
+
+    $company = apigee_company_get_current_context_company();
+    if (!empty($company)) {
+      $company_id = $company->name;
+    }
+    else {
+      $company_id = NULL;
+    }
+
     // Decide what API call to use to get the report data for Billing and
     // Reports page.
     if (variable_get('devconnect_monetization_balance_report_type', BILLING_AND_REPORTS_USE_PREPAID_API_CALL) == BILLING_AND_REPORTS_USE_PREPAID_API_CALL) {
       try {
-        $balances = $developer->getPrepaidBalance();
+        $balances = $developer->getPrepaidBalance(NULL, NULL, NULL, $company_id);
       }
       catch(\Apigee\Exceptions\ResponseException $e) {
         drupal_set_message(t('There was an error retrieving your balance. If the problem persists please contact your administrator.'), 'error');
@@ -61,14 +71,16 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
       $balances = $developer_balance->getList();
     }
     $topped_up_currencies = 0;
+    /** @var Apigee\Mint\DeveloperBalance $balance */
     foreach ($balances as $balance) {
+      /** @var Apigee\Mint\DataStructures\SupportedCurrency $currency */
       foreach ($currencies as $currency) {
         if ($balance->getSupportedCurrency()->getId() == $currency->getId()) {
           $topped_up_currencies++;
           break;
         }
       }
-      // Calculate the Current Balance from Total - Usage
+      // Calculate the Current Balance from Total - Usage.
       if (! (variable_get('devconnect_monetization_balance_report_type', BILLING_AND_REPORTS_USE_PREPAID_API_CALL) == BILLING_AND_REPORTS_USE_PREPAID_API_CALL) )
         $balance->setAmount($balance->getAmount() - $balance->getUsage());
     }
@@ -104,31 +116,41 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
  */
 function devconnect_monetization_billing_documents(\Apigee\Mint\Developer $developer) {
   $billing_documents_form = drupal_get_form('devconnect_monetization_billing_document_form', $developer);
-  $billing_docs_collection = isset($billing_documents_form['#billing_docs']) ? $billing_documents_form['#billing_docs'] : NULL;
+  $billing_docs_collection = isset($billing_documents_form['#billing_docs']) ? $billing_documents_form['#billing_docs'] : array();
   unset($billing_documents_form['#billing_docs']);
   $docs = array();
+  /** @var Apigee\Mint\BillingDocument $doc */
   foreach ($billing_docs_collection as &$doc) {
     switch ($doc->getType()) {
       case BillingDocumentType::REV_STMT:
         $type = 'Revenue Share Statement';
         break;
+
       case BillingDocumentType::GPA:
         $type = 'GPA';
         break;
+
       case BillingDocumentType::NPA:
         $type = 'NPA';
         break;
+
       case BillingDocumentType::SELF_INVOICE:
         $type = 'Self Invoice';
         break;
+
       case BillingDocumentType::INVOICE:
         $type = 'Invoice';
         break;
+
       case BillingDocumentType::NETTING_STMT:
         $type = 'Netting Statement';
         break;
+      default: // should never get here!
+        $type = NULL;
+        break;
     }
     $products = array();
+    /** @var Apigee\Mint\Product $product */
     foreach ($doc->getProducts() as $product) {
       $products[] = $product->getDisplayName();
     }
@@ -155,6 +177,7 @@ function devconnect_monetization_top_up_balance_form($form, $form_state) {
   $currencies = $organization->listSupportedCurrencies();
 
   $currency_options = array();
+  /** @var Apigee\Mint\DataStructures\SupportedCurrency $currency */
   foreach ($currencies as $currency) {
     if ($currency->isVirtualCurrency()) {
       continue;
@@ -163,8 +186,6 @@ function devconnect_monetization_top_up_balance_form($form, $form_state) {
   }
 
   $form = array();
-
-  $form['#attributes']['class'][] = 'form-horizontal';
 
   $form['currency_id'] = array(
     '#type' => 'select',
@@ -189,7 +210,7 @@ function devconnect_monetization_top_up_balance_form($form, $form_state) {
       'placeholder' => t('enter an amount'),
       'class' => array(
         'numeric',
-        'currency'
+        'currency',
       ),
       'currency' => '',
       'minimum' => 0,
@@ -254,13 +275,12 @@ function devconnect_monetization_top_up_balance_form_submit($form, &$form_state)
 
     commerce_order_save($deposit_order);
     $form_state['order_id'] = $deposit_order->order_id;
-    //$form_state['rebuild'] = FALSE;
     $form_state['redirect'] = 'checkout/' . $deposit_order->order_id;
   }
   catch (Exception $e) {
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
-    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-    devconnect_default_api_client()->logger->critical($message);
+    $message = (method_exists($e, '__toString') ? (string) $e : $e->getMessage());
+    devconnect_default_org_config()->logger->critical($message);
   }
 }
 
@@ -282,8 +302,17 @@ function devconnect_monetization_download_report($currency_id, $date, \Apigee\Mi
   list($month, $year) = explode('-', $date);
   try {
 
+    $developer_or_company_id = $developer->getEmail();
+    // If there is a company in the context then download the report for the
+    // company instead of the developer. So we replace the developer email with
+    // the company machine name below.
+    $company = apigee_company_get_current_context_company();
+    if(!empty($company)){
+      $developer_or_company_id = $company->name;
+    }
+
     $org = new Organization(devconnect_monetization_default_org_config());
-    $response = $org->getPrepaidBalanceReport($month, $year, $developer->getEmail(), $currency_id);
+    $response = $org->getPrepaidBalanceReport($month, $year, $developer_or_company_id, $currency_id);
 
     header('Content-Disposition: attachment; filename="Prepaid_Balance-' . $month . $year . '_' . time() . '.csv"');
     header('Content-Type: application/octet-stream;charset=utf-8');
@@ -293,7 +322,8 @@ function devconnect_monetization_download_report($currency_id, $date, \Apigee\Mi
     echo $response;
     module_invoke_all('exit');
     exit;
-  } catch (MintApiException $cae) {
+  }
+  catch (MintApiException $cae) {
     if ($cae->getMintCode() == MintApiException::RESOURCE_DOES_NOT_EXIST) {
       drupal_set_message(t('There is no report for account @account in @month-@year', array(
         '@account' => $currency_id,
@@ -309,9 +339,18 @@ function devconnect_monetization_download_report($currency_id, $date, \Apigee\Mi
     }
   }
   catch (Exception $e) {
-    drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
-    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-    devconnect_default_api_client()->logger->critical($message);
+    if ($e->getCode() == 404) {
+      drupal_set_message(t('There is no report for account @account in @month-@year', array(
+        '@account' => $currency_id,
+        '@month' => $month,
+        '@year' => $year,
+          )), 'error');
+    }
+    else{
+      drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
+      $message = (method_exists($e, '__toString') ? (string) $e : $e->getMessage());
+      devconnect_default_org_config()->logger->critical($message);
+    }
   }
   $me = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
   drupal_goto("users/$me/monetization/billing/prepaid-balance");
@@ -327,6 +366,7 @@ function devconnect_monetization_download_prepaid_report_form($form, $form_state
   $billing_documents = new BillingDocument($config);
   $billing_months = $billing_documents->listBillingMonths();
   $years = array();
+  /** @var Apigee\Mint\DataStructures\BillingMonth $billing_month */
   foreach ($billing_months as $billing_month) {
     if (!in_array($billing_month->getYear(), $years)) {
       $years[$billing_month->getYear()] = $billing_month->getYear();
@@ -334,11 +374,15 @@ function devconnect_monetization_download_prepaid_report_form($form, $form_state
   }
   rsort($years);
   $accounts = array();
+  /** @var Apigee\Mint\DataStructures\SupportedCurrency $currency */
   foreach ($currencies as $currency) {
     $accounts[$currency->getName()] = "{$currency->getName()} ({$currency->getDisplayName()})";
   }
 
-  $years = array_combine($years, $years);
+  if (!empty($years)) {
+    $years = array_combine($years, $years);
+  }
+
   $form = array();
   $form['validation_message'] = array(
     '#markup' => t('<div id="download_previous_prepaid_statements_error_div" class="alert alert-block alert-error fade in hide"><h4 class="alert-heading">Make sure you have:</h4><p></p></div>'),
@@ -379,7 +423,7 @@ function devconnect_monetization_download_prepaid_report_form($form, $form_state
   drupal_add_js(array('devconnect_monetization_previous_prepaid_statement' => $js_settings), 'setting');
 
   $form['submit'] = array(
-    '#markup' => '<a id="donwload_previous_prepaid_statements_anchor" class="btn">' . t('Download CSV') . '</a>'
+    '#markup' => '<a id="download_previous_prepaid_statements_anchor" class="btn">' . t('Download CSV') . '</a>'
   );
   return $form;
 }
@@ -390,6 +434,7 @@ function devconnect_monetization_billing_get_billing_months_by_year($form, &$for
   $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
   $billing_months = $billing_document->listBillingMonths();
   $months = array();
+  /** @var Apigee\Mint\DataStructures\BillingMonth $billing_month */
   foreach ($billing_months as $billing_month) {
     if ($billing_month->getYear() == $year) {
       $months[(int) $billing_month->getMonth()] = $billing_month->getMonthEnum();
@@ -405,11 +450,11 @@ function devconnect_monetization_billing_get_billing_months_by_year($form, &$for
   $commands[] = ajax_command_replace('#devconnect-monetization-download-prepaid-report-form select:last option', $options);
   $commands[] = ajax_command_invoke('#devconnect-monetization-download-prepaid-report-form select:last option:first-child', 'attr', array(
     'disabled',
-    TRUE
+    TRUE,
   ));
   $commands[] = ajax_command_invoke('#devconnect-monetization-download-prepaid-report-form select:last option:first-child', 'attr', array(
     'selected',
-    TRUE
+    TRUE,
   ));
   $commands[] = ajax_command_invoke(NULL, 'fixBillingMonthSelect');
   return array('#type' => 'ajax', '#commands' => $commands);
@@ -437,6 +482,7 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
   $currency_options = array();
   $show_local_currency_option = FALSE;
   $count_default = 0;
+  /** @var Apigee\Mint\DataStructures\SupportedCurrency $currency */
   foreach ($currencies as $currency) {
     if (!in_array($currency->getName(), array('GBP', 'EUR', 'USD'))) {
       $show_local_currency_option = TRUE;
@@ -464,12 +510,12 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
     '#title' => t('From'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#date_format' => 'j F Y',
+    '#date_format' => variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT),
     '#attributes' => array(
       'size' => 23,
-      'class' => array('date')
+      'class' => array('date'),
     ),
-    '#default_value' => date('m/d/Y', time()),
+    '#default_value' => date(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT), time()),
   );
 
   $form['end_date'] = array(
@@ -477,12 +523,12 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
     '#type' => 'textfield',
     '#required' => TRUE,
     '#size' => 10,
-    '#date_format' => 'j F Y',
+    '#date_format' => variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT),
     '#attributes' => array(
       'size' => 23,
-      'class' => array('date')
+      'class' => array('date'),
     ),
-    '#default_value' => date('m/d/Y', time()),
+    '#default_value' => date(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT), time()),
   );
 
   $form['reporting_level'] = array(
@@ -530,6 +576,11 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
   $form['#submit'][] = 'devconnect_monetization_developer_report_submit';
   $form['#theme'] = 'devconnect_monetization_developer_report_form';
 
+  $js_settings = array(
+    'date_format' => variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT),
+  );
+
+  drupal_add_js(array('devconnect_monetization_developer_reports' => $js_settings), 'setting');
   drupal_add_library('system', 'ui.datepicker');
   return $form;
 }
@@ -542,12 +593,10 @@ function devconnect_monetization_developer_report_validate($form, &$form_state) 
 
   $org_timezone = new DateTimeZone($form_state['values']['org_timezone']);
   $start_date_string = $form_state['values']['start_date'] . ' 00:00:00';
-  $separator = strpos($start_date_string, '/') > 0 ? '/' : '-';
-  $start_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $start_date_string, $org_timezone);
+  $start_date = DateTime::createFromFormat(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT) . " H:i:s", $start_date_string, $org_timezone);
 
   $end_date_string = $form_state['values']['end_date'] . ' 00:00:00';
-  $separator = strpos($end_date_string, '/') > 0 ? '/' : '-';
-  $end_date = DateTime::createFromFormat("m{$separator}d{$separator}Y H:i:s", $end_date_string, $org_timezone);
+  $end_date = DateTime::createFromFormat(variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT) . " H:i:s", $end_date_string, $org_timezone);
 
   if (!is_object($start_date)) {
     form_set_error('start_date', t('Incorect date format in From field'));
@@ -583,7 +632,7 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
     'CREDIT',
     'SETUPFEES',
     'TERMINATIONFEES',
-    'RECURRINGFEES'
+    'RECURRINGFEES',
   );
   if ($form_state['values']['reporting_level'] == 'SUMMARY') {
     $report->showSummary = TRUE;
@@ -625,6 +674,14 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
     field_sql_storage_field_storage_write('user', $account, 'insert', $fields);
   }
   cache_clear_all("field:user:" . $user->uid, 'cache_field');
+
+  $company = apigee_company_get_current_context_company();
+  // If the user is in a company context then show him the company reports.
+  if ($company) {
+    // @TODO: This should be handled in the SDK later.
+    $dev->setEmail($company->name);
+  }
+
   try {
     $response = $dev->getRevenueReport($report);
 
@@ -660,6 +717,7 @@ function devconnect_monetization_billing_document_form($form, &$form_state, \Api
   $billing_months = $billing_document->listBillingMonths();
 
   $months = array();
+  /** @var Apigee\Mint\DataStructures\BillingMonth $billing_month */
   foreach ($billing_months as $billing_month) {
     // Build the key as float made out of Y as interger part and month as decimal part pad with 0 e.g. January 2013 = 2013.01
     // This way we can sort them descending
@@ -714,7 +772,7 @@ function devconnect_monetization_billing_document_form($form, &$form_state, \Api
       'js' => array(
         array(
           'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/received-bills-form.js',
-          'type' => 'file'
+          'type' => 'file',
         ),
       ),
     ),
@@ -728,7 +786,17 @@ function devconnect_monetization_billing_document_form($form, &$form_state, \Api
     if (count($opts) > 0) {
       list($default_billing_month) = array_keys($opts);
       list($month, $year) = explode('-', $default_billing_month);
-      $form['#billing_docs'] = $billing_document->getBillingDocuments($developer->getEmail(), strtoupper($month), $year, TRUE);
+
+      $developer_or_company_id = $developer->getEmail();
+      // If there is a company in the context then fetch the billing
+      // documents for the company instead of the developer. So we replace the
+      // developer email with the company machine name.
+      $company = apigee_company_get_current_context_company();
+      if(!empty($company)){
+        $developer_or_company_id = $company->name;
+      }
+
+      $form['#billing_docs'] = $billing_document->getBillingDocuments($developer_or_company_id, strtoupper($month), $year, TRUE);
       $form['#submited'] = FALSE;
     }
   }
@@ -745,18 +813,28 @@ function devconnect_monetization_billing_document_form_submit(&$form, &$form_sta
     }
     $developer_id = _devconnect_monetization_get_developer_id(TRUE);
 
+    $developer_or_company_id = $developer_id;
+    // If there is a company in the context then search the document for the
+    // company instead of the developer. So we replace the developer email with
+    // the company machine name.
+    $company = apigee_company_get_current_context_company();
+    if (!empty($company)) {
+      $developer_or_company_id = $company->name;
+    }
+
     list($month, $year) = explode('-', $form_state['values']['billing_month']);
     $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
     if (strlen($form_state['values']['search-billing-doc'])) {
       try {
-        $billing_docs = $billing_document->searchBillingDoc($form_state['values']['search-billing-doc'], $developer_id);
-      } catch (MintApiException $re) {
+        $billing_docs = $billing_document->searchBillingDoc($form_state['values']['search-billing-doc'], $developer_or_company_id);
+      }
+      catch (MintApiException $re) {
         drupal_set_message(t("Error: %error", array('%error' => $re->getMintMessage(TRUE, TRUE))), 'warning');
         return;
       }
     }
     else {
-      $billing_docs = $billing_document->getBillingDocuments($developer_id, strtoupper($month), $year, TRUE);
+      $billing_docs = $billing_document->getBillingDocuments($developer_or_company_id, strtoupper($month), $year, TRUE);
     }
 
     $form_state['rebuild'] = TRUE;

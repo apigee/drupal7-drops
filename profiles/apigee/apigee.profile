@@ -1,9 +1,10 @@
 <?php
-require_once(DRUPAL_ROOT . '/profiles/apigee/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
-// Make Crypto work properly with R23
-if (method_exists('Apigee\Util\Crypto', 'setKey')) {
-  Apigee\Util\Crypto::setKey(hash('SHA256', 'w3-Love_ap|s', TRUE));
-}
+use Drupal\devconnect\Crypto;
+
+require_once(DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php');
+
+
+define('SMARTDOCS_SAMPLE_MODEL', 'weather');
 
 /**
  * Selects the Apigee Profile
@@ -24,7 +25,8 @@ function apigee_install_select_locale(&$install_state) {
 }
 
 /**
- * Task handler to load our install profile and enhance the dependency information
+ * Task handler to load our install profile and enhance the dependency
+ * information.
  *
  * @param $install_state
  */
@@ -112,7 +114,7 @@ function _apigee_install_configure_task_finished($success, $results, $operations
 }
 
 /**
- * Configure variables across the environment properly
+ * Configure variables across the environment properly.
  *
  * @param $context
  */
@@ -126,7 +128,7 @@ function apigee_install_configure_variables(&$context) {
     $conf = array(
       'file_public_path' => 'sites/default/files',
       'file_private_path' => 'sites/default/private',
-      'file_temporary_path' => 'sites/default/tmp'
+      'file_temporary_path' => 'sites/default/tmp',
     );
   }
   try {
@@ -135,10 +137,12 @@ function apigee_install_configure_variables(&$context) {
     file_prepare_directory($conf['file_private_path'], FILE_CREATE_DIRECTORY);
   } catch (Exception $e) {
     drupal_set_message(t('unable to create the directories necessary for Drupal to write files: :error', array(
-      ':error' => $e->getMessage()
+      ':error' => $e->getMessage(),
     )));
   }
-  $crypt_key = drupal_random_bytes(64);
+
+  $crypt_key = drupal_random_bytes(32);
+
   variable_set('file_public_path', $conf['file_public_path']);
   variable_set('file_temporary_path', $conf['file_temporary_path']);
   variable_set('file_private_path', $conf['file_private_path']);
@@ -168,7 +172,33 @@ function apigee_install_configure_variables(&$context) {
   variable_set('logintoboggan_login_with_email', 1); // Set use email for login flag
   variable_set('logintoboggan_immediate_login_on_register', 0); // Set immediate login to false by default
   variable_set('logintoboggan_override_destination_parameter', 0); // Set immediate login to false by default
-  variable_set('apigee_crypt_key', $crypt_key);
+
+  // Detect private dir if it is configured already
+  $configured_private_dir = $conf['file_private_path'];
+  // Make sure private dir exists and is writable.
+  if (!empty($configured_private_dir)) {
+    if (!is_dir(DRUPAL_ROOT . '/' . $configured_private_dir) || !is_writable(DRUPAL_ROOT . '/' . $configured_private_dir)) {
+      unset($configured_private_dir);
+    }
+  }
+  // Do we need to guess where to store?
+  if (!isset($configured_private_dir)) {
+    foreach (array('sites/default/files/private', 'sites/default/private') as $private_dir) {
+      if (is_dir(DRUPAL_ROOT . '/' . $private_dir) && is_writable(DRUPAL_ROOT . '/' . $private_dir)) {
+        $configured_private_dir = $private_dir;
+        break;
+      }
+    }
+  }
+  if (!isset($configured_private_dir)) {
+    $configured_private_dir = $conf['file_public_path'] . '/private';
+    if (!file_exists(DRUPAL_ROOT . '/' . $configured_private_dir)) {
+      mkdir($configured_private_dir);
+    }
+  }
+  variable_set('apigee_credential_dir', $configured_private_dir);
+  file_put_contents($configured_private_dir . '/.apigee.key', $crypt_key);
+
   $context['results'][] = 'variables';
   $context['message'] = st('Default variables set.');
 }
@@ -225,7 +255,7 @@ function apigee_install_configure_solr(&$context) {
 }
 
 /**
- * Function that configures standard user functionality across the platform
+ * Function that configures standard user functionality across the platform.
  *
  * @param $context
  */
@@ -289,7 +319,6 @@ function apigee_install_configure_themes(&$context) {
   $enable = array(
     'theme_default' => 'apigee_responsive',
     'admin_theme' => 'rubik',
-    'apigee_base'
   );
   try {
     theme_enable($enable);
@@ -1734,7 +1763,7 @@ function apigee_install_bootstrap_status(&$context) {
 }
 
 /**
- * Set the apigee endpoint configuration vars
+ * Set the apigee endpoint configuration vars.
  *
  * @param $form
  * @param $form_state
@@ -1814,6 +1843,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#attributes' => $attributes,
     '#post_render' => array('apigee_endpoint_password_post_render'),
   );
+
   $form['actions'] = array(
     '#weight' => 100,
     '#attributes' => array(
@@ -1861,14 +1891,17 @@ function apigee_install_api_endpoint_validate($form, &$form_state) {
 }
 
 /**
- * Turns a text field into a password field.
+ * Removes the password strength indicator, the title for the first password field and the description from the confirm password field.
  *
- * @param $content
  * @param $element
  * @return mixed
  */
-function apigee_password_post_render($content, $element) {
-  return str_replace('type="text"', 'type="password"', $content);
+function apigee_password_pre_render($element) {
+  unset($element['pass1']['#title']);
+  unset($element['pass1']['#attributes']['class']);
+  unset($element['pass2']['#attributes']['class']);
+  return $element;
+
 }
 
 function apigee_endpoint_password_post_render($content, $element) {
@@ -1901,17 +1934,16 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
   $config = devconnect_get_org_settings();
   foreach (array('org', 'endpoint', 'user', 'pass') as $key) {
     $value = $form_state['values'][$key];
-    if ($key == 'pass') {
-      $value = Apigee\Util\Crypto::encrypt($value);
-    }
     $config[$key] = $value;
   }
-  $config_copy = $config;
-  unset($config_copy['org_settings']);
-  $config['org_settings'] = array($config_copy);
   $config['connection_timeout'] = 16;
   $config['request_timeout'] = 16;
-  variable_set('devconnect_org_settings', $config);
+
+  $private_dir = variable_get('apigee_credential_dir', NULL);
+  $key = devconnect_get_crypt_key();
+  Crypto::setKey($key);
+  file_put_contents(DRUPAL_ROOT . '/' . $private_dir . '/.apigee', Crypto::encrypt(serialize($config)));
+
   $GLOBALS['apigee_api_endpoint_configured'] = TRUE;
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
@@ -1950,9 +1982,8 @@ function apigee_install_settings_form($form, &$form_state, &$install_state) {
  */
 function apigee_generate_make_smartdocs_model($form, &$form_state) {
   // Configure SmartDocs API Proxy URL
-  $form = array();
   $form['smartdocs_api_proxy_url'] = array(
-    '#markup' => t('Generate sample SmartDocs content.'),
+    '#markup' => t('Generate sample SmartDocs content. <strong><em>This is beta functionality.</em></strong>'),
   );
   $form['apigee_api_endpoint_configured'] = array(
     '#type' => 'hidden',
@@ -2004,7 +2035,7 @@ function apigee_skip_generate_make_smartdocs_model($form, &$form_state) {
  */
 function apigee_generate_make_smartdocs_model_submit($form, &$form_state) {
   // re-apply apigee_api_endpoint_configured status
-  $GLOBALS['apigee_api_endpoint_configured'] = $form_state['input']['apigee_api_endpoint_configured'];
+  $GLOBALS['apigee_api_endpoint_configured'] = $form_state['values']['apigee_api_endpoint_configured'];
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
 
@@ -2025,35 +2056,55 @@ function apigee_generate_import_smartdocs_model_content() {
   if (!module_exists('smartdocs')) {
     module_enable(array('smartdocs'), TRUE);
   }
+  //During the install process it does not return the correct values and hence needs to be reset.
+  drupal_static_reset('devconnect_default_org_config');
   // Create sample SmartDocs Weather Model
-  $model_name = 'weather';
-  $payload = array(
-    'model_name' => $model_name,
-    'display_name' => 'Weather Model',
-    'model_description' => 'Weather Model (Apigee sample)',
-  );
-  /** @var SmartDocsModelController $controller */
-  $controller = entity_get_controller('smartdocs_model');
-  $model = $controller->loadSingle($payload['model_name']);
-  if (empty($model)) {
-    $model = $controller->create($payload);
+  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
+  try {
+    $model->load(SMARTDOCS_SAMPLE_MODEL);
+    $update = TRUE;
+  } catch (Apigee\Exceptions\ResponseException $e) {
+    $update = FALSE;
   }
-  $GLOBALS['smartdocs_latest_revision_number'] = $model['latestRevisionNumber'];
-  if (empty($model['latestRevisionNumber'])) {
-    $entity = array();
-    $entity['apiId'] = $model_name;
-    $entity['xml'] = file_get_contents(drupal_get_path('profile', 'apigee') . '/samples/smartdocs/weather.xml');
-    $test = $controller->import($entity, 'wadl');
-    if (is_array($test)) {
-      drupal_set_message($test['message'], 'error');
+  $model->setName(SMARTDOCS_SAMPLE_MODEL);
+  $model->setDisplayName('Weather Model');
+  $model->setDescription('Weather Model (Apigee sample)');
+  try {
+    $model->save($update);
+    $saved_model = TRUE;
+  } catch (Apigee\Exceptions\ResponseException $e) {
+    $saved_model = FALSE;
+    $message = $e->getResponse();
+    $messageObj = @json_decode($message, TRUE);
+    if (is_array($messageObj) && array_key_exists('message', $messageObj)) {
+      $err_msg = $messageObj['message'];
     }
     else {
-      drupal_set_message('The WADL XML has been imported into the model.', 'status');
+      $err_msg = $e->getMessage();
     }
+    drupal_set_message($err_msg, 'error');
   }
-  else {
-    $display = (empty($model['displayName'])) ? $model['name'] : $model['displayName'];
-    drupal_set_message($display . ' currently has a revision.  No need to import data.', 'status');
+  if ($saved_model) {
+    if ($model->getLatestRevisionNumber() > 0) {
+      drupal_set_message($model->getDisplayName() . ' currently has a revision.  No need to import data.', 'status');
+    }
+    else {
+      try {
+        $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
+        $revision->importWadl(file_get_contents(__DIR__ . '/samples/smartdocs/weather.xml'));
+        drupal_set_message('The WADL XML has been imported into the model.', 'status');
+      } catch (Apigee\Exceptions\ResponseException $e) {
+        $message = $e->getResponse();
+        $messageObj = @json_decode($message, TRUE);
+        if (is_array($messageObj) && array_key_exists('message', $messageObj)) {
+          $err_msg = $messageObj['message'];
+        }
+        else {
+          $err_msg = $e->getMessage();
+        }
+        drupal_set_message($err_msg, 'error');
+      }
+    }
   }
   return;
 }
@@ -2075,8 +2126,19 @@ function apigee_generate_render_smartdocs_model_template() {
   }
 
   $context['message'] = t('Ensuring correct model template');
-  $html = file_get_contents(drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr');
-  entity_get_controller('smartdocs_template')->updateTemplate('weather', 'method', $html);
+  $path = __DIR__ . '/modules/custom/devconnect/smartdocs/templates/smartdocs.hbr';
+  $html = file_get_contents($path);
+  $template = new Apigee\SmartDocs\Template(devconnect_default_org_config(), SMARTDOCS_SAMPLE_MODEL);
+  try {
+    $template->save('drupal-cms', 'method', $html, TRUE);
+  } catch (Apigee\Exceptions\ResponseException $e) {
+    try {
+      $template->save('drupal-cms', 'method', $html, FALSE);
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+      drupal_set_message('Could not update template.', 'error');
+    }
+  }
 }
 
 /**
@@ -2093,39 +2155,22 @@ function apigee_generate_render_smartdocs_model_content() {
       return NULL;
     }
   }
-  $model_name = 'weather';
-  $model = array(
-    'name' => $model_name,
-    'displayName' => 'Weather Model',
-  );
-  /** @var SmartDocsRevisionController $controller */
-  $controller = entity_get_controller('smartdocs_revision');
-  $display = $model['displayName'];
-  if (isset($GLOBALS['smartdocs_latest_revision_number'])) {
-    $entity = $controller->loadVerbose($model_name, $GLOBALS['smartdocs_latest_revision_number']);
-    drupal_set_message($display . ' is preparing to render revision #' . $GLOBALS['smartdocs_latest_revision_number'], 'status');
-  }
-  else {
-    $entity = $controller->loadVerbose($model_name, 1);
-    drupal_set_message($display . ' is preparing to render revision #1', 'status');
-  }
+  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
+  $model->load(SMARTDOCS_SAMPLE_MODEL);
+  $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
+  $rev = max($model->getLatestRevisionNumber(), 1);
+  $revision->load($rev);
+  drupal_set_message($model->getDisplayName() . ' is preparing to render revision #' . $rev, 'status');
   $selected = array();
-  foreach ($entity['resources'] as $revision) {
-    foreach ($revision['methods'] as $method) {
-      $selected[$method['id']] = $method['id'];
+  /** @var Apigee\SmartDocs\Resource $resource */
+  foreach ($revision->getResources() as $resource) {
+    /** @var Apigee\SmartDocs\Method $method */
+    foreach ($resource->getMethods() as $method) {
+      $selected[$method->getUuid()] = $method->getUuid();
     }
   }
-  require drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc';
-  $entity['displayName'] = $model['displayName'];
-  $entity['name'] = $model['name'];
-  $verbose = $entity;
-  $selected = array();
-  foreach ($entity['resources'] as $revision) {
-    foreach ($revision['methods'] as $method) {
-      $selected[$method['id']] = $method['id'];
-    }
-  }
-  $batch = smartdocs_render($model, $verbose, $selected, array('publish' => 'publish'), FALSE);
+  require_once drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc';
+  $batch = smartdocs_render($model, $revision, $selected, array('publish' => 'publish'), FALSE);
   unset($batch['finished']);
   return $batch;
 }
@@ -2143,7 +2188,7 @@ function apigee_install_create_admin_user($form, &$form_state) {
     'autocomplete' => 'off',
     'autocorrect' => 'off',
     'autocapitalize' => 'off',
-    'spellcheck' => 'false'
+    'spellcheck' => 'false',
   );
   $form = array();
   $form['firstname'] = array(
@@ -2152,7 +2197,7 @@ function apigee_install_create_admin_user($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => '',
     '#description' => t('The first name of the administrator.'),
-    '#attributes' => $attributes
+    '#attributes' => $attributes,
   );
   $form['lastname'] = array(
     '#type' => 'textfield',
@@ -2160,7 +2205,7 @@ function apigee_install_create_admin_user($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => '',
     '#description' => t('The last name of the administrator.'),
-    '#attributes' => $attributes
+    '#attributes' => $attributes,
   );
   $form['username'] = array(
     '#type' => 'textfield',
@@ -2168,16 +2213,15 @@ function apigee_install_create_admin_user($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => '',
     '#description' => t('An admin username used when logging into the Developer Portal.'),
-    '#attributes' => $attributes
+    '#attributes' => $attributes,
   );
   $form['pass'] = array(
-    '#type' => 'textfield',
+    '#type' => 'password_confirm',
     '#title' => t('Developer Portal Password'),
     '#required' => TRUE,
-    '#default_value' => '',
     '#description' => t('An admin password used when logging into the Developer Portal.'),
     '#attributes' => $attributes,
-    '#post_render' => array('apigee_password_post_render')
+    '#pre_render' => array('apigee_password_pre_render')
   );
   $form['emailaddress'] = array(
     '#type' => 'textfield',
@@ -2185,7 +2229,7 @@ function apigee_install_create_admin_user($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => '',
     '#description' => t('Email address to associate with this account.'),
-    '#attributes' => $attributes
+    '#attributes' => $attributes,
   );
   $form['actions'] = array(
     '#weight' => 100,
@@ -2404,7 +2448,102 @@ function apigee_install_create_admin_user_validate($form, &$form_state) {
   if (!valid_email_address($form_state['values']['emailaddress'])) {
     form_set_error('emailaddress', 'Please select a valid email address.');
   }
+  if(apigee_install_create_admin_user_is_sdn_match($form_state['values']['firstname'], $form_state['values']['lastname'])) {
+    form_set_error('', 'This name cannot be used as an administrator account. Please contact Apigee support for more details.');
+  }
 }
+
+/**
+ * Specially Designated Nationals List (SDN) Validation check.
+ * @param $form
+ * @param $form_state
+ */
+function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) {
+  // Do not validate unless this is a cloud installation.
+  if (!array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+    return FALSE;
+  }
+
+  $endpoint = 'https://api.usergrid.com/devportalbuild/ofac-sdn-validation/individuals';
+
+  $url = $endpoint . "?ql=" . urlencode("firstName='" . $first_name . "' AND lastName='" . $last_name . "'");
+  $ch = curl_init();
+
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+  // The number of seconds to wait while trying to connect. Use 0
+  // to wait indefinitely.
+  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,10);
+  // The maximum number of seconds to allow cURL functions to execute.
+  curl_setopt($ch, CURLOPT_TIMEOUT, 10); //timeout in seconds
+  $response_json = curl_exec($ch);
+  $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  $curl_errno= curl_errno($ch);
+  curl_close($ch);
+  $response = json_decode($response_json, TRUE);
+
+
+  if(array_key_exists('count', $response)) {
+    if ($response['count'] != 0) {
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    // The system could not check the SDN list, let Dev Portal team know.
+    $my_module = 'sdn_check_error';
+    $my_mail_token = 'apigee_profile';
+    $from = variable_get('system_mail', 'noreply@apigee.com');
+
+    $http_response_string = '';
+    foreach($response as $response_key => $response_value) {
+      $http_response_string .= "$response_key => $response_value ";
+    }
+
+    $pantheon_site_name = '';
+    if (array_key_exists('PANTHEON_SITE_NAME', $_SERVER) && array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+      $pantheon_site_name = $_SERVER['PANTHEON_SITE_NAME'] . '.' . $_SERVER['PANTHEON_ENVIRONMENT'];
+    }
+    $pantheon_site_uuid = '';
+    if (array_key_exists('PANTHEON_SITE', $_SERVER)) {
+      $pantheon_site_uuid = $_SERVER['PANTHEON_SITE'];
+    }
+
+    $message_body = array(
+      'The Specially Designated Nationals List (SDN) Validation check failed during a Dev Portal Pantheon site install.',
+      'URL: ' . $url,
+      'cURL Error Number: ' . $curl_errno,
+      'HTTP Status: ' . $http_status,
+      'HTTP Response: ' . $http_response_string,
+      'Pantheon Site Name: ' . $pantheon_site_name,
+      'Pantheon Site UUID: ' . $pantheon_site_uuid,
+    );
+
+    $message = array(
+      'id' => $my_module . '_' . $my_mail_token,
+      'to' => 'devportalbuild@apigee.com',
+      'subject' => 'Dev Portal Specially Designated Nationals List (SDN) Validation check failure',
+      'body' => $message_body,
+      'headers' => array(
+        'From' => $from,
+        'Sender' => $from,
+        'Return-Path' => $from,
+      ),
+    );
+    $system = drupal_mail_system($my_module, $my_mail_token);
+
+    // The format function must be called before calling the mail function.
+    $message = $system->format($message);
+
+    if (!$system->mail($message)) {
+      watchdog('apigee_profile', "SDN Validation error email NOT sent." . implode(" ", $message_body), WATCHDOG_WARNING);
+    }
+  }
+
+}
+
 
 /**
  * hook submit for create admin user form

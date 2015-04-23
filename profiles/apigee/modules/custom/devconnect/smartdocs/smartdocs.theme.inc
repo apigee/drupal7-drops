@@ -1,244 +1,6 @@
 <?php
 
-/**
- * Implements theme_hook().
- *
- * @param $form
- * @return string
- */
-function theme_smartdocs_models_table($form) {
-  drupal_add_css(drupal_get_path('module', 'views') . '/css/views-admin.ctools.css');
-  $form = $form['form'];
-  $specific = arg(3);
-  if (isset($form['models'])) {
-    foreach ($form['models'] as $model) {
-      if (isset($model['#type']) && $model['#type'] == 'row') {
-        if (isset($specific)) {
-          $operations = $model['operations']['#markup'];
-          $model = entity_get_controller('smartdocs_model')->loadSingle($specific);
-          if (!isset($model['#data']['id'])) {
-            $model['#data']['id'] = '';
-          }
-          $rows[] = array(
-            'data' => array(
-              'name' => array(
-                'data' => $model['displayName'],
-              ),
-              'description' => array(
-                'data' => '<p>' . $model['description'] . '</p><br/>',
-              ),
-              'revision' => array(
-                'data' => (isset($model['latestRevisionNumber'])) ? l('Revision #' . $model['latestRevisionNumber'], 'admin/smartdocs/models/' . $model['name'] . '/revisions/' . $model['latestRevisionNumber']) : 'n/a'
-              ),
-              'created' => array(
-                'data' => date('F d, Y', floor($model['createdTime'] / 1000))
-              ),
-              'updated' => array(
-                'data' => (isset($model['modifiedTime'])) ? date('F d, Y', floor($model['modifiedTime'] / 1000)) : 'n/a'
-              ),
-              'operations' => array(
-                'data' => $operations,
-              )
-            ),
-          );
-        }
-        else {
-          $rows[] = array(
-            'data' => array(
-              'name' => array(
-                'data' => l($model['#data']['displayName'], 'admin/smartdocs/models/' . $model['#data']['name']),
-              ),
-              'description' => array(
-                'data' => '<p>' . $model['#data']['description'] . '</p><br/>',
-              ),
-              'operations' => array(
-                'data' => $model['operations']['#markup'],
-              )
-            ),
-          );
-        }
-      }
-    }
-    $link['add_model'] = array(
-      'title' => t('Add a New Model'),
-      'href' => 'admin/smartdocs/models/add',
-      'attributes' => array(
-        'title' => t('Add a New Model'),
-        'class' => array(
-          'views-ajax-link'
-        ),
-      ),
-    );
-    if (isset($specific)) {
-      $header = array(
-        'name' => t('Name'),
-        'description' => t('Description'),
-        'revision' => t('Latest Revision'),
-        'created' => t('Created'),
-        'updated' => t('Updated'),
-        'operations' => array(
-          'data' => t('Operations'),
-          'class' => array(
-            'smartdocs-operations'
-          ),
-        ),
-      );
-    }
-    else {
-      $header = array(
-        'name' => t('Name'),
-        'description' => t('Description'),
-        'operations' => array(
-          'data' => t('Operations'),
-          'class' => array(
-            'smartdocs-operations'
-          ),
-        ),
-      );
-    }
-    if (isset($rows)) {
-      if (isset($specific)) {
-        return theme('table', array(
-          'header' => $header,
-          'rows' => $rows,
-            )
-        );
-      }
-      else {
-        $ops = theme('links__ctools_dropbutton', array(
-          'links' => $link,
-            )
-        );
-        return $ops . '<br/><br/>' . theme('table', array(
-              'header' => $header,
-              'rows' => $rows,
-                )
-        );
-      }
-    }
-  }
-  else {
-    return 'Make a model';
-  }
-}
-
-/**
- * Implements theme_hook().
- *
- * @param $form
- * @return string
- */
-function theme_smartdocs_revisions_table($form) {
-  drupal_add_css(drupal_get_path('module', 'views') . '/css/views-admin.ctools.css');
-  $form = $form['form'];
-  if (!empty($form['revisions'])) {
-    foreach ($form['revisions'] as $revision) {
-      if (isset($revision['#type']) && $revision['#type'] == 'row') {
-        $rows[] = array(
-          'data' => array(
-            'revision' => array(
-              'data' => l('Revision #' . $revision['#data']['revisionNumber'], 'admin/smartdocs/models/' . $form['model']['#data']['name'] . '/revisions/' . $revision['#data']['revisionNumber']),
-            ),
-            'base' => array(
-              'data' => $revision['#data']['baseUrl'],
-            ),
-            'created' => array(
-              'data' => date('F d, Y', floor($revision['#data']['createdTime'] / 1000)),
-            ),
-            'operations' => array(
-              'data' => $revision['operations']['#markup']
-            )
-          ),
-        );
-      }
-    }
-    $link['add_model'] = array(
-      'title' => t('Add API Revision'),
-      'href' => 'admin/smartdocs/models/' . $form['model']['#data']['name'] . '/add',
-      'attributes' => array(
-        'title' => t('Add API Revision'),
-        'class' => array(
-          'views-ajax-link'
-        ),
-      ),
-    );
-    $link['import_model'] = array(
-      'title' => t('Import'),
-      'href' => 'admin/smartdocs/models/' . $form['model']['#data']['name'] . '/import',
-      'attributes' => array(
-        'title' => t('Import'),
-        'class' => array(
-          'views-ajax-link'
-        ),
-      ),
-    );
-    $header = array(
-      'revision' => t('Revision'),
-      'base' => t('Base URL'),
-      'created' => t('Created'),
-      'operations' => array(
-        'data' => t('Operations'),
-        'class' => array(
-          'smartdocs-operations'
-        ),
-      )
-    );
-    if (isset($rows)) {
-      $ops = theme('links__ctools_dropbutton', array(
-        'links' => $link,
-          )
-      );
-      $recent = $header;
-      $recent['revision'] = t('Latest Revision');
-      $latest = theme('table', array(
-        'header' => $recent,
-        'rows' => array_pop($rows),
-      ));
-      if (empty($rows)) {
-        return $ops . '<br/><br/>' . $latest;
-      }
-      else {
-        return $ops . '<br/><br/>' . $latest . theme('table', array(
-              'header' => $header,
-              'rows' => $rows,
-                )
-        );
-      }
-    }
-    else {
-      return theme('links__ctools_dropbutton', array(
-        'links' => $link,
-          )
-      );
-    }
-  }
-  else {
-    $link['add_model'] = array(
-      'title' => t('Add API Revision'),
-      'href' => 'admin/smartdocs/models/' . $form['model']['#data']['name'] . '/add',
-      'attributes' => array(
-        'title' => t('Add API Revision'),
-        'class' => array(
-          'views-ajax-link'
-        ),
-      ),
-    );
-    $link['import_model'] = array(
-      'title' => t('Import'),
-      'href' => 'admin/smartdocs/models/' . $form['model']['#data']['name'] . '/import',
-      'attributes' => array(
-        'title' => t('Import'),
-        'class' => array(
-          'views-ajax-link'
-        ),
-      ),
-    );
-    return theme('links__ctools_dropbutton', array(
-      'links' => $link,
-        )
-    );
-  }
-}
+use Apigee\Exceptions\ResponseException;
 
 /**
  * Sets breadcrumbs for taxonomy term pages related to SmartDocs vocabularies.
@@ -247,11 +9,9 @@ function theme_smartdocs_revisions_table($form) {
  */
 function _smartdocs_set_term_breadcrumb($term) {
   if (!$term) {
-    drupal_set_message('no term!');
     return;
   }
   if (substr($term->vocabulary_machine_name, -8) != '_methods') {
-    drupal_set_message(substr($term->vocabulary_machine_name, -8));
     return;
   }
   $type = node_type_get_type(substr($term->vocabulary_machine_name, 0, -8));
@@ -273,23 +33,16 @@ function _smartdocs_set_term_breadcrumb($term) {
 function _smartdocs_preprocess_node_page(&$vars) {
   $node = $vars['node'];
 
-  $types = db_select('smartdata', 's')
-    ->fields('s', array('model'))
+  $type = db_select('smartdata', 's')
+    ->fields('s', array('model', 'method', 'revision', 'resource'))
     ->condition('nid', $node->nid)
     ->execute()
-    ->fetchCol();
-  if (empty($types)) {
+    ->fetchAssoc();
+  if (empty($type)) {
     return;
   }
-  $type = NULL;
-  foreach ($types as $this_type) {
-    $this_type = smartdocs_model_name($this_type);
-    if ($this_type == $node->type) {
-      $type = $this_type;
-      break;
-    }
-  }
-  if (!isset($type)) {
+  list($model_id, $method_id, $revision_id, $resource_id) = array_values($type);
+  if (smartdocs_model_name($model_id) != $node->type) {
     return;
   }
 
@@ -298,31 +51,35 @@ function _smartdocs_preprocess_node_page(&$vars) {
 
   // If appropriate, set edit revision tab(s).
   if (array_key_exists('#primary', $vars['tabs']) && !user_is_anonymous()) {
-    $edit = array();
-    foreach ($vars['tabs']['#primary'] as $key => $tab) {
-      if (strtolower($tab['#link']['title']) == 'view' || strtolower($tab['#link']['title']) == 'view published') {
-        $edit = $tab;
+
+    foreach ($vars['tabs']['#primary'] as &$tab) {
+      if ($tab['#link']['path'] == 'node/%/edit') {
+        $tab['#link'] = array(
+          'title' => t('Edit'),
+          'href' => 'admin/smartdocs/models/' . $model_id . '/method/edit/' . $revision_id . '/' . $resource_id . '/' . $method_id,
+          'localized_options' => array(),
+        );
         break;
       }
     }
-    $edit['#active'] = FALSE;
-    $result = db_select('smartdata', 's')
-      ->fields('s', array('model', 'revision'))
-      ->condition('nid', $node->nid)
-      ->execute();
-    foreach ($result as $record) {
-      $edit['#link']['title'] = 'View SmartDocs Revision';
-      $edit['#link']['href'] = url(base_path() . '/admin/smartdocs/models/' . $record->model . '/revisions/' . $record->revision);
-      $vars['tabs']['#primary'][] = $edit;
-    }
+
+    $vars['tabs']['#primary'][] = array(
+      '#theme' => 'menu_local_task',
+      '#active' => FALSE,
+      '#link' => array(
+        'title' => t('View SmartDocs Revision'),
+        'href' => 'admin/smartdocs/models/' . $model_id . '/revisions/' . $revision_id,
+        'localized_options' => array(),
+      ),
+    );
   }
 
   // Set breadcrumbs
   $breadcrumb = array(
     l(t('Home'), '<front>'),
-    l(t('@node_type Documentation', array('@node_type' => node_type_get_name($node))), $type . '/apis')
+    l(t('@node_type Documentation', array('@node_type' => node_type_get_name($node))), $model_id . '/apis')
   );
-  $field_name = 'field_' . smartdocs_field_name($type) . '_model_verb';
+  $field_name = 'field_' . smartdocs_field_name($model_id) . '_model_verb';
   $verb =& $node->$field_name;
   if (isset($verb[LANGUAGE_NONE][0]['taxonomy_term'])) {
     $verb_term =& $verb[LANGUAGE_NONE][0]['taxonomy_term'];
@@ -365,7 +122,7 @@ function smartdocs_form_alter(&$form, &$form_state, $form_id) {
         '/-+/',
         '/^-+/',
         '/-+$/',
-              ), array('_', '_', '', ''), $record->model));
+      ), array('_', '_', '', ''), $record->model));
       $mid = substr($mid, 0, 32);
       $type[$mid][$record->nid] = array(
         'model' => $record->model,
@@ -381,7 +138,7 @@ function smartdocs_form_alter(&$form, &$form_state, $form_id) {
         if (is_numeric($arg[1]) && $arg[2] == 'edit') {
           $info = $type[$form['type']['#value']][$form['nid']['#value']];
           $path = 'admin/smartdocs/models/' . $info['model'] . '/method/edit/' . $info['revision'] .
-              '/' . $info['resource'] . '/' . $info['method'];
+            '/' . $info['resource'] . '/' . $info['method'];
           unset($_GET['destination']);
           unset($_REQUEST['edit']['destination']);
           $redirect = (isset($_GET['rawNode'])) ? $_GET['rawNode'] : 0;
@@ -424,54 +181,40 @@ function smartdocs_form_alter(&$form, &$form_state, $form_id) {
 function smartdocs_preprocess_node(&$vars) {
   global $base_url;
   $models = array();
-  $types = db_query('SELECT model FROM {smartdata} WHERE nid = :nid', array(':nid' => $vars['nid']));
-  foreach ($types as $type) {
+  $response = db_select('smartdata', 's')
+    ->fields('s', array('model'))
+    ->condition('nid', $vars['nid'])
+    ->execute();
+  foreach ($response as $type) {
     $models[smartdocs_model_name($type->model)] = $type->model;
   }
 
-  if (in_array($vars['type'], array_keys($models))) {
+  if (array_key_exists($vars['type'], $models)) {
 
     if (!$vars['teaser']) {
-      $templates = entity_get_controller('smartdocs_doc');
-      $config = devconnect_get_org_settings();
+      $org_settings = devconnect_get_org_settings();
 
       if ((bool) variable_get('use_api_proxy_url', 0)) {
         drupal_add_js(
-            array(
-          'devconnect_docgen' => array(
-            'isDrupal' => TRUE,
-            'apiModelBaseUrl' => variable_get('api_proxy_url'),
-            'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
-          )
-            ), 'setting');
+          array(
+            'devconnect_docgen' => array(
+              'isDrupal' => TRUE,
+              'apiModelBaseUrl' => variable_get('api_proxy_url'),
+              'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
+            )
+          ), 'setting');
       }
       else {
         drupal_add_js(
-            array(
-          'devconnect_docgen' => array(
-            'isDrupal' => TRUE,
-            'apiModelBaseUrl' => str_replace('/v1', '', $config['endpoint']),
-            'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
-            'dataProxyUrl' => variable_get('data_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1'),
-            'dataAuthUrl' => variable_get('data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
-          )
-            ), 'setting');
-      }
-
-      $query = db_select('smartdata', 's');
-      $query->condition('s.nid', $vars['node']->nid);
-      $query->fields('s', array('nid', 'revision', 'resource', 'method', 'model'));
-
-      $results = $query->execute();
-      $data = array();
-      foreach ($results as $result) {
-        $data = array(
-          'nid' => $result->nid,
-          'revision' => $result->revision,
-          'resource' => $result->resource,
-          'operation' => $result->method,
-        );
-        $model = $result->model;
+          array(
+            'devconnect_docgen' => array(
+              'isDrupal' => TRUE,
+              'apiModelBaseUrl' => str_replace('/v1', '', $org_settings['endpoint']),
+              'oauth2AuthUrl' => $base_url . '/smartdocs/oauth/callback',
+              'dataProxyUrl' => variable_get('data_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1'),
+              'dataAuthUrl' => variable_get('data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
+            )
+          ), 'setting');
       }
 
       drupal_add_css(drupal_get_path('module', 'smartdocs') . '/css/smartdocs.css');
@@ -490,8 +233,8 @@ https://smartdocs.apigee.com/5/static/js/controller.js";
 
         $smart_mid = smartdocs_model_name($models[$vars['type']]);
 
-        $js = preg_split("/\\r\\n|\\r|\\n/", variable_get($smart_mid . '_js', $def_js));
-        $css = preg_split("/\\r\\n|\\r|\\n/", variable_get($smart_mid . '_css', $def_css));
+        $js = preg_split('/\\r\\n|\\r|\\n/', variable_get($smart_mid . '_js', $def_js));
+        $css = preg_split('/\\r\\n|\\r|\\n/', variable_get($smart_mid . '_css', $def_css));
         $i = 100;
         foreach ($js as $file) {
           $options = array(
@@ -549,9 +292,28 @@ https://smartdocs.apigee.com/5/static/js/controller.js";
           $i++;
         }
       }
-      $data = $templates->loadOperation((array) $data, $model, 'drupal-cms');
-      $vars['content'] = array();
-      $vars['content']['#markup'] = $data;
+
+
+      $query = db_select('smartdata', 's')
+        ->condition('nid', $vars['node']->nid)
+        ->fields('s', array('nid', 'model', 'revision', 'resource', 'method'));
+      $data = $query->execute()->fetchAssoc();
+      $doc = new Apigee\SmartDocs\Doc(devconnect_default_org_config(), $data['model'], $data['revision'], $data['resource'], $data['method']);
+
+      try {
+        $content_markup = $doc->getHtml('drupal-cms');
+        $vars['content'] = array('#markup' => $content_markup);
+      } catch (ResponseException $e) {
+        // Fall back to Teaser behavior, which doesn't require Modeling API roundtrip.
+        // This is icky, but at least it shows SOMETHING to the end user.
+        $vars['content'] = array(
+          '#type' => 'markup',
+          '#markup' => theme('smartdocs_method', $vars),
+          '#prefix' => '<div class="col-sm-12">',
+          '#suffix' => '</div>',
+        );
+        //drupal_set_message($e->getMessage());
+      }
     }
     else {
       $vars['content']['#markup'] = '<div class="col-sm-12">' . theme('smartdocs_method', $vars) . '</div>';
@@ -601,3 +363,23 @@ function smartdocs_preprocess_devconnect_developer_apps_list(&$vars) {
     }
   }
 }
+
+/**
+ * Implements hook_preprocess_HOOK() for smartdocs_method.
+ */
+function smartdocs_preprocess_smartdocs_method(&$vars) {
+  $field_name = smartdocs_field_name($vars['type']);
+  $vars['field_name'] = $field_name;
+
+  $path_field = 'field_' . $field_name . '_model_path';
+  $path = $vars['node']->$path_field;
+  $vars['path'] = $path[LANGUAGE_NONE][0]['value'];
+
+  $verb_field = 'field_' . $field_name . '_model_verb';
+  $verb = $vars['node']->$verb_field;
+  $verb_term = taxonomy_term_load($verb[LANGUAGE_NONE][0]['tid']);
+  $vars['verb'] = $verb_term->name;
+
+  $vars['body'] = $vars['content']['body']['#items'][0]['value'];
+}
+

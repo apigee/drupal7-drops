@@ -3376,6 +3376,7 @@ class Google_Service_ShoppingContent_DatafeedStatus extends Google_Collection
   public $itemsTotal;
   public $itemsValid;
   public $kind;
+  public $lastUploadDate;
   public $processingStatus;
   protected $warningsType = 'Google_Service_ShoppingContent_DatafeedStatusError';
   protected $warningsDataType = 'array';
@@ -3420,6 +3421,14 @@ class Google_Service_ShoppingContent_DatafeedStatus extends Google_Collection
   public function getKind()
   {
     return $this->kind;
+  }
+  public function setLastUploadDate($lastUploadDate)
+  {
+    $this->lastUploadDate = $lastUploadDate;
+  }
+  public function getLastUploadDate()
+  {
+    return $this->lastUploadDate;
   }
   public function setProcessingStatus($processingStatus)
   {
@@ -4277,6 +4286,8 @@ class Google_Service_ShoppingContent_Product extends Google_Collection
   public $adwordsLabels;
   public $adwordsRedirect;
   public $ageGroup;
+  protected $aspectsType = 'Google_Service_ShoppingContent_ProductAspect';
+  protected $aspectsDataType = 'array';
   public $availability;
   public $availabilityDate;
   public $brand;
@@ -4404,6 +4415,14 @@ class Google_Service_ShoppingContent_Product extends Google_Collection
   public function getAgeGroup()
   {
     return $this->ageGroup;
+  }
+  public function setAspects($aspects)
+  {
+    $this->aspects = $aspects;
+  }
+  public function getAspects()
+  {
+    return $this->aspects;
   }
   public function setAvailability($availability)
   {
@@ -4900,6 +4919,41 @@ class Google_Service_ShoppingContent_Product extends Google_Collection
   public function getWarnings()
   {
     return $this->warnings;
+  }
+}
+
+class Google_Service_ShoppingContent_ProductAspect extends Google_Model
+{
+  protected $internal_gapi_mappings = array(
+  );
+  public $aspectName;
+  public $destinationName;
+  public $intention;
+
+
+  public function setAspectName($aspectName)
+  {
+    $this->aspectName = $aspectName;
+  }
+  public function getAspectName()
+  {
+    return $this->aspectName;
+  }
+  public function setDestinationName($destinationName)
+  {
+    $this->destinationName = $destinationName;
+  }
+  public function getDestinationName()
+  {
+    return $this->destinationName;
+  }
+  public function setIntention($intention)
+  {
+    $this->intention = $intention;
+  }
+  public function getIntention()
+  {
+    return $this->intention;
   }
 }
 

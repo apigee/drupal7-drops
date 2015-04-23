@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file 
+ * Apigee Google tag manager.
+ * 
+ * Adds the google tag manager script to administration pages.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function apigee_gtm_init() {
+  global $base_url;
+  global $user;
+
+  $current_path = current_path();
+  if (strstr($current_path, "admin")) {
+    $buildinfo = file_get_contents($base_url . '/buildInfo');
+    $config = devconnect_default_org_config();
+    $version = strstr($buildinfo, "\n", TRUE);
+    $version_number = str_replace("Version: ", '', $version);
+    
+    $datalayer = array(
+      array(
+        "component.name" => "Developer Portal",
+        "component.version" => $version_number,
+        "user.email" => $user->mail,
+        "organization.name" => $config->orgName,
+        "pantheon.env" => isset($_ENV['PANTHEON_ENVIRONMENT']) ? $_ENV['PANTHEON_ENVIRONMENT'] : "",
+        "pantheon.site" => isset($_ENV['PANTHEON_SITE_NAME']) ? $_ENV['PANTHEON_SITE_NAME'] : ""
+      )
+    );
+    
+    if (strrchr($user->mail, "@") == "@apigee.com") {
+      $datalayer[0]['user.internal'] = "Internal";
+    }
+    
+    $datalayerjson = json_encode($datalayer);
+    drupal_add_js("var dataLayer = $datalayerjson;", 'inline');
+    drupal_add_js(drupal_get_path("module", "apigee_gtm") . "/apigee_gtm.js", 'file');
+  }
+}

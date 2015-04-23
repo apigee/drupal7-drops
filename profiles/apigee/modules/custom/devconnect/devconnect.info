@@ -2,6 +2,6 @@ name = Devconnect API
 description = "SDK to contact and communicate with Apigee v4 product (Edge)"
 package = "DevConnect"
 core = "7.x"
-version = "7.x-4.29"
+version = "7.x-4.31"
 
 configure = admin/config/devconnect

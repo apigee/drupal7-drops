@@ -29,3 +29,16 @@ div.addressfield-container-inline.locality-block div {
 del {
     text-decoration: line-through;
 }
+
+.rate-plan-form-product-label {
+  font-size: 16px;
+  float: left;
+  margin: 0 10px 0 0;
+}
+.rate-plan-form-product-list {
+  float: left;
+}
+.rate-plan-form-product-label label{
+    font-weight: normal;
+    margin-bottom: 0;
+}

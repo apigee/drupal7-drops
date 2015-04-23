@@ -102,6 +102,14 @@ class DeveloperAppEntity {
    * @var array
    */
   public $credentialAttributes = array();
+  /**
+   * @var int
+   */
+  public $credentialIssuedAt = -1;
+  /**
+   * @var int
+   */
+  public $credentialExpiresAt = -1;
 
   /**
    * @var string
@@ -121,6 +129,11 @@ class DeveloperAppEntity {
    * @var int
    */
   public $uid = 0;
+
+  /**
+   * @var int
+   */
+  public $keyExpiresIn = -1;
 
   /**
    * @var array

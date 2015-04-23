@@ -16,12 +16,7 @@ class MintTest extends DrupalWebTestCase {
     $org = $config['org'];
     $endpoint = $config['endpoint'];
     $username = $config['user'];
-    try {
-      $password = \Apigee\Util\Crypto::decrypt($config['pass']);
-    }
-    catch (Exception $e) {
-      $password = '';
-    }
+    $password = $config['pass'];
     $curl_auth = "$username:$password";
     $morg = variable_get('devconnect_monetization_org', $org);
     $mendpoint = variable_get('devconnect_monetization_endpoint', $endpoint);

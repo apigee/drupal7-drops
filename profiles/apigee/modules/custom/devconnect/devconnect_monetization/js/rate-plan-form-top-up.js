@@ -10,7 +10,10 @@
                 + encodeURI(
                   + settings.top_up.required_balance + "|"
                   + settings.top_up.start_date.replace(/[/]/g, '-') + "|"
-                  + settings.top_up.overlap
+                  + settings.top_up.overlap + "|"
+                  + settings.top_up.has_cost_details + "|"
+                  + settings.top_up.cost_tax + "|"
+                  + settings.top_up.cost_rateplan
                 );
             $.ajax({
                 url: url,

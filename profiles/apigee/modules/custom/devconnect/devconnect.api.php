@@ -8,8 +8,8 @@
  * devconnect_error_message.tpl.php.
  *
  * @param int $error_code
- *        This could be one of the Apigee\Util\ErrorHandling::CODE_* constants
- *        or an actual HTTP code or exception error code.
+ *        This could be one of the Drupal\devconnect\ErrorHandling::CODE_*
+ *        constants or an actual HTTP code or exception error code.
  * @param string $summary
  *        Error message that is shown to unprivileged users.
  * @param string $details
@@ -28,8 +28,8 @@
 function hook_devconnect_error_alter($error_code, &$summary, &$details, &$severity, &$display) {
   if ($error_code == 404) {
     $summary = 'Sorry, bro, I cannot find your resource.';
-    $display = Apigee\Util\ErrorHandling::DISPLAY_INLINE;
-    $severity = Apigee\Util\ErrorHandling::SEVERITY_WARNING;
+    $display = Drupal\devconnect\ErrorHandling::DISPLAY_INLINE;
+    $severity = Drupal\devconnect\ErrorHandling::SEVERITY_WARNING;
   }
 }
 

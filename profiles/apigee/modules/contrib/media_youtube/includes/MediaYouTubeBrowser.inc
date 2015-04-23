@@ -14,17 +14,17 @@ class MediaYouTubeBrowser extends MediaBrowserPlugin {
    * Implements MediaBrowserPluginInterface::access().
    */
   public function access($account = NULL) {
-    return media_youtube_access('create', NULL, $account);
+    return media_internet_access($account);
   }
 
   /**
    * Implements MediaBrowserPlugin::view().
    */
   public function view() {
-    // Check if the user is able to add remote media.
-    if (user_access('add media from remote sources')) {
-      $build['form'] = drupal_get_form('media_youtube_add', $this->params['types'], $this->params['multiselect']);
-      return $build;
-    }
+    $build = array();
+    $params = $this->params;
+    $build['form'] = drupal_get_form('media_youtube_add', $params);
+
+    return $build;
   }
 }

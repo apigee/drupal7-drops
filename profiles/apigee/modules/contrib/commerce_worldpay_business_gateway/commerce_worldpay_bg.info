@@ -1,6 +1,0 @@
-name = WorldPay Business Gateway Integration
-description = Provides Integration with the WorldPay Payment Gateway (http://www.worldpay.com)
-package = Commerce - Payment
-dependencies[] = commerce
-dependencies[] = commerce_payment
-core = 7.x

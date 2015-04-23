@@ -10,11 +10,13 @@
  */
 function devconnect_monetization_admin_settings() {
 
-  $role_ids = array(
-    variable_get('devconnect_monetization_role_' . MONETIZATION_ADMIN_ROLE_NAME, NULL),
-    variable_get('devconnect_monetization_role_' . MONETIZATION_FINANCE_ADMIN_ROLE_NAME, NULL),
-    variable_get('devconnect_monetization_role_' . MONETIZATION_DEVELOPER_ROLE_NAME, NULL),
-  );
+  $role_ids = array();
+  foreach(array(MONETIZATION_ADMIN_ROLE_NAME, MONETIZATION_FINANCE_ADMIN_ROLE_NAME, MONETIZATION_DEVELOPER_ROLE_NAME) as $role_name) {
+    $rid = variable_get('devconnect_monetization_role_' . $role_name, NULL);
+    if ($rid) {
+      $role_ids[] = $rid;
+    }
+  }
 
   $roles = db_select('role', 'r')
     ->fields('r', array('rid', 'name'))
@@ -27,7 +29,6 @@ function devconnect_monetization_admin_settings() {
     $role_options[$role['rid']] = $role['name'];
   }
 
-  $default_role =
   $form['devconnect_monetization_default_role'] = array(
     '#type' => 'radios',
     '#title' => t('Default Monetization Role'),
@@ -71,7 +72,46 @@ function devconnect_monetization_admin_settings() {
     ),
   );
 
+  $form['devconnect_monetization_app_form_product_display'] = array(
+    '#type' => 'radios',
+    '#title' => t('Application creation product display'),
+    '#description' => t('Display settings for products in the <a href="@link">application create/edit form</a>.', array('@link' => url('user/me/apps/add'))),
+    '#default_value' => variable_get('devconnect_monetization_app_form_product_display', DEVCONNECT_MONETIZATION_APP_FORM_PRODUCT_DISPLAY_ALLOWED),
+    '#options' => array(
+      DEVCONNECT_MONETIZATION_APP_FORM_PRODUCT_DISPLAY_ALL => t('Display all products on app creation form'),
+      DEVCONNECT_MONETIZATION_APP_FORM_PRODUCT_DISPLAY_ALLOWED => t('Display only products that developer can purchase'),
+    ),
+  );
+
+  $form['devconnect_monetization_date_format'] = array(
+    '#type' => 'radios',
+    '#title' => t("Select monetization date format"),
+    '#description' => t('This setting changes the date format that will be used within monetization'),
+    '#default_value' => variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT),
+    '#options' => array(
+      EU_DATE_FORMAT => t('EU date format (\'d-m-Y\')'),
+      NORTH_AMERICAN_DATE_FORMAT => t('North American date format (\'m/d/Y\')'),
+        
+    ),
+  );
+
+  $form['#submit'][] = 'devconnect_monetization_admin_settings_submit';
+
   return system_settings_form($form);
+}
+
+function devconnect_monetization_admin_settings_submit($form, &$form_state) {
+  if($form['devconnect_monetization_date_format']['#value'] == NORTH_AMERICAN_DATE_FORMAT){
+    variable_set('date_format_monetization', NORTH_AMERICAN_DATE_FORMAT);
+    variable_set('date_format_short', 'm/d/Y - H:i');
+    variable_set('date_format_medium', 'D, m/d/Y - H:i');
+    variable_set('date_format_long', 'I, F j, Y - H:i');
+  } elseif ($form['devconnect_monetization_date_format']['#value'] == EU_DATE_FORMAT) {
+    variable_set('date_format_monetization', EU_DATE_FORMAT);
+    variable_set('date_format_short', 'd-m-Y - H:i');
+    variable_set('date_format_medium', 'D, d-m-Y - H:i');
+    variable_set('date_format_long', 'I, j F, Y - H:i');
+  }
 }
 
 /**

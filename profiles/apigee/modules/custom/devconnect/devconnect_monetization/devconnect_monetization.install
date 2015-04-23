@@ -6,6 +6,7 @@
  */
 
 use Apigee\ManagementAPI\Organization;
+use Drupal\devconnect\Crypto;
 
 /**
  * Implements hook_install().
@@ -85,7 +86,10 @@ function devconnect_monetization_enable() {
   $org_settings = devconnect_get_org_settings();
   $org_settings['connection_timeout'] = 60;
   $org_settings['request_timeout'] = 60;
-  variable_set('devconnect_org_settings', $org_settings);
+
+  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
+  $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+  file_put_contents($config_file, Crypto::encrypt(serialize($org_settings)));
 }
 
 /**

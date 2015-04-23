@@ -23,10 +23,11 @@ function apigee_responsive_preprocess_html(&$vars) {
   $button_hover_background_color  = theme_get_setting('button_hover_background_color');
   $button_hover_text_color        = theme_get_setting('button_hover_text_color');
 
-  //add additional class to the body to adjust the body padding according to the logo size.
-  //this is to prevent the search box from going beneath the header.
+  // Add additional class to the body to adjust the body padding according to
+  // the logo size. This is to prevent the search box from going beneath the
+  // header.
   $vars['classes_array'][] = "logo_" . theme_get_setting('logo_size');
- 
+
   $cdn = theme_get_setting('bootstrap_cdn');
 
   if (!(bool)$cdn || !isset($cdn) || empty($cdn)) {
@@ -198,14 +199,14 @@ function apigee_responsive_preprocess_page(&$vars) {
   $dropdown_links = array(
     array(
       'classes' => array('glyphicon', 'glyphicon-user'),
-      'text' => 'Edit Profile',
-      'url' => 'user/' . $second_arg . '/edit'
+      'text' => t('Edit Profile'),
+      'url' => 'user/' . $second_arg . '/edit',
     ),
     array(
       'classes' => array('glyphicon', 'glyphicon-off'),
-      'text' => 'Logout',
-      'url' => 'user/logout'
-    )
+      'text' => t('Logout'),
+      'url' => 'user/logout',
+    ),
   );
 
   drupal_alter('apigee_responsive_links', $dropdown_links);
@@ -213,11 +214,18 @@ function apigee_responsive_preprocess_page(&$vars) {
   $ddl = '';
   foreach ($dropdown_links as $dropdown_link) {
     $classes = join(' ', $dropdown_link['classes']);
-    $text = t($dropdown_link['text']);
+    $text = $dropdown_link['text'];
     $ddl .= '<li>' . l('<span class="' . $classes . '"></span>&nbsp;&nbsp; ' . check_plain($text), $dropdown_link['url'], array('html' => TRUE)) . '</li>';
   }
 
   $vars['dropdown_links'] = $ddl;
+
+  // If the apigee_company module is enabled then show the company switcher on
+  // the page.
+  if (module_exists('apigee_company')) {
+    module_load_include('inc', 'apigee_company', 'includes/apigee_company_switcher');
+    $vars['company_switcher'] = apigee_company_context_switcher();
+  }
 }
 
 /**
@@ -235,8 +243,10 @@ function apigee_responsive_preprocess_region(&$vars) {
  * Implements hook_preprocess_block().
  */
 function apigee_responsive_preprocess_block(&$vars) {
-  if (drupal_is_front_page() && $vars['block']->module == 'views') {
+  //Add custom css classes to the default apigee blocks in the home page.
+  if (drupal_is_front_page() && $vars['block']->module == 'views' && ($vars['block']->bid == 'views-devconnect_blog-block_1' || $vars['block']->bid == 'views-home_featured_forum_posts-block' || $vars['block']->bid == 'views-weather_listing-block_1' )) {
     $vars['classes_array'][] = 'col-md-4';
+    $vars['classes_array'][] = 'apigee-home-default-blocks';
   }
   if (drupal_is_front_page() && $vars['block_html_id'] == 'block-system-main') {
     $vars['classes_array'][] = 'row';
@@ -244,59 +254,40 @@ function apigee_responsive_preprocess_block(&$vars) {
 }
 
 /**
- * Implements hook_preprocess_hook().
+ * Formats a status label for the developer apps list.
+ *
+ * @param string $status
+ * @param bool $pull_right
+ * @return string
  */
-function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
-  $user = (isset($vars['user']) ? $vars['user'] : $GLOBALS['user']);
-  // Set Title.
-  if ($user->uid == $GLOBALS['user']->uid) {
-    $title = t('My ' . _devconnect_developer_apps_get_app_label(TRUE));
+function _apigee_responsive_status_label_callback($status, $pull_right = FALSE) {
+  if ($status == 'Revoked') {
+    return '<span class="label label-danger' . ($pull_right ? ' pull-right' : '') . '">' . t('Revoked') . '</span>';
   }
-  else {
-    $title = t('@name’s ' . _devconnect_developer_apps_get_app_label(TRUE), array('@name' => $user->name));
+  elseif ($status == 'Pending') {
+    return '<span class="label label-default' . ($pull_right ? ' pull-right' : '') . '">' . t('Pending') . '</span>';
   }
-  drupal_set_title($title);
-
-  // Build Breadcrumbs.
-  $breadcrumb = array();
-  $breadcrumb[] = l(t('Home'), '<front>');
-  // Set Breadcrumbs.
-  drupal_set_breadcrumb($breadcrumb);
-
-  $vars['show_status'] = variable_get('devconnect_show_apiproduct_status', FALSE);
-  
-  if (user_access("create developer apps")) {
-    $link_text = '<span class="glyphicon glyphicon-plus"></span> ' . t('Add a new ' . _devconnect_developer_apps_get_app_label(FALSE));
-    $vars['add_app'] = l($link_text, 'user/' . $user->uid . '/apps/add', array('html' => TRUE, 'attributes' => array('class' => array('add-app'))));
-  }
-
-  $vars['i'] = 0;
-
-  foreach ($vars['applications'] as $key => $detail) {
-    $vars['applications'][$key]['created'] = ($detail['entity']->createdAt) ? floor($detail['entity']->createdAt) / 1000 : $detail['entity']->attributes['create_date'];
-    if ((time() - 86400) < $vars['applications'][$key]['created']) {
-      $vars['applications'][$key]['new_status'] = 1;
-    }
-    else {
-      $vars['applications'][$key]['new_status'] = 0;
-    }
-    $vars['applications'][$key]['edit_url_id'] = preg_replace('/[^A-Za-z0-9\-]/', '', $detail['edit_url']);
-    $vars['applications'][$key]['delete_url_id'] = preg_replace('/[^A-Za-z0-9\-]/', '', $detail['delete_url']);
-    if (empty($vars['applications'][$key]['credential']['apiProducts'])) {
-      $vars['applications'][$key]['noproducts'] = TRUE;
-    } else {
-      $vars['applications'][$key]['noproducts'] = FALSE;
-    }
-  }
-
-  $vars['show_analytics'] = FALSE;
-  if (variable_get('devconnect_show_analytics', FALSE)) {
-    $vars['show_analytics'] = TRUE;
-  }
+  return '<span class="label label-success' . ($pull_right ? ' pull-right' : '') . '">' . t('Approved') . '</span>';
 }
 
 /**
  * Implements hook_preprocess_hook().
+ */
+function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
+  $user = (isset($vars['user']) ? $vars['user'] : $GLOBALS['user']);
+
+  if (user_access('create developer apps')) {
+    $link_text = '<span class="glyphicon glyphicon-plus"></span> ' . t('Add a new !app_label', array('!app_label' => _devconnect_developer_apps_get_app_label(FALSE)));
+    $vars['add_app'] = l($link_text, 'user/' . $user->uid . '/apps/add', array('html' => TRUE, 'attributes' => array('class' => array('add-app'))));
+  }
+
+  foreach ($vars['applications'] as $key => $detail) {
+    $vars['applications'][$key]['id'] = uniqid();
+  }
+}
+
+/**
+ * Implements hook_preprocess().
  */
 function apigee_responsive_preprocess_bootstrap_modal_forms(&$vars) {
   switch($vars['identifier']){
@@ -327,7 +318,7 @@ function apigee_responsive_preprocess_node(&$vars) {
 }
 
 /**
- * Implements hook_form_alter
+ * Implements hook_form_alter().
  */
 function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
@@ -341,17 +332,16 @@ function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
         $form['userpasswordlink']['#prefix'] = '<br>';
       }
       break;
-    case 'devconnect_developer_app_list':
-      if (module_exists('devconnect_monetization')) {
-        $settings = array(
-          'verify_accepted_url' => MONETIZATION_PRODUCT_VERIFY_ACCEPTED_URL,
-        );
-        drupal_add_js(array('devconnect_monetization_developer_apps_form' => $settings), 'setting');
-        drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/api-products.js', 'file');
-        drupal_add_js('jQuery( document ).ajaxComplete(function() { Drupal.attachBehaviors(jQuery("body")); });', 'inline');
-      }
-    default:
-      break;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function apigee_responsive_form_devconnect_monetization_plan_form_alter(&$form, &$form_state) {
+  if (isset($form['comparisons'])) {
+    // Add comparison template javascript
+    $form['#attached']['js'][] = drupal_get_path('theme', 'apigee_responsive') . '/js/monetization/devconnect_monetization_plan_detail_comparison.js';
   }
 }
 
@@ -363,25 +353,103 @@ function apigee_responsive_form_alter(&$form, &$form_state, $form_id) {
  * @param $form_state
  *   The form state.
  */
-function apigee_responsive_form_devconnect_monetization_plan_form_alter(&$form, &$form_state) {
-  if (isset($form['comparisons'])) {
-    // Add comparison template javascript
-    $form['#attached']['js'][] = drupal_get_path('theme', 'apigee_responsive') . '/js/monetization/devconnect_monetization_plan_detail_comparison.js';
-  }
+function apigee_responsive_form_devconnect_monetization_company_details_form_alter(&$form, &$form_state) {
+
+  $form['#attached']['js'][] = drupal_get_path('theme', 'apigee_responsive') . '/js/monetization/jquery.select-to-autocomplete.js';
+  $form['company_details']['legal_company_name']['#prefix'] = '<div class="row"><div class="col-md-6">';
+  $form['company_details']['legal_company_name']['#suffix'] = '</div>';
+  $form['company_details']['company_reg_number']['#prefix'] = '<div class="col-md-6">';
+  $form['company_details']['company_reg_number']['#suffix'] = '</div></div>';
+
+  $form['billing_address']['contact_name']['#prefix'] = '<div class="row"><div class="col-md-4">';
+  $form['billing_address']['contact_name']['#suffix'] = '</div>';
+  $form['billing_address']['contact_email']['#prefix'] = '<div class="col-md-4">';
+  $form['billing_address']['contact_email']['#suffix'] = '</div>';
+  $form['billing_address']['billing_type']['#prefix'] = '<div class="col-md-4">';
+  $form['billing_address']['billing_type']['#suffix'] = '</div></div>';
+
+  $form['billing_address']['street_address_1']['#prefix'] = '<div class="row"><div class="col-md-6">';
+  $form['billing_address']['street_address_1']['#suffix'] = '</div>';
+  $form['billing_address']['street_address_2']['#prefix'] = '<div class="col-md-6">';
+  $form['billing_address']['street_address_2']['#suffix'] = '</div></div>';
+
+  $form['billing_address']['country']['#prefix'] = '<div class="row"><div class="col-md-4">';
+  $form['billing_address']['country']['#suffix'] = '</div>';
+  $form['billing_address']['state_province']['#prefix'] = '<div class="col-md-2">';
+  $form['billing_address']['state_province']['#suffix'] = '</div>';
+  $form['billing_address']['city']['#prefix'] = '<div class="col-md-4">';
+  $form['billing_address']['city']['#suffix'] = '</div>';
+  $form['billing_address']['zip_code']['#prefix'] = '<div class="col-md-2">';
+  $form['billing_address']['zip_code']['#suffix'] = '</div></div>';
+
+  $form['billing_address']['contact_tel_number']['#prefix'] = '<div class="row"><div class="col-md-4">';
+  $form['billing_address']['contact_tel_number']['#suffix'] = '</div>';
+  $form['billing_address']['registered_for_tax_vat']['#prefix'] = '<div class="col-md-3 col-md-offset-1">';
+  $form['billing_address']['registered_for_tax_vat']['#suffix'] = '</div>';
+  $form['billing_address']['vat_tax_number']['#prefix'] = '<div class="col-md-4">';
+  $form['billing_address']['vat_tax_number']['#suffix'] = '</div></div>';
+
+}
+
+function apigee_responsive_form_devconnect_monetization_company_bank_details_form_alter(&$form, &$form_state) {
+
+    $form['#attached']['js'][] = drupal_get_path('theme', 'apigee_responsive') . '/js/monetization/jquery.select-to-autocomplete.js';
+    $form['bank_details']['street_address_1']['#prefix'] = '<div class="row"><div class="col-md-4">';
+    $form['bank_details']['street_address_1']['#suffix'] = '</div>';
+    $form['bank_details']['street_address_2']['#prefix'] = '<div class="col-md-4">';
+    $form['bank_details']['street_address_2']['#suffix'] = '</div>';
+    $form['bank_details']['country']['#prefix'] = '<div class="col-md-4">';
+    $form['bank_details']['country']['#suffix'] = '</div></div>';
+
+    $form['bank_details']['state_province']['#prefix'] = '<div class="row"><div class="col-md-4">';
+    $form['bank_details']['state_province']['#suffix'] = '</div>';
+    $form['bank_details']['city']['#prefix'] = '<div class="col-md-4">';
+    $form['bank_details']['city']['#suffix'] = '</div>';
+    $form['bank_details']['zip_code']['#prefix'] = '<div class="col-md-4">';
+    $form['bank_details']['zip_code']['#suffix'] = '</div></div>';
+
+    $form['account_info']['name']['#prefix'] = '<div class="row"><div class="col-md-6">';
+    $form['account_info']['name']['#suffix'] = '</div>';
+    $form['account_info']['account_name']['#prefix'] = '<div class="col-md-6">';
+    $form['account_info']['account_name']['#suffix'] = '</div></div>';
+
+    $form['account_info']['account_number']['#prefix'] = '<div class="row"><div class="col-md-4">';
+    $form['account_info']['account_number']['#suffix'] = '</div>';
+    $form['account_info']['account_currency']['#prefix'] = '<div class="col-md-4">';
+    $form['account_info']['account_currency']['#suffix'] = '</div>';
+    $form['account_info']['account_sort_code']['#prefix'] = '<div class="col-md-4">';
+    $form['account_info']['account_sort_code']['#suffix'] = '</div></div>';
+
+    $form['account_info']['account_aban_routing_number']['#prefix'] = '<div class="row"><div class="col-md-4">';
+    $form['account_info']['account_aban_routing_number']['#suffix'] = '</div>';
+    $form['account_info']['account_bic_swiff_code']['#prefix'] = '<div class="col-md-4">';
+    $form['account_info']['account_bic_swiff_code']['#suffix'] = '</div>';
+    $form['account_info']['account_iban']['#prefix'] = '<div class="col-md-4">';
+    $form['account_info']['account_iban']['#suffix'] = '</div></div>';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @param $form
+ *   The form.
+ * @param $form_state
+ *   The form state.
+ */
+function apigee_responsive_form_apigee_company_company_form_alter(&$form, &$form_state) {
+  apigee_responsive_form_devconnect_monetization_company_details_form_alter($form, $form_state);
 }
 
 /**
  * Implements theme_developer_app_tabs().
  */
 function apigee_responsive_developer_app_tabs(&$vars, $apps = NULL) {
-  // the app details page will only be used for analytics for now.
+  // The app details page will only be used for analytics for now.
   return '';
 }
 
 /**
  * Implements hook_preprocess_user_profile().
- *
- * @param $vars
  */
 function apigee_responsive_preprocess_user_profile(&$vars) {
   $vars['user_profile']['account'] = $vars['elements']['#account'];
@@ -474,14 +542,16 @@ function apigee_responsive_menu_link($vars) {
         $below = _apigee_responsive_get_below($element['#below']);
       }
       $output = l($element['#title'], $element['#href'], $element['#localized_options']) . $below;
-    } else {
+    }
+    else {
       $sub_menu = drupal_render($element['#below']);
       if (($element['#href'] == $_GET['q'] || ($element['#href'] == '<front>' && drupal_is_front_page())) && (empty($element['#localized_options']['language']))) {
         $element['#attributes']['class'][] = 'active';
       }
       $output = l($element['#title'], $element['#href'], $element['#localized_options']);
     }
-  } else {
+  }
+  else {
     if (($element['#href'] == $_GET['q'] || ($element['#href'] == '<front>' && drupal_is_front_page())) && (empty($element['#localized_options']['language']))) {
       $element['#attributes']['class'][] = 'active';
     }
@@ -504,7 +574,8 @@ function _apigee_responsive_get_below($element) {
           $below = _apigee_responsive_get_below($item['#below']);
         }
         $output .= $below . "</li>\n";
-      } else {
+      }
+      else {
         $link = l($item['#title'], $item['#href'], $item['#localized_options']);
         $output .= '<li' . drupal_attributes($item['#attributes']) . '>' . $link . "</li>\n";
       }
@@ -558,7 +629,7 @@ function apigee_responsive_advanced_forum_reply_link(&$vars) {
       'text' => $reply_link['title'],
       'path' => $reply_link['href'],
       'options' => $reply_link['options'],
-      'button_class' => 'large'
+      'button_class' => 'large',
     ));
     $output .= '</div>';
     return $output;
@@ -574,9 +645,6 @@ function apigee_responsive_advanced_forum_reply_link(&$vars) {
 
 /**
  * Implements hook_form_FORM_ID_alter().
- *
- * @param $form
- * @param $form_state
  */
 function apigee_responsive_form_search_form_alter(&$form, &$form_state) {
   $form['#attributes']['class'][] = 'navbar-search';
@@ -639,4 +707,123 @@ function apigee_responsive_app_status($app) {
     return 'Pending';
   }
   return 'Approved';
+}
+
+/**
+ * Implements hook_preprocess_maintenance_page().
+ */
+function apigee_responsive_preprocess_maintenance_page(&$vars) {
+
+  $vars['navbar_classes_array'] = array('navbar');
+
+  if (theme_get_setting('bootstrap_navbar_position') !== '') {
+    $vars['navbar_classes_array'][] = 'navbar-' . theme_get_setting('bootstrap_navbar_position');
+  }
+  else {
+    $vars['navbar_classes_array'][] = 'container';
+  }
+  if (theme_get_setting('bootstrap_navbar_inverse')) {
+    $vars['navbar_classes_array'][] = 'navbar-inverse';
+  }
+  else {
+    $vars['navbar_classes_array'][] = 'navbar-default';
+  }
+
+  $vars['navbar_classes'] = implode(' ', $vars['navbar_classes_array']);
+
+  apigee_responsive_preprocess_html($vars);
+}
+
+/**
+ * Returns HTML for the company context switcher.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - company_list: An array containing the company attributes, indexed by
+ *     company id. Each element of the array has the following keys:
+ *     - "id": The company's unique id.
+ *     - "display_name": The company's display name.
+ *     - 'url': The URL to call in order to switch to that company.
+ *     Here's an example:
+ *     @code
+ *     $company_list = array(
+ *       'apigee' => array(
+ *         'id' => 'apigee',
+ *         'display_name' => 'Apigee Corporation',
+ *         'url' => 'api_company/company/switch/apigee',
+ *       ),
+ *     );
+ *     @endcode
+ *
+ * @return string
+ *   HTML for the table switcher.
+ */
+function apigee_responsive_apigee_company_switcher($variables) {
+  drupal_add_css(drupal_get_path('theme', 'apigee_responsive') . '/css/company-switcher.css');
+  $output_links = '';
+
+  // Only display "Switch Company if company list has more than the default
+  //  user.
+  if (count($variables['company_list']) > 1 ) {
+    $output_links  .= '<li role="presentation" class="dropdown-header">Switch company</li>';
+  }
+
+  $first = TRUE;
+  $output_button = '';
+  foreach ($variables['company_list'] as $company) {
+    if ($first) {
+      $output_button = '<button class="btn btn-default btn-xs dropdown-toggle company-switcher" type="button" id="company-switcher-dropdown-menu" data-toggle="dropdown" aria-expanded="true">';
+      $output_button .= $company['display_name'] . ' ';
+      $output_button .= '<span class="caret"></span>';
+      $output_button .= '</button>';
+      $first = FALSE;
+    }
+    else {
+      $output_links .= '<li role="presentation">';
+
+      $link_options = array(
+        'query' => drupal_get_destination(),
+        'title' => $company['display_name'],
+        'attributes' => array(
+          'role' => "menuitem",
+          'tabindex' => '-1',
+          'class' => array(
+            'company-' . $company['name'],
+          ),
+        ),
+      );
+      $output_links .= l($company['display_name'], $company['url'], $link_options);
+      $output_links .= '</li>';
+    }
+  }
+
+  // Only show divider if there are companies in the list besides default user
+  // company.
+  if(count($variables['company_list']) > 1 ) {
+    $output_links .= '<li role="presentation" class="divider"></li>';
+  }
+
+
+  $link_options = array(
+    'title' => t('Manage your companies'),
+    'attributes' => array(
+      'role' => "menuitem",
+      'tabindex' => '-1',
+      'class' => array(
+        'company-manage',
+      ),
+    ),
+  );
+
+  $output_links .= '<li role="presentation">';
+  $output_links .= l(t('Manage Companies'), 'api_company/companies/list', $link_options);
+  $output_links .= '</li>';
+
+  $output = '<div class="dropdown">';
+  $output .= $output_button;
+  $output .= '<ul class="dropdown-menu" role="menu" aria-labelledby="company-switcher-dropdown-menu">';
+  $output .= $output_links;
+  $output .= '</ul>';
+  $output .= '</div>';
+  return $output;
 }

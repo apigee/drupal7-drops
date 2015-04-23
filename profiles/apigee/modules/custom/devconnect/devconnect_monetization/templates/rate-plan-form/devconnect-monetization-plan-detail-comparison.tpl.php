@@ -29,7 +29,7 @@
           <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
 
           <p style="color: #666;">
-            <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => substr($rate_plan->getChildRatePlan()->getStartDate(), 0, 10))); ?>
+            <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDateTime()->format('m-d-Y'))); ?>
           </p>
           <div class="tabbable">
             <ul class="nav nav-tabs">
@@ -64,8 +64,8 @@
                 <?php if ($rate_plant_free_quantity_message != NULL): ?>
                   <br>
                   <strong>Free Quantity:&nbsp;</strong><?php print $rate_plant_free_quantity_message; ?>
-                  <br>
-                  <br>
+                  <br />
+                  <br />
                 <?php endif; ?>
                 <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, isset($product_list) ? $product_list : NULL); ?>
                 <?php // End Of Future Plan 1 ?>
@@ -97,8 +97,8 @@
                 <?php if ($rate_plant_free_quantity_message != NULL): ?>
                   <br>
                   <strong>Free Quantity:&nbsp;</strong><?php print $rate_plant_free_quantity_message; ?>
-                  <br>
-                  <br>
+                  <br />
+                  <br />
                 <?php endif; ?>
                 <?php print devconnect_monetization_build_rate_plan_details_output($rate_plan, isset($product_list) ? $product_list : NULL); ?>
               </div>

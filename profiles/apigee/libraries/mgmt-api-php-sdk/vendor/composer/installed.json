@@ -41,8 +41,8 @@
     },
     {
         "name": "symfony/event-dispatcher",
-        "version": "v2.6.5",
-        "version_normalized": "2.6.5.0",
+        "version": "v2.6.6",
+        "version_normalized": "2.6.6.0",
         "target-dir": "Symfony/Component/EventDispatcher",
         "source": {
             "type": "git",

@@ -1,5 +1,5 @@
 name = Apigee Responsive Starter Kit
-description = A starter theme for the Apigee developer portal with the apigee responsive theme as the base
+description = A starter theme for the Apigee developer portal with the Apigee responsive theme as the base.
 core = 7.x
 base theme = apigee_responsive
 

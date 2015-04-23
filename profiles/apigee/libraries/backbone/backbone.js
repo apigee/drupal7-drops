@@ -17,8 +17,9 @@
 
   // Next for Node.js or CommonJS. jQuery may not be needed as a module.
   } else if (typeof exports !== 'undefined') {
-    var _ = require('underscore');
-    factory(root, exports, _);
+    var _ = require('underscore'), $;
+    try { $ = require('jquery'); } catch(e) {}
+    factory(root, exports, _, $);
 
   // Finally, as a browser global.
   } else {
@@ -242,7 +243,10 @@
   };
 
   // Bind an event to only be triggered a single time. After the first time
-  // the callback is invoked, it will be removed.
+  // the callback is invoked, it will be removed. When multiple events are
+  // passed in using the space-separated syntax, the event will fire once for every
+  // event you passed in, not once for a combination of all events
+
   Events.once =  function(name, callback, context) {
     // Map the event into a `{event: once}` object.
     var events = onceMap(name, callback, _.bind(this.off, this));
@@ -277,7 +281,7 @@
   // receive the true name of the event as the first argument).
   Events.trigger =  function(name) {
     if (!this._events) return this;
-    
+
     var length = Math.max(0, arguments.length - 1);
     var args = Array(length);
     for (var i = 0; i < length; i++) args[i] = arguments[i + 1];
@@ -421,7 +425,7 @@
 
     // Special-cased proxy to underscore's `_.matches` method.
     matches: function(attrs) {
-      return _.matches(attrs)(this.attributes);
+      return !!_.iteratee(attrs, this)(this.attributes);
     },
 
     // Set a hash of model attributes on the object, firing `"change"`. This is
