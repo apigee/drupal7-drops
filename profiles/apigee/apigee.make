@@ -392,7 +392,7 @@ projects[variable][subdir] = "contrib"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.10"
+projects[views][version] = "3.11"
 ; see https://www.drupal.org/node/1809958
 projects[views][patch][1809958] = "https://www.drupal.org/files/issues/fix-views-missing-dom-id-1809958-21.patch"
 ; see https://www.drupal.org/node/1036962

@@ -454,7 +454,7 @@ function theme_media_widget_multiple($variables) {
     // "operations" column.
     $operations_elements = array();
     foreach (element_children($widget) as $sub_key) {
-      if (isset($widget[$sub_key]['#type']) && $widget[$sub_key]['#type'] == 'submit') {
+      if (isset($widget[$sub_key]['#type']) && ($widget[$sub_key]['#type'] == 'submit' || $widget[$sub_key]['#type'] == 'link')) {
         hide($widget[$sub_key]);
         $operations_elements[] = &$widget[$sub_key];
       }

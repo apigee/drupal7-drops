@@ -38,10 +38,15 @@ function sumo_watchdog(array $log_entry) {
 
   $severity = watchdog_severity_levels();
 
+  $message = $log_entry['message'];
+  if (is_array($log_entry['variables'])) {
+    $message = strtr($message, $log_entry['variables']);
+  }
+
   $payload = array(
     'uid' => $log_entry['uid'],
     'type' => $log_entry['type'],
-    'message' => strtr($log_entry['message'], $log_entry['variables']),
+    'message' => $message,
     'severity' => $severity[$log_entry['severity']],
     'link' => $log_entry['link'],
     'request_uri' => $log_entry['request_uri'],
