@@ -9,7 +9,15 @@
  */
 function uuid_bean_features_export_options() {
   $options = array();
-  $types = variable_get('uuid_features_entity_bean', FALSE);
+
+  // Check what bean types are enabled for uuid features export.
+  $types = array();
+  $entity_info = entity_get_info('bean');
+  foreach ($entity_info['bundles'] as $key => $value) {
+    if (variable_get("uuid_features_entity_bean_${key}", FALSE)) {
+      $types[$key] = $key;
+    }
+  }
   if (module_exists("bean_uuid") && !empty($types)) {
     $query = db_select('bean', 'n');
     $query->fields('n', array('bid', 'delta', 'type', 'uuid'))

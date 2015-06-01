@@ -103,7 +103,7 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
     logintoboggan_form_alter($form, $form_state, $form_id);
   }
   // Since the hook_module_implements_alter() above removes all the form alter implementations
-  // logintoboggan_form_logintoboggan_main_settings_alter is not called which is required for 
+  // logintoboggan_form_logintoboggan_main_settings_alter is not called which is required for
   // the logintoboggan setting form to work correctly. So we call it again below.
   if(function_exists('logintoboggan_form_logintoboggan_main_settings_alter')){
     logintoboggan_form_logintoboggan_main_settings_alter($form, $form_state);
@@ -148,17 +148,7 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
         }
       }
 
-      // Email address is now immutable, to keep it in line with
-      // Edge product requirements.
-      $form['account']['mail']['#disabled'] = TRUE;
-      $form['account']['mail']['#description'] = t('All emails from the system will be sent to this address.');
-      $form['account']['mail']['#title'] = str_replace('E-mail', 'Email', $form['account']['mail']['#title']);
-      $form['account']['current_pass']['#description'] = t('Enter your current password to change your password.')
-        . ' '
-        . l(t('Request new password'), 'user/password', array('attributes' => array('title' => t('Request new password via email.'))))
-        . '.';
-
-      // Add a link to openid admin page only if the openid module is enabled
+      // Add a link to openid admin page only if the openid module is enabled.
       if (module_exists('openid')) {
         $middle_arg = (module_exists('me') && $form['#user']->uid == $GLOBALS['user']->uid) ? 'me' : $form['#user']->uid;
         $form['openid'] = array(

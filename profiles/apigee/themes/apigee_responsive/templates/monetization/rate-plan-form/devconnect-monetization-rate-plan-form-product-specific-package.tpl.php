@@ -3,9 +3,9 @@
 ?>
 
 <div>
-  <h3><?php print t('Plan Details'); ?></h3>
+  <br/><h3><?php print t('Plan Details'); ?></h3>
   <hr>
-  <strong><?php echo $rate_plan->getDisplayName(); ?></strong>
+  <h4><?php print t('Plan Name: @plan_name', array('@plan_name' => $rate_plan->getDisplayName())); ?></h4>
   <?php if ($rate_plan->getChildRatePlan() != NULL): // Start Future Product Specific 1 ?>
   <p style="color: #666;">
     <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDateTime()->format('m-d-Y'))); ?>

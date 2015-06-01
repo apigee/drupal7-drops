@@ -86,7 +86,7 @@ function devconnect_developer_apps_schema() {
       'consumer_key'  => array(
         'description' => 'Consumer key',
         'type'        => 'char',
-        'length'      => 32,
+        'length'      => 36, // Migrated UUID keys may contain dashes
         'not null'    => TRUE,
       ),
       'consumer_secret' => array(
@@ -321,6 +321,15 @@ function devconnect_developer_apps_update_7431() {
     drupal_load('module', 'devconnect_developer_apps');
     devconnect_developer_apps_sync_apps($config->orgName, TRUE, TRUE);
   }
+}
+
+/**
+ * Lengthen consumer_key field to accommodate imported fields in UUID format
+ * which may have included hyphens.
+ */
+function devconnect_developer_apps_update_7432() {
+  $schema = devconnect_developer_apps_schema();
+  db_change_field('dc_dev_app', 'consumer_key', 'consumer_key', $schema['dc_dev_app']['fields']['consumer_key']);
 }
 
 /**

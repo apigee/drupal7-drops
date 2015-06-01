@@ -37,7 +37,7 @@ function devconnect_admin_form($form, &$form_state) {
     )
   );
   $element =& $form['connection_config_container']['org_settings'][0];
-  if (DEVCONNECT_SHOW_CONFIG_FIELDS || empty($org_settings['org'])) {
+  if (DEVCONNECT_SHOW_CONFIG_FIELDS || empty($org_settings['org']) || isset($form_state['input']['org_settings'])) {
     $element['org'] = array(
       '#type' => 'textfield',
       '#title' => t('Management API Organization'),
@@ -312,7 +312,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
   }
   foreach (array('org', 'endpoint', 'user', 'pass') as $field) {
     $hide_field_in_log = FALSE;
-    if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
+    if ($form['connection_config_container']['org_settings'][0]['org']['#type'] == 'textfield') {
       // Pull user/pass values from existing config if fields are empty.
       if (($field == 'user' || $field == 'pass') && empty($default_org[$field])) {
         $new_config[$field] = $existing_config[$field];
@@ -325,7 +325,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
       else {
         $new_config[$field] = $existing_config[$field];
       }
-      if ($field == 'pass') {
+      if ($field == 'pass' || $field == 'user') {
         $hide_field_in_log = TRUE;
       }
     }
@@ -421,12 +421,38 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
     $org->load();
     return '<span style="color:green">' . t('Connection Successful') . '</span>';
   } catch (ResponseException $e) {
-    if ($e->getCode() == 302 && strpos($org, 'https') == 0) {
-      $message = t('DevPortal Endpoint seems to be SSL enabled. Try <strong style="color:green"><em>@endpoint</em></strong> instead.',
+    // Give a nicer message if the user/pass is incorrect.
+    if ($e->getCode() == 401) {
+      $message = t('Edge Endpoint responded with 401 Unauthorized. Check the username and password.');
+      return '<span style="color:red">' . $message . '</span>';
+    }
+
+    // If the user put in a non HTTPS endpoint, give them a hint that they may
+    // want to use HTTPS instead.
+    if(substr($endpoint, 0, 5) != 'https') {
+      $message_try_ssl = t('DevPortal Endpoint may be SSL enabled. Try using <strong><em>@endpoint</em></strong> instead.',
         array('@endpoint' => str_replace('http', 'https', $endpoint))
       );
-      return '<span style="color:orange">' . $message . '</span>';
     }
-    return '<span style="color:red">' . t('Connection Unsuccessful: ' . $e->getCode()) . '</span>';
+
+    // See if we get a response from server to get a better idea what happened.
+    $response_text = $e->getResponse();
+    if (!empty($response_text)) {
+      $message = t('Edge connection unsuccessful. HTTP code: %error_code, server response: %server_response',
+        array(
+          '%error_code' => $e->getCode(),
+          '%server_response' => $e->getResponse(),
+        )
+      );
+      return '<span style="color:red">' . $message . '</span> ' . $message_try_ssl;
+    }
+
+    // We have no response, show the error code.
+    $message = t('Edge connection unsuccessful. HTTP code: %error_code',
+      array(
+        '%error_code' => $e->getCode(),
+      )
+    );
+    return '<span style="color:red">' . $message . '</span> ' . $message_try_ssl;
   }
 }

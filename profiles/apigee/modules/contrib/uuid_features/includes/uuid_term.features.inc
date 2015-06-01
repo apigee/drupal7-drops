@@ -9,25 +9,28 @@
  */
 function uuid_term_features_export_options() {
   $options = array();
-  // Could just leave this empty.
-  $vocabs = variable_get('uuid_features_entity_taxonomy_term', array_fill_keys(array_keys(taxonomy_vocabulary_get_names()), 0));
-  // Only include vocabs that user has selected (ie. set a non zero value).
-  $vocabs = array_filter($vocabs);
-  if (empty($vocabs)) {
-    return $options;
+
+  // Check what vocabularies are enabled for uuid features export.
+  $vocabs = array();
+  $entity_info = entity_get_info('taxonomy_term');
+  foreach ($entity_info['bundles'] as $key => $value) {
+    if (variable_get("uuid_features_entity_taxonomy_term_${key}", FALSE)) {
+      $vocabs[$key] = $key;
+    }
   }
+  if (!empty($vocabs)) {
+    $query = db_select('taxonomy_term_data', 't');
+    $query->innerJoin('taxonomy_vocabulary', 'v', 't.vid = v.vid');
+    $query->condition('v.machine_name', array_keys($vocabs))
+      ->fields('t', array('tid', 'name', 'uuid'))
+      ->addField('v', 'name', 'vname');
+    $query->orderBy('v.name', 'ASC');
+    $query->orderBy('t.name', 'ASC');
+    $results = $query->execute()->fetchAll();
 
-  $query = db_select('taxonomy_term_data', 't');
-  $query->innerJoin('taxonomy_vocabulary', 'v', 't.vid = v.vid');
-  $query->condition('v.machine_name', array_keys($vocabs))
-    ->fields('t', array('tid', 'name', 'uuid'))
-    ->addField('v', 'name', 'vname');
-  $query->orderBy('v.name', 'ASC');
-  $query->orderBy('t.name', 'ASC');
-  $results = $query->execute()->fetchAll();
-
-  foreach ($results as $term) {
-    $options[$term->uuid] = $term->vname . ' - ' . $term->name;
+    foreach ($results as $term) {
+      $options[$term->uuid] = $term->vname . ' - ' . $term->name;
+    }
   }
 
   drupal_alter('uuid_term_features_export_options', $options);
@@ -143,12 +146,19 @@ function uuid_term_features_export_render($module, $data) {
     unset($export->tid);
     // No need to export the rdf mapping.
     unset($export->rdf_mapping);
-    uuid_features_file_field_export($export, 'taxonomy_term');
+    $files = uuid_features_file_field_export($export, 'taxonomy_term');
 
     $entity_type = 'taxonomy_term';
     drupal_alter('uuid_entity_features_export_render', $entity_type, $export, $first_term, $module);
 
-    $code[] = '  $terms[] = ' . features_var_export($export, '  ') . ';';
+    $code[] = '  $terms[] = ' . features_var_export(get_object_vars($export), '  ') . ';';
+
+    // Add packaged files, if any.
+    if (!empty($files)) {
+      foreach ($files as $filename => $src_path) {
+        $return[$filename] = $src_path;
+      }
+    }
   }
 
   if (!empty($translatables)) {
@@ -156,7 +166,10 @@ function uuid_term_features_export_render($module, $data) {
   }
   $code[] = '  return $terms;';
   $code = implode("\n", $code);
-  return array('uuid_features_default_terms' => $code);
+
+  $return['uuid_features_default_terms'] = $code;
+
+  return $return;
 }
 
 /**
@@ -206,7 +219,7 @@ function uuid_term_features_rebuild($module) {
 
         drupal_alter('uuid_entity_features_rebuild', $entity_type, $term, $data, $module);
 
-        uuid_features_file_field_import($term, 'taxonomy_term');
+        uuid_features_file_field_import($term, 'taxonomy_term', $module);
         entity_uuid_save('taxonomy_term', $term);
       }
     }

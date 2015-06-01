@@ -469,6 +469,15 @@ body.front .view li {
     line-height: 18px;
 }
 
+/* SmartDocs Home Block */
+.view-smartdocs-methods .views-row, .view-blog-tag .views-row {
+  clear: both;
+  float: left;
+  margin-bottom: 15px;
+  min-width: 100%;
+  position: relative;
+}
+
 .view-hot-topics .views-row ul {
     margin: 0;
     padding: 0;
@@ -822,7 +831,7 @@ div#analytics-highchart {
 #devconnect-developer-apps-edit-form div.form-checkboxes div.error.form-type-checkbox .apiproduct-description {
     margin-left: 22px;
 }
-    
+
 .panel-heading {
     background-color: #F5F5F5;
     border-color: #DDDDDD;
@@ -1021,6 +1030,10 @@ Analytics styles
 
     body {
         font-size:12px;
+    }
+
+    .apigee-home-default-blocks {
+      min-height: auto;
     }
 
     .view-recent-blog-posts .views-field-created span,
@@ -1310,6 +1323,10 @@ Analytics styles
 
     #devconnect-developer-apps-analytics-form #edit-submit {
         margin-top:10px;
+    }
+
+    .apigee-home-default-blocks {
+      min-height: auto;
     }
 
     .view-recent-blog-posts .views-field-created,

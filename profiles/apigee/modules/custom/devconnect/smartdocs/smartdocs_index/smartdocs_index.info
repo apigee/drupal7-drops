@@ -1,7 +1,0 @@
-name = SmartDocs Method Index Block
-description = Provides an index menu block to be placed on SmartDocs method pages.
-package = DevConnect
-version = 7.x-1.0
-core = 7.x
-
-dependencies[] = smartdocs

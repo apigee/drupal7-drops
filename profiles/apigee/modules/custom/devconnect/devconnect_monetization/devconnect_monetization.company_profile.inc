@@ -185,9 +185,11 @@ function devconnect_monetization_company_details_form($form, &$form_state, $deve
   );
 
   $form['billing_address']['state_province'] = array(
-    '#title' => t('State\Province'),
+    '#title' => t('State/Province'),
     '#type' => 'textfield',
     '#default_value' => $address->getState(),
+    '#empty_option' => t('N/A'),
+    '#required' => TRUE,
   );
 
   $form['billing_address']['city'] = array(

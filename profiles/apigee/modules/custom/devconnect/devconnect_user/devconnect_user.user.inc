@@ -30,6 +30,17 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   $orig_mail = (empty($account->mail) ? $edit['mail'] : $account->mail);
 
   $entity = entity_get_controller('developer')->loadIfExists($orig_mail);
+
+  // If there is a change in the email we try to update the email first.
+  if ($entity && isset($edit['mail']) && $orig_mail != $edit['mail']) {
+    $saved = entity_get_controller('developer')->updateEmail($entity, $edit['mail']);
+    // If the email was not udpated in EDGE then we dont allow updating email
+    // of the user and set it back to the original email.
+    if (!$saved) {
+      $edit['mail'] = $orig_mail;
+      drupal_set_message(t("There was an error updating the email, please try again"));
+    }
+  }
   if (!$entity) {
     $entity = entity_create('developer', array());
   }
@@ -103,9 +114,6 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   $saved = entity_save('developer', $entity);
   $results = devconnect_get_debug_data();
 
-  if ($results === NULL) {
-    drupal_set_message('results are null');
-  }
   if (!$saved) {
     devconnect_default_org_config()->logger->error(print_r($results, TRUE));
   }

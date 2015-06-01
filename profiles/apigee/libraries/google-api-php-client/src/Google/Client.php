@@ -16,7 +16,7 @@
  */
 
 if (!class_exists('Google_Client')) {
-  require_once dirname(__FILE__) . '/../autoload.php';
+  require_once dirname(__FILE__) . '/autoload.php';
 }
 
 /**
@@ -25,7 +25,7 @@ if (!class_exists('Google_Client')) {
  */
 class Google_Client
 {
-  const LIBVER = "1.1.3";
+  const LIBVER = "1.1.5";
   const USER_AGENT_SUFFIX = "google-api-php-client/";
   /**
    * @var Google_Auth_Abstract $auth

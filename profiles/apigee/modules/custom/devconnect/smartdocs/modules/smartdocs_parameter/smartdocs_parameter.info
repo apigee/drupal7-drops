@@ -1,0 +1,5 @@
+name = SmartDocs Parameters
+description = Provides field widgets for displaying SmartDocs parameters
+package = DevConnect
+version = 7.x-4.5
+core = 7.x

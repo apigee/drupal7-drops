@@ -141,8 +141,15 @@ function devconnect_developer_apps_analytics_form_submit($form, &$form_state) {
   $to = $form_state['storage']['to'];
   $metric = $form_state['values']['metric'];
 
-  $args = array('from' => $from, 'to' => $to, 'metric' => $metric);
+  $unit = 'day';
+  // Set the unit to hours only if the selected range is less than or equal to
+  // 24 hours i.e less than or equal to 24*60*60 = 86400 seconds.
+  $range = ($to - $from);
+  if ($range <= 86400) {
+    $unit = 'hour';
+  }
 
+  $args = array('from' => $from, 'to' => $to, 'metric' => $metric, 'unit' => $unit);
   $form_state['redirect'] = array(current_path(), array('query' => $args, 'fragment' => 'performance'));
 }
 

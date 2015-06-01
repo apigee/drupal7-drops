@@ -91,7 +91,6 @@ function devconnect_monetization_admin_settings() {
     '#options' => array(
       EU_DATE_FORMAT => t('EU date format (\'d-m-Y\')'),
       NORTH_AMERICAN_DATE_FORMAT => t('North American date format (\'m/d/Y\')'),
-        
     ),
   );
 

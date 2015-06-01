@@ -80,6 +80,9 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
   foreach ($package->getProducts() as $product) {
     $products_names['products'][] = $product->getDisplayName();
   }
+  $form['product_names'] = array(
+      '#children' => $products_names,
+  );
   $form['product_list'] = array(
     '#type'     => 'container',
     '#children' => theme(
@@ -236,6 +239,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
   else {
     $plan_action = DEVCONNECT_MONETIZATION_PLAN_ACTION_CANCEL;
   }
+  $form['#attributes']['class'][] = 'form-inline';
 
   $form['visible_form'] = array(
     'start_date' => array(
@@ -261,7 +265,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
       '#type' => 'hidden',
       '#value' => $plan_action,
     ),
-    '#prefix' => '<div class="purchase-plan well">'
+    '#prefix' => '<div class="row"><div class="purchase-plan well col-sm-7">'
     . '<h3><span id="action_title_wrapper"></span>&nbsp;<span id="plan_name_wrapper"></span></h3>'
     . '<p class="purchase">'. t('Any API products contained within this package will be available after the start date of your plan.') . '</p>'
     . '<p class="cancel">'. t('Ending a plan will result in loss of access to the API Products contained within this plan. All keys will be revoked to these API Products upon the end selected below.') . '</p>'
@@ -269,7 +273,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     . '<strong class="purchase">' . t('Select a start date for this plan') . '</strong>'
     . '<strong class="cancel">' . t('Select an end date') . '</strong>'
     . '<br/>',
-    '#suffix' => '</div>',
+    '#suffix' => '</div></div>',
   );
 
   if ($cannot_purchase_message !== FALSE) {
@@ -292,8 +296,8 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     'active_plan_end_date'   => isset($plans['active_plan_end_date']) ? $plans['active_plan_end_date']->format('Y-m-d') : NULL,
     'active_plan_ends_today' => $plans['active_plan_ends_today'],
     'action_title_wrapper' => array(
-      'cancel' => t('End'),
-      'purchase' => t('Purchase'),
+      'cancel' => t('End Plan:'),
+      'purchase' => t('Purchase Plan:'),
     ),
     'date_format' => variable_get('devconnect_monetization_date_format', NORTH_AMERICAN_DATE_FORMAT),
     'select_date_tip' => array(
@@ -668,7 +672,7 @@ function devconnect_monetization_overlap_plan_confirm_form($form, &$form_state) 
   return confirm_form($form,
     t('Plan "@plan_name" conflicts with others', array('@plan_name' => $rate_plan->getDisplayName())),
     'users/' . $GLOBALS['user']->uid . '/monetization/packages/' . rawurlencode($package->getId()) . '/view',
-    NULL,
+    '<div class="text-center"><span class="alert alert-warning"><strong>' . t('Warning: ') . '</strong>' . t('This action cannot be undone.') . '</span></div><div class="text-center"><br/><br/>',
     t('Purchase'),
     t('Cancel'));
 }
@@ -677,11 +681,25 @@ function devconnect_monetization_overlap_plan_confirm_form($form, &$form_state) 
  * Theme callback for devconnect_monetization_conflicting_products.
  *
  * Decorator of theme_item_list, we just wrap theme_item_list within
- * out own theme function thus allowing other modules to alter
+ * our own theme function thus allowing other modules to alter
  * this theme instead of theme_item_list.
  */
 function theme_devconnect_monetization_conflicting_products($products) {
-  return theme('item_list', $products);
+    $items = $products['items'];
+
+    $output .= "<br/><div class='row'><div class='col-sm-6 col-sm-offset-3'><table class='table'><thead><tr><th>Already Purchased Plan</th><th>Has Product</th></tr></thead>";
+    $output .= "<tbody>";
+
+    foreach ($items as $item){
+        $output .= "<tr><td>";
+        $output .= $item['data'];
+        $output .= "</td><td>";
+        $output .= $item['children'][0]['children'][0];
+        $output .= "</td></tr>";
+    }
+
+    $output .= "</tbody></table></div></div>";
+    return $output;
 }
 
 /**

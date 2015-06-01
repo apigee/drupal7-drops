@@ -4,7 +4,7 @@ use Drupal\devconnect\Crypto;
 require_once(DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php');
 
 
-define('SMARTDOCS_SAMPLE_MODEL', 'weather');
+define('SMARTDOCS_SAMPLE_MODEL', 'petstore_example');
 
 /**
  * Selects the Apigee Profile
@@ -1879,10 +1879,10 @@ function apigee_install_api_endpoint($form, &$form_state) {
  * @param $form_state
  */
 function apigee_install_api_endpoint_validate($form, &$form_state) {
-  $org = $form_state['values']['org'];
-  $endpoint = $form_state['values']['endpoint'];
-  $user = $form_state['values']['user'];
-  $pass = $form_state['values']['pass'];
+  $org = trim($form_state['values']['org']);
+  $endpoint = trim($form_state['values']['endpoint']);
+  $user = trim($form_state['values']['user']);
+  $pass = trim($form_state['values']['pass']);
   module_load_include('inc', 'devconnect', 'devconnect.admin');
   $return = _devconnect_test_kms_connection($org, $endpoint, $user, $pass);
   if (strpos($return, t('Connection Successful')) === FALSE) { //If connection is not successful
@@ -1974,91 +1974,24 @@ function apigee_install_settings_form($form, &$form_state, &$install_state) {
 }
 
 /**
- * Form for choosing to generate SmartDocs content
- *
- * @param $form
- * @param $form_state
- * @return array
- */
-function apigee_generate_make_smartdocs_model($form, &$form_state) {
-  // Configure SmartDocs API Proxy URL
-  $form['smartdocs_api_proxy_url'] = array(
-    '#markup' => t('Generate sample SmartDocs content. <strong><em>This is beta functionality.</em></strong>'),
-  );
-  $form['apigee_api_endpoint_configured'] = array(
-    '#type' => 'hidden',
-    '#value' => (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? intval($GLOBALS['apigee_api_endpoint_configured']) : 0),
-  );
-  $form['actions'] = array(
-    '#weight' => 100,
-    '#attributes' => array(
-      'class' => array('container-inline'),
-    ),
-  );
-  $form['actions']['save'] = array(
-    '#type' => 'submit',
-    '#value' => t('Generate sample SmartDocs Content'),
-    '#attributes' => array(
-      'style' => 'float:left;',
-    ),
-  );
-  $form['actions']['skip'] = array(
-    '#type' => 'submit',
-    '#limit_validation_errors' => array(),
-    '#value' => t('Skip this config'),
-    '#submit' => array('apigee_skip_generate_make_smartdocs_model'),
-    '#attributes' => array(
-      'style' => 'float:left;',
-    ),
-  );
-  $form['#submit'][] = 'apigee_generate_make_smartdocs_model_submit';
-  return $form;
-}
-
-
-/**
- * Custom function that skips the Smartdocs installation piece
- *
- * @param $form
- * @param $form_state
- */
-function apigee_skip_generate_make_smartdocs_model($form, &$form_state) {
-  $GLOBALS['apigee_smartdocs_skip'] = TRUE;
-  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
-}
-
-/**
- * Reapplies apigee_api_endpoint_configured status
- *
- * @param $form
- * @param $form_state
- */
-function apigee_generate_make_smartdocs_model_submit($form, &$form_state) {
-  // re-apply apigee_api_endpoint_configured status
-  $GLOBALS['apigee_api_endpoint_configured'] = $form_state['values']['apigee_api_endpoint_configured'];
-  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
-}
-
-/**
  * Creates model if it doesn't exist
  */
 function apigee_generate_import_smartdocs_model_content() {
 
   _apigee_manage_memory();
 
-  if (isset($GLOBALS['apigee_smartdocs_skip'])) {
-    $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
-    if (!$endpoint_configured || $GLOBALS['apigee_smartdocs_skip']) {
-      return;
-    }
+  $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
+  if (!$endpoint_configured) {
+    return;
   }
+
   // Enable SmartDocs Module
   if (!module_exists('smartdocs')) {
     module_enable(array('smartdocs'), TRUE);
   }
   //During the install process it does not return the correct values and hence needs to be reset.
   drupal_static_reset('devconnect_default_org_config');
-  // Create sample SmartDocs Weather Model
+  // Create sample SmartDocs Model
   $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
   try {
     $model->load(SMARTDOCS_SAMPLE_MODEL);
@@ -2067,8 +2000,8 @@ function apigee_generate_import_smartdocs_model_content() {
     $update = FALSE;
   }
   $model->setName(SMARTDOCS_SAMPLE_MODEL);
-  $model->setDisplayName('Weather Model');
-  $model->setDescription('Weather Model (Apigee sample)');
+  $model->setDisplayName('Petstore Example');
+  $model->setDescription('Example SmartDocs model.');
   try {
     $model->save($update);
     $saved_model = TRUE;
@@ -2085,14 +2018,12 @@ function apigee_generate_import_smartdocs_model_content() {
     drupal_set_message($err_msg, 'error');
   }
   if ($saved_model) {
-    if ($model->getLatestRevisionNumber() > 0) {
-      drupal_set_message($model->getDisplayName() . ' currently has a revision.  No need to import data.', 'status');
-    }
-    else {
+    if ($model->getLatestRevisionNumber() <= 0) {
       try {
-        $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
-        $revision->importWadl(file_get_contents(__DIR__ . '/samples/smartdocs/weather.xml'));
-        drupal_set_message('The WADL XML has been imported into the model.', 'status');
+        // Use the Swagger URL until we can import a Swagger file.
+        $petstore_swagger_contents = file_get_contents(__DIR__ . '/modules/custom/devconnect/smartdocs/samples/petstore.swagger.json');
+        $model->importFile($petstore_swagger_contents, 'swagger', 'application/json');
+        drupal_set_message('Sample Swagger petstore example imported into SmartDocs.', 'status');
       } catch (Apigee\Exceptions\ResponseException $e) {
         $message = $e->getResponse();
         $messageObj = @json_decode($message, TRUE);
@@ -2110,7 +2041,7 @@ function apigee_generate_import_smartdocs_model_content() {
 }
 
 /**
- * Renders content if it doesn't exist
+ * Renders content if it doesn't exist.
  *
  * @return mixed
  */
@@ -2118,14 +2049,12 @@ function apigee_generate_render_smartdocs_model_template() {
 
   _apigee_manage_memory();
 
-  if (isset($GLOBALS['apigee_smartdocs_skip'])) {
-    $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
-    if (!$endpoint_configured || $GLOBALS['apigee_smartdocs_skip']) {
-      return NULL;
-    }
+  $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
+  if (!$endpoint_configured) {
+    return NULL;
   }
 
-  $context['message'] = t('Ensuring correct model template');
+//  $context['message'] = t('Ensuring correct model template');
   $path = __DIR__ . '/modules/custom/devconnect/smartdocs/templates/smartdocs.hbr';
   $html = file_get_contents($path);
   $template = new Apigee\SmartDocs\Template(devconnect_default_org_config(), SMARTDOCS_SAMPLE_MODEL);
@@ -2142,7 +2071,7 @@ function apigee_generate_render_smartdocs_model_template() {
 }
 
 /**
- * Renders content if it doesn't exist
+ * Renders content if it doesn't exist.
  *
  * @return mixed
  */
@@ -2150,17 +2079,30 @@ function apigee_generate_render_smartdocs_model_content() {
 
   _apigee_manage_memory();
 
-  if (isset($GLOBALS['apigee_smartdocs_skip'])) {
-    if ((array_key_exists('apigee_api_endpoint_configured', $GLOBALS) && $GLOBALS['apigee_api_endpoint_configured']) || $GLOBALS['apigee_smartdocs_skip']) {
-      return NULL;
-    }
+  $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
+  if (!$endpoint_configured) {
+    return NULL;
   }
+
+//  $model = new Model(devconnect_default_org_config());
+//  Model::fromArray($model, $form_state['values']['model']);
+//  $revision = new Revision($model->getConfig(), $model->getUuid());
+//  Revision::fromArray($revision, $form_state['values']['revision']);
+//  $selected = $form_state['values']['methods'];
+//  $options = array(
+//    'publish' => variable_get('smartdocs_publish_on_render', 1),
+//    'path' => variable_get('smartdocs_path_gen_type', 'path')
+//  );
+//  module_load_include('inc', 'smartdocs', 'batch/smartdocs.render');
+//  batch_set(smartdocs_render($model, $revision, $selected, $options));
+//  cache_clear_all('model:' . $model->getUuid(), 'cache_smartdocs');
+
   $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
   $model->load(SMARTDOCS_SAMPLE_MODEL);
   $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
   $rev = max($model->getLatestRevisionNumber(), 1);
   $revision->load($rev);
-  drupal_set_message($model->getDisplayName() . ' is preparing to render revision #' . $rev, 'status');
+  drupal_set_message('Rendering SmartDocs petstore example documentation pages.', 'status');
   $selected = array();
   /** @var Apigee\SmartDocs\Resource $resource */
   foreach ($revision->getResources() as $resource) {
@@ -2176,7 +2118,7 @@ function apigee_generate_render_smartdocs_model_content() {
 }
 
 /**
- * Create a Drupal Admin User
+ * Create a Drupal Admin User.
  *
  * @param array $form
  * @param array $form_state
@@ -2408,6 +2350,11 @@ function apigee_install_smtp_credentials_submit($form, &$form_state) {
   variable_set('smtp_from', $values['smtp_from']);
   variable_set('smtp_fromname', $values['smtp_fromname']);
   variable_set('smtp_allowhtml', $values['smtp_allowhtml']);
+  // Set the default mail system to be smtp as this is not set in the
+  // hook_enable() implementation of smtp module.
+  $mail_modes = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  $mail_modes['default-system'] = 'SmtpMailSystem';
+  variable_set('mail_system', $mail_modes);
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
 

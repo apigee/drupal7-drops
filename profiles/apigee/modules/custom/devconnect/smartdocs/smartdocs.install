@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Handles installation of SmartDocs database schema.
+ */
 
 /**
  * Implements hook_schema().
@@ -48,10 +52,10 @@ function smartdocs_schema() {
         'default' => 1,
       ),
       'mpid' => array(
-        'description' => 'Method Path ID based on full method URL path',
+        'description' => 'Method ID based on model name and method name',
         'type' => 'varchar',
         'length' => 1024,
-        'not null' => FALSE
+        'not null' => FALSE,
       ),
     ),
     'primary key' => array('sid'),
@@ -71,7 +75,7 @@ function smartdocs_requirements($phase) {
         $result['smartdocs_docgen'] = array(
           'severity' => REQUIREMENT_ERROR,
           'title' => $t('Apigee SmartDocs'),
-          'value' => $t(' (alpha).  Please disable SmartDocs (alpha) before enabling the beta version.'),
+          'value' => $t(' (alpha).  Please disable SmartDocs (alpha) before enabling the production version.'),
         );
         return $result;
       }
@@ -79,6 +83,7 @@ function smartdocs_requirements($phase) {
         return $result;
       }
       break;
+
     case 'runtime':
       $proxy_url = variable_get("data_proxy_url", NULL);
       if (empty($proxy_url)) {
@@ -86,10 +91,10 @@ function smartdocs_requirements($phase) {
           'severity' => REQUIREMENT_WARNING,
           'title' => $t('Apigee SmartDocs'),
           'description' => $t('The custom proxy URL is empty. Please configure the custom proxy URL under advanced settings on the !smartdocs_settings. !smartdocs_documentation.', array(
-              "!smartdocs_settings" => l("SmartDocs settings page", "admin/smartdocs/settings"),
-              "!smartdocs_documentation" => l("More information", "http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis#configuringthesmartdocsmodule")
-            )),
-          'value' => $t("Missing custom proxy URL")
+            "!smartdocs_settings" => l($t('SmartDocs settings page'), 'admin/config/smartdocs/settings'),
+            "!smartdocs_documentation" => l($t('learn more'), 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array('fragment' => 'configuringthesmartdocsmodule')),
+          )),
+          'value' => $t('Missing custom proxy URL'),
         );
       }
       elseif (!valid_url($proxy_url, TRUE)) {
@@ -97,14 +102,14 @@ function smartdocs_requirements($phase) {
           'severity' => REQUIREMENT_WARNING,
           'title' => $t('Apigee SmartDocs'),
           'description' => $t('The custom proxy URL is not well-formed. Please configure the custom proxy URL under advanced settings on the !smartdocs_settings. !smartdocs_documentation.', array(
-              "!smartdocs_settings" => l("SmartDocs settings page", "admin/smartdocs/settings"),
-              "!smartdocs_documentation" => l("More information", "http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis#configuringthesmartdocsmodule")
-            )),
-          'value' => $t("Misconfigured custom proxy URL")
+            "!smartdocs_settings" => l($t('SmartDocs settings page'), 'admin/config/smartdocs/settings'),
+            "!smartdocs_documentation" => l($t('learn more'), 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array('fragment' => 'configuringthesmartdocsmodule')),
+          )),
+          'value' => $t('Misconfigured custom proxy URL'),
         );
       }
       else {
-        //Make a request to the proxyURL to check if it is correct.
+        // Make a request to the proxyURL to check if it is correct.
         $request_url = $proxy_url . '/ping';
 
         $client = new \Guzzle\Http\Client();
@@ -113,9 +118,11 @@ function smartdocs_requirements($phase) {
 
         try {
           $response_code = $client->send($request)->getStatusCode();
-        } catch (\Guzzle\Http\Exception\BadResponseException $e) {
+        }
+        catch (\Guzzle\Http\Exception\BadResponseException $e) {
           $response_code = $e->getResponse()->getStatusCode();
-        } catch (\Guzzle\Http\Exception\CurlException $e) {
+        }
+        catch (\Guzzle\Http\Exception\CurlException $e) {
           $response_code = $e->getErrorNo();
         }
 
@@ -124,27 +131,30 @@ function smartdocs_requirements($phase) {
             $result['smartdocs_proxy'] = array(
               'severity' => REQUIREMENT_ERROR,
               'title' => $t('Apigee SmartDocs'),
-              'description' => $t('Unable to validate the proxy URL due to the request timing out. You can change the Request Timeout value in !devconnect_settings.', array('!devconnect_settings' => l('Dev Portal settings', 'admin/config/devconnect'))),
-              'value' => $t('Request Timed Out')
+              'description' => $t('Unable to validate the proxy URL due to the request timing out. You can change the Request Timeout value in !devconnect_settings.', array('!devconnect_settings' => l($t('Dev Portal settings'), 'admin/config/devconnect'))),
+              'value' => $t('Request Timed Out'),
             );
             break;
-          case 200: // OK
-          case 204: // OK, no content
+
+          // OK (with & without content).
+          case 200:
+          case 204:
             $result['smartdocs_proxy'] = array(
               'severity' => REQUIREMENT_OK,
               'title' => $t('Apigee SmartDocs'),
-              'value' => $t('OK')
+              'value' => $t('OK'),
             );
             break;
+
           default:
             $result['smartdocs_proxy'] = array(
               'severity' => REQUIREMENT_WARNING,
               'title' => $t('Apigee SmartDocs'),
               'description' => $t('The custom proxy URL is unreachable as configured. Check the !smartdocs_settings or !learn_more.', array(
-                  '!smartdocs_settings' => l('SmartDocs settings', 'admin/smartdocs/settings'),
-                  '!learn_more' => l('learn more', 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array('fragment' => 'configuringthesmartdocsmodule'))
-                )),
-              'value' => $t('Invalid custom proxy URL')
+                '!smartdocs_settings' => l($t('SmartDocs settings'), 'admin/config/smartdocs/settings'),
+                '!learn_more' => l($t('learn more'), 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array('fragment' => 'configuringthesmartdocsmodule')),
+              )),
+              'value' => $t('Invalid custom proxy URL'),
             );
             break;
         }
@@ -157,9 +167,9 @@ function smartdocs_requirements($phase) {
   if (!class_exists('Apigee\\SmartDocs\\Model')) {
     $result['smartdocs_sdk'] = array(
       'severity' => REQUIREMENT_ERROR,
-      'title' => t('SmartDocs SDK'),
+      'title' => $t('SmartDocs SDK'),
       'description' => $t('Your version of the Edge SDK is too old and does not contain classes in the Apigee\\SmartDocs namespace.'),
-      'value' => $t('Edge SDK needs updating')
+      'value' => $t('Edge SDK needs updating'),
     );
   }
   return $result;
@@ -174,9 +184,7 @@ function smartdocs_requirements($phase) {
  */
 function smartdocs_install() {
   if (db_table_exists('smartdocs')) {
-    $query = db_select('smartdocs', 's');
-    $query->fields('s', array('sid', 'nid', 'revision', 'resource', 'method', 'model', 'synced', 'mpid'));
-    $result = $query->execute();
+    $result = db_select('smartdocs', 's')->fields('s')->execute();
     foreach ($result as $row) {
       $record = array(
         'nid' => $row->nid,
@@ -204,10 +212,57 @@ function smartdocs_install() {
   variable_set('pathauto_max_component_length', 255);
   variable_set('pathauto_punctuation_left_curly', 2);
   variable_set('pathauto_punctuation_right_curly', 2);
+
+  module_load_include('inc', 'smartdocs', 'smartdocs.update');
+  _smartdocs_update();
+  $item = array(
+    'menu_name' => 'main-menu',
+    'link_path' => 'apis',
+    'link_title' => 'APIs',
+    'weight' => 0,
+    'options' => array(
+      'attributes' => array(
+        'title' => 'APIs',
+      ),
+    ),
+  );
+  menu_link_save($item);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function smartdocs_uninstall() {
+  $fid = variable_get('custom_template_file', NULL);
+  if ($fid) {
+    $file = file_load($fid);
+    if ($file) {
+      file_usage_delete($file, 'smartdocs');
+      file_delete($file, TRUE);
+    }
+  }
+
+  $api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+  foreach ($api_products as $api_product) {
+    variable_del($api_product->name . '_docs');
+  }
+  variable_del('smartdocs_path_gen_type');
+  variable_del('smartdocs_publish_on_render');
+  variable_del('use_docgen_templates');
+  variable_del('custom_template_file');
+  variable_del('data_proxy_url');
+  variable_del('data_auth_url');
+  variable_del('use_local_assets');
+  variable_del('local_asset_version');
+  variable_del('use_api_proxy_url');
+  variable_del('api_proxy_url');
 }
 
 /**
  * Make sure changes in Drupal 7.36 do not disable SmartDocs node types.
+ *
+ * Note: While this is fixed in Drupal 7.37, it is still necessary to re-enable
+ * any node types that 7.36 might have marked as disabled.
  */
 function smartdocs_update_7403() {
   $query = db_select('node', 'n');
@@ -230,4 +285,50 @@ function smartdocs_update_7403() {
 function smartdocs_update_7404() {
   $schema = smartdocs_schema();
   db_change_field('smartdata', 'mpid', 'mpid', $schema['smartdata']['fields']['mpid']);
+}
+
+/**
+ * Create unified SmartDocs content type and update menu locations.
+ */
+function smartdocs_update_7500() {
+  $models = variable_get('smartdocs_content_types', NULL);
+  if (isset($models) && is_array($models)) {
+    foreach ($models as $model) {
+      variable_del($model . '_nodes');
+      variable_del($model);
+    }
+  }
+
+  $modules = array(
+    'smartdocs_attachment',
+    'smartdocs_error',
+    'smartdocs_parameter',
+  );
+  module_enable($modules);
+
+  module_load_include('inc', 'smartdocs', 'smartdocs.update');
+  // Create unified content type and its associated vocabularies.
+  _smartdocs_update();
+  // Migrate nodes to the new content-type.
+  _smartdocs_update_process_nodes();
+
+  // Create menu item for the model list page.
+  $item = array(
+    'menu_name' => 'main-menu',
+    'link_path' => 'apis',
+    'link_title' => 'APIs',
+    'weight' => 0,
+    'options' => array(
+      'attributes' => array(
+        'title' => 'APIs',
+      ),
+    ),
+  );
+  menu_link_save($item);
+  // Since admin menu paths have changed, clear menu caches.
+  menu_cache_clear_all();
+  // Remove no-longer-used variables.
+  variable_del('smartdocs_path_gen_type');
+  variable_del('smartdocs_content_types');
+  variable_del('use_docgen_templates');
 }

@@ -25,7 +25,6 @@ dependencies[] = comment
 dependencies[] = context
 dependencies[] = context_ui
 dependencies[] = ctools
-dependencies[] = dashboard
 dependencies[] = dblog
 dependencies[] = faq
 dependencies[] = devconnect
@@ -89,6 +88,6 @@ dependencies[] = webform
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20150505.0958
-version = "15.05.04.00"
+; Added by build script on 20150601.1649
+version = "15.05.27.00"
     

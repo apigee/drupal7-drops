@@ -1,0 +1,5 @@
+name = SmartDocs Errors
+description = Provides field widgets for displaying SmartDocs API error responses
+package = DevConnect
+version = 7.x-4.5
+core = 7.x

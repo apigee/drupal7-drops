@@ -919,6 +919,7 @@ Apigee.APIModel.Editor = function() {
                     if (inputElementName == inputElementValue || inputElementValue == "" || jQuery(this).html() == "&nbsp;") {
                         isTemplateParamMissing = true;
                         templateParamMissing.push(inputElementName.substring(1,inputElementName.length-1));
+                        jQuery(this).text(inputElementName);
                         jQuery(this).addClass('error');
                     }
                     var isModified = false;

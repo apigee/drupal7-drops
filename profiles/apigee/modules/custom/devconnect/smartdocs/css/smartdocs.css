@@ -1,6 +1,5 @@
 body #method_content h1,
 body #method_content h2,
-body #method_content h3,
 body #method_content h4,
 body #method_content h5,
 body #method_content h6,
@@ -91,7 +90,7 @@ body.page-admin-smartdocs .api-model-table-operations {
 .node-teaser .method_details .title,
 .view .method_details .title {
     float: left;
-    width:450px;
+    width: 450px;
     position:relative;
     font-size: 13px;
 }
@@ -112,10 +111,11 @@ body.page-admin-smartdocs .api-model-table-operations {
 
 .node-teaser .method_details .description-header,
 .view .method_details .description-header {
-    float:left;
     font-size: 10px;
     font-weight:bold;
     text-transform: uppercase;
+    max-width: 500px;
+    overflow: hidden;
 }
 
 .node-teaser .method_details:hover,
@@ -150,11 +150,14 @@ body.page-admin-smartdocs .api-model-table-operations {
     padding-left: 10px;
 }
 
+.front .view .method_details .title-description {
+    max-width: 260px;
+}
 .node-teaser.method_details .description,
 .view .method_details .description {
-    float: left;
-    line-height: 20px;
-    max-width: 500px;
+  line-height: 20px;
+  max-width: 500px;
+  overflow: hidden;
 }
 
 .node-teaser p.get,
@@ -418,6 +421,25 @@ table.table td p.data {
     word-break: break-all;
 }
 
+.page-admin-smartdocs .collapsible .fieldset-legend a {
+    height: 30px;
+}
+
+.page-admin-smartdocs input[type="text"]:disabled {
+    background-color: #F4F4F4;
+}
+.page-admin-smartdocs .templateauth-type,
+.page-admin-smartdocs .templateauth-help {
+    margin: 10px 0;
+}
+.page-admin-smartdocs .templateauth-help div {
+    margin: 5px 0;
+}
+.page-admin-smartdocs .smartdocs-revision-view-published-docs,
+.page-admin-smartdocs .templateauth-help {
+    border: 1px solid #ccc;
+    padding: 10px;
+}
 /* Responsiveness */
 /**
 * Smallest
@@ -450,4 +472,65 @@ table.table td p.data {
         border-left: 1px dashed #E0E0E0;
         border-right: 1px dashed #E0E0E0;
     }
+}
+
+/** Styles for the model list page **/
+.view-smartdocs-models .model-info{
+    border-bottom: 1px solid #CACACA;
+    padding: 10px;
+}
+
+.view-smartdocs-models span.field-content.model_title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.view-smartdocs-models .views-field-name {
+    margin: 0 0 5px 0;
+}
+
+/**
+ * @TODO: Remove after DEVSOL-649 is complete.
+ * This is hiding IMPLICIT, PASSWORD,and CLIENT_CREDENTIALS from the auth_fields
+ * grant type for OAuth security settings. ($form['auth_fields']['grantType'])
+ */
+#edit-auth-fields-granttype div:nth-child(1),
+#edit-auth-fields-granttype div:nth-child(2),
+#edit-auth-fields-granttype div:nth-child(3) {
+    display:none;
+}
+
+/** Overriding Method styles from the Smartdocs Main Css**/
+
+#method_container {
+    margin: 0 auto;
+}
+#method_content {
+    margin-top: 0;
+}
+
+#method_content .resource_description {
+    font-size: 14px;
+}
+#method_content [data-role='method_url_container'] {
+    font-family: Courier;
+}
+#method_content .url_container > p >span {
+    font-family: Courier;
+}
+#method_content .table>thead>tr>th {
+    border-bottom: none;
+}
+#method_content  span[data-role='name']{
+    font-weight: bold;
+}
+#method_content  span[data-role='required']{
+    font-style: italic;
+}
+
+#method_content .table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th {
+    background-color: #ffffff;
+}
+#method_content .table th {
+    background-color: #ffffff;
 }

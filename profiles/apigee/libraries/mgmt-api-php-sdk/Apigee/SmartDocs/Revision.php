@@ -395,6 +395,7 @@ class Revision extends APIObject
 
     /**
      * Imports a model revision from a Swagger URL.
+     * @deprecated Use Model.importFile() or Model.importUrl() instead.
      *
      * @param string $modelId
      * @param string $swaggerUrl
@@ -409,6 +410,7 @@ class Revision extends APIObject
 
     /**
      * Imports a model revision from a WADL document.
+     * @deprecated Use Model.importFile() or Model.importUrl() instead.
      *
      * @param string $modelId
      * @param string $xml
@@ -423,6 +425,7 @@ class Revision extends APIObject
 
     /**
      * Imports a model revision from an Apigee Internal JSON document.
+     * @deprecated Use Model.importFile() or Model.importUrl() instead.
      *
      * @param string $modelId
      * @param string $json
@@ -439,18 +442,20 @@ class Revision extends APIObject
      * Exports a SmartDocs revision as JSON (default) or an XML-based format.
      *
      * @param string $modelId
-     * @param string $format
+     * @param string $format Export format, either 'wadl' or 'json', defaults
+     *  to 'wadl'.
      * @param int|null $revision
      *
      * @return string
      */
-    public function export($format, $revision = NULL)
+    public function export($format = 'json', $revision = NULL)
     {
         $revision = $revision ?: 'latest';
         if ($format == 'json' || empty($format)) {
-            $this->get($revision . '?expand=yes');
+            $this->get($revision . '?expand=true' );
         } else {
-            $this->get($revision . '?expand=yes&format=' . $format, 'text/xml');
+            // Export format is WADL.
+            $this->get($revision . '?expand=true&format=' . $format, 'text/xml');
         }
         return $this->responseText;
     }

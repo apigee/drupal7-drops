@@ -1,0 +1,228 @@
+<?php
+/**
+ * @file
+ * Describes the smartdocs_parameter field widget.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function smartdocs_parameter_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#smartdocs_parameter':
+      return '<h3>' . t('About') . '</h3>'
+      . '<p>' . t('The SmartDocs Parameters module defines a field type for the Field module which describes method parameters.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function smartdocs_parameter_field_info() {
+  return array(
+    'smartdocs_parameter' => array(
+      'label' => t('SmartDocs Parameter'),
+      'description' => t('This field stores method parameter data in the database.'),
+      'settings' => array(),
+      'instance_settings' => array(),
+      'default_widget' => 'smartdocs_parameter_widget',
+      'default_formatter' => 'smartdocs_parameter_formatter',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function smartdocs_parameter_field_is_empty($item, $field) {
+  return empty($item['name']);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function smartdocs_parameter_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array('#markup' => theme('smartdocs_parameter', $item));
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function smartdocs_parameter_field_widget_info() {
+  return array(
+    'smartdocs_parameter_widget' => array(
+      'label' => t('SmartDocs parameter'),
+      'field types' => array('smartdocs_parameter'),
+      'settings' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function smartdocs_parameter_field_formatter_info() {
+  return array(
+    'smartdocs_parameter_formatter' => array(
+      'label' => t('SmartDocs Parameter'),
+      'field types' => array('smartdocs_parameter'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+  $element['name'] = array(
+    '#title' => t('Name'),
+    '#type' => 'textfield',
+    '#default_value' => (isset($items[$delta]['name']) ? $items[$delta]['name'] : NULL),
+    '#size' => 64,
+    '#maxlength' => 64,
+    '#attributes' => array('class' => array('smartdocs-parameter-name')),
+  );
+  $element['description'] = array(
+    '#title' => t('Description'),
+    '#type' => 'textarea',
+    '#default_value' => (isset($items[$delta]['description']) ? $items[$delta]['description'] : NULL),
+    '#attributes' => array('class' => array('smartdocs-parameter-description')),
+  );
+  $element['required'] = array(
+    '#title' => t('Required'),
+    '#type' => 'checkbox',
+    '#default_value' => (isset($items[$delta]['required']) ? $items[$delta]['required'] : NULL),
+    '#return_value' => 1,
+    '#attributes' => array('class' => array('smartdocs-parameter-required')),
+  );
+  $element['allow_multiple'] = array(
+    '#title' => t('Allow multiple'),
+    '#type' => 'checkbox',
+    '#default_value' => (isset($items[$delta]['allow_multiple']) ? $items[$delta]['allow_multiple'] : NULL),
+    '#return_value' => 1,
+    '#attributes' => array('class' => array('smartdocs-parameter-allow-multiple')),
+  );
+
+  $data_type_options = array(
+    'integer' => t('Integer'),
+    'long' => t('Long'),
+    'float' => t('Float'),
+    'double' => t('Double'),
+    'number' => t('Number'),
+    'string' => t('String'),
+    'byte' => t('Byte'),
+    'boolean' => t('Boolean'),
+    'date' => t('Date'),
+    'dateTime' => t('Date/Time'),
+    'object' => t('Object'),
+    'array' => t('Array'),
+  );
+  if (isset($items[$delta]['data_type']) && !array_key_exists($items[$delta]['data_type'], $data_type_options)) {
+    $data_type_options[$items[$delta]['data_type']] = ucfirst($items[$delta]['data_type']);
+    watchdog('smartdocs_parameter', 'Dynamically added ‘:option’ to list of available dataTypes.', array(':option' => $items[$delta]['data_type']), WATCHDOG_INFO);
+  }
+
+  $element['data_type'] = array(
+    '#title' => t('Data type'),
+    '#type' => 'select',
+    '#default_value' => (isset($items[$delta]['data_type']) ? $items[$delta]['data_type'] : NULL),
+    '#options' => $data_type_options,
+    '#attributes' => array('class' => array('smartdocs-parameter-data-type')),
+  );
+
+  $type_options = array(
+    'template' => t('Template'),
+    'query' => t('Query'),
+    'body' => t('Body'),
+    'header' => t('Header'),
+  );
+  if (isset($items[$delta]['type']) && !array_key_exists($items[$delta]['type'], $type_options)) {
+    $type_options[$items[$delta]['type']] = ucfirst($items[$delta]['type']);
+    watchdog('smartdocs_parameter', 'Dynamically added ‘:option’ to list of available types.', array(':option' => $items[$delta]['type']), WATCHDOG_INFO);
+  }
+
+  $element['type'] = array(
+    '#title' => t('Parameter type'),
+    '#type' => 'radios',
+    '#default_value' => (isset($items[$delta]['type']) ? $items[$delta]['type'] : NULL),
+    '#options' => $type_options,
+    '#attributes' => array('class' => array('smartdocs-parameter-type')),
+  );
+
+  $default_value = NULL;
+  if (isset($items[$delta]['options']) && !empty($items[$delta]['options'])) {
+    if (is_array($items[$delta]['options'])) {
+      $default_value = implode("\n", $items['delta']['options']);
+    }
+    elseif (is_scalar($items[$delta]['options'])) {
+      $default_value = $items[$delta]['options'];
+    }
+  }
+
+  $element['options'] = array(
+    '#title' => t('Options'),
+    '#type' => 'textarea',
+    '#default_value' => $default_value,
+    '#attributes' => array('class' => array('smartdocs-parameter-options')),
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function smartdocs_parameter_theme() {
+  return array(
+    'smartdocs_parameter' => array(
+      'arguments' => array(
+        'name' => '',
+        'description' => '',
+        'required' => FALSE,
+        'allow_multiple' => FALSE,
+        'data_type' => '',
+        'type' => '',
+        'options' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Formats a parameter into a displayable HTML block.
+ *
+ * @param array $vars
+ *   Variables to be passed to the theme function.
+ *
+ * @return string
+ *   Rendered HTML.
+ */
+function theme_smartdocs_parameter(&$vars) {
+  if (empty($vars['name'])) {
+    return '';
+  }
+  $output = '<div class="smartdocs-parameter">';
+  $output .= '<div class="smartdocs-parameter-name">' . check_plain($vars['name']) . ($vars['required'] ? ' ' . t('(required)') : '') . '</div>';
+  if (!empty($vars['description'])) {
+    $output .= '<div class="smartdocs-parameter-description">' . check_plain($vars['description']) . '</div>';
+  }
+  $output .= '<div class="smartdocs-parameter-allow-multiple">' . ($vars['allow_multiple'] ? t('Multiple values') : t('Single value')) . '</div>';
+  if (!empty($vars['data_type'])) {
+    $output .= '<div class="smartdocs-parameter-data-type">' . check_plain($vars['data_type']) . '</div>';
+  }
+  if (!empty($vars['type'])) {
+    $output .= '<div class="smartdocs-parameter-type">' . check_plain($vars['type']) . '</div>';
+  }
+  if (!empty($vars['options'])) {
+    $output .= '<div class="smartdocs-parameter-options">' . check_plain($vars['options']) . '</div>';
+  }
+  $output .= '</div>';
+  return $output;
+}

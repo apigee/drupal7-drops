@@ -11,7 +11,13 @@ function uuid_node_features_export_options() {
   $options = array();
 
   // Check what content types are enabled for uuid features export.
-  $enabled_types = variable_get('uuid_features_entity_node', FALSE);
+  $enabled_types = array();
+  $entity_info = entity_get_info('node');
+  foreach ($entity_info['bundles'] as $key => $value) {
+    if (variable_get("uuid_features_entity_node_${key}", FALSE)) {
+      $enabled_types[$key] = $key;
+    }
+  }
   if (!empty($enabled_types)) {
     $types = node_type_get_names();
     $query = db_select('node', 'n');

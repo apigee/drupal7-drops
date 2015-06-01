@@ -38,9 +38,8 @@
 <div class="col-sm-9" id="method_content">
 <div class="col-sm-12">
 <!-- Error container -->
-<div data-role="error_container">
+<div data-role="error_container"></div>
 
-</div>
 <!-- Inline edit Organization admin credential section -->
 <div class="admin_auth_section hide">
     <a class="set_admin_credentials hide" href="javascript:void(0)" title="set admin credentials.">Set Admin Credentials...</a>
@@ -107,9 +106,7 @@
                             {{/if}}
                         </td>
                         <td>
-                            <p data-role="description" data-allow-edit="true">
-                                {{description}}
-                            </p>
+                            <p data-role="description" data-allow-edit="true"></p>
                         </td>
                     </tr>
                     {{/query-list}}
@@ -133,20 +130,29 @@
                     <tbody>
                     {{#header-list this.parameters}}
                     <tr data-role="header-param-list" data-scope="{{scope}}">
-                        <td>
+                        <td style="vertical-align:middle">
                             <span data-role="name">{{name}}</span>
                             {{#required}}
-                            <br/><span class="required" data-role="required">(required)</span>
+                            <br/>
+                            <span class="required" data-role="required">(required)</span>
                             {{/required}}
                         </td>
                         <td>
                             {{#if required}}
                             <input type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
                             {{else}}
-                            <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                              {{#if defaultValue}}
+                                <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                              {{else}}
+                                {{#each options}}
+                                  {{#if @first}}
+                                    <input type="text" class="form-control" data-role="value" placeholder="{{this}}" value=""/>
+                                  {{/if}}
+                                {{/each}}
+                              {{/if}}
                             {{/if}}
                         </td>
-                        <td>
+                        <td style="vertical-align:middle">
                             <p data-role="description" data-allow-edit="true">
                                 {{description}}
                             </p>
@@ -202,7 +208,6 @@
     </div>
 </div>
 {{#body}}
-{{#if sample}}
 <!-- Request payload section -->
 <div class="request_payload">
     <h3>Request Body</h3>
@@ -220,12 +225,9 @@
         {{{doc}}}
     </div>
     <div data-role="request-payload-example">
-        <textarea data-format="{{contentType}}">
-            {{sample}}
-        </textarea>
+        <textarea class="payload_text" data-format="{{contentType}}"></textarea>
     </div>
 </div>
-{{/if}}
 {{/body}}
 {{#if-template-param this.parameters}}
 <div class="hide" data-role="template-params">
@@ -243,21 +245,21 @@
     <!-- Basic authentication, custom token and OAuth 2 authentication container -->
     <div class="authentication" data-role="authentication_container">
         <div class="well basicauth" data-role="basic_auth_container">
-            <p class="title">Basic Auth</p>
+            <p class="title">HTTP Basic</p>
             <div class="details">
                 <a data-toggle="modal" role="button" href="#basicauth_modal" title="Set credentials." class="link_open_basicauth">Set...</a>
                 <i title="Clear admin credentials." class="icon-remove"></i>
             </div>
         </div>
         <div class="well oauth2" data-role="oauth2_container">
-            <p class="title">OAuth 2</p>
+            <p class="title">OAuth 2.0</p>
             <div class="details">
                 <a data-toggle="modal" role="button" href="#oauth2_modal" title="Set credentials." class="link_open_oauth2">Set...</a>
                 <i title="Clear admin credentials." class="icon-remove"></i>
             </div>
         </div>
         <div class="well customtoken" data-role="custom_token_container">
-            <p class="title">Custom Token</p>
+            <p class="title">API Key</p>
             <div class="details">
                 <a data-toggle="modal" role="button" href="#customtoken_modal" title="Set credentials." class="link_open_customtoken">Set...</a>
                 <i title="Clear admin credentials." class="icon-remove"></i>
@@ -272,6 +274,7 @@
 <div class="request_response_tabs" >
     <a href="javascript:void(0)" id="link_request_tab" data-role="request-link">Request</a>
     <a href="javascript:void(0)" id="link_response_tab" data-role="response-link" class="selected">Response</a>
+    <a href="javascript:void(0)" id="link_curl_tab" data-role="curl-link">cURL</a>
 </div>
 <!-- Request and response container -->
 <div id="request_response_container">
@@ -279,6 +282,9 @@
         <p>Make a request and see the response.</p>
     </div>
     <div class="request" data-role="request-container">
+        <p>Make a request and see the response.</p>
+    </div>
+    <div class="curl" data-role="curl-container">
         <p>Make a request and see the response.</p>
     </div>
 </div>
@@ -336,18 +342,12 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr>
+                    <tr class="authType">
                         <td>
-                            <p class="title">Auth Type</p>
+                            <p class="title">Security</p>
                         </td>
                         <td>
-                            <p class="data auth_type" data-role="auth-type">
-                                {{#if authSchemes}}
-                                {{#each authSchemes}}{{.}},{{/each}}
-                                {{else}}
-                                NOAUTH
-                                {{/if}}
-                            </p>
+                            <p class="data auth_type" data-role="auth-type"></p>
                         </td>
                     </tr>
                     <tr>
@@ -356,7 +356,11 @@
                         </td>
                         <td>
                             <p class="data" data-role="content-type">
-                                {{#body}}{{contentType}}{{/body}}
+                                {{#parameters}}
+                                  {{#each this.options}}
+                                    {{this}}<br/>
+                                  {{/each}}
+                                {{/parameters}}
                             </p>
                         </td>
                     </tr>
@@ -429,7 +433,7 @@
             </div>
             <div class="modal-footer">
                 <p>Your credentials are saved for the session only.</p>
-                <a class="btn btn-primary button_save_modal" href="javascript:void(0)">Save</a>
+                <a class="btn btn-primary button_save_modal" href="javascript:void(0)">OK</a>
                 <a class="button_close_modal" href="javascript:void(0)">Cancel</a>
             </div>
         </div>
@@ -538,11 +542,84 @@
 </div>
 <!-- /.modal -->
 <script type="text/javascript">
+    var Apigee = Apigee || {}; // Look for a namespace 'Apigee', if it is not there, creates an empty one.
+    Apigee.APIModel = Apigee.APIModel || {}; // Look for a namespace 'APIModel' under 'Apigee', if it is not there, creates an empty one.
     Apigee.APIModel.apiName = "{{apiName}}";
     Apigee.APIModel.revisionNumber = "{{revisionNumber}}";
     Apigee.APIModel.organizationName = "{{organizationName}}";
     Apigee.APIModel.resourceId = "{{resourceId}}";
     Apigee.APIModel.methodId = "{{id}}";
-    Apigee.APIModel.methodType ="details";
+    Apigee.APIModel.methodType = "details";
+    var model = {{this}};
+    Apigee.APIModel.resourceName = "";
+    if(model.body && model.body.parameters) {
+        for(var i in model.body.parameters) {
+            if(model.body.parameters[i].schema) {
+                Apigee.APIModel.resourceName = JSON.parse(model.body.parameters[0].schema).$ref;
+                Apigee.APIModel.resourceName = Apigee.APIModel.resourceName.split("/");
+                Apigee.APIModel.resourceName = Apigee.APIModel.resourceName[Apigee.APIModel.resourceName.length-1];
+            }
+        }
+    }
+    var security = [];
+    if(model.security) {
+        for (i=0;i<model.security.length;i++){
+            security.push(JSON.parse(model.security[i]));
+        }
+    }
+
+    var newAuth = "";
+    jQuery("[data-role='auth-type']").text(newAuth);
+    for (var i in security){
+        for (var keys in security[i]) {
+            if (security[i][keys].type === "OAUTH2") {
+                newAuth = "OAuth 2.0";
+                secName = keys;
+                jQuery("[data-role='auth-type']").append(newAuth + ", ");
+            }
+            if (security[i][keys].type === "APIKEY") {
+                newAuth = "API Key";
+                secName = keys;
+                jQuery("[data-role='auth-type']").append(newAuth + ", ");
+            }
+            if (security[i][keys].type === "BASIC") {
+                newAuth = "HTTP Basic";
+                secName = keys;
+                jQuery("[data-role='auth-type']").append(newAuth + ", ");
+            }
+        }
+    }
+    if (jQuery("[data-role='auth-type']").text() === "") {
+        jQuery("[data-role='auth-type']").append("None");
+    }
+    var methodVerb = jQuery.trim(jQuery("[data-role='verb']:first").text().toLowerCase()); // Retrieve the verb from the first HTML element.
+    var payload = jQuery(".request_payload")
+    if(model.parameters && Array.isArray(model.parameters)) {
+        for(var key in model.parameters){
+            if(model.parameters[key].type === "HEADER"){
+                jQuery("[data-role='description']").html(model.parameters[key].description);
+            }
+        }
+    }
+    if (methodVerb != "post" && methodVerb != "put" && methodVerb != "patch") {
+        // remove request payload
+        payload.remove();
+    }
+    else {
+         // If a sample exists, use it to populate the body payload textarea, else create an example from the api schema to populate the body payload
+         if (model.body && model.body.sample) {
+             jQuery("textarea.payload_text").val(model.body.sample);
+         }
+         else if (model.apiSchema && model.apiSchema.expandedSchema) {
+             var expandedSchema = JSON.parse(model.apiSchema.expandedSchema);
+             var swaggerModel = new Apigee.APIModel.SwaggerModel( Apigee.APIModel.resourceName, expandedSchema[Apigee.APIModel.resourceName]);
+             var sampleFromAPISchema = swaggerModel.createJSONSample( false );
+             jQuery("textarea.payload_text").val(JSON.stringify(sampleFromAPISchema, null, 4));
+         }
+         else {
+             payload.remove();
+         }
+    }
+
 </script>
 </div>

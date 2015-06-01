@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Adds SmartDocs to the list of drush-clearable caches.
+ */
 
 /**
  * Implements hook_drush_cache_clear().

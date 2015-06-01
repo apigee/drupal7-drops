@@ -412,10 +412,9 @@ projects[views_queue][version] = "1.x-dev"
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
 
-; Enabled on install.
+; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.7"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -760,7 +759,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
-libraries[mgmt-api-php-sdk][download][tag] = "1.1.0"
+libraries[mgmt-api-php-sdk][download][tag] = "1.1.2"
 libraries[mgmt-api-php-sdk][download][type] = "git"
 libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk.git"
 

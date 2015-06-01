@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Controller class for Apigee Company Invitation Entity.
+ */
 
 use Apigee\ManagementAPI\CompanyInvitation;
 use Apigee\Exceptions\ResponseException;
@@ -25,15 +29,19 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
    */
   protected static $lastException;
 
+  /**
+   * {@inheritdoc}
+   */
   public function __construct($entity_type) {
     $this->entityInfo = entity_get_info($entity_type);
     $this->entityType = $entity_type;
   }
-
+  /**
+   * {@inheritdoc}
+   */
   public function create(array $values = array()) {
     // Add is_new property if it is not set.
     $values += array('is_new' => TRUE);
-
 
     // If there is a class for this entity type, instantiate it now.
     if (isset($this->entityInfo['entity class']) && $class = $this->entityInfo['entity class']) {
@@ -50,22 +58,22 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
     return $entity;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function resetCache(array $ids = NULL) {
 
   }
 
   /**
-   * Load the request objects based on the conditions.
-   * @param type $ids
-   * @param type $conditions
-   * @return type
+   * {@inheritdoc}
    */
   public function load($ids = array(), $conditions = array()) {
     $entities = array();
-    if(!empty($ids)){
+    if (!empty($ids)) {
       $config = self::getConfig();
       $invitation = new CompanyInvitation($config);
-      foreach($ids as $id){
+      foreach ($ids as $id) {
         $invitation->load($id);
         $invitation_array = $invitation->toArray();
         $entity = new ApigeeCompanyInvitationEntity($invitation_array);
@@ -102,8 +110,7 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
   }
 
   /**
-   * Saves a request entity.
-   * @param type $entity
+   * {@inheritdoc}
    */
   public function save($entity) {
     $config = self::getConfig();
@@ -141,6 +148,9 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
     return ($is_update ? SAVED_UPDATED : SAVED_NEW);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function delete($ids) {
     global $user;
     foreach ($ids as $id) {
@@ -158,26 +168,44 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
     return TRUE;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function invoke($hook, $entity) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function export($entity, $prefix = '') {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function import($export) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function view($entities, $view_mode = 'full', $langcode = NULL, $page = NULL) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   protected static function getConfig() {
     return devconnect_default_org_config();
   }
@@ -186,11 +214,10 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
    * Returns the last exception returned from Edge.
    *
    * @return Apigee\Exceptions\ResponseException
+   *   The last exception.
    */
   public static function getLastException() {
     return self::$lastException;
   }
 
 }
-
-?>

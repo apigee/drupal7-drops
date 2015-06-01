@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Entity controller for developers.
+ */
 
 use Apigee\ManagementAPI\Developer;
 use Apigee\Exceptions\ResponseException;
@@ -17,9 +21,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   private $emailCache;
 
   /**
-   * Initializes internal variables.
-   *
-   * @param $entity_type
+   * {@inheritdoc}
    */
   public function __construct($entity_type) {
     $this->devCache = array();
@@ -32,9 +34,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   }
 
   /**
-   * Implements DrupalEntityControllerInterface::resetCache().
-   *
-   * @param array $ids
+   * {@inheritdoc}
    */
   public function resetCache(array $ids = NULL) {
     if (is_array($ids) && !empty($this->devCache)) {
@@ -50,14 +50,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   }
 
   /**
-   * Implements DrupalEntityControllerInterface::load().
-   *
-   * @param array $ids
-   * @param array $conditions
-   *
-   * @throws Apigee\Exceptions\ResponseException
-   *
-   * @return array
+   * {@inheritdoc}
    */
   public function load($ids = array(), $conditions = array()) {
     $email_lookup = array();
@@ -85,7 +78,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
               $email_lookup[] = $email;
             }
           }
-        } catch (ResponseException $e) {
+        }
+        catch (ResponseException $e) {
         }
       }
       else {
@@ -102,7 +96,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
               if (!in_array($mail, $this->emailCache)) {
                 $email_lookup[] = $mail;
               }
-            } catch (Exception $e) {
+            }
+            catch (Exception $e) {
             }
           }
           else {
@@ -112,7 +107,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       }
     }
 
-    // Look up UIDs by email
+    // Look up UIDs by email.
     if (!empty($email_lookup)) {
       $result = db_select('users', 'u')
         ->fields('u', array('mail', 'uid'))
@@ -131,8 +126,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       $array['uid'] = (isset($this->emailCache[$email]) ? $this->emailCache[$email] : NULL);
       $return[$email] = new DeveloperEntity($array);
     }
-    // Correct for first/last name
-    // TODO: verify that this is really necessary
+    // Correct for first/last name.
+    // TODO: verify that this is really necessary.
     if (!empty($return) && db_table_exists('field_data_field_first_name') && db_table_exists('field_data_field_last_name')) {
       $query = db_select('users', 'u');
       $query->innerJoin('field_data_field_first_name', 'fn', 'u.uid = fn.entity_id AND fn.entity_type = \'user\'');
@@ -156,19 +151,27 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
         }
       }
     }
+
+    if (array_key_exists('cache', $conditions) && $conditions['cache'] === FALSE) {
+      $this->devCache = array();
+    }
+
     return $return;
   }
 
   /**
-   * Determines if a developer exists with the given email or set of
-   * conditions.
+   * Determines if developer exists with the given email or set of conditions.
    *
    * This is accomplished without writing to logs or watchdog. If the developer
    * exists, the DeveloperEntity is returned, else FALSE.
    *
    * @param string|null $id
+   *   Developer email, if any.
    * @param array $conditions
+   *   List of conditions for loading, if any.
+   *
    * @return bool|Drupal\devconnect_user\DeveloperEntity
+   *   Returns developer entity if found, otherwise returns FALSE.
    */
   public function loadIfExists($id = NULL, $conditions = array()) {
     if (!empty($id) && array_key_exists($id, $this->devCache)) {
@@ -184,9 +187,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   }
 
   /**
-   * Implements EntityAPIControllerInterface::delete().
-   *
-   * @param array $ids
+   * {@inheritdoc}
    */
   public function delete($ids) {
     $id_count = count($ids);
@@ -214,8 +215,10 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
                 unset($this->devCache[$entity->developerId]);
               }
             }
-          } catch (ResponseException $e) {
-          } catch (ParameterException $e) {
+          }
+          catch (ResponseException $e) {
+          }
+          catch (ParameterException $e) {
           }
         }
         if ($delete_succeeded) {
@@ -232,19 +235,15 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   }
 
   /**
-   * Implements EntityAPIControllerInterface::invoke().
-   *
-   * @param string $hook
-   * @param array $entity
+   * {@inheritdoc}
    */
   public function invoke($hook, $entity) {
-    // TODO
+    // This function is required by EntityAPIControllerInterface, but is
+    // unused.
   }
 
   /**
-   * Implements EntityAPIControllerInterface::save().
-   *
-   * @param $entity
+   * {@inheritdoc}
    */
   public function save($entity) {
     $is_update = !empty($entity->developerId);
@@ -290,7 +289,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
           $uid = 0;
         }
         $this->devCache[$new_entity->developerId] = $new_entity;
-      } catch (ResponseException $e) {
+      }
+      catch (ResponseException $e) {
         $overall_success = FALSE;
       }
 
@@ -302,57 +302,39 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   }
 
   /**
-   * Implements EntityAPIControllerInterface::create().
-   *
-   * @param array $values
+   * {@inheritdoc}
    */
   public function create(array $values = array()) {
     return new DeveloperEntity($values);
   }
 
   /**
-   * Implements EntityAPIControllerInterface::export().
-   *
-   * @param $entity
-   * @param string $prefix
+   * {@inheritdoc}
    */
   public function export($entity, $prefix = '') {
     return json_encode($entity);
   }
 
   /**
-   * Implements EntityAPIControllerInterface::import().
-   *
-   * @param string $export
+   * {@inheritdoc}
    */
   public function import($export) {
     return @json_decode($export);
   }
 
   /**
-   * Implements EntityAPIControllerInterface::buildContent().
-   *
-   * @todo fill this in
-   *
-   * @param array $entity
-   * @param string $view_mode
-   * @param string|null $langcode
+   * {@inheritdoc}
    */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL) {
+    // This function is required by EntityAPIControllerInterface, but is unused.
     return array();
   }
 
   /**
-   * Implements EntityAPIControllerInterface::view().
-   *
-   * @todo fill this in
-   *
-   * @param array $entities
-   * @param string $view_mode
-   * @param string|null $langcode
-   * @param boolean $page
+   * {@inheritdoc}
    */
   public function view($entities, $view_mode = 'full', $langcode = NULL, $page = FALSE) {
+    // This function is required by EntityAPIControllerInterface, but is unused.
     return array();
   }
 
@@ -363,14 +345,19 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * the user-profile form -- we disable the element. However, customer-
    * specific code may do so, hence this function.
    *
-   * Returns TRUE on success or FALSE on failure.
-   *
    * @param \Drupal\devconnect_user\DeveloperEntity $entity
+   *   The entity whose email address is to be changed.
    * @param string $new_email
+   *   The new email to be assigned to this entity.
+   *
    * @return bool
+   *   TRUE on success, FALSE on failure.
    */
   public function updateEmail(DeveloperEntity $entity, $new_email) {
     $saved = FALSE;
+    if (empty($entity->orgNames)) {
+      $entity->orgNames = array('default');
+    }
     foreach ($entity->orgNames as $org) {
       if (module_exists('devconnect_multiorg')) {
         $org = devconnect_multiorg_find_requested_org($org);
@@ -384,8 +371,9 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
         $saved = TRUE;
         $this->devCache[$entity->developerId] = $dev;
         $entity->email = $new_email;
-      } catch (Exception $e) {
-
+      }
+      catch (Exception $e) {
+        watchdog('devconnect_user', 'Error updating the developer email: %response_message', array('%response_message' => $e->getMessage()), WATCHDOG_ERROR);
       }
     }
     return $saved;
@@ -395,6 +383,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * Lists all email addresses for all developers in all configured orgs.
    *
    * @return array
+   *   List of all email addresses of all developers in all configured orgs.
    */
   public function listEmails() {
     $emails = array();
@@ -403,14 +392,29 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       try {
         $dev = new Developer($config);
         $emails += $dev->listDevelopers();
-      } catch (Exception $e) {
+      }
+      catch (Exception $e) {
       }
     }
     sort($emails);
     return array_unique($emails);
   }
 
+  /**
+   * Lists all org names from which current request should fetch developers.
+   *
+   * @param array $conditions
+   *   Conditions applicable to the current request.
+   *
+   * @return array
+   *   List of strings, each representing an org name. The special value
+   *   'default' represents the org from which we expect to fetch data when no
+   *   other criteria are present.
+   */
   protected static function getOrgs(array $conditions = NULL) {
+    // By itself, this function does virtually nothing; it is here so that
+    // subclasses can implement custom functionality without having to
+    // copy/paste larger chunks of code.
     return array('default');
   }
 

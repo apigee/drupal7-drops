@@ -1,0 +1,31 @@
+<?php
+/**
+ * @file
+ * Defines field schema for smartdocs_error module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function smartdocs_error_field_schema($field) {
+  return array(
+    'columns' => array(
+      'code' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'description' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'http_code' => array(
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+  );
+}

@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * The Controller class for the Apigee Company App.
+ */
 
 use Apigee\ManagementAPI\DeveloperApp;
 use Apigee\ManagementAPI\CompanyApp;
@@ -13,7 +17,8 @@ class ApigeeCompanyAppController extends DeveloperAppController {
   /**
    * Implements DrupalEntityControllerInterface::__construct().
    *
-   * @param $entity_type
+   * @param string $entity_type
+   *   The type of entity.
    */
   public function __construct($entity_type) {
     $this->appCache = array();
@@ -27,7 +32,8 @@ class ApigeeCompanyAppController extends DeveloperAppController {
   /**
    * Implements EntityAPIControllerInterface::save().
    *
-   * @param $entity
+   * @param object $entity
+   *   The entity object to be saved.
    */
   public function save($entity) {
 
@@ -60,14 +66,14 @@ class ApigeeCompanyAppController extends DeveloperAppController {
 
     $is_update = !empty($entity['appId']);
     $dev_app = new CompanyApp($config, $company);
-//    $product_cache = $entity['apiProductCache'];
-//    unset ($entity['apiProductCache']);
+    // $product_cache = $entity['apiProductCache'];
+    // unset ($entity['apiProductCache']);
     $dev_app->fromArray($entity);
-//    $dev_app->setApiProductCache($product_cache);
+    // $dev_app->setApiProductCache($product_cache);
     try {
       $dev_app->save($is_update);
-//      $this->appCache[$dev_app->getAppId()] = $dev_app;
-//      cache_clear_all('emc_company_apps:', 'cache_emc_company', TRUE);
+      // $this->appCache[$dev_app->getAppId()] = $dev_app;
+      // cache_clear_all('emc_company_apps:', 'cache_emc_company', TRUE);
     }
     catch (ResponseException $e) {
       self::$lastException = $e;
@@ -75,7 +81,7 @@ class ApigeeCompanyAppController extends DeveloperAppController {
     }
 
     $dev_app_array = $dev_app->toArray();
-    // Copy incoming UID to outgoing UID
+    // Copy incoming UID to outgoing UID.
     $dev_app_array['uid'] = $entity['uid'];
     $last_app = new ApigeeCompanyAppEntity($dev_app_array);
     devconnect_developer_apps_write_to_cache($last_app);
@@ -90,7 +96,11 @@ class ApigeeCompanyAppController extends DeveloperAppController {
    * Creates an empty developer_app entity, but does not save it.
    *
    * @param array $values
+   *   An associative array with the keys as the object properties and values
+   *   as the corresponding property value.
+   *
    * @return Drupal\devconnect_developer_apps\DeveloperAppEntity
+   *   Developer app entity object.
    */
   public function create(array $values = array()) {
     $dev_app = new CompanyApp(self::getConfig(), '');
@@ -99,13 +109,7 @@ class ApigeeCompanyAppController extends DeveloperAppController {
   }
 
   /**
-   * Implements EntityAPIControllerInterface::buildContent().
-   *
-   * @param array $entity
-   * @param string $view_mode
-   * @param string|null $langcode
-   * @param boolean $page
-   * @return array
+   * {@inheritdoc}
    */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $page = FALSE) {
     $callback = 'devconnect_company_apps_view_' . $view_mode;
@@ -116,11 +120,7 @@ class ApigeeCompanyAppController extends DeveloperAppController {
   }
 
   /**
-   * Implements DrupalEntityControllerInterface::load().
-   *
-   * @param array $names
-   * @param array $conditions
-   * @return array
+   * {@inheritdoc}
    */
   public function load($ids = array(), $conditions = array()) {
     $company_in_context = apigee_company_get_current_context_company();
@@ -131,7 +131,6 @@ class ApigeeCompanyAppController extends DeveloperAppController {
       $result = $developer_app_controller->load($ids, $conditions);
       return $result;
     }
-
 
     $orgs = self::getOrgs($conditions);
     $disable_logging = (isset($conditions['disableLogging']) && ($conditions['disableLogging'] === TRUE));
@@ -310,9 +309,7 @@ class ApigeeCompanyAppController extends DeveloperAppController {
 
 
   /**
-   * Implements EntityAPIControllerInterface::delete().
-   *
-   * @param array $ids
+   * {@inheritdoc}
    */
   public function delete($ids) {
     $id_count = count($ids);
@@ -331,10 +328,12 @@ class ApigeeCompanyAppController extends DeveloperAppController {
           $dev_app0 = new DeveloperApp($config, '');
           try {
             $dev_app = $dev_app0->loadByAppId($id, TRUE);
-          } catch (ResponseException $e) {
+          }
+          catch (ResponseException $e) {
             $dev_app = NULL;
             self::$lastException = $e;
-          } catch (ParameterException $e) {
+          }
+          catch (ParameterException $e) {
             $dev_app = NULL;
             self::$lastException = $e;
           }
@@ -345,7 +344,8 @@ class ApigeeCompanyAppController extends DeveloperAppController {
             $dev_app->delete();
             devconnect_developer_apps_delete_from_cache($entity);
             $deleted_count++;
-          } catch (ResponseException $e) {
+          }
+          catch (ResponseException $e) {
             self::$lastException = $e;
           }
         }
@@ -364,8 +364,12 @@ class ApigeeCompanyAppController extends DeveloperAppController {
    * exists, the DeveloperAppEntity is returned, else FALSE.
    *
    * @param string|null $appId
+   *   The the uuid of the app to be loaded.
    * @param array $conditions
+   *   An array of condition for the apps to be loaded.
+   *
    * @return bool|\Drupal\devconnect_developer_apps\DeveloperAppEntity
+   *   A fully loaded Developer App Entity on success, False otherwise
    */
   public function loadIfExists($appId = NULL, $conditions = array(), $criteria = NULL) {
     return FALSE;

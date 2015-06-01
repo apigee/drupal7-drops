@@ -171,7 +171,7 @@ function apigee_responsive_preprocess_page(&$vars) {
     unset($search['#attributes']);
     $search_form = drupal_render($search);
     $find = array('type="submit"', 'type="text"');
-    $replace = array('type="hidden"', 'type="search" placeholder="search" autocapitalize="off" autocorrect="off"');
+    $replace = array('type="hidden"', 'type="search" placeholder="Keyword" autocapitalize="off" autocorrect="off"');
     $vars['search_form'] = str_replace($find, $replace, $search_form);
   }
 
@@ -191,7 +191,9 @@ function apigee_responsive_preprocess_page(&$vars) {
   // Custom Search.
   $vars['search'] = FALSE;
   if (theme_get_setting('toggle_search') && module_exists('search')) {
-    $vars['search'] = drupal_get_form('search_form');
+    $search = drupal_get_form('search_form');
+    $search['basic']['keys']['#attributes']['placeholder'] = t('Keyword');
+    $vars['search'] = $search;
   }
 
   $second_arg = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
@@ -244,7 +246,7 @@ function apigee_responsive_preprocess_region(&$vars) {
  */
 function apigee_responsive_preprocess_block(&$vars) {
   //Add custom css classes to the default apigee blocks in the home page.
-  if (drupal_is_front_page() && $vars['block']->module == 'views' && ($vars['block']->bid == 'views-devconnect_blog-block_1' || $vars['block']->bid == 'views-home_featured_forum_posts-block' || $vars['block']->bid == 'views-weather_listing-block_1' )) {
+  if (drupal_is_front_page() && $vars['block']->module == 'views' && ($vars['block']->bid == 'views-devconnect_blog-block_1' || $vars['block']->bid == 'views-home_featured_forum_posts-block' || $vars['block']->bid == 'views-weather_listing-block_1'  || $vars['block']->bid == 'views-smartdocs_methods-frontpage'  )) {
     $vars['classes_array'][] = 'col-md-4';
     $vars['classes_array'][] = 'apigee-home-default-blocks';
   }

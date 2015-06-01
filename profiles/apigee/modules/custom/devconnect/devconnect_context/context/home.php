@@ -27,11 +27,11 @@ $context->reactions = array(
         'region' => 'content',
         'weight' => '-9',
       ),
-      'views-weather_listing-block_1' => array(
+      'views-smartdocs_methods-frontpage' => array(
         'module' => 'views',
-        'delta' => 'weather_listing-block_1',
+        'delta' => 'smartdocs_methods-frontpage',
         'region' => 'content',
-        'weight' => '-7',
+        'weight' => '-8',
       ),
       'devconnect_homepage-homepage_header' => array(
         'module' => 'devconnect_homepage',

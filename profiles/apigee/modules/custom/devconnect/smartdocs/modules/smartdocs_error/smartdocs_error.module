@@ -1,0 +1,146 @@
+<?php
+/**
+ * @file
+ * Describes the smartdocs_error field widget.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function smartdocs_error_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#smartdocs_error':
+      return '<h3>' . t('About') . '</h3>'
+      . '<p>' . t('The SmartDocs Errors module defines a field type for the Field module which describes API response error codes.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function smartdocs_error_field_info() {
+  return array(
+    'smartdocs_error' => array(
+      'label' => t('SmartDocs Error'),
+      'description' => t('This field stores response error code data in the database.'),
+      'settings' => array(),
+      'instance_settings' => array(),
+      'default_widget' => 'smartdocs_error_widget',
+      'default_formatter' => 'smartdocs_error_formatter',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function smartdocs_error_field_is_empty($item, $field) {
+  return empty($item['code']);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function smartdocs_error_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array('#markup' => theme('smartdocs_error', $item));
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function smartdocs_error_field_widget_info() {
+  return array(
+    'smartdocs_error_widget' => array(
+      'label' => t('SmartDocs error'),
+      'field types' => array('smartdocs_error'),
+      'settings' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function smartdocs_error_field_formatter_info() {
+  return array(
+    'smartdocs_error_formatter' => array(
+      'label' => t('SmartDocs Error'),
+      'field types' => array('smartdocs_error'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function smartdocs_error_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+  $element['code'] = array(
+    '#title' => t('Code'),
+    '#type' => 'textfield',
+    '#default_value' => (isset($items[$delta]['code']) ? $items[$delta]['code'] : NULL),
+    '#size' => 64,
+    '#maxlength' => 64,
+    '#attributes' => array('class' => array('smartdocs-error-code')),
+  );
+  $element['description'] = array(
+    '#title' => t('Description'),
+    '#type' => 'textfield',
+    '#maxlength' => 255,
+    '#default_value' => (isset($items[$delta]['description']) ? $items[$delta]['description'] : NULL),
+    '#attributes' => array('class' => array('smartdocs-error-description')),
+  );
+  $element['http_code'] = array(
+    '#title' => t('HTTP code'),
+    '#type' => 'textfield',
+    '#default_value' => (isset($items[$delta]['http_code']) ? $items[$delta]['http_code'] : NULL),
+    '#attributes' => array('class' => array('smartdocs-error-http-code')),
+  );
+  return $element;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function smartdocs_error_theme() {
+  return array(
+    'smartdocs_error' => array(
+      'arguments' => array(
+        'code' => '',
+        'description' => '',
+        'http_code' => 400,
+      ),
+    ),
+  );
+}
+
+/**
+ * Formats an attachment into a displayable HTML block.
+ *
+ * @param array $vars
+ *   Variables to be passed to the theme function.
+ *
+ * @return string
+ *   Rendered HTML.
+ */
+function theme_smartdocs_error(&$vars) {
+  if (empty($vars['name'])) {
+    return '';
+  }
+  $output = '<div class="smartdocs-error">';
+  $output .= '<div class="smartdocs-error-code">' . check_plain($vars['code']) . '</div>';
+  if (!empty($vars['description'])) {
+    $output .= '<div class="smartdocs-error-description">' . check_plain($vars['description']) . '</div>';
+  }
+  if (!empty($vars['http_code']) && $vars['http_code'] != $vars['code']) {
+    $output .= '<div class="smartdocs-error-http-code">' . check_plain($vars['http_code']) . '</div>';
+  }
+  $output .= '</div>';
+  return $output;
+}

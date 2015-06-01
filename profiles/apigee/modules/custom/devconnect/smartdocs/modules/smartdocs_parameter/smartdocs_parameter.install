@@ -1,0 +1,52 @@
+<?php
+/**
+ * @file
+ * Defines field schema for smartdocs_parameter module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function smartdocs_parameter_field_schema($field) {
+  return array(
+    'columns' => array(
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'description' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => FALSE,
+      ),
+      'required' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'default' => 0,
+      ),
+      'allow_multiple' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'default' => 0,
+      ),
+      'data_type' => array(
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+      ),
+      'options' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => FALSE,
+      ),
+    ),
+  );
+}

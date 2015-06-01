@@ -18,10 +18,6 @@ function apigee_install_tasks(&$install_state) {
       'display_name' => t('Configure the Edge Endpoint'),
       'type' => 'form',
     ),
-    'apigee_generate_make_smartdocs_model' => array(
-      'display_name' => t('Enable SmartDocs sample content'),
-      'type' => 'form',
-    ),
     'apigee_generate_import_smartdocs_model_content' => array(
       'display_name' => t('Import sample SmartDocs content'),
       'type' => 'normal',

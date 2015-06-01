@@ -195,6 +195,7 @@ class Redis_Client {
    * For unit testing only reset internals.
    */
   static public function reset() {
+    self::$globalPrefix = null;
     self::$_clientInterface = null;
     self::$_client = null;
   }

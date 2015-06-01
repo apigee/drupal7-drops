@@ -1,0 +1,143 @@
+<?php
+/**
+ * @file
+ * Describes the smartdocs_attachment field widget.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function smartdocs_attachment_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#smartdocs_attachment':
+      return '<h3>' . t('About') . '</h3>'
+      . '<p>' . t('The SmartDocs Attachments module defines a field type for the Field module which describes method body attachments.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function smartdocs_attachment_field_info() {
+  return array(
+    'smartdocs_attachment' => array(
+      'label' => t('SmartDocs Attachment'),
+      'description' => t('This field stores method body attachment data in the database.'),
+      'settings' => array(),
+      'instance_settings' => array(),
+      'default_widget' => 'smartdocs_attachment_widget',
+      'default_formatter' => 'smartdocs_attachment_formatter',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function smartdocs_attachment_field_is_empty($item, $field) {
+  return empty($item['name']);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function smartdocs_attachment_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array('#markup' => theme('smartdocs_attachment', $item));
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function smartdocs_attachment_field_widget_info() {
+  return array(
+    'smartdocs_attachment_widget' => array(
+      'label' => t('SmartDocs attachment'),
+      'field types' => array('smartdocs_attachment'),
+      'settings' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function smartdocs_attachment_field_formatter_info() {
+  return array(
+    'smartdocs_attachment_formatter' => array(
+      'label' => t('SmartDocs Attachment'),
+      'field types' => array('smartdocs_attachment'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function smartdocs_attachment_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+  $element['name'] = array(
+    '#title' => t('Name'),
+    '#type' => 'textfield',
+    '#default_value' => (isset($items[$delta]['name']) ? $items[$delta]['name'] : NULL),
+    '#size' => 64,
+    '#maxlength' => 64,
+    '#attributes' => array('class' => array('smartdocs-attachment-name')),
+  );
+  $element['description'] = array(
+    '#title' => t('Description'),
+    '#type' => 'textarea',
+    '#default_value' => (isset($items[$delta]['description']) ? $items[$delta]['description'] : NULL),
+    '#attributes' => array('class' => array('smartdocs-attachment-description')),
+  );
+  $element['required'] = array(
+    '#title' => t('Required'),
+    '#type' => 'checkbox',
+    '#default_value' => (isset($items[$delta]['required']) ? $items[$delta]['required'] : NULL),
+    '#return_value' => 1,
+    '#attributes' => array('class' => array('smartdocs-attachment-required')),
+  );
+  return $element;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function smartdocs_attachment_theme() {
+  return array(
+    'smartdocs_attachment' => array(
+      'arguments' => array(
+        'name' => '',
+        'description' => '',
+        'required' => FALSE,
+      ),
+    ),
+  );
+}
+
+/**
+ * Formats an attachment into a displayable HTML block.
+ *
+ * @param array $vars
+ *   Variables to be passed to the theme function.
+ *
+ * @return string
+ *   Rendered HTML.
+ */
+function theme_smartdocs_attachment(&$vars) {
+  if (empty($vars['name'])) {
+    return '';
+  }
+  $output = '<div class="smartdocs-attachment">';
+  $output .= '<div class="smartdocs-attachment-name">' . check_plain($vars['name']) . ($vars['required'] ? ' ' . t('(required)') : '') . '</div>';
+  if (!empty($vars['description'])) {
+    $output .= '<div class="smartdocs-attachment-description">' . check_plain($vars['description']) . '</div>';
+  }
+  $output .= '</div>';
+  return $output;
+}

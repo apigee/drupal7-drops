@@ -1,5 +1,19 @@
 <?php
+/**
+ * @file
+ * The company context switcher.
+ *
+ * This file contains code for the company context switcher dropdown, which
+ * enables the developers to switch between companies.
+ */
 
+/**
+ * Generates the drop down for switching companies.
+ *
+ * @global type $user
+ * @return string
+ *   HTML for the drop down
+ */
 function apigee_company_context_switcher() {
   global $user;
 
@@ -56,6 +70,12 @@ function apigee_company_context_switcher() {
   return theme('apigee_company_switcher', array('company_list' => $company_list));
 }
 
+/**
+ * Callback to switch company context.
+ *
+ * @param string $company_id
+ *   The machine name of the company to which to switch the context to.
+ */
 function apigee_company_switch($company_id) {
   // Set the company context, or back to user context if NULL.
   if ($company_id != '') {
@@ -72,23 +92,30 @@ function apigee_company_switch($company_id) {
 
 /**
  * Returns the list of company for the given user email.
- * If no user email is given then returns the list of companies for the current user.
+ *
+ * If no user email is given then returns the list of companies
+ * for the current user.
  * @global type $user
- * @param type $developer_email
- * @return type
+ *
+ * @param string $developer_email
+ *   The email of the developer.
+ *
+ * @return array
+ *   An array of company objects that the developer belongs to.
  */
 function apigee_company_get_company_list($developer_email = NULL) {
   global $user;
 
   $developer_email = $developer_email ?: $user->mail;
   $developer = entity_load_single('developer', $developer_email);
-  if(is_object($developer)){
+  if (is_object($developer)) {
     $company_ids = $developer->companies;
   }
 
-  //If the $developer->companies is an empty array then we should return immediately
-  //as loading the entities with empty ids array will return all the companies in the org.
-  if(empty($company_ids)){
+  // If the $developer->companies is an empty array then we should return
+  // immediately as loading the entities with empty ids array will return
+  // all the companies in the org.
+  if (empty($company_ids)) {
     return array();
   }
 

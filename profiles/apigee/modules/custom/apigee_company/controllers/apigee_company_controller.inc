@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * The controller class for the Apigee Company Entity.
+ */
 
 use Apigee\ManagementAPI\Company;
 use Apigee\Exceptions\ResponseException;
@@ -18,15 +22,27 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
    */
   protected static $lastException;
 
+  /**
+   * Get the org config.
+   *
+   * @return array
+   *   The org configurations
+   */
   protected static function getConfig() {
     return devconnect_default_org_config();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function __construct($entity_type) {
     $this->entityInfo = entity_get_info($entity_type);
     $this->entityType = $entity_type;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function create(array $values = array()) {
     // Add is_new property if it is not set.
     $values += array('is_new' => TRUE);
@@ -46,6 +62,9 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     return $entity;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function save($entity) {
     $config = self::getConfig();
     $company = new Company($config);
@@ -74,6 +93,9 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     return ($is_update ? SAVED_UPDATED : SAVED_NEW);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function load($ids = array(), $conditions = array()) {
     $entities = array();
 
@@ -82,7 +104,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
       $company = new Company($config);
       foreach ($ids as $id) {
         $company->load($id);
-//        $entities[$company->getName()] = $company;
+        // $entities[$company->getName()] = $company;
 
         $array = $company->toArray();
         $entity = new ApigeeCompanyEntity($array);
@@ -93,7 +115,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     }
 
     if (empty($ids) && empty($conditions)) {
-      // Load all companies for this org
+      // Load all companies for this org.
       $config = self::getConfig();
       $company = new Company($config);
       $companies = $company->listCompaniesDetail();
@@ -107,6 +129,19 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     }
   }
 
+  /**
+   * Updates a developer in a company.
+   *
+   * @param string $company_name
+   *   The company machine name.
+   * @param string $developer_email
+   *   The developers email.
+   * @param string $developer_role
+   *   The developer role.
+   *
+   * @return bool
+   *   TRUE if the developer was updated successfull else FALSE.
+   */
   public function updateDeveloper($company_name, $developer_email, $developer_role) {
 
     $config = self::getConfig();
@@ -122,9 +157,19 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     return TRUE;
   }
 
-
+  /**
+   * Remove a developer from a company.
+   *
+   * @param string $developer_email
+   *   The email id of the developer to be removed from the company.
+   * @param string $company_name
+   *   The machine name of the company from which to remove the developer.
+   *
+   * @return bool
+   *   TRUE if the developer was removed successfully, else FALSE.
+   */
   public function removeDeveloper($developer_email, $company_name = NULL) {
-    $company_name = $company_name? : $this->name;
+    $company_name = $company_name ?: $this->name;
     $config = self::getConfig();
     $company = new Company($config);
 
@@ -138,7 +183,18 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     return TRUE;
   }
 
-  public function getDeveloperRoles($developer_email, $company_name){
+  /**
+   * Fetch the roles of a developer in a company.
+   *
+   * @param string $developer_email
+   *   The email id of the developer whose roles are to be retrieved.
+   * @param string $company_name
+   *   The machine name of the company from which to fetch the developer roles.
+   *
+   * @return array
+   *   An array of developer roles, returns false in case of failure.
+   */
+  public function getDeveloperRoles($developer_email, $company_name) {
     $config = self::getConfig();
     $company = new Company($config);
     try{
@@ -151,30 +207,51 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     return $developer_roles;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function resetCache(array $ids = NULL) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function delete($ids) {
-    //@todo Implement the logic to delete a company
+    // @TODO Implement the logic to delete a company.
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function invoke($hook, $entity) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function export($entity, $prefix = '') {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function import($export) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL) {
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function view($entities, $view_mode = 'full', $langcode = NULL, $page = NULL) {
 
   }
@@ -183,11 +260,10 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
    * Returns the last exception returned from Edge.
    *
    * @return Apigee\Exceptions\ResponseException
+   *   The last exception that occured.
    */
   public static function getLastException() {
     return self::$lastException;
   }
 
 }
-
-?>

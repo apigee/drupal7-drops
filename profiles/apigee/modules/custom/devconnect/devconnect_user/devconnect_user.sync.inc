@@ -6,6 +6,14 @@
 
 /**
  * Confirm form for DevConnect Developer Sync.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   State of the form being created.
+ *
+ * @return array
+ *   The newly-created form.
  */
 function devconnect_user_sync_confirm_form($form, $form_state) {
   $form['#submit'][] = 'devconnect_user_sync';
@@ -17,23 +25,40 @@ function devconnect_user_sync_confirm_form($form, $form_state) {
  *
  * Makes sure that all local users have a corresponding account in Edge;
  * likewise makes sure that all Edge users (other than those created by
- * simpletest) have Drupal accounts.
+ * unit tests) have Drupal accounts.
  *
- * It creates batch processes to avoid php timeouts
+ * It creates batch processes to avoid php timeouts.
  *
- * Batch process has two callbacks _devconnect_user_sync_to_kms and
- * _devconnect_user_sync_from_kms, one pushes missing developer in Edge
+ * Batch process has two callbacks _devconnect_user_sync_to_edge and
+ * _devconnect_user_sync_from_edge, one pushes missing developer in Edge
  * from Dev Portal and the other from Edge to Dev Portal respectively.
  *
  * Each batch process works with 10 developers per iteration.
  */
 function devconnect_user_sync() {
 
-  // Fetch list of developers on Edge.
-  $kms_developers_orig = entity_load('developer');
-  $kms_developers = array();
-  foreach ($kms_developers_orig as $email => $data) {
-    $kms_developers[strtolower($email)] = $data;
+  // Fetch list of developers' email addresses on Edge.
+  /** @var DeveloperController $controller */
+  $controller = entity_get_controller('developer');
+  $edge_developers_orig = $controller->listEmails();
+  $edge_developers = array();
+  // If there are relatively few developers, fetch them all at once.
+  if (count($edge_developers_orig) < 200) {
+    $edge_developers_orig = entity_load('developer');
+    foreach ($edge_developers_orig as $email => $data) {
+      $edge_developers[strtolower($email)] = $data;
+    }
+    if (function_exists('drush_print')) {
+      drush_print('Syncing all developers from Edge at once.');
+    }
+  }
+  else {
+    foreach ($edge_developers_orig as $email) {
+      $edge_developers[strtolower($email)] = $email;
+    }
+    if (function_exists('drush_print')) {
+      drush_print('Syncing developers from Edge one at a time.');
+    }
   }
   // Fetch list of users in Drupal.
   $stmt = db_select('users', 'u')
@@ -46,32 +71,32 @@ function devconnect_user_sync() {
   }
 
   // Get a case-insensitive diff of developer emails.
-  $not_in_kms = array();
+  $not_in_edge = array();
   foreach ($drupal_users as $key => $value) {
-    if (!array_key_exists($key, $kms_developers) || $kms_developers[$key]->forceSync) {
-      $not_in_kms[$key] = $value;
+    if (!array_key_exists($key, $edge_developers)) {
+      $not_in_edge[$key] = $value;
     }
   }
-  $not_in_drupal = array_diff_key($kms_developers, $drupal_users);
+  $not_in_drupal = array_diff_key($edge_developers, $drupal_users);
   $offset = 10;
   $operations = array();
   for ($i = 0, $len = count($not_in_drupal); $i < $len; $i += $offset) {
     $operations[] = array(
-      '_devconnect_user_sync_from_kms',
+      '_devconnect_user_sync_from_edge',
       array(
         array_slice($not_in_drupal, $i, $offset, TRUE),
-        array('total' => $len, 'offset' => $offset)
-      )
+        array('total' => $len, 'offset' => $offset),
+      ),
     );
   }
 
-  for ($i = 0, $len = count($not_in_kms); $i < $len; $i += $offset) {
+  for ($i = 0, $len = count($not_in_edge); $i < $len; $i += $offset) {
     $operations[] = array(
-      '_devconnect_user_sync_to_kms',
+      '_devconnect_user_sync_to_edge',
       array(
-        array_slice($not_in_kms, $i, $offset, TRUE),
-        array('total' => $len, 'offset' => $offset)
-      )
+        array_slice($not_in_edge, $i, $offset, TRUE),
+        array('total' => $len, 'offset' => $offset),
+      ),
     );
   }
 
@@ -85,7 +110,7 @@ function devconnect_user_sync() {
   );
   batch_set($devconnect_user_sync_batch);
 
-  // Check if not run by drush.
+  // If not run by drush, redirect to People admin page.
   if (!drupal_is_cli()) {
     batch_process('admin/people');
   }
@@ -102,9 +127,11 @@ function devconnect_user_sync() {
  * @param array $developers
  *   List of developers to be synced from Edge.
  * @param array $counters
+ *   State variable containing total and offset within the series of batches.
  * @param array $context
+ *   Batch context.
  */
-function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
+function _devconnect_user_sync_from_edge($developers, $counters, &$context) {
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['current_developer'] = 0;
@@ -112,24 +139,32 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
     $context['results'][] = array(
       'message' => t('from Edge to Dev Portal.'),
       'processed_dc' => 0,
-      'simpletest_dc' => 0
+      'unit_test_dc' => 0,
     );
+  }
+
+  // Were we passed an array of developer objects or developer emails?
+  $first_item = reset($developers);
+  if (is_string($first_item)) {
+    // Avoid holding onto developer entity cache so that we don't exhaust the
+    // maximum number of available open file handles.
+    $developers = entity_load('developer', $developers, array('cache' => FALSE));
   }
 
   // For each developer in Edge that is not in Drupal, create user in Drupal.
   foreach ($developers as $email => $developer) {
-    // Skip any cruft users left over from failed simpletests.
+    // Skip any cruft users left over from failed unit tests.
     if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $developer->email) || substr($developer->email, 0, 7) == 'phpunit') {
-      $context['results'][0]['simpletest_dc']++;
+      $context['results'][0]['unit_test_dc']++;
       $context['sandbox']['progress']++;
       continue;
     }
-    $kms_user_name = $developer->userName;
+    $edge_user_name = $developer->userName;
     // Now find an untaken Drupal username. If there is already a user with
     // the name in question, start appending numbers until we find an untaken
     // name.
     $extra = 0;
-    $drupal_name = $kms_user_name;
+    $drupal_name = $edge_user_name;
     do {
       $uid = db_select('users', 'u')
         ->fields('u', array('uid'))
@@ -140,7 +175,7 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
       if (!$uid) {
         break;
       }
-      $drupal_name = $kms_user_name . $extra++;
+      $drupal_name = $edge_user_name . $extra++;
     } while (TRUE);
 
     $account = (object) array('is_new' => TRUE);
@@ -169,7 +204,7 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
           '@type' => ($is_admin ? t('Administrative') : t('Ordinary')),
           '@name' => $drupal_user->name,
           '@mail' => $drupal_user->mail,
-          '@uid' => $drupal_user->uid
+          '@uid' => $drupal_user->uid,
         ));
       $context['results'][0]['processed_dc']++;
       if ($is_admin) {
@@ -190,6 +225,7 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
     $context['sandbox']['progress']++;
     $context['sandbox']['current_developer'] = $email;
   }
+
   $context['message'] = t('%completed developers out of %total synced to Dev Portal', array(
     '%completed' => $context['results'][0]['processed_dc'],
     '%total' => $context['sandbox']['max'],
@@ -203,33 +239,35 @@ function _devconnect_user_sync_from_kms($developers, $counters, &$context) {
  * @param array $developers
  *   List of developers to be saved from Dev Portal to Edge.
  * @param array $counters
+ *   State variable containing total and offset within the series of batches.
  * @param array $context
+ *   Batch context.
  */
-function _devconnect_user_sync_to_kms($developers, $counters, &$context) {
+function _devconnect_user_sync_to_edge($developers, $counters, &$context) {
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['current_developer'] = 0;
     $context['sandbox']['max'] = $counters['total'];
     $context['results'][] = array(
       'message' => t('from Dev Portal to Edge.'),
-      'processed_kms' => 0,
-      'simpletest_kms' => 0,
+      'processed_edge' => 0,
+      'unit_test_edge' => 0,
     );
   }
   foreach ($developers as $email => $developer) {
     if (preg_match('!^[a-z0-9]{8}@example\.com$!i', $email)) {
-      $context['results'][0]['simpletest_kms']++;
+      $context['results'][0]['unit_test_edge']++;
       $context['sandbox']['progress']++;
       continue;
     }
     $result = _devconnect_user_save_entity($developer);
     $context['results'][] = $result;
-    $context['results'][0]['processed_kms'] += strpos($result, 'not') ? 0 : 1;
+    $context['results'][0]['processed_edge'] += strpos($result, 'not') ? 0 : 1;
     $context['sandbox']['progress']++;
     $context['sandbox']['current_developer'] = $email;
   }
   $context['message'] = t('%completed developers processed out of %total synced to Edge', array(
-    '%completed' => $context['results'][0]['processed_kms'],
+    '%completed' => $context['results'][0]['processed_edge'],
     '%total' => $context['sandbox']['max'],
   ));
   $context['finished'] = 1;
@@ -239,49 +277,59 @@ function _devconnect_user_sync_to_kms($developers, $counters, &$context) {
  * Finish batch callback to sync developers.
  *
  * @param bool $success
+ *   TRUE if batch was successful.
  * @param array $results
+ *   Contains result statistics for batch run.
  * @param array $operations
+ *   Contains all operations that were queued.
  */
 function _devconnect_user_sync_finished($success, $results, $operations) {
   if ($success) {
     $statistics = $results[0];
-    $simpletest = $statistics['simpletest_kms'] + $statistics['simpletest_dc'];
+    // Guarantee some default values.
+    $statistics += array(
+      'processed_edge' => 0,
+      'processed_dc' => 0,
+      'unit_test_edge' => 0,
+      'unit_test_dc' => 0,
+    );
+    $unit_test = $statistics['unit_test_edge'] + $statistics['unit_test_dc'];
 
     if (function_exists('drush_print')) {
       drush_print('Sync completed.');
-      drush_print($statistics['processed_kms'] . ' account(s) created in Edge');
+      drush_print($statistics['processed_edge'] . ' account(s) created in Edge');
       drush_print($statistics['processed_dc'] . ' account(s) created in Dev Portal');
-      drush_print($simpletest . ' Simpletest account(s) skipped');
+      drush_print($unit_test . ' unit testing account(s) skipped');
       return;
     }
 
     $message = '';
-    if ($statistics['processed_kms']) {
-      $message .= t('@count created in Edge', array('@count' => $statistics['processed_kms'])) . '<br>';
+    if ($statistics['processed_edge']) {
+      $message .= t('@count created in Edge', array('@count' => $statistics['processed_edge'])) . '<br>';
     }
     if ($statistics['processed_dc']) {
       $message .= t('@count created in Dev Portal', array('@count' => $statistics['processed_dc'])) . '<br>';
     }
-    if ($simpletest) {
-      $message .= t('@count Simpletest accounts skipped', array('@count' => $simpletest)) . '<br>';
+    if ($unit_test) {
+      $message .= t('@count unit testing accounts skipped', array('@count' => $unit_test)) . '<br>';
     }
 
     if (strlen($message) > 0) {
       array_shift($results);
       $results = array_filter($results, function ($item) {
-          return !is_array($item) && trim($item) != '';
-        });
+        return !is_array($item) && trim($item) != '';
+      });
       foreach (array_keys($results) as $key) {
         $results[$key] = array(
           'id' => 'Item' . $key,
-          'data' => $results[$key]
+          'data' => $results[$key],
         );
       }
       $message .= theme_item_list(array(
           'items' => $results,
           'title' => t('Synced Developers'),
           'type' => 'ul',
-          'attributes' => array()
+          'attributes' => array(),
         ));
     }
     else {
@@ -293,7 +341,7 @@ function _devconnect_user_sync_finished($success, $results, $operations) {
     $error_operation = reset($operations);
     $message = t('An error occurred while processing %error_operation with arguments: @arguments', array(
         '%error_operation' => $error_operation[0],
-        '@arguments' => print_r($error_operation[1], TRUE)
+        '@arguments' => print_r($error_operation[1], TRUE),
       ));
     drupal_set_message($message, 'error');
   }
