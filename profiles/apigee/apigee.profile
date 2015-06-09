@@ -2059,10 +2059,10 @@ function apigee_generate_render_smartdocs_model_template() {
   $html = file_get_contents($path);
   $template = new Apigee\SmartDocs\Template(devconnect_default_org_config(), SMARTDOCS_SAMPLE_MODEL);
   try {
-    $template->save('drupal-cms', 'method', $html, TRUE);
+    $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
   } catch (Apigee\Exceptions\ResponseException $e) {
     try {
-      $template->save('drupal-cms', 'method', $html, FALSE);
+      $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, FALSE);
     }
     catch (Apigee\Exceptions\ResponseException $e) {
       drupal_set_message('Could not update template.', 'error');

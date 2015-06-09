@@ -578,6 +578,7 @@ Apigee.APIModel.Methods = function() {
 
     Apigee.APIModel.initMethodsPageEvents();
     Apigee.APIModel.initMethodsAuthDialogsEvents();
+    self.getCustomTokenCredentials();
   };
   /**
    * Success callback method of a proxy URL AJAX call.
@@ -683,7 +684,6 @@ Apigee.APIModel.Methods = function() {
     if (authType.indexOf("No auth") != -1) {
       jQuery("[data-role='authentication_container']").css({'visibility':'hidden'});
       jQuery(".icon_lock").css({'visibility':'hidden'});
-
     } else {
       if (authType.indexOf("HTTP Basic") != -1) { // Show Basic auth info in the operation container.
         if (authType.indexOf(",") == -1) {
@@ -774,8 +774,8 @@ Apigee.APIModel.Methods = function() {
         var custemTokenSession = sessionStorage.revisionsCustomTokenCredentialsDetails;
         if (custemTokenSession) { // Check if Custom token details stored in session storage.
           // Format of the revisionsCustomTokenDetails - api name@@@revision number@@@oauth 2 details.
-          if (apiName==custemTokenSession.split("@@@")[0] && revisionNumber==custemTokenSession.split("@@@")[1]) { // Check if apiName and revison number matches.
-            customTokenObject = JSON.parse(custemTokenSession.split("@@@")[2])
+          if (apiName==custemTokenSession.split("@@@")[0] && revisionNumber==custemTokenSession.split("@@@")[1]) { // Check if apiName and revision number matches.
+            customTokenObject = JSON.parse(custemTokenSession.split("@@@")[2]);
             //custemTokenCredentials = custemTokenSession.split("@@@")[2]+ "@@@" + custemTokenSession.split("@@@")[3]+ "@@@" + custemTokenSession.split("@@@")[4];
             var selected = (apiName == sessionStorage.selectedAuthScheme.split("@@@")[0] && revisionNumber == sessionStorage.selectedAuthScheme.split("@@@")[1] && sessionStorage.selectedAuthScheme.split("@@@")[2]== "customtoken") ? "selected" : "";
             if (selected != "") {
@@ -871,10 +871,28 @@ Apigee.APIModel.Methods = function() {
     }
   };
   this.getCustomTokenCredentials = function() {
-    if (!isCutomTokenShown) {
-      windowLocation = windowLocation.split("/resources/")[0];
-      self.makeAJAXCall({"url":windowLocation+"/authschemes/custom",dataType:"json", "callback":self.renderCustomTokenCredentials, "errorCallback" :self.handleCustomTokenFailure});
-      isCutomTokenShown = true;
+
+      if(Apigee.APIModel.apiKey != "") {
+          customTokenObject = {};
+          customTokenObject.tokenType = Apigee.APIModel.location;
+          customTokenObject.tokenMap = {};
+          customTokenObject.tokenMap[Apigee.APIModel.templateAuthName] = Apigee.APIModel.apiKey;
+          sessionStorage.revisionsCustomTokenCredentialsDetails = apiName +"@@@"+ revisionNumber + "@@@" + JSON.stringify(customTokenObject);;
+          sessionStorage.selectedAuthScheme = Apigee.APIModel.apiName +"@@@"+ Apigee.APIModel.revisionNumber + "@@@" + "customtoken"; // Store selected auth scheme info in session storage.;
+          jQuery("[data-role='custom_token_row']").find("[data-role='name']").val(Apigee.APIModel.templateAuthName.toLowerCase());
+          jQuery("[data-role='custom_token_row']").find("[data-role='value']").val(Apigee.APIModel.apiKey);
+          if(customTokenObject.tokenType === "query") {
+              jQuery("[data-role='custom_token_modal']").find("[data-role='query']").attr('checked','checked');
+          }
+          if(customTokenObject.tokenType === "header") {
+              jQuery("[data-role='custom_token_modal']").find("[data-role='header']").attr('checked','checked');
+          }
+          self.updateAuthContainer();
+          // Clear 'Custom Token' href and remove X
+          jQuery(".link_open_customtoken").unbind("click");
+          jQuery(".link_open_customtoken").attr("href", "")
+          jQuery(".link_open_customtoken").removeClass("link_open_customtoken");
+          jQuery("i.icon-remove").remove();
     }
   };
   /**
@@ -1126,7 +1144,7 @@ Apigee.APIModel.Methods = function() {
         }
         headersList.push({"name" : "Authorization", "value" : basicAuth});
       }
-    } else { // Add OAuth 2 details in send request proxy API call.
+    } else if(selectedAuthScheme  == "oauth2"){ // Add OAuth 2 details in send request proxy API call.
       if (selectedAuthScheme  == "oauth2" && oauth2Credentials != null) {
         if (localStorage.apisOAuth2CredentialsDetails && apiName==localStorage.apisOAuth2CredentialsDetails.split("@@@")[0]) {
           var credentialObj = jQuery.parseJSON(localStorage.apisOAuth2CredentialsDetails.split("@@@")[1]);
@@ -1480,8 +1498,13 @@ Apigee.APIModel.Methods = function() {
       jQuery("[data-role='custom_token_container']").find(".link_open_customtoken").html("Set...").attr('title','Set custom token credentials.');
       jQuery("[data-role='custom_token_container']").find(".icon-remove").css('display','none');
       isCutomTokenShown = false;
+      customTokenObject = {};
+      jQuery("[data-role='custom_token_row']").find("[data-role='name']").val("");
+      jQuery("[data-role='custom_token_row']").find("[data-role='value']").val("");
     }
-
+    sessionStorage.selectedAuthScheme = "";
+    selectedAuthScheme = "";
+    authCredentials = "";
     Apigee.APIModel.initMethodsAuthDialogsEvents(); // Re initialize events after the change.
   };
 };
@@ -1708,7 +1731,7 @@ Apigee.APIModel.InlineEdit = function() {
 
   //Public methods.
   /**
-   * This method initilize the edit mode based on the mode.
+   * This method initializes the edit mode based on the mode.
    * @param {Int} mode - Mode type. type 1 provides basic edit functionalities 2 provides advance edit.
    * @return {Void} checks whether user already signed in or not using session storage variable.
    * If yes, stores the basic auth details in local variable and construct the inline edit mode.

@@ -1,4 +1,4 @@
-//     Backbone.js 1.2.0
+//     Backbone.js 1.2.1
 
 //     (c) 2010-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Backbone may be freely distributed under the MIT license.
@@ -44,7 +44,7 @@
   var slice = [].slice;
 
   // Current version of the library. Keep in sync with `package.json`.
-  Backbone.VERSION = '1.2.0';
+  Backbone.VERSION = '1.2.1';
 
   // For Backbone's purposes, jQuery, Zepto, Ender, or My Library (kidding) owns
   // the `$` variable.
@@ -789,7 +789,7 @@
     // the core operation for updating the data contained by the collection.
     set: function(models, options) {
       options = _.defaults({}, options, setOptions);
-      if (options.parse) models = this.parse(models, options);
+      if (options.parse && !this._isModel(models)) models = this.parse(models, options);
       var singular = !_.isArray(models);
       models = singular ? (models ? [models] : []) : models.slice();
       var id, model, attrs, existing, sort;
@@ -983,8 +983,7 @@
     // collection when they arrive. If `reset: true` is passed, the response
     // data will be passed through the `reset` method instead of `set`.
     fetch: function(options) {
-      options = options ? _.clone(options) : {};
-      if (options.parse === void 0) options.parse = true;
+      options = _.extend({parse: true}, options);
       var success = options.success;
       var collection = this;
       options.success = function(resp) {
@@ -1003,7 +1002,8 @@
     create: function(model, options) {
       options = options ? _.clone(options) : {};
       var wait = options.wait;
-      if (!(model = this._prepareModel(model, options))) return false;
+      model = this._prepareModel(model, options);
+      if (!model) return false;
       if (!wait) this.add(model, options);
       var collection = this;
       var success = options.success;
@@ -1060,7 +1060,6 @@
     // Internal method called by both remove and set.
     // Returns removed models, or false if nothing is removed.
     _removeModels: function(models, options) {
-      options = _.extend({}, options);
       var removed = [];
       for (var i = 0; i < models.length; i++) {
         var model = this.get(models[i]);
@@ -1646,15 +1645,16 @@
       // support the `hashchange` event, HTML5 history, or the user wants
       // `hashChange` but not `pushState`.
       if (!this._hasHashChange && this._wantsHashChange && !this._usePushState) {
-        var iframe = document.createElement('iframe');
-        iframe.src = 'javascript:0';
-        iframe.style.display = 'none';
-        iframe.tabIndex = -1;
+        this.iframe = document.createElement('iframe');
+        this.iframe.src = 'javascript:0';
+        this.iframe.style.display = 'none';
+        this.iframe.tabIndex = -1;
         var body = document.body;
         // Using `appendChild` will throw on IE < 9 if the document is not ready.
-        this.iframe = body.insertBefore(iframe, body.firstChild).contentWindow;
-        this.iframe.document.open().close();
-        this.iframe.location.hash = '#' + this.fragment;
+        var iWindow = body.insertBefore(this.iframe, body.firstChild).contentWindow;
+        iWindow.document.open();
+        iWindow.document.close();
+        iWindow.location.hash = '#' + this.fragment;
       }
 
       // Add a cross-platform `addEventListener` shim for older browsers.
@@ -1692,7 +1692,7 @@
 
       // Clean up the iframe if necessary.
       if (this.iframe) {
-        document.body.removeChild(this.iframe.frameElement);
+        document.body.removeChild(this.iframe);
         this.iframe = null;
       }
 
@@ -1715,7 +1715,7 @@
       // If the user pressed the back button, the iframe's hash will have
       // changed and we should use that for comparison.
       if (current === this.fragment && this.iframe) {
-        current = this.getHash(this.iframe);
+        current = this.getHash(this.iframe.contentWindow);
       }
 
       if (current === this.fragment) return false;
@@ -1773,12 +1773,18 @@
       // fragment to store history.
       } else if (this._wantsHashChange) {
         this._updateHash(this.location, fragment, options.replace);
-        if (this.iframe && (fragment !== this.getHash(this.iframe))) {
+        if (this.iframe && (fragment !== this.getHash(this.iframe.contentWindow))) {
+          var iWindow = this.iframe.contentWindow;
+
           // Opening and closing the iframe tricks IE7 and earlier to push a
           // history entry on hash-tag change.  When replace is true, we don't
           // want this.
-          if (!options.replace) this.iframe.document.open().close();
-          this._updateHash(this.iframe.location, fragment, options.replace);
+          if (!options.replace) {
+            iWindow.document.open();
+            iWindow.document.close();
+          }
+
+          this._updateHash(iWindow.location, fragment, options.replace);
         }
 
       // If you've told us that you explicitly don't want fallback hashchange-

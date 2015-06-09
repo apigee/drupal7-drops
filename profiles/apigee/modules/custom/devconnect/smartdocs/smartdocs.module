@@ -1499,8 +1499,8 @@ function smartdocs_node_presave($node) {
     'sample' => 'field_smart_method_sample',
   );
   foreach ($other_body_fields as $key => $other_field) {
-    if (!empty($node->${other_field}[LANGUAGE_NONE][0]['value'])) {
-      $body[$key] = $node->${other_field}[LANGUAGE_NONE][0]['value'];
+    if (property_exists($node, $other_field) && !empty($node->{$other_field}[LANGUAGE_NONE][0]['value'])) {
+      $body[$key] = $node->{$other_field}[LANGUAGE_NONE][0]['value'];
     }
     elseif (array_key_exists($key, $body)) {
       unset($body[$key]);

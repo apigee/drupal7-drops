@@ -550,6 +550,9 @@
     Apigee.APIModel.resourceId = "{{resourceId}}";
     Apigee.APIModel.methodId = "{{id}}";
     Apigee.APIModel.methodType = "details";
+    Apigee.APIModel.apiKey = "";
+    Apigee.APIModel.location = ""; // will be 'header' or 'query'
+    Apigee.APIModel.templateAuthName = "";
     var model = {{this}};
     Apigee.APIModel.resourceName = "";
     if(model.body && model.body.parameters) {
@@ -572,19 +575,32 @@
     jQuery("[data-role='auth-type']").text(newAuth);
     for (var i in security){
         for (var keys in security[i]) {
-            if (security[i][keys].type === "OAUTH2") {
-                newAuth = "OAuth 2.0";
-                secName = keys;
-                jQuery("[data-role='auth-type']").append(newAuth + ", ");
+            if(security[i][keys].type) {
+                if (security[i][keys].type === "OAUTH2") {
+                    newAuth = "OAuth 2.0";
+                    secName = keys;
+                    jQuery("[data-role='auth-type']").append(newAuth + ", ");
+                }
+                if (security[i][keys].type === "APIKEY") {
+                    newAuth = "API Key";
+                    secName = keys;
+                    jQuery("[data-role='auth-type']").append(newAuth + ", ");
+                    if(security[i][keys].templateauths) {
+                        for(var key in security[i][keys].templateauths) {
+                            Apigee.APIModel.apiKey = security[i][keys].templateauths[key];
+                            Apigee.APIModel.location = security[i][keys].location.toLowerCase();
+                            Apigee.APIModel.templateAuthName = key.toLowerCase();
+                        }
+                    }
+                }
+                if (security[i][keys].type === "BASIC") {
+                    newAuth = "HTTP Basic";
+                    secName = keys;
+                    jQuery("[data-role='auth-type']").append(newAuth + ", ");
+                }
             }
-            if (security[i][keys].type === "APIKEY") {
+            else if (keys === "api_key") {
                 newAuth = "API Key";
-                secName = keys;
-                jQuery("[data-role='auth-type']").append(newAuth + ", ");
-            }
-            if (security[i][keys].type === "BASIC") {
-                newAuth = "HTTP Basic";
-                secName = keys;
                 jQuery("[data-role='auth-type']").append(newAuth + ", ");
             }
         }
