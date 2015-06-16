@@ -59,7 +59,7 @@ function smartdocs_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['admin/smartdocs/models/add'] = array(
+  $items['admin/content/smartdocs/models/add'] = array(
     'title' => 'Add Model',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_add_model'),
@@ -67,91 +67,91 @@ function smartdocs_menu() {
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model'] = array(
     'title' => 'Model Detail',
     'page callback' => 'smartdocs_show_model_detail',
-    'page arguments' => array(3),
+    'page arguments' => array(4),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/import'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/import'] = array(
     'title' => 'Import',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_import_model', 3),
+    'page arguments' => array('smartdocs_import_model', 4),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/export'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/export'] = array(
     'title' => 'Export',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_model_export', 3),
+    'page arguments' => array('smartdocs_model_export', 4),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/settings'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/settings'] = array(
     'title' => 'Settings',
     'page callback' => 'smartdocs_model_settings_page',
-    'page arguments' => array(3),
+    'page arguments' => array(4),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/delete'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/delete'] = array(
     'title' => 'Delete',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_model_delete', 3),
+    'page arguments' => array('smartdocs_model_delete', 4),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
 
   // Revisions.
-  $items['admin/smartdocs/models/%smartdocs_model/revisions'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/revisions'] = array(
     'title' => 'API Revisions',
     'page callback' => 'smartdocs_revision_list',
-    'page arguments' => array(3),
+    'page arguments' => array(4),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/add'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/add'] = array(
     'title' => 'Add API Revision',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_add_revision', 3),
+    'page arguments' => array('smartdocs_add_revision', 4),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/export/%smartdocs_revision'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/export/%smartdocs_revision'] = array(
     'title' => 'Export',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_model_export', 3, 5),
+    'page arguments' => array('smartdocs_model_export', 4, 6),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision'] = array(
     'title' => 'Revisions',
     'title callback' => 'smartdocs_revision_detail_page_title',
-    'title arguments' => array(5),
+    'title arguments' => array(6),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_revision_detail', 3, 5),
+    'page arguments' => array('smartdocs_revision_detail', 4, 6),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/auth'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/auth'] = array(
     'title' => 'Authentication Settings',
     'page callback' => 'smartdocs_revision_auth',
-    'page arguments' => array(3, 5),
+    'page arguments' => array(4, 6),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/security'] = array(
+  $items['admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security'] = array(
     'title' => 'Security Schemes',
     'page callback' => 'smartdocs_security_scheme_list',
     'page arguments' => array(3, 5),
@@ -159,7 +159,7 @@ function smartdocs_menu() {
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/security/add'] = array(
+  $items['admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security/add'] = array(
     'title' => 'Add Security Scheme',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_model_security_scheme', 3, 5),
@@ -167,7 +167,7 @@ function smartdocs_menu() {
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/security/%/edit'] = array(
+  $items['admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security/%/edit'] = array(
     'title' => 'Edit Security Scheme',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_model_security_scheme', 3, 5, 7),
@@ -175,7 +175,7 @@ function smartdocs_menu() {
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/security/%/delete'] = array(
+  $items['admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security/%/delete'] = array(
     'title' => 'Delete Security Scheme',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('smartdocs_model_security_delete', 3, 5, 7),
@@ -183,46 +183,46 @@ function smartdocs_menu() {
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/edit'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/edit'] = array(
     'title' => 'Edit Revision',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_edit_revision', 3, 5),
+    'page arguments' => array('smartdocs_edit_revision', 4, 6),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
 
   // Resources.
-  $items['admin/smartdocs/models/%smartdocs_model/resource/add/%smartdocs_revision'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/resource/add/%smartdocs_revision'] = array(
     'title' => 'Add Resource',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_resource_edit', 3, 6),
+    'page arguments' => array('smartdocs_resource_edit', 4, 7),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/resource/edit/%smartdocs_revision/%smartdocs_resource'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/resource/edit/%smartdocs_revision/%smartdocs_resource'] = array(
     'title' => 'Edit Resource',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_resource_edit', 3, 6, 7),
+    'page arguments' => array('smartdocs_resource_edit', 4, 7, 8),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
 
   // Methods.
-  $items['admin/smartdocs/models/%smartdocs_model/method/delete/%smartdocs_revision/%smartdocs_resource/%smartdocs_method'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/method/delete/%smartdocs_revision/%smartdocs_resource/%smartdocs_method'] = array(
     'title' => 'Delete Method',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('smartdocs_method_delete', 3, 6, 7, 8),
+    'page arguments' => array('smartdocs_method_delete', 4, 7, 8, 9),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['admin/smartdocs/models/%smartdocs_model/method/toggle-status/%smartdocs_revision/%smartdocs_resource/%smartdocs_method'] = array(
+  $items['admin/content/smartdocs/models/%smartdocs_model/method/toggle-status/%smartdocs_revision/%smartdocs_resource/%smartdocs_method'] = array(
     'title' => 'Publish Method',
     'page callback' => 'smartdocs_toggle_node_status',
-    'page arguments' => array(3, 6, 7, 8),
+    'page arguments' => array(4, 7, 8, 9),
     'access arguments' => array('administer smartdocs content'),
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
@@ -1037,6 +1037,8 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
       drupal_write_record('smartdata', $record);
     }
   }
+  // Ensure this model has a view.
+  smartdocs_create_model_view($model);
   return $node;
 }
 
@@ -1250,10 +1252,28 @@ function smartdocs_module_implements_alter(&$implementations, $hook) {
 function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_state) {
   // TODO: Handle association with model/revision/resource dynamically.
   if (!isset($form['nid']['#value'])) {
-    $model = (array_key_exists('model', $_GET) ? $_GET['model'] : NULL);
-    $revision = (array_key_exists('revision', $_GET) ? intval($_GET['revision']) : 0);
-    $resource = (array_key_exists('resource', $_GET) ? $_GET['resource'] : NULL);
+    // For model, revision, resource, look in $form_state first, and if not
+    // found there, then try to fetch from URL query string.
+    if (!empty($form_state['storage']['model'])) {
+      $model = $form_state['storage']['model'];
+    }
+    else {
+      $model = (array_key_exists('model', $_GET) ? $_GET['model'] : NULL);
+    }
+    if (!empty($form_state['storage']['revision'])) {
+      $revision = $form_state['storage']['revision'];
+    }
+    else {
+      $revision = (array_key_exists('revision', $_GET) ? intval($_GET['revision']) : 0);
+    }
+    if (!empty($form_state['storage']['resource'])) {
+      $resource = $form_state['storage']['resource'];
+    }
+    else {
+      $resource = (array_key_exists('resource', $_GET) ? $_GET['resource'] : NULL);
+    }
     $resource_path = $resource_base_url = NULL;
+
     if (!empty($model) && !empty($revision) && !empty($resource)) {
       $resource_obj = new Resource(devconnect_default_org_config(), $model, $revision);
       try {
@@ -1272,7 +1292,7 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
       $form = array();
       $form['message'] = array(
         '#type' => 'markup',
-        '#markup' => t('SmartDocs Methods cannot be directly created; they must be added from the <a href="@url">SmartDocs admin screen</a>.', array('@url' => url('admin/smartdocs/models'))),
+        '#markup' => t('SmartDocs Methods cannot be directly created; they must be added from the <a href="@url">SmartDocs admin screen</a>.', array('@url' => url('admin/content/smartdocs/models'))),
       );
       return;
     }
@@ -1382,6 +1402,12 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
     '#markup' => $resource_base_url . $resource_path,
     '#weight' => $form['field_smart_method_base_url']['#weight'],
   );
+
+  // Store model, resource, revision in form_state so that when the form is
+  // rebuilt for "Add more..." via AJAX, we don't error out for missing data.
+  $form_state['storage']['model'] = $model;
+  $form_state['storage']['resource'] = $form['field_smart_method_resource_uuid'][LANGUAGE_NONE][0]['value']['#default_value'];
+  $form_state['storage']['revision'] = $form['field_smart_method_revision_num'][LANGUAGE_NONE][0]['value']['#default_value'];
 }
 
 /**
@@ -1663,7 +1689,14 @@ function smartdocs_taxonomy_term_page($term) {
   }
   drupal_set_title(smartdocs_taxonomy_term_title($term));
 
-  $view = views_get_view('smartdocs_methods');
+  // View names may only be 128 char long.
+  $view_name = substr($term->name . '_methods', 0, 128);
+  $view = views_get_view($view_name);
+  $view_args = array();
+  if (!$view) {
+    $view = views_get_view('smartdocs_methods');
+    $view_args[] = $term->tid;
+  }
 
   $output = array();
   if (!empty($term->description)) {
@@ -1676,7 +1709,7 @@ function smartdocs_taxonomy_term_page($term) {
   }
   $output['methods'] = array(
     '#type' => 'markup',
-    '#markup' => $view->preview('modelindex', array($term->tid)),
+    '#markup' => $view->preview('modelindex', $view_args),
   );
 
   return $output;
@@ -1723,4 +1756,100 @@ function smartdocs_block_view($delta = 'method_toc') {
 function smartdocs_revision_detail_page_title(Revision $revision) {
   $rev = is_object($revision) ? $revision->getRevisionNumber() : '';
   return t('Revision #!rev', array('!rev' => $rev));
+}
+
+/**
+ * Implements hook_taxonomy_term_insert().
+ *
+ * Makes sure that any new models that are created have a view created for
+ * them.
+ */
+function smartdocs_taxonomy_term_insert($term) {
+  // Ensure that we only act on the models vocabulary.
+  $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+  if (!$vocab || $term->vid != $vocab->vid) {
+    return;
+  }
+
+  $model = new Model(devconnect_default_org_config());
+  try {
+    $model->load($term->name);
+    smartdocs_create_model_view($model);
+  }
+  catch (Exception $e) {
+  }
+}
+
+/**
+ * Creates a model-specific view, based on the generic model view.
+ *
+ * If such a view already exists, or if we cannot find/create a term
+ * corresponding to the model, we bail early. (The latter should never
+ * happen!)
+ *
+ * @param Apigee\SmartDocs\Model $model
+ *   The model for which we are creating a view.
+ */
+function smartdocs_create_model_view(Model $model) {
+  // Cache to avoid re-querying for the same view.
+  static $views_processed = array();
+
+  // View names may only be 128 char long.
+  $view_name = substr($model->getName() . '_methods', 0, 128);
+  if (in_array($view_name, $views_processed)) {
+    return;
+  }
+  $view = views_get_view($view_name);
+  if (isset($view)) {
+    $views_processed[] = $view_name;
+    return;
+  }
+
+  $term = taxonomy_get_term_by_name($model->getName(), 'smartdocs_models');
+  // Where possible, create a term for this model. We should never get this
+  // far in an ideal world, but there may be bad legacy data out there.
+  if (empty($term)) {
+    $vocabs = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+    if (!empty($vocabs)) {
+      $vocab = reset($vocabs);
+      $term = new stdClass;
+      $term->vid = $vocab->vid;
+      $term->name = $model->getName();
+      $term->description = $model->getDescription();
+      $term->field_model_display_name[LANGUAGE_NONE][0]['value'] = $model->getDisplayName();
+      taxonomy_term_save($term);
+    }
+  }
+  else {
+    $term = reset($term);
+  }
+  if (empty($term)) {
+    return;
+  }
+
+  module_load_include('inc', 'smartdocs', 'smartdocs.views_default');
+  $generic_views = smartdocs_views_default_views();
+  /** @var view $view */
+  $view = $generic_views['smartdocs_methods'];
+  $view->name = $view_name;
+  $view->human_name = $model->getDisplayName() . ' Method Listing';
+
+  $view->display['default']->display_options['filters'] = array(
+    'model_tid' => array(
+      'id' => 'model_tid',
+      'table' => 'field_data_field_smart_method_model',
+      'field' => 'field_smart_method_model_tid',
+      'value' => $term->tid,
+      'group' => 1,
+      'expose' => array('operator' => FALSE),
+    ),
+  );
+  $view->display['frontpage']->display_options['title'] = $model->getDisplayName() . ' APIs';
+  $view->display['modelindex']->display_options = array();
+
+  unset($view->display['methodtoc']->display_options['defaults']['arguments']);
+  unset($view->display['methodtoc']->display_options['arguments']);
+
+  views_save_view($view);
+  $views_processed[] = $view_name;
 }

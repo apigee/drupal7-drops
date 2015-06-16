@@ -163,9 +163,14 @@ function devconnect_admin_form($form, &$form_state) {
     '#weight' => 12
   );
 
-  $status = _devconnect_test_kms_connection($org_settings['org'], $org_settings['endpoint'], $org_settings['user'], $org_settings['pass'], $conn_timeout);
+  if (empty($org_settings['org'])) {
+    $status = '';
+  }
+  else {
+    $status = _devconnect_test_kms_connection($org_settings['org'], $org_settings['endpoint'], $org_settings['user'], $org_settings['pass'], $conn_timeout);
+  }
 
-  if (DEVCONNECT_SHOW_CONFIG_FIELDS) {
+  if (DEVCONNECT_SHOW_CONFIG_FIELDS || empty($org_settings['org']) || isset($form_state['input']['org_settings'])) {
     $form['connection_config_container']['connect_test'] = array(
       '#type' => 'fieldset',
       '#title' => t('Test Configuration'),
@@ -343,7 +348,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
   $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
   $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
 
-  file_put_contents($config_file, Drupal\devconnect\Crypto::encrypt(serialize($new_config)));
+  $settings_success = file_put_contents($config_file, Drupal\devconnect\Crypto::encrypt(serialize($new_config)));
   @chmod($config_file, 0666);
 
   if (isset($form_state['values']['devconnect_user_tnc_url'])) {
@@ -355,6 +360,10 @@ function devconnect_admin_form_submit($form, &$form_state) {
       // Refresh the footer block, since it contains a link to this URI.
       cache_clear_all('devconnect_default_structure:footer', 'cache_block', TRUE);
     }
+  }
+  if (!$settings_success) {
+    drupal_set_message(t('An error occurred, and your connection settings were not saved.'), 'error');
+    watchdog('devconnect', 'Failed to write connection settings to file :file', array(':file' => $config_file), WATCHDOG_ERROR);
   }
 
   if (!empty($changes)) {

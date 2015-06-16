@@ -1,3 +1,23 @@
+smartdocs 7.x-5.1
+=================
+DEVSOL-1567: "Add model" id no longer being displayed on top admin menu.
+DEVSOL-1577: Make sure legacy models use new 'devportal-drupal-cms' template.
+DEVSOL-1576: API Documentation View now displays model display name.
+DEVSOL-1565: Fixed issue where editing a SmartDocs method would sometimes
+             generate an error.
+DEVSOL-1562: Views are now generated for every SmartDocs Model in addition
+             to the one parameterized view for everything. This helps users who
+             are not Drupal Experts to use these as widgets without creating a
+             new view.
+DEVSOL-1548: SmartDocs migration from beta to GA (smartdocs 7.x-5.0) is now
+             handled better and gives better information when errors occur.
+DEVSOL-1536: Query params are now displayed correctly on the method page.
+DEVSOL-1534: Content-type is now being populated in SmartDocs method page.
+DEVSOL-1507: You can now add multiple params to an API with Add Method.
+DEVSOL-1499: HTML code is now parsed in SmartDocs Param descriptions.
+DEVSOL-1486: SmartDocs calls can now authenticate with a predefined key.
+DEVSOL-584:  Path parameter when making calls was not always remembered.
+
 smartdocs 7.x-5.0
 =================
 DEVSOL-236: Make model import a batch job.

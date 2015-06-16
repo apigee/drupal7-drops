@@ -204,3 +204,61 @@ function hook_devconnect_developer_app_label_alter(&$label, $form_value, $plural
     $label = 'Chimpanzee' . ($plural ? 's' : '');
   }
 }
+
+/**
+ * Alter the data and properties of the chart for the developer app performance.
+ *
+ * @param array $chart_data
+ *   The array of properties for the analytics chart.
+ */
+function hook_devconnect_developer_apps_analytics_chart_data_alter(&$chart_data) {
+  $chart_data['chart']['marginRight'] = '100px';
+}
+
+/**
+ * Alter the parameters sent to retrieve the performance data of an app.
+ *
+ * @param array $info
+ *   An associative array of parameters that are sent to the backend to retrieve
+ *   the performance data of an app from the backend.
+ *   Following are the items in the $info array
+ *    - developer_id : The id of the developer of the app.
+ *    - app_name : The name of the developer app.
+ *    - metric : The metric based on which to retrieve the analytics data.
+ *    - start : The start time to retrieve the analytics data from .
+ *    - end : The end time to retrieve the analytics data to.
+ *    - unit : The unit to display the data in hour, days, weeks.
+ *    - order: The order in which to sort the data ASC or DESC.
+ *    - time_points : The time points to be plotted on the graph.
+ *    - default_datapoints : The default time points to be plotted on the graph.
+ *    - timezone : The timezone to retrieve the anayltics data in, default UTC.
+ */
+function hook_devconnect_developer_app_analytics_datapoints_params_alter(&$info) {
+  $info['start'] = strtotime(gmdate('Y-m-d H:i:s', time()));
+}
+
+/**
+ * Alter the analytics datapoints.
+ *
+ * Alter the analytics datapoints that are retrieved from the analytics backend
+ * before it is sent to the chart to be rendered.
+ *
+ * @param string $app_name
+ *   The name of the app for which to alter the datapoints.
+ * @param array $datapoints
+ *   An associtive array with the app names as keys and array
+ *   of datapoints as values.
+ */
+function hook_devconnect_developer_app_analytics_datapoints_alter($app_name, &$datapoints) {
+  $offset = timezone_offset_get(new DateTimeZone(drupal_get_user_timezone()), new DateTime("now", new DateTimeZone("UTC")));
+  $app = $datapoints[$app_name];
+  $new_envdatapoints = array();
+  foreach ($app as $env => $env_datapoints) {
+    foreach ($env_datapoints as $timepoint => $value) {
+      $newtimepoint = $timepoint + $offset;
+      $new_envdatapoints[$newtimepoint] = $value;
+    }
+    $app[$env] = $new_envdatapoints;
+  }
+  $datapoints[$app_name] = $app;
+}

@@ -1,7 +1,7 @@
 name = SmartDocs
 description = Provides integration to Apigee SmartDocs API
 package = DevConnect
-version = 7.x-5.0
+version = 7.x-5.1
 core = 7.x
 
 configure = admin/config/smartdocs
@@ -14,4 +14,4 @@ dependencies[] = views
 dependencies[] = taxonomy
 dependencies[] = pathauto
 dependencies[] = ctools
-dependencies[] = devconnect_developer_apps
+

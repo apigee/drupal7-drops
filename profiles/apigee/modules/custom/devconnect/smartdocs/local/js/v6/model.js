@@ -984,9 +984,9 @@ Apigee.APIModel.Methods = function() {
         localStorage.setItem("templateParams",JSON.stringify(templateParams));
       } else {
         var templateParamArray = [];
-        jQuery("[data-role='method_url_container'] input").each(function() {
-          var spanElement = jQuery(this).siblings("span");
-          templateParamArray.push({"name":spanElement.attr("data-role"),"value":spanElement.html()});
+        jQuery("[data-role='method_url_container'] span.template_param").each(function() {
+          var spanElement = jQuery(this);
+          templateParamArray.push({"name":spanElement.siblings("span").attr("data-role"),"value":spanElement.html()});
         });
         localStorage.setItem("templateParams",JSON.stringify(templateParamArray)); // Create local storage variable and assign the values.
       }

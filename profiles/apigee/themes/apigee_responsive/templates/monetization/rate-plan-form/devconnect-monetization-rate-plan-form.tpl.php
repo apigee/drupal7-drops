@@ -8,24 +8,27 @@
  */
 $form = $variables['form'];
 ?>
-<a href="/users/me/monetization/packages" class="back-to-catalog pull-right" ><?php print t('Back to Catalog'); ?></a>
-<h3><?php print t('Package Name: @package_name', array('@package_name' => $form['#package_name'])); ?></h3>
-<hr>
+<a href="/users/me/monetization/packages" class="back-to-catalog"><?php print t('Back to Catalog'); ?></a>
 <?php if (isset($form['#active_plan'])): ?>
 <span class="active-plan well"><strong>Active Plan:</strong>&nbsp;<?php print $form['#active_plan']; ?></span>
 <?php endif; ?>
+<h3><?php print t('Package Name: @package_name', array('@package_name' => $form['#package_name'])); ?></h3>
+<hr>
 <div class="row">
-<div class="col-sm-2"><h4>Included Products:</h4></div>
-    <div class="col-sm-7">
-<ol>
-    <?php foreach ($form['product_names']['#children']['products'] as $product) print '<li>' . $product . '</li>'; ?>
-</ol>
-    </div>
+<?php print drupal_render($form['product_list']); ?>
 </div>
+<div class="row">
 <?php print drupal_render($form['limits']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render($form['price_points']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render($form['comparisons']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render($form['visible_form']); ?>
+</div>
+<div class="row">
+<?php print drupal_render_children($form); ?>
+</div>

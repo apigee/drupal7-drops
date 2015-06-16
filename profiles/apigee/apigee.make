@@ -35,15 +35,8 @@ projects[advanced_forum][version] = "2.5"
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
 
-projects[apachesolr_stats][type] = "module"
-projects[apachesolr_stats][subdir] = "contrib"
-
 projects[autologout][type] = "module"
 projects[autologout][subdir] = "contrib"
-
-; Deprecated
-projects[bean][type] = "module"
-projects[bean][subdir] = "contrib"
 
 ; Enabled during profile install.
 projects[block_class][type] = "module"
@@ -129,7 +122,7 @@ projects[diff][subdir] = "contrib"
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
 
-; Required by devconnect_download
+; Deprecated. Required by devconnect_download which is also deprecated.
 projects[eck][type] = "module"
 projects[eck][subdir] = "contrib"
 
@@ -159,7 +152,7 @@ projects[faq][version] = "1.0"
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.4"
+projects[features][version] = "2.5"
 
 projects[features_extra][type] = "module"
 projects[features_extra][subdir] = "contrib"
@@ -182,9 +175,11 @@ projects[flood_control][version] = "1.0"
 projects[ftools][type] = "module"
 projects[ftools][subdir] = "contrib"
 
+; Deprecated
 projects[gauth][type] = "module"
 projects[gauth][subdir] = "contrib"
 
+; Deprecated
 projects[github_connect][type] = "module"
 projects[github_connect][subdir] = "contrib"
 ; see https://www.drupal.org/node/2150767
@@ -202,12 +197,14 @@ projects[google_analytics][subdir] = "contrib"
 projects[gravatar][type] = "module"
 projects[gravatar][subdir] = "contrib"
 
+; Deprecated
 projects[highcharts][type] = "module"
 projects[highcharts][subdir] = "contrib"
 
 projects[http_client][type] = "module"
 projects[http_client][subdir] = "contrib"
 
+; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
 
@@ -243,7 +240,7 @@ projects[link][version] = "1.3"
 ; Enabled during profile install.
 projects[logintoboggan][type] = "module"
 projects[logintoboggan][subdir] = "contrib"
-projects[logintoboggan][version] = "1.4"
+projects[logintoboggan][version] = "1.5"
 
 projects[mailsystem][type] = "module"
 projects[mailsystem][subdir] = "contrib"
@@ -264,15 +261,12 @@ projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-vie
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
-projects[media_youtube][version] = "2.0-rc5"
+projects[media_youtube][version] = "3.0"
 
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
 projects[menu_attributes][subdir] = "contrib"
 projects[menu_attributes][version] = "1.0-rc3"
-
-projects[message][type] = "module"
-projects[message][subdir] = "contrib"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
@@ -296,6 +290,7 @@ projects[module_filter][version] = "2.0"
 projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
 
+; Deprecated
 projects[navbar][type] = "module"
 projects[navbar][subdir] = "contrib"
 
@@ -369,9 +364,6 @@ projects[syntaxhighlighter][subdir] = "contrib"
 projects[token][type] = "module"
 projects[token][subdir] = "contrib"
 projects[token][version] = "1.6"
-
-projects[translation_overview][type] = "module"
-projects[translation_overview][subdir] = "contrib"
 
 projects[util][type] = "module"
 projects[util][subdir] = "contrib"
@@ -759,7 +751,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
-libraries[mgmt-api-php-sdk][download][tag] = "1.1.2"
+libraries[mgmt-api-php-sdk][download][tag] = "1.1.3"
 libraries[mgmt-api-php-sdk][download][type] = "git"
 libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk.git"
 

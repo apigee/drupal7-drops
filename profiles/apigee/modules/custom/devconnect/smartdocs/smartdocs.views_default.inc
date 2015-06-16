@@ -262,73 +262,97 @@ EOM;
 
   /* Display: Master */
   $handler = $view->new_display('default', 'Master', 'default');
-  $handler->display->display_options['title'] = 'API Documentation ';
-  $handler->display->display_options['use_more_always'] = FALSE;
-  $handler->display->display_options['group_by'] = TRUE;
-  $handler->display->display_options['access']['type'] = 'perm';
-  $handler->display->display_options['cache']['type'] = 'none';
-  $handler->display->display_options['query']['type'] = 'views_query';
-  $handler->display->display_options['exposed_form']['type'] = 'basic';
-  $handler->display->display_options['pager']['type'] = 'full';
-  $handler->display->display_options['pager']['options']['items_per_page'] = '10';
-  $handler->display->display_options['style_plugin'] = 'default';
-  $handler->display->display_options['style_options']['row_class'] = 'model_info';
-  $handler->display->display_options['row_plugin'] = 'fields';
-  /* No results behavior: Global: Text area */
-  $handler->display->display_options['empty']['area']['id'] = 'area';
-  $handler->display->display_options['empty']['area']['table'] = 'views';
-  $handler->display->display_options['empty']['area']['field'] = 'area';
-  $handler->display->display_options['empty']['area']['empty'] = TRUE;
-  $handler->display->display_options['empty']['area']['content'] = '<div class=\'smartdocs-no-models\'>We  are currently working on putting together our Api Docs, we will be publishing them shortly. Please check back again in some time. Thanks for your patience..!!</div>';
-  $handler->display->display_options['empty']['area']['format'] = 'full_html';
-  /* Relationship: Taxonomy term: Content using Model */
-  $handler->display->display_options['relationships']['reverse_field_smart_method_model_node']['id'] = 'reverse_field_smart_method_model_node';
-  $handler->display->display_options['relationships']['reverse_field_smart_method_model_node']['table'] = 'taxonomy_term_data';
-  $handler->display->display_options['relationships']['reverse_field_smart_method_model_node']['field'] = 'reverse_field_smart_method_model_node';
-  $handler->display->display_options['relationships']['reverse_field_smart_method_model_node']['required'] = TRUE;
-  /* Field: Taxonomy term: Name */
-  $handler->display->display_options['fields']['name']['id'] = 'name';
-  $handler->display->display_options['fields']['name']['table'] = 'taxonomy_term_data';
-  $handler->display->display_options['fields']['name']['field'] = 'name';
-  $handler->display->display_options['fields']['name']['label'] = '';
-  $handler->display->display_options['fields']['name']['alter']['word_boundary'] = FALSE;
-  $handler->display->display_options['fields']['name']['alter']['ellipsis'] = FALSE;
-  $handler->display->display_options['fields']['name']['element_class'] = 'model_title';
-  $handler->display->display_options['fields']['name']['element_label_colon'] = FALSE;
-  $handler->display->display_options['fields']['name']['link_to_taxonomy'] = TRUE;
-  /* Field: Taxonomy term: Term description */
-  $handler->display->display_options['fields']['description']['id'] = 'description';
-  $handler->display->display_options['fields']['description']['table'] = 'taxonomy_term_data';
-  $handler->display->display_options['fields']['description']['field'] = 'description';
-  $handler->display->display_options['fields']['description']['label'] = '';
-  $handler->display->display_options['fields']['description']['element_class'] = 'model_description';
-  $handler->display->display_options['fields']['description']['element_label_colon'] = FALSE;
-  /* Filter criterion: Taxonomy vocabulary: Machine name */
-  $handler->display->display_options['filters']['machine_name']['id'] = 'machine_name';
-  $handler->display->display_options['filters']['machine_name']['table'] = 'taxonomy_vocabulary';
-  $handler->display->display_options['filters']['machine_name']['field'] = 'machine_name';
-  $handler->display->display_options['filters']['machine_name']['value'] = array(
-    'smartdocs_models' => 'smartdocs_models',
+  $handler->display->display_options = array(
+    'title' => 'API Documentation',
+    'use_more_always' => FALSE,
+    'group_by' => TRUE,
+    'access' => array('type' => 'perm'),
+    'cache' => array('type' => 'none'),
+    'query' => array('type' => 'views_query'),
+    'exposed_form' => array('type' => 'basic'),
+    'pager' => array(
+      'type' => 'full',
+      'options' => array('items_per_page' => 10),
+    ),
+    'style_plugin' => 'default',
+    'style_options' => array('row_class' => 'model_info'),
+    'row_plugin' => 'fields',
+    'empty' => array(
+      'area' => array(
+        'id' => 'area',
+        'table' => 'views',
+        'field' => 'area',
+        'empty' => TRUE,
+        'content' => '<div class="smartdocs-no-models">We are currently working on putting together our API documentation; we will be publishing them shortly. Please check back again soon. Thanks for your patience!</div>',
+        'format' => 'full_html',
+      ),
+    ),
+    'relationships' => array(
+      'reverse_field_smart_method_model_node' => array(
+        'id' => 'reverse_field_smart_method_model_node',
+        'table' => 'taxonomy_term_data',
+        'field' => 'reverse_field_smart_method_model_node',
+        'required' => TRUE,
+      ),
+    ),
+     'fields' => array(
+      'tid' => array(
+        'id' => 'tid',
+        'table' => 'taxonomy_term_data',
+        'field' => 'tid',
+        'label' => '',
+        'exclude' => TRUE,
+        'element_label_colon' => FALSE,
+        'separator' => '',
+      ),
+      'name' => array(
+        'id' => 'name',
+        'table' => 'field_data_field_model_display_name',
+        'field' => 'field_model_display_name',
+        'label' => '',
+        'alter' => array('make_link' => TRUE, 'path' => 'taxonomy/term/[tid]'),
+        'element_type' => 'span',
+        'element_class' => 'model_title',
+        'element_label_colon' => FALSE,
+      ),
+      'description' => array(
+        'id' => 'description',
+        'table' => 'taxonomy_term_data',
+        'field' => 'description',
+        'label' => '',
+        'element_class' => 'model_description',
+        'element_label_colon' => FALSE,
+      ),
+    ),
+    'filters' => array(
+      'machine_name' => array(
+        'id' => 'machine_name',
+        'table' => 'taxonomy_vocabulary',
+        'field' => 'machine_name',
+        'value' => array('smartocs_models' => 'smartdocs_models'),
+      ),
+      'count_published' => array(
+        'id' => 'count_published',
+        'table' => 'node',
+        'field' => 'status',
+        'relationship' => 'reverse_field_smart_method_model_node',
+        'group_type' => 'count',
+        'operator' => '>=',
+        'value' => array('value' => 1),
+      ),
+      'status' => array(
+        'id' => 'status',
+        'table' => 'node',
+        'field' => 'status',
+        'relationship' => 'reverse_field_smart_method_model_node',
+        'value' => 1,
+      ),
+    ),
   );
-  /* Filter criterion: COUNT(Content: Published) */
-  $handler->display->display_options['filters']['status_1']['id'] = 'status_1';
-  $handler->display->display_options['filters']['status_1']['table'] = 'node';
-  $handler->display->display_options['filters']['status_1']['field'] = 'status';
-  $handler->display->display_options['filters']['status_1']['relationship'] = 'reverse_field_smart_method_model_node';
-  $handler->display->display_options['filters']['status_1']['group_type'] = 'count';
-  $handler->display->display_options['filters']['status_1']['operator'] = '>=';
-  $handler->display->display_options['filters']['status_1']['value']['value'] = '1';
-  /* Filter criterion: Content: Published */
-  $handler->display->display_options['filters']['status']['id'] = 'status';
-  $handler->display->display_options['filters']['status']['table'] = 'node';
-  $handler->display->display_options['filters']['status']['field'] = 'status';
-  $handler->display->display_options['filters']['status']['relationship'] = 'reverse_field_smart_method_model_node';
-  $handler->display->display_options['filters']['status']['value'] = '1';
 
   /* Display: Page */
   $handler = $view->new_display('page', 'Page', 'page');
   $handler->display->display_options['path'] = 'apis';
-
 
   $views[$view->name] = $view;
   return $views;

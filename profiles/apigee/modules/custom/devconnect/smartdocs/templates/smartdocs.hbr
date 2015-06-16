@@ -84,9 +84,9 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Values</th>
-                        <th>Description</th>
+                        <th class="col-sm-2">Name</th>
+                        <th class="col-sm-3">Values</th>
+                        <th class="col-sm-7">Description</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -106,7 +106,7 @@
                             {{/if}}
                         </td>
                         <td>
-                            <p data-role="description" data-allow-edit="true"></p>
+                            <p data-role="description" data-allow-edit="true">{{{description}}}</p>
                         </td>
                     </tr>
                     {{/query-list}}
@@ -154,7 +154,7 @@
                         </td>
                         <td style="vertical-align:middle">
                             <p data-role="description" data-allow-edit="true">
-                                {{description}}
+                                {{{description}}}
                             </p>
                         </td>
                     </tr>
@@ -356,11 +356,15 @@
                         </td>
                         <td>
                             <p class="data" data-role="content-type">
-                                {{#parameters}}
-                                  {{#each this.options}}
-                                    {{this}}<br/>
-                                  {{/each}}
-                                {{/parameters}}
+                                {{#if body.contentType}}
+                                    {{body.contentType}}
+                                {{else}}
+                                    {{#parameters}}
+                                        {{#each this.options}}
+                                            {{this}}<br/>
+                                        {{/each}}
+                                    {{/parameters}}
+                                {{/if}}
                             </p>
                         </td>
                     </tr>
@@ -610,13 +614,6 @@
     }
     var methodVerb = jQuery.trim(jQuery("[data-role='verb']:first").text().toLowerCase()); // Retrieve the verb from the first HTML element.
     var payload = jQuery(".request_payload")
-    if(model.parameters && Array.isArray(model.parameters)) {
-        for(var key in model.parameters){
-            if(model.parameters[key].type === "HEADER"){
-                jQuery("[data-role='description']").html(model.parameters[key].description);
-            }
-        }
-    }
     if (methodVerb != "post" && methodVerb != "put" && methodVerb != "patch") {
         // remove request payload
         payload.remove();

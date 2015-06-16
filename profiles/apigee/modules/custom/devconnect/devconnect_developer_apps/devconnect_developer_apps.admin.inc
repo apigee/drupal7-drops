@@ -203,9 +203,9 @@ function devconnect_developer_apps_config($form, &$form_state) {
 
   $form['analytics']['devconnect_show_analytics'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Show Developer App performance tab?'),
+    '#title' => t('Show Developer App analytics tab'),
     '#return_value' => '1',
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_show_analytics', 0, $form_state)
+    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_show_analytics', 1, $form_state)
   );
 
   // Analytics environments

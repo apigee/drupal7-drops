@@ -36,7 +36,7 @@ function devconnect_developer_apps_preprocess_devconnect_developer_apps_list(&$v
 
   $vars['show_status'] = variable_get('devconnect_show_apiproduct_status', FALSE);
   $vars['show_analytics'] = FALSE;
-  if (variable_get('devconnect_show_analytics', FALSE)) {
+  if (variable_get('devconnect_show_analytics', TRUE)) {
     $vars['show_analytics'] = TRUE;
   }
 
@@ -1554,7 +1554,7 @@ function devconnect_developer_apps_set_description($description = NULL) {
  * @return bool
  */
 function devconnect_developer_apps_show_analytics() {
-  return variable_get('devconnect_show_analytics', FALSE);
+  return variable_get('devconnect_show_analytics', TRUE);
 }
 
 /**

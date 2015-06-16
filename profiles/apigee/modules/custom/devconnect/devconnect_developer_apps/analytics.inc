@@ -273,6 +273,9 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
     );
   }
 
+  // Allow other modules to alter the chart settings.
+  drupal_alter('devconnect_developer_apps_analytics_chart_data', $chart_data);
+
   $chart_json = json_encode($chart_data);
   $script = "jQuery(document).ready(function(){chart=new Highcharts.Chart($chart_json);});";
   drupal_add_js($script, array('type' => 'inline'));
@@ -285,7 +288,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
   );
   drupal_static(__FUNCTION__, $query);
 
-  // TODO: FIXME eliminate inline style
+  // TODO: FIXME eliminate inline style.
   return '<div id="analytics-highchart" style="min-width:400px; height: 300px; margin: 0 auto"></div>';
 
 }
@@ -406,9 +409,28 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name, $
     $default_datapoints[$time_point] = 0;
   }
 
+  // We will pass all the parameters that are required to fetch the analytics
+  // data from the backend and that are required to render the data on the
+  // graph as an array to drupal_alter() to be modified by other modules.
+  $info['developer_id'] = devconnect_user_get_developer_id($user);
+  $info['app_name'] = $app_name;
+  $info['metric'] = $metric;
+  $info['start'] = $start;
+  $info['end'] = $end;
+  $info['unit'] = $unit;
+  $info['order'] = $order;
+  $info['time_points'] = $time_points;
+  $info['default_datapoints'] = $default_datapoints;
+  $info['timezone'] = "UTC";
+
+  // Pass the $info to drupal_alter to be modified by other modules.
+  drupal_alter('devconnect_developer_app_analytics_datapoints_params', $info);
+
   try {
     $developer_id = devconnect_user_get_developer_id($user);
-    $datapoints = $dca->getByAppName($developer_id, $app_name, $metric, $start, $end, $unit, $metric, $order);
+    // We pass the altered version of the parameters to the call to get the
+    // analytics data.
+    $datapoints = $dca->getByAppName($developer_id, $app_name, $info['metric'], $info['start'], $info['end'], $info['unit'], $info['metric'], $info['order']);
   } catch (Apigee\Exceptions\EnvironmentException $e) {
     watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
     return FALSE;
@@ -420,20 +442,26 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name, $
     return FALSE;
   }
 
+  // Allow modules to alter the datapoints.
+  drupal_alter('devconnect_developer_app_analytics_datapoints', $app_name, $datapoints);
+
+  // We return the altered version of the parameters so that it is reflected in
+  // the graph and the downloads.
   return array(
     'date_format' => $date_format,
     'datapoints' => $datapoints,
-    'default_datapoints' => $default_datapoints,
-    'time_points' => $time_points,
+    'default_datapoints' => $info['default_datapoints'],
+    'time_points' => $info['time_points'],
     'params' => array(
       'metric' => array(
         'display_name' => $metrics[$metric],
         'name' => $metric
       ),
-      'start' => $start,
-      'end' => $end,
-      'unit' => $unit
-    )
+      'start' => $info['start'],
+      'end' => $info['end'],
+      'unit' => $info['unit'],
+      'timezone' => $info['timezone'],
+    ),
   );
 
 }
@@ -487,8 +515,8 @@ function _devconnect_developer_apps_analytics_to_xml($params, $data) {
     . '<analytics>'
     . '<params>'
     . '<metric>' . htmlspecialchars($params['metric']['display_name']) . '</metric>'
-    . '<start>' . date('Y-m-d H:i:s', $params['start']) . ' UTC</start>'
-    . '<end>' . date('Y-m-d H:i:s', $params['end']) . ' UTC</end>'
+    . '<start>' . date('Y-m-d H:i:s', $params['start']) . " " . $params['timezone'] . '</start>'
+    . '<end>' . date('Y-m-d H:i:s', $params['end']) . " " . $params['timezone'] . '</end>'
     . '<time-unit>' . htmlspecialchars($params['unit']) . '</time-unit>'
     . '</params>'
     . '<data>';
@@ -507,8 +535,8 @@ function _devconnect_developer_apps_analytics_to_xml($params, $data) {
 
 function _devconnect_developer_apps_analytics_to_csv($params, $data) {
   $csv = 'Metric,' . $params['metric']['display_name'] . "\n"
-    . 'Start,' . date('Y-m-d H:i:s', $params['start']) . " UTC\n"
-    . 'End,' . date('Y-m-d H:i:s', $params['end']) . " UTC\n"
+    . 'Start,' . date('Y-m-d H:i:s', $params['start']) . " " . $params['timezone'] . "\n"
+    . 'End,' . date('Y-m-d H:i:s', $params['end']) . " " . $params['timezone'] . "\n"
     . 'Time Unit,' . $params['unit'] . "\n"
     . "\n\n";
 

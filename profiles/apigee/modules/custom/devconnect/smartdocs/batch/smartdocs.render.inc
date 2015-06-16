@@ -76,7 +76,7 @@ function smartdocs_render(Model $model, Revision $revision, $selected, $options,
     'finished' => 'smartdocs_render_finished',
     'init_message' => t('Rendering has started...'),
     'progress_message' => t('Processed @current out of @total.'),
-    'error_message' => t('Importing has encountered an error.'),
+    'error_message' => t('Rendering SmartDocs nodes for %model model has encountered an error.', array('%model' => $display_name)),
     'file' => drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc',
   );
   return $batch;

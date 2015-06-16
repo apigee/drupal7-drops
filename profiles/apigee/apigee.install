@@ -18,22 +18,13 @@ function apigee_install_tasks(&$install_state) {
       'display_name' => t('Configure the Edge Endpoint'),
       'type' => 'form',
     ),
-    'apigee_generate_import_smartdocs_model_content' => array(
+    'apigee_smartdocs_import_model_content' => array(
       'display_name' => t('Import sample SmartDocs content'),
-      'type' => 'normal',
-    ),
-    'apigee_generate_render_smartdocs_model_template' => array(
-      'display_name' => t('Import sample SmartDocs content'),
-      'display' => 0,
-      'type' => 'normal',
-    ),
-    'apigee_generate_render_smartdocs_model_content' => array(
-      'display_name' => t('Render sample SmartDocs content'),
       'type' => 'batch',
     ),
-    'apigee_install_smtp_credentials' => array(
-      'display_name' => t('Define your organization\'s SMTP credentials'),
-      'type' => 'form',
+    'apigee_smartdocs_render_model_content' => array(
+      'display_name' => t('Render sample SmartDocs content'),
+      'type' => 'batch',
     ),
     'apigee_install_create_admin_user' => array(
       'display_name' => t('Create an admin user'),
@@ -55,7 +46,7 @@ function apigee_install_tasks_alter(&$tasks, &$install_state) {
   $tasks['install_settings_form']['function'] = 'apigee_install_settings_form';
   $tasks['install_configure_form'] = array(
     'function' => 'apigee_install_configure_batch',
-    'display_name' => t('Configure Dev Portal settings'),
+    'display_name' => t('Create default content'),
     'run' => $install_state['batch_configure_complete'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
     'type' => 'batch'
   );

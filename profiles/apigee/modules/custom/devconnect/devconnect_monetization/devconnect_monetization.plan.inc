@@ -80,9 +80,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
   foreach ($package->getProducts() as $product) {
     $products_names['products'][] = $product->getDisplayName();
   }
-  $form['product_names'] = array(
-      '#children' => $products_names,
-  );
+
   $form['product_list'] = array(
     '#type'     => 'container',
     '#children' => theme(

@@ -427,9 +427,8 @@ function devconnect_drush_generate_smartdocs_sample() {
     drush_log(dt('SmartDocs can only be generated when the install profile is Apigee.'), 'error');
   }
   drupal_load('profile', 'apigee');
-  apigee_generate_import_smartdocs_model_content();
-  apigee_generate_render_smartdocs_model_template();
-  $batch = apigee_generate_render_smartdocs_model_content();
+  apigee_smartdocs_import_model_content();
+  $batch = apigee_smartdocs_render_model_content();
   $batch['progressive'] = FALSE;
   batch_set($batch);
   drush_backend_batch_process();

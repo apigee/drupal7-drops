@@ -57,7 +57,7 @@ function _smartdocs_preprocess_node_page(&$vars) {
       '#active' => FALSE,
       '#link' => array(
         'title' => t('View model revision'),
-        'href' => 'admin/smartdocs/models/' . $model_id . '/revisions/' . $revision_id,
+        'href' => 'admin/content/smartdocs/models/' . $model_id . '/revisions/' . $revision_id,
         'localized_options' => array(),
       ),
     );
@@ -91,7 +91,7 @@ function smartdocs_preprocess_page(&$vars) {
 
   // If SSL is not enabled, then show warning on the smartdocs node and
   // smartdocs admin pages.
-  if ((array_key_exists('node', $vars) && $vars['node']->type == 'smart_method') || strstr(current_path(), 'admin/content/smartdocs') ||  strstr(current_path(), 'admin/smartdocs')) {
+  if ((array_key_exists('node', $vars) && $vars['node']->type == 'smart_method') || strstr(current_path(), 'admin/content/smartdocs') ||  strstr(current_path(), 'admin/content/smartdocs')) {
     if (user_access('administer smartdocs content') && !isset($_SERVER['HTTPS']) && !variable_get('disable_ssl_warning', FALSE)) {
       $path = current_path();
       $prologue = $message = t('SmartDocs pages are not secured with SSL.');
@@ -277,36 +277,53 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
 /**
  * Implements hook_preprocess_HOOK() for devconnect_developer_apps_list().
  *
- * @todo Clean this up and document it.
+ * If an API Product is configured to correspond to one or more models, adds a
+ * link to each model's documentation on the developer app listing page.
  */
 function smartdocs_preprocess_devconnect_developer_apps_list(&$vars) {
-  foreach ($vars['applications'] as $key => $app) {
-    $products = array();
+  // Initialize a cache of already-loaded terms.
+  $model_terms = array();
+  // Initialize a cache of already-queried models containing published nodes.
+  $model_has_nodes = array();
+  foreach ($vars['applications'] as &$app) {
     foreach ($app['entity']->apiProducts as $product) {
-      $products[$product] = $product;
-    }
-    foreach ($products as $product) {
+      // This variable may be set on the main SmartDocs config admin screen.
       $models = variable_get($product . '_docs', array());
       foreach ($models as $model) {
-        $query = db_select('smartdata', 's');
-        $query->condition('s.model', $model);
-        $query->fields('s', array('nid'));
-        $results = $query->execute();
-        $nodes = array();
-        foreach ($results as $result) {
-          $status = db_query('SELECT status FROM {node} WHERE nid = :nid', array(':nid' => $result->nid . $model))->fetchField();
-          if ((bool) $status) {
-            $nodes[$result->nid] = $result->nid;
-          }
+        // Get taxonomy term corresponding to this model.
+        if (array_key_exists($model, $model_terms)) {
+          $model_term = $model_terms[$model];
         }
-        if (!empty($nodes)) {
-          $display = db_query('SELECT title FROM {menu_router} WHERE path = :path', array(':path' => 'admin/smartdocs/models/' . $model))->fetchField();
-          $vars['applications'][$key]['smartdocs'][$product][] = l($display . ' Documentation', $model . '/apis', array(
-            'html' => TRUE,
-            'attributes' => array(
-              'target' => '_blank',
-            ),
-          ));
+        else {
+          $terms = taxonomy_get_term_by_name($model, 'smartdocs_models');
+          if (empty($terms)) {
+            // This can happen if the model has never been rendered.
+            continue;
+          }
+          $model_term = reset($terms);
+          $model_terms[$model] = $model_term;
+        }
+        // Are there any published nodes associated with this model?
+        if (array_key_exists($model, $model_has_nodes)) {
+          // We already queried for this model.
+          $has_nodes = $model_has_nodes[$model];
+        }
+        else {
+          // Hit the database to find at least one published node.
+          $query = new EntityFieldQuery();
+          $result = $query->entityCondition('entity_type', 'node')
+            ->entityCondition('bundle', 'smart_method')
+            ->fieldCondition('field_smart_method_model', 'tid', $model_term->tid, '=')
+            ->propertyCondition('status', NODE_PUBLISHED)
+            ->range(0, 1)
+            ->execute();
+          $has_nodes = (isset($result['node']) && !empty($result['node']));
+          $model_has_nodes[$model] = $has_nodes;
+        }
+        if ($has_nodes) {
+          // Yes, at least one published node exists.
+          $link_title = t(':model documentation', array(':model' => smartdocs_taxonomy_term_title($model_term)));
+          $app['smartdocs'][$product][] = l($link_title, 'taxonomy/term/' . $model_term->tid, array('attributes' => array('target' => '_blank')));
         }
       }
     }

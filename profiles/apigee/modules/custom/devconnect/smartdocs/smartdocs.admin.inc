@@ -52,57 +52,67 @@ function smartdocs_settings($form, $form_state) {
     '#value' => t('Rebuild SmartDocs model caches'),
     '#submit' => array('smartdocs_rebuild_cache_table'),
   );
-  $form['products'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('API Products / SmartDocs Settings'),
-    '#collapsed' => TRUE,
-    '#collapsible' => TRUE,
-  );
-  $form['products']['info'] = array(
-    '#markup' => '<p>This section creates a correlation between your products and SmartDocs internally.</p><br/>',
-  );
-  try {
-    $model_obj = new Model(devconnect_default_org_config());
-    $models = $model_obj->listModels();
-  }
-  catch (ResponseException $e) {
-    $models = array();
-  }
 
-  $options = array();
-  /** @var Apigee\SmartDocs\Model $model */
-  foreach ($models as $model) {
-    $model_name = $model->getDisplayName();
-    if (empty($model_name)) {
-      $model_name = $model->getName();
+  // Don't bother with API Product correlation if devconnect_developer_apps is
+  // not enabled; otherwise we'll encounter failure when trying to load
+  // api_product entities.
+  if (module_exists('devconnect_developer_apps')) {
+    $form['products'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('API Products/SmartDocs Settings'),
+      '#collapsed' => TRUE,
+      '#collapsible' => TRUE,
+    );
+    $form['products']['info'] = array(
+      '#markup' => t('This section creates a correlation between your products and SmartDocs internally.'),
+      '#prefix' => '<p>',
+      '#suffix' => '</p><br>',
+    );
+    try {
+      $model_obj = new Model(devconnect_default_org_config());
+      $models = $model_obj->listModels();
+    }
+    catch (ResponseException $e) {
+      $models = array();
     }
 
-    $options[$model_name] = $model->getName();
-  }
-  $options = array_flip($options);
-  natcasesort($options);
+    $options = array();
+    /** @var Apigee\SmartDocs\Model $model */
+    foreach ($models as $model) {
+      $model_name = $model->getDisplayName();
+      if (empty($model_name)) {
+        $model_name = $model->getName();
+      }
 
-  $api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
-  $products = array();
-  foreach ($api_products as $product) {
-    $products[$product->displayName] = $product->name;
-  }
-  $products = array_flip($products);
-  natcasesort($products);
+      $options[$model_name] = $model->getName();
+    }
+    $options = array_flip($options);
+    natcasesort($options);
 
-  foreach ($products as $machine => $product) {
-    $form['products'][$machine . '_docs'] = array(
-      '#type' => 'select',
-      '#title' => t(':product models', array(':product' => $product)),
-      '#default_value' => variable_get($machine . '_docs', array()),
-      '#description' => t('Specify the SmartDocs model that relates to the product.'),
-      '#options' => $options,
-      '#multiple' => TRUE,
-      '#attributes' => array(
-        'style' => 'height:200px;',
-      ),
-      '#suffix' => '<br/>',
-    );
+    $api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+    $products = array();
+    foreach ($api_products as $product) {
+      $products[$product->displayName] = $product->name;
+    }
+    $products = array_flip($products);
+    natcasesort($products);
+
+    foreach ($products as $machine => $product) {
+      $default_value = variable_get($machine . '_docs', array());
+
+      if (!empty($default_value)) {
+        $form['products']['#collapsed'] = FALSE;
+      }
+
+      $form['products'][$machine . '_docs'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t(':product models', array(':product' => $product)),
+        '#default_value' => $default_value,
+        '#description' => t('Specify the SmartDocs model that relates to the product.'),
+        '#options' => $options,
+        '#suffix' => '<br/>',
+      );
+    }
   }
   $form['smartdocs_publish_on_render'] = array(
     '#type' => 'checkbox',
@@ -186,7 +196,6 @@ function smartdocs_settings($form, $form_state) {
     '#default_value' => variable_get('data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
   );
 
-
   $form['settings']['api_proxy']['use_local_assets'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use local SmartDocs JS/CSS'),
@@ -243,8 +252,45 @@ function smartdocs_settings($form, $form_state) {
     '#default_value' => variable_get('api_proxy_url', 'https://api.enterprise.apigee.com/v1'),
   );
 
+  $form = system_settings_form($form);
+
+  // Make sure the array is flattened before system_settings_form_submit() is
+  // called.
+  array_unshift($form['#submit'], 'smartdocs_settings_flatten_array');
+  // Additional submit handler to be invoked *after* calling
+  // system_settings_form_submit().
   $form['#submit'][] = 'smartdocs_settings_submit';
-  return system_settings_form($form);
+  return $form;
+}
+
+/**
+ * Early submit handler for smartdocs_settings().
+ *
+ * Flattens arrays of models to which API Products might correspond. Since the
+ * incoming array is generated by a checkboxes element, it is by nature very
+ * ugly. Here we convert it to a simple numerically-indexed array.
+ *
+ * @param array $form
+ *   Descriptor of the form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
+ */
+function smartdocs_settings_flatten_array($form, &$form_state) {
+  // Short circuit if devconnect_developer_apps is not enabled.
+  if (!array_key_exists('products', $form)) {
+    return;
+  }
+  foreach ($form_state['values'] as $key => $val) {
+    if (substr($key, -5) == '_docs' && is_array($val)) {
+      $values = array();
+      foreach ($val as $name => $value) {
+        if ($value !== 0) {
+          $values[] = $value;
+        }
+      }
+      $form_state['values'][$key] = $values;
+    }
+  }
 }
 
 /**
@@ -256,7 +302,6 @@ function smartdocs_settings($form, $form_state) {
  *   State of the form being submitted.
  */
 function smartdocs_settings_submit($form, &$form_state) {
-
   $current_template = variable_get('custom_template_file', NULL);
   $template = $form_state['values']['custom_template_file'];
   if ($template == $current_template) {
@@ -289,7 +334,7 @@ function smartdocs_model_list() {
   $output['add_model'] = array(
     '#type' => 'link',
     '#title' => t('New model'),
-    '#href' => 'admin/smartdocs/models/add',
+    '#href' => 'admin/content/smartdocs/models/add',
     '#prefix' => '<div style="margin-bottom:1.5em">',
     '#suffix' => '</div>',
   );
@@ -301,10 +346,10 @@ function smartdocs_model_list() {
   foreach ($models as $model) {
     $latest_rev = $model->getLatestRevisionNumber();
     if ($latest_rev > 0) {
-      $model_name = l($model->getDisplayName(), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $model->getLatestRevisionNumber());
+      $model_name = l($model->getDisplayName(), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $model->getLatestRevisionNumber());
     }
     else {
-      $model_name = l($model->getDisplayName(), 'admin/smartdocs/models/' . $model->getUuid());
+      $model_name = l($model->getDisplayName(), 'admin/content/smartdocs/models/' . $model->getUuid());
     }
 
     $method_count = $node_count = $published_count = 0;
@@ -353,7 +398,7 @@ function smartdocs_model_list() {
 
       $ops['list-' . $op] = array(
         'title' => $disp,
-        'href' => 'admin/smartdocs/models/' . $model->getUuid() . '/' . $op,
+        'href' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/' . $op,
         'attributes' => array(
           'title' => $disp,
           'class' => array($op . '-' . $model->getName(), 'views-ajax-link'),
@@ -384,13 +429,17 @@ function smartdocs_model_list() {
   );
 
   $empty_msg = t('No models have been created. <a href="@add_model">Create a new model</a> or <a href="@read_docs">read the documentation</a> to get started.', array(
-      '@add_model' => url('admin/smartdocs/models/add'),
+      '@add_model' => url('admin/content/smartdocs/models/add'),
       '@read_docs' => url('http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis'),
     )
   );
 
   $output['table'] = array(
-    '#markup' => theme('table', array('header' => $header, 'rows' => $table_rows, 'empty' => $empty_msg)),
+    '#markup' => theme('table', array(
+      'header' => $header,
+      'rows' => $table_rows,
+      'empty' => $empty_msg,
+    )),
   );
 
   return $output;
@@ -494,6 +543,20 @@ function smartdocs_add_model_submit(array $form, array &$form_state) {
     $success = TRUE;
     cache_clear_all('model:' . $model->getUuid(), 'cache_smartdocs');
     module_invoke_all('smartdocs_model_update', $model->getUuid());
+
+    // Create taxonomy term for model.
+    $term = taxonomy_get_term_by_name($model->getName(), 'smartdocs_models');
+    if (empty($term)) {
+      $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+      if (!empty($vocab)) {
+        $term = new stdClass;
+        $term->vid = $vocab->vid;
+        $term->name = $model->getName();
+        $term->description = $model->getDescription();
+        $term->field_model_display_name[LANGUAGE_NONE][0]['value'] = $model->getDisplayName();
+        taxonomy_term_save($term);
+      }
+    }
   }
   catch (Exception $e) {
     drupal_set_message(t('There was an error when trying to create the model.'), 'error');
@@ -502,8 +565,8 @@ function smartdocs_add_model_submit(array $form, array &$form_state) {
   if ($success) {
     menu_rebuild();
     drupal_set_message($model->getDisplayName() . ' was created successfully.', 'status');
+    $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid();
   }
-  $form_state['redirect'] = 'admin/smartdocs/models/' . $model->getUuid();
 }
 
 /**
@@ -547,7 +610,7 @@ function smartdocs_show_model_detail(Model $model) {
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
   drupal_set_breadcrumb($breadcrumb);
   drupal_add_css(drupal_get_path('module', 'views') . '/css/views-admin.ctools.css');
   $output = array();
@@ -575,18 +638,18 @@ function smartdocs_show_model_detail(Model $model) {
   }
 
   $operations = array(
-      'import' => 'Import',
-      'add' => 'Add Revision',
-      'settings' => 'Settings',
-      'export' => 'Export',
-      'delete' => 'Delete',
-    ) + $operations;
+    'import' => 'Import',
+    'add' => 'Add Revision',
+    'settings' => 'Settings',
+    'export' => 'Export',
+    'delete' => 'Delete',
+  ) + $operations;
 
   $links = array();
   foreach ($operations as $key => $op) {
     $links[$key . '-' . $model_name] = array(
       'title' => $op,
-      'href' => 'admin/smartdocs/models/' . $model_uuid . '/' . $key,
+      'href' => 'admin/content/smartdocs/models/' . $model_uuid . '/' . $key,
       'attributes' => array(
         'title' => $op,
         'class' => array(
@@ -622,7 +685,7 @@ function smartdocs_show_model_detail(Model $model) {
     $output['revision'] = array(
       '#type' => 'item',
       '#title' => t('Latest Revision'),
-      '#markup' => l(t('Revision #@rev', array('@rev' => $revision->getRevisionNumber())), 'admin/smartdocs/models/' . $model_uuid . '/revisions/' . $revision->getRevisionNumber()),
+      '#markup' => l(t('Revision #@rev', array('@rev' => $revision->getRevisionNumber())), 'admin/content/smartdocs/models/' . $model_uuid . '/revisions/' . $revision->getRevisionNumber()),
     );
   }
   $output['created'] = array(
@@ -681,7 +744,7 @@ function smartdocs_import_model(array $form, array $form_state, Model $model) {
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
   drupal_set_breadcrumb($breadcrumb);
 
   $form['model_uuid'] = array(
@@ -723,9 +786,8 @@ function smartdocs_import_model(array $form, array $form_state, Model $model) {
     '#default_value' => array('file'),
   );
 
-
   // Either show URL or File upload depending on upload_type.
-  if( !isset($form_state['values']) || $form_state['values']['upload_type'] == 'file') {
+  if (!isset($form_state['values']) || $form_state['values']['upload_type'] == 'file') {
     // Show file upload field.
     $form['format']['import']['file'] = array(
       '#type' => 'file',
@@ -778,15 +840,16 @@ function smartdocs_import_ajax($form, &$form_state) {
  */
 function smartdocs_import_model_validate($form, &$form_state) {
 
-  if($form_state['values']['upload_type'] == 'file') {
+  if ($form_state['values']['upload_type'] == 'file') {
     // Validate file is not null.
     if (empty($_FILES['files']['name']['file'])) {
       form_set_error('file', t('You must select a file to upload.'));
     }
-  } else {
+  }
+  else {
     // Validate URL is valid.
     if (isset($form_state['values']['url']) && !valid_url($form_state['values']['url'], TRUE)) {
-      form_set_error('url', t('The URL %url is invalid.', array('%url' => $form_state['values']['url'] )));
+      form_set_error('url', t('The URL %url is invalid.', array('%url' => $form_state['values']['url'])));
     }
   }
 }
@@ -806,29 +869,33 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
   $model->load($form_state['values']['model_uuid']);
 
   $content_type = NULL;
-  switch($form_state['values']['type']) {
+  switch ($type) {
     case 'wadl':
       $content_type = 'application/xml';
       $document_format = 'wadl';
       break;
+
     case 'swagger_json':
       $content_type = 'application/json';
       $document_format = 'swagger';
       break;
+
     case 'swagger_yaml':
       $content_type = 'application/yaml';
       $document_format = 'swagger';
       break;
+
     case 'apigee_json':
       $content_type = 'application/json';
       $document_format = 'apimodel';
       break;
+
     default:
       $content_type = 'application/yaml';
       $document_format = 'swagger';
   }
 
-  if($form_state['values']['upload_type'] == 'url') {
+  if ($form_state['values']['upload_type'] == 'url') {
     // Importing a URL.
     $url = $form_state['values']['url'];
     try {
@@ -841,7 +908,8 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
         '%source_name' => "URL",
         '%source' => $url,
       );
-    } catch (Apigee\Exceptions\ResponseException $e) {
+    }
+    catch (ResponseException $e) {
       smartdocs_admin_handle_import_exception($e, $model, 'URL', $url);
       // Prevent Drupal from cleaning the form.
       $form_state['redirect'] = FALSE;
@@ -877,7 +945,8 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
         '%source_name' => 'file',
         '%source' => $file_obj->filename,
       );
-    } catch (Apigee\Exceptions\ResponseException $e) {
+    }
+    catch (ResponseException $e) {
       smartdocs_admin_handle_import_exception($e, $model, 'file', $file_obj->filename . ' (URI: ' . $file_obj->uri . ')');
       // Prevent Drupal from cleaning the form.
       $form_state['redirect'] = FALSE;
@@ -885,28 +954,38 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
     }
   }
 
-  $form_state['redirect'] = 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' .  $revision;
+  $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' .  $revision;
   drupal_set_message(t('Revision %revision has been created from from %source_name %source', $message_vars), 'status');
   watchdog('smartdocs', 'Model %model_name revision %revision has been created from from @source_name %source', $message_vars, WATCHDOG_INFO);
   cache_clear_all('model:' . $model->getUuid(), 'cache_smartdocs');
-  return;
-
 }
 
-function smartdocs_admin_handle_import_exception($e, $model, $source_name, $source){
+/**
+ * Handles exceptions encountered when importing a model.
+ *
+ * @param Apigee\Exceptions\ResponseException $e
+ *   The exception that was thrown.
+ * @param Apigee\SmartDocs\Model $model
+ *   The model being imported.
+ * @param string $source_name
+ *   The type of import ('file' or 'URL').
+ * @param string $source
+ *   The filename or URL from which the import was taking place.
+ */
+function smartdocs_admin_handle_import_exception(ResponseException $e, Model $model, $source_name, $source) {
   // See if there is a response body in the exception to give info to user.
   $error_code = '';
   $error_message = '';
   $error_response = $e->getResponse();
   if (!empty($error_response)) {
     $response_body = json_decode($error_response);
-    if(!empty($response_body->code)) {
+    if (!empty($response_body->code)) {
       $error_code = $response_body->code;
-      if(!empty($response_body->message)) {
+      if (!empty($response_body->message)) {
         $error_message = $response_body->message;
       }
       else {
-        $error_message = "";
+        $error_message = '';
       }
     }
     else {
@@ -915,23 +994,31 @@ function smartdocs_admin_handle_import_exception($e, $model, $source_name, $sour
       $error_code = '';
       $error_message = $error_response;
     }
-
   }
 
-  $link_options = array('target' => '_blank');
-  $doc_url = 'https://apigee.com/docs/developer-services/content/using-smartdocs-document-apis';
   $message_vars = array(
     '%model_name' => $model->getName(),
     '@source_name' => $source_name,
     '%source' => $source,
-    '%error_code' => $error_code . ':',
+    '%error_code' => $error_code,
     '%error_message' => $error_message,
-    '!refer_docs' => l(t('refer to our documentation'), $doc_url,$link_options, 'error'));
-  drupal_set_message(t('There was an error importing @source_name %source. %error_code %error_message Please consult the logs or !refer_docs.', $message_vars), 'error');
-  watchdog('smartdocs', 'Model %model_name import failure. @source_name %source %error_code %error_message', $message_vars, WATCHDOG_ERROR);
+    '@url' => 'https://apigee.com/docs/developer-services/content/using-smartdocs-document-apis',
+  );
+  drupal_set_message(t('There was an error importing @source_name %source. %error_code: %error_message Please consult the logs or <a href="@url" target="_blank">refer to our documentation</a>.', $message_vars), 'error');
+  watchdog('smartdocs', 'Model %model_name import failure. @source_name %source %error_code: %error_message', $message_vars, WATCHDOG_ERROR);
 }
 
-function smartdocs_model_export_exception_handler($e, $model, $export_type){
+/**
+ * Handles exceptions thrown by model export.
+ *
+ * @param Exception $e
+ *   The exception that was thrown.
+ * @param Model $model
+ *   The model which was being exported.
+ * @param string $export_type
+ *   Identifier for the type of export being done.
+ */
+function smartdocs_model_export_exception_handler(Exception $e, Model $model, $export_type) {
   // See if there is a response body in the exception to give info to user.
   $error_code = '';
   $error_message = '';
@@ -947,7 +1034,7 @@ function smartdocs_model_export_exception_handler($e, $model, $export_type){
     '%error_code' => $error_code,
     '%error_message' => $error_message,
   );
-  drupal_set_message(t('There was an export importing %export_type format. Edge API Response: %error_code: %error_message ', $message_vars), 'error');
+  drupal_set_message(t('There was an export importing %export_type format. Edge API Response: %error_code: %error_message', $message_vars), 'error');
   watchdog('smartdocs', 'Model %model_name export to %export_type failure. Edge API Response: %error_code %error_message', $message_vars, WATCHDOG_ERROR);
 }
 
@@ -978,8 +1065,8 @@ function smartdocs_model_export(array $form, array &$form_state, Model $model, R
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
-  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $revision->getRevisionNumber())), 'admin/smartdocs/models/' . $model->getUuid() . '/revision/' . $revision->getRevisionNumber());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $revision->getRevisionNumber())), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revision/' . $revision->getRevisionNumber());
   drupal_set_breadcrumb($breadcrumb);
 
   $form = array();
@@ -1051,16 +1138,17 @@ function smartdocs_model_export_submit($form, &$form_state) {
  *
  * @param \Apigee\SmartDocs\Model $model
  *   The model whose settings are to be edited.
+ *
  * @return string
  *   The html for the settings page.
  */
-function smartdocs_model_settings_page(Model $model){
+function smartdocs_model_settings_page(Model $model) {
   drupal_set_title(t('Template settings for @model', array('@model' => $model->getDisplayName())));
   $breadcrumb = array();
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
   drupal_set_breadcrumb($breadcrumb);
 
   $settings_form = drupal_get_form('smartdocs_model_settings', $model);
@@ -1093,7 +1181,7 @@ function smartdocs_model_settings(array $form, array &$form_state, Model $model)
       '#markup' => t('Unable to load method template from model !model. This may happen if you have not imported a revision for the model. Please !import a model and try again.',
         array(
           '!model' => '<em>' . $model->getDisplayName() . '</em>',
-          '!import' => l(t('import'), 'admin/smartdocs/models/' . $model->getUuid() . '/import'),
+          '!import' => l(t('import'), 'admin/content/smartdocs/models/' . $model->getUuid() . '/import'),
         )),
       '#prefix' => '<div class="messages error">',
       '#suffix' => '</div>',
@@ -1137,7 +1225,6 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
       '#value' => t('Save CSS & JavaScript'),
     ),
   );
-
 
   $form['templates'] = array(
     '#type' => 'fieldset',
@@ -1184,10 +1271,10 @@ function smartdocs_model_settings_submit($form, &$form_state) {
   $model_css_name = $model_name . '_css';
   $model_js_name = $model_name . '_js';
 
-  variable_set($model_css_name,$form_state['values'][$model_css_name]);
-  variable_set($model_js_name,$form_state['values'][$model_js_name]);
+  variable_set($model_css_name, $form_state['values'][$model_css_name]);
+  variable_set($model_js_name, $form_state['values'][$model_js_name]);
 
-  drupal_set_message(t('The CSS & JavaScript settings have been saved.'));
+  drupal_set_message(t('The CSS and JavaScript settings have been saved.'));
 }
 
 /**
@@ -1224,15 +1311,19 @@ function smartdocs_model_template_auth($form, &$form_state, Model $model) {
     '#title' => t('Template authentication schemes'),
     '#collapsed' => FALSE,
     '#collapsible' => TRUE,
-    '#prefix' => '<div id="template_auth_settings"></div>'
+    '#prefix' => '<div id="template_auth_settings"></div>',
+  );
+
+  $markup_args = array(
+    '@doc_url' => 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis',
+    '@sec_url' => url('admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security'),
   );
   $form['auth_schemes']['help_docs'] = array(
     '#type' => 'markup',
-    '#markup' => '<div class="templateauth-help">
-      <div>' .
-      t('For additional help in configuring template authentication schemes, consult the <a href="@url">online documentation</a>.', array('@url' => 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis'))
-      . '</div><div>' . t('To manage the security objects, go to the <a href="@url">security settings</a>.', array(
-      '@url' => url('admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security'))) . '</div></div>',
+    '#markup' => t('For additional help in configuring template authentication schemes, consult the <a href="@doc_url">online documentation</a>.<br>
+       To manage the security objects, go to the <a href="@sec_url">security settings</a>.', $markup_args),
+    '#prefix' => '<div class="templateauth-help"><div>',
+    '#suffix' => '</div></div>',
   );
 
   $form['auth_schemes']['model'] = array(
@@ -1291,8 +1382,8 @@ function smartdocs_model_template_auth($form, &$form_state, Model $model) {
         );
         if (!empty($template_auth_scheme)) {
           // @TODO: Use $template_auth_scheme->getCallbackUrl(); when the
-          // backend return the callback url in the response for loadAllSchemes()
-          // call
+          // backend return the callback url in the response for
+          // loadAllSchemes() call.
           $config = devconnect_default_org_config();
           $callback_url = $config->endpoint . '/o/' . $config->orgName . '/apimodels/' . $model->getName() . '/templateauths/' . $template_auth_scheme->getName() . '/callback';
           if (isset($callback_url)) {
@@ -1440,7 +1531,7 @@ function smartdocs_model_delete(array $form, array &$form_state, Model $model) {
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
   drupal_set_breadcrumb($breadcrumb);
 
   $form['model'] = array(
@@ -1449,7 +1540,7 @@ function smartdocs_model_delete(array $form, array &$form_state, Model $model) {
   );
   $ques = t('Are you sure you want to delete the model %name?', array('%name' => $model->getName()));
   $desc = t('Deleting the model %name will delete the all content from Dev Portal and remove the model from the Edge Management server.  This cannot be undone.  If you want make this documentation unavailable to end users, unpublish the nodes instead.', array('%name' => $model->getName()));
-  return confirm_form($form, $ques, 'admin/smartdocs/models/' . $model->getUuid(), $desc, t('Delete'), t('Cancel'));
+  return confirm_form($form, $ques, 'admin/content/smartdocs/models/' . $model->getUuid(), $desc, t('Delete'), t('Cancel'));
 }
 
 /**
@@ -1468,7 +1559,7 @@ function smartdocs_model_delete_submit(array $form, array &$form_state) {
   try {
     $model->delete();
 
-    // Delete all nodes in this model
+    // Delete all nodes in this model.
     $model_terms = taxonomy_get_term_by_name($model_name, 'smartdocs_models');
     if (!empty($model_terms)) {
       $model_term = reset($model_terms);
@@ -1511,7 +1602,7 @@ function smartdocs_model_delete_submit(array $form, array &$form_state) {
  */
 function smartdocs_revision_list(Model $model) {
   try {
-    $revision_obj = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
+    $revision_obj = new Revision($model->getConfig(), $model->getUuid());
     $revisions = $revision_obj->listRevisions();
   }
   catch (ResponseException $e) {
@@ -1531,7 +1622,7 @@ function smartdocs_revision_list(Model $model) {
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
   drupal_set_breadcrumb($breadcrumb);
 
   $headers = array(
@@ -1574,6 +1665,12 @@ function smartdocs_revision_list(Model $model) {
         ),
       );
     }
+    if($op == 'Security Settings') {
+      // Removed 'models' from URL since menu routing can only be 9 items.
+      // See MENU_MAX_PARTS in menu.inc.
+      $links[$key . '-' . $revision->getUuid()]['href'] = 'admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber() . $key;
+    }
+
     $caption = 'Revision #@rev';
     if ($is_latest_revision) {
       $caption .= ' (latest)';
@@ -1581,7 +1678,7 @@ function smartdocs_revision_list(Model $model) {
     }
 
     $rows[] = array(
-      l(t($caption, array('@rev' => $revision->getRevisionNumber())), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber()),
+      l(t($caption, array('@rev' => $revision->getRevisionNumber())), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber()),
       $revision->getBaseUrl(),
       format_date($revision->getCreatedTime(), 'custom', 'j F Y'),
       theme('links__ctools_dropbutton', array('links' => $links)),
@@ -1593,7 +1690,7 @@ function smartdocs_revision_list(Model $model) {
 
 
 /**
- * Page Callback for admin/smartdocs/model/%name.
+ * Page Callback for admin/content/smartdocs/model/%name.
  *
  * @param array $form
  *   Descriptor of the form being submitted.
@@ -1608,7 +1705,7 @@ function smartdocs_add_revision(array $form, array $form_state, Model $model) {
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
   drupal_set_breadcrumb($breadcrumb);
 
   $form['model'] = array(
@@ -1691,7 +1788,7 @@ function smartdocs_add_revision_submit($form, &$form_state) {
     cache_clear_all('model:' . $model->getUuid(), 'cache_smartdocs');
     module_invoke_all('smartdocs_model_update', $model->getUuid());
     drupal_set_message(t('Revision was created successfully'));
-    $form_state['redirect'] = 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber();
+    $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber();
   }
   catch (Exception $e) {
     drupal_set_message(t('There was a problem creating the new revision. Please check the logs.'), 'error');
@@ -1699,7 +1796,7 @@ function smartdocs_add_revision_submit($form, &$form_state) {
 }
 
 /**
- * Page Callback for admin/smartdocs/model/%smartdocs_model/revisions/%.
+ * Page Callback for admin/content/smartdocs/model/%smartdocs_model/revisions/%.
  *
  * @param array $form
  *   Descriptor of the form being created.
@@ -1750,9 +1847,9 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
-  $breadcrumb[] = l(t('Revisions'), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions');
-  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $rev_number)), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $rev_number);
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('Revisions'), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions');
+  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $rev_number)), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $rev_number);
   drupal_set_breadcrumb($breadcrumb);
 
   $nids = db_select('smartdata', 's')
@@ -1790,12 +1887,20 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
   foreach ($operations as $key => $op) {
     $links[$key] = array(
       'title' => $op,
-      'href' => 'admin/smartdocs/models/' . $model->getUuid() . '/' . $key,
       'attributes' => array(
         'title' => $op,
         'class' => array('views-ajax-link'),
       ),
     );
+
+    if($op == 'Security Settings') {
+      // Removed 'models' from URL since menu routing can only be 9 items.
+      // See MENU_MAX_PARTS in menu.inc.
+      $links[$key]['href'] = 'admin/content/smartdocs/' . $model->getUuid() . '/' . $key;
+    }
+    else {
+      $links[$key]['href'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/' . $key;
+    }
   }
   $form['revision_tools'] = array(
     '#markup' => theme('links__ctools_dropbutton', array('links' => $links)),
@@ -1922,7 +2027,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
       );
       $links['edit-' . $resource_id] = array(
         'title' => t('Edit resource'),
-        'href' => 'admin/smartdocs/models/' . $model->getUuid() . '/resource/edit/' . $rev_number . '/' . $resource_id,
+        'href' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/resource/edit/' . $rev_number . '/' . $resource_id,
         'attributes' => array(
           'title' => t('Edit resource'),
           'class' => array(
@@ -1990,7 +2095,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
 
           $ops['toggle-status-method-' . $method->getUuid()] = array(
             'title' => $op_title,
-            'href' => 'admin/smartdocs/models/' . $model->getUuid() . '/method/toggle-status/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
+            'href' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/method/toggle-status/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
             'attributes' => array(
               'title' => $op_title,
               'class' => array(
@@ -2002,7 +2107,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
         }
         $ops['delete-method-' . $method->getUuid()] = array(
           'title' => t('Delete method'),
-          'href' => 'admin/smartdocs/models/' . $model->getUuid() . '/method/delete/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
+          'href' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/method/delete/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
           'attributes' => array(
             'title' => t('Delete method'),
             'class' => array(
@@ -2052,23 +2157,20 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
   }
 
   if ($published_count && $view_path = _smartdocs_get_revision_view_path($model)) {
-    $link = l(t('View API Documentation'), $view_path);
-    $message = $link . ' ' . t('(%published_count out of %total_count methods published)',
-        array('%published_count' => $published_count, '%total_count' => $method_count));
+    $count_args = array('%published_count' => $published_count, '%total_count' => $method_count);
+    $published_docs_message = l(t('View API Documentation'), $view_path)
+      . ' '
+      . t('(%published_count out of %total_count methods published)', $count_args);
 
-    $form['published_docs_link'] = array(
-      '#markup' => $message,
-          '#prefix' => '<div class="smartdocs-revision-view-published-docs">',
-          '#suffix' => '</div><br><br>',
-      );
   }
   else {
-    $form['published_docs_link'] = array(
-      '#markup' => t('No documentation created. Render and publish one or more methods to view documentation.'),
-      '#prefix' => '<div class="smartdocs-revision-view-published-docs">',
-      '#suffix' => '</div><br><br>',
-    );
+    $published_docs_message = t('No documentation created. Render and publish one or more methods to view documentation.');
   }
+  $form['published_docs_link'] = array(
+    '#markup' => $published_docs_message,
+    '#prefix' => '<div class="smartdocs-revision-view-published-docs">',
+    '#suffix' => '</div><br><br>',
+  );
 
   $form['revision'] = array(
     '#type' => 'value',
@@ -2084,7 +2186,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
 }
 
 /**
- * Validates the revision detail form
+ * Validates the revision detail form.
  *
  * @param array $form
  *   Descriptor of the form being submitted.
@@ -2198,9 +2300,9 @@ function smartdocs_resource_edit(array $form, array &$form_state, Model $model, 
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l($model->getDisplayName(), 'admin/smartdocs/models/' . $model->getUuid());
-  $breadcrumb[] = l(t('API Revisions'), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/');
-  $breadcrumb[] = l(t('Revision #!revision', array('!revision' => $revision->getRevisionNumber())), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
+  $breadcrumb[] = l($model->getDisplayName(), 'admin/content/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('API Revisions'), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/');
+  $breadcrumb[] = l(t('Revision #!revision', array('!revision' => $revision->getRevisionNumber())), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
   drupal_set_breadcrumb($breadcrumb);
 
   $version = variable_get('local_asset_version', '6');
@@ -2339,7 +2441,7 @@ function smartdocs_resource_edit_submit($form, &$form_state) {
     }
     cache_clear_all('model:' . $model->getUuid(), 'cache_smartdocs');
     module_invoke_all('smartdocs_model_update', $model->getUuid());
-    $form_state['redirect'] = 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber();
+    $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber();
   }
   catch (Exception $e) {
     drupal_set_message(t('Resource failed to save, please consult the logs.'), 'error');
@@ -2377,7 +2479,7 @@ function smartdocs_toggle_node_status(Model $model, Revision $revision, Resource
   else {
     drupal_set_message(t('No node is associated with method ‘@method’.', array('@method' => $method->getDisplayName())), 'error');
   }
-  drupal_goto('admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
+  drupal_goto('admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
 }
 
 /**
@@ -2410,14 +2512,14 @@ function smartdocs_method_delete(array $form, array &$form_state, Model $model, 
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Administration'), 'admin');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l($model->getDisplayName(), 'admin/smartdocs/models/' . $model->getUuid());
-  $breadcrumb[] = l(t('API Revisions'), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/');
-  $breadcrumb[] = l(t('Revision #@revision', array('@revision' => $revision->getRevisionNumber())), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
+  $breadcrumb[] = l($model->getDisplayName(), 'admin/content/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('API Revisions'), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/');
+  $breadcrumb[] = l(t('Revision #@revision', array('@revision' => $revision->getRevisionNumber())), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
   drupal_set_breadcrumb($breadcrumb);
 
   $form['revision_url'] = array(
     '#type' => 'value',
-    '#value' => 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber(),
+    '#value' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber(),
   );
   $form['model_uuid'] = array(
     '#type' => 'value',
@@ -2534,7 +2636,7 @@ function smartdocs_method_delete_submit($form, &$form_state) {
     module_invoke_all('smartdocs_model_update', $form_state['values']['model_uuid']);
     drupal_set_message(t('Method ‘@method’ was successfully deleted.', array('@method' => $method_name)));
   }
-  catch (Apigee\Exceptions\ResponseException $e) {
+  catch (ResponseException $e) {
     drupal_set_message(t('Deleting method ‘@method’ failed. Please check the logs.', array('@method' => $method_name)), 'error');
   }
   $form_state['redirect'] = $form_state['values']['revision_url'];
@@ -2933,7 +3035,7 @@ function smartdocs_model_security_scheme_submit($form, &$form_state) {
   catch (Exception $e) {
     drupal_set_message(t('There was an error saving the security scheme.'));
   }
-  drupal_goto('admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security');
+  drupal_goto('admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security');
 }
 
 /**
@@ -2956,26 +3058,24 @@ function smartdocs_security_scheme_list(Model $model, Revision $revision) {
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
-  $breadcrumb[] = l(t('Revisions'), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions');
-  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $rev)), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $rev);
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('Revisions'), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions');
+  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $rev)), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $rev);
   drupal_set_breadcrumb($breadcrumb);
-
 
   drupal_add_css(drupal_get_path('module', 'views') . '/css/views-admin.ctools.css');
   $output['add_scheme'] = array(
     '#type' => 'link',
-    '#href' => 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security/add',
+    '#href' => 'admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security/add',
     '#title' => t('Add Security Scheme'),
     '#prefix' => '<div class="templateauth-help" style="margin-bottom: 1.5em">',
     '#suffix' => '</div>',
   );
+  $settings_url = url('admin/content/smartdocs/models/' . $model->getUuid() . '/settings', array('fragment' => 'template_auth_settings'));
   $output['template_auth_link'] = array(
-    '#markup' =>  '<div class="templateauth-help">' . t('To manage the template auth schemes, go to the <a href="@url"> template auth settings </a>.', array(
-      '@url' => url('admin/smartdocs/models/' . $model->getUuid() . '/settings', array(
-        'fragment' => 'template_auth_settings'
-      ))
-    )) .'</div>'
+    '#markup' => t('To manage the template auth schemes, go to the <a href="@url">template auth settings</a>.', array('@url' => $settings_url)),
+    '#prefix' => '<div class="templateauth-help">',
+    '#suffix' => '</div>',
   );
 
   $security = new Security(devconnect_default_org_config(), $model->getUuid(), $revision->getUuid());
@@ -2989,23 +3089,23 @@ function smartdocs_security_scheme_list(Model $model, Revision $revision) {
   foreach ($schemes as $scheme) {
     $operations = array(
       'edit' => 'Edit',
-      'delete' => 'Delete'
+      'delete' => 'Delete',
     );
     foreach ($operations as $op => $disp) {
       $ops['list-' . $op] = array(
         'title' => $disp,
-        'href' => 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security/' . $scheme->getName() . '/' .$op,
+        'href' => 'admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security/' . $scheme->getName() . '/' . $op,
         'attributes' => array(
           'title' => $disp,
-          'class' => array($op . '-' . $scheme->getName(), 'views-ajax-link')
-        )
+          'class' => array($op . '-' . $scheme->getName(), 'views-ajax-link'),
+        ),
       );
     }
 
     $rows[] = array(
       $scheme->getName(),
       $scheme->getType(),
-      theme('links__ctools_dropbutton', array('links' => $ops))
+      theme('links__ctools_dropbutton', array('links' => $ops)),
     );
   }
 
@@ -3051,7 +3151,13 @@ function smartdocs_model_security_delete($form, &$form_state, Model $model, Revi
     '#type' => 'value',
     '#value' => $scheme_name,
   );
-  $path = 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security';
+  $form['delete_templateauth'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Delete associated template auth scheme?'),
+    '#description' => t('Selecting this option will delete the associated template auth scheme with name matching the name of this security scheme.'),
+    '#weight' => 5,
+  );
+  $path = 'admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getUuid() . '/security';
   $description = t('You will be deleting this security scheme permanently and this action cannot be undone.');
 
   return confirm_form($form, t('Are you sure, that you want to delete the security scheme !scheme_name', array('!scheme_name' => $scheme_name)), $path, $description, t('Delete'));
@@ -3069,15 +3175,21 @@ function smartdocs_model_security_delete_submit($form, &$form_state) {
   $model_id = $form_state['values']['model_uuid'];
   $revision_id = $form_state['values']['revision_uuid'];
   $scheme_name = $form_state['values']['scheme_name'];
+  $delete_templateauth = $form_state['values']['delete_templateauth'];
+
   $security = new Security(devconnect_default_org_config(), $model_id, $revision_id);
   try{
     $security->delete($scheme_name);
+    if ($delete_templateauth) {
+      $templateauth = new TemplateAuth(devconnect_default_org_config(), $model_id);
+      $templateauth->delete($scheme_name);
+    }
     drupal_set_message(t('Successfully deleted scheme !scheme_name', array('!scheme_name' => $scheme_name)));
   }
   catch (Exception $e) {
     drupal_set_message(t('An error occured when trying to delete the scheme !scheme_name', array('!scheme_name' => $scheme_name)), 'error');
   }
-  $form_state['redirect'] = 'admin/smartdocs/models/' . $model_id . '/revisions/' . $revision_id . '/security';
+  $form_state['redirect'] = 'admin/content/smartdocs/' . $model_id . '/revisions/' . $revision_id . '/security';
 }
 
 /**
@@ -3101,9 +3213,9 @@ function smartdocs_edit_revision(array $form, array $form_state, Model $model, R
   $breadcrumb[] = l(t('Home'), '<front>');
   $breadcrumb[] = l(t('Content'), 'admin/content');
   $breadcrumb[] = l(t('SmartDocs'), 'admin/content/smartdocs/models');
-  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/smartdocs/models/' . $model->getUuid());
-  $breadcrumb[] = l(t('Revisions'), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions');
-  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $revision->getRevisionNumber(),)), 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
+  $breadcrumb[] = l(t('@model', array('@model' => $model->getDisplayName())), 'admin/content/smartdocs/models/' . $model->getUuid());
+  $breadcrumb[] = l(t('Revisions'), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions');
+  $breadcrumb[] = l(t('Revision #@rev', array('@rev' => $revision->getRevisionNumber())), 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber());
   drupal_set_breadcrumb($breadcrumb);
 
   $form['model'] = array(
@@ -3179,7 +3291,7 @@ function smartdocs_edit_revision_submit($form, &$form_state) {
 
     $rev = $revision->getRevisionNumber();
     drupal_set_message(t('Revision #@rev has been updated.', array('@rev' => $rev)));
-    $form_state['redirect'] = 'admin/smartdocs/models/' . $model->getUuid() . '/revisions/' . $rev;
+    $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $rev;
   }
   catch (Exception $e) {
     drupal_set_message(t('Revision #@rev failed to update.', array('@rev' => $revision->getRevisionNumber())), 'error');

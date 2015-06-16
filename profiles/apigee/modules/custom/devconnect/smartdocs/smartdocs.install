@@ -332,3 +332,104 @@ function smartdocs_update_7500() {
   variable_del('smartdocs_content_types');
   variable_del('use_docgen_templates');
 }
+
+/**
+ * Rebuild admin menu structure & migrate old SmartDocs templates to new name.
+ */
+function smartdocs_update_7501() {
+
+  $query = db_select('menu_links', 'ml');
+  $query->fields('ml', array('mlid'));
+  $query->condition('link_path', 'admin/smartdocs/models/add');
+
+  $result = $query->execute()->fetchField();
+  if ($result) {
+    db_delete('menu_links')
+        ->condition('mlid', $result)
+        ->execute();
+    db_delete('menu_router')
+        ->condition('path', 'admin/smartdocs/models/add')
+        ->execute();
+  }
+  menu_rebuild();
+
+  // Register autoloaders.
+  drupal_load('module', 'devconnect');
+  devconnect_init();
+
+  $config = devconnect_default_org_config();
+  if (empty($config->orgName) || empty($config->endpoint)) {
+    // Edge connection is not configured, so we bail.
+    return;
+  }
+  $config->subscribers = array();
+  $config->logger = NULL;
+
+  $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
+  $custom_template_file = variable_get('custom_template_file', NULL);
+
+  if (!empty($custom_template_file)) {
+    $file = file_load($custom_template_file);
+    $path = file_create_url($file->uri);
+  }
+  $default_html = file_get_contents($path);
+
+
+  // Load this just to get the SMARTDOCS_TEMPLATE_NAME constant.
+  drupal_load('module', 'smartdocs');
+
+  $model = new Apigee\SmartDocs\Model($config);
+  $model_list = $model->listModels();
+
+  $success = $fail = 0;
+  /** @var Apigee\SmartDocs\Model $model */
+  foreach ($model_list as $model) {
+    $template = new Apigee\SmartDocs\Template($config, $model->getUuid());
+    $html = FALSE;
+    // Does new-named template exist for this model?
+    try {
+      $html = $template->load(SMARTDOCS_TEMPLATE_NAME, 'method');
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
+    }
+    // If there is already a template by the new name, skip further processing
+    // for this model.
+    if ($html) {
+      if (function_exists('drush_print')) {
+        drush_print('Model ‘' . $model->getDisplayName() . '’ already has the new SmartDocs template name.');
+      }
+      continue;
+    }
+    // Does old-named template exist for this model?
+    try {
+      $html = $template->load('drupal-cms', 'method');
+    }
+    catch  (Apigee\Exceptions\ResponseException $e) {
+    }
+    // If neither template existed, pull from our template file.
+    if (!$html) {
+      if (function_exists('drush_print')) {
+        drush_print('Model ‘' . $model->getDisplayName() . '’ had neither the old nor the new SmartDocs template name.');
+      }
+      $html = $default_html;
+    }
+    // Do our best to save to the new template.
+    try {
+      $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html);
+      if (function_exists('drush_print')) {
+        drush_print('Model ‘' . $model->getDisplayName() . '’ was migrated to the new SmartDocs template name.');
+      }
+      $success++;
+    }
+    catch  (Apigee\Exceptions\ResponseException $e) {
+      if (function_exists('drush_print')) {
+        drush_print('Could not migrate model ‘' . $model->getDisplayName() . '’ to the new SmartDocs template name.');
+      }
+      $fail++;
+    }
+  }
+  if ($success || $fail) {
+    $t = get_t();
+    return $t('%total SmartDocs template migrations attempted: %success successes, %fail failures', array('%total' => $success + $fail, '%success' => $success, '%fail' => $fail));
+  }
+}

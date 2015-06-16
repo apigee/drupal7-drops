@@ -1,40 +1,48 @@
 <?php
+/**
+ * @file
+ * Contains install steps for the Apigee profile.
+ */
+
 use Drupal\devconnect\Crypto;
 
-require_once(DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php');
+require_once DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php';
 
 
-define('SMARTDOCS_SAMPLE_MODEL', 'petstore_example');
+define('SMARTDOCS_SAMPLE_PETSTORE_MODEL', 'petstore_example');
+define('SMARTDOCS_SAMPLE_WEATHER_MODEL', 'weather_example');
 
 /**
- * Selects the Apigee Profile
+ * Selects the Apigee Profile.
  *
- * @param $install_state
+ * @param array $install_state
+ *   Current state of installer.
  */
 function apigee_install_select_profile(&$install_state) {
   $install_state['parameters']['profile'] = 'apigee';
 }
 
 /**
- * Ensure the locale is set to English
+ * Ensure the locale is set to English.
  *
- * @param $install_state
+ * @param array $install_state
+ *   Current state of installer.
  */
 function apigee_install_select_locale(&$install_state) {
   $install_state['parameters']['locale'] = 'en';
 }
 
 /**
- * Task handler to load our install profile and enhance the dependency
- * information.
+ * Loads our install profile and enhances the dependency information.
  *
- * @param $install_state
+ * @param array $install_state
+ *   Current state of installer.
  */
 function apigee_install_load_profile(&$install_state) {
-  // Loading the install profile normally
+  // Loading the install profile normally.
   install_load_profile($install_state);
   if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
-    $install_state['profile_info']['dependencies'][] = "pantheon_api";
+    $install_state['profile_info']['dependencies'][] = 'pantheon_api';
   }
   // Include any dependencies that we might have missed...
   $dependencies = $install_state['profile_info']['dependencies'];
@@ -51,10 +59,13 @@ function apigee_install_load_profile(&$install_state) {
 }
 
 /**
- * Create batch items for apigee install
+ * Create batch items for apigee install.
  *
- * @param $install_state
+ * @param array $install_state
+ *   Current state of installer.
+ *
  * @return array
+ *   Batch items.
  */
 function apigee_install_configure_batch(&$install_state) {
 
@@ -101,25 +112,23 @@ function apigee_install_configure_batch(&$install_state) {
 }
 
 /**
- * Ensures the given task is completed, if not, skip
+ * Implements callback_batch_finished().
  *
- * @param $success
- * @param $results
- * @param $operations
+ * Ensures the given task is completed.
  */
 function _apigee_install_configure_task_finished($success, $results, $operations) {
-  watchdog(__FUNCTION__, 'Configure Task Finished', array(), WATCHDOG_INFO);
-
+  watchdog('apigee_install', 'Configure Task Finished', array(), WATCHDOG_INFO);
   $GLOBALS['install_state']['batch_configure_complete'] = install_verify_completed_task();
 }
 
 /**
  * Configure variables across the environment properly.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_configure_variables(&$context) {
-  watchdog(__FUNCTION__, 'Config Vars', array(), WATCHDOG_INFO);
+function apigee_install_configure_variables(array &$context) {
+  watchdog('apigee_install', 'Config Vars', array(), WATCHDOG_INFO);
   if (array_key_exists('PRESSFLOW_SETTINGS', $_SERVER)) {
     $pressflow = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
     $conf = $pressflow['conf'];
@@ -135,7 +144,8 @@ function apigee_install_configure_variables(&$context) {
     file_prepare_directory($conf['file_public_path'], FILE_CREATE_DIRECTORY);
     file_prepare_directory($conf['file_temporary_path'], FILE_CREATE_DIRECTORY);
     file_prepare_directory($conf['file_private_path'], FILE_CREATE_DIRECTORY);
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     drupal_set_message(t('unable to create the directories necessary for Drupal to write files: :error', array(
       ':error' => $e->getMessage(),
     )));
@@ -156,7 +166,8 @@ function apigee_install_configure_variables(&$context) {
   variable_set('clean_url', TRUE);
   variable_set('site_name', 'New Apigee Site');
   variable_set('site_mail', 'noreply@apigee.com');
-  variable_set('date_default_timezone', 'America/Los_Angeles'); // Designed by Apigee in California
+  // Designed by Apigee in California.
+  variable_set('date_default_timezone', 'America/Los_Angeles');
   variable_set('site_default_country', 'US');
   variable_set('jquery_update_compression_type', 'none');
   variable_set('jquery_update_jquery_cdn', 'google');
@@ -169,11 +180,14 @@ function apigee_install_configure_variables(&$context) {
   variable_set('bootstrap_version', '3');
   variable_set('bootstrap_modal_forms_login', '1');
   variable_set('bootstrap_modal_forms_register', '1');
-  variable_set('logintoboggan_login_with_email', 1); // Set use email for login flag
-  variable_set('logintoboggan_immediate_login_on_register', 0); // Set immediate login to false by default
-  variable_set('logintoboggan_override_destination_parameter', 0); // Set immediate login to false by default
+  // Set use email for login flag.
+  variable_set('logintoboggan_login_with_email', 1);
+  // Set immediate login to false by default.
+  variable_set('logintoboggan_immediate_login_on_register', 0);
+  // Set immediate login to false by default.
+  variable_set('logintoboggan_override_destination_parameter', 0);
 
-  // Detect private dir if it is configured already
+  // Detect private dir if it is configured already.
   $configured_private_dir = $conf['file_private_path'];
   // Make sure private dir exists and is writable.
   if (!empty($configured_private_dir)) {
@@ -204,32 +218,34 @@ function apigee_install_configure_variables(&$context) {
 }
 
 /**
- * Pushes apachesolr xml to Pantheon server
+ * Pushes apachesolr XML to Pantheon server.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_pantheon_push_solr(&$context) {
+function apigee_install_pantheon_push_solr(array &$context) {
   if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) && module_exists('pantheon_apachesolr')) {
-    watchdog(__FUNCTION__, 'Pushing Solr', array(), WATCHDOG_INFO);
+    watchdog('apigee_install', 'Pushing Solr', array(), WATCHDOG_INFO);
     module_load_include('module', 'pantheon_apachesolr');
     pantheon_apachesolr_post_schema_exec('profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml');
     $context['results'][] = 'solr_push';
     $context['message'] = st('Solr config pushed to pantheon solr server.');
   }
   else {
-    watchdog(__FUNCTION__, 'Solr not enabled.', array(), WATCHDOG_NOTICE);
+    watchdog('apigee_install', 'Solr not enabled.', array(), WATCHDOG_NOTICE);
     $context['results'][] = 'solr_push';
     $context['message'] = st('Solr is not enabled, no need to push to Solr server.');
   }
 }
 
 /**
- * Solr config batch item
+ * Solr config batch item.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_configure_solr(&$context) {
-  watchdog(__FUNCTION__, 'Configuring Solr', array(), WATCHDOG_INFO);
+function apigee_install_configure_solr(array &$context) {
+  watchdog('apigee_install', 'Configuring Solr', array(), WATCHDOG_INFO);
   $search_default_module = 'apachesolr_search';
   if (module_exists('apachesolr')) {
     $search_active_modules = array(
@@ -255,12 +271,13 @@ function apigee_install_configure_solr(&$context) {
 }
 
 /**
- * Function that configures standard user functionality across the platform.
+ * Configures standard user functionality across the platform.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_configure_users(&$context) {
-  watchdog(__FUNCTION__, 'Configuring Default Users', array(), WATCHDOG_INFO);
+function apigee_install_configure_users(array &$context) {
+  watchdog('apigee_install', 'Configuring Default Users', array(), WATCHDOG_INFO);
   $admin_role = new stdClass();
   $admin_role->name = 'administrator';
   $admin_role->weight = 10;
@@ -274,10 +291,10 @@ function apigee_install_configure_users(&$context) {
   }
   variable_set('user_admin_role', $admin_role->rid);
   user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
-  //Anonymous user permissions
+  // Grant anonymous user permissions.
   $permissions = array('access comments', 'access content', 'view faq page');
   user_role_grant_permissions(1, $permissions);
-  //Authenticated user permissions
+  // Grant authenticated user permissions.
   $permissions[] = 'post comments';
   user_role_grant_permissions(2, $permissions);
   $roles = array(3 => TRUE, 4 => TRUE);
@@ -304,13 +321,14 @@ function apigee_install_configure_users(&$context) {
 }
 
 /**
- * Configures default themes batch item
+ * Configures default themes batch item.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_configure_themes(&$context) {
-  watchdog(__FUNCTION__, 'Configuring themes', array(), WATCHDOG_INFO);
-  // activate admin theme when editing a node
+function apigee_install_configure_themes(array &$context) {
+  watchdog('apigee_install', 'Configuring themes', array(), WATCHDOG_INFO);
+  // Activate admin theme when editing a node.
   variable_set('node_admin_theme', '1');
   db_update('system')
     ->fields(array('status' => 0))
@@ -328,8 +346,9 @@ function apigee_install_configure_themes(&$context) {
       }
     }
     db_update('block')->fields(array('status' => 0, 'region' => -1))->condition('delta', 'main', '!=')->execute();
-  } catch (Exception $e) {
-    watchdog_exception(__FUNCTION__, $e, 'ERROR CONFIGURING THEMES %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  catch (Exception $e) {
+    watchdog_exception('apigee_install', $e, 'ERROR CONFIGURING THEMES %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
   }
   $context['results'][] = 'themes';
   $context['message'] = st('Default Apigee theme configured.');
@@ -338,10 +357,11 @@ function apigee_install_configure_themes(&$context) {
 /**
  * Installs the various content types that the profile will use.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_content_types(&$context) {
-  watchdog(__FUNCTION__, 'Creating default content types', array(), WATCHDOG_INFO);
+function apigee_install_content_types(array &$context) {
+  watchdog('apigee_install', 'Creating default content types', array(), WATCHDOG_INFO);
   $types = array(
     array(
       'type' => 'page',
@@ -376,20 +396,26 @@ function apigee_install_content_types(&$context) {
 }
 
 /**
- * Enables the devconnect_blog_content_types module
+ * Enables the devconnect_blog_content_types module.
+ *
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_enable_blog_content_types() {
-  //Needs to be done here not in the .info file
+function apigee_install_enable_blog_content_types(array &$context) {
+  // Needs to be done here not in the .info file.
   module_enable(array('devconnect_blog_content_types'));
   $context['results'][] = 'blog_content_types';
   $context['message'] = st('Enabling DevConnect Blog Content Types!');
 }
 
 /**
- * Installs the default homepage
+ * Installs the default homepage.
+ *
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_homepage() {
-  watchdog(__FUNCTION__, 'Generating Homepage', array(), WATCHDOG_INFO);
+function apigee_install_create_homepage(array &$context) {
+  watchdog('apigee_install', 'Generating Homepage', array(), WATCHDOG_INFO);
   $homepage = (object) array(
     'title' => 'home',
     'body' => array(),
@@ -404,19 +430,21 @@ function apigee_install_create_homepage() {
     variable_set("site_frontpage", "node/{$homepage->nid}");
     $context['results'][] = 'homepage_created';
     $context['message'] = st('Default Homepage Generated!');
-  } catch (Exception $e) {
-    watchdog_exception(__FUNCTION__, $e, 'Error generating home page: %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  catch (Exception $e) {
+    watchdog_exception('apigee_install', $e, 'Error generating home page: %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
     $context['results'][] = 'homepage_created';
     $context['message'] = st('No need to generate default homepage...');
   }
 }
 
 /**
- * Creates the CKEditor settings for the portal
+ * Creates the CKEditor settings for the portal.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_base_ckeditor_settings(&$context) {
+function apigee_install_base_ckeditor_settings(array &$context) {
   if (!module_exists('filter')) {
     module_enable(array('filter'), TRUE);
   }
@@ -454,9 +482,7 @@ p[align<center?justify?left?right],
 br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
               'allow_comments' => 0,
               'nofollow_policy' => 'whitelist',
-              'nofollow_domains' => array(
-                0 => 'gitesh.loc',
-              ),
+              'nofollow_domains' => array(),
               'style_color' => array(
                 'color' => 0,
                 'background' => 0,
@@ -581,12 +607,12 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
     db_insert('role_permission')->fields(array(
       'rid' => 2,
       'permission' => 'use text format filtered_html',
-      'module' => 'filter'
+      'module' => 'filter',
     ))->execute();
     db_insert('role_permission')->fields(array(
       'rid' => 3,
       'permission' => 'use text format filtered_html',
-      'module' => 'filter'
+      'module' => 'filter',
     ))->execute();
   }
   if (!in_array('full_html', array_keys($filters))) {
@@ -614,9 +640,71 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
     db_insert('role_permission')->fields(array(
       'rid' => 3,
       'permission' => 'use text format full_html',
-      'module' => 'filter'
+      'module' => 'filter',
     ))->execute();
   }
+
+  $plugin_names = array(
+    'a11yhelp', 'about', 'basicstyles', 'blockquote', 'button',
+    'ckeditor_link', 'clipboard', 'contextmenu', 'counter', 'dialog',
+    'dialogui', 'drupalbreaks', 'elementspath', 'enterkey', 'entities',
+    'fakeobjects', 'filebrowser', 'floatingspace', 'floatpanel',
+    'horizontalrule', 'htmlwriter', 'iframe', 'image', 'insertpre',
+    'indent', 'indentlist', 'lineutils', 'list', 'magicline', 'media',
+    'mediaembed', 'menu', 'menubutton', 'panel', 'pastefromword',
+    'pastetext', 'popup', 'removeformat', 'richcombo', 'scayt',
+    'sharedspace', 'sourcearea', 'sourcedialog', 'specialchar',
+    'stylescombo', 'tab', 'tableresize', 'toolbarswitch', 'widget',
+    'wysiwygarea', 'trifold', 'featurette', 'jumbotron', 'carousel',
+  );
+  $plugins = array();
+  foreach ($plugin_names as $plugin_name) {
+    $plugins[$plugin_name] = array(
+      'name' => $plugin_name,
+      'desc' => 'Plugin file: ' . $plugin_name,
+      'path' => '%plugin_dir_extra%' . $plugin_name . '/',
+      'buttons' => '',
+      'default' => 'f',
+    );
+  }
+  // Now handle exceptions to the rule.
+  $plugins['ckeditor_link']['path'] = '%base_path%profiles/apigee/modules/contrib/ckeditor_link/plugins/link/';
+  // Is this a bug?
+  unset($plugins['ckeditor_link']['default']);
+
+  $plugins['drupalbreaks']['path'] = '%plugin_dir%drupalbreaks/';
+  $plugins['drupalbreaks']['buttons'] = array(
+    'DrupalBreak' => array(
+      'label' => 'DrupalBreak',
+      'icon' => 'images/drupalbreak.png',
+    ),
+  );
+
+  $plugins['media']['path'] = '%plugin_dir%media/';
+  $plugins['media']['buttons'] = array(
+    'Media' => array(
+      'label' => 'Media',
+      'icon' => 'images/icon.gif',
+    ),
+  );
+
+  $plugins['mediaembed']['path'] = '%plugin_dir%mediaembed/';
+  $plugins['media']['buttons'] = array(
+    'MediaEmbed' => array(
+      'label' => 'MediaEmbed',
+      'icon' => 'images/icon.gif',
+    ),
+  );
+
+  // Set default-true plugins.
+  foreach (array('drupalbreaks', 'tableresize', 'toolbarswitch', 'widget', 'wysiwygarea', 'trifold', 'featurette', 'jumbotron', 'carousel') as $plugin_name) {
+    $plugins[$plugin_name]['default'] = 't';
+  }
+  // Set paths for bootstrap plugins.
+  foreach (array('trifold', 'featurette', 'jumbotron', 'carousel') as $plugin_name) {
+    $plugins[$plugin_name]['path'] = '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/' . $plugin_name . '/';
+  }
+
   $ckeditor_filtered = array(
     'ss' => 2,
     'default' => 't',
@@ -671,400 +759,7 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
     'scayt_autoStartup' => 'f',
     'theme_config_js' => 'f',
     'js_conf' => 'config.allowedContent = true;',
-    'loadPlugins' => array(
-      'a11yhelp' => array(
-        'name' => 'a11yhelp',
-        'desc' => 'Plugin file: a11yhelp',
-        'path' => '%plugin_dir_extra%a11yhelp/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'about' => array(
-        'name' => 'about',
-        'desc' => 'Plugin file: about',
-        'path' => '%plugin_dir_extra%about/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'basicstyles' => array(
-        'name' => 'basicstyles',
-        'desc' => 'Plugin file: basicstyles',
-        'path' => '%plugin_dir_extra%basicstyles/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'blockquote' => array(
-        'name' => 'blockquote',
-        'desc' => 'Plugin file: blockquote',
-        'path' => '%plugin_dir_extra%blockquote/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'button' => array(
-        'name' => 'button',
-        'desc' => 'Plugin file: button',
-        'path' => '%plugin_dir_extra%button/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'ckeditor_link' => array(
-        'name' => 'drupal_path',
-        'desc' => 'CKEditor Link - A plugin to easily create links to Drupal internal paths',
-        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_link/plugins/link/',
-        'buttons' => '',
-      ),
-      'clipboard' => array(
-        'name' => 'clipboard',
-        'desc' => 'Plugin file: clipboard',
-        'path' => '%plugin_dir_extra%clipboard/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'contextmenu' => array(
-        'name' => 'contextmenu',
-        'desc' => 'Plugin file: contextmenu',
-        'path' => '%plugin_dir_extra%contextmenu/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'counter' => array(
-        'name' => 'contextmenu',
-        'desc' => 'Plugin file: counter',
-        'path' => '%plugin_dir_extra%counter/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'dialog' => array(
-        'name' => 'dialog',
-        'desc' => 'Plugin file: dialog',
-        'path' => '%plugin_dir_extra%dialog/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'dialogui' => array(
-        'name' => 'dialog',
-        'desc' => 'Plugin file: dialogui',
-        'path' => '%plugin_dir_extra%dialogui/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'drupalbreaks' => array(
-        'name' => 'drupalbreaks',
-        'desc' => 'Plugin for inserting Drupal teaser and page breaks.',
-        'path' => '%plugin_dir%drupalbreaks/',
-        'buttons' => array(
-          'DrupalBreak' => array(
-            'label' => 'DrupalBreak',
-            'icon' => 'images/drupalbreak.png',
-          ),
-        ),
-        'default' => 't',
-      ),
-      'elementspath' => array(
-        'name' => 'elementspath',
-        'desc' => 'Plugin file: elementspath',
-        'path' => '%plugin_dir_extra%elementspath/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'enterkey' => array(
-        'name' => 'enterkey',
-        'desc' => 'Plugin file: enterkey',
-        'path' => '%plugin_dir_extra%enterkey/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'entities' => array(
-        'name' => 'entities',
-        'desc' => 'Plugin file: entities',
-        'path' => '%plugin_dir_extra%entities/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'fakeobjects' => array(
-        'name' => 'fakeobjects',
-        'desc' => 'Plugin file: fakeobjects',
-        'path' => '%plugin_dir_extra%fakeobjects/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'filebrowser' => array(
-        'name' => 'filebrowser',
-        'desc' => 'Plugin file: filebrowser',
-        'path' => '%plugin_dir_extra%filebrowser/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'floatingspace' => array(
-        'name' => 'floatingspace',
-        'desc' => 'Plugin file: floatingspace',
-        'path' => '%plugin_dir_extra%floatingspace/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'floatpanel' => array(
-        'name' => 'floatpanel',
-        'desc' => 'Plugin file: floatpanel',
-        'path' => '%plugin_dir_extra%floatpanel/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'horizontalrule' => array(
-        'name' => 'horizontalrule',
-        'desc' => 'Plugin file: horizontalrule',
-        'path' => '%plugin_dir_extra%horizontalrule/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'htmlwriter' => array(
-        'name' => 'htmlwriter',
-        'desc' => 'Plugin file: htmlwriter',
-        'path' => '%plugin_dir_extra%htmlwriter/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'iframe' => array(
-        'name' => 'iframe',
-        'desc' => 'Plugin file: iframe',
-        'path' => '%plugin_dir_extra%iframe/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'image' => array(
-        'name' => 'image',
-        'desc' => 'Plugin file: image',
-        'path' => '%plugin_dir_extra%image/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'insertpre' => array(
-        'name' => 'insertpre',
-        'desc' => 'Plugin file: insertpre',
-        'path' => '%plugin_dir_extra%insertpre/',
-        'buttons' => '',
-        'default' => 'f'
-      ),
-      'indent' => array(
-        'name' => 'indent',
-        'desc' => 'Plugin file: indent',
-        'path' => '%plugin_dir_extra%indent/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'indentlist' => array(
-        'name' => 'indentlist',
-        'desc' => 'Plugin file: indentlist',
-        'path' => '%plugin_dir_extra%indentlist/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'lineutils' => array(
-        'name' => 'lineutils',
-        'desc' => 'Plugin file: lineutils',
-        'path' => '%plugin_dir_extra%lineutils/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'list' => array(
-        'name' => 'list',
-        'desc' => 'Plugin file: list',
-        'path' => '%plugin_dir_extra%list/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'magicline' => array(
-        'name' => 'magicline',
-        'desc' => 'Plugin file: magicline',
-        'path' => '%plugin_dir_extra%magicline/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'media' => array(
-        'name' => 'media',
-        'desc' => 'Plugin for inserting images from Drupal media module',
-        'path' => '%plugin_dir%media/',
-        'buttons' => array(
-          'Media' => array(
-            'label' => 'Media',
-            'icon' => 'images/icon.gif',
-          ),
-        ),
-        'default' => 'f',
-      ),
-      'mediaembed' => array(
-        'name' => 'mediaembed',
-        'desc' => 'Plugin for inserting Drupal embeded media',
-        'path' => '%plugin_dir%mediaembed/',
-        'buttons' => array(
-          'MediaEmbed' => array(
-            'label' => 'MediaEmbed',
-            'icon' => 'images/icon.png',
-          )
-        ),
-        'default' => 'f',
-      ),
-      'menu' => array(
-        'name' => 'menu',
-        'desc' => 'Plugin file: menu',
-        'path' => '%plugin_dir_extra%menu/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'menubutton' => array(
-        'name' => 'menubutton',
-        'desc' => 'Plugin file: menubutton',
-        'path' => '%plugin_dir_extra%menubutton/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'panel' => array(
-        'name' => 'panel',
-        'desc' => 'Plugin file: panel',
-        'path' => '%plugin_dir_extra%panel/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'pastefromword' => array(
-        'name' => 'pastefromword',
-        'desc' => 'Plugin file: pastefromword',
-        'path' => '%plugin_dir_extra%pastefromword/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'pastetext' => array(
-        'name' => 'pastetext',
-        'desc' => 'Plugin file: pastetext',
-        'path' => '%plugin_dir_extra%pastetext/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'popup' => array(
-        'name' => 'popup',
-        'desc' => 'Plugin file: popup',
-        'path' => '%plugin_dir_extra%popup/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'removeformat' => array(
-        'name' => 'removeformat',
-        'desc' => 'Plugin file: removeformat',
-        'path' => '%plugin_dir_extra%removeformat/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'richcombo' => array(
-        'name' => 'richcombo',
-        'desc' => 'Plugin file: richcombo',
-        'path' => '%plugin_dir_extra%richcombo/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'scayt' => array(
-        'name' => 'scayt',
-        'desc' => 'Plugin file: scayt',
-        'path' => '%plugin_dir_extra%scayt/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'sharedspace' => array(
-        'name' => 'sharedspace',
-        'desc' => 'Plugin file: sharedspace',
-        'path' => '%plugin_dir_extra%sharedspace/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'sourcearea' => array(
-        'name' => 'sourcearea',
-        'desc' => 'Plugin file: sourcearea',
-        'path' => '%plugin_dir_extra%sourcearea/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'sourcedialog' => array(
-        'name' => 'sourcedialog',
-        'desc' => 'Plugin file: sourcedialog',
-        'path' => '%plugin_dir_extra%sourcedialog/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'specialchar' => array(
-        'name' => 'specialchar',
-        'desc' => 'Plugin file: specialchar',
-        'path' => '%plugin_dir_extra%specialchar/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'stylescombo' => array(
-        'name' => 'stylescombo',
-        'desc' => 'Plugin file: stylescombo',
-        'path' => '%plugin_dir_extra%stylescombo/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'tab' => array(
-        'name' => 'tab',
-        'desc' => 'Plugin file: tab',
-        'path' => '%plugin_dir_extra%tab/',
-        'buttons' => '',
-        'default' => 'f',
-      ),
-      'tableresize' => array(
-        'name' => 'tableresize',
-        'desc' => 'Plugin file: tableresize',
-        'path' => '%plugin_dir_extra%tableresize/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-      'toolbarswitch' => array(
-        'name' => 'toolbarswitch',
-        'desc' => 'Plugin file: toolbarswitch',
-        'path' => '%plugin_dir_extra%toolbarswitch/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-      'widget' => array(
-        'name' => 'widget',
-        'desc' => 'Plugin file: widget',
-        'path' => '%plugin_dir_extra%widget/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-      'wysiwygarea' => array(
-        'name' => 'wysiwygarea',
-        'desc' => 'Plugin file: wysiwygarea',
-        'path' => '%plugin_dir_extra%wysiwygarea/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-      'trifold' => array(
-        'name' => 'trifold',
-        'desc' => 'Plugin file: trifold',
-        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/trifold/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-      'featurette' => array(
-        'name' => 'featurette',
-        'desc' => 'Plugin file: featurette',
-        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/featurette/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-      'jumbotron' => array(
-        'name' => 'jumbotron',
-        'desc' => 'Plugin file: jumbotron',
-        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/jumbotron/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-      'carousel' => array(
-        'name' => 'carousel',
-        'desc' => 'Plugin file: carousel',
-        'path' => '%base_path%profiles/apigee/modules/contrib/ckeditor_bootstrap/plugins/carousel/',
-        'buttons' => '',
-        'default' => 't',
-      ),
-    ),
+    'loadPlugins' => $plugins,
   );
   $ckeditor_full = $ckeditor_filtered;
   $ckeditor_full['toolbar'] = "
@@ -1097,13 +792,7 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
     'loadPlugins' => array(),
   );
   db_delete('ckeditor_settings')
-    ->condition('name', 'Full')
-    ->execute();
-  db_delete('ckeditor_settings')
-    ->condition('name', 'Advanced')
-    ->execute();
-  db_delete('ckeditor_settings')
-    ->condition('name', 'CKEditor Global Profile')
+    ->condition('name', array('Full', 'Advanced', 'CKEditor Global Profile'))
     ->execute();
   db_insert('ckeditor_settings')
     ->fields(array(
@@ -1136,11 +825,12 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
 }
 
 /**
- * Creates dummy taxonomy terms
+ * Creates dummy taxonomy terms.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_taxonomy_terms(&$context) {
+function apigee_install_create_taxonomy_terms(array &$context) {
   for ($i = 0; $i <= 5; $i++) {
     $term = new stdClass();
     $term->name = _apigee_install_generate_greek(1, TRUE);
@@ -1152,11 +842,12 @@ function apigee_install_create_taxonomy_terms(&$context) {
 }
 
 /**
- * Creates example tutorial content
+ * Creates example tutorial content.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_tutorial_content(&$context) {
+function apigee_install_create_tutorial_content(array &$context) {
   $posts = array(
     array(
       'title' => 'Portal Start Up Guide',
@@ -1198,12 +889,13 @@ function apigee_install_create_tutorial_content(&$context) {
 }
 
 /**
- * Creates default content for the install
+ * Creates default forum content for the install.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_forum_content(&$context) {
-  // 10 forum posts
+function apigee_install_create_forum_content(array &$context) {
+  // Create 10 forum posts.
   for ($i = 0; $i <= 7; $i++) {
     $body = array();
     $body['title'] = _apigee_install_generate_greek(mt_rand(3, 10));
@@ -1220,12 +912,13 @@ function apigee_install_create_forum_content(&$context) {
 }
 
 /**
- * Creates default content for the install
+ * Creates default page content for the install.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_page_content(&$context) {
-  // 5 pages
+function apigee_install_create_page_content(array &$context) {
+  // Create five pages.
   for ($i = 0; $i <= 5; $i++) {
     $body = array();
     $body['title'] = _apigee_install_generate_greek(mt_rand(3, 10));
@@ -1237,11 +930,12 @@ function apigee_install_create_page_content(&$context) {
 }
 
 /**
- * Creates default content for the install
+ * Creates default audio content for the install.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_audio_content(&$context) {
+function apigee_install_create_audio_content(array &$context) {
   $fid = _apigee_content_types_get_fid('http://www.lullabot.com/sites/default/files/podcasts/drupalizeme_033.mp3', 'drupalizeme_033.mp3', 'audio/mpeg', 'audio');
   $blog_tid = _apigee_get_blog_tid();
   $t = get_t();
@@ -1260,17 +954,17 @@ function apigee_install_create_audio_content(&$context) {
         array(
           'value' => '',
           'summary' => '',
-          'format' => 'full_html'
-        )
-      )
+          'format' => 'full_html',
+        ),
+      ),
     ),
     'field_audio' => array(
       LANGUAGE_NONE => array(
         array(
           'fid' => $fid,
           'display' => 1,
-        )
-      )
+        ),
+      ),
     ),
   );
   node_save($node);
@@ -1284,11 +978,12 @@ function apigee_install_create_audio_content(&$context) {
 }
 
 /**
- * Creates default content for the install
+ * Creates default video content for the install.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_video_content(&$context) {
+function apigee_install_create_video_content(array &$context) {
   $fid = _apigee_content_types_get_fid('youtube://v/twWnGnQG_1s', 'twWnGnQG_1s', 'video/youtube', 'video');
   $blog_tid = _apigee_get_blog_tid();
   $t = get_t();
@@ -1306,9 +1001,9 @@ function apigee_install_create_video_content(&$context) {
         array(
           'value' => '<p>' . $t('Marsh and Brian from Apigee help your API Program take it to the next level!') . '</p>',
           'summary' => '',
-          'format' => 'full_html'
-        )
-      )
+          'format' => 'full_html',
+        ),
+      ),
     ),
     'field_content_tag' => array(LANGUAGE_NONE => array(array('tid' => $blog_tid))),
     'field_video' => array(
@@ -1316,14 +1011,14 @@ function apigee_install_create_video_content(&$context) {
         array(
           'fid' => $fid,
           'display' => 1,
-          'description' => ''
-        )
-      )
+          'description' => '',
+        ),
+      ),
     ),
   );
   node_save($node);
   _apigee_content_types_set_file_usage($fid, $node->nid);
-  // Now create path alias
+  // Now create path alias.
   if (!module_exists('pathauto')) {
     $path = array('source' => 'node/' . $node->nid, 'alias' => 'blog/your-api-sucks');
     path_save($path);
@@ -1333,11 +1028,12 @@ function apigee_install_create_video_content(&$context) {
 }
 
 /**
- * Creates default content for the install
+ * Creates default FAQ content for the install.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_faq_content(&$context) {
+function apigee_install_create_faq_content(array &$context) {
   $type = 'faq';
   for ($i = 0; $i <= 3; $i++) {
     _apigee_install_generate_node($type, $body = NULL, $fields = NULL);
@@ -1347,10 +1043,12 @@ function apigee_install_create_faq_content(&$context) {
 }
 
 /**
- * Helper function that sets the file usage
+ * Helper function that sets the file usage.
  *
- * @param $fid
- * @param $nid
+ * @param int $fid
+ *   File identifier
+ * @param int $nid
+ *   Node identifier
  */
 function _apigee_content_types_set_file_usage($fid, $nid) {
   $fid_exists = db_select('file_usage', 'fu')
@@ -1367,7 +1065,7 @@ function _apigee_content_types_set_file_usage($fid, $nid) {
         'module' => 'file',
         'type' => 'node',
         'id' => $nid,
-        'count' => 1
+        'count' => 1,
       ))
       ->execute();
   }
@@ -1377,10 +1075,16 @@ function _apigee_content_types_set_file_usage($fid, $nid) {
  * Helper function to find (or create) an entry in the file_managed table.
  *
  * @param string $uri
+ *   URI of the managed file
  * @param string $filename
+ *   Filename of the managed file
  * @param string $filemime
+ *   MIME type of the managed file
  * @param string $type
- * @return integer
+ *   Content-type to which file is attached.
+ *
+ * @return int
+ *   File ID of the managed file.
  */
 function _apigee_content_types_get_fid($uri, $filename, $filemime, $type) {
   $fid = db_select('file_managed', 'fm')
@@ -1397,7 +1101,7 @@ function _apigee_content_types_get_fid($uri, $filename, $filemime, $type) {
       'status' => 1,
       'type' => $type,
       'alt' => '',
-      'title' => ''
+      'title' => '',
     );
     $file = file_save($file);
     $fid = $file->fid;
@@ -1406,10 +1110,15 @@ function _apigee_content_types_get_fid($uri, $filename, $filemime, $type) {
 }
 
 /**
- * Gets the tid for a Given Blog
+ * Gets the tid for the 'blog' term in the 'content_type_tag' vocabulary.
  *
- * @param null $blog_tid
- * @return null
+ * @param int|null $blog_tid
+ *   If $blog_tid is passed in, it is set as the tid for future use.
+ *
+ * @return int
+ *   The tid of the blog term.
+ *
+ * @TODO Why aren't we using taxonomy_get_term_by_name()?
  */
 function _apigee_get_blog_tid($blog_tid = NULL) {
   static $tid;
@@ -1429,11 +1138,14 @@ function _apigee_get_blog_tid($blog_tid = NULL) {
 }
 
 /**
- * Function that generates nodes
+ * Helper function to generate a node.
  *
- * @param $type
- * @param null $body
- * @param null $fields
+ * @param string $type
+ *   Node content-type to be created.
+ * @param string|null $body
+ *   Body of the node.
+ * @param null|array $fields
+ *   Abbreviated descriptors of fields to be created on the node.
  */
 function _apigee_install_generate_node($type, $body = NULL, $fields = NULL) {
   $node = new stdClass();
@@ -1501,6 +1213,7 @@ function _apigee_install_generate_node($type, $body = NULL, $fields = NULL) {
           }
         }
         break;
+
       case 'forum':
         if (isset($fields['vid'])) {
           $node->comment = 2;
@@ -1509,6 +1222,7 @@ function _apigee_install_generate_node($type, $body = NULL, $fields = NULL) {
           $node->taxonomy_forums[LANGUAGE_NONE][]['tid'] = $tree[$rand]->tid;
         }
         break;
+
       default:
         break;
     }
@@ -1520,12 +1234,18 @@ function _apigee_install_generate_node($type, $body = NULL, $fields = NULL) {
 }
 
 /**
- * Generates filler content for generated nodes
- * Mimics Devel's devel_creating_greeking, but makes this profile not rely on it
+ * Generates filler content for generated nodes.
  *
- * @param $word_count
+ * Mimics Devel's devel_creating_greeking, but makes this profile not rely on
+ * that module.
+ *
+ * @param int $word_count
+ *   How many words are to be created?
  * @param bool $title
+ *   Are we creating a node title rather than node body?
+ *
  * @return string
+ *   String of greeked "words".
  */
 function _apigee_install_generate_greek($word_count, $title = FALSE) {
   static $greek_flipped = NULL;
@@ -1558,76 +1278,83 @@ function _apigee_install_generate_greek($word_count, $title = FALSE) {
 }
 
 /**
- * Rebuilds permissions
+ * Rebuilds permissions.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_rebuild_permissions(&$context) {
-  watchdog(__FUNCTION__, 'rebuilding permissions', array(), WATCHDOG_INFO);
+function apigee_install_rebuild_permissions(array &$context) {
+  watchdog('apigee_install', 'rebuilding permissions', array(), WATCHDOG_INFO);
   try {
     node_access_rebuild(TRUE);
-  } catch (Exception $e) {
-    watchdog_exception(__FUNCTION__, $e, 'Error rebuilding node access: %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  catch (Exception $e) {
+    watchdog_exception('apigee_install', $e, 'Error rebuilding node access: %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
   }
   $context['results'][] = 'content_permissions';
   $context['message'] = st('Content Permissions Rebuilt');
 }
 
 /**
- * Flushes caches for the JS/CSS cache
+ * Flushes caches for the JS/CSS cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_flush(&$context) {
-  watchdog(__FUNCTION__, 'Flushing CSS/JS', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_flush(array &$context) {
+  watchdog('apigee_install', 'Flushing CSS/JS', array(), WATCHDOG_INFO);
   _drupal_flush_css_js();
   $context['results'][] = 'cache_flush';
   $context['message'] = st('CSS & JS flushed');
 }
 
 /**
- * Rebuilds the registry for the site
+ * Rebuilds the registry for the site.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_rebuild_registry(&$context) {
-  watchdog(__FUNCTION__, 'Rebuilding Registry', array(), WATCHDOG_INFO);
+function apigee_install_rebuild_registry(array &$context) {
+  watchdog('apigee_install', 'Rebuilding Registry', array(), WATCHDOG_INFO);
   registry_rebuild();
   $context['results'][] = 'cache_registry';
   $context['message'] = st('Registry Rebuilt');
 }
 
 /**
- * Clears the CSS Cache
+ * Clears the CSS Cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_css(&$context) {
-  watchdog(__FUNCTION__, 'Clearing CSS Cache', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_css(array &$context) {
+  watchdog('apigee_install', 'Clearing CSS Cache', array(), WATCHDOG_INFO);
   drupal_clear_css_cache();
   $context['results'][] = 'cache_css';
   $context['message'] = st('CSS Caches Cleared');
 }
 
 /**
- * Clears the JS Cache
+ * Clears the JS Cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_js(&$context) {
-  watchdog(__FUNCTION__, 'Clearing JS Cache', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_js(array &$context) {
+  watchdog('apigee_install', 'Clearing JS Cache', array(), WATCHDOG_INFO);
   drupal_clear_js_cache();
   $context['results'][] = 'cache_js';
   $context['message'] = st('JS Caches Cleared');
 }
 
 /**
- * Clears the theme cache
+ * Clears the theme cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_theme(&$context) {
-  watchdog(__FUNCTION__, 'Rebuilding themes...', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_theme(array &$context) {
+  watchdog('apigee_install', 'Rebuilding themes', array(), WATCHDOG_INFO);
   system_rebuild_theme_data();
   drupal_theme_rebuild();
   $context['results'][] = 'cache_theme';
@@ -1635,67 +1362,75 @@ function apigee_install_clear_caches_theme(&$context) {
 }
 
 /**
- * Clears the entity cache
+ * Clears the entity cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_entity(&$context) {
-  watchdog(__FUNCTION__, 'Clearing Entity Cache...', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_entity(array &$context) {
+  watchdog('apigee_install', 'Clearing Entity Cache', array(), WATCHDOG_INFO);
   entity_info_cache_clear();
   $context['results'][] = 'cache_entity';
   $context['message'] = st('Entity Caches Cleared');
 }
 
 /**
- * Rebuilds the node types cache
+ * Rebuilds the node types cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_nodes(&$context) {
-  watchdog(__FUNCTION__, 'Rebuilding Node Types...', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_nodes(array &$context) {
+  watchdog('apigee_install', 'Rebuilding Node Types', array(), WATCHDOG_INFO);
   node_types_rebuild();
   $context['results'][] = 'cache_node';
   $context['message'] = st('Node Caches Cleared');
 }
 
 /**
- * Rebuilds the menu
+ * Rebuilds the menu.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_menu(&$context) {
-  watchdog(__FUNCTION__, 'Rebuilding Menu...', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_menu(array &$context) {
+  watchdog('apigee_install', 'Rebuilding Menu', array(), WATCHDOG_INFO);
   menu_rebuild();
   $context['results'][] = 'cache_menu';
   $context['message'] = st('Menu Caches Cleared');
 }
 
 /**
- * Synchronizes Actions
+ * Synchronizes Actions.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_actions(&$context) {
-  watchdog(__FUNCTION__, 'Synchronizing Actions...', array(), WATCHDOG_INFO);
+function apigee_install_clear_caches_actions(array &$context) {
+  watchdog('apigee_install', 'Synchronizing Actions...', array(), WATCHDOG_INFO);
   actions_synchronize();
   $context['results'][] = 'cache_action';
   $context['message'] = st('Action Caches Cleared');
 }
 
 /**
- * Worker to flush a supplied cache
+ * Helper function to flush a supplied cache.
  *
- * @param $table
- * @param $results_label
- * @param $message_label
- * @param $context
+ * @param string $table
+ *   Name of cache table to clear.
+ * @param string $results_label
+ *   Human-readable name of cache for logs.
+ * @param string $message_label
+ *   Human-readable name of cache for UI.
+ * @param array $context
+ *   Current state of installer.
  */
 function _apigee_install_clear_cache($table, $results_label, $message_label, &$context) {
   static $cache_tables;
   if (!isset($cache_tables)) {
     $cache_tables = module_invoke_all('flush_caches');
   }
-  watchdog(__FUNCTION__, "Flushing $results_label caches...", array(), WATCHDOG_INFO);
+  watchdog('apigee_install', "Flushing $results_label caches...", array(), WATCHDOG_INFO);
   $my_cache_tables = array_merge($cache_tables, array($table));
   foreach ($my_cache_tables as $my_table) {
     cache_clear_all('*', $my_table, TRUE);
@@ -1705,57 +1440,63 @@ function _apigee_install_clear_cache($table, $results_label, $message_label, &$c
 }
 
 /**
- * Clears core cache
+ * Clears core cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_core(&$context) {
+function apigee_install_clear_caches_core(array &$context) {
   _apigee_install_clear_cache('cache', 'cache_core', 'Core', $context);
 }
 
 /**
- * Clears core path cache
+ * Clears core path cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_core_path(&$context) {
+function apigee_install_clear_caches_core_path(array &$context) {
   _apigee_install_clear_cache('cache_path', 'cache_path', 'Path', $context);
 }
 
 /**
- * Clears cache filter
+ * Clears cache filter.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_core_filter(&$context) {
+function apigee_install_clear_caches_core_filter(array &$context) {
   _apigee_install_clear_cache('cache_filter', 'cache_filter', 'Filter', $context);
 }
 
 /**
- * Clears bootstrap cache
+ * Clears bootstrap cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_core_bootstrap(&$context) {
+function apigee_install_clear_caches_core_bootstrap(array &$context) {
   _apigee_install_clear_cache('cache_bootstrap', 'cache_bootstrap', 'Bootstrap', $context);
 }
 
 /**
- * Clears cache page
+ * Clears page cache.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_clear_caches_core_page(&$context) {
+function apigee_install_clear_caches_core_page(array &$context) {
   _apigee_install_clear_cache('cache_page', 'cache_page', 'Page', $context);
 }
 
 /**
- * Updates the bootstrap Status
+ * Updates the bootstrap status.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_bootstrap_status(&$context) {
-  watchdog(__FUNCTION__, 'Updating bootstrap status...', array(), WATCHDOG_INFO);
+function apigee_install_bootstrap_status(array &$context) {
+  watchdog('apigee_install', 'Updating bootstrap status...', array(), WATCHDOG_INFO);
   _system_update_bootstrap_status();
   drupal_get_messages();
   $context['results'][] = 'bootstrap_status';
@@ -1763,11 +1504,15 @@ function apigee_install_bootstrap_status(&$context) {
 }
 
 /**
- * Set the apigee endpoint configuration vars.
+ * Form constructor for setting Apigee endpoint configuration vars.
  *
- * @param $form
- * @param $form_state
+ * @param array $form
+ *   The form being constructed.
+ * @param array $form_state
+ *   State of the form being constructed.
+ *
  * @return array
+ *   The newly-created form.
  */
 function apigee_install_api_endpoint($form, &$form_state) {
   if (isset($_REQUEST['devconnect_org'])) {
@@ -1792,7 +1537,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     'autocomplete' => 'off',
     'autocorrect' => 'off',
     'autocapitalize' => 'off',
-    'spellcheck' => 'false'
+    'spellcheck' => 'false',
   );
   $form = array();
 
@@ -1807,7 +1552,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     a.innerHTML = 'Show password';
     i.type = 'password';
   }
-}</script>"
+}</script>",
   );
 
   $form['org'] = array(
@@ -1816,7 +1561,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => $org,
     '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
-    '#attributes' => $attributes
+    '#attributes' => $attributes,
   );
   $form['endpoint'] = array(
     '#type' => 'textfield',
@@ -1824,7 +1569,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => $endpoint,
     '#description' => t('URL to which to make Edge REST calls. For on-prem installs you will need to change this value.'),
-    '#attributes' => $attributes
+    '#attributes' => $attributes,
   );
   $form['user'] = array(
     '#type' => 'textfield',
@@ -1832,7 +1577,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#required' => TRUE,
     '#default_value' => '',
     '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
-    '#attributes' => $attributes + array('placeholder' => 'username')
+    '#attributes' => $attributes + array('placeholder' => 'username'),
   );
   $form['pass'] = array(
     '#type' => 'textfield',
@@ -1873,10 +1618,12 @@ function apigee_install_api_endpoint($form, &$form_state) {
 }
 
 /**
- * Validates if the connection is successful
+ * Validates if the connection is successful.
  *
- * @param $form
- * @param $form_state
+ * @param array $form
+ *   The form being validated.
+ * @param array $form_state
+ *   The state of the form being validated.
  */
 function apigee_install_api_endpoint_validate($form, &$form_state) {
   $org = trim($form_state['values']['org']);
@@ -1885,16 +1632,20 @@ function apigee_install_api_endpoint_validate($form, &$form_state) {
   $pass = trim($form_state['values']['pass']);
   module_load_include('inc', 'devconnect', 'devconnect.admin');
   $return = _devconnect_test_kms_connection($org, $endpoint, $user, $pass);
-  if (strpos($return, t('Connection Successful')) === FALSE) { //If connection is not successful
+  // Was connection successful?
+  if (strpos($return, t('Connection Successful')) === FALSE) {
     form_set_error('form', $return);
   }
 }
 
 /**
- * Removes the password strength indicator, the title for the first password field and the description from the confirm password field.
+ * Pre-render callback for password fields.
  *
- * @param $element
- * @return mixed
+ * @param array $element
+ *   The password element about to be rendered.
+ *
+ * @return array
+ *   Password element descriptor to be rendered.
  */
 function apigee_password_pre_render($element) {
   unset($element['pass1']['#title']);
@@ -1904,6 +1655,17 @@ function apigee_password_pre_render($element) {
 
 }
 
+/**
+ * Post-render callback for a password field.
+ *
+ * @param string $content
+ *   The rendered output of the form element.
+ * @param array $element
+ *   The form element being rendered.
+ *
+ * @return string
+ *   HTML for the password element.
+ */
 function apigee_endpoint_password_post_render($content, $element) {
   $content = str_replace('type="text"', 'type="password"', $content);
   $toggle = '<a style="font-size:0.75em" href="#" onclick="togglePass(this); return false">Show password</a>';
@@ -1913,23 +1675,30 @@ function apigee_endpoint_password_post_render($content, $element) {
 }
 
 /**
- * Custom function that skips the devconnect installation piece
+ * Form submit handler that skips the devconnect installation piece.
  *
- * @param $form
- * @param $form_state
+ * @param array $form
+ *   The form being submitted
+ * @param array $form_state
+ *   State of the form being submitted.
  */
 function apigee_skip_api_endpoint($form, &$form_state) {
-  $GLOBALS['apigee_api_endpoint_configured'] = FALSE;
-  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+  global $install_state;
+  $install_state['parameters']['edge_configured'] = FALSE;
+  $install_state['completed_task'] = install_verify_completed_task();
 }
 
 /**
- * Installs the endpoint credentials for the management server
+ * Installs the endpoint credentials for the management server.
  *
- * @param $form
- * @param $form_state
+ * @param array $form
+ *   The form being submitted
+ * @param array $form_state
+ *   State of the form being submitted.
  */
 function apigee_install_api_endpoint_submit($form, &$form_state) {
+  global $install_state;
+
   drupal_load('module', 'devconnect');
   $config = devconnect_get_org_settings();
   foreach (array('org', 'endpoint', 'user', 'pass') as $key) {
@@ -1944,28 +1713,31 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
   Crypto::setKey($key);
   file_put_contents(DRUPAL_ROOT . '/' . $private_dir . '/.apigee', Crypto::encrypt(serialize($config)));
 
-  $GLOBALS['apigee_api_endpoint_configured'] = TRUE;
-  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+  $install_state['parameters']['edge_configured'] = TRUE;
+  $install_state['completed_task'] = install_verify_completed_task();
 }
 
 /**
- * Install settings form
+ * Database settings form constructor.
  *
- * @param $form
- * @param $form_state
- * @param $install_state
- * @return mixed
+ * @param array $form
+ *   The form being constructed.
+ * @param array $form_state
+ *   The state of the form being constructed.
+ * @param array $install_state
+ *   An array of information about the current installation state.
+ *
+ * @return array
+ *   Newly-created form.
  */
 function apigee_install_settings_form($form, &$form_state, &$install_state) {
   $attributes = array(
     'autocomplete' => 'off',
     'autocorrect' => 'off',
     'autocapitalize' => 'off',
-    'spellcheck' => 'false'
+    'spellcheck' => 'false',
   );
   $form = install_settings_form($form, $form_state, $install_state);
-  $form['settings']['mysql']['database']['#default_value'] = 'drops7';
-  $form['settings']['mysql']['username']['#default_value'] = 'root';
   $form['settings']['mysql']['database']['#attributes'] = $attributes;
   $form['settings']['mysql']['username']['#attributes'] = $attributes;
   $form['settings']['mysql']['password']['#attributes'] = $attributes;
@@ -1974,156 +1746,116 @@ function apigee_install_settings_form($form, &$form_state, &$install_state) {
 }
 
 /**
- * Creates model if it doesn't exist
+ * Create model and import Swagger/WADL file to load content.
  */
-function apigee_generate_import_smartdocs_model_content() {
+function apigee_smartdocs_import_model_content() {
+  global $install_state;
 
   _apigee_manage_memory();
 
-  $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
-  if (!$endpoint_configured) {
-    return;
-  }
-
-  // Enable SmartDocs Module
-  if (!module_exists('smartdocs')) {
-    module_enable(array('smartdocs'), TRUE);
-  }
-  //During the install process it does not return the correct values and hence needs to be reset.
-  drupal_static_reset('devconnect_default_org_config');
-  // Create sample SmartDocs Model
-  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
-  try {
-    $model->load(SMARTDOCS_SAMPLE_MODEL);
-    $update = TRUE;
-  } catch (Apigee\Exceptions\ResponseException $e) {
-    $update = FALSE;
-  }
-  $model->setName(SMARTDOCS_SAMPLE_MODEL);
-  $model->setDisplayName('Petstore Example');
-  $model->setDescription('Example SmartDocs model.');
-  try {
-    $model->save($update);
-    $saved_model = TRUE;
-  } catch (Apigee\Exceptions\ResponseException $e) {
-    $saved_model = FALSE;
-    $message = $e->getResponse();
-    $messageObj = @json_decode($message, TRUE);
-    if (is_array($messageObj) && array_key_exists('message', $messageObj)) {
-      $err_msg = $messageObj['message'];
-    }
-    else {
-      $err_msg = $e->getMessage();
-    }
-    drupal_set_message($err_msg, 'error');
-  }
-  if ($saved_model) {
-    if ($model->getLatestRevisionNumber() <= 0) {
-      try {
-        // Use the Swagger URL until we can import a Swagger file.
-        $petstore_swagger_contents = file_get_contents(__DIR__ . '/modules/custom/devconnect/smartdocs/samples/petstore.swagger.json');
-        $model->importFile($petstore_swagger_contents, 'swagger', 'application/json');
-        drupal_set_message('Sample Swagger petstore example imported into SmartDocs.', 'status');
-      } catch (Apigee\Exceptions\ResponseException $e) {
-        $message = $e->getResponse();
-        $messageObj = @json_decode($message, TRUE);
-        if (is_array($messageObj) && array_key_exists('message', $messageObj)) {
-          $err_msg = $messageObj['message'];
-        }
-        else {
-          $err_msg = $e->getMessage();
-        }
-        drupal_set_message($err_msg, 'error');
-      }
-    }
-  }
-  return;
-}
-
-/**
- * Renders content if it doesn't exist.
- *
- * @return mixed
- */
-function apigee_generate_render_smartdocs_model_template() {
-
-  _apigee_manage_memory();
-
-  $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
-  if (!$endpoint_configured) {
+  if (!$install_state['parameters']['edge_configured']) {
     return NULL;
   }
 
-//  $context['message'] = t('Ensuring correct model template');
-  $path = __DIR__ . '/modules/custom/devconnect/smartdocs/templates/smartdocs.hbr';
-  $html = file_get_contents($path);
-  $template = new Apigee\SmartDocs\Template(devconnect_default_org_config(), SMARTDOCS_SAMPLE_MODEL);
-  try {
-    $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
-  } catch (Apigee\Exceptions\ResponseException $e) {
-    try {
-      $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, FALSE);
-    }
-    catch (Apigee\Exceptions\ResponseException $e) {
-      drupal_set_message('Could not update template.', 'error');
-    }
-  }
-}
+  // Create sample SmartDocs  model.
+  $model_display_name = 'Pet Store Example API';
+  $model_description = 'Manage inventory and users through an example REST API patterned after the classic pet store demo.';
+  $operations[] = array('apigee_batch_smartdocs_create_model', array(SMARTDOCS_SAMPLE_PETSTORE_MODEL, $model_display_name, $model_description));
 
-/**
- * Renders content if it doesn't exist.
- *
- * @return mixed
- */
-function apigee_generate_render_smartdocs_model_content() {
+  // Import pet store Swagger file into pet store model.
+  $model_import_file = __DIR__ . '/modules/custom/devconnect/smartdocs/samples/petstore.swagger.json';
+  $operations[] = array('apigee_batch_smartdocs_import_model', array(SMARTDOCS_SAMPLE_PETSTORE_MODEL, $model_import_file, 'swagger', 'application/json'));
 
-  _apigee_manage_memory();
+  // Create sample SmartDocs  model.
+  $model_display_name = 'Weather Example API';
+  $model_description = 'Get weather reports for any location using the Yahoo Weather API.';
+  $operations[] = array('apigee_batch_smartdocs_create_model', array(SMARTDOCS_SAMPLE_WEATHER_MODEL, $model_display_name, $model_description));
 
-  $endpoint_configured = (array_key_exists('apigee_api_endpoint_configured', $GLOBALS) ? $GLOBALS['apigee_api_endpoint_configured'] : FALSE);
-  if (!$endpoint_configured) {
-    return NULL;
-  }
+  // Import pet store Swagger file into pet store model.
+  $model_import_file = __DIR__ . '/modules/custom/devconnect/smartdocs/samples/weather.xml';
+  $operations[] = array('apigee_batch_smartdocs_import_model', array(SMARTDOCS_SAMPLE_WEATHER_MODEL, $model_import_file, 'wadl', 'application/xml'));
 
-//  $model = new Model(devconnect_default_org_config());
-//  Model::fromArray($model, $form_state['values']['model']);
-//  $revision = new Revision($model->getConfig(), $model->getUuid());
-//  Revision::fromArray($revision, $form_state['values']['revision']);
-//  $selected = $form_state['values']['methods'];
-//  $options = array(
-//    'publish' => variable_get('smartdocs_publish_on_render', 1),
-//    'path' => variable_get('smartdocs_path_gen_type', 'path')
-//  );
-//  module_load_include('inc', 'smartdocs', 'batch/smartdocs.render');
-//  batch_set(smartdocs_render($model, $revision, $selected, $options));
-//  cache_clear_all('model:' . $model->getUuid(), 'cache_smartdocs');
+  $batch = array(
+    'operations' => $operations,
+    'title' => t('Creating and importing SmartDocs example models'),
+    'init_message' => t('SmartDocs model creation has started...'),
+    'file' => drupal_get_path('profile', 'apigee') . '/apigee.install_callbacks.inc',
+  );
 
-  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
-  $model->load(SMARTDOCS_SAMPLE_MODEL);
-  $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
-  $rev = max($model->getLatestRevisionNumber(), 1);
-  $revision->load($rev);
-  drupal_set_message('Rendering SmartDocs petstore example documentation pages.', 'status');
-  $selected = array();
-  /** @var Apigee\SmartDocs\Resource $resource */
-  foreach ($revision->getResources() as $resource) {
-    /** @var Apigee\SmartDocs\Method $method */
-    foreach ($resource->getMethods() as $method) {
-      $selected[$method->getUuid()] = $method->getUuid();
-    }
-  }
-  require_once drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc';
-  $batch = smartdocs_render($model, $revision, $selected, array('publish' => 'publish'), FALSE);
-  unset($batch['finished']);
   return $batch;
 }
 
 /**
- * Create a Drupal Admin User.
+ * Renders and publishes pet store and weather SmartDocs nodes.
+ *
+ * @return mixed
+ */
+function apigee_smartdocs_render_model_content() {
+  global $install_state;
+
+  _apigee_manage_memory();
+
+  if (!$install_state['parameters']['edge_configured']) {
+    return NULL;
+  }
+
+  drupal_set_message('Rendering SmartDocs example documentation pages.', 'status');
+  require_once drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc';
+
+  // Render weather model node.
+  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
+  $model->load(SMARTDOCS_SAMPLE_WEATHER_MODEL);
+  $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
+  $rev = max($model->getLatestRevisionNumber(), 1);
+  $revision->load($rev);
+
+  $selected = array();
+  foreach ($revision->getResources() as $resource) {
+    foreach ($resource->getMethods() as $method) {
+      $selected[$method->getUuid()] = $method->getUuid();
+    }
+  }
+  $batch_weather = smartdocs_render($model, $revision, $selected, array('publish' => 'publish'), TRUE);
+
+  // Render pet store model nodes.
+  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
+  $model->load(SMARTDOCS_SAMPLE_PETSTORE_MODEL);
+  $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
+  $rev = max($model->getLatestRevisionNumber(), 1);
+  $revision->load($rev);
+
+  $selected = array();
+
+  foreach ($revision->getResources() as $resource) {
+    foreach ($resource->getMethods() as $method) {
+      $selected[$method->getUuid()] = $method->getUuid();
+    }
+  }
+  $batch_pet = smartdocs_render($model, $revision, $selected, array('publish' => 'publish'), TRUE);
+
+  // Merge the pet and weather batch to return.
+  $batch = array(
+    'operations' => array_merge($batch_weather['operations'], $batch_pet['operations']),
+    'title' => t('Rendering SmartDocs documentation pages'),
+    'init_message' => t('SmartDocs rendering has started...'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('Rendering SmartDocs nodes has encountered an error.'),
+    'file' => drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc',
+  );
+
+  return $batch;
+}
+
+/**
+ * Form constructor to create a Drupal Admin User.
  *
  * @param array $form
+ *   The form being constructed.
  * @param array $form_state
+ *   The state of the form being constructed.
+ *
  * @return array
- * @author Cesar Galindo
+ *   The newly-constructed form.
  */
 function apigee_install_create_admin_user($form, &$form_state) {
   $attributes = array(
@@ -2132,7 +1864,6 @@ function apigee_install_create_admin_user($form, &$form_state) {
     'autocapitalize' => 'off',
     'spellcheck' => 'false',
   );
-  $form = array();
   $form['firstname'] = array(
     '#type' => 'textfield',
     '#title' => t('Developer First Name'),
@@ -2163,7 +1894,7 @@ function apigee_install_create_admin_user($form, &$form_state) {
     '#required' => TRUE,
     '#description' => t('An admin password used when logging into the Developer Portal.'),
     '#attributes' => $attributes,
-    '#pre_render' => array('apigee_password_pre_render')
+    '#pre_render' => array('apigee_password_pre_render'),
   );
   $form['emailaddress'] = array(
     '#type' => 'textfield',
@@ -2201,193 +1932,26 @@ function apigee_install_create_admin_user($form, &$form_state) {
 }
 
 /**
- * Defines the SMTP credentials for the ORG
+ * Submit handler to skip the create admin user installation piece.
  *
- * @param $form
- * @param $form_state
- * @return mixed
- */
-function apigee_install_smtp_credentials($form, &$form_state) {
-  $attributes = array(
-    "autocomplete" => "off",
-    "autocorrect" => "off",
-    "autocapitalize" => "off",
-    "spellcheck" => "false"
-  );
-  $form['server'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('SMTP server settings'),
-  );
-  $form['server']['smtp_host'] = array(
-    '#type' => 'textfield',
-    '#title' => t('SMTP server'),
-    '#default_value' => variable_get('smtp_host', ''),
-    '#description' => t('The address of your outgoing SMTP server.'),
-    '#attributes' => $attributes
-  );
-  $form['server']['smtp_hostbackup'] = array(
-    '#type' => 'textfield',
-    '#title' => t('SMTP backup server'),
-    '#default_value' => variable_get('smtp_hostbackup', ''),
-    '#description' => t('The address of your outgoing SMTP backup server. If the primary server can\'t be found this one will be tried. This is optional.'),
-    '#attributes' => $attributes
-  );
-  $form['server']['smtp_port'] = array(
-    '#type' => 'textfield',
-    '#title' => t('SMTP port'),
-    '#size' => 6,
-    '#maxlength' => 6,
-    '#default_value' => variable_get('smtp_port', '25'),
-    '#description' => t('The default SMTP port is 25, if that is being blocked try 80. Gmail uses 465. See !url for more information on configuring for use with Gmail.', array('!url' => l(t('this page'), 'http://gmail.google.com/support/bin/answer.py?answer=13287'))),
-    '#attributes' => $attributes
-  );
-  // Only display the option if openssl is installed.
-  if (function_exists('openssl_open')) {
-    $encryption_options = array(
-      'standard' => t('No'),
-      'ssl' => t('Use SSL'),
-      'tls' => t('Use TLS'),
-    );
-    $encryption_description = t('This allows connection to an SMTP server that requires SSL encryption such as Gmail.');
-  }
-  // If openssl is not installed, use normal protocol.
-  else {
-    variable_set('smtp_protocol', 'standard');
-    $encryption_options = array('standard' => t('No'));
-    $encryption_description = t('Your PHP installation does not have SSL enabled. See the !url page on php.net for more information. Gmail requires SSL.', array('!url' => l(t('OpenSSL Functions'), 'http://php.net/openssl')));
-  }
-  $form['server']['smtp_protocol'] = array(
-    '#type' => 'select',
-    '#title' => t('Use encrypted protocol'),
-    '#default_value' => variable_get('smtp_protocol', 'standard'),
-    '#options' => $encryption_options,
-    '#description' => $encryption_description,
-  );
-
-  $form['auth'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('SMTP Authentication'),
-    '#description' => t('Leave blank if your SMTP server does not require authentication.'),
-  );
-  $form['auth']['smtp_username'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Username'),
-    '#default_value' => variable_get('smtp_username', ''),
-    '#description' => t('SMTP Username.'),
-    '#attributes' => $attributes
-  );
-  $form['auth']['smtp_password'] = array(
-    '#type' => 'password',
-    '#title' => t('Password'),
-    '#default_value' => variable_get('smtp_password', ''),
-    '#description' => t('SMTP password. If you have already entered your password before, you should leave this field blank, unless you want to change the stored password.'),
-    '#attributes' => $attributes
-  );
-  $form['email_options'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('E-mail options'),
-  );
-  $form['email_options']['smtp_from'] = array(
-    '#type' => 'textfield',
-    '#title' => t('E-mail from address'),
-    '#default_value' => variable_get('smtp_from', ''),
-    '#description' => t('The e-mail address that all e-mails will be from.'),
-    '#attributes' => $attributes
-  );
-  $form['email_options']['smtp_fromname'] = array(
-    '#type' => 'textfield',
-    '#title' => t('E-mail from name'),
-    '#default_value' => variable_get('smtp_fromname', ''),
-    '#description' => t('The name that all e-mails will be from. If left blank will use the site name of:') . ' ' . variable_get('site_name', 'Drupal powered site'),
-  );
-  $form['email_options']['smtp_allowhtml'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Allow to send e-mails formated as Html'),
-    '#default_value' => variable_get('smtp_allowhtml', 0),
-    '#description' => t('Checking this box will allow Html formated e-mails to be sent with the SMTP protocol.'),
-  );
-  $form['actions']['save'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save'),
-    '#attributes' => array(
-      'style' => 'float:left;',
-    ),
-  );
-  $form['actions']['skip'] = array(
-    '#type' => 'submit',
-    '#limit_validation_errors' => array(),
-    '#value' => t('Skip this config'),
-    '#submit' => array('apigee_skip_smtp_details'),
-    '#attributes' => array(
-      'style' => 'float:left;',
-    ),
-  );
-  return $form;
-}
-
-/**
- * Submit for SMTP credentials
- *
- * @param $form
- * @param $form_state
- */
-function apigee_install_smtp_credentials_submit($form, &$form_state) {
-  if (!module_exists('smtp')) {
-    module_enable(array('smtp'), TRUE);
-  }
-  $values = $form_state['values'];
-  // Make the site use SMTP
-  variable_set('smtp_on', 1);
-  // SMTP credentials vars
-  variable_set('smtp_host', $values['smtp_host']);
-  variable_set('smtp_hostbackup', $values['smtp_hostbackup']);
-  variable_set('smtp_port', $values['smtp_port']);
-  variable_set('smtp_protocol', $values['smtp_protocol']);
-  // SMTP authentication vars
-  variable_set('smtp_username', $values['smtp_username']);
-  variable_set('smtp_password', $values['smtp_password']);
-  // SMTP email settings vars
-  variable_set('smtp_from', $values['smtp_from']);
-  variable_set('smtp_fromname', $values['smtp_fromname']);
-  variable_set('smtp_allowhtml', $values['smtp_allowhtml']);
-  // Set the default mail system to be smtp as this is not set in the
-  // hook_enable() implementation of smtp module.
-  $mail_modes = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
-  $mail_modes['default-system'] = 'SmtpMailSystem';
-  variable_set('mail_system', $mail_modes);
-  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
-}
-
-/**
- * Skips SMTP piece
- *
- * @param $form
- * @param $form_state
- */
-function apigee_skip_smtp_details($form, &$form_state) {
-  $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
-}
-
-/**
- * Custom function that skips the create admin user installation piece
- *
- * @param $form
- * @param $form_state
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
 function apigee_skip_create_admin_user($form, &$form_state) {
-  // skips the config, nothing left to do
+  // Skips the config, nothing left to do.
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
 }
 
 /**
- * hook validate for create admin user form
+ * Validates create admin user form.
  *
  * @param string $form
+ *   The form being validated.
  * @param string $form_state
- * @return void
- * @author Cesar Galindo
+ *   State of the form being validated.
  */
-
 function apigee_install_create_admin_user_validate($form, &$form_state) {
   if ($form_state['values']['username'] == 'admin') {
     form_set_error('username', 'Please select a different username.');
@@ -2395,15 +1959,21 @@ function apigee_install_create_admin_user_validate($form, &$form_state) {
   if (!valid_email_address($form_state['values']['emailaddress'])) {
     form_set_error('emailaddress', 'Please select a valid email address.');
   }
-  if(apigee_install_create_admin_user_is_sdn_match($form_state['values']['firstname'], $form_state['values']['lastname'])) {
+  if (apigee_install_create_admin_user_is_sdn_match($form_state['values']['firstname'], $form_state['values']['lastname'])) {
     form_set_error('', 'This name cannot be used as an administrator account. Please contact Apigee support for more details.');
   }
 }
 
 /**
  * Specially Designated Nationals List (SDN) Validation check.
- * @param $form
- * @param $form_state
+ *
+ * @param string $first_name
+ *   First name of user to be validated.
+ * @param string $last_name
+ *   Last name of user to be validated.
+ *
+ * @return bool
+ *   TRUE if person is on the SDN List.
  */
 function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) {
   // Do not validate unless this is a cloud installation.
@@ -2420,22 +1990,18 @@ function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) 
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
   // The number of seconds to wait while trying to connect. Use 0
   // to wait indefinitely.
-  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,10);
+  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
   // The maximum number of seconds to allow cURL functions to execute.
-  curl_setopt($ch, CURLOPT_TIMEOUT, 10); //timeout in seconds
+  curl_setopt($ch, CURLOPT_TIMEOUT, 10);
   $response_json = curl_exec($ch);
   $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  $curl_errno= curl_errno($ch);
+  $curl_errno = curl_errno($ch);
   curl_close($ch);
   $response = json_decode($response_json, TRUE);
 
-
-  if(array_key_exists('count', $response)) {
+  if (array_key_exists('count', $response)) {
     if ($response['count'] != 0) {
       return TRUE;
-    }
-    else {
-      return FALSE;
     }
   }
   else {
@@ -2445,7 +2011,7 @@ function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) 
     $from = variable_get('system_mail', 'noreply@apigee.com');
 
     $http_response_string = '';
-    foreach($response as $response_key => $response_value) {
+    foreach ($response as $response_key => $response_value) {
       $http_response_string .= "$response_key => $response_value ";
     }
 
@@ -2485,20 +2051,20 @@ function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) 
     $message = $system->format($message);
 
     if (!$system->mail($message)) {
-      watchdog('apigee_profile', "SDN Validation error email NOT sent." . implode(" ", $message_body), WATCHDOG_WARNING);
+      watchdog('apigee_install', "SDN Validation error email NOT sent." . implode(" ", $message_body), WATCHDOG_WARNING);
     }
   }
-
+  return FALSE;
 }
 
 
 /**
- * hook submit for create admin user form
+ * Submit handler for create admin user form.
  *
- * @param string $form
- * @param string $form_state
- * @return void
- * @author Cesar Galindo
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
 function apigee_install_create_admin_user_submit($form, &$form_state) {
   require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
@@ -2521,9 +2087,10 @@ function apigee_install_create_admin_user_submit($form, &$form_state) {
 /**
  * Batch process callback to create the environmental indicators.
  *
- * @param $context
+ * @param array $context
+ *   Current state of installer.
  */
-function apigee_install_create_environmental_indicators(&$context) {
+function apigee_install_create_environmental_indicators(array &$context) {
   if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
     $environment_dev = (object) array(
       'disabled' => FALSE,
@@ -2536,8 +2103,8 @@ function apigee_install_create_environmental_indicators(&$context) {
         'text_color' => '#ffffff',
         'weight' => '',
         'position' => 'top',
-        'fixed' => 0
-      )
+        'fixed' => 0,
+      ),
     );
     ctools_export_crud_save('environment_indicator_environment', $environment_dev);
     $environment_test = (object) array(
@@ -2551,14 +2118,17 @@ function apigee_install_create_environmental_indicators(&$context) {
         'text_color' => '#ffffff',
         'weight' => '',
         'position' => 'top',
-        'fixed' => 0
-      )
+        'fixed' => 0,
+      ),
     );
     ctools_export_crud_save('environment_indicator_environment', $environment_test);
     $context['message'] = st('Created environmental indicators');
   }
 }
 
+/**
+ * Boosts PHP's memory and execution time for large-capacity batch processes.
+ */
 function _apigee_manage_memory() {
   ini_set('memory_limit', '1024M');
   ini_set('max_execution_time', 300);

@@ -1135,10 +1135,9 @@ function _smartdocs_update_process_node($existing_nid, $status, Model $model, Re
  * Finds all nodes in legacy per-model content-types and re-renders them.
  *
  * If re-rendering all was successful, we then delete views and content-types
- * relating to old version. If it was unsuccessful, we roll back all updates.
+ * relating to old version. If it was unsuccessful, we throw an exception.
  *
- * @todo Find a way to stop the update from finishing when there is failure.
- * Maybe throw an exception?
+ * @throws Exception
  */
 function _smartdocs_update_process_nodes() {
   /** @var Apigee\SmartDocs\Model $model */
@@ -1152,7 +1151,6 @@ function _smartdocs_update_process_nodes() {
 
   // Newly-created Smart Method nodes will be put in this array.
   $new_nodes = array();
-  $has_error = FALSE;
   // Cache SmartDocs object identifiers so we don't do more API fetches than
   // we really need to.
   $last_model = $last_revision = $last_resource = $last_method = NULL;
@@ -1167,16 +1165,26 @@ function _smartdocs_update_process_nodes() {
   $t = (function_exists('dt') ? 'dt' : 't');
   $success_flag = ($t == 'dt' ? 'success' : 'info');
 
+  $failures = $successes = 0;
+
   foreach ($node_info_list as $node_info) {
-    if (!in_array($node_info->type, $old_types)) {
-      $old_types[] = $node_info->type;
-    }
+    // The following are used for logging in case of failures.
+    $args = array(
+      ':nid' => $node_info->nid,
+      ':model' => $node_info->model,
+      ':rev' => $node_info->revision,
+      ':res' => $node_info->resource,
+      ':method' => $node_info->method,
+    );
+
     // Only load model if it's different from the last one.
     if ($node_info->model !== $last_model) {
       $model = smartdocs_model_load($node_info->model);
       if (!$model) {
-        $has_error = TRUE;
-        break;
+        $log_fn($t('Failed to update node :nid because model :model could not be loaded.', $args), 'error');
+        watchdog('smartdocs update', 'Failed to load model :model', $args, WATCHDOG_ERROR);
+        $failures++;
+        continue;
       }
       $last_model = $model->getName();
     }
@@ -1184,8 +1192,10 @@ function _smartdocs_update_process_nodes() {
     if ($node_info->revision !== $last_revision) {
       $revision = smartdocs_revision_load($node_info->revision);
       if (!$revision) {
-        $has_error = TRUE;
-        break;
+        $log_fn($t('Failed to update node :nid because revision :rev of model :model could not be loaded.', $args), 'error');
+        watchdog('smartdocs update', 'Failed to load revision :rev of model :model', $args, WATCHDOG_ERROR);
+        $failures++;
+        continue;
       }
       $last_revision = $revision->getRevisionNumber();
     }
@@ -1193,8 +1203,10 @@ function _smartdocs_update_process_nodes() {
     if ($node_info->resource !== $last_resource) {
       $resource = smartdocs_resource_load($node_info->resource);
       if (!$resource) {
-        $has_error = TRUE;
-        break;
+        $log_fn($t('Failed to update node :nid because resource :res of model :model revision :rev could not be loaded.', $args), 'error');
+        watchdog('smartdocs update', 'Failed to load resource :res, revision :rev, model :model', $args, WATCHDOG_ERROR);
+        $failures++;
+        continue;
       }
       $last_resource = $resource->getUuid();
     }
@@ -1202,30 +1214,34 @@ function _smartdocs_update_process_nodes() {
     if ($node_info->method !== $last_method) {
       $method = smartdocs_method_load($node_info->method);
       if (!$method) {
-        $has_error = TRUE;
-        break;
+        $log_fn($t('Failed to update node :nid because method :method of model :model, revision :rev, resource :res could not be loaded.', $args), 'error');
+        watchdog('smartdocs update', 'Failed to load method :method, resource :res, revision :rev, model :model', $args, WATCHDOG_ERROR);
+        $failures++;
+        continue;
       }
       $last_method = $method->getUuid();
     }
+
+    if (!in_array($node_info->type, $old_types)) {
+      $old_types[] = $node_info->type;
+    }
+
     // Create the new node.
     $node = _smartdocs_update_process_node($node_info->nid, $node_info->status, $model, $revision, $resource, $method);
     if (!$node) {
-      $has_error = TRUE;
-      break;
+      $log_fn($t('Failed to re-render node :nid.', array(':nid' => $node_info->nid)), 'error');
+      watchdog('smartdocs update', 'Failed to re-render node :nid', $args, WATCHDOG_ERROR);
+      $failures++;
     }
     else {
       $new_nodes[] = $node;
+      $successes++;
     }
   }
-  if ($has_error) {
-    // Roll everything back
-    foreach ($new_nodes as $node) {
-      node_delete($node->nid);
-    }
-    $log_fn($t('SmartDocs node migration failed!'), 'error');
-    return FALSE;
+  if ($failures) {
+    throw new Exception($t(':fail failure(s) were encountered while updating SmartDocs nodes (there were :success successes).', array(':fail' => $failures, ':success' => $successes)));
   }
-  else {
+  if ($successes) {
     // Finish processing nodes.
     $has_comments = db_table_exists('comments');
     foreach ($new_nodes as $node) {
@@ -1245,25 +1261,35 @@ function _smartdocs_update_process_nodes() {
       // Delete old node.
       node_delete($node->old_nid);
     }
-    // Delete old views.
-    $wrappers = stream_get_wrappers();
-    if (!in_array('private', $wrappers)) {
-      return array();
-    }
+  }
+  // Delete old views.
+  $wrappers = stream_get_wrappers();
+  if (in_array('private', $wrappers)) {
     $files = file_scan_directory('private://', '/_listing\.view$/');
     foreach ($files as $file) {
       file_delete($file, TRUE);
     }
-
-    // Flush views caches.
-    cache_clear_all('*', 'cache_views', TRUE);
-    menu_rebuild();
-    module_invoke_all('views_invalidate_cache');
-
-    // Delete non-unified content-types.
-    foreach ($old_types as $type) {
-      node_type_delete($type);
-    }
   }
-  $log_fn($t('Content types were successfully migrated.'), $success_flag);
+
+  // Flush views caches.
+  cache_clear_all('*', 'cache_views', TRUE);
+  menu_rebuild();
+  module_invoke_all('views_invalidate_cache');
+
+  // Delete non-unified content-types.
+  foreach ($old_types as $type) {
+    node_type_delete($type);
+  }
+  if ($successes) {
+    $log_fn($t(':success nodes were successfully updated.', array(':success' => $successes)), $success_flag);
+  }
+  else {
+    $log_fn($t('No nodes were updated.'), $success_flag);
+  }
+  if (count($old_types)) {
+    $log_fn($t(':count content types were successfully migrated to the unified Smart Method type.', array(':count' => count($old_types))), $success_flag);
+  }
+  else {
+    $log_fn($t('No content types were migrated.'), $success_flag);
+  }
 }

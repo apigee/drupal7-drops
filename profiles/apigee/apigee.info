@@ -73,6 +73,7 @@ dependencies[] = pathauto
 dependencies[] = rdf
 dependencies[] = redirect
 dependencies[] = search
+dependencies[] = smartdocs
 dependencies[] = sumo
 dependencies[] = system
 dependencies[] = taxonomy
@@ -88,6 +89,6 @@ dependencies[] = webform
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20150609.1148
-version = "15.06.08.00"
+; Added by build script on 20150616.1358
+version = "15.06.15.00"
     
