@@ -646,15 +646,15 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
 
   $plugin_names = array(
     'a11yhelp', 'about', 'basicstyles', 'blockquote', 'button',
-    'ckeditor_link', 'clipboard', 'contextmenu', 'counter', 'dialog',
-    'dialogui', 'drupalbreaks', 'elementspath', 'enterkey', 'entities',
-    'fakeobjects', 'filebrowser', 'floatingspace', 'floatpanel',
-    'horizontalrule', 'htmlwriter', 'iframe', 'image', 'insertpre',
-    'indent', 'indentlist', 'lineutils', 'list', 'magicline', 'media',
-    'mediaembed', 'menu', 'menubutton', 'panel', 'pastefromword',
-    'pastetext', 'popup', 'removeformat', 'richcombo', 'scayt',
-    'sharedspace', 'sourcearea', 'sourcedialog', 'specialchar',
-    'stylescombo', 'tab', 'tableresize', 'toolbarswitch', 'widget',
+    'ckeditor_link', 'clipboard', 'contextmenu', 'dialog', 'dialogui',
+    'drupalbreaks', 'elementspath', 'enterkey', 'entities', 'fakeobjects',
+    'filebrowser', 'floatingspace', 'floatpanel', 'horizontalrule',
+    'htmlwriter', 'iframe', 'image', 'insertpre', 'indent', 'indentlist',
+    'lineutils', 'list', 'magicline', 'media', 'mediaembed', 'menu',
+    'menubutton', 'panel', 'pastefromword', 'pastetext', 'popup',
+    'removeformat', 'richcombo', 'scayt', 'sharedspace', 'sourcearea',
+    'sourcedialog', 'specialchar', 'stylescombo', 'tab',
+    'tableresize', 'toolbarswitch', 'widget',
     'wysiwygarea', 'trifold', 'featurette', 'jumbotron', 'carousel',
   );
   $plugins = array();
@@ -669,6 +669,7 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
   }
   // Now handle exceptions to the rule.
   $plugins['ckeditor_link']['path'] = '%base_path%profiles/apigee/modules/contrib/ckeditor_link/plugins/link/';
+  $plugins['ckeditor_link']['name'] = 'drupal_path';
   // Is this a bug?
   unset($plugins['ckeditor_link']['default']);
 
@@ -689,10 +690,10 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
   );
 
   $plugins['mediaembed']['path'] = '%plugin_dir%mediaembed/';
-  $plugins['media']['buttons'] = array(
+  $plugins['mediaembed']['buttons'] = array(
     'MediaEmbed' => array(
       'label' => 'MediaEmbed',
-      'icon' => 'images/icon.gif',
+      'icon' => 'images/icon.png',
     ),
   );
 
