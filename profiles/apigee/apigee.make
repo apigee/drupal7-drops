@@ -751,7 +751,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
-libraries[mgmt-api-php-sdk][download][tag] = "1.1.3"
+libraries[mgmt-api-php-sdk][download][branch] = "1.1.x"
 libraries[mgmt-api-php-sdk][download][type] = "git"
 libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk.git"
 

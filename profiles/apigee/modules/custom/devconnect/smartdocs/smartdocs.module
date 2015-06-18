@@ -885,6 +885,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
       'dataType' => 'string',
       'type' => 'body',
       'options' => NULL,
+      'defaultValue' => NULL,
     );
     $params[] = array(
       'name' => $parameter['name'],
@@ -894,6 +895,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
       'data_type' => $parameter['dataType'],
       'type' => $parameter['type'],
       'options' => (is_array($parameter['options']) ? json_encode($parameter['options']) : ''),
+      'default_value' => $parameter['defaultValue'],
     );
   }
   $node->field_smart_method_params[LANGUAGE_NONE] = $params;
@@ -929,6 +931,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
       'dataType' => 'string',
       'type' => 'body',
       'options' => NULL,
+      'defaultValue' => NULL,
     );
     $params[] = array(
       'name' => $parameter['name'],
@@ -938,6 +941,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
       'data_type' => $parameter['dataType'],
       'type' => $parameter['type'],
       'options' => (is_array($parameter['options']) ? json_encode($parameter['options']) : ''),
+      'default_value' => $parameter['defaultValue'],
     );
   }
   $node->field_smart_method_body_params[LANGUAGE_NONE] = $params;
@@ -1461,24 +1465,7 @@ function smartdocs_node_presave($node) {
     if (empty($param['name']) || empty($param['data_type']) || empty($param['type'])) {
       continue;
     }
-    foreach (array('allow_multiple', 'description', 'required') as $field) {
-      if (!array_key_exists($field, $param)) {
-        $param[$field] = FALSE;
-      }
-    }
-    $param_obj = array(
-      'allowMultiple' => (bool) $param['allow_multiple'],
-      'dataType' => $param['data_type'],
-      'name' => $param['name'],
-      'type' => $param['type'],
-      'required' => (bool) $param['required'],
-      'description' => (string) $param['description'],
-    );
-    $options = @json_decode($param['options']);
-    if (is_array($options) && !empty($options)) {
-      $param_obj['options'] = array_values($options);
-    }
-    $params[] = $param_obj;
+    $params[] = _smartdocs_prepare_parameter($param);
   }
   $method_obj->setParameters($params);
 
@@ -1499,24 +1486,10 @@ function smartdocs_node_presave($node) {
     if (!is_int($index) || !is_array($param)) {
       continue;
     }
-    foreach (array('allow_multiple', 'description', 'required') as $field) {
-      if (!array_key_exists($field, $param)) {
-        $param[$field] = FALSE;
-      }
+    if (empty($param['name']) || empty($param['data_type']) || empty($param['type'])) {
+      continue;
     }
-    $param_obj = array(
-      'allowMultiple' => (bool) $param['allow_multiple'],
-      'dataType' => $param['data_type'],
-      'name' => $param['name'],
-      'type' => $param['type'],
-      'required' => (bool) $param['required'],
-      'description' => (string) $param['description'],
-    );
-    $options = @json_decode($param['options']);
-    if (is_array($options) && !empty($options)) {
-      $param_obj['options'] = array_values($options);
-    }
-    $body['parameters'][] = $param_obj;
+    $body['parameters'][] = _smartdocs_prepare_parameter($param);
   }
 
   $other_body_fields = array(
@@ -1606,6 +1579,39 @@ function smartdocs_node_presave($node) {
     watchdog_exception('smartdocs', $e);
     drupal_set_message(t('Unable to update Modeling API (save failed).'), 'error');
   }
+}
+
+/**
+ * Turns a smartdocs_parameter field into part of a Modeling API document.
+ *
+ * @param array $param
+ *   The smartdocs_parameter to be prepared.
+ *
+ * @return array
+ *   A parameter fragment of a Modeling API document suitable for PUT/POST.
+ */
+function _smartdocs_prepare_parameter(array $param) {
+  foreach (array('allow_multiple', 'description', 'required') as $field) {
+    if (!array_key_exists($field, $param)) {
+      $param[$field] = FALSE;
+    }
+  }
+  $param_obj = array(
+    'allowMultiple' => (bool) $param['allow_multiple'],
+    'dataType' => $param['data_type'],
+    'name' => $param['name'],
+    'type' => $param['type'],
+    'required' => (bool) $param['required'],
+    'description' => (string) $param['description'],
+  );
+  if (!empty($param['default_value'])) {
+    $param_obj['defaultValue'] = $param['default_value'];
+  }
+  $options = @json_decode($param['options']);
+  if (is_array($options) && !empty($options)) {
+    $param_obj['options'] = array_values($options);
+  }
+  return $param_obj;
 }
 
 /**

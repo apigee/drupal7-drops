@@ -95,6 +95,12 @@ function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $in
     '#default_value' => (isset($items[$delta]['description']) ? $items[$delta]['description'] : NULL),
     '#attributes' => array('class' => array('smartdocs-parameter-description')),
   );
+  $element['default_value'] = array(
+    '#title' => t('Default value'),
+    '#type' => 'textarea',
+    '#default_value' => (isset($items[$delta]['default_value']) ? $items[$delta]['default_value'] : NULL),
+    '#attributes' => array('class' => array('smartdocs-parameter-default-value')),
+  );
   $element['required'] = array(
     '#title' => t('Required'),
     '#type' => 'checkbox',
@@ -124,15 +130,15 @@ function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $in
     'object' => t('Object'),
     'array' => t('Array'),
   );
-  if (isset($items[$delta]['data_type']) && !array_key_exists($items[$delta]['data_type'], $data_type_options)) {
-    $data_type_options[$items[$delta]['data_type']] = ucfirst($items[$delta]['data_type']);
-    watchdog('smartdocs_parameter', 'Dynamically added ‘:option’ to list of available dataTypes.', array(':option' => $items[$delta]['data_type']), WATCHDOG_INFO);
+  if (isset($items[$delta]['data_type']) && !array_key_exists(strtolower($items[$delta]['data_type']), $data_type_options)) {
+    $data_type_options[strtolower($items[$delta]['data_type'])] = ucfirst(strtolower($items[$delta]['data_type']));
+    watchdog('smartdocs_parameter', 'Dynamically added ‘:option’ to list of available dataTypes.', array(':option' => strtolower($items[$delta]['data_type'])), WATCHDOG_INFO);
   }
 
   $element['data_type'] = array(
     '#title' => t('Data type'),
     '#type' => 'select',
-    '#default_value' => (isset($items[$delta]['data_type']) ? $items[$delta]['data_type'] : NULL),
+    '#default_value' => (isset($items[$delta]['data_type']) ? strtolower($items[$delta]['data_type']) : NULL),
     '#options' => $data_type_options,
     '#attributes' => array('class' => array('smartdocs-parameter-data-type')),
   );
@@ -143,15 +149,15 @@ function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $in
     'body' => t('Body'),
     'header' => t('Header'),
   );
-  if (isset($items[$delta]['type']) && !array_key_exists($items[$delta]['type'], $type_options)) {
-    $type_options[$items[$delta]['type']] = ucfirst($items[$delta]['type']);
-    watchdog('smartdocs_parameter', 'Dynamically added ‘:option’ to list of available types.', array(':option' => $items[$delta]['type']), WATCHDOG_INFO);
+  if (isset($items[$delta]['type']) && !array_key_exists(strtolower($items[$delta]['type']), $type_options)) {
+    $type_options[$items[$delta]['type']] = ucfirst(strtolower($items[$delta]['type']));
+    watchdog('smartdocs_parameter', 'Dynamically added ‘:option’ to list of available types.', array(':option' => strtolower($items[$delta]['type'])), WATCHDOG_INFO);
   }
 
   $element['type'] = array(
     '#title' => t('Parameter type'),
     '#type' => 'radios',
-    '#default_value' => (isset($items[$delta]['type']) ? $items[$delta]['type'] : NULL),
+    '#default_value' => (isset($items[$delta]['type']) ? strtolower($items[$delta]['type']) : NULL),
     '#options' => $type_options,
     '#attributes' => array('class' => array('smartdocs-parameter-type')),
   );
@@ -168,6 +174,7 @@ function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $in
 
   $element['options'] = array(
     '#title' => t('Options'),
+    '#description' => t('When present, this must be formatted as a JSON array.'),
     '#type' => 'textarea',
     '#default_value' => $default_value,
     '#attributes' => array('class' => array('smartdocs-parameter-options')),
@@ -219,6 +226,9 @@ function theme_smartdocs_parameter(&$vars) {
   }
   if (!empty($vars['type'])) {
     $output .= '<div class="smartdocs-parameter-type">' . check_plain($vars['type']) . '</div>';
+  }
+  if (!empty($vars['default_value'])) {
+    $output .= '<div class="smartdocs-parameter-default-value">' . check_plain($vars['default_value']) . '</div>';
   }
   if (!empty($vars['options'])) {
     $output .= '<div class="smartdocs-parameter-options">' . check_plain($vars['options']) . '</div>';
