@@ -143,9 +143,9 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
   }
 
   if (module_exists('devconnect')) {
-    $config = devconnect_default_org_config();
-    $org_name = $config->orgName;
-    $org_user = $config->user;
+    $settings = devconnect_get_org_settings();
+    $org_name = $settings['org'];
+    $org_user = $settings['user'];
     $release_ver = devconnect_get_build_version();
   }
   else {

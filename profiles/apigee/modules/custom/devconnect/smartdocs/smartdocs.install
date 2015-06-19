@@ -360,10 +360,12 @@ function smartdocs_update_7501() {
   $config = devconnect_default_org_config();
   if (empty($config->orgName) || empty($config->endpoint)) {
     // Edge connection is not configured, so we bail.
-    return;
+    $t = get_t();
+    return $t('Connection to Edge is not configured, so this update is skipped.');
   }
+  // Don't write update events to the log.
   $config->subscribers = array();
-  $config->logger = NULL;
+  $config->logger = new \Psr\Log\NullLogger();
 
   $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
   $custom_template_file = variable_get('custom_template_file', NULL);
@@ -373,7 +375,6 @@ function smartdocs_update_7501() {
     $path = file_create_url($file->uri);
   }
   $default_html = file_get_contents($path);
-
 
   // Load this just to get the SMARTDOCS_TEMPLATE_NAME constant.
   drupal_load('module', 'smartdocs');
