@@ -12,10 +12,12 @@ api = 2
 ; Deprecated
 projects[acl][type] = "module"
 projects[acl][subdir] = "contrib"
+projects[acl][version] = "1.0"
 
 ; Required by Monetization
 projects[addressfield][type] = "module"
 projects[addressfield][subdir] = "contrib"
+projects[addressfield][version] = "1.1"
 
 ; Enabled during profile install.
 projects[admin_menu][type] = "module"
@@ -34,9 +36,11 @@ projects[advanced_forum][version] = "2.5"
 
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
+projects[apachesolr][version] = "1.7"
 
 projects[autologout][type] = "module"
 projects[autologout][subdir] = "contrib"
+projects[autologout][version] = "4.3"
 
 ; Enabled during profile install.
 projects[block_class][type] = "module"
@@ -53,13 +57,16 @@ projects[bootstrap_modal_forms][directory_name] = "bootstrap_modal_forms"
 
 projects[bugherd][type] = "module"
 projects[bugherd][subdir] = "contrib"
+projects[bugherd][version] = "1.0-beta4"
 
 projects[captcha][type] = "module"
 projects[captcha][subdir] = "contrib"
+projects[captcha][version] = "1.3"
 
 ; Deprecated?
 projects[cck_phone][type] = "module"
 projects[cck_phone][subdir] = "contrib"
+projects[cck_phone][version] = "1.x-dev"
 
 ; Enabled during profile install.
 projects[ckeditor][type] = "module"
@@ -74,26 +81,33 @@ projects[ckeditor_bootstrap][version] = "1.0-alpha1"
 
 projects[ckeditor_link][type] = "module"
 projects[ckeditor_link][subdir] = "contrib"
+projects[ckeditor_link][version] = "2.3"
 
 projects[commerce][type] = "module"
 projects[commerce][subdir] = "contrib"
+projects[commerce][version] = "1.11"
 
 projects[commerce_custom_line_items][type] = "module"
 projects[commerce_custom_line_items][subdir] = "contrib"
+projects[commerce_custom_line_items][version] = "1.x-dev"
 
 ; Deprecated
 projects[commerce_worldpay][type] = "module"
 projects[commerce_worldpay][subdir] = "contrib"
+projects[commerce_worldpay][version] = "1.0-alpha2"
 
 projects[connector][type] = "module"
 projects[connector][subdir] = "contrib"
+projects[connector][version] = "1.0-beta2"
 
 ; Deprecated
 projects[contentapi][type] = "module"
 projects[contentapi][subdir] = "contrib"
+projects[contentapi][version] = "1.0-alpha3"
 
 projects[content_access][type] = "module"
 projects[content_access][subdir] = "contrib"
+projects[content_access][version] = "1.2-beta2"
 
 ; Enabled during profile install.
 projects[context][type] = "module"
@@ -112,26 +126,33 @@ projects[ctools][version] = "1.7"
 
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
+projects[date][version] = "2.8"
 
 projects[devel][type] = "module"
 projects[devel][subdir] = "contrib"
+projects[devel][version] = "1.5"
 
 projects[diff][type] = "module"
 projects[diff][subdir] = "contrib"
+projects[diff][version] = "3.2"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
+projects[ds][version] = "2.10"
 
 ; Deprecated. Required by devconnect_download which is also deprecated.
 projects[eck][type] = "module"
 projects[eck][subdir] = "contrib"
+projects[eck][version] = "2.0-rc7"
 
 ; Required by OPDK
 projects[encrypt][type] = "module"
 projects[encrypt][subdir] = "contrib"
+projects[encrypt][version] = "2.0"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
+projects[entityreference][version] = "1.1"
 ; see https://www.drupal.org/node/2170193
 projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
 
@@ -143,6 +164,7 @@ projects[entity][version] = "1.6"
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
 projects[environment_indicator][subdir] = "contrib"
+projects[environment_indicator][version] = "2.7"
 
 ; Enabled during profile install.
 projects[faq][type] = "module"
@@ -152,10 +174,11 @@ projects[faq][version] = "1.0"
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.5"
+projects[features][version] = "2.6"
 
 projects[features_extra][type] = "module"
 projects[features_extra][subdir] = "contrib"
+projects[features_extra][version] = "1.0-beta1"
 
 ; Enabled during profile install.
 projects[field_group][type] = "module"
@@ -172,16 +195,20 @@ projects[flood_control][type] = "module"
 projects[flood_control][subdir] = "contrib"
 projects[flood_control][version] = "1.0"
 
+; Features tools
 projects[ftools][type] = "module"
 projects[ftools][subdir] = "contrib"
+projects[ftools][version] = "1.6"
 
 ; Deprecated
 projects[gauth][type] = "module"
 projects[gauth][subdir] = "contrib"
+projects[gauth][version] = "1.4"
 
 ; Deprecated
 projects[github_connect][type] = "module"
 projects[github_connect][subdir] = "contrib"
+projects[github_connect][version] = "1.1"
 ; see https://www.drupal.org/node/2150767
 projects[github_connect][patch][2150767] = "https://www.drupal.org/files/issues/administer-github-connect-2150767-2.patch"
 ; see https://www.drupal.org/node/1895544
@@ -193,20 +220,25 @@ projects[github_connect][patch][2292767] = "https://www.drupal.org/files/issues/
 
 projects[google_analytics][type] = "module"
 projects[google_analytics][subdir] = "contrib"
+projects[google_analytics][version] = "2.1"
 
 projects[gravatar][type] = "module"
 projects[gravatar][subdir] = "contrib"
+projects[gravatar][version] = "1.1"
 
 ; Deprecated
 projects[highcharts][type] = "module"
 projects[highcharts][subdir] = "contrib"
+projects[highcharts][version] = "1.0-alpha6"
 
 projects[http_client][type] = "module"
 projects[http_client][subdir] = "contrib"
+projects[http_client][version] = "2.4"
 
 ; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
+projects[i18n][version] = "1.13"
 
 ; Enabled during profile install.
 projects[jquery_colorpicker][type] = "module"
@@ -220,9 +252,11 @@ projects[jquery_update][version] = "2.3"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
+projects[ldap][version] = "2.0-beta8"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
+projects[legal][version] = "1.5"
 
 ; Enabled during profile install.
 projects[libraries][type] = "module"
@@ -231,6 +265,7 @@ projects[libraries][version] = "2.2"
 
 projects[linkchecker][type] = "module"
 projects[linkchecker][subdir] = "contrib"
+projects[linkchecker][version] = "1.2"
 
 ; Enabled during profile install.
 projects[link][type] = "module"
@@ -244,12 +279,15 @@ projects[logintoboggan][version] = "1.5"
 
 projects[mailsystem][type] = "module"
 projects[mailsystem][subdir] = "contrib"
+projects[mailsystem][version] = "2.34"
 
 projects[markdown][type] = "module"
 projects[markdown][subdir] = "contrib"
+projects[markdown][version] = "1.2"
 
 projects[mediaelement][type] = "module"
 projects[mediaelement][subdir] = "contrib"
+projects[mediaelement][version] = "1.2"
 
 ; Enabled during profile install.
 projects[media][type] = "module"
@@ -274,13 +312,15 @@ projects[metatag][subdir] = "contrib"
 ; Enabled during profile install.
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
-projects[me][version] = "1.1"
+projects[me][version] = "1.2"
 
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"
+projects[migrate][version] = "2.7"
 
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
+projects[mimemail][version] = "1.0-beta3"
 
 ; Enabled on install.
 projects[module_filter][type] = "module"
@@ -289,20 +329,25 @@ projects[module_filter][version] = "2.0"
 
 projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
+projects[nagios][version] = "1.3"
 
 ; Deprecated
 projects[navbar][type] = "module"
 projects[navbar][subdir] = "contrib"
+projects[navbar][version] = "1.6"
 
 ; Deprecated?
 projects[node_export][type] = "module"
 projects[node_export][subdir] = "contrib"
+projects[node_export][version] = "3.0"
 
 projects[oauth][type] = "module"
 projects[oauth][subdir] = "contrib"
+projects[oauth][version] = "3.2"
 
 projects[oauthconnector][type] = "module"
 projects[oauthconnector][subdir] = "contrib"
+projects[oauthconnector][version] = "1.0-beta2"
 
 ; Enabled on install.
 projects[pathauto][type] = "module"
@@ -311,9 +356,11 @@ projects[pathauto][version] = "1.2"
 
 projects[readonlymode][type] = "module"
 projects[readonlymode][subdir] = "contrib"
+projects[readonlymode][version] = "1.2"
 
 projects[recaptcha][type] = "module"
 projects[recaptcha][subdir] = "contrib"
+projects[recaptcha][version] = "2.0"
 
 ; Enabled on install.
 projects[redirect][type] = "module"
@@ -322,6 +369,7 @@ projects[redirect][version] = "1.0-rc1"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
+projects[redis][version] = "2.14"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
@@ -330,26 +378,33 @@ projects[remote_stream_wrapper][version] = "1.0-rc1"
 
 projects[rules][type] = "module"
 projects[rules][subdir] = "contrib"
+projects[rules][version] = "2.9"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
+projects[services][version] = "3.12"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
+projects[services_views][version] = "1.0"
 
 ; Required for OPDK
 projects[siteminder][type] = "module"
 projects[siteminder][subdir] = "contrib"
+projects[siteminder][version] = "2.x-dev"
 
 projects[smtp][type] = "module"
 projects[smtp][subdir] = "contrib"
+projects[smtp][version] = "1.2"
 
 ; Required by Monetization
 projects[special_menu_items][type] = "module"
 projects[special_menu_items][subdir] = "contrib"
+projects[special_menu_items][version] = "2.0"
 
 projects[strongarm][type] = "module"
 projects[strongarm][subdir] = "contrib"
+projects[strongarm][version] = "2.0"
 
 projects[sumo][type] = "module"
 projects[sumo][subdir] = "contrib"
@@ -359,6 +414,7 @@ projects[sumo][directory_name] = "sumo"
 
 projects[syntaxhighlighter][type] = "module"
 projects[syntaxhighlighter][subdir] = "contrib"
+projects[syntaxhighlighter][version] = "2.0"
 
 ; Enabled on install.
 projects[token][type] = "module"
@@ -367,6 +423,7 @@ projects[token][version] = "1.6"
 
 projects[util][type] = "module"
 projects[util][subdir] = "contrib"
+projects[util][version] = "1.0-rc2"
 
 ; Enabled on install.
 projects[uuid][type] = "module"
@@ -380,6 +437,7 @@ projects[uuid_features][version] = "1.x-dev"
 
 projects[variable][type] = "module"
 projects[variable][subdir] = "contrib"
+projects[variable][version] = "2.5"
 
 ; Enabled on install.
 projects[views][type] = "module"
@@ -392,21 +450,24 @@ projects[views][patch][1036962] = "https://www.drupal.org/files/issues/views-aja
 
 projects[views_accordion][type] = "module"
 projects[views_accordion][subdir] = "contrib"
+projects[views_accordion][version] = "1.1"
 
 projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
+projects[views_bulk_operations][version] = "3.2"
 
-; Enabled on install.
 projects[views_queue][type] = "module"
 projects[views_queue][subdir] = "contrib"
 projects[views_queue][version] = "1.x-dev"
 
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
+projects[views_slideshow][version] = "3.1"
 
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
+projects[webform][version] = "4.9"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -415,6 +476,7 @@ projects[wysiwyg_filter][version] = "1.6-rc2"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
+projects[xautoload][version] = "5.1"
 
 
 
@@ -429,6 +491,7 @@ projects[rubik][type] = "theme"
 projects[rubik][version] = "4.2"
 
 projects[tao][type] = "theme"
+projects[tao][version] = "3.1"
 
 
 

@@ -42,23 +42,6 @@ class me_plugin_argument_validate_me_alias extends views_plugin_argument_validat
       $this->argument->options['me_validate_user_roles'] = array();
     }
 
-#    // Because of the way these forms are presented, we need to coerce the parent form into a particular setup.
-#    $user_form = array();
-
-#    
-#    $user_form['validate_user_argument_type']['#default_value'] = $this->argument->options['me_validate_user_argument_type'];
-#    $user_form['validate_user_restrict_roles']['#default_value'] = $this->argument->options['me_validate_user_restrict_roles'];
-#    $user_form['validate_user_roles']['#default_value'] = $this->argument->options['me_validate_user_roles'];
-#    $user_form['validate_user_argument_type']['#prefix'] = '<div id="edit-options-me-validate-user-argument-type-wrapper">';
-#    $user_form['validate_user_roles']['#prefix'] = '<div id="edit-options-me-validate-user-roles-wrapper">';
-#    $user_form['validate_user_roles']['#dependency'] = array(
-#      'edit-options-validate-type' => array($this->id),
-#      'edit-options-me-validate-user-restrict-roles' => array(1),
-#    );
-
-#    $form['me_validate_user_argument_type'] = $user_form['validate_user_argument_type'];
-#    $form['me_validate_user_restrict_roles'] = $user_form['validate_user_restrict_roles'];
-#    $form['me_validate_user_roles'] = $user_form['validate_user_roles'];
   }
 
   /**
@@ -100,6 +83,16 @@ class me_plugin_argument_validate_me_alias extends views_plugin_argument_validat
       // and check to be sure.
       foreach ($uid_args as $key => $uid_arg) {
         $uid_args[$key] = _me_check_arg($uid_arg, $this->options['type'] == 'name', FALSE);
+        //Make sure we only allow access to the current user
+        if (is_numeric($uid_args[$key])) {
+          if ($uid_args[$key] != $GLOBALS['user']->uid) {
+            $this->view->build_info['denied'] = TRUE;
+            return FALSE;
+          }
+        } else if ($uid_args[$key] != $GLOBALS['user']->name) {
+          $this->view->build_info['denied'] = TRUE;
+          return FALSE;
+        }
       }
 
       $argument = implode($seperator, $uid_args);
