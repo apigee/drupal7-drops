@@ -8,9 +8,12 @@ use Drupal\devconnect\Crypto;
 
 require_once DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php';
 
-
 define('SMARTDOCS_SAMPLE_PETSTORE_MODEL', 'petstore_example');
 define('SMARTDOCS_SAMPLE_WEATHER_MODEL', 'weather_example');
+
+// Fix for reCAPTCHA & anything else that uses http_build_query().
+// @see https://www.drupal.org/node/2476237.
+ini_set('arg_separator.output', '&');
 
 /**
  * Selects the Apigee Profile.

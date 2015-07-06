@@ -16,10 +16,10 @@
  */
 
 /**
- * Service definition for CloudUserAccounts (vm_alpha).
+ * Service definition for Computeaccounts (alpha).
  *
  * <p>
- * API for the Google Cloud User Accounts service.</p>
+ * API for the Google Compute Accounts service.</p>
  *
  * <p>
  * For more information about this service, see the API
@@ -28,21 +28,15 @@
  *
  * @author Google, Inc.
  */
-class Google_Service_CloudUserAccounts extends Google_Service
+class Google_Service_Computeaccounts extends Google_Service
 {
   /** View and manage your data across Google Cloud Platform services. */
   const CLOUD_PLATFORM =
       "https://www.googleapis.com/auth/cloud-platform";
-  /** Manage your Google Cloud User Accounts. */
-  const CLOUD_USERACCOUNTS =
-      "https://www.googleapis.com/auth/cloud.useraccounts";
-  /** View your Google Cloud User Accounts. */
-  const CLOUD_USERACCOUNTS_READONLY =
-      "https://www.googleapis.com/auth/cloud.useraccounts.readonly";
-  /** Manage your Google Compute Accounts. */
+  /** New Service: https://www.googleapis.com/auth/computeaccounts. */
   const COMPUTEACCOUNTS =
       "https://www.googleapis.com/auth/computeaccounts";
-  /** View your Google Compute Accounts. */
+  /** New Service: https://www.googleapis.com/auth/computeaccounts.readonly. */
   const COMPUTEACCOUNTS_READONLY =
       "https://www.googleapis.com/auth/computeaccounts.readonly";
 
@@ -53,19 +47,18 @@ class Google_Service_CloudUserAccounts extends Google_Service
   
 
   /**
-   * Constructs the internal representation of the CloudUserAccounts service.
+   * Constructs the internal representation of the Computeaccounts service.
    *
    * @param Google_Client $client
    */
   public function __construct(Google_Client $client)
   {
     parent::__construct($client);
-    $this->rootUrl = 'https://www.googleapis.com/';
-    $this->servicePath = 'clouduseraccounts/vm_alpha/projects/';
-    $this->version = 'vm_alpha';
-    $this->serviceName = 'clouduseraccounts';
+    $this->servicePath = 'computeaccounts/alpha/projects/';
+    $this->version = 'alpha';
+    $this->serviceName = 'computeaccounts';
 
-    $this->globalAccountsOperations = new Google_Service_CloudUserAccounts_GlobalAccountsOperations_Resource(
+    $this->globalAccountsOperations = new Google_Service_Computeaccounts_GlobalAccountsOperations_Resource(
         $this,
         $this->serviceName,
         'globalAccountsOperations',
@@ -114,7 +107,7 @@ class Google_Service_CloudUserAccounts extends Google_Service
                   'location' => 'query',
                   'type' => 'string',
                 ),
-                'orderBy' => array(
+                'pageToken' => array(
                   'location' => 'query',
                   'type' => 'string',
                 ),
@@ -122,16 +115,12 @@ class Google_Service_CloudUserAccounts extends Google_Service
                   'location' => 'query',
                   'type' => 'integer',
                 ),
-                'pageToken' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
               ),
             ),
           )
         )
     );
-    $this->groups = new Google_Service_CloudUserAccounts_Groups_Resource(
+    $this->groups = new Google_Service_Computeaccounts_Groups_Resource(
         $this,
         $this->serviceName,
         'groups',
@@ -205,17 +194,13 @@ class Google_Service_CloudUserAccounts extends Google_Service
                   'location' => 'query',
                   'type' => 'string',
                 ),
-                'orderBy' => array(
+                'pageToken' => array(
                   'location' => 'query',
                   'type' => 'string',
                 ),
                 'maxResults' => array(
                   'location' => 'query',
                   'type' => 'integer',
-                ),
-                'pageToken' => array(
-                  'location' => 'query',
-                  'type' => 'string',
                 ),
               ),
             ),'removeMember' => array(
@@ -237,7 +222,7 @@ class Google_Service_CloudUserAccounts extends Google_Service
           )
         )
     );
-    $this->linux = new Google_Service_CloudUserAccounts_Linux_Resource(
+    $this->linux = new Google_Service_Computeaccounts_Linux_Resource(
         $this,
         $this->serviceName,
         'linux',
@@ -287,10 +272,6 @@ class Google_Service_CloudUserAccounts extends Google_Service
                   'type' => 'string',
                   'required' => true,
                 ),
-                'orderBy' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
                 'pageToken' => array(
                   'location' => 'query',
                   'type' => 'string',
@@ -312,7 +293,7 @@ class Google_Service_CloudUserAccounts extends Google_Service
           )
         )
     );
-    $this->users = new Google_Service_CloudUserAccounts_Users_Resource(
+    $this->users = new Google_Service_Computeaccounts_Users_Resource(
         $this,
         $this->serviceName,
         'users',
@@ -386,17 +367,13 @@ class Google_Service_CloudUserAccounts extends Google_Service
                   'location' => 'query',
                   'type' => 'string',
                 ),
-                'orderBy' => array(
+                'pageToken' => array(
                   'location' => 'query',
                   'type' => 'string',
                 ),
                 'maxResults' => array(
                   'location' => 'query',
                   'type' => 'integer',
-                ),
-                'pageToken' => array(
-                  'location' => 'query',
-                  'type' => 'string',
                 ),
               ),
             ),'removePublicKey' => array(
@@ -431,18 +408,18 @@ class Google_Service_CloudUserAccounts extends Google_Service
  * The "globalAccountsOperations" collection of methods.
  * Typical usage is:
  *  <code>
- *   $clouduseraccountsService = new Google_Service_CloudUserAccounts(...);
- *   $globalAccountsOperations = $clouduseraccountsService->globalAccountsOperations;
+ *   $computeaccountsService = new Google_Service_Computeaccounts(...);
+ *   $globalAccountsOperations = $computeaccountsService->globalAccountsOperations;
  *  </code>
  */
-class Google_Service_CloudUserAccounts_GlobalAccountsOperations_Resource extends Google_Service_Resource
+class Google_Service_Computeaccounts_GlobalAccountsOperations_Resource extends Google_Service_Resource
 {
 
   /**
    * Deletes the specified operation resource. (globalAccountsOperations.delete)
    *
    * @param string $project Project ID for this request.
-   * @param string $operation Name of the Operations resource to delete.
+   * @param string $operation Name of the operation resource to delete.
    * @param array $optParams Optional parameters.
    */
   public function delete($project, $operation, $optParams = array())
@@ -456,15 +433,15 @@ class Google_Service_CloudUserAccounts_GlobalAccountsOperations_Resource extends
    * Retrieves the specified operation resource. (globalAccountsOperations.get)
    *
    * @param string $project Project ID for this request.
-   * @param string $operation Name of the Operations resource to return.
+   * @param string $operation Name of the operation resource to return.
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
   public function get($project, $operation, $optParams = array())
   {
     $params = array('project' => $project, 'operation' => $operation);
     $params = array_merge($params, $optParams);
-    return $this->call('get', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('get', array($params), "Google_Service_Computeaccounts_Operation");
   }
 
   /**
@@ -474,42 +451,19 @@ class Google_Service_CloudUserAccounts_GlobalAccountsOperations_Resource extends
    * @param string $project Project ID for this request.
    * @param array $optParams Optional parameters.
    *
-   * @opt_param string filter Sets a filter expression for filtering listed
-   * resources, in the form filter={expression}. Your {expression} must contain
-   * the following: FIELD_NAME COMPARISON_STRING LITERAL_STRING   - FIELD_NAME:
-   * The name of the field you want to compare. The field name must be valid for
-   * the type of resource being filtered. Only atomic field types are supported
-   * (string, number, boolean). Array and object fields are not currently
-   * supported.  - COMPARISON_STRING: The comparison string, either eq (equals) or
-   * ne (not equals).  - LITERAL_STRING: The literal string value to filter to.
-   * The literal value must be valid for the type of field (string, number,
-   * boolean). For string fields, the literal value is interpreted as a regular
-   * expression using RE2 syntax. The literal value must match the entire field.
-   * For example, you can filter by the name of a resource: filter=name ne
-   * example-instance The above filter returns only results whose name field does
-   * not equal example-instance. You can also enclose your literal string in
-   * single, double, or no quotes.
-   * @opt_param string orderBy Sorts list results by a certain order. By default,
-   * results are returned in alphanumerical order based on the resource name.
-   *
-   * You can also sort results in descending order based on the creation timestamp
-   * using orderBy="creationTimestamp desc". This sorts results based on the
-   * creationTimestamp field in reverse chronological order (newest result first).
-   * Use this to sort resources like operations so that the newest operation is
-   * returned first.
-   *
-   * Currently, only sorting by name or creationTimestamp desc is supported.
-   * @opt_param string maxResults Maximum count of results to be returned.
-   * @opt_param string pageToken Specifies a page token to use. Use this parameter
-   * if you want to list the next page of results. Set pageToken to the
-   * nextPageToken returned by a previous list request.
-   * @return Google_Service_CloudUserAccounts_OperationList
+   * @opt_param string filter Optional. Filter expression for filtering listed
+   * resources.
+   * @opt_param string pageToken Optional. Tag returned by a previous list request
+   * truncated by maxResults. Used to continue a previous list request.
+   * @opt_param string maxResults Optional. Maximum count of results to be
+   * returned. Maximum value is 500 and default value is 500.
+   * @return Google_Service_Computeaccounts_OperationList
    */
   public function listGlobalAccountsOperations($project, $optParams = array())
   {
     $params = array('project' => $project);
     $params = array_merge($params, $optParams);
-    return $this->call('list', array($params), "Google_Service_CloudUserAccounts_OperationList");
+    return $this->call('list', array($params), "Google_Service_Computeaccounts_OperationList");
   }
 }
 
@@ -517,11 +471,11 @@ class Google_Service_CloudUserAccounts_GlobalAccountsOperations_Resource extends
  * The "groups" collection of methods.
  * Typical usage is:
  *  <code>
- *   $clouduseraccountsService = new Google_Service_CloudUserAccounts(...);
- *   $groups = $clouduseraccountsService->groups;
+ *   $computeaccountsService = new Google_Service_Computeaccounts(...);
+ *   $groups = $computeaccountsService->groups;
  *  </code>
  */
-class Google_Service_CloudUserAccounts_Groups_Resource extends Google_Service_Resource
+class Google_Service_Computeaccounts_Groups_Resource extends Google_Service_Resource
 {
 
   /**
@@ -531,59 +485,59 @@ class Google_Service_CloudUserAccounts_Groups_Resource extends Google_Service_Re
    * @param string $groupName Name of the group for this request.
    * @param Google_GroupsAddMemberRequest $postBody
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
-  public function addMember($project, $groupName, Google_Service_CloudUserAccounts_GroupsAddMemberRequest $postBody, $optParams = array())
+  public function addMember($project, $groupName, Google_Service_Computeaccounts_GroupsAddMemberRequest $postBody, $optParams = array())
   {
     $params = array('project' => $project, 'groupName' => $groupName, 'postBody' => $postBody);
     $params = array_merge($params, $optParams);
-    return $this->call('addMember', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('addMember', array($params), "Google_Service_Computeaccounts_Operation");
   }
 
   /**
-   * Deletes the specified Group resource. (groups.delete)
+   * Deletes the specified group resource. (groups.delete)
    *
    * @param string $project Project ID for this request.
-   * @param string $groupName Name of the Group resource to delete.
+   * @param string $groupName Name of the group resource to delete.
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
   public function delete($project, $groupName, $optParams = array())
   {
     $params = array('project' => $project, 'groupName' => $groupName);
     $params = array_merge($params, $optParams);
-    return $this->call('delete', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('delete', array($params), "Google_Service_Computeaccounts_Operation");
   }
 
   /**
-   * Returns the specified Group resource. (groups.get)
+   * Returns the specified group resource. (groups.get)
    *
    * @param string $project Project ID for this request.
-   * @param string $groupName Name of the Group resource to return.
+   * @param string $groupName Name of the group resource to return.
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Group
+   * @return Google_Service_Computeaccounts_Group
    */
   public function get($project, $groupName, $optParams = array())
   {
     $params = array('project' => $project, 'groupName' => $groupName);
     $params = array_merge($params, $optParams);
-    return $this->call('get', array($params), "Google_Service_CloudUserAccounts_Group");
+    return $this->call('get', array($params), "Google_Service_Computeaccounts_Group");
   }
 
   /**
-   * Creates a Group resource in the specified project using the data included in
+   * Creates a group resource in the specified project using the data included in
    * the request. (groups.insert)
    *
    * @param string $project Project ID for this request.
    * @param Google_Group $postBody
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
-  public function insert($project, Google_Service_CloudUserAccounts_Group $postBody, $optParams = array())
+  public function insert($project, Google_Service_Computeaccounts_Group $postBody, $optParams = array())
   {
     $params = array('project' => $project, 'postBody' => $postBody);
     $params = array_merge($params, $optParams);
-    return $this->call('insert', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('insert', array($params), "Google_Service_Computeaccounts_Operation");
   }
 
   /**
@@ -593,42 +547,19 @@ class Google_Service_CloudUserAccounts_Groups_Resource extends Google_Service_Re
    * @param string $project Project ID for this request.
    * @param array $optParams Optional parameters.
    *
-   * @opt_param string filter Sets a filter expression for filtering listed
-   * resources, in the form filter={expression}. Your {expression} must contain
-   * the following: FIELD_NAME COMPARISON_STRING LITERAL_STRING   - FIELD_NAME:
-   * The name of the field you want to compare. The field name must be valid for
-   * the type of resource being filtered. Only atomic field types are supported
-   * (string, number, boolean). Array and object fields are not currently
-   * supported.  - COMPARISON_STRING: The comparison string, either eq (equals) or
-   * ne (not equals).  - LITERAL_STRING: The literal string value to filter to.
-   * The literal value must be valid for the type of field (string, number,
-   * boolean). For string fields, the literal value is interpreted as a regular
-   * expression using RE2 syntax. The literal value must match the entire field.
-   * For example, you can filter by the name of a resource: filter=name ne
-   * example-instance The above filter returns only results whose name field does
-   * not equal example-instance. You can also enclose your literal string in
-   * single, double, or no quotes.
-   * @opt_param string orderBy Sorts list results by a certain order. By default,
-   * results are returned in alphanumerical order based on the resource name.
-   *
-   * You can also sort results in descending order based on the creation timestamp
-   * using orderBy="creationTimestamp desc". This sorts results based on the
-   * creationTimestamp field in reverse chronological order (newest result first).
-   * Use this to sort resources like operations so that the newest operation is
-   * returned first.
-   *
-   * Currently, only sorting by name or creationTimestamp desc is supported.
-   * @opt_param string maxResults Maximum count of results to be returned.
-   * @opt_param string pageToken Specifies a page token to use. Use this parameter
-   * if you want to list the next page of results. Set pageToken to the
-   * nextPageToken returned by a previous list request.
-   * @return Google_Service_CloudUserAccounts_GroupList
+   * @opt_param string filter Optional. Filter expression for filtering listed
+   * resources.
+   * @opt_param string pageToken Optional. Tag returned by a previous list request
+   * truncated by maxResults. Used to continue a previous list request.
+   * @opt_param string maxResults Optional. Maximum count of results to be
+   * returned. Maximum value is 500 and default value is 500.
+   * @return Google_Service_Computeaccounts_GroupList
    */
   public function listGroups($project, $optParams = array())
   {
     $params = array('project' => $project);
     $params = array_merge($params, $optParams);
-    return $this->call('list', array($params), "Google_Service_CloudUserAccounts_GroupList");
+    return $this->call('list', array($params), "Google_Service_Computeaccounts_GroupList");
   }
 
   /**
@@ -638,13 +569,13 @@ class Google_Service_CloudUserAccounts_Groups_Resource extends Google_Service_Re
    * @param string $groupName Name of the group for this request.
    * @param Google_GroupsRemoveMemberRequest $postBody
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
-  public function removeMember($project, $groupName, Google_Service_CloudUserAccounts_GroupsRemoveMemberRequest $postBody, $optParams = array())
+  public function removeMember($project, $groupName, Google_Service_Computeaccounts_GroupsRemoveMemberRequest $postBody, $optParams = array())
   {
     $params = array('project' => $project, 'groupName' => $groupName, 'postBody' => $postBody);
     $params = array_merge($params, $optParams);
-    return $this->call('removeMember', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('removeMember', array($params), "Google_Service_Computeaccounts_Operation");
   }
 }
 
@@ -652,81 +583,57 @@ class Google_Service_CloudUserAccounts_Groups_Resource extends Google_Service_Re
  * The "linux" collection of methods.
  * Typical usage is:
  *  <code>
- *   $clouduseraccountsService = new Google_Service_CloudUserAccounts(...);
- *   $linux = $clouduseraccountsService->linux;
+ *   $computeaccountsService = new Google_Service_Computeaccounts(...);
+ *   $linux = $computeaccountsService->linux;
  *  </code>
  */
-class Google_Service_CloudUserAccounts_Linux_Resource extends Google_Service_Resource
+class Google_Service_Computeaccounts_Linux_Resource extends Google_Service_Resource
 {
 
   /**
-   * Returns a list of authorized public keys for a specific user account.
+   * Returns the AuthorizedKeysView of the specified user.
    * (linux.getAuthorizedKeysView)
    *
    * @param string $project Project ID for this request.
    * @param string $zone Name of the zone for this request.
-   * @param string $user The user account for which you want to get a list of
-   * authorized public keys.
-   * @param string $instance The fully-qualified URL of the virtual machine
-   * requesting the view.
+   * @param string $user Username of the AuthorizedKeysView to return.
+   * @param string $instance The fully-qualified URL of the instance requesting
+   * the view.
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_LinuxGetAuthorizedKeysViewResponse
+   * @return Google_Service_Computeaccounts_LinuxGetAuthorizedKeysViewResponse
    */
   public function getAuthorizedKeysView($project, $zone, $user, $instance, $optParams = array())
   {
     $params = array('project' => $project, 'zone' => $zone, 'user' => $user, 'instance' => $instance);
     $params = array_merge($params, $optParams);
-    return $this->call('getAuthorizedKeysView', array($params), "Google_Service_CloudUserAccounts_LinuxGetAuthorizedKeysViewResponse");
+    return $this->call('getAuthorizedKeysView', array($params), "Google_Service_Computeaccounts_LinuxGetAuthorizedKeysViewResponse");
   }
 
   /**
-   * Retrieves a list of user accounts for an instance within a specific project.
-   * (linux.getLinuxAccountViews)
+   * Retrieves the Linux views for an instance contained within the specified
+   * project. (linux.getLinuxAccountViews)
    *
    * @param string $project Project ID for this request.
    * @param string $zone Name of the zone for this request.
-   * @param string $instance The fully-qualified URL of the virtual machine
-   * requesting the views.
+   * @param string $instance The fully-qualified URL of the instance requesting
+   * the views.
    * @param array $optParams Optional parameters.
    *
-   * @opt_param string orderBy Sorts list results by a certain order. By default,
-   * results are returned in alphanumerical order based on the resource name.
-   *
-   * You can also sort results in descending order based on the creation timestamp
-   * using orderBy="creationTimestamp desc". This sorts results based on the
-   * creationTimestamp field in reverse chronological order (newest result first).
-   * Use this to sort resources like operations so that the newest operation is
-   * returned first.
-   *
-   * Currently, only sorting by name or creationTimestamp desc is supported.
-   * @opt_param string pageToken Specifies a page token to use. Use this parameter
-   * if you want to list the next page of results. Set pageToken to the
-   * nextPageToken returned by a previous list request.
-   * @opt_param string maxResults Maximum count of results to be returned.
-   * @opt_param string filter Sets a filter expression for filtering listed
-   * resources, in the form filter={expression}. Your {expression} must contain
-   * the following: FIELD_NAME COMPARISON_STRING LITERAL_STRING   - FIELD_NAME:
-   * The name of the field you want to compare. The field name must be valid for
-   * the type of resource being filtered. Only atomic field types are supported
-   * (string, number, boolean). Array and object fields are not currently
-   * supported.  - COMPARISON_STRING: The comparison string, either eq (equals) or
-   * ne (not equals).  - LITERAL_STRING: The literal string value to filter to.
-   * The literal value must be valid for the type of field (string, number,
-   * boolean). For string fields, the literal value is interpreted as a regular
-   * expression using RE2 syntax. The literal value must match the entire field.
-   * For example, you can filter by the name of a resource: filter=name ne
-   * example-instance The above filter returns only results whose name field does
-   * not equal example-instance. You can also enclose your literal string in
-   * single, double, or no quotes.
-   * @opt_param string user If provided, the user requesting the views. If left
-   * blank, the system is requesting the views, instead of a particular user.
-   * @return Google_Service_CloudUserAccounts_LinuxGetLinuxAccountViewsResponse
+   * @opt_param string pageToken Optional. Tag returned by a previous list request
+   * truncated by maxResults. Used to continue a previous list request.
+   * @opt_param string maxResults Optional. Maximum count of results to be
+   * returned. Maximum value is 500 and default value is 500.
+   * @opt_param string filter Optional. Filter expression for filtering listed
+   * resources.
+   * @opt_param string user If provided, the user whose login is triggering an
+   * immediate refresh of the views.
+   * @return Google_Service_Computeaccounts_LinuxGetLinuxAccountViewsResponse
    */
   public function getLinuxAccountViews($project, $zone, $instance, $optParams = array())
   {
     $params = array('project' => $project, 'zone' => $zone, 'instance' => $instance);
     $params = array_merge($params, $optParams);
-    return $this->call('getLinuxAccountViews', array($params), "Google_Service_CloudUserAccounts_LinuxGetLinuxAccountViewsResponse");
+    return $this->call('getLinuxAccountViews', array($params), "Google_Service_Computeaccounts_LinuxGetLinuxAccountViewsResponse");
   }
 }
 
@@ -734,119 +641,96 @@ class Google_Service_CloudUserAccounts_Linux_Resource extends Google_Service_Res
  * The "users" collection of methods.
  * Typical usage is:
  *  <code>
- *   $clouduseraccountsService = new Google_Service_CloudUserAccounts(...);
- *   $users = $clouduseraccountsService->users;
+ *   $computeaccountsService = new Google_Service_Computeaccounts(...);
+ *   $users = $computeaccountsService->users;
  *  </code>
  */
-class Google_Service_CloudUserAccounts_Users_Resource extends Google_Service_Resource
+class Google_Service_Computeaccounts_Users_Resource extends Google_Service_Resource
 {
 
   /**
-   * Adds a public key to the specified User resource with the data included in
-   * the request. (users.addPublicKey)
+   * Adds a public key to the specified user using the data included in the
+   * request. (users.addPublicKey)
    *
    * @param string $project Project ID for this request.
    * @param string $user Name of the user for this request.
    * @param Google_PublicKey $postBody
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
-  public function addPublicKey($project, $user, Google_Service_CloudUserAccounts_PublicKey $postBody, $optParams = array())
+  public function addPublicKey($project, $user, Google_Service_Computeaccounts_PublicKey $postBody, $optParams = array())
   {
     $params = array('project' => $project, 'user' => $user, 'postBody' => $postBody);
     $params = array_merge($params, $optParams);
-    return $this->call('addPublicKey', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('addPublicKey', array($params), "Google_Service_Computeaccounts_Operation");
   }
 
   /**
-   * Deletes the specified User resource. (users.delete)
+   * Deletes the specified user resource. (users.delete)
    *
    * @param string $project Project ID for this request.
    * @param string $user Name of the user resource to delete.
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
   public function delete($project, $user, $optParams = array())
   {
     $params = array('project' => $project, 'user' => $user);
     $params = array_merge($params, $optParams);
-    return $this->call('delete', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('delete', array($params), "Google_Service_Computeaccounts_Operation");
   }
 
   /**
-   * Returns the specified User resource. (users.get)
+   * Returns the specified user resource. (users.get)
    *
    * @param string $project Project ID for this request.
    * @param string $user Name of the user resource to return.
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_User
+   * @return Google_Service_Computeaccounts_User
    */
   public function get($project, $user, $optParams = array())
   {
     $params = array('project' => $project, 'user' => $user);
     $params = array_merge($params, $optParams);
-    return $this->call('get', array($params), "Google_Service_CloudUserAccounts_User");
+    return $this->call('get', array($params), "Google_Service_Computeaccounts_User");
   }
 
   /**
-   * Creates a User resource in the specified project using the data included in
+   * Creates a user resource in the specified project using the data included in
    * the request. (users.insert)
    *
    * @param string $project Project ID for this request.
    * @param Google_User $postBody
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
-  public function insert($project, Google_Service_CloudUserAccounts_User $postBody, $optParams = array())
+  public function insert($project, Google_Service_Computeaccounts_User $postBody, $optParams = array())
   {
     $params = array('project' => $project, 'postBody' => $postBody);
     $params = array_merge($params, $optParams);
-    return $this->call('insert', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('insert', array($params), "Google_Service_Computeaccounts_Operation");
   }
 
   /**
-   * Retrieves a list of users contained within the specified project.
+   * Retrieves the list of users contained within the specified project.
    * (users.listUsers)
    *
    * @param string $project Project ID for this request.
    * @param array $optParams Optional parameters.
    *
-   * @opt_param string filter Sets a filter expression for filtering listed
-   * resources, in the form filter={expression}. Your {expression} must contain
-   * the following: FIELD_NAME COMPARISON_STRING LITERAL_STRING   - FIELD_NAME:
-   * The name of the field you want to compare. The field name must be valid for
-   * the type of resource being filtered. Only atomic field types are supported
-   * (string, number, boolean). Array and object fields are not currently
-   * supported.  - COMPARISON_STRING: The comparison string, either eq (equals) or
-   * ne (not equals).  - LITERAL_STRING: The literal string value to filter to.
-   * The literal value must be valid for the type of field (string, number,
-   * boolean). For string fields, the literal value is interpreted as a regular
-   * expression using RE2 syntax. The literal value must match the entire field.
-   * For example, you can filter by the name of a resource: filter=name ne
-   * example-instance The above filter returns only results whose name field does
-   * not equal example-instance. You can also enclose your literal string in
-   * single, double, or no quotes.
-   * @opt_param string orderBy Sorts list results by a certain order. By default,
-   * results are returned in alphanumerical order based on the resource name.
-   *
-   * You can also sort results in descending order based on the creation timestamp
-   * using orderBy="creationTimestamp desc". This sorts results based on the
-   * creationTimestamp field in reverse chronological order (newest result first).
-   * Use this to sort resources like operations so that the newest operation is
-   * returned first.
-   *
-   * Currently, only sorting by name or creationTimestamp desc is supported.
-   * @opt_param string maxResults Maximum count of results to be returned.
-   * @opt_param string pageToken Specifies a page token to use. Use this parameter
-   * if you want to list the next page of results. Set pageToken to the
-   * nextPageToken returned by a previous list request.
-   * @return Google_Service_CloudUserAccounts_UserList
+   * @opt_param string filter Optional. Filter expression for filtering listed
+   * resources.
+   * @opt_param string pageToken Optional. Tag returned by a previous list request
+   * truncated by maxResults. Used to continue a previous list request.
+   * @opt_param string maxResults Optional. Maximum count of results to be
+   * returned. Maximum value is 500 and default value is 500.
+   * @return Google_Service_Computeaccounts_UserList
    */
   public function listUsers($project, $optParams = array())
   {
     $params = array('project' => $project);
     $params = array_merge($params, $optParams);
-    return $this->call('list', array($params), "Google_Service_CloudUserAccounts_UserList");
+    return $this->call('list', array($params), "Google_Service_Computeaccounts_UserList");
   }
 
   /**
@@ -858,20 +742,20 @@ class Google_Service_CloudUserAccounts_Users_Resource extends Google_Service_Res
    * Public keys are identified by their fingerprint, which is defined by RFC4716
    * to be the MD5 digest of the public key.
    * @param array $optParams Optional parameters.
-   * @return Google_Service_CloudUserAccounts_Operation
+   * @return Google_Service_Computeaccounts_Operation
    */
   public function removePublicKey($project, $user, $fingerprint, $optParams = array())
   {
     $params = array('project' => $project, 'user' => $user, 'fingerprint' => $fingerprint);
     $params = array_merge($params, $optParams);
-    return $this->call('removePublicKey', array($params), "Google_Service_CloudUserAccounts_Operation");
+    return $this->call('removePublicKey', array($params), "Google_Service_Computeaccounts_Operation");
   }
 }
 
 
 
 
-class Google_Service_CloudUserAccounts_AuthorizedKeysView extends Google_Collection
+class Google_Service_Computeaccounts_AuthorizedKeysView extends Google_Collection
 {
   protected $collection_key = 'keys';
   protected $internal_gapi_mappings = array(
@@ -889,7 +773,7 @@ class Google_Service_CloudUserAccounts_AuthorizedKeysView extends Google_Collect
   }
 }
 
-class Google_Service_CloudUserAccounts_Group extends Google_Collection
+class Google_Service_Computeaccounts_Group extends Google_Collection
 {
   protected $collection_key = 'members';
   protected $internal_gapi_mappings = array(
@@ -961,13 +845,13 @@ class Google_Service_CloudUserAccounts_Group extends Google_Collection
   }
 }
 
-class Google_Service_CloudUserAccounts_GroupList extends Google_Collection
+class Google_Service_Computeaccounts_GroupList extends Google_Collection
 {
   protected $collection_key = 'items';
   protected $internal_gapi_mappings = array(
   );
   public $id;
-  protected $itemsType = 'Google_Service_CloudUserAccounts_Group';
+  protected $itemsType = 'Google_Service_Computeaccounts_Group';
   protected $itemsDataType = 'array';
   public $kind;
   public $nextPageToken;
@@ -1016,7 +900,7 @@ class Google_Service_CloudUserAccounts_GroupList extends Google_Collection
   }
 }
 
-class Google_Service_CloudUserAccounts_GroupsAddMemberRequest extends Google_Collection
+class Google_Service_Computeaccounts_GroupsAddMemberRequest extends Google_Collection
 {
   protected $collection_key = 'users';
   protected $internal_gapi_mappings = array(
@@ -1034,7 +918,7 @@ class Google_Service_CloudUserAccounts_GroupsAddMemberRequest extends Google_Col
   }
 }
 
-class Google_Service_CloudUserAccounts_GroupsRemoveMemberRequest extends Google_Collection
+class Google_Service_Computeaccounts_GroupsRemoveMemberRequest extends Google_Collection
 {
   protected $collection_key = 'users';
   protected $internal_gapi_mappings = array(
@@ -1052,15 +936,15 @@ class Google_Service_CloudUserAccounts_GroupsRemoveMemberRequest extends Google_
   }
 }
 
-class Google_Service_CloudUserAccounts_LinuxAccountViews extends Google_Collection
+class Google_Service_Computeaccounts_LinuxAccountViews extends Google_Collection
 {
   protected $collection_key = 'userViews';
   protected $internal_gapi_mappings = array(
   );
-  protected $groupViewsType = 'Google_Service_CloudUserAccounts_LinuxGroupView';
+  protected $groupViewsType = 'Google_Service_Computeaccounts_LinuxGroupView';
   protected $groupViewsDataType = 'array';
   public $kind;
-  protected $userViewsType = 'Google_Service_CloudUserAccounts_LinuxUserView';
+  protected $userViewsType = 'Google_Service_Computeaccounts_LinuxUserView';
   protected $userViewsDataType = 'array';
 
 
@@ -1090,15 +974,15 @@ class Google_Service_CloudUserAccounts_LinuxAccountViews extends Google_Collecti
   }
 }
 
-class Google_Service_CloudUserAccounts_LinuxGetAuthorizedKeysViewResponse extends Google_Model
+class Google_Service_Computeaccounts_LinuxGetAuthorizedKeysViewResponse extends Google_Model
 {
   protected $internal_gapi_mappings = array(
   );
-  protected $resourceType = 'Google_Service_CloudUserAccounts_AuthorizedKeysView';
+  protected $resourceType = 'Google_Service_Computeaccounts_AuthorizedKeysView';
   protected $resourceDataType = '';
 
 
-  public function setResource(Google_Service_CloudUserAccounts_AuthorizedKeysView $resource)
+  public function setResource(Google_Service_Computeaccounts_AuthorizedKeysView $resource)
   {
     $this->resource = $resource;
   }
@@ -1108,15 +992,15 @@ class Google_Service_CloudUserAccounts_LinuxGetAuthorizedKeysViewResponse extend
   }
 }
 
-class Google_Service_CloudUserAccounts_LinuxGetLinuxAccountViewsResponse extends Google_Model
+class Google_Service_Computeaccounts_LinuxGetLinuxAccountViewsResponse extends Google_Model
 {
   protected $internal_gapi_mappings = array(
   );
-  protected $resourceType = 'Google_Service_CloudUserAccounts_LinuxAccountViews';
+  protected $resourceType = 'Google_Service_Computeaccounts_LinuxAccountViews';
   protected $resourceDataType = '';
 
 
-  public function setResource(Google_Service_CloudUserAccounts_LinuxAccountViews $resource)
+  public function setResource(Google_Service_Computeaccounts_LinuxAccountViews $resource)
   {
     $this->resource = $resource;
   }
@@ -1126,7 +1010,7 @@ class Google_Service_CloudUserAccounts_LinuxGetLinuxAccountViewsResponse extends
   }
 }
 
-class Google_Service_CloudUserAccounts_LinuxGroupView extends Google_Collection
+class Google_Service_Computeaccounts_LinuxGroupView extends Google_Collection
 {
   protected $collection_key = 'members';
   protected $internal_gapi_mappings = array(
@@ -1162,7 +1046,7 @@ class Google_Service_CloudUserAccounts_LinuxGroupView extends Google_Collection
   }
 }
 
-class Google_Service_CloudUserAccounts_LinuxUserView extends Google_Model
+class Google_Service_Computeaccounts_LinuxUserView extends Google_Model
 {
   protected $internal_gapi_mappings = array(
   );
@@ -1224,7 +1108,7 @@ class Google_Service_CloudUserAccounts_LinuxUserView extends Google_Model
   }
 }
 
-class Google_Service_CloudUserAccounts_Operation extends Google_Collection
+class Google_Service_Computeaccounts_Operation extends Google_Collection
 {
   protected $collection_key = 'warnings';
   protected $internal_gapi_mappings = array(
@@ -1232,7 +1116,7 @@ class Google_Service_CloudUserAccounts_Operation extends Google_Collection
   public $clientOperationId;
   public $creationTimestamp;
   public $endTime;
-  protected $errorType = 'Google_Service_CloudUserAccounts_OperationError';
+  protected $errorType = 'Google_Service_Computeaccounts_OperationError';
   protected $errorDataType = '';
   public $httpErrorMessage;
   public $httpErrorStatusCode;
@@ -1250,7 +1134,7 @@ class Google_Service_CloudUserAccounts_Operation extends Google_Collection
   public $targetId;
   public $targetLink;
   public $user;
-  protected $warningsType = 'Google_Service_CloudUserAccounts_OperationWarnings';
+  protected $warningsType = 'Google_Service_Computeaccounts_OperationWarnings';
   protected $warningsDataType = 'array';
   public $zone;
 
@@ -1279,7 +1163,7 @@ class Google_Service_CloudUserAccounts_Operation extends Google_Collection
   {
     return $this->endTime;
   }
-  public function setError(Google_Service_CloudUserAccounts_OperationError $error)
+  public function setError(Google_Service_Computeaccounts_OperationError $error)
   {
     $this->error = $error;
   }
@@ -1433,12 +1317,12 @@ class Google_Service_CloudUserAccounts_Operation extends Google_Collection
   }
 }
 
-class Google_Service_CloudUserAccounts_OperationError extends Google_Collection
+class Google_Service_Computeaccounts_OperationError extends Google_Collection
 {
   protected $collection_key = 'errors';
   protected $internal_gapi_mappings = array(
   );
-  protected $errorsType = 'Google_Service_CloudUserAccounts_OperationErrorErrors';
+  protected $errorsType = 'Google_Service_Computeaccounts_OperationErrorErrors';
   protected $errorsDataType = 'array';
 
 
@@ -1452,7 +1336,7 @@ class Google_Service_CloudUserAccounts_OperationError extends Google_Collection
   }
 }
 
-class Google_Service_CloudUserAccounts_OperationErrorErrors extends Google_Model
+class Google_Service_Computeaccounts_OperationErrorErrors extends Google_Model
 {
   protected $internal_gapi_mappings = array(
   );
@@ -1487,13 +1371,13 @@ class Google_Service_CloudUserAccounts_OperationErrorErrors extends Google_Model
   }
 }
 
-class Google_Service_CloudUserAccounts_OperationList extends Google_Collection
+class Google_Service_Computeaccounts_OperationList extends Google_Collection
 {
   protected $collection_key = 'items';
   protected $internal_gapi_mappings = array(
   );
   public $id;
-  protected $itemsType = 'Google_Service_CloudUserAccounts_Operation';
+  protected $itemsType = 'Google_Service_Computeaccounts_Operation';
   protected $itemsDataType = 'array';
   public $kind;
   public $nextPageToken;
@@ -1542,13 +1426,13 @@ class Google_Service_CloudUserAccounts_OperationList extends Google_Collection
   }
 }
 
-class Google_Service_CloudUserAccounts_OperationWarnings extends Google_Collection
+class Google_Service_Computeaccounts_OperationWarnings extends Google_Collection
 {
   protected $collection_key = 'data';
   protected $internal_gapi_mappings = array(
   );
   public $code;
-  protected $dataType = 'Google_Service_CloudUserAccounts_OperationWarningsData';
+  protected $dataType = 'Google_Service_Computeaccounts_OperationWarningsData';
   protected $dataDataType = 'array';
   public $message;
 
@@ -1579,7 +1463,7 @@ class Google_Service_CloudUserAccounts_OperationWarnings extends Google_Collecti
   }
 }
 
-class Google_Service_CloudUserAccounts_OperationWarningsData extends Google_Model
+class Google_Service_Computeaccounts_OperationWarningsData extends Google_Model
 {
   protected $internal_gapi_mappings = array(
   );
@@ -1605,7 +1489,7 @@ class Google_Service_CloudUserAccounts_OperationWarningsData extends Google_Mode
   }
 }
 
-class Google_Service_CloudUserAccounts_PublicKey extends Google_Model
+class Google_Service_Computeaccounts_PublicKey extends Google_Model
 {
   protected $internal_gapi_mappings = array(
   );
@@ -1658,7 +1542,7 @@ class Google_Service_CloudUserAccounts_PublicKey extends Google_Model
   }
 }
 
-class Google_Service_CloudUserAccounts_User extends Google_Collection
+class Google_Service_Computeaccounts_User extends Google_Collection
 {
   protected $collection_key = 'publicKeys';
   protected $internal_gapi_mappings = array(
@@ -1670,7 +1554,7 @@ class Google_Service_CloudUserAccounts_User extends Google_Collection
   public $kind;
   public $name;
   public $owner;
-  protected $publicKeysType = 'Google_Service_CloudUserAccounts_PublicKey';
+  protected $publicKeysType = 'Google_Service_Computeaccounts_PublicKey';
   protected $publicKeysDataType = 'array';
   public $selfLink;
 
@@ -1749,13 +1633,13 @@ class Google_Service_CloudUserAccounts_User extends Google_Collection
   }
 }
 
-class Google_Service_CloudUserAccounts_UserList extends Google_Collection
+class Google_Service_Computeaccounts_UserList extends Google_Collection
 {
   protected $collection_key = 'items';
   protected $internal_gapi_mappings = array(
   );
   public $id;
-  protected $itemsType = 'Google_Service_CloudUserAccounts_User';
+  protected $itemsType = 'Google_Service_Computeaccounts_User';
   protected $itemsDataType = 'array';
   public $kind;
   public $nextPageToken;
