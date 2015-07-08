@@ -27,7 +27,7 @@ projects[admin_menu][version] = "3.0-rc5"
 ; Enabled during profile install.
 projects[admin_views][type] = "module"
 projects[admin_views][subdir] = "contrib"
-projects[admin_views][version] = "1.4"
+projects[admin_views][version] = "1.5"
 
 ; Enabled during profile install.
 projects[advanced_forum][type] = "module"
@@ -316,7 +316,7 @@ projects[me][version] = "1.2"
 
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"
-projects[migrate][version] = "2.7"
+projects[migrate][version] = "2.8"
 
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
@@ -365,11 +365,11 @@ projects[recaptcha][version] = "2.0"
 ; Enabled on install.
 projects[redirect][type] = "module"
 projects[redirect][subdir] = "contrib"
-projects[redirect][version] = "1.0-rc1"
+projects[redirect][version] = "1.0-rc2"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-projects[redis][version] = "2.14"
+projects[redis][version] = "2.15"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
@@ -454,7 +454,7 @@ projects[views_accordion][version] = "1.1"
 
 projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
-projects[views_bulk_operations][version] = "3.2"
+projects[views_bulk_operations][version] = "3.3"
 
 projects[views_queue][type] = "module"
 projects[views_queue][subdir] = "contrib"

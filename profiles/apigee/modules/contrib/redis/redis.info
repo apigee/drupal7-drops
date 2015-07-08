@@ -21,9 +21,9 @@ files[] = lib/Redis/Tests/Lock/PhpRedisLockingUnitTestCase.test
 files[] = lib/Redis/Tests/Lock/PredisLockingUnitTestCase.test
 files[] = lib/Redis/Tests/Queue/AbtractQueueUnitTestCase.php
 files[] = lib/Redis/Tests/Queue/PhpRedisQueueUnitTestCase.test
-; Information added by Drupal.org packaging script on 2015-06-26
-version = "7.x-2.14"
+; Information added by Drupal.org packaging script on 2015-07-06
+version = "7.x-2.15"
 core = "7.x"
 project = "redis"
-datestamp = "1435315719"
+datestamp = "1436175841"
 
