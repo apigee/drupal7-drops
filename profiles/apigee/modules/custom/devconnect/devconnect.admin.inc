@@ -373,6 +373,15 @@ function devconnect_admin_form_submit($form, &$form_state) {
     }
     $message = 'The following authentication configuration items were changed: ' . join(',', $change_items);
     watchdog('devconnect', $message, array(), WATCHDOG_INFO);
+
+    try {
+      $org = new Organization(devconnect_default_org_config());
+      $org->load($new_config['org']);
+      $is_paging_enabled = ($org->getProperty('features.isCpsEnabled') === 'true');
+      variable_set('devconnect_paging_enabled', $is_paging_enabled);
+    }
+    catch (Exception $e) {
+    }
   }
 
   drupal_set_message(t('Your changes have been saved.'), 'status');

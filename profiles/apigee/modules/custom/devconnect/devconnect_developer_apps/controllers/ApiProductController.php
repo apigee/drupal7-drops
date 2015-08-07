@@ -52,6 +52,8 @@ class ApiProductController implements DrupalEntityControllerInterface {
    * @return array
    */
   public function load($ids = array(), $conditions = array('show_private' => FALSE)) {
+    static $string_keys = array('description', 'displayName', 'name', 'quota', 'quotaInterval', 'quotaTimeUnit');
+    static $array_keys = array('apiResources', 'attributes', 'environments', 'proxies', 'scopes');
 
     if (!isset($conditions['show_private'])) {
       $conditions['show_private'] = FALSE;
@@ -99,6 +101,19 @@ class ApiProductController implements DrupalEntityControllerInterface {
       $array = $api_product->toArray();
       $array['isPublic'] = $api_product->isPublic();
       $array['orgName'] = $api_product->getConfig()->orgName;
+
+      // Ensure that non-null values exist for non-nullable fields.
+      foreach ($string_keys as $string_key) {
+        if (!array_key_exists($string_key, $array)) {
+          $array[$string_key] = '';
+        }
+      }
+      foreach ($array_keys as $array_key) {
+        if (!array_key_exists($array_key, $array)) {
+          $array[$array_key] = array();
+        }
+      }
+
       $return[$api_product->getName()] = new ApiProductEntity($array);
     }
     return $return;

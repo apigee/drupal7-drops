@@ -26,6 +26,7 @@ function uuid_term_features_export_options() {
       ->addField('v', 'name', 'vname');
     $query->orderBy('v.name', 'ASC');
     $query->orderBy('t.name', 'ASC');
+    $query->addTag('uuid_term_features_export_options');
     $results = $query->execute()->fetchAll();
 
     foreach ($results as $term) {

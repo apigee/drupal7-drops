@@ -30,8 +30,8 @@ use Drupal\xautoload\Main;
  * @property ExtensionNamespaces extensionNamespaces
  * @property LibrariesInfoAlter librariesInfoAlter
  *
- * @see ServiceContainer
- * @see ServiceFactory
+ * @see \Drupal\xautoload\DIC\ServiceContainer
+ * @see \Drupal\xautoload\DIC\ServiceFactory
  */
 interface ServiceContainerInterface {
 

@@ -138,7 +138,7 @@ function uuid_features_features_api() {
   if (module_exists('bean')) {
     $components['uuid_bean'] = array(
       'name' => t('Bean'),
-      'feature_resource' => TRUE,
+      'feature_source' => TRUE,
       'default_hook' => 'uuid_features_default_beans',
       'default_file' => FEATURES_DEFAULTS_INCLUDED,
       'file' => drupal_get_path('module', 'uuid_features') . '/includes/uuid_bean.features.inc',
@@ -911,21 +911,23 @@ function uuid_features_fetch_uuid_references(&$fields, $entity_type, $map) {
             // missing. It's likely that the uuid was stored in the first map
             // key. This is for backward compatibility.
             $target_key = reset($map);
-            if (isset($field_value[$target_key])) {
+            if (isset($field_value[$target_key]) && uuid_is_valid($field_value[$target_key])) {
               $uuid = $field_value[$target_key];
             }
           }
 
-          $entities = entity_uuid_load($entity_type, array($uuid), array(), TRUE);
-          $referenced_entity = reset($entities);
+          if ($uuid != 'not found') {
+            $entities = entity_uuid_load($entity_type, array($uuid), array(), TRUE);
+            $referenced_entity = reset($entities);
 
-          foreach ($map as $source => $destination) {
-            if ($referenced_entity) {
-              $field_value[$destination] = $referenced_entity->{$source};
-            }
-            else {
-              // Fallback.
-              $field_value[$destination] = UUID_FEATURES_DEFAULT_FALLBACK_ID;
+            foreach ($map as $source => $destination) {
+              if ($referenced_entity) {
+                $field_value[$destination] = $referenced_entity->{$source};
+              }
+              else {
+                // Fallback.
+                $field_value[$destination] = UUID_FEATURES_DEFAULT_FALLBACK_ID;
+              }
             }
           }
         }

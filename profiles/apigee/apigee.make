@@ -138,7 +138,7 @@ projects[diff][version] = "3.2"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
-projects[ds][version] = "2.10"
+projects[ds][version] = "2.11"
 
 ; Deprecated. Required by devconnect_download which is also deprecated.
 projects[eck][type] = "module"
@@ -188,7 +188,7 @@ projects[field_group][version] = "1.4"
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.0-beta1"
+projects[file_entity][version] = "2.0-beta2"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -308,6 +308,7 @@ projects[menu_attributes][version] = "1.0-rc3"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
+projects[metatag][version] = "1.7"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -320,7 +321,7 @@ projects[migrate][version] = "2.8"
 
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
-projects[mimemail][version] = "1.0-beta3"
+projects[mimemail][version] = "1.0-beta4"
 
 ; Enabled on install.
 projects[module_filter][type] = "module"
@@ -361,11 +362,13 @@ projects[readonlymode][version] = "1.2"
 projects[recaptcha][type] = "module"
 projects[recaptcha][subdir] = "contrib"
 projects[recaptcha][version] = "2.0"
+; see https://www.drupal.org/node/2530156
+projects[recaptcha][patch][2530156] = "https://www.drupal.org/files/issues/recaptcha-2530156-3-arg-separator.patch"
 
 ; Enabled on install.
 projects[redirect][type] = "module"
 projects[redirect][subdir] = "contrib"
-projects[redirect][version] = "1.0-rc2"
+projects[redirect][version] = "1.0-rc3"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
@@ -467,7 +470,7 @@ projects[views_slideshow][version] = "3.1"
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.9"
+projects[webform][version] = "4.10"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -476,7 +479,7 @@ projects[wysiwyg_filter][version] = "1.6-rc2"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
-projects[xautoload][version] = "5.1"
+projects[xautoload][version] = "5.2"
 
 
 

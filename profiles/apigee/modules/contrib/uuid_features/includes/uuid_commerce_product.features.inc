@@ -18,7 +18,8 @@ function uuid_commerce_product_features_export_options() {
     $query->fields('cp', array('product_id', 'title', 'type', 'uuid'))
       ->condition('type', $enabled_types)
       ->orderBy('type')
-      ->orderBy('title');
+      ->orderBy('title')
+      ->addTag('uuid_commerce_product_features_export_options');
     $products = $query->execute()->fetchAll();
     foreach ($products as $product) {
       $options[$product->uuid] = t('@type: @title', array(

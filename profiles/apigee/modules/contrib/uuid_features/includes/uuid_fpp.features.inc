@@ -10,9 +10,13 @@
 function uuid_fpp_features_export_options() {
   $options = array();
 
-  $query = 'SELECT f.fpid, f.admin_title, f.title, f.bundle, f.uuid
-    FROM {fieldable_panels_panes} f ORDER BY f.bundle, f.title ASC';
-  $results = db_query($query);
+  $query = db_select('fieldable_panels_panes', 'f')
+    ->fields('f', array('fpid', 'admin_title', 'title', 'bundle', 'uuid'))
+    ->orderBy('f.bundle', 'ASC')
+    ->orderBy('f.title', 'ASC')
+    ->addTag('uuid_fpp_features_export_options');
+
+  $results = $query->execute()->fetchAll();
   foreach ($results as $fpp) {
     $bundle_name = ucwords(str_replace('_', ' ', $fpp->bundle));
     $display_title = ($fpp->admin_title) ? $fpp->admin_title : $fpp->uuid;

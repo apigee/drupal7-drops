@@ -1140,6 +1140,7 @@ function _smartdocs_update_process_node($existing_nid, $status, Model $model, Re
  * @throws Exception
  */
 function _smartdocs_update_process_nodes() {
+
   /** @var Apigee\SmartDocs\Model $model */
   $model = NULL;
   /** @var Apigee\SmartDocs\Revision $revision */
@@ -1238,9 +1239,7 @@ function _smartdocs_update_process_nodes() {
       $successes++;
     }
   }
-  if ($failures) {
-    throw new Exception($t(':fail failure(s) were encountered while updating SmartDocs nodes (there were :success successes).', array(':fail' => $failures, ':success' => $successes)));
-  }
+
   if ($successes) {
     // Finish processing nodes.
     $has_comments = db_table_exists('comments');
@@ -1248,13 +1247,13 @@ function _smartdocs_update_process_nodes() {
       // Update old node's URL alias entry to apply to the new node instead of
       // the old one.
       db_update('url_alias')
-        ->fields(array('source', 'node/' . $node->nid))
+        ->fields(array('source' => 'node/' . $node->nid))
         ->condition('source', 'node/' . $node->old_nid)
         ->execute();
       // Migrate comments (if any) from old node to new one.
       if ($has_comments) {
         db_update('comments')
-          ->fields(array('nid', $node->nid))
+          ->fields(array('nid' => $node->nid))
           ->condition('nid', $node->old_nid)
           ->execute();
       }
@@ -1291,5 +1290,8 @@ function _smartdocs_update_process_nodes() {
   }
   else {
     $log_fn($t('No content types were migrated.'), $success_flag);
+  }
+  if ($failures) {
+    $log_fn($t('!fail failure(s) were encountered while updating SmartDocs nodes (there were !success successes).', array('!fail' => $failures, '!success' => $successes)));
   }
 }

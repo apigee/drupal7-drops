@@ -12,11 +12,18 @@ function uuid_field_collection_features_export_options() {
   $all_ids = array();
 
   // Only allow enabled bundles to be exported.
-  $enabled_bundles = variable_get('uuid_features_entity_field_collection_item', FALSE);
+  $enabled_bundles = array();
+  $entity_info = entity_get_info('field_collection_item');
+  foreach ($entity_info['bundles'] as $key => $value) {
+    if (variable_get("uuid_features_entity_field_collection_item_${key}", FALSE)) {
+      $enabled_bundles[$key] = $key;
+    }
+  }
   if ($enabled_bundles) {
     $efq_field_collection_items = new EntityFieldQuery();
     $efq_field_collection_items->entityCondition('entity_type', 'field_collection_item');
     $efq_field_collection_items->entityCondition('bundle', $enabled_bundles);
+    $efq_field_collection_items->addTag('uuid_field_collection_features_export_options');
     $result = $efq_field_collection_items->execute();
 
     if (!empty($result['field_collection_item'])) {

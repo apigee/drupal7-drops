@@ -306,6 +306,14 @@ function smartdocs_update_7500() {
   );
   module_enable($modules);
 
+  // Since updates can be run for modules that are disabled but not uninstalled,
+  // we need to explicitly load SmartDocs here.
+  drupal_load('module', 'smartdocs');
+  // For unknown reasons, some upgrades fail if file_entity is not loaded here.
+  // If file_entity cannot be loaded for some bizarre reason, drupal_load will
+  // silently return FALSE here, which we ignore.
+  drupal_load('module', 'file_entity');
+  // Include the file that has our migration routines.
   module_load_include('inc', 'smartdocs', 'smartdocs.update');
   // Create unified content type and its associated vocabularies.
   _smartdocs_update();

@@ -6,8 +6,6 @@ class DrupalSystem implements DrupalSystemInterface {
 
   function __construct() {
     if (!function_exists('drupal_get_filename')) {
-      debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-      echo "\n\n";
       throw new \Exception("This class works only within a working Drupal environment.");
     }
   }
@@ -55,9 +53,23 @@ class DrupalSystem implements DrupalSystemInterface {
    * {@inheritdoc}
    */
   function getActiveExtensions() {
-    // Doing this directly tends to be a lot faster than system_list().
-    return db_query("SELECT name, type from {system} WHERE status = 1")
-      ->fetchAllKeyed();
+    try {
+      // Doing this directly tends to be a lot faster than system_list().
+      return db_query("SELECT name, type from {system} WHERE status = 1")
+        ->fetchAllKeyed();
+    }
+    catch (\DatabaseConnectionNotDefinedException $e) {
+      // During install, the database is not available.
+      // At this time only the system module is "installed".
+      /** See https://www.drupal.org/node/2393205 */
+      return array('system' => 'module');
+    }
+    catch (\PDOException $e) {
+      // Some time later during install, there is a database but not yet a system table.
+      // At this time only the system module is "installed".
+      // @todo Check if this is really a "Table 'system' doesn't exist'" exception.
+      return array('system' => 'module');
+    }
   }
 
   /**

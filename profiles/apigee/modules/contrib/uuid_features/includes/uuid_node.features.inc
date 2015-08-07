@@ -24,7 +24,8 @@ function uuid_node_features_export_options() {
     $query->fields('n', array('nid', 'title', 'type', 'uuid'))
       ->condition('type', $enabled_types)
       ->orderBy('type')
-      ->orderBy('title');
+      ->orderBy('title')
+      ->addTag('uuid_node_features_export_options');
     $nodes = $query->execute()->fetchAll();
     foreach ($nodes as $node) {
       $options[$node->uuid] = t('@type: @title', array(

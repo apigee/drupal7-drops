@@ -416,6 +416,16 @@ function _devconnect_drush_save_config($config) {
     return;
   }
   file_put_contents($config_file, Drupal\devconnect\Crypto::encrypt(serialize($config)));
+
+  $org_obj = new Apigee\ManagementAPI\Organization(devconnect_default_org_config());
+  try {
+    $org_obj->load($config['org']);
+    $is_paging_enabled = ($org_obj->getProperty('features.isCpsEnabled') === 'true');
+    variable_set('devconnect_paging_enabled', $is_paging_enabled);
+  }
+  catch (Exception $e) {
+  }
+
 }
 
 /**

@@ -17,6 +17,7 @@ function uuid_paragraphs_features_export_options() {
     $efq_paragraphs_items = new EntityFieldQuery();
     $efq_paragraphs_items->entityCondition('entity_type', 'paragraphs_item');
     $efq_paragraphs_items->entityCondition('bundle', $enabled_bundles);
+    $efq_paragraphs_items->addTag('uuid_paragraphs_features_export_options');
     $result = $efq_paragraphs_items->execute();
 
     if (!empty($result['paragraphs_item'])) {

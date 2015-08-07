@@ -18,7 +18,8 @@ function uuid_file_entity_features_export_options() {
       ->entityCondition('entity_type', 'file')
       ->propertyCondition('type', $enabled_types, 'IN')
       ->propertyOrderBy('filename')
-      ->propertyOrderBy('type');
+      ->propertyOrderBy('type')
+      ->addTag('uuid_file_entity_features_export_options');
 
     $result = $query->execute();
     if (!empty($result['file'])) {

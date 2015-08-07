@@ -305,5 +305,22 @@ function devconnect_update_7431() {
   }
 }
 
+/**
+ * Flag if Edge paging is enabled for the configured organization.
+ */
+function devconnect_update_7432() {
+  drupal_load('module', 'devconnect');
+  devconnect_init();
+  $config = devconnect_default_org_config();
+  $org = new Apigee\ManagementAPI\Organization($config);
+  try {
+    $org->load($config->orgName);
+    $is_paging_enabled = ($org->getProperty('features.isCpsEnabled') === 'true');
+    variable_set('devconnect_paging_enabled', $is_paging_enabled);
+  }
+  catch (Exception $e) {
+  }
+}
+
 // From now on, all update rules enabling/disabling dependencies should be done
 // in apigee_profile_updates.install instead.

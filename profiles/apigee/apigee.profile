@@ -1605,6 +1605,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#attributes' => array(
       'style' => 'float:left;',
     ),
+    '#name' => 'save',
   );
   $form['actions']['skip'] = array(
     '#type' => 'submit',
@@ -1614,7 +1615,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#attributes' => array(
       'style' => 'float:left;',
     ),
-
+    '#name' => 'skip',
   );
   $form['#submit'][] = 'apigee_install_api_endpoint_submit';
   $form['#validate'][] = 'apigee_install_api_endpoint_validate';
@@ -1630,10 +1631,16 @@ function apigee_install_api_endpoint($form, &$form_state) {
  *   The state of the form being validated.
  */
 function apigee_install_api_endpoint_validate($form, &$form_state) {
+  // Short-circuit if we are skipping this step.
+  if ($form_state['triggering_element']['#name'] == 'skip') {
+    return;
+  }
   $org = trim($form_state['values']['org']);
   $endpoint = trim($form_state['values']['endpoint']);
   $user = trim($form_state['values']['user']);
   $pass = trim($form_state['values']['pass']);
+  drupal_load('module', 'devconnect');
+  devconnect_init();
   module_load_include('inc', 'devconnect', 'devconnect.admin');
   $return = _devconnect_test_kms_connection($org, $endpoint, $user, $pass);
   // Was connection successful?
@@ -1716,6 +1723,18 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
   $key = devconnect_get_crypt_key();
   Crypto::setKey($key);
   file_put_contents(DRUPAL_ROOT . '/' . $private_dir . '/.apigee', Crypto::encrypt(serialize($config)));
+
+  //reset the static cache
+  drupal_static_reset('devconnect_default_org_config');
+
+  $org = new Apigee\ManagementAPI\Organization(devconnect_default_org_config());
+  try {
+    $org->load($config['org']);
+    $is_paging_enabled = ($org->getProperty('features.isCpsEnabled') === 'true');
+    variable_set('devconnect_paging_enabled', $is_paging_enabled);
+  }
+  catch (Exception $e) {
+  }
 
   $install_state['parameters']['edge_configured'] = TRUE;
   $install_state['completed_task'] = install_verify_completed_task();

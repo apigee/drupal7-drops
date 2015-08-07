@@ -287,6 +287,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
 
       if (isset($identifier) && empty($ids)) {
         $dev_app = new DeveloperApp($config, $identifier);
+        if (variable_get('devconnect_paging_enabled', FALSE) && method_exists($dev_app, 'usePaging')) {
+          $dev_app->usePaging();
+        }
         if (array_key_exists('name', $conditions)) {
           try {
             $dev_app->load($conditions['name']);
@@ -306,10 +309,14 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       // TODO: add more conditions here such as Status
       elseif (empty($ids)) { // Fetch all apps in the org.
         $dev_app = new DeveloperApp($config, '');
+        if (variable_get('devconnect_paging_enabled', FALSE) && method_exists($dev_app, 'usePaging')) {
+          $dev_app->usePaging();
+        }
         try {
           $list += $dev_app->listAllApps();
           $this->addListToCache($list, $ids);
-        } catch (ResponseException $e) {
+        }
+        catch (ResponseException $e) {
           self::$lastException = $e;
         }
       }

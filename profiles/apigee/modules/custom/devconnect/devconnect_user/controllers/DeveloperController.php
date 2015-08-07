@@ -64,6 +64,9 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       }
 
       $dev_obj = new Developer(devconnect_default_org_config($org));
+      if (variable_get('devconnect_paging_enabled', FALSE) && method_exists($dev_obj, 'usePaging')) {
+        $dev_obj->usePaging();
+      }
 
       if (empty($ids)) {
         // The following may throw Apigee\Exceptions\ResponseException if the
@@ -391,6 +394,9 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       $config = devconnect_default_org_config($org);
       try {
         $dev = new Developer($config);
+        if (variable_get('devconnect_paging_enabled', FALSE) && method_exists($dev, 'usePaging')) {
+          $dev->usePaging();
+        }
         $emails += $dev->listDevelopers();
       }
       catch (Exception $e) {

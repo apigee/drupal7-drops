@@ -45,9 +45,11 @@ class XAutoloadUnitTestCase extends \DrupalUnitTestCase {
   function testAutoloadStackOrder() {
     $expected = array(
       'Drupal\\xautoload\\ClassFinder\\ClassFinder->loadClass()',
+      /* @see _drupal_bootstrap_database() */
       'drupal_autoload_class',
       'drupal_autoload_interface',
-      '_simpletest_autoload_psr0',
+      /* @see simpletest_classloader_register() */
+      '_simpletest_autoload_psr4_psr0',
     );
 
     $actual = array();
