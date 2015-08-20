@@ -122,7 +122,7 @@ projects[context_condition_theme][version] = "1.0"
 ; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.7"
+projects[ctools][version] = "1.9"
 
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
@@ -178,7 +178,7 @@ projects[features][version] = "2.6"
 
 projects[features_extra][type] = "module"
 projects[features_extra][subdir] = "contrib"
-projects[features_extra][version] = "1.0-beta1"
+projects[features_extra][version] = "1.0"
 
 ; Enabled during profile install.
 projects[field_group][type] = "module"
@@ -850,5 +850,5 @@ libraries[syntaxhighlighter][download][url] = "http://alexgorbatchev.com/SyntaxH
 libraries[underscore][destination] = "libraries"
 libraries[underscore][directory_name] = "underscore"
 libraries[underscore][download][type] = "file"
-libraries[underscore][download][url] = "http://documentcloud.github.io/underscore/underscore-min.js"
+libraries[underscore][download][url] = "http://jashkenas.github.io/underscore/underscore-min.js"
 

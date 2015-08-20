@@ -3,7 +3,7 @@
   "description"   : "Give your JS App some Backbone with Models, Views, Collections, and Events.",
   "url"           : "http://backbonejs.org",
   "keywords"      : ["model", "view", "controller", "router", "server", "client", "browser"],
-  "author"        : "Jeremy Ashkenas <jeremy@documentcloud.org>",
+  "author"        : "Jeremy Ashkenas",
   "dependencies"  : {
     "underscore"  : ">=1.7.0"
   },
@@ -23,14 +23,14 @@
     "lint": "jsl -nofilelisting -nologo -conf docs/jsl.conf -process backbone.js"
   },
   "main"          : "backbone.js",
-  "version"       : "1.2.1",
+  "version"       : "1.2.2",
   "license"       : "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/jashkenas/backbone.git"
   },
   "files": [
-    "backbone.js", "backbone-min.js", "backbone-min.map", "LICENSE"
+    "backbone.js", "backbone-min.js", "backbone-min.map"
   ]
 }
 
