@@ -8,7 +8,12 @@
  * Page Callback for admin/config/people/devconnect/settings.
  *
  * @param array $form
+ *   The form being created.
  * @param array $form_state
+ *   State of the form being created.
+ *
+ * @return array
+ *   The fully-created form.
  */
 function devconnect_user_settings_form($form, &$form_state) {
   $form = array();
@@ -42,7 +47,9 @@ function devconnect_user_settings_form($form, &$form_state) {
  * Validate handler for devconnect_user_settings_form.
  *
  * @param array $form
+ *   The form being validated.
  * @param array $form_state
+ *   State of the form being validated.
  */
 function devconnect_user_settings_form_validate($form, &$form_state) {
   $path = $form_state['values']['apigee_user_redirect_path'];
@@ -52,7 +59,12 @@ function devconnect_user_settings_form_validate($form, &$form_state) {
 }
 
 /**
- * Submit hander for devconnect_user_settings_form.
+ * Submit handler for devconnect_user_settings_form.
+ *
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   The state of the form being submitted.
  */
 function devconnect_user_settings_form_submit($form, &$form_state) {
   $vars = array(
@@ -69,9 +81,12 @@ function devconnect_user_settings_form_submit($form, &$form_state) {
  * Form constructor to administer user attributes persisted to Edge.
  *
  * @param array $form
+ *   The form being created.
  * @param array $form_state
+ *   State of the form being created.
  *
  * @return array
+ *   The fully-created form.
  */
 function devconnect_user_attributes_form($form, &$form_state) {
   $fields = field_info_instances('user', 'user');
@@ -82,10 +97,17 @@ function devconnect_user_attributes_form($form, &$form_state) {
     unset($fields['field_last_name']);
   }
 
+  $form['explanation'] = array(
+    '#type' => 'markup',
+    '#markup' => t('This form allows custom fields attached to Drupal users to be saved to the Edge Management server as custom developer attributes.'),
+    '#prefix' => '<p>',
+    '#suffix' => '</p>',
+  );
+
   if (count($fields) == 0) {
     $form['notice'] = array(
       '#type' => 'markup',
-      '#markup' => t('There are no configured user attributes that can be persisted to KMS.'),
+      '#markup' => t('There are no configured user attributes that can be persisted to the Edge Management server. To create custom attributes, you must first <a href="@url">add custom fields to the Drupal user entity</a>. The First Name and Last Name fields are already primary properties of Edge’s developer object and are therefore not persisted as custom attributes.', array('@url' => url('admin/config/people/accounts/fields'))),
       '#prefix' => '<p>',
       '#suffix' => '</p>',
     );
@@ -94,53 +116,61 @@ function devconnect_user_attributes_form($form, &$form_state) {
 
   $default_values = variable_get('devconnect_user_attributes_to_persist_in_kms', array());
 
-  $form['kms_persisted_user_attribute'] = array(
-    '#tree' => FALSE,
-    '#title' => t('User attributes to be persisted to KMS'),
-    '#type' => 'fieldset',
-    '#collapsible' => FALSE,
-  );
-
   foreach ($fields as $field_name => $field_data) {
     $field_name = preg_replace('!^field_!', '', $field_name);
 
-    $form['kms_persisted_user_attribute'][$field_name] = array(
+    $form[$field_name] = array(
       '#tree' => FALSE,
       '#type' => 'fieldset',
-      '#title' => $field_data['label'],
+      '#title' => t('Field: :label', array(':label' => $field_data['label'])),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => FALSE,
     );
 
-    $form['kms_persisted_user_attribute'][$field_name]["kms_internal_attribute_selected_$field_name"] = array(
-      '#title' => t('Persist attribute in KMS?'),
+    $form[$field_name]["kms_internal_attribute_selected_$field_name"] = array(
+      '#title' => t('Persist this field as an attribute in Edge'),
       '#type' => 'checkbox',
-      '#default_value' => isset($default_values[$field_name]["selected"]) ? $default_values[$field_name]["selected"] : FALSE,
+      '#default_value' => isset($default_values[$field_name]['selected']) ? $default_values[$field_name]['selected'] : FALSE,
     );
 
-    $form['kms_persisted_user_attribute'][$field_name]["kms_internal_attribute_name_$field_name"] = array(
-      '#title' => t('KMS Attribute Name'),
+    $form[$field_name]['container'] = array(
+      '#type' => 'container',
+      '#states' => array(
+        'visible' => array(
+          ':input[name="kms_internal_attribute_selected_' . $field_name . '"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+
+    $form[$field_name]['container']["kms_internal_attribute_name_$field_name"] = array(
+      '#title' => t('Edge attribute name'),
       '#type' => 'textfield',
-      '#default_value' => isset($default_values[$field_name]["kms_internal_attribute_name"]) ? $default_values[$field_name]["kms_internal_attribute_name"] : NULL,
+      '#description' => t('Name of the custom attribute as it will appear in Edge.'),
+      '#default_value' => isset($default_values[$field_name]['kms_internal_attribute_name']) ? $default_values[$field_name]['kms_internal_attribute_name'] : $field_name,
+      '#states' => array(
+        'required' => array(
+          ':input[name="kms_internal_attribute_selected_' . $field_name . '"]' => array('checked' => TRUE),
+        ),
+      ),
     );
 
-    $form['kms_persisted_user_attribute'][$field_name]["kms_attribute_empty_action_$field_name"] = array(
-      '#title' => t('If Attribute Is Empty'),
+    $form[$field_name]['container']["kms_attribute_empty_action_$field_name"] = array(
+      '#title' => t('If attribute is empty'),
       '#type' => 'radios',
       '#options' => array(
-        'default' => t('Send Default Value'),
+        'default' => t('Send default value'),
         'null' => t('Send NULL'),
-        'empty' => t('Send Empty String'),
-        'avoid' => t('Do Not Send'),
+        'empty' => t('Send empty string'),
+        'avoid' => t('Do not send'),
       ),
-      '#default_value' => isset($default_values[$field_name]["empty_action"]) ? $default_values[$field_name]["empty_action"] : 'null',
+      '#default_value' => isset($default_values[$field_name]['empty_action']) ? $default_values[$field_name]['empty_action'] : 'null',
     );
 
-    $form['kms_persisted_user_attribute'][$field_name]["kms_attribute_set_to_string_boolean_$field_name"] = array(
-      '#title' => t('Convert to true|false string'),
+    $form[$field_name]['container']["kms_attribute_set_to_string_boolean_$field_name"] = array(
+      '#title' => t('Convert value to true|false string'),
       '#type' => 'checkbox',
-      '#description' => t('Value to be sent to KMS will be set as (field_value ? \'true\' : \'false\')'),
-      '#default_value' => isset($default_values[$field_name]["convert_to_boolean_string_value"]) ? $default_values[$field_name]["convert_to_boolean_string_value"] : FALSE,
+      '#description' => t('If checked, the value to be sent to Edge will be cast as a boolean and then converted to a ‘true’ or ‘false’ string value.'),
+      '#default_value' => isset($default_values[$field_name]['convert_to_boolean_string_value']) ? $default_values[$field_name]['convert_to_boolean_string_value'] : FALSE,
     );
   }
 
@@ -149,19 +179,25 @@ function devconnect_user_attributes_form($form, &$form_state) {
     '#value' => $default_values,
   );
 
-  return system_settings_form($form);
+  $form = system_settings_form($form);
+  // Push our specialized handler to the front of the submit queue.
+  array_unshift($form['#submit'], 'devconnect_user_attributes_form_submit');
+
+  return $form;
 }
 
 /**
- * Validator for devconnect_user_attributes_form.
+ * Submit handler for devconnect_user_attributes_form.
  *
- * This doesn't actually validate the form, but rather converts the array
- * to a sensible numeric array prior to saving in the database.
+ * This converts the array to a sensible numeric array prior to saving in the
+ * database.
  *
  * @param array $form
+ *   The form being submitted.
  * @param array $form_state
+ *   State of the form being submitted.
  */
-function devconnect_user_attributes_form_validate($form, &$form_state) {
+function devconnect_user_attributes_form_submit($form, &$form_state) {
   $default_values = array();
   foreach ($form_state['values'] as $input => $value) {
     if (strpos($input, 'kms_internal_attribute_selected_') === 0) {

@@ -97,7 +97,7 @@ function smartdocs_template(array $model_array, array &$context) {
     $context['message'] = t('Correct model template verified');
 
     $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
-    $custom_template_file = variable_get('custom_template_file', NULL);
+    $custom_template_file = variable_get('smartdocs_custom_template_file', NULL);
 
     if (!empty($custom_template_file)) {
       $file = file_load($custom_template_file);
@@ -107,7 +107,15 @@ function smartdocs_template(array $model_array, array &$context) {
 
     try {
       $template = new Template(devconnect_default_org_config(), $model->getUuid());
+      $start = microtime(TRUE);
       $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
+      if (variable_get('smartdocs_log_transaction_time', 0)) {
+        $args = array(
+          '!model' => $model->getUuid(),
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Saved method template for model !model in !time seconds', $args, WATCHDOG_INFO);
+      }
     }
     catch (ResponseException $e) {
       $current_set = &_batch_current_set();

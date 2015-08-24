@@ -373,7 +373,7 @@ function devconnect_developer_apps_performance_pane($variables) {
       '#prefix' => '<div class="btn-group pull-right">',
       '#suffix' => '</div>',
       '#type' => 'markup',
-      '#markup' => '<a class="export btn dropdown-toggle" data-toggle="dropdown" href="#">Export<span class="caret"></span></a>'
+      '#markup' => '<a class="export btn dropdown-toggle" data-toggle="dropdown" href="#">' . t('Export') . '<span class="caret"></span></a>'
                  . '<ul class="dropdown-menu">'
                  . '<li><a href="' . url($download_base . '/xml', array('query' => $query)) . '">XML</a></li>'
                  . '<li><a href="' . url($download_base . '/csv', array('query' => $query)) . '">CSV</a></li>'

@@ -198,41 +198,23 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     foreach (self::getOrgs() as $org) {
       $config = devconnect_default_org_config($org);
       foreach ($ids as $id) {
-        $delete_succeeded = FALSE;
-        // If entity is in our cache, we can make one fewer server roundtrips.
-        if (array_key_exists($id, $this->devCache)) {
-          unset ($this->devCache[$id]);
-          $delete_succeeded = TRUE;
-        }
-        else {
-          // Not in cache. Fetch, then delete.
-          $dev = new Developer($config);
-          try {
-            $entity = new DeveloperEntity($dev->toArray());
-            $dev->delete($id);
-            if ($dev->getDeveloperId() === NULL) {
-              devconnect_user_delete_from_cache($entity);
-              $deleted_count++;
-              $delete_succeeded = TRUE;
-              if (array_key_exists($entity->developerId, $this->devCache)) {
-                unset($this->devCache[$entity->developerId]);
-              }
-            }
-          }
-          catch (ResponseException $e) {
-          }
-          catch (ParameterException $e) {
-          }
-        }
-        if ($delete_succeeded) {
-          $entity = new DeveloperEntity(array('developerId' => $id));
-          devconnect_user_delete_from_cache($entity);
+        $dev = new Developer($config);
+        try {
+          $dev->delete($id);
           $deleted_count++;
+          if (array_key_exists($id, $this->devCache)) {
+            unset($this->devCache[$id]);
+          }
         }
-
-        if ($id_count == $deleted_count) {
-          break;
+        catch (ResponseException $e) {
         }
+        catch (ParameterException $e) {
+        }
+      }
+      // If there are multiple orgs, and we've deleted all we're meant to
+      // delete, no sense continuing to the next org.
+      if ($id_count == $deleted_count) {
+        break;
       }
     }
   }
@@ -287,7 +269,6 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
         $new_entity = new DeveloperEntity($dev->toArray());
         if ($new_entity->email && $uid > 1) {
           $new_entity->uid = $uid;
-          devconnect_user_write_to_cache($new_entity);
           // Prevent cache from being rewritten.
           $uid = 0;
         }

@@ -8,7 +8,6 @@
  * Implements hook_schema().
  */
 function smartdocs_schema() {
-  $schema['cache_smartdocs'] = drupal_get_schema_unprocessed('system', 'cache');
   $schema['smartdata'] = array(
     'description' => 'Provides all of the necessary data for smartdocs.',
     'fields' => array(
@@ -85,7 +84,10 @@ function smartdocs_requirements($phase) {
       break;
 
     case 'runtime':
-      $proxy_url = variable_get("data_proxy_url", NULL);
+      $proxy_url = variable_get('data_proxy_url', NULL);
+      if (!isset($proxy_url)) {
+        $proxy_url = variable_get('smartdocs_data_proxy_url', NULL);
+      }
       if (empty($proxy_url)) {
         $result['smartdocs_proxy'] = array(
           'severity' => REQUIREMENT_WARNING,
@@ -158,9 +160,23 @@ function smartdocs_requirements($phase) {
             );
             break;
         }
+        // End switch $response_code.
+      }
+
+      if (variable_get('smartdocs_custom_template_warning', FALSE)) {
+        $result['smartdocs_template'] = array(
+          'severity' => REQUIREMENT_WARNING,
+          'title' => $t('SmartDocs Custom Template'),
+          'description' => $t('The default SmartDocs method template has changed, but you are using a custom template. Please review the default template at %path and make sure your custom template is up-to-date. <a href=!url>Click here to dismiss this warning.</a>', array(
+            '%path' => base_path() . drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr',
+            '!url' => url('admin/config/smartdocs/custom-template-update'),
+          )),
+          'value' => $t('The default method template has changed'),
+        );
       }
 
       break;
+      // End switch $phase.
   }
   drupal_load('module', 'devconnect');
   devconnect_init();
@@ -234,6 +250,9 @@ function smartdocs_install() {
  */
 function smartdocs_uninstall() {
   $fid = variable_get('custom_template_file', NULL);
+  if (!isset($fid)) {
+    $fid = variable_get('smartdocs_custom_template_file', NULL);
+  }
   if ($fid) {
     $file = file_load($fid);
     if ($file) {
@@ -242,20 +261,44 @@ function smartdocs_uninstall() {
     }
   }
 
+  $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+  if ($vocab) {
+    $terms = taxonomy_term_load_multiple(array(), array('vid' => $vocab->vid));
+    foreach ($terms as $model_term) {
+      variable_del($model_term->name . '_css');
+      variable_del($model_term->name . '_js');
+      variable_del('smartdocs_css_' . $model_term->tid);
+      variable_del('smartdocs_js_' . $model_term->tid);
+    }
+  }
+
+  drupal_load('module', 'devconnect_developer_apps');
   $api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
   foreach ($api_products as $api_product) {
     variable_del($api_product->name . '_docs');
+    variable_del('smartdocs_' . $api_product->name . '_docs');
   }
   variable_del('smartdocs_path_gen_type');
   variable_del('smartdocs_publish_on_render');
   variable_del('use_docgen_templates');
-  variable_del('custom_template_file');
-  variable_del('data_proxy_url');
-  variable_del('data_auth_url');
-  variable_del('use_local_assets');
-  variable_del('local_asset_version');
-  variable_del('use_api_proxy_url');
-  variable_del('api_proxy_url');
+  variable_del('smartdocs_custom_template_warning');
+
+  $vars = array(
+    'api_proxy_url',
+    'custom_template_file',
+    'data_auth_url',
+    'data_proxy_url',
+    'disable_ssl_warning',
+    'is_edge_mgmt_firewalled',
+    'local_asset_version',
+    'use_api_proxy_url',
+    'use_local_assets',
+  );
+  foreach ($vars as $var) {
+    variable_del($var);
+    variable_del('smartdocs_' . $var);
+  }
+
 }
 
 /**
@@ -377,6 +420,9 @@ function smartdocs_update_7501() {
 
   $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
   $custom_template_file = variable_get('custom_template_file', NULL);
+  if (!isset($custom_template_file)) {
+    $custom_template_file = variable_get('smartdocs_custom_template_file', NULL);
+  }
 
   if (!empty($custom_template_file)) {
     $file = file_load($custom_template_file);
@@ -440,5 +486,72 @@ function smartdocs_update_7501() {
   if ($success || $fail) {
     $t = get_t();
     return $t('%total SmartDocs template migrations attempted: %success successes, %fail failures', array('%total' => $success + $fail, '%success' => $success, '%fail' => $fail));
+  }
+}
+
+/**
+ * Migrate Drupal variables to smartdocs namespace.
+ */
+function smartdocs_update_7502() {
+
+  // Process vars with constant names.
+  $vars = array(
+    'api_proxy_url',
+    'custom_template_file',
+    'data_auth_url',
+    'data_proxy_url',
+    'disable_ssl_warning',
+    'is_edge_mgmt_firewalled',
+    'local_asset_version',
+    'use_api_proxy_url',
+    'use_local_assets',
+  );
+  foreach ($vars as $var) {
+    $value = variable_get($var, NULL);
+    if (isset($value)) {
+      variable_set('smartdocs_' . $var, $value);
+    }
+    variable_del($var);
+  }
+
+  drupal_load('module', 'taxonomy');
+  // Migrate model-specific CSS, JS.
+  $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+  if ($vocab) {
+    $terms = taxonomy_term_load_multiple(array(), array('vid' => $vocab->vid));
+    foreach ($terms as $model_term) {
+      foreach (array('css', 'js') as $asset_type) {
+        $value = variable_get($model_term->name . '_' . $asset_type, NULL);
+        if (isset($value)) {
+          variable_set('smartdocs_' . $asset_type . '_' . $model_term->tid, $value);
+        }
+        variable_del($model_term->name . '_' . $asset_type, NULL);
+      }
+    }
+  }
+
+  drupal_load('module', 'devconnect_developer_apps');
+  $products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+  /** @var Drupal\devconnect_developer_apps\ApiProductEntity $product */
+  foreach ($products as $product) {
+    $value = variable_get($product->name . '_docs', NULL);
+    if (isset($value)) {
+      variable_set('smartdocs_' . $product->name . '_docs', $value);
+    }
+    variable_del($product->name . '_docs');
+  }
+
+  // Make sure latest templates are pushed to Modeling API if default
+  // templates are in use.
+  module_load_include('inc', 'smartdocs', 'smartdocs.update');
+  smartdocs_update_default_template();
+}
+
+/**
+ * Remove smartdocs cache table if it exists.
+ */
+function smartdocs_update_7503() {
+  if (db_table_exists('cache_smartdocs')) {
+    db_drop_table('cache_smartdocs');
   }
 }

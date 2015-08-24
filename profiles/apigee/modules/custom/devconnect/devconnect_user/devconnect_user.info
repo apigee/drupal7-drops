@@ -3,7 +3,7 @@ description = Additional developer-centric enhancements for the User object
 core = 7.x
 package = DevConnect
 php = 5.3
-version = 7.x-4.29
+version = 7.x-4.31
 
 files[] = tests/DeveloperEntityTestCase.test
 
@@ -17,6 +17,4 @@ dependencies[] = entity
 features[features_api][] = api:1
 features[field][] = user-user-field_first_name
 features[field][] = user-user-field_last_name
-
-files[] = handlers/du_handler_filter_attribute.inc
 

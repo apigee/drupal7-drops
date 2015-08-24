@@ -8,6 +8,7 @@ use Apigee\SmartDocs\Model;
 use Apigee\SmartDocs\Revision;
 use Apigee\SmartDocs\Resource;
 use Apigee\SmartDocs\Method;
+use Apigee\SmartDocs\Template;
 
 /**
  * Creates the basic smart_method content type.
@@ -1293,5 +1294,53 @@ function _smartdocs_update_process_nodes() {
   }
   if ($failures) {
     $log_fn($t('!fail failure(s) were encountered while updating SmartDocs nodes (there were !success successes).', array('!fail' => $failures, '!success' => $successes)));
+  }
+}
+
+/**
+ * Pushes default template to Modeling API if that is the template in use.
+ *
+ * If a custom template is in use instead, sets a variable which adds a warning
+ * message to the site's status report.
+ *
+ * SmartDocs module updates which change smartdocs.hbr should include this file
+ * and call this function.
+ */
+function smartdocs_update_default_template() {
+  // Prevent this from running twice in the case of multiple updates occurring
+  // in a single invocation of update.php.
+  static $already_ran = FALSE;
+  if ($already_ran) {
+    return;
+  }
+  $already_ran = TRUE;
+  // Register autoloaders.
+  drupal_load('module', 'devconnect');
+  devconnect_init();
+
+  if (!is_null(variable_get('smartdocs_custom_template_file', NULL))) {
+    // Custom template is in use.
+    variable_set('smartdocs_custom_template_warning', TRUE);
+    return;
+  }
+  $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
+  $html = file_get_contents($path);
+
+  try {
+    $model = new Model(devconnect_default_org_config());
+    $start = microtime(TRUE);
+    $model_list = $model->listModels();
+    if (variable_get('smartdocs_log_transaction_time', 0)) {
+      $args = array('!time' => number_format(microtime(TRUE) - $start, 4));
+      watchdog('smartdocs', 'Listed all models in !time seconds', $args, WATCHDOG_INFO);
+    }
+    foreach ($model_list as $model) {
+      $template = new Template(devconnect_default_org_config(), $model->getUuid());
+      $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
+    }
+    cache_clear_all();
+    variable_del('smartdocs_custom_template_warning');
+  }
+  catch (Exception $e) {
   }
 }

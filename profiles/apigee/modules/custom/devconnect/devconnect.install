@@ -1,25 +1,17 @@
 <?php
+/**
+ * @file
+ * Install/update functions for DevConnect.
+ */
 
 /**
  * Implements hook_requirements().
  *
- * Ensures that mcrypt is present at install time.
- *
- * @param $phase
- * @return array
+ * Ensures that the Edge PHP SDK is installed, configured and up-to-date.
  */
 function devconnect_requirements($phase) {
   $requirements = array();
   $t = get_t();
-
-  if (!defined('MCRYPT_RIJNDAEL_128')) {
-    $requirements['mcrypt'] = array(
-      'description' => 'PHP must have the mcrypt extension for DevConnect to work.',
-      'severity' => REQUIREMENT_ERROR,
-      'value' => $t('Please install the PHP mcrypt extension.'),
-      'title' => $t('Missing library'),
-    );
-  }
 
   module_load_include('module', 'libraries');
   $lib_dir = libraries_get_path('mgmt-api-php-sdk');
@@ -32,7 +24,7 @@ function devconnect_requirements($phase) {
   $sdk_ok = TRUE;
   if (!is_dir($lib_dir)) {
     $requirements['mgmt-api-php-sdk'] = array(
-      'description' => 'The Edge SDK must be installed in <code>' . $lib_dir . '</code>. It can be downloaded from ' . l('https://packagist.org/packages/apigee/edge', 'https://packagist.org/packages/apigee/edge') . '.',
+      'description' => 'The Edge SDK must be installed in <code>' . $lib_dir . '</code>. It can be downloaded from <a href="https://packagist.org/packages/apigee/edge">https://packagist.org/packages/apigee/edge</a>.',
       'severity' => REQUIREMENT_ERROR,
       'value' => $t('Please install the Edge SDK library.'),
       'title' => $t('Missing library'),
@@ -52,20 +44,34 @@ function devconnect_requirements($phase) {
     }
   }
 
+  if ($sdk_ok) {
+    // Make sure OrgConfig is loaded.
+    if (!class_exists('Apigee\\Util\\OrgConfig')) {
+      require_once $lib_dir . '/Apigee/Util/OrgConfig.php';
+    }
+    if (!defined('Apigee\\Util\\OrgConfig::LOG_SUBSCRIBER_FORMAT')) {
+      $requirements['mgmt-api-php-sdk_recent_enough'] = array(
+        'description' => 'The Edge SDK’s version is not recent enough. Please download a more recent version and place it in <code>' . $lib_dir . '</code>.',
+        'severity' => REQUIREMENT_ERROR,
+        'value' => $t('Please update the Edge SDK library.'),
+        'title' => $t('Out-of-date libraries'),
+      );
+      $sdk_ok = FALSE;
+    }
+  }
+
   if ($phase == 'runtime' && $sdk_ok) {
 
     $requirements['mgmt-api-php-sdk'] = array(
       'severity' => REQUIREMENT_OK,
       'value' => $t('Edge SDK library is installed correctly.'),
-      'title' => 'Edge SDK'
+      'title' => 'Edge SDK',
     );
 
     drupal_load('module', 'devconnect');
-    // Make sure all autoloaders are registered
+    // Make sure all autoloaders are registered.
     devconnect_init();
 
-    // The following will NOT fail if mcrypt is not installed, but it will
-    // return an array of blank/default values.
     $config = devconnect_get_org_settings();
     $org = $config['org'];
     $endpoint = $config['endpoint'];
@@ -116,8 +122,8 @@ function devconnect_install() {
 /**
  * Disable deprecated modules in preparation for their removal in R24.
  */
-function devconnect_update_7423(&$sandbox) {
-  // Make sure Apigee autoloader has been run
+function devconnect_update_7423() {
+  // Make sure Apigee autoloader has been run.
   drupal_load('module', 'devconnect');
   devconnect_init();
 
@@ -130,7 +136,6 @@ function devconnect_update_7423(&$sandbox) {
     ->fetchAll(PDO::FETCH_NUM);
   $missing_modules = array();
 
-
   foreach ($list as $module) {
     list($name, $filename) = $module;
     if (!file_exists(DRUPAL_ROOT . '/' . $filename)) {
@@ -140,7 +145,7 @@ function devconnect_update_7423(&$sandbox) {
 
   if (count($missing_modules) > 0) {
     if (function_exists('drush_print')) {
-      drush_print('Removing these missing modules: ' . join(', ', $missing_modules));
+      drush_print('Removing these missing modules: ' . implode(', ', $missing_modules));
     }
     db_delete('system')
       ->condition('type', 'module')
@@ -151,11 +156,11 @@ function devconnect_update_7423(&$sandbox) {
   $disable_modules = array(
     'devconnect_apigee',
     'devconnect_validate',
-    'devconnect_faq_ext'
+    'devconnect_faq_ext',
   );
 
   if (function_exists('drush_print')) {
-    drush_print('Disabling these modules: ' . join(', ', $disable_modules));
+    drush_print('Disabling these modules: ' . implode(', ', $disable_modules));
   }
 
   module_disable($disable_modules, FALSE);
@@ -170,10 +175,11 @@ function devconnect_update_7423(&$sandbox) {
 }
 
 /**
- * Correctly configure ckeditor javascript configuration if the ckeditor module is enabled
+ * Correctly configure CKEditor Javascript configuration if the CKEditor module is enabled.
  */
-function devconnect_update_7424(&$sandbox) {
-  // This update should append config.allowedContent = true; to the javascript configuration
+function devconnect_update_7424() {
+  // This update should append config.allowedContent = true; to the Javascript
+  // configuration.
   if (module_exists('ckeditor')) {
     if (function_exists('drush_print')) {
       drush_print('Allowing default content in ckeditor');
@@ -208,16 +214,18 @@ function devconnect_update_7424(&$sandbox) {
  */
 function devconnect_update_7425() {
   $enable = array('admin_views', 'contextual');
-  // DEVSOL-4: make sure we pick up home_featured_forum_posts view when updating to R25
+  // DEVSOL-4: make sure we pick up home_featured_forum_posts view when
+  // updating to R25.
   if (module_exists('devconnect_default_structure') && !module_exists('devconnect_views')) {
     $enable[] = 'devconnect_views';
   }
   module_enable($enable);
 }
+
 /**
- * Restructure the org config and remove d8cmi entirely
+ * Restructure the org config and remove d8cmi entirely.
  */
-function devconnect_update_7426(){
+function devconnect_update_7426() {
   // Nuke it entirely, in case this update is run AFTER the code
   // has disappeared.
   db_delete('system')
@@ -226,18 +234,26 @@ function devconnect_update_7426(){
 }
 
 /**
- * Disable devconnect_ui module if it exists, in preparation for
- * code removal. Also disable node_export and its children.
+ * Disable devconnect_ui module if it exists, in preparation for code removal.
+ * Also disable node_export and its children.
  */
 function devconnect_update_7428() {
   $disable_modules = array();
-  foreach (array('devconnect_ui', 'node_export', 'node_export_dependency', 'node_export_features', 'node_export_feeds', 'node_export_relation') as $ne_module) {
+  $obsolete_modules = array(
+    'devconnect_ui',
+    'node_export',
+    'node_export_dependency',
+    'node_export_features',
+    'node_export_feeds',
+    'node_export_relation',
+  );
+  foreach ($obsolete_modules as $ne_module) {
     if (module_exists($ne_module)) {
       $disable_modules[] = $ne_module;
     }
   }
   drupal_uninstall_modules($disable_modules);
-  // Nuke devconnect_ui entirely, in case this update is run AFTER the code
+  // Nuke these modules entirely, in case this update is run AFTER the code
   // has disappeared.
   db_delete('system')
     ->condition('name', $disable_modules)
@@ -261,8 +277,14 @@ function devconnect_update_7429() {
   }
   $extended_api_modules = array_merge($api_modules, array(
     'acl_node_test',
-    'bean_admin_ui', 'bean_all', 'bean_entitycache', 'bean_usage', 'bean_uuid',
-    'contentapi_summary', 'contentapi_taxonomy_term', 'contentapi_taxonomy_vocab'
+    'bean_admin_ui',
+    'bean_all',
+    'bean_entitycache',
+    'bean_usage',
+    'bean_uuid',
+    'contentapi_summary',
+    'contentapi_taxonomy_term',
+    'contentapi_taxonomy_vocab',
   ));
   $result = db_select('system', 's')
     ->fields('s', array('info'))
@@ -275,7 +297,7 @@ function devconnect_update_7429() {
       $info = @unserialize($info);
     }
     if (is_array($info) && array_key_exists('dependencies', $info)) {
-      foreach($api_modules as $i => $api_module) {
+      foreach ($api_modules as $i => $api_module) {
         if (in_array($extended_api_modules, $info['dependencies'])) {
           unset($extended_api_modules[$i]);
           if (empty($extended_api_modules)) {
@@ -297,7 +319,7 @@ function devconnect_update_7429() {
 }
 
 /**
- * Migrate encryption key to the filesystem
+ * Enable Apigee Profile Updates module.
  */
 function devconnect_update_7431() {
   if (!module_exists('apigee_profile_updates')) {
@@ -320,6 +342,14 @@ function devconnect_update_7432() {
   }
   catch (Exception $e) {
   }
+}
+
+/**
+ * Rewrite configuration file using openssl encryption.
+ */
+function devconnect_update_7433() {
+  drupal_load('module', 'devconnect');
+  devconnect_get_org_settings(TRUE);
 }
 
 // From now on, all update rules enabling/disabling dependencies should be done

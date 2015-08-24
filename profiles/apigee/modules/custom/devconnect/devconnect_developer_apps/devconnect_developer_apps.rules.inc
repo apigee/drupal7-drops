@@ -201,7 +201,8 @@ function devconnect_developer_apps_create_app($parameters) {
         . "\n" . $e->getResponse();
 
       devconnect_default_org_config()->logger->warning($detail);
-    } else {
+    }
+    else {
       $response = @json_decode($e->getResponse());
       $uri = $e->getUri();
       if ($response && property_exists($response, 'code') && $response->code == 'keymanagement.service.app_invalid_name') {

@@ -119,7 +119,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
   );
   $form['cache']['devconnect_developer_apps_cache_cron'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Rebuild API Product and Developer App caches every time cron runs.'),
+    '#title' => t('Rebuild API Product cache every time cron runs.'),
     '#default_value' => variable_get('devconnect_developer_apps_cache_cron', 1),
     '#return_value' => 1,
   );
@@ -292,4 +292,65 @@ function devconnect_developer_apps_config_submit($form, &$form_state) {
     ->execute();
   cache_clear_all(NULL, 'cache_menu');
   drupal_set_message(t('The configuration options have been saved.'));
+}
+
+/**
+ * Form constructor for admin page allowing repair of app attributes.
+ *
+ * @return array
+ *   The newly-constructed form.
+ */
+function devconnect_developer_apps_rebuild_attributes() {
+  $form = array();
+  $status = variable_get('devconnect_developer_apps_unescaped', 0);
+  if ($status > 0) {
+    // User has already made the fix, so don't show the form.
+    $form['message'] = array(
+      '#type' => 'markup',
+      '#markup' => t('You have successfully rebuilt developer attributes.'),
+    );
+    return $form;
+  }
+
+  $form['suppress'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Suppress message warning about rebuilding developer app attributes.'),
+    '#default_value' => $status,
+    '#return_value' => -1,
+  );
+
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['do_not_update'] = array(
+    '#type' => 'submit',
+    '#value' => t('Do not rebuild now'),
+    '#name' => 'do_not_update',
+  );
+  $form['actions']['update'] = array(
+    '#type' => 'submit',
+    '#value' => t('Rebuild app attributes'),
+    '#name' => 'update',
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for the devconnect_developer_apps_rebuild_attributes form.
+ *
+ * Saves the results of the 'suppress message' checkbox. If appropriate, begins
+ * batch process to repair all developer app attributes.
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function devconnect_developer_apps_rebuild_attributes_submit(array $form, array &$form_state) {
+  variable_set('devconnect_developer_apps_unescaped', intval($form_state['values']['suppress']));
+  if ($form_state['triggering_element']['#name'] == 'update') {
+    module_load_include('inc', 'devconnect_developer_apps', 'devconnect_developer_apps.batch');
+    $batch = devconnect_developer_apps_rebuild_apps_batch();
+    batch_set($batch);
+  }
+  else {
+    drupal_set_message(t('Your changes have been saved.'));
+  }
 }

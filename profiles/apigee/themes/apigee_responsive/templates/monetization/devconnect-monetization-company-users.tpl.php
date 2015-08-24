@@ -1,8 +1,9 @@
 <?php
 /**
  * Variables:
- *   $manage_users_from Rendered form to remove user from a company or to grant them Mint Roles
- *   $associate_new_user_form Rendered form to add developers to a company
+ *   $manage_users_from Rendered form to remove user from a company or to
+ *    grant them Mint Roles $associate_new_user_form Rendered form to add
+ *    developers to a company
  */
 ?>
 <div class="tab-pane user-roles" id="tab4">

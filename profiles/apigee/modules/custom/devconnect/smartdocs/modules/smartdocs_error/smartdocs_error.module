@@ -91,8 +91,8 @@ function smartdocs_error_field_widget_form(&$form, &$form_state, $field, $instan
   );
   $element['description'] = array(
     '#title' => t('Description'),
-    '#type' => 'textfield',
-    '#maxlength' => 255,
+    '#type' => 'textarea',
+    '#maxlength' => 16777215,
     '#default_value' => (isset($items[$delta]['description']) ? $items[$delta]['description'] : NULL),
     '#attributes' => array('class' => array('smartdocs-error-description')),
   );
@@ -101,8 +101,64 @@ function smartdocs_error_field_widget_form(&$form, &$form_state, $field, $instan
     '#type' => 'textfield',
     '#default_value' => (isset($items[$delta]['http_code']) ? $items[$delta]['http_code'] : NULL),
     '#attributes' => array('class' => array('smartdocs-error-http-code')),
+    '#element_validate' => array('smartdocs_error_validate_http_code'),
+    '#description' => t('When present, must be an integer between 100 and 599.'),
+    '#post_render' => array('smartdocs_error_http_code_postrender'),
+    '#size' => 5,
+    '#maxlength' => 3,
   );
   return $element;
+}
+
+/**
+ * Turns a given textfield form element into an HTML5 number input element.
+ *
+ * @param string $content
+ *   The form-element HTML which is about to be output for display.
+ * @param array $element
+ *   The internal representation of the element being rendered.
+ *
+ * @return string
+ *   Resulting HTML for the number input element.
+ */
+function smartdocs_error_http_code_postrender($content, $element) {
+  $content = str_replace('type="text"', 'type="number" min="100" max="599"', $content);
+  return $content;
+}
+
+/**
+ * Validation callback for http_code.
+ *
+ * Ensures that if the element is not empty, only integers within the
+ * prescribed range are present. This is also enforced on the browser side,
+ * but this validation keeps any malicious funny business from happening.
+ *
+ * @param array $element
+ *   The element being validated.
+ * @param array $form_state
+ *   The state of the form being validated.
+ * @param array $form
+ *   The form containing the element being validated.
+ */
+function smartdocs_error_validate_http_code($element, &$form_state, $form) {
+  $value = trim($element['#value']);
+  if (strlen($value) == 0) {
+    return;
+  }
+  $value = intval($value);
+  if ( $value < 100 || $value > 599) {
+    form_error($element, t('%name must be an integer between 100 and 599.', array('%name' => $element['#title'])));
+  }
+  else {
+    // Only allow integers; strip off any fractional part.
+    $form_element =& $form_state['values'];
+    foreach ($element['#parents'] as $parent) {
+      $form_element =& $form_element[$parent];
+    }
+    if (is_scalar($form_element)) {
+      $form_element = $value;
+    }
+  }
 }
 
 /**

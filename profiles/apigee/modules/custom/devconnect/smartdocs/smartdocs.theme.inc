@@ -92,7 +92,7 @@ function smartdocs_preprocess_page(&$vars) {
   // If SSL is not enabled, then show warning on the smartdocs node and
   // smartdocs admin pages.
   if ((array_key_exists('node', $vars) && $vars['node']->type == 'smart_method') || strstr(current_path(), 'admin/content/smartdocs') ||  strstr(current_path(), 'admin/content/smartdocs')) {
-    if (user_access('administer smartdocs content') && !isset($_SERVER['HTTPS']) && !variable_get('disable_ssl_warning', FALSE)) {
+    if (user_access('administer smartdocs content') && !isset($_SERVER['HTTPS']) && !variable_get('smartdocs_disable_ssl_warning', FALSE)) {
       $path = current_path();
       $prologue = $message = t('SmartDocs pages are not secured with SSL.');
       if (array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
@@ -141,12 +141,12 @@ function smartdocs_preprocess_node(&$vars) {
   if (!$vars['teaser']) {
     $org_settings = devconnect_get_org_settings();
 
-    if ((bool) variable_get('use_api_proxy_url', 0)) {
+    if ((bool) variable_get('smartdocs_use_api_proxy_url', 0)) {
       drupal_add_js(
         array(
           'smartdocs' => array(
             'isDrupal' => TRUE,
-            'apiModelBaseUrl' => variable_get('api_proxy_url'),
+            'apiModelBaseUrl' => variable_get('smartdocs_api_proxy_url'),
             'oauth2AuthUrl' => base_path() . '/smartdocs/oauth/callback',
           ),
         ), 'setting');
@@ -158,13 +158,13 @@ function smartdocs_preprocess_node(&$vars) {
             'isDrupal' => TRUE,
             'apiModelBaseUrl' => str_replace('/v1', '', $org_settings['endpoint']),
             'oauth2AuthUrl' => base_path() . '/smartdocs/oauth/callback',
-            'dataProxyUrl' => variable_get('data_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1'),
-            'dataAuthUrl' => variable_get('data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
+            'dataProxyUrl' => variable_get('smartdocs_data_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1'),
+            'dataAuthUrl' => variable_get('smartdocs_data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
           ),
         ), 'setting');
     }
 
-    if (!(bool) variable_get('use_local_assets', 0)) {
+    if (!(bool) variable_get('smartdocs_use_local_assets', 0)) {
       $def_css = 'https://smartdocs.apigee.com/6/static/css/main.css
 https://smartdocs.apigee.com/6/static/css/codemirror.css
 https://smartdocs.apigee.com/6/static/css/prism.css';
@@ -176,8 +176,8 @@ https://smartdocs.apigee.com/6/static/js/base64_min.js
 https://smartdocs.apigee.com/6/static/js/model.js
 https://smartdocs.apigee.com/6/static/js/controller.js";
 
-      $js = preg_split('/\\r\\n|\\r|\\n/', variable_get($model_term->name . '_js', $def_js));
-      $css = preg_split('/\\r\\n|\\r|\\n/', variable_get($model_term->name . '_css', $def_css));
+      $js = preg_split('/\\r\\n|\\r|\\n/', variable_get('smartdocs_js_' . $model_term->tid, $def_js));
+      $css = preg_split('/\\r\\n|\\r|\\n/', variable_get('smartdocs_css_' . $model_term->tid, $def_css));
       $i = 100;
       foreach ($js as $file) {
         $options = array(
@@ -200,7 +200,7 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
       }
     }
     else {
-      $version = variable_get('local_asset_version', '6');
+      $version = variable_get('smartdocs_local_asset_version', '6');
       $path = drupal_get_path('module', 'smartdocs');
       $css = array(
         $path . '/local/css/v' . $version . '/main.css',
@@ -288,7 +288,7 @@ function smartdocs_preprocess_devconnect_developer_apps_list(&$vars) {
   foreach ($vars['applications'] as &$app) {
     foreach ($app['entity']->apiProducts as $product) {
       // This variable may be set on the main SmartDocs config admin screen.
-      $models = variable_get($product . '_docs', array());
+      $models = variable_get('smartdocs_' . $product . '_docs', array());
       foreach ($models as $model) {
         // Get taxonomy term corresponding to this model.
         if (array_key_exists($model, $model_terms)) {

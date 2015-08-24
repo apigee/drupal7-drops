@@ -29,7 +29,7 @@ class MonetizationBillingTestCases
     $group = t('Prepaid Balance');
 
     $this->drupalGet($test_url);
-    $this->assertLink(t('Top Up Balance'), 0, t('Verify top up balance link'), $group);
+    $this->assertLink(t('Add Money to Account'), 0, t('Verify top up balance link'), $group);
 
     $edit = array(
       'account' => (string) end($this->getAllOptions($this->xpath('//select[@name="account"]')[0]))['value'],

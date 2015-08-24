@@ -2,7 +2,8 @@
 /**
  * Variables:
  *   $billing_documents_form Search and Filter form
- *   $billing_documents collection of object of type Apigee\Mint\BillingDocuements
+ *   $billing_documents collection of object of type
+ *    Apigee\Mint\BillingDocuements
  */
 ?>
 <?php print $billing_documents_form; ?>

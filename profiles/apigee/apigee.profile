@@ -339,7 +339,7 @@ function apigee_install_configure_themes(array &$context) {
     ->execute();
   $enable = array(
     'theme_default' => 'apigee_responsive',
-    'admin_theme' => 'rubik',
+    'admin_theme' => 'adminimal',
   );
   try {
     theme_enable($enable);
@@ -1716,8 +1716,8 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
     $value = $form_state['values'][$key];
     $config[$key] = $value;
   }
-  $config['connection_timeout'] = 16;
-  $config['request_timeout'] = 16;
+  $config['connection_timeout'] = 30;
+  $config['request_timeout'] = 30;
 
   $private_dir = variable_get('apigee_credential_dir', NULL);
   $key = devconnect_get_crypt_key();

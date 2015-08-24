@@ -61,7 +61,7 @@ $i = 0;
           <h4 class="panel-title">
             <div class="truncate">
               <?php if ((bool) $app['new_status']) : ?><span class="badge">new</span>&nbsp;&nbsp;<?php endif; ?>
-              <a data-toggle="collapse" data-parent="#my-apps-accordion" href="#my-apps-collapse<?php print $i; ?>"><strong><?php print $app['app_name']; ?></strong></a>
+              <a data-toggle="collapse" data-parent="#my-apps-accordion" href="#my-apps-collapse<?php print $i; ?>"><strong><?php print check_plain($app['app_name']); ?></strong></a>
             </div>
             <div class="status-label"><?php print _apigee_responsive_status_label_callback($status, TRUE); ?></div>
           </h4>

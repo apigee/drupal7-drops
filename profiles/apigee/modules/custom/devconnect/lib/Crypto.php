@@ -56,13 +56,10 @@ class Crypto {
       self::$encryptedStrings = array();
     }
     if (!array_key_exists($string, self::$encryptedStrings)) {
-      srand();
-      $iv = mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC), MCRYPT_RAND);
+      $iv = drupal_random_bytes(16);
       $iv_base64 = rtrim(base64_encode($iv), '='); // Guaranteed to be 22 char long
-      // Store password length so we can accurately trim in case of null-padding
-      $encrypt = strlen($string) . "\n" . $string;
-      $encrypted = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, self::$cryptoKey, $encrypt, MCRYPT_MODE_CBC, $iv);
-      self::$encryptedStrings[$string] = $iv_base64 . base64_encode($encrypted);
+      $encrypted = openssl_encrypt($string, 'aes-256-cbc', self::$cryptoKey, 1, $iv);
+      self::$encryptedStrings[$string] = '$' . $iv_base64 . base64_encode($encrypted);
     }
     return self::$encryptedStrings[$string];
   }
@@ -77,6 +74,15 @@ class Crypto {
    * @throws \Exception
    */
   public static function decrypt($scrambled) {
+    $use_openssl = FALSE;
+    if (substr($scrambled, 0, 1) == '$') {
+      $use_openssl = TRUE;
+      $scrambled = substr($scrambled, 1);
+    }
+    if (!$use_openssl && !extension_loaded('mcrypt')) {
+      throw new \Exception('Cannot decrypt legacy data; mcrypt extension not found.');
+    }
+
     // If $scrambled is not valid base64, abort.
     if (!preg_match('!^[A-Za-z0-9+/]+={0,2}$!', $scrambled)) {
       throw new \Exception('Encrypted string is not properly formed.');
@@ -88,11 +94,21 @@ class Crypto {
     if ($iv === FALSE || strlen($iv) < 16) {
       throw new \Exception('Unable to parse encrypted string.');
     }
-    $decrypted = mcrypt_decrypt(MCRYPT_RIJNDAEL_128, self::$cryptoKey, base64_decode($string_encrypted), MCRYPT_MODE_CBC, $iv);
-    if (strpos($decrypted, "\n") === FALSE) {
-      throw new \Exception('Unable to decrypt encrypted string.');
+    $string_unmangled = @base64_decode($string_encrypted);
+    if ($string_unmangled === FALSE) {
+      throw new \Exception('Unable to decode encrypted string.');
     }
-    list ($length, $password) = explode("\n", $decrypted, 2);
-    return substr($password, 0, intval($length));
+    if ($use_openssl) {
+      $decrypted = openssl_decrypt($string_unmangled, 'aes-256-cbc', self::$cryptoKey, 1, $iv);
+    }
+    else {
+      $decrypted = mcrypt_decrypt(MCRYPT_RIJNDAEL_128, self::$cryptoKey, $string_unmangled, MCRYPT_MODE_CBC, $iv);
+      if (strpos($decrypted, "\n") === FALSE) {
+        throw new \Exception('Unable to decrypt encrypted string.');
+      }
+      list ($length, $password) = explode("\n", $decrypted, 2);
+      $decrypted = substr($password, 0, intval($length));
+    }
+    return $decrypted;
   }
 }

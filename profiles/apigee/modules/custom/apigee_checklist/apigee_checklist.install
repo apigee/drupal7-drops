@@ -62,22 +62,6 @@ function apigee_checklist_requirements($phase) {
         );
       }
     }
-    if (version_compare(PHP_VERSION, '5.5.0') == -1) {
-      $requirements['pantheon-php'] = array(
-        'title' => $t('Pantheon PHP Version'),
-        'value' => $t('The version of PHP configured with your environment is an older version.'),
-        'severity' => REQUIREMENT_WARNING,
-        'description' => $t('For best performance, go to your Pantheon dashboard, select “Settings,” and select PHP 5.5 as the Site Default PHP version.'),
-      );
-    }
-    else {
-      $requirements['pantheon-php'] = array(
-        'title' => $t('Pantheon PHP Version'),
-        'value' => $t('Pantheon’s PHP version (@version) is sufficiently up-to-date.', array('@version' => PHP_VERSION)),
-        'severity' => REQUIREMENT_OK,
-        'description' => '',
-      );
-    }
   }
 
   return $requirements;

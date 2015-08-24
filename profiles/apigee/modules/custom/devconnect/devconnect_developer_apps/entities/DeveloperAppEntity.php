@@ -229,4 +229,77 @@ class DeveloperAppEntity {
     return \DeveloperAppController::deleteCredentialAttribute($this, $name);
   }
 
+  /**
+   * Checks to see if overall status has changed.
+   *
+   * If status has changed and the rules module is enabled, fires the
+   * appropriate event.
+   */
+  public function checkStatusChange() {
+    if (empty($this->appId) || empty($this->orgName)) {
+      return;
+    }
+    $new_status = self::getNumericStatus($this->overallStatus);
+    $previous_status = db_select('dc_dev_app_previous_status', 'd')
+      ->fields('d', array('status'))
+      ->condition('app_id', $this->appId)
+      ->execute()
+      ->fetchField();
+    if ($previous_status === FALSE) {
+      if (isset($new_status)) {
+        db_insert('dc_dev_app_previous_status')
+          ->fields(array('app_id' => $this->appId, 'org_name' => $this->orgName, 'status' => $new_status))
+          ->execute();
+      }
+    }
+    elseif ($new_status != $previous_status) {
+      db_update('dc_dev_app_previous_status')
+        ->fields(array('status' => $new_status))
+        ->condition('app_id', $this->appId)
+        ->execute();
+      if (module_exists('rules')) {
+        $event = NULL;
+        switch ($previous_status) {
+          case -1:
+            $event = 'revoked_';
+            break;
+          case 0:
+            $event = 'pending_';
+            break;
+          case 1:
+            $event = 'approved_';
+            break;
+        }
+        $event .= $this->overallStatus;
+
+        if ($event && strlen($event) > 10) {
+          rules_invoke_event('devconnect_developer_app_status_' . $event, $this);
+        }
+      }
+    }
+  }
+
+  /**
+   * Translates a text status into a numeric representation.
+   *
+   * @param $text_status
+   * @return int|null
+   */
+  protected static function getNumericStatus($text_status) {
+    switch ($text_status) {
+      case 'revoked':
+        $new_status = -1;
+        break;
+      case 'pending':
+        $new_status = 0;
+        break;
+      case 'approved':
+        $new_status = 1;
+        break;
+      default:
+        $new_status = NULL;
+    }
+    return $new_status;
+  }
+
 }

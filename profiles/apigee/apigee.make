@@ -30,6 +30,11 @@ projects[admin_views][subdir] = "contrib"
 projects[admin_views][version] = "1.5"
 
 ; Enabled during profile install.
+projects[adminimal_admin_menu][type] = "module"
+projects[adminimal_admin_menu][subdir] = "contrib"
+projects[adminimal_admin_menu][version] = "1.6"
+
+; Enabled during profile install.
 projects[advanced_forum][type] = "module"
 projects[advanced_forum][subdir] = "contrib"
 projects[advanced_forum][version] = "2.5"
@@ -332,11 +337,6 @@ projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
 projects[nagios][version] = "1.3"
 
-; Deprecated
-projects[navbar][type] = "module"
-projects[navbar][subdir] = "contrib"
-projects[navbar][version] = "1.6"
-
 ; Deprecated?
 projects[node_export][type] = "module"
 projects[node_export][subdir] = "contrib"
@@ -485,11 +485,15 @@ projects[xautoload][version] = "5.2"
 
 ; --- THEMES ---
 
+; Enabled during profile install for admin screens.
+projects[adminimal_theme][type] = "theme"
+projects[adminimal_theme][version] = "1.22"
+
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
 projects[bootstrap][version] = "3.0"
 
-; Enabled during profile install for admin screens.
+; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
 projects[rubik][version] = "4.2"
 
@@ -499,12 +503,6 @@ projects[tao][version] = "3.1"
 
 
 ; --- LIBRARIES ---
-
-; Used by navbar et. al.
-libraries[backbone][destination] = "libraries"
-libraries[backbone][directory_name] = "backbone"
-libraries[backbone][download][type] = "git"
-libraries[backbone][download][url] = "https://github.com/jashkenas/backbone.git"
 
 libraries[ckeditor][destination] = "libraries"
 libraries[ckeditor][directory_name] = "ckeditor"
@@ -821,13 +819,6 @@ libraries[mgmt-api-php-sdk][download][branch] = "1.1.x"
 libraries[mgmt-api-php-sdk][download][type] = "git"
 libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk.git"
 
-; Used by navbar
-libraries[modernizr][destination] = "libraries"
-libraries[modernizr][directory_name] = "modernizr"
-libraries[modernizr][download][type] = "file"
-libraries[modernizr][download][url] = "http://modernizr.com/downloads/modernizr-2.8.3.js"
-libraries[modernizr][filename] = "modernizr.js"
-
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"
 libraries[plupload][directory_name] = "plupload"
@@ -845,10 +836,4 @@ libraries[syntaxhighlighter][destination] = "libraries"
 libraries[syntaxhighlighter][directory_name] = "syntaxhighlighter"
 libraries[syntaxhighlighter][download][type] = "file"
 libraries[syntaxhighlighter][download][url] = "http://alexgorbatchev.com/SyntaxHighlighter/download/download.php?sh_current"
-
-; Used by navbar
-libraries[underscore][destination] = "libraries"
-libraries[underscore][directory_name] = "underscore"
-libraries[underscore][download][type] = "file"
-libraries[underscore][download][url] = "http://jashkenas.github.io/underscore/underscore-min.js"
 

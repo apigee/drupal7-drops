@@ -1,5 +1,5 @@
 name = DevConnect Monetization Payment
-description = Provides connection between Apigee's monetization services and Worldpay System to allow admin developers to Top Up their balance
+description = Provides connection between Apigee's monetization services and Worldpay System to allow developers to add money to an account.
 core = 7.x
 package = DevConnect Mint
 php = 5.3

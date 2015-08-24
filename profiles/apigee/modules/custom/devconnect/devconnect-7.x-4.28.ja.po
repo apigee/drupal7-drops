@@ -129,10 +129,6 @@ msgstr "Devconnect"
 msgid "KMS authentication settings."
 msgstr "キーマネージャシステム認証設定。"
 
-#: (duplicate) devconnect.install:21
-msgid "Please install the PHP mcrypt extension."
-msgstr "PHPのmcrypt拡張をインストールしてください。"
-
 #: (duplicate) devconnect.install:22
 msgid "Missing library"
 msgstr "ライブラリが見つからない"

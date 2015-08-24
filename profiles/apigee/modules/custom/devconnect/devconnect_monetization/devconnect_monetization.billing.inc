@@ -204,7 +204,7 @@ function devconnect_monetization_top_up_balance_form($form, $form_state) {
 
   $form['top_up_amount'] = array(
     '#type' => 'textfield',
-    '#title' => t('Amount to Top Up'),
+    '#title' => t('Amount to add'),
     '#required' => TRUE,
     '#attributes' => array(
       'placeholder' => t('enter an amount'),

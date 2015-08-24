@@ -13,9 +13,11 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   if (empty($account->mail) && empty($edit['mail'])) {
     return;
   }
-  // Don't update user 1.
-  if (is_object($account) && property_exists($account, 'uid') && $account->uid == 1) {
-    return;
+  // Determine if this user should be excluded.
+  if (is_object($account) && property_exists($account, 'uid') && $account->uid > 0) {
+    if (!devconnect_user_is_developer($account)) {
+      return;
+    }
   }
   $config =& devconnect_get_org_settings();
   $org = $config['org'];
@@ -29,6 +31,7 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   $name = _devconnect_user_get_field_value('name', $edit, $account);
   $orig_mail = (empty($account->mail) ? $edit['mail'] : $account->mail);
 
+  /** @var Drupal\devconnect_user\DeveloperEntity $entity */
   $entity = entity_get_controller('developer')->loadIfExists($orig_mail);
 
   // If there is a change in the email we try to update the email first.
@@ -126,29 +129,29 @@ function devconnect_user_user_presave(&$edit, $account, $category) {
   }
 }
 
-
 /**
  * Implements hook_user_delete().
  */
 function devconnect_user_user_delete($account) {
-  // Don't try to delete users from KMS if org hasn't been configured yet.
+  // Don't try to delete users from Edge if org hasn't been configured yet.
   $config =& devconnect_get_org_settings();
   if (empty($config['org']) || $config['org'] == 'fixme') {
     return;
   }
-  // Don't update anonymous or user 1.
+  // Skip users that are disallowed.
   if (property_exists($account, 'uid') && $account->uid < 2) {
     return;
   }
 
+  entity_delete('developer', $account->mail);
+
+  // Log as an error if delete failed AND user is a developer.
+  // Otherwise only write a debug-log.
+  $results = devconnect_get_debug_data();
   $log_level = 'debug';
-  try {
-    entity_delete('developer', $account->mail);
-  }
-  catch (Exception $e) {
+  if (array_key_exists('code_class', $results) && $results['code_class'] != 2 && devconnect_user_is_developer($account)) {
     $log_level = 'error';
   }
-  $results = devconnect_get_debug_data();
   devconnect_default_org_config()->logger->$log_level(print_r($results, TRUE));
   module_invoke_all('devconnect_user_delete', $results, $account);
 }

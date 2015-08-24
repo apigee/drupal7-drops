@@ -13,6 +13,20 @@ use Apigee\ManagementAPI\DeveloperApp;
 use Apigee\ManagementAPI\APIProduct;
 use Drupal\devconnect\ErrorHandling;
 
+/**
+ * Implements hook_init().
+ *
+ * If user is an admin and is on an admin page, and has not either already
+ * rebuilt developer app attributes or elected to suppress the warning message,
+ * a warning message is shown.
+ */
+function devconnect_developer_apps_init() {
+  if (!path_is_admin($_GET['q']) || !user_access('administer developer apps') || arg(0) == 'batch' || variable_get('devconnect_developer_apps_unescaped', 0) != 0 || $_GET['q'] == 'admin/config/devconnect/apps/rebuild-attributes') {
+    return;
+  }
+  drupal_set_message(t('Some developer apps may have corrupted attributes (including display name) due to superfluous HTML entity escaping. <a href="!url">Click here to rebuild attributes or to suppress this message.</a>', array('!url' => url('admin/config/devconnect/apps/rebuild-attributes'))), 'warning');
+}
+
 function devconnect_developer_apps_preprocess_devconnect_developer_apps_list(&$vars) {
 
   $vars['singular'] = _devconnect_developer_apps_get_app_label(FALSE);
@@ -156,7 +170,17 @@ function devconnect_developer_apps_menu() {
     'page arguments' => array('devconnect_developer_apps_config'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'devconnect_developer_apps.admin.inc'
+    'file' => 'devconnect_developer_apps.admin.inc',
+  );
+
+  $items['admin/config/devconnect/apps/rebuild-attributes'] = array(
+    'title' => 'Rebuild app attributes',
+    'description' => 'Rebuild developer app attributes to remove superflouous HTML escaping.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('devconnect_developer_apps_rebuild_attributes'),
+    'access arguments' => array('administer developer apps'),
+    'type' => (variable_get('devconnect_developer_apps_unescaped', 0) == 1 ? MENU_CALLBACK : MENU_NORMAL_ITEM),
+    'file' => 'devconnect_developer_apps.admin.inc',
   );
 
   return $items;
@@ -192,10 +216,18 @@ function devconnect_developer_apps_permission() {
  * @return bool
  */
 function devconnect_developer_apps_access($account, $permission, $app_id = NULL) {
+  // If user page is for a non-developer, disallow.
+  if (!devconnect_user_is_developer($account)) {
+    return FALSE;
+  }
+
+  // Otherwise, if we can administer, always allow.
   if (user_access('administer developer apps')) {
     return TRUE;
   }
 
+  // Otherwise, if we are in our own profile, check to see if we have access to
+  // perform the required operation on a per-app basis.
   if (user_is_logged_in() && $account->uid == $GLOBALS['user']->uid && user_access("$permission developer apps", $account)) {
     if ($permission == 'view' || $permission == 'create') {
       return TRUE;
@@ -208,6 +240,8 @@ function devconnect_developer_apps_access($account, $permission, $app_id = NULL)
       return FALSE;
     }
   }
+
+  // If all else fails, refuse access.
   return FALSE;
 }
 
@@ -296,16 +330,6 @@ function devconnect_developer_apps_entity_property_info() {
     'api_product' => array('properties' => $api_product_properties)
   );
   return $info;
-}
-
-/**
- * Implements hook_views_api().
- */
-function devconnect_developer_apps_views_api() {
-  return array(
-    'api' => '3.0',
-    'path' => drupal_get_path('module', 'devconnect_developer_apps'),
-  );
 }
 
 /**
@@ -1071,7 +1095,7 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
     if (substr($key, 0, 10) == 'attribute_') {
       // unmangle attribute name in cases containing non-machine-legal chars
       $attribute_name = rawurldecode(substr($key, 10));
-      $entity->attributes[$attribute_name] = check_plain($value);
+      $entity->attributes[$attribute_name] = $value;
     }
   }
 
@@ -1161,17 +1185,11 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
  * @return bool
  */
 function devconnect_developer_apps_machine_name_exists($value, array $element, array $form_state) {
-  if (empty($value) || empty($form_state['values']['uid'])) {
+  if (empty($value) || empty($form_state['values']['user'])) {
     return TRUE; // is this the right thing to do?
   }
-  $uid = $form_state['values']['uid'];
-  $name = db_select('dc_dev_app', 'a')
-    ->fields('a', array('name'))
-    ->condition('uid', $uid)
-    ->condition('name', $value)
-    ->execute()
-    ->fetchField();
-  return ($name !== FALSE);
+  $entity = entity_get_controller('developer_app')->loadIfExists($value, array('mail' => $form_state['values']['user']->mail));
+  return ($entity !== FALSE);
 }
 
 /**
@@ -1702,11 +1720,7 @@ function devconnect_developer_apps_view_full($entity, $page = TRUE) {
  */
 function devconnect_developer_apps_delete_from_cache($entity) {
   $bin = $cid = NULL;
-  if ($entity instanceof Drupal\devconnect_developer_apps\DeveloperAppEntity) {
-    $bin = 'developer_app';
-    $cid = $entity->orgName . ':' . $entity->appId;
-  }
-  elseif ($entity instanceof Drupal\devconnect_developer_apps\ApiProductEntity) {
+  if ($entity instanceof Drupal\devconnect_developer_apps\ApiProductEntity) {
     $bin = 'api_product';
     $cid = $entity->orgName . ':' . $entity->name;
   }
@@ -1716,7 +1730,7 @@ function devconnect_developer_apps_delete_from_cache($entity) {
 }
 
 /**
- * Writes a developer_app or api_product entity to our internal cache.
+ * Writes an api_product entity to our internal cache.
  *
  * By default we delete any references to this entity from our cache before
  * writing, but when $ensure_clean is set to FALSE we can skip this step.
@@ -1728,11 +1742,7 @@ function devconnect_developer_apps_delete_from_cache($entity) {
 function devconnect_developer_apps_write_to_cache($entity, $ensure_clean = TRUE) {
 
   $bin = $cid = NULL;
-  if ($entity instanceof Drupal\devconnect_developer_apps\DeveloperAppEntity) {
-    $bin = 'developer_app';
-    $cid = $entity->orgName . ':' . $entity->appId;
-  }
-  elseif ($entity instanceof Drupal\devconnect_developer_apps\ApiProductEntity) {
+  if ($entity instanceof Drupal\devconnect_developer_apps\ApiProductEntity) {
     $bin = 'api_product';
     $cid = $entity->orgName . ':' . $entity->name;
   }
@@ -1795,51 +1805,6 @@ function devconnect_developer_apps_sync_products($org, $truncate = FALSE, $set_m
 }
 
 /**
- * Syncs developer-apps and api-products caches with upstream Edge for a given
- * org.
- *
- * @param string $org
- * @param bool $truncate
- */
-function devconnect_developer_apps_sync_apps($org, $truncate = FALSE, $set_messages = FALSE) {
-  $has_drush = function_exists('drush_print');
-
-  if ($org == 'default') {
-    $config = devconnect_default_org_config();
-    $org = $config->orgName;
-  }
-
-  $apps = entity_load('developer_app', array(), array('orgName' => $org));
-  $count = count($apps);
-
-  if ($count) {
-    if (lock_acquire(__FUNCTION__ . '_developer_app', 5)) {
-
-      if ($truncate) {
-        cache_clear_all(NULL, 'developer_app');
-      }
-
-      $apps = array_values($apps);
-      foreach ($apps as $i => $app) {
-        cache_set(NULL, $app, 'developer_app');
-      }
-      if ($has_drush) {
-        drush_print('Wrote ' . $count . ' developer_apps to cache');
-      }
-      lock_release(__FUNCTION__ . '_developer_app');
-    }
-    else {
-      if ($has_drush) {
-        drush_print('Another process is currently caching Developer Apps.');
-      }
-      elseif ($set_messages) {
-        drupal_set_message('Another process is currently caching Developer Apps.', 'warning');
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_cron().
  *
  * Refreshes our developer_app and api_product caches.
@@ -1856,9 +1821,8 @@ function devconnect_developer_apps_cron() {
     return;
   }
 
-  $client = devconnect_default_org_config();
-  devconnect_developer_apps_sync_products($client->orgName, TRUE, TRUE);
-  devconnect_developer_apps_sync_apps($client->orgName, TRUE, TRUE);
+  $config = devconnect_get_org_settings();
+  devconnect_developer_apps_sync_products($config['org'], TRUE, TRUE);
 }
 
 /**
@@ -1872,8 +1836,8 @@ function devconnect_developer_apps_cron() {
  */
 function devconnect_developer_apps_get_api_products($show_private = FALSE, $names = FALSE, $orgName = 'default') {
   if ($orgName == 'default') {
-    $config = devconnect_default_org_config();
-    $orgName = $config->orgName;
+    $config = devconnect_get_org_settings();
+    $orgName = $config['org'];
   }
   if (!variable_get('devconnect_api_product_cache_enable', 1)) {
     return entity_load('api_product', $names, array('show_private' => $show_private, 'orgName' => $orgName));
@@ -1918,12 +1882,14 @@ function devconnect_developer_apps_get_api_products($show_private = FALSE, $name
 /**
  * Implements hook_apigee_responsive_links_alter().
  *
- * Adds
- *
- * @param $links
- * @param $user_id
+ * @param array $links
+ *   List of links in the responsive menu.
  */
 function devconnect_developer_apps_apigee_responsive_links_alter(&$links) {
+  if (!devconnect_user_is_developer()) {
+    return;
+  }
+
   $second_arg = (module_exists('me') ? 'me' : $GLOBALS['user']->uid);
   $link = array(
     'classes' => array('glyphicon', 'glyphicon-pencil'),
@@ -1942,24 +1908,10 @@ function devconnect_developer_apps_flush_caches() {
   $caches = array();
   // If user has not run update.php yet, don't return caches with unregistered
   // cache classes.
-  if (variable_get('cache_class_developer_app', FALSE)) {
-    $caches[] = 'developer_app';
-  }
   if (variable_get('cache_class_api_product', FALSE)) {
     $caches[] = 'api_product';
   }
   return $caches;
-}
-
-/**
- * Callback for admin menu to flush and rebuild developer app caches.
- */
-function _devconnect_developer_apps_flush_developer_apps() {
-  $config = devconnect_default_org_config();
-  $org_name = $config->orgName;
-  if (!empty($org_name) && $org_name != 'fixme') {
-    devconnect_developer_apps_sync_apps($org_name, TRUE, TRUE);
-  }
 }
 
 /**
@@ -1982,10 +1934,6 @@ function devconnect_developer_apps_admin_menu_cache_info() {
   $caches['api_product'] = array(
     'title' => t('API products'),
     'callback' => '_devconnect_developer_apps_flush_api_products',
-  );
-  $caches['developer_app'] = array(
-    'title' => t('Developer apps'),
-    'callback' => '_devconnect_developer_apps_flush_developer_apps',
   );
   return $caches;
 }

@@ -399,12 +399,19 @@ function devconnect_drush_set_connect_timeout() {
 }
 
 function _devconnect_drush_save_config($config) {
-  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
-  if (!is_dir(DRUPAL_ROOT . '/' . $private_dir)) {
+  $default_private_dir = variable_get('file_private_path', 'sites/default/files/private');
+  $private_dir = variable_get('apigee_credential_dir', $default_private_dir);
+
+
+  if(substr($private_dir,0,1) != '/') {
+    $private_dir = DRUPAL_ROOT . '/' . $private_dir;
+  }
+ 
+  if (!is_dir($private_dir)) {
     drush_log(dt('Your filesystem is misconfigured. Please set the ‘@var’ variable to a directory that is writable.', array('@var' =>'apigee_credential_dir')), 'error');
     return;
   }
-  $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+  $config_file = $private_dir . '/.apigee';
   if (file_exists($config_file)) {
     if (!is_writable($config_file)) {
       drush_log(dt('The config file ‘@file’ is not writable.', array('@file' => $private_dir . '/.apigee')), 'error');

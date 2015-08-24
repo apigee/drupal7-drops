@@ -40,19 +40,19 @@
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
           <h3 id="topUpLabel"><?php print t('Insufficient !currency_title Prepaid Balance', array('!currency_title' => drupal_render($form['currency_title']))); ?></h3>
           <div id="topup_alert_minimum_required" class="alert alert-error hide error">
-            <?php print t('You have to top up your balance for at least !minimum_amount.', array('!minimum_amount' => '<span id="span-minimum-amount">0</span>')); ?>
+            <?php print t('You have to add at least !minimum_amount to your balance.', array('!minimum_amount' => '<span id="span-minimum-amount">0</span>')); ?>
           </div>
           <div id="topup_alert_maximum_required" class="alert alert-error hide error">
-            <?php print t('You cannot top up your balance with more than !max_amount.', array('!max_amount' => '<span id="span-maximum-amount">0</span>')); ?>
+            <?php print t('You cannot add more than !max_amount to your account.', array('!max_amount' => '<span id="span-maximum-amount">0</span>')); ?>
           </div>
         </div>
         <div class="modal-body">
           <p><?php print t('You have insufficient funds to purchase plan !plan_name.', array('!plan_name' => drupal_render($form['plan_name']))); ?></p>
           <p>
             <?php if(!isset($form['#has_cost_details']) || $form['#has_cost_details'] == false): ?>
-              <?php print t('To purchase this plan you are required to top up your prepaid balance with at least !req_display.', array('!req_display' => drupal_render($form['required_display']))); ?>
+              <?php print t('To purchase this plan you are required to add at least !req_display to your account.', array('!req_display' => drupal_render($form['required_display']))); ?>
             <?php else: ?>
-              <?php print t('To purchase this plan you are required to top up your prepaid balance with at least !req_display ', array('!req_display' => drupal_render($form['required_display']))); ?>
+              <?php print t('To purchase this plan you are required to add at least !req_display to your account.', array('!req_display' => drupal_render($form['required_display']))); ?>
               <?php print t('(!cost_rateplan plan cost + !cost_tax tax).', array('!cost_rateplan' => drupal_render($form['cost_rateplan_display']), '!cost_tax' => drupal_render($form['cost_tax_display']))); ?>
             <?php endif; ?>
           </p>
@@ -62,7 +62,7 @@
             <span id="topUpCurrentBalance"><?php print drupal_render($form['current_balance_display']); ?></span>
           </div>
           <div style="margin-bottom: 10px;">
-            <span class="topup-modal-label"><?php print t('Amount to Top Up:'); ?></span>
+            <span class="topup-modal-label"><?php print t('Amount to Add:'); ?></span>
             <span class="topup-modal-value">
               <?php print drupal_render($form['amount']); ?>
             </span>

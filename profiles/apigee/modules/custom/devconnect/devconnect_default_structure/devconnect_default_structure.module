@@ -53,9 +53,6 @@ function _devconnect_default_structure_footer_content() {
                   <li class="divider-vertical"></li>
                   <li class="last">' . l('Contact', 'contact-us') . '</li>
                 </ul>
-                <!--<div class="footer-logo span2 pull-right">
-                  <a href="http://apigee.com/"><img src="' . $theme_path . '/images/footer-logo.png" /></a>
-               </div>-->
               </div>
             </div>
           </div>';
@@ -86,9 +83,6 @@ function devconnect_default_structure_block_configure($delta = '') {
                   <li class="divider-vertical"></li>
                   <li class="last"><a href="contact-us">Contact</a></li>
                 </ul>
-                <!--<div class="footer-logo span2 pull-right">
-                  <a href="http://apigee.com/"><img src="' . $theme_path . '/images/footer-logo.png" /></a>
-               </div>-->
               </div>
             </div>
           </div>';
@@ -508,7 +502,7 @@ function devconnect_default_structure_menu_local_tasks_alter(&$data, $router_ite
 }
 
 /*
- * hook_preprocess_menu_link for blog_content_creation_menu 
+ * hook_preprocess_menu_link for blog_content_creation_menu
  */
 function devconnect_default_structure_preprocess_menu_link(&$variables) {
   $element = & $variables['element'];

@@ -201,14 +201,18 @@ function devconnect_default_org_config($requested_org = 'default') {
     $logger::setLogThreshold($settings['log_threshold']);
     $user_mail = user_is_logged_in() ? $GLOBALS['user']->mail : NULL;
 
-    $adapter = new \Guzzle\Log\PsrLogAdapter($logger);
-    $message = '<pre>' . \Guzzle\Log\MessageFormatter::DEBUG_FORMAT . '</pre>';
-    $guzzle_log_plugin = new \Guzzle\Plugin\Log\LogPlugin($adapter, $message);
+    $subscribers = array();
+    $subscriber_log_format = '';
+    if (defined('Apigee\\Util\\OrgConfig::LOG_SUBSCRIBER_FORMAT')) {
+      $subscribers[] = $logger;
+      $subscriber_log_format = '<pre>' . Apigee\Util\OrgConfig::LOG_SUBSCRIBER_FORMAT . '</pre>';
+    }
 
     $options = array(
       'logger' => $logger,
       'user_mail' => $user_mail,
-      'subscribers' => array($guzzle_log_plugin),
+      'subscribers' => $subscribers,
+      'log_subscriber_format' => $subscriber_log_format,
       'http_options' => array(
         'connect_timeout' => intval($settings['connection_timeout']),
         'timeout' => intval($settings['request_timeout'])
@@ -366,22 +370,31 @@ function devconnect_get_crypt_key() {
  * .apigee file and delete them from the database (we also try to delete the
  * YAML file if it is present).
  *
+ * @param bool $force_write
+ *   If TRUE, we write the settings file regardless of whether it previously
+ *   existed or whether it changed.
+ *
  * @return array
  */
-function &devconnect_get_org_settings() {
+function &devconnect_get_org_settings($force_write = FALSE) {
   devconnect_init();
+  $default_private_dir = variable_get('file_private_path', 'sites/default/files/private');
+  $private_dir = variable_get('apigee_credential_dir', $default_private_dir);
 
-  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
   $key = devconnect_get_crypt_key();
   Crypto::setKey($key);
 
-  $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+  if(substr($private_dir,0,1) == '/') {
+    $config_file = $private_dir . '/.apigee';
+  } else {
+    $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+  }
+
   $got_results = FALSE;
-  $has_mcrypt = defined('MCRYPT_RIJNDAEL_128');
   $yaml_file = NULL;
   if (file_exists($config_file)) {
     $encrypted = file_get_contents($config_file);
-    if ($encrypted && $has_mcrypt) {
+    if ($encrypted) {
       try {
         $decrypted = Crypto::decrypt($encrypted);
         if ($decrypted) {
@@ -415,7 +428,7 @@ function &devconnect_get_org_settings() {
           }
           require_once libraries_get_path('spyc') . '/Spyc.php';
           $custom_vars = spyc_load_file($yaml_file);
-          if (array_key_exists('pass', $custom_vars) && $has_mcrypt) {
+          if (array_key_exists('pass', $custom_vars)) {
             try {
               $pass = Crypto::decrypt($custom_vars['pass']);
               if ($pass) {
@@ -438,11 +451,11 @@ function &devconnect_get_org_settings() {
       'endpoint' => 'https://api.enterprise.apigee.com/v1',
       'pass' => '',
       'log_threshold' => 4,
-      'connection_timeout' => 4,
-      'request_timeout' => 4
+      'connection_timeout' => 30,
+      'request_timeout' => 30
     );
   }
-  elseif (array_key_exists('pass', $custom_vars) && $has_mcrypt) {
+  elseif (array_key_exists('pass', $custom_vars)) {
     try {
       $pass = Crypto::decrypt($custom_vars['pass']);
       if ($pass) {
@@ -452,8 +465,8 @@ function &devconnect_get_org_settings() {
     }
   }
 
-  if ($got_results && $has_mcrypt) {
-    if (!file_exists($config_file)) {
+  if ($got_results) {
+    if (!file_exists($config_file) || $force_write) {
       file_put_contents($config_file, Crypto::encrypt(serialize($custom_vars)));
       // Let drush touch this file
       @chmod($config_file, 0666);

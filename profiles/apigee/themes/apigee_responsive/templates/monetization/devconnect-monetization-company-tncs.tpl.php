@@ -1,8 +1,8 @@
 <?php
 /**
  * Variables
- *   $tncs_forms List of accepted and new Apigee\Mint\TermsAndCondition objects for the user
- *   to accept them
+ *   $tncs_forms List of accepted and new Apigee\Mint\TermsAndCondition objects
+ *   for the user to accept them.
  */
 ?>
 <div class="table-responsive">

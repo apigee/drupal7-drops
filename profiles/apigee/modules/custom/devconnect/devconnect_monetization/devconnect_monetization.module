@@ -208,7 +208,7 @@ function devconnect_monetization_menu() {
   );
 
   $items['users/%devconnect_monetization_developer/monetization/packages/%devconnect_monetization_package/required-top-up-form/%devconnect_monetization_plan/%'] = array(
-    'title' => 'Top up',
+    'title' => 'Add to balance',
     'delivery callback' => 'devconnect_monetization_insufficient_top_up_form_output',
     'page callback' => 'devconnect_monetization_ajax_insufficient_top_up_form',
     'page arguments' => array(
@@ -364,6 +364,8 @@ function devconnect_monetization_menu_alter(&$items) {
     'page arguments' => array(1, 3, 4),
     'file' => 'devconnect_monetization.apps.inc',
     'file path' => drupal_get_path('module', 'devconnect_monetization'),
+    'access callback' => 'user_access',
+    'access arguments' => array('view mint company application details'),
   ));
 }
 
@@ -1269,8 +1271,8 @@ function devconnect_monetization_permission() {
     ),
     // Top up balance
     'top up mint balance' => array(
-      'title' => t('Top up balance'),
-      'description' => t('Allow developer to top up balance.'),
+      'title' => t('Add money to account'),
+      'description' => t('Allow developer to add money to an account.'),
     ),
     'access mint prepaid reports' => array(
       'title' => t('Access prepaid reports'),
@@ -1290,7 +1292,7 @@ function devconnect_monetization_permission() {
     ),
     'access mint billing & reports' => array(
       'title' => t('Access Billing & Reports section'),
-      'description' => t('Can download reports and top up balance.')
+      'description' => t('Can download reports and add money to account.')
     ),
     'list mint company applications' => array(
       'title' => t('List company applications'),

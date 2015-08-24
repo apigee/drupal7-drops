@@ -63,7 +63,7 @@ function devconnect_user_sync() {
   // Fetch list of users in Drupal.
   $stmt = db_select('users', 'u')
     ->fields('u', array('mail', 'uid'))
-    ->condition('u.uid', 1, '>')
+    ->addTag('devconnect_user_sync')
     ->execute();
   $drupal_users = array();
   while ($user_data = $stmt->fetchAssoc()) {

@@ -22,7 +22,7 @@
     <tr>
         <th><?php print t('Account Currency'); ?></th>
         <th><?php print t('Balance Brought Forward'); ?></th>
-        <th><?php print t('Top Ups'); ?></th>
+        <th><?php print t('Money Added to Account'); ?></th>
         <th><?php print t('Usage'); ?></th>
         <th><?php print t('Tax'); ?></th>
         <th><?php print t('Current Balance'); ?></th>
@@ -58,7 +58,7 @@
               <td>
                 <a class="top-up trigger btn" balance-id="<?php print $balance->getId(); ?>"
                    current-balance="<?php print $balance->getCurrentBalance(); ?>"
-                     currency="<?php print $balance->getSupportedCurrency()->getName(); ?>" role="button"><?php print t('Top Up Balance'); ?></a>
+                     currency="<?php print $balance->getSupportedCurrency()->getName(); ?>" role="button"><?php print t('Add Money to Account'); ?></a>
               </td>
             <?php else: ?>
               <td>&nbsp;</td>
@@ -76,7 +76,7 @@
         <td>--</td>
         <td>--</td>
         <?php if ($top_up_balance_perm) : ?>
-            <td><a class="top-up trigger btn" role="button"><?php print t('Top Up Balance'); ?></a></td>
+            <td><a class="top-up trigger btn" role="button"><?php print t('Add Money to Account'); ?></a></td>
         <?php endif; ?>
       </tr>
     <?php endif; ?>

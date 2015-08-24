@@ -16,8 +16,8 @@ function smartdocs_error_field_schema($field) {
         'not null' => TRUE,
       ),
       'description' => array(
-        'type' => 'varchar',
-        'length' => 255,
+        'type' => 'text',
+        'size' => 'medium',
         'not null' => FALSE,
       ),
       'http_code' => array(
@@ -28,4 +28,21 @@ function smartdocs_error_field_schema($field) {
       ),
     ),
   );
+}
+
+/**
+ * Alter SmartDocs error descriptions to have virtually no max length.
+ */
+function smartdocs_error_update_7406() {
+  $schema = smartdocs_error_field_schema(NULL);
+  $description_schema = $schema['columns']['description'];
+  $all_fields = field_info_field_map();
+  foreach ($all_fields as $field_name => $info) {
+    if ($info['type'] == 'smartdocs_error') {
+      $table_field = $field_name . '_description';
+      db_change_field('field_data_' . $field_name, $table_field, $table_field, $description_schema);
+      db_change_field('field_revision_' . $field_name, $table_field, $table_field, $description_schema);
+    }
+  }
+  cache_clear_all(NULL, 'cache_field');
 }

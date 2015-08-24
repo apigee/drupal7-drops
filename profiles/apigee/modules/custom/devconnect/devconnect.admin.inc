@@ -345,8 +345,15 @@ function devconnect_admin_form_submit($form, &$form_state) {
       $changes["Default Connection: $field"] = array($old_value, $new_value);
     }
   }
-  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
-  $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+
+  $default_private_dir = variable_get('file_private_path', 'sites/default/files/private');
+  $private_dir = variable_get('apigee_credential_dir', $default_private_dir);
+
+  if(substr($private_dir,0,1) == '/') {
+    $config_file = $private_dir . '/.apigee';
+  } else {
+    $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+  }
 
   $settings_success = file_put_contents($config_file, Drupal\devconnect\Crypto::encrypt(serialize($new_config)));
   @chmod($config_file, 0666);

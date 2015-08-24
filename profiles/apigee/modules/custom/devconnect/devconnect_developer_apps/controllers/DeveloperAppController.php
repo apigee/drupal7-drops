@@ -92,9 +92,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
             $entity = new DeveloperAppEntity($dev_app->toArray());
             $entity->orgName = $config->orgName;
             $dev_app->delete();
-            devconnect_developer_apps_delete_from_cache($entity);
             $deleted_count++;
-          } catch (ResponseException $e) {
+          }
+          catch (ResponseException $e) {
             self::$lastException = $e;
           }
         }
@@ -140,7 +140,8 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     try {
       $dev_app->save($is_update);
       $this->appCache[$dev_app->getAppId()] = $dev_app;
-    } catch (ResponseException $e) {
+    }
+    catch (ResponseException $e) {
       self::$lastException = $e;
       return FALSE;
     }
@@ -151,8 +152,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     $dev_app_array['orgName'] = $config->orgName;
     $last_app = new DeveloperAppEntity($dev_app_array);
     $last_app->orgName = $config->orgName;
-
-    devconnect_developer_apps_write_to_cache($last_app);
+    $last_app->checkStatusChange();
 
     self::$lastApp = $last_app;
 
@@ -301,13 +301,15 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         else {
           try {
             $list += $dev_app->getListDetail();
-          } catch (ResponseException $e) {
+          }
+          catch (ResponseException $e) {
             self::$lastException = $e;
           }
         }
       }
       // TODO: add more conditions here such as Status
-      elseif (empty($ids)) { // Fetch all apps in the org.
+      elseif (empty($ids)) {
+        // Fetch all apps in the org.
         $dev_app = new DeveloperApp($config, '');
         if (variable_get('devconnect_paging_enabled', FALSE) && method_exists($dev_app, 'usePaging')) {
           $dev_app->usePaging();
@@ -336,9 +338,11 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
             try {
               $app->loadByAppId($id, TRUE);
               $sub_list[] = $app;
-            } catch (ResponseException $e) {
+            }
+            catch (ResponseException $e) {
               self::$lastException = $e;
-            } catch (ParameterException $e) {
+            }
+            catch (ParameterException $e) {
               self::$lastException = $e;
             }
           }
@@ -377,7 +381,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $array = $dev_app->toArray($include_debug_data);
         $array['orgName'] = $dev_app->getConfig()->orgName;
         $array['uid'] = (array_key_exists($mail, $uids) ? $uids[$mail] : NULL);
-        $app_entities[$id] = new DeveloperAppEntity($array);
+        $app_entity = new DeveloperAppEntity($array);
+        $app_entity->checkStatusChange();
+        $app_entities[$id] = $app_entity;
       }
     }
     return $app_entities;
@@ -390,6 +396,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    *
    * @param Drupal\devconnect_developer_apps\DeveloperAppEntity $entity
    * @param string $status
+   *
    * @return bool
    */
   public static function setKeyStatus(DeveloperAppEntity &$entity, $status) {
@@ -401,9 +408,11 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         return TRUE;
       }
       return FALSE;
-    } catch (ParameterException $e) {
+    }
+    catch (ParameterException $e) {
       return FALSE;
-    } catch (ResponseException $e) {
+    }
+    catch (ResponseException $e) {
       return FALSE;
     }
   }
@@ -431,9 +440,11 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         return TRUE;
       }
       return FALSE;
-    } catch (ParameterException $e) {
+    }
+    catch (ParameterException $e) {
       return FALSE;
-    } catch (ResponseException $e) {
+    }
+    catch (ResponseException $e) {
       return FALSE;
     }
   }
@@ -462,9 +473,11 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         return TRUE;
       }
       return FALSE;
-    } catch (ParameterException $e) {
+    }
+    catch (ParameterException $e) {
       return FALSE;
-    } catch (ResponseException $e) {
+    }
+    catch (ResponseException $e) {
       return FALSE;
     }
   }
@@ -474,9 +487,11 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
       $da = new DeveloperApp($config, $entity->developer);
       $da->fromArray((array) $entity);
       return $da;
-    } catch (ParameterException $e) {
+    }
+    catch (ParameterException $e) {
       return FALSE;
-    } catch (ResponseException $e) {
+    }
+    catch (ResponseException $e) {
       return FALSE;
     }
   }

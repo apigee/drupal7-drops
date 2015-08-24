@@ -49,6 +49,16 @@ function smartdocs_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  // Dismiss custom template update warning.
+  $items['admin/config/smartdocs/custom-template-update'] = array(
+    'title' => 'Custom Template',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('smartdocs_dismiss_custom_template_warning'),
+    'access arguments' => array('administer smartdocs content'),
+    'file' => 'smartdocs.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
   // Models.
   $items['admin/content/smartdocs/models'] = array(
     'title' => 'SmartDocs',
@@ -259,43 +269,6 @@ function smartdocs_permission() {
 }
 
 /**
- * Implements hook_flush_caches().
- */
-function smartdocs_flush_caches() {
-  return array('cache_smartdocs');
-}
-
-/**
- * Forcibly clears all models from cache, then rebuilds cache from Edge.
- *
- * @param bool $notify
- *   When TRUE, a message will be set after caches are rebuilt.
- */
-function smartdocs_rebuild_cache_table($notify = TRUE) {
-  db_truncate('cache_smartdocs')->execute();
-  $config = devconnect_default_org_config();
-  // Don't log errors generated during cron runs.
-  $config->logger = new \Psr\Log\NullLogger();
-  $config->subscribers = array();
-
-  try {
-    $model_obj = new Model($config);
-    $models = $model_obj->listModels();
-  }
-  catch (ResponseException $e) {
-    drupal_set_message(t('Unable to fetch list of SmartDocs models.'), 'error');
-    return;
-  }
-  /** @var Apigee\SmartDocs\Model $model */
-  foreach ($models as $model) {
-    smartdocs_load_model_hierarchy($model->getUuid(), $config);
-  }
-  if ($notify) {
-    drupal_set_message(t('SmartDocs model cache has been rebuilt.'));
-  }
-}
-
-/**
  * Themes the oauth callback.
  *
  * @return string
@@ -304,7 +277,7 @@ function smartdocs_rebuild_cache_table($notify = TRUE) {
 function smartdocs_oauth_callback() {
   $config =& devconnect_get_org_settings();
   return theme('smartdocs_oauth_callback', array(
-    'proxy' => str_replace('v1/smartdocs', 'smartdocs/v1/sendrequest', variable_get('api_proxy_url', 'https://apiconsole-prod.apigee.net/v1/smartdocs')),
+    'proxy' => str_replace('v1/smartdocs', 'smartdocs/v1/sendrequest', variable_get('smartdocs_api_proxy_url', 'https://apiconsole-prod.apigee.net/v1/smartdocs')),
     'endpoint' => $config['endpoint'],
   ));
 }
@@ -462,43 +435,6 @@ function smartdocs_format_json($obj) {
 }
 
 /**
- * Implements hook_cron().
- *
- * Builds the revision cache.
- */
-function smartdocs_cron() {
-  $config = devconnect_default_org_config();
-  // Don't log errors generated during cron runs.
-  $config->logger = new \Psr\Log\NullLogger();
-  $config->subscribers = array();
-  try {
-    $model_obj = new Model($config);
-    $models = $model_obj->listModels();
-    if (count($models) == 0) {
-      if (function_exists('drush_log')) {
-        drush_log('No models defined for org ' . $config->orgName, 'status');
-      }
-      return;
-    }
-  }
-  catch (ResponseException $e) {
-    if (function_exists('drush_log')) {
-      drush_log('Cannot list models. Modeling API said: ' . $e->getCode() . ' ' . $e->getMessage(), 'error');
-    }
-    return;
-  }
-
-  $model_names = array();
-
-  /** @var Apigee\SmartDocs\Model $model */
-  foreach ($models as $model) {
-    $model_info[$model->getName()] = array('uuid' => $model->getUuid(), 'name' => $model->getDisplayName());
-    smartdocs_load_model_hierarchy($model->getUuid());
-  }
-  variable_set('smartdocs_model_info', $model_names);
-}
-
-/**
  * Fetches, populates and returns an array of all models for the org.
  *
  * @return array
@@ -509,7 +445,12 @@ function _smartdocs_get_methods_details() {
   $config = devconnect_default_org_config();
   try {
     $model_obj = new Model($config);
+    $start = microtime(TRUE);
     $models = $model_obj->listModels();
+    if (variable_get('smartdocs_log_transaction_time', 0)) {
+      $args = array('!time' => number_format(microtime(TRUE) - $start, 4));
+      watchdog('smartdocs', 'Listed all models in !time seconds', $args, WATCHDOG_INFO);
+    }
   }
   catch (ResponseException $e) {
     $models = array();
@@ -554,19 +495,37 @@ function smartdocs_model_load($mid) {
   }
   // If loading by name, we have to look up the UUID.
   if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $mid)) {
+    $log_transaction_time = variable_get('smartdocs_log_transaction_time', 0);
+
     $model = new Model(devconnect_default_org_config());
     try {
+      $start = microtime(TRUE);
       $model->load($mid);
+      if ($log_transaction_time) {
+        $args = array(
+          '!model' => $mid,
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
+      }
     }
     catch (ResponseException $e) {
+      if ($log_transaction_time) {
+        watchdog_exception('smartdocs', 'Failed to load model !model', array('!model' => $mid), WATCHDOG_WARNING);
+      }
       return FALSE;
     }
     catch (ParameterException $e) {
+      if ($log_transaction_time) {
+        watchdog_exception('smartdocs', 'Failed to load model !model (Invalid UUID)', array('!model' => $mid), WATCHDOG_WARNING);
+      }
       return FALSE;
     }
-    $mid = $model->getUuid();
+    $model = smartdocs_load_model_hierarchy($model);
   }
-  $model = smartdocs_load_model_hierarchy($mid);
+  else {
+    $model = smartdocs_load_model_hierarchy($mid);
+  }
   drupal_static('smartdocs_model', $model);
   return $model;
 }
@@ -601,7 +560,17 @@ function smartdocs_revision_load($rev) {
   if (empty($revision)) {
     $revision = new Revision($model->getConfig(), $model->getUuid());
     try {
+      $start = microtime(TRUE);
       $revision->load($rev);
+      if (variable_get('smartdocs_log_transaction_time', 0)) {
+        $args = array(
+          '!revision' => $rev,
+          '!model' => $model->getUuid(),
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+
+      }
     }
     catch (ResponseException $e) {
       $server_body_response = $e->getResponse();
@@ -667,7 +636,17 @@ function smartdocs_resource_load($res) {
   if (!$found_resource) {
     $resource = new Resource($model->getConfig(), $model->getUuid(), $revision->getUuid());
     try {
+      $start = microtime(TRUE);
       $resource->load($res);
+      if (variable_get('smartdocs_log_transaction_time', 0)) {
+        $args = array(
+          '!resource' => $res,
+          '!revision' => $revision->getRevisionNumber(),
+          '!model' => $model->getUuid(),
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+      }
     }
     catch (ResponseException $e) {
       return FALSE;
@@ -717,7 +696,18 @@ function smartdocs_method_load($method_id) {
   if (!$found_method) {
     $method = new Method($model->getConfig(), $model->getUuid(), $revision->getUuid(), $resource->getUuid());
     try {
+      $start = microtime(TRUE);
       $method->load($method_id);
+      if (variable_get('smartdocs_log_transaction_time', 0)) {
+        $args = array(
+          '!method' => $method_id,
+          '!resource' => $resource->getUuid(),
+          '!revision' => $revision->getRevisionNumber(),
+          '!model' => $model->getUuid(),
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded method !method of resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+      }
     }
     catch (ResponseException $e) {
       return FALSE;
@@ -1125,47 +1115,64 @@ function _smartdocs_get_method_node(Method $method) {
  * Loads a model and its active revision (if there is one).
  *
  * The revision will in turn contain a hierarchy of resources and methods.
- * Cache will be used whenever possible. In cases where data was read from the
- * endpoint, cache will be written.
  *
- * @param string $model_uuid
- *   UUID of the model to be loaded.
+ * @param string|Model $model_uuid
+ *   UUID of the model to be loaded, or an already-loaded model.
  *
  * @return Apigee\SmartDocs\Model|bool
  *   Contains Model if it was found, otherwise FALSE.
  */
 function smartdocs_load_model_hierarchy($model_uuid, $config = NULL) {
-  if (empty($config)) {
-    $config = devconnect_default_org_config();
-  }
-  $cid = 'model:' . $model_uuid;
-  $model = new Model($config);
-  $write_cache = FALSE;
+  $log_transaction_time = variable_get('smartdocs_log_transaction_time', 0);
 
-  $data = cache_get($cid, 'cache_smartdocs');
-  if (is_object($data) && is_array($data->data) && count($data->data) > 0) {
-    Model::fromArray($model, $data->data);
+  if (is_object($model_uuid) && get_class($model_uuid) == 'Apigee\\SmartDocs\\Model') {
+    $model = $model_uuid;
   }
   else {
+    if (empty($config)) {
+      $config = devconnect_default_org_config();
+    }
+    $model = new Model($config);
+
     try {
+      $start = microtime(TRUE);
       $model->load($model_uuid);
+      if ($log_transaction_time) {
+        $args = array(
+          '!model' => $model_uuid,
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
+      }
     }
     catch (ResponseException $e) {
+      if ($log_transaction_time) {
+        watchdog('smartdocs', 'Failed to load model !model', array('!model' => $model_uuid), WATCHDOG_WARNING);
+      }
       return FALSE;
     }
     catch (ParameterException $e) {
+      if ($log_transaction_time) {
+        watchdog('smartdocs', 'Failed to load model !model (Invalid UUID)', array('!model' => $model_uuid), WATCHDOG_WARNING);
+      }
       return FALSE;
     }
-    $write_cache = TRUE;
   }
-
   $revision_number = $model->getLatestRevisionNumber();
   if ($revision_number > 0) {
     if (is_null($model->getActiveRevision())) {
-      $write_cache = TRUE;
-      $revision = new Revision($config, $model_uuid);
+      $revision = new Revision($model->getConfig(), $model->getUuid());
       try {
+        $start = microtime(TRUE);
         $revision->load($revision_number);
+        if ($log_transaction_time) {
+          $args = array(
+            '!revision' => $revision_number,
+            '!model' => $model_uuid,
+            '!time' => number_format(microtime(TRUE) - $start, 4),
+          );
+          watchdog('smartdocs', 'Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+        }
 
         $query = db_select('smartdata', 's');
         $query->innerJoin('node', 'n', 's.nid = n.nid');
@@ -1195,38 +1202,20 @@ function smartdocs_load_model_hierarchy($model_uuid, $config = NULL) {
         $model->setActiveRevision($revision);
       }
       catch (ResponseException $e) {
+        if ($log_transaction_time) {
+          $args = array('!revision' => $revision_number, '!model' => $model_uuid);
+          watchdog('smartdocs', 'Failed to load revision !revision of model !model', $args, WATCHDOG_WARNING);
+        }
       }
       catch (ParameterException $e) {
+        if ($log_transaction_time) {
+          $args = array('!revision' => $revision_number, '!model' => $model_uuid);
+          watchdog('smartdocs', 'Failed to load revision !revision of model !model (Invalid revision ID)', $args, WATCHDOG_WARNING);
+        }
       }
     }
   }
-
-  if ($write_cache) {
-    cache_set($cid, $model->toArray(), 'cache_smartdocs');
-    if (function_exists('drush_log')) {
-      drush_log('Rebuilt cache for ' . $model->getName(), 'success');
-    }
-  }
-
   return $model;
-}
-
-/**
- * Implements hook_admin_menu_cache_info().
- */
-function smartdocs_admin_menu_cache_info() {
-  $caches['smartdocs'] = array(
-    'title' => t('SmartDocs models'),
-    'callback' => '_smartdocs_flush_models',
-  );
-  return $caches;
-}
-
-/**
- * Admin menu cache flush callback.
- */
-function _smartdocs_flush_models() {
-  smartdocs_rebuild_cache_table(FALSE);
 }
 
 /**
@@ -1254,6 +1243,8 @@ function smartdocs_module_implements_alter(&$implementations, $hook) {
  * method ID fields are hidden entirely.
  */
 function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_state) {
+  $log_transaction_time = variable_get('smartdocs_log_transaction_time', 0);
+
   // TODO: Handle association with model/revision/resource dynamically.
   if (!isset($form['nid']['#value'])) {
     // For model, revision, resource, look in $form_state first, and if not
@@ -1281,7 +1272,17 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
     if (!empty($model) && !empty($revision) && !empty($resource)) {
       $resource_obj = new Resource(devconnect_default_org_config(), $model, $revision);
       try {
+        $start = microtime(TRUE);
         $resource_obj->load($resource);
+        if ($log_transaction_time) {
+          $args = array(
+            '!model' => $model,
+            '!revision' => $revision,
+            '!resource' => $resource,
+            '!time' => number_format(microtime(TRUE) - $start, 4),
+          );
+          watchdog('smartdocs', 'Loaded resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+        }
         $resource_path = $resource_obj->getPath();
         $resource_base_url = $resource_obj->getBaseUrl();
       }
@@ -1353,7 +1354,16 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
     // Load all security schemes available to the revision.
     try {
       $security = new Security(devconnect_default_org_config(), $model, $revision);
+      $start = microtime(TRUE);
       $security_schemes = $security->loadAllSchemes();
+      if ($log_transaction_time) {
+        $args = array(
+          '!model' => $model,
+          '!revision' => $revision,
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded security schemes for revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+      }
     }
     catch (ResponseException $e) {
       $security_schemes = array();
@@ -1407,11 +1417,40 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
     '#weight' => $form['field_smart_method_base_url']['#weight'],
   );
 
+  if (!isset($resource)) {
+    $resource = $form['field_smart_method_resource_uuid'][LANGUAGE_NONE][0]['value']['#default_value'];
+  }
+
   // Store model, resource, revision in form_state so that when the form is
   // rebuilt for "Add more..." via AJAX, we don't error out for missing data.
   $form_state['storage']['model'] = $model;
-  $form_state['storage']['resource'] = $form['field_smart_method_resource_uuid'][LANGUAGE_NONE][0]['value']['#default_value'];
+  $form_state['storage']['resource'] = $resource;
   $form_state['storage']['revision'] = $form['field_smart_method_revision_num'][LANGUAGE_NONE][0]['value']['#default_value'];
+
+  if (!isset($resource_obj)) {
+    $resource_obj = new Resource(devconnect_default_org_config(), $model, $revision);
+    try {
+      $start = microtime(TRUE);
+      $resource_obj->load($resource);
+      if ($log_transaction_time) {
+        $args = array(
+          '!model' => $model,
+          '!revision' => $revision,
+          '!resource' => $resource,
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
+      }
+    } catch (Exception $e) {
+    }
+  }
+  if (isset($resource_obj) && count($resource_obj->getParameters()) > 0) {
+    $edit_resource_url = url('admin/content/smartdocs/models/' . $model . '/resource/edit/' . $revision . '/' . $resource);
+    if (!array_key_exists('#suffix', $form['field_smart_method_params'][LANGUAGE_NONE])) {
+      $form['field_smart_method_params'][LANGUAGE_NONE]['#suffix'] = '';
+    }
+    $form['field_smart_method_params'][LANGUAGE_NONE]['#suffix'] .= t('There are also parameters defined for this method’s resource. <a href="!url" target="_blank">Click here to edit the resource.</a>', array('!url' => $edit_resource_url));
+  }
 }
 
 /**
@@ -1429,6 +1468,8 @@ function smartdocs_node_presave($node) {
   if ($node->type != 'smart_method' || property_exists($node, 'method_already_created')) {
     return;
   }
+  $log_transaction_time = variable_get('smartdocs_log_transaction_time', 0);
+
   $is_update = (!property_exists($node, 'is_new') || !$node->is_new);
   $model_tid = $node->field_smart_method_model[LANGUAGE_NONE][0]['tid'];
   $model_term = taxonomy_term_load($model_tid);
@@ -1439,7 +1480,18 @@ function smartdocs_node_presave($node) {
   $method_obj = new Method(devconnect_default_org_config(), $model_name, $revision_num, $resource_uuid);
   if ($is_update) {
     try {
+      $start = microtime(TRUE);
       $method_obj->load($node->field_smart_method_uuid[LANGUAGE_NONE][0]['value']);
+      if ($log_transaction_time) {
+        $args = array(
+          '!model' => $model_name,
+          '!revision' => $revision_num,
+          '!resource' => $resource_uuid,
+          '!method' => $method_obj->getUuid(),
+          '!time' => number_format(microtime(TRUE) - $start, 4),
+        );
+        watchdog('smartdocs', 'Loaded method !method of resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
+      }
     }
     catch (Exception $e) {
       watchdog_exception('smartdocs', $e);
@@ -1454,7 +1506,8 @@ function smartdocs_node_presave($node) {
   $verb_term = taxonomy_term_load($node->field_smart_method_verb[LANGUAGE_NONE][0]['tid']);
 
   $method_obj->setDisplayName($node->title);
-  $method_obj->setDescription(isset($node->body[LANGUAGE_NONE][0]['value']) ? $node->body[LANGUAGE_NONE][0]['value'] : '');
+  $body_format = $node->body[LANGUAGE_NONE][0]['format']?: 'full_html';
+  $method_obj->setDescription(isset($node->body[LANGUAGE_NONE][0]['value']) ? check_markup($node->body[LANGUAGE_NONE][0]['value'], $body_format): '');
   $method_obj->setVerb($verb_term->name);
 
   $params = array();
@@ -1548,7 +1601,18 @@ function smartdocs_node_presave($node) {
   $new_mpid = $model_name . '|' . $method_obj->getName();
 
   try {
+    $start = microtime(TRUE);
     $method_obj->save($is_update);
+    if ($log_transaction_time) {
+      $args = array(
+        '!method' => $method_obj->getUuid(),
+        '!resource' => $resource_uuid,
+        '!revision' => $revision_num,
+        '!model' => $model_name,
+        '!time' => number_format(microtime(TRUE) - $start, 4),
+      );
+      watchdog('smartdocs', 'Saved method !method in resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
+    }
     drupal_set_message(t('Modeling API was successfully updated.'));
     // Make sure node has method_uuid populated.
     if (!$is_update) {
@@ -1629,8 +1693,7 @@ function smartdocs_node_update($node) {
 }
 
 /**
- * Writes a node's data to the smartdata table and clear cache for its
- * associated model.
+ * Writes a node's data to the smartdata table.
  *
  * @param $node
  */
@@ -1645,15 +1708,6 @@ function _smartdocs_write_smartdata($node) {
   }
   else {
     drupal_write_record('smartdata', $record);
-  }
-  // Invalidate model cache.
-  try {
-    $model = new Model(devconnect_default_org_config());
-    $model->load($record['model']);
-    cache_clear_all('model:' . $model->getUuid(), 'cache_smartdocs');
-  }
-  catch (Exception $e) {
-    cache_clear_all(NULL, 'cache_smartdocs');
   }
 }
 
@@ -1704,6 +1758,11 @@ function smartdocs_taxonomy_term_page($term) {
     $view_args[] = $term->tid;
   }
 
+  // If user has no access to the view display, show them the door.
+  if (!$view->access(array('modelindex'))) {
+    drupal_access_denied();
+  }
+
   $output = array();
   if (!empty($term->description)) {
     $output['description'] = array(
@@ -1713,10 +1772,13 @@ function smartdocs_taxonomy_term_page($term) {
       '#suffix' => '</p>',
     );
   }
+
   $output['methods'] = array(
     '#type' => 'markup',
     '#markup' => $view->preview('modelindex', $view_args),
   );
+
+  views_add_contextual_links($output, 'block', $view, 'modelindex');
 
   return $output;
 }
@@ -1779,7 +1841,15 @@ function smartdocs_taxonomy_term_insert($term) {
 
   $model = new Model(devconnect_default_org_config());
   try {
+    $start = microtime(TRUE);
     $model->load($term->name);
+    if (variable_get('smartdocs_log_transaction_time', 0)) {
+      $args = array(
+        '!model' => $model->getUuid(),
+        '!time' => number_format(microtime(TRUE) - $start, 4),
+      );
+      watchdog('smartdocs', 'Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
+    }
     smartdocs_create_model_view($model);
   }
   catch (Exception $e) {

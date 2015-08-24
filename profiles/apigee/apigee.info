@@ -12,6 +12,7 @@ core = "7.x"
 dependencies[] = admin_menu
 dependencies[] = admin_menu_toolbar
 dependencies[] = admin_views
+dependencies[] = adminimal_admin_menu
 dependencies[] = advanced_forum
 dependencies[] = apigee_account
 dependencies[] = apigee_checklist
@@ -83,12 +84,11 @@ dependencies[] = update
 dependencies[] = user
 dependencies[] = uuid
 dependencies[] = views
-dependencies[] = views_queue
 dependencies[] = views_ui
 dependencies[] = webform
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20150819.2049
-version = "15.08.20.00"
+; Added by build script on 20150824.0937
+version = "15.08.24.00"
     

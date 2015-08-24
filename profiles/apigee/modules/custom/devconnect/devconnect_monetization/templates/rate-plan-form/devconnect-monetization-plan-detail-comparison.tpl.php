@@ -62,7 +62,7 @@
                 <?php endif; ?>
                 <?php $rate_plant_free_quantity_message = _devconnect_monetization_get_free_quantity_text_for_rate_plan_level($rate_plan); ?>
                 <?php if ($rate_plant_free_quantity_message != NULL): ?>
-                  <br>
+                  <br />
                   <strong>Free Quantity:&nbsp;</strong><?php print $rate_plant_free_quantity_message; ?>
                   <br />
                   <br />
@@ -95,7 +95,7 @@
                 <?php endif; ?>
                 <?php $rate_plant_free_quantity_message = _devconnect_monetization_get_free_quantity_text_for_rate_plan_level($rate_plan); ?>
                 <?php if ($rate_plant_free_quantity_message != NULL): ?>
-                  <br>
+                  <br />
                   <strong>Free Quantity:&nbsp;</strong><?php print $rate_plant_free_quantity_message; ?>
                   <br />
                   <br />

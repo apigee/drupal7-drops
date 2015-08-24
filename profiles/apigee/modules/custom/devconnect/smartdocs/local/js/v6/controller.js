@@ -12,11 +12,13 @@ var apiModelCommon; // An Instance of a 'Apigee.APIModel.Common' class.
 var apiModelMethods; // An Instance of a 'Apigee.APIModel.Methods' class.
 var apiModelInlineEdit; // An Instance of a 'Apigee.APIModel.InlineEdit' class.
 var apiModelEditor;
+var apiModelSchema;
 Apigee.APIModel.authUrl = "";
 Apigee.APIModel.proxyURL; // Stores proxy URL.
 
 jQuery(function() {
     apiModelEditor = new Apigee.APIModel.Editor();
+    apiModelSchema = new Apigee.APIModel.Schema();
     apiModelCommon = new Apigee.APIModel.Common();
     if (localStorage.getItem("unsupportedBrowserFlag") == null) {
         apiModelCommon.showUnsupportedBrowserAlertMessage();
