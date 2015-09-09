@@ -8,9 +8,9 @@ files[] = encrypt.test
 
 dependencies[] = ctools
 
-; Information added by Drupal.org packaging script on 2014-10-01
-version = "7.x-2.0"
+; Information added by Drupal.org packaging script on 2015-08-21
+version = "7.x-2.1"
 core = "7.x"
 project = "encrypt"
-datestamp = "1412192667"
+datestamp = "1440191040"
 

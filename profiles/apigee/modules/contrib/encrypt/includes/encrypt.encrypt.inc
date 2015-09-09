@@ -97,17 +97,16 @@ function _encrypt_decrypt($op = 'encrypt', $text = '', $options = array(), $meth
   }
 
   // Get the encryption key from the default key provider.
-  $key = encrypt_get_key_from_key_provider($key_provider, $provider_settings);
+  $key = encrypt_get_key_from_key_provider($key_provider, $provider_settings, $config);
   if(!$key){
     drupal_set_message(t('The key from %key_provider could not be retrieved.', array('%key_provider' => $key_provider)), 'error');
     throw new Exception('Key not found');
   }
-  $key = encrypt_get_key_from_key_provider($key_provider, $provider_settings);
 
   // Call callback function for encryption and decryption.
   $encryption_method = encrypt_get_encryption_method($method);
   $function = ctools_plugin_get_function($encryption_method, 'encrypt callback');
-  $processed = call_user_func($function, $op, $text, $key, $options);
+  $processed = call_user_func($function, $op, $text, $key, $options, $config);
 
   // Check for returned value.
   if (!empty($processed) && $op == 'encrypt') {

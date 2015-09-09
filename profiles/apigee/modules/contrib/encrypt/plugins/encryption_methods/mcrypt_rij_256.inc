@@ -5,12 +5,19 @@
  * Plugin definition for the mcrypt extension and AES-256 encryption method.
  */
 
-$plugin = array(
-  'title' => t('Mcrypt AES 256'),
-  'description' => t('This uses PHPs mcrypt extension and <a href="http://en.wikipedia.org/wiki/Advanced_Encryption_Standard">AES-256</a>.'),
-  'encrypt callback' => '_encrypt_encryption_methods_mcrypt_rij_256',
-  'dependency callback' => '_mcrypt_extension_is_present',
-);
+$plugin = encrypt_mcrypt_rij_256_encrypt_encryption_methods();
+
+/**
+ * Implements MODULE_FILENAME_encrypt_encryption_methods().
+ */
+function encrypt_mcrypt_rij_256_encrypt_encryption_methods() {
+  return array(
+    'title' => t('Mcrypt AES 256'),
+    'description' => t('This uses PHPs mcrypt extension and <a href="http://en.wikipedia.org/wiki/Advanced_Encryption_Standard">AES-256</a>.'),
+    'encrypt callback' => '_encrypt_encryption_methods_mcrypt_rij_256',
+    'dependency callback' => '_mcrypt_extension_is_present',
+  );
+}
 
 /**
  * Callback for Encrypt implementation: Mcrypt.

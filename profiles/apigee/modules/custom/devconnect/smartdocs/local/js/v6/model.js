@@ -467,15 +467,6 @@ Apigee.APIModel.Methods = function() {
    * This method invokes the necessary details for the operation page.
    */
   this.init = function() {
-    // Convert the auth type value as user friendly text.
-    var authTypeElement = jQuery("[data-role='auth-type']");
-    authType = jQuery.trim(authTypeElement.text());
-    if (authType.split(",").length > 1) {
-      authType = authType.substr(0,authType.length-1); // Remove the last extra comma symbol.
-    }
-
-    authTypeElement.html(authType); // Update the auth type HTML element.
-    self.updateAuthContainer();
     //Fix for extraneous space in the resource URL.
     var resourceURLString = "";
     jQuery("[data-role='method_url_container'] span").each(function() {
@@ -553,13 +544,6 @@ Apigee.APIModel.Methods = function() {
       }
     });
 
-    // Remove the last extra comma symbol from category field.
-    var categoryElement = jQuery("[data-role='category']");
-    var categoryElementValue = jQuery.trim(categoryElement.text());
-    if (categoryElementValue.split(",").length > 1) {
-      categoryElementValue = categoryElementValue.substr(0,categoryElementValue.length-1); // Remove the last extra comma symbol.
-    }
-    categoryElement.html(categoryElementValue); // Update the auth type HTML element.
     // Show the request payload docs by default if request payload sample is not available.
     if (jQuery("[data-role='request-payload-docs']").length && !jQuery("[data-role='request-payload-example']").length) {
       jQuery("[data-role='request-payload-docs']").show();
@@ -1403,7 +1387,7 @@ Apigee.APIModel.Methods = function() {
     }
     requestContainerString += "</dl>";
     requestContainerElement.html(requestContainerString);
-    curlContainerElement.html("<pre>"+Apigee.curl+"</pre>");
+    curlContainerElement.html("<pre>" + Apigee.curl.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') + "</pre>");
     // Resquest content construction.
     bodyContent = unescape(data.requestContent);
     bodyContent = bodyContent.replace(/[^\x00-\x7F]/g, "###");

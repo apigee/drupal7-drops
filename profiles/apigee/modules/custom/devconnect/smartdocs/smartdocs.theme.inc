@@ -9,7 +9,7 @@ use Apigee\Exceptions\ResponseException;
 /**
  * Sets breadcrumbs for taxonomy term pages related to SmartDocs vocabularies.
  *
- * @param stdClass $term
+ * @param object $term
  *   A taxonomy term.
  */
 function _smartdocs_set_term_breadcrumb($term) {
@@ -48,6 +48,7 @@ function _smartdocs_preprocess_node_page(&$vars) {
   }
 
   // Set 'dna' var to let templates know this is Smartdocs doing the talking.
+  // This is only used by the legacy theme.
   $vars['dna'] = TRUE;
 
   // If appropriate, set edit revision tab(s).
@@ -240,28 +241,63 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
       'group' => CSS_THEME,
       'weight' => 200,
     ));
-    $model_id = $model_term->name;
-    $revision_num = $vars['field_smart_method_revision_num'][LANGUAGE_NONE][0]['value'];
-    $resource_uuid = $vars['field_smart_method_resource_uuid'][LANGUAGE_NONE][0]['value'];
-    $method_uuid = $vars['field_smart_method_uuid'][LANGUAGE_NONE][0]['value'];
 
-    $doc = new Apigee\SmartDocs\Doc(devconnect_default_org_config(), $model_id, $revision_num, $resource_uuid, $method_uuid);
+    $vars['content'] = array('#type' => 'markup');
 
+    $content_markup = NULL;
+    $write_cache = FALSE;
+    // Pull markup from cache if it exists and is not expired.
+    // Don't fail if updates haven't been run yet!
     try {
-      $content_markup = $doc->getHtml(SMARTDOCS_TEMPLATE_NAME);
-      $vars['content'] = array('#markup' => $content_markup);
+      $cached_data = cache_get('node:' . $vars['nid'], 'cache_smartdocs');
+      if ($cached_data) {
+        $content_markup = trim($cached_data->data);
+      }
     }
-    catch (ResponseException $e) {
-      // Fall back to Teaser behavior, which doesn't require Modeling API
-      // roundtrip. This is icky, but at least it shows SOMETHING to the end
-      // user.
-      $vars['content'] = array(
-        '#type' => 'markup',
-        '#markup' => theme('smartdocs_method', $vars),
-        '#prefix' => '<div class="col-sm-12">',
-        '#suffix' => '</div>',
-      );
+    catch (Exception $e) {
+      // Do nothing.
+      // If we are using the default caching backend, and the cache_smartdocs
+      // table does not yet exist, it will throw a PDOException which we catch
+      // here.
     }
+
+    if (empty($content_markup)) {
+      // Cache miss (or no cache at all), so fetch from Modeling API.
+      $model_id = $model_term->name;
+      $revision_num = $vars['field_smart_method_revision_num'][LANGUAGE_NONE][0]['value'];
+      $resource_uuid = $vars['field_smart_method_resource_uuid'][LANGUAGE_NONE][0]['value'];
+      $method_uuid = $vars['field_smart_method_uuid'][LANGUAGE_NONE][0]['value'];
+
+      $doc = new Apigee\SmartDocs\Doc(devconnect_default_org_config(), $model_id, $revision_num, $resource_uuid, $method_uuid);
+
+      try {
+        $content_markup = trim($doc->getHtml(SMARTDOCS_TEMPLATE_NAME));
+        $write_cache = TRUE;
+      }
+      catch (ResponseException $e) {
+        // Fall back to Teaser behavior, which doesn't require Modeling API
+        // roundtrip. This is icky, but at least it shows SOMETHING to the end
+        // user.
+        $content_markup = theme('smartdocs_method', $vars);
+        $vars['content']['prefix'] = '<div class="col-sm-12">';
+        $vars['content']['suffix'] = '</div>';
+      }
+    }
+
+    if ($write_cache && !empty($content_markup)) {
+      $expire_timestamp = REQUEST_TIME + intval(variable_get('smartdocs_node_cache_ttl', SMARTDOCS_DEFAULT_METHOD_CACHE_TTL) * 60);
+      // Don't fail if updates haven't been run yet!
+      try {
+        cache_set('node:' . $vars['nid'], $content_markup, 'cache_smartdocs', $expire_timestamp);
+      }
+      catch (Exception $e) {
+        // Do nothing.
+        // If we are using the default caching backend, and the cache_smartdocs
+        // table does not yet exist, it will throw a PDOException which we
+        // catch here.
+      }
+    }
+    $vars['content']['#markup'] = $content_markup;
   }
   else {
     $vars['content']['#markup'] = '<div class="col-sm-12">' . theme('smartdocs_method', $vars) . '</div>';

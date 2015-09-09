@@ -21,34 +21,31 @@ probably will need to compile the extension yourself.
 Redis version
 -------------
 
-Be careful with lock.inc replacement, actual implementation uses the Redis
-WATCH command, it is actually there only since version 2.1.0. If you use
-the it, it will just pass silently and work gracefully, but lock exclusive
-mutex is exposed to race conditions.
+This module requires Redis version to be 2.6.0 or later with LUA scrpting
+enabled due to the EVAL command usage.
 
-Please use Redis 2.4.0 or later if you can. I won't maintain any bug for
-Redis versions prior to 2.4.0.
+If you can't upgrade you Redis server:
 
-If you can't upgrade you Redis server, please use an older version of this
-module (prior to 7.x-2.6).
+  - 3.x release will only officially support Redis server <= 2.6
+    nevertheless you may use it with Redis 2.4 if you configure your cache
+    backend to operate in sharding mode.
+
+  - For Redis 2.4 use the latest 2.x release of this module or use the
+    3.x release with sharding mode enabled.
+
+  - For Redis <=2.3 use any version of this module <=2.6
 
 Notes
 -----
 
 Both backends provide the exact same functionalities. The major difference is
-because PhpRedis uses a PHP extension, and not PHP code, it more performant.
+because PhpRedis uses a PHP extension, and not PHP code, it will performe a
+lot better (Predis needs PHP userland code to be loaded).
 
-Difference is not that visible, it's really a few millisec on my testing box.
+Difference is not that visible, it's really a few millisec on my testing box,
+in case you attempt to profile the code, traces will be a lot bigger.
 
 Note that most of the settings are shared. See next sections.
-
-Important notice
-----------------
-
-This module only supports Redis >= 2.4 due to the missing WATCH command in
-Redis <= 2.2. Using it with older versions is untested, might work but might
-also cause you serious trouble. Any bug report raised using such version will
-be ignored.
 
 Getting started
 ===============
@@ -72,7 +69,7 @@ See next chapters for more information.
 Is there any cache bins that should *never* go into Redis?
 ----------------------------------------------------------
 
-TL;DR: No.
+TL;DR: No. Except for 'cache_form' if you use Redis with LRU eviction.
 
 Redis has been maturing a lot over time, and will apply different sensible
 settings for different bins; It's today very stable.
@@ -172,6 +169,9 @@ use one in particular, just add to your settings.php file:
 
   $conf['redis_client_base'] = 12;
 
+Please note that if you are working in shard mode, you should never set this
+variable.
+
 Connection to a password protected instance
 -------------------------------------------
 
@@ -192,6 +192,11 @@ Prefixing site cache entries (avoiding sites name collision)
 
 If you need to differenciate multiple sites using the same Redis instance and
 database, you will need to specify a prefix for your site cache entries.
+
+Important note: most people don't need that feature since that when no prefix
+is specified, the Redis module will attempt to use the a hash of the database
+credentials in order to provide a multisite safe default behavior. This means
+that the module will also safely work in CLI scripts.
 
 Cache prefix configuration attemps to use a unified variable accross contrib
 backends that support this feature. This variable name is 'cache_prefix'.
@@ -228,61 +233,51 @@ Here is a complex sample:
   // Set another prefix for 'cache_menu' bin.
   $conf['cache_prefix']['cache_menu'] = 'menumysite_';
 
-Note that if you don't specify the default behavior, the Redis module will
-attempt to use the a hash of the database credentials in order to provide a
-multisite safe default behavior. Notice that this is not failsafe. In such
-environments you are strongly advised to set at least an explicit default
-prefix.
-
 Note that this last notice is Redis only specific, because per default Redis
 server will not namespace data, thus sharing an instance for multiple sites
 will create conflicts. This is not true for every contributed backends.
 
-Flush mode
-----------
+Sharding vs normal mode
+-----------------------
 
-Redis allows to set a time-to-live at the key level, which frees us from
-handling the garbage collection at clear() calls; Unfortunately Drupal never
-explicitely clears single cached pages or blocks. If you didn't configure the
-"cache_lifetime" core variable, its value is "0" which means that temporary
-items never expire: in this specific case, we need to adopt a different
-behavior than leting Redis handling the TTL by itself; This is why we have
-three different implementations of the flush algorithm you can use:
+Per default the Redis cache backend will be in "normal" mode, meaning that
+every flush call will trigger and EVAL lua script that will proceed to cache
+wipeout and cleanup the Redis database from stalled entries.
 
- * 0: Never flush temporary: leave Redis handling the TTL; This mode is
-   not compatible for the "page" and "block" bins but is the default for
-   all others.
+Nevertheless, if you are working with a Redis server < 2.6 or in a sharded
+environment, you cannot multiple keys per command nor proceed to EVAL'ed
+scripts, you will then need to switch to the sharded mode.
 
- * 1: Keep a copy of temporary items identifiers in a SET and flush them
-   accordingly to spec (DatabaseCache default backend mimic behavior):
-   this is the default for "page" and "block" bin if you don't change the
-   configuration.
+Sharded mode will never delete entries on flush calls, but register a key
+with the current flush time instead. Cache entries will then be deleted on
+read if the entry checksum does not match or is older than the latest flush
+call. Note that this mode is fast and safe, but must be used accordingly
+with the default lifetime for permanent items, else your Redis server might
+keep stalled entries into its database forever.
 
- * 2: Flush everything including permanent or valid items on clear() calls:
-   this behavior mimics the pre-1.0 releases of this module. Use it only
-   if you experience backward compatibility problems on a production
-   environement - at the cost of potential performance issues; All other
-   users should ignore this parameter.
+In order to enable the sharded mode, set into your settings.php file:
 
-You can configure a default flush mode which will override the sensible
-provided defaults by setting the 'redis_flush_mode' variable.
+    $conf['redis_flush_mode'] = 3;
 
-  // For example this is the safer mode.
-  $conf['redis_flush_mode'] = 1;
+Please note that the value 3 is there to keep backward compatibility with
+older versions of the Redis module and will not change.
 
-But you may also want to change the behavior for only a few bins.
+Note that previous Redis module version allowed to set a per-bin setting for
+the clear mode value; nevertheless the clear mode is not a valid setting
+anymore and the past issues have been resolved. Only the global value will
+work as of now.
 
-  // This will put mode 0 on "bootstrap" bin.
-  $conf['redis_flush_mode_cache_bootstrap'] = 0;
+Sharding and pipelining
+-----------------------
 
-  // And mode 2 to "page" bin.
-  $conf['redis_flush_mode_cache_page'] = 2;
+Whe using this module with sharding mode you may have a sharding proxy able to
+do command pipelining. If that is the case, you should switch to "sharding with
+pipelining" mode instead:
 
-Note that you must prefix your bins with "cache" as the Drupal 7 bin naming
-convention requires it.
+    $conf['redis_flush_mode'] = 4;
 
-Keep in mind that defaults will provide the best balance between performance
-and safety for most sites; Non advanced users should ever change them.
+Note that if you use the sharding mode because you use an older version of the
+Redis server, you should always use this mode to ensure the best performances.
 
 Default lifetime for permanent items
 ------------------------------------
@@ -332,10 +327,11 @@ please refer to its documentation:
 
     http://www.php.net/manual/en/dateinterval.createfromdatestring.php
 
-Last but not least please be aware that this setting affects the
-CACHE_PERMANENT ONLY; All other use cases (CACHE_TEMPORARY or user set TTL
-on single cache entries) will continue to behave as documented in Drupal core
-cache backend documentation.
+Please also be careful about the fact that those settings are overriden by
+the 'cache_lifetime' Drupal variable, which should always be set to 0.
+Moreover, this setting will affect all cache entries without exception so
+be careful and never set values too low if you don't want this setting to
+override default expire value given by modules on temporary cache entries.
 
 Lock backends
 -------------
@@ -344,7 +340,7 @@ Both implementations provides a Redis lock backend. Redis lock backend proved to
 be faster than the default SQL based one when using both servers on the same box.
 
 Both backends, thanks to the Redis WATCH, MULTI and EXEC commands provides a
-real race condition free mutexes if you use Redis >= 2.1.0.
+real race condition free mutexes by using Redis transactions.
 
 Queue backend
 -------------
@@ -401,14 +397,16 @@ Current components state
 
 As of now, provided components are simple enough so they never use WATCH or
 MULTI/EXEC transaction blocks on multiple keys : this means that you can use
-them in an environment doing data sharding/partionning.
+them in an environment doing data sharding/partionning. This remains true
+except when you use a proxy that blocks those commands such as Twemproxy.
 
 Lock
 ----
 
 Lock backend works on a single key per lock, it theorically guarantees the
-atomicity of operations therefore is usable in a sharded environement. Note
-that this is still untested as of now. Feedback is welcome.
+atomicity of operations therefore is usable in a sharded environement. Sadly
+if you use proxy assisted sharding such as Twemproxy, WATCH, MULTI and EXEC
+commands won't pass making it non shardable.
 
 Path
 ----

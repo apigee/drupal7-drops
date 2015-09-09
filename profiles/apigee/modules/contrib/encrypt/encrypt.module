@@ -196,6 +196,33 @@ function encrypt_get_configs($reset = FALSE) {
 }
 
 /**
+ * Get all configurations as options.
+ *
+ * Useful for retrieving a list of configurations to be used as
+ * #options in form elements such as select, checkboxes, and radios.
+ *
+ * @param bool $reset
+ *   A flag to force the configurations to be retrieved from the database.
+ *
+ * @return array
+ *   An array of key-value pairs. The key is the configuration's machine-
+ *   readable name and the value is its human-friendly label.
+ */
+function encrypt_get_configs_as_options($reset = FALSE) {
+  static $options = array();
+
+  if (!$options || $reset) {
+    $configs = encrypt_get_configs($reset);
+
+    foreach ($configs as $key => $config) {
+      $options[$key] = $config['label'];
+    }
+  }
+
+  return $options;
+}
+
+/**
  * Get one configuration.
  *
  * @param bool $name
@@ -308,6 +335,56 @@ function encrypt_get_default_config($reset = FALSE) {
 }
 
 /**
+ * Save a configuration.
+ *
+ * @param array $fields
+ *   The fields of the configuration to save.
+ * @param bool $messages
+ *   TRUE if messages should be displayed.
+ */
+function encrypt_save_config($fields, $messages = TRUE) {
+  // Serialize any field that is an array.
+  foreach ($fields as $key => $field) {
+    if (is_array($field)) {
+      $fields[$key] = serialize($field);
+    }
+  }
+
+  // If the created field is empty, set it to the request time.
+  if (empty($fields['created'])) {
+    $fields['created'] = REQUEST_TIME;
+  }
+
+  // If the changed field is empty, set it to the request time.
+  if (empty($fields['changed'])) {
+    $fields['changed'] = REQUEST_TIME;
+  }
+
+  // Save the configuration.
+  $merge_status = db_merge('encrypt_config')
+    ->key(array('name' => $fields['name']))
+    ->fields($fields)
+    ->execute();
+
+  // Display message and log to watchdog.
+  if ($messages) {
+    $t_args = array('%label' => $fields['label']);
+
+    switch ($merge_status) {
+      case MergeQuery::STATUS_INSERT:
+        drupal_set_message(t('The configuration %label has been added.', $t_args));
+        watchdog('encrypt', 'Added encryption configuration %label.', $t_args, WATCHDOG_NOTICE, l(t('view'), ENCRYPT_MENU_PATH . '/list'));
+        break;
+
+      case MergeQuery::STATUS_UPDATE:
+        drupal_set_message(t('The configuration %label has been updated.', $t_args));
+        watchdog('encrypt', 'Updated encryption configuration %label.', $t_args, WATCHDOG_NOTICE, l(t('view'), ENCRYPT_MENU_PATH . '/list'));
+        break;
+    }
+  }
+}
+
+/**
  * Fetch metadata on a specific encryption method plugin.
  *
  * @param mixed $method
@@ -406,10 +483,14 @@ function encrypt_get_key_providers($all = TRUE, $reset = FALSE) {
  *   provider (from encrypt_get_key_provider() or the name of the provider. If
  *   NULL, it assumes the default key provider.
  *
+ * @param array $config
+ * The selected configuration.
+ *
  * @return string
  *   The key.
  */
-function encrypt_get_key_from_key_provider($provider = NULL, $provider_settings = array()) {
+function encrypt_get_key_from_key_provider($provider = NULL, $provider_settings = array(), $config = array()) {
+
   $keys = &drupal_static(__FUNCTION__);
 
   if (!is_array($provider)) {
@@ -429,7 +510,7 @@ function encrypt_get_key_from_key_provider($provider = NULL, $provider_settings 
   // retrieve it from the key provider.
   if (!isset($key)) {
     $key_function = ctools_plugin_get_function($provider, 'key callback');
-    $key = call_user_func($key_function, $provider_settings);
+    $key = call_user_func($key_function, $provider_settings, $config);
 
     // If the key provider allows static variable storage, set the
     // static variable.
@@ -581,4 +662,21 @@ function _encrypt_display_update_message() {
   if (user_access('administer content')) {
     drupal_set_message(t('Encrypt requires a database schema update. You should run the <a href="@update">database update script</a> immediately.', array('@update' => base_path() . 'update.php')), 'error', FALSE);
   }
+}
+
+/**
+ * Implements hook_features_api().
+ *
+ * Define the components that we want to make exportable, in this case
+ * Encrypt configurations.
+ */
+function encrypt_features_api() {
+  return array(
+    'encrypt_config' => array(
+      'name' => 'Encrypt configurations',
+      'file' => drupal_get_path('module', 'encrypt') . '/includes/encrypt.features.inc',
+      'default_hook' => 'encrypt_default_configs',
+      'feature_source' => TRUE,
+    ),
+  );
 }

@@ -1,6 +1,6 @@
 <?php
 
-class Redis_Tests_Cache_PhpRedisFlushUnitTestCase extends Redis_Tests_Cache_AbstractFlushUnitTestCase
+class Redis_Tests_Cache_PhpRedisFlushUnitTestCase extends Redis_Tests_Cache_FlushUnitTestCase
 {
     public static function getInfo()
     {
@@ -13,8 +13,6 @@ class Redis_Tests_Cache_PhpRedisFlushUnitTestCase extends Redis_Tests_Cache_Abst
 
     protected function getClientInterface()
     {
-        if (extension_loaded('redis') && class_exists('Redis')) {
-            return 'PhpRedis';
-        }
+        return 'PhpRedis';
     }
 }

@@ -534,3 +534,23 @@ table.table td p.data {
 #method_content .table th {
     background-color: #ffffff;
 }
+
+.resource-ops {
+    top:-24px;
+    z-index:1;
+    right:0;
+    position:relative;
+    float:right;
+    width:150px;
+}
+body.tao .resource-ops {
+    top:4px;
+    right:70px;
+}
+
+#smartdocs-revision-detail tbody .ctools-dropbutton {
+    margin-top:-1em;
+}
+body.tao #smartdocs-revision-detail tbody .ctools-dropbutton {
+    margin-top:0;
+}

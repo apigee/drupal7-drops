@@ -57,7 +57,34 @@ function faq_general_settings_form($form) {
     '#default_value' => variable_get('faq_custom_breadcrumbs', TRUE),
   );
 
+  $form['faq_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('FAQ Path'),
+    '#description' => t('This option sets the path to the faq page. DO NOT append with a \'/\''),
+    '#default_value' => variable_get('faq_path', 'faq-page'),
+  );
+
   return system_settings_form($form);
+}
+
+/**
+ * Validate for general settings form.
+ */
+function faq_general_settings_form_validate($form, &$form_state) {
+  $path = $form_state['values']['faq_path'];
+
+  // Check if there is no special characters and trailing slash.
+  $pattern = "/[\w-\/]+(?<!\/)$/";
+  if (!preg_match($pattern, $path)) {
+    form_set_error('faq_path', t('FAQ path is not correct.'));
+  }
+}
+
+/**
+ * Rebuilds the menu to account for adjustments to the faq_path variable.
+ */
+function faq_general_settings_form_submit($form, &$form_state) {
+  menu_rebuild();
 }
 
 /**

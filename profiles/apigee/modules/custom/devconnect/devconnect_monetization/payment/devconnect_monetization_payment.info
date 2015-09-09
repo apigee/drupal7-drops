@@ -4,7 +4,6 @@ core = 7.x
 package = DevConnect Mint
 php = 5.3
 version = 7.x-4.22
-project = devconnect
 
 dependencies[] = devconnect_monetization
 dependencies[] = commerce_order
@@ -12,10 +11,3 @@ dependencies[] = commerce_product
 dependencies[] = commerce_payment
 dependencies[] = commerce_checkout
 dependencies[] = commerce_price
-
-; Information added by drush on 2013-09-16
-version = "7.x-4.23-dev"
-core = "7.x"
-project = "devconnect-mint"
-datestamp = "1379375171"
-

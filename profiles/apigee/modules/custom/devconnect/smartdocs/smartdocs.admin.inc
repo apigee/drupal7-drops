@@ -71,7 +71,6 @@ function smartdocs_settings($form, $form_state) {
     }
 
     $options = array();
-    /** @var Apigee\SmartDocs\Model $model */
     foreach ($models as $model) {
       $model_name = $model->getDisplayName();
       if (empty($model_name)) {
@@ -125,10 +124,18 @@ function smartdocs_settings($form, $form_state) {
     '#suffix' => '</p>',
   );
 
+  // Do not collapse advanced settings if an advanced setting is set.
+  if (variable_get('smartdocs_custom_template_file', 0) || variable_get('smartdocs_is_edge_mgmt_firewalled', 0) || variable_get('smartdocs_use_local_assets', 0) || variable_get('smartdocs_use_api_proxy_url', 0)) {
+    $is_advanced_settings_collapsed = FALSE;
+  }
+  else {
+    $is_advanced_settings_collapsed = TRUE;
+  }
+
   $form['settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Advanced settings'),
-    '#collapsed' => TRUE,
+    '#collapsed' => $is_advanced_settings_collapsed,
     '#collapsible' => TRUE,
   );
 
@@ -140,15 +147,29 @@ function smartdocs_settings($form, $form_state) {
   );
 
   $form['settings']['smartdocs_custom_template_file'] = array(
-    '#title' => t("Upload customized model template"),
+    '#title' => t("Upload customized method template"),
     '#type' => 'managed_file',
-    '#description' => t('Upload a .hbr template file. This template file will be used to render the methods instead of the default template.'),
+    '#description' => t('Upload a .hbr method template file. This template will be instead of the default model template when creating new models.'),
     '#upload_location' => 'public://smartdocs_templates',
     '#upload_validators' => array(
       'file_validate_extensions' => array('hbr'),
     ),
     '#default_value' => variable_get('smartdocs_custom_template_file', 0),
     '#suffix' => '<br/>',
+  );
+
+  // Add javascript to the form to warn user when uploading template to click
+  // save on page.
+  $form['#attached']['js'] = array(
+    drupal_get_path('module', 'smartdocs') . '/js/admin_settings.js',
+  );
+
+  $form['settings']['smartdocs_node_cache_ttl'] = array(
+    '#title' => t('Method HTML cache lifetime'),
+    '#type' => 'textfield',
+    '#description' => t('The HTML for SmartDocs method pages is cached for this length of time before re-fetching from the Modeling API. A value of zero indicates that method pages are cached indefinitely.'),
+    '#default_value' => intval(variable_get('smartdocs_node_cache_ttl', SMARTDOCS_DEFAULT_METHOD_CACHE_TTL)),
+    '#post_render' => array('_smartdocs_node_cache_ttl_postrender'),
   );
 
   $form['settings']['api_proxy'] = array(
@@ -258,6 +279,24 @@ function smartdocs_settings($form, $form_state) {
 }
 
 /**
+ * Post-render callback for the Cache TTL number field.
+ *
+ * @param string $content
+ *   The already-rendered HTML for this element.
+ * @param array $element
+ *   The array representation of the element.
+ *
+ * @return string
+ *   The modified HTML for this element.
+ */
+function _smartdocs_node_cache_ttl_postrender($content, $element) {
+  $input_element = '<input type="number" style="width:7em !important" min="0" '
+    . 'id="' . $element['#id'] . '" name="' . $element['#name'] . '" '
+    . 'value="' . $element['#value'] . '" class="form-text" /> ' . t('minutes');
+  return preg_replace('!<input [^>]+>!Ums', $input_element, $content);
+}
+
+/**
  * Early submit handler for smartdocs_settings().
  *
  * Flattens arrays of models to which API Products might correspond. Since the
@@ -290,31 +329,69 @@ function smartdocs_settings_flatten_array($form, &$form_state) {
 /**
  * Submit callback for the smartdocs_settings(); handles template file upload.
  *
- * @param array $form
+ * @param $form
  *   Descriptor of the form being submitted.
- * @param array $form_state
+ * @param $form_state
  *   State of the form being submitted.
  */
 function smartdocs_settings_submit($form, &$form_state) {
-  $current_template = variable_get('smartdocs_custom_template_file', NULL);
-  $template = $form_state['values']['smartdocs_custom_template_file'];
-  if ($template == $current_template) {
-    return;
-  }
+  // Get the managed file if it exists.
+  $custom_template_file_current = (!empty($form['smartdocs_custom_template_file']['#default_value'])) ? $form['smartdocs_custom_template_file']['#default_value'] : 0;
 
-  if ($current_template != NULL) {
-    $current_file = file_load($current_template);
-    file_usage_delete($current_file, 'smartdocs');
-    file_delete($current_file, TRUE);
-  }
-  if (!empty($template)) {
-    $file = file_load($template);
-    if ($file) {
-      $file->status = FILE_STATUS_PERMANENT;
-      file_save($file);
-      file_usage_add($file, 'smartdocs', 'smartdocs', 1);
-      variable_set('smartdocs_custom_template_file', $file->fid);
+  // If a file has been submitted, mark it as in use.
+  if (isset($form_state['values']['smartdocs_custom_template_file']) && $form_state['values']['smartdocs_custom_template_file']) {
+    // If the uploaded file is different than the current file, remove the
+    // current file and replace it.
+    if (!empty($custom_template_file_current) && $custom_template_file_current != $form_state['values']['smartdocs_custom_template_file']) {
+      smartdocs_template_remove_managed_file($custom_template_file_current);
+      smartdocs_template_add_managed_file($form_state['values']['smartdocs_custom_template_file']);
     }
+    else {
+      smartdocs_template_add_managed_file($form_state['values']['smartdocs_custom_template_file']);
+    }
+  }
+}
+
+/**
+ * Remove a SmartDoc template from the managed file system.
+ *
+ * @param $managed_file
+ *   A file ID.
+ */
+function smartdocs_template_remove_managed_file($managed_file) {
+  // Retrieve the old file's id.
+  $file = $managed_file ? file_load($managed_file) : FALSE;
+  if ($file) {
+    // When a module is managing a file, it must manage the usage count.
+    // Here we decrement the usage count with file_usage_delete().
+    file_usage_delete($file, 'smartdocs', 'smartdocs_global_template_file', $file->fid);
+
+    // The file_delete() function takes a file object and checks to see if
+    // the file is being used by any other modules. If it is the delete
+    // operation is cancelled, otherwise the file is deleted.
+    file_delete($file);
+    drupal_set_message(t('The smartdocs template @filename was removed.', array('@filename' => $file->filename)));
+  }
+}
+
+/**
+ * Add a SmartDoc template to the managed file system.
+ *
+ * @param $managed_file
+ *   A file ID.
+ */
+function smartdocs_template_add_managed_file($managed_file) {
+  // If our file is already marked as used we do not need to increase the count.
+  $count = db_query("SELECT 'count' FROM {file_usage} WHERE fid=:fid", array('fid' => $managed_file))->fetchField();
+  if (empty($count)) {
+    // Load the file via file id.
+    $file = file_load($managed_file);
+    // Change the file status to permanent.
+    $file->status = FILE_STATUS_PERMANENT;
+    file_save($file);
+    // Mark file as in use by SmartDocs.
+    file_usage_add($file, 'smartdocs', 'smartdocs_global_template_file', $managed_file);
+    unset($file);
   }
 }
 
@@ -337,7 +414,6 @@ function smartdocs_model_list() {
   $models = $model->listModels();
 
   $table_rows = array();
-  /** @var Apigee\SmartDocs\Model $model */
   foreach ($models as $model) {
     $node_count = $published_count = 0;
     $latest_rev = $model->getLatestRevisionNumber();
@@ -516,16 +592,45 @@ function smartdocs_add_model_submit(array $form, array &$form_state) {
   try {
     $model->save();
 
-    $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
+    // Get the content of the custom template.
     $custom_template_file = variable_get('smartdocs_custom_template_file', NULL);
-
+    $template_content = FALSE;
     if (!empty($custom_template_file)) {
       $file = file_load($custom_template_file);
-      $path = file_create_url($file->uri);
+      $path = FALSE;
+      if ($file === FALSE) {
+        // The custom template file no longer exists in db, show error and
+        // remove setting.
+        drupal_set_message(t('Custom model template could not be loaded. Standard model template is being used instead.'), 'warning');
+        watchdog('smartdocs', 'Custom model template could not be loaded, smartdocs_custom_template_file variable was set to %smartdocs_custom_template_file.', array('%smartdocs_custom_template_file' => $custom_template_file), WATCHDOG_ERROR);
+        variable_del('smartdocs_custom_template_file');
+      }
+      else {
+        $path = file_create_url($file->uri);
+      }
+
+      // Get custom template content if path is valid.
+      if ($path) {
+        $template_content = file_get_contents($path);
+        if ($template_content === FALSE) {
+          // The custom template file no longer exists in filesystem, show error
+          // and remove setting.
+          drupal_set_message(t('Custom model template could not be loaded. Standard model template is being used instead.'), 'warning');
+          watchdog('smartdocs', 'Custom model template could not be loaded, could not get contents of file %path.', array('path' => $path), WATCHDOG_ERROR);
+          variable_del('smartdocs_custom_template_file');
+        }
+      }
     }
-    $html = file_get_contents($path);
+
+    // Check to see if successfully loaded the custom template and if not get
+    // standard template content to add to model.
+    if ($template_content === FALSE) {
+      $path = drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr';
+      $template_content = file_get_contents($path);
+    }
+
     $template = new Template(devconnect_default_org_config(), $model->getUuid());
-    $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
+    $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $template_content, TRUE);
 
     $success = TRUE;
     module_invoke_all('smartdocs_model_update', $model->getUuid());
@@ -535,7 +640,7 @@ function smartdocs_add_model_submit(array $form, array &$form_state) {
     if (empty($term)) {
       $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_models');
       if (!empty($vocab)) {
-        $term = new stdClass;
+        $term = new stdClass();
         $term->vid = $vocab->vid;
         $term->name = $model->getName();
         $term->description = $model->getDescription();
@@ -757,7 +862,7 @@ function smartdocs_import_model(array $form, array $form_state, Model $model) {
       'swagger_yaml' => 'Swagger - YAML',
       'apigee_json' => 'SmartDocs - JSON',
     ),
-    '#default_value' => array('wadl'),
+    '#default_value' => array('swagger_yaml'),
   );
 
   $form['format']['upload_type'] = array(
@@ -857,7 +962,6 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
   $log_transaction_time = variable_get('smartdocs_log_transaction_time', 0);
 
   $type = $form_state['values']['type'];
-  /** @var Apigee\SmartDocs\Model $model */
   $model = new Model(devconnect_default_org_config());
   $start = microtime(TRUE);
   $model->load($form_state['values']['model_uuid']);
@@ -866,7 +970,7 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
       '!model' => $model->getUuid(),
       '!time' => number_format(microtime(TRUE) - $start, 4),
     );
-    watchdog('smartdocs', 'Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
+    watchdog('smartdocs', __FUNCTION__ . ': Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
   }
 
   $content_type = NULL;
@@ -975,8 +1079,7 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
 
   drupal_set_message(t('Revision %revision has been created from from %source_name %source', $message_vars), 'status');
   watchdog('smartdocs', 'Model %model_name revision %revision has been created from from @source_name %source', $message_vars, WATCHDOG_INFO);
-
-  $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' .  $revision;
+  $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision;
 }
 
 /**
@@ -1075,7 +1178,7 @@ function smartdocs_model_export(array $form, array &$form_state, Model $model, R
   }
   else {
     $revision_id = $model->getLatestRevisionNumber();
-    if($revision_id < 1) {
+    if ($revision_id < 1) {
       drupal_set_message(t('You have no revisions in the model %model. You cannot export a model until you create a revision.', array('%model' => $model->getDisplayName())), 'error');
       drupal_goto('admin/content/smartdocs/models/' . $model->getUuid());
     }
@@ -1088,7 +1191,7 @@ function smartdocs_model_export(array $form, array &$form_state, Model $model, R
         '!revision' => $revision->getRevisionNumber(),
         '!time' => number_format(microtime(TRUE) - $start, 4),
       );
-      watchdog('smartdocs', 'Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+      watchdog('smartdocs', __FUNCTION__ . ': Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
     }
     drupal_set_title('Export Revision #' . $revision->getRevisionNumber());
   }
@@ -1138,10 +1241,8 @@ function smartdocs_model_export(array $form, array &$form_state, Model $model, R
  *   State of the form being submitted.
  */
 function smartdocs_model_export_submit($form, &$form_state) {
-  /** @var Apigee\SmartDocs\Model $model */
   $model = new Model(devconnect_default_org_config());
   Model::fromArray($model, $form_state['values']['model']);
-  /** @var Apigee\SmartDocs\Revision $revision */
   $revision = new Revision($model->getConfig(), $model->getUuid());
   Revision::fromArray($revision, $form_state['values']['revision']);
 
@@ -1256,6 +1357,11 @@ function smartdocs_model_settings(array $form, array &$form_state, Model $model)
     '#value' => $model_tid,
   );
 
+  $form['model_name'] = array(
+    '#type' => 'value',
+    '#value' => $model->getName(),
+  );
+
   $def_css = 'https://smartdocs.apigee.com/6/static/css/main.css
 https://smartdocs.apigee.com/6/static/css/codemirror.css
 https://smartdocs.apigee.com/6/static/css/prism.css';
@@ -1301,7 +1407,7 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
     '#collapsed' => FALSE,
     '#collapsible' => TRUE,
   );
-  $form['templates'][$model_name][$model_name . '_method_template'] = array(
+  $form['templates'][$model_name]['method_template'] = array(
     '#type' => 'textarea',
     '#title' => t('Method Template'),
     '#rows' => 10,
@@ -1312,7 +1418,7 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
   $form['templates'][$model_name]['method_save'] = array(
     '#type' => 'submit',
     '#value' => t('Save template'),
-    '#submit' => array('smartdocs_model_method_settings_save'),
+    '#submit' => array('smartdocs_model_template_save'),
     '#model' => $model_name,
     '#ajax' => array(
       'callback' => 'smartdocs_method_callback',
@@ -1580,7 +1686,7 @@ function smartdocs_model_template_auth_submit($form, &$form_state) {
  */
 function smartdocs_method_callback($form, &$form_state) {
   $name = $form_state['clicked_button']['#model'];
-  return $form['templates'][$name][$name . '_method_template'];
+  return $form['templates'][$name]['method_template'];
 }
 
 /**
@@ -1591,26 +1697,27 @@ function smartdocs_method_callback($form, &$form_state) {
  * @param array $form_state
  *   State of the form being submitted.
  */
-function smartdocs_model_method_settings_save($form, &$form_state) {
+function smartdocs_model_template_save($form, &$form_state) {
   try {
-    $model = new Model(devconnect_default_org_config());
-    Model::fromArray($model, $form_state['values']['model']);
-    $html = $form_state['values'][$model->getName() . '_method_template'];
-    $template_obj = new Template($model->getConfig(), $model->getUuid());
+    $model_name = $form_state['values']['model_name'];
+
+    $html = $form_state['values']['method_template'];
+    $template_obj = new Template(devconnect_default_org_config(), $model_name);
     $start = microtime(TRUE);
     $template_obj->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
     if (variable_get('smartdocs_log_transaction_time', 0)) {
       $args = array(
-        '!model' => $model->getUuid(),
+        '!model' => $model_name,
         '!time' => number_format(microtime(TRUE) - $start, 4),
       );
       watchdog('smartdocs', 'Saved method template for model !model in !time seconds', $args, WATCHDOG_INFO);
     }
-
-    drupal_set_message('Template saved.');
+    drupal_set_message(t('Template saved.'));
   }
   catch (Exception $e) {
-    drupal_set_message('There was an error saving your template.', 'error');
+    $msg_args = array('%model_name' => $model_name, '%error' => $e->getMessage());
+    drupal_set_message(t('Cannot save SmartDocs template for model %model_name. %error', $msg_args));
+    watchdog('smartdocs', 'Cannot save SmartDocs template for model %model_name. %error', $msg_args, WATCHDOG_ERROR);
   }
   $form_state['rebuild'] = TRUE;
 }
@@ -1640,8 +1747,8 @@ function smartdocs_model_delete(array $form, array &$form_state, Model $model) {
     '#type' => 'value',
     '#value' => $model->toArray(),
   );
-  $ques = t('Are you sure you want to delete the model %name?', array('%name' => $model->getName()));
-  $desc = t('Deleting the model %name will delete the all content from Dev Portal and remove the model from the Edge Management server.  This cannot be undone.  If you want make this documentation unavailable to end users, unpublish the nodes instead.', array('%name' => $model->getName()));
+  $ques = t('Are you sure you want to delete the model %name?', array('%name' => $model->getDisplayName()));
+  $desc = t('Deleting the model %name will delete the all content from Dev Portal and remove the model from the Edge Management server.  This cannot be undone.  If you want make this documentation unavailable to end users, unpublish the nodes instead.', array('%name' => $model->getDisplayName()));
   return confirm_form($form, $ques, 'admin/content/smartdocs/models/' . $model->getUuid(), $desc, t('Delete'), t('Cancel'));
 }
 
@@ -1694,7 +1801,7 @@ function smartdocs_model_delete_submit(array $form, array &$form_state) {
 
     menu_rebuild();
     drupal_flush_all_caches();
-    drupal_set_message(t('%model has been deleted along with all of its associated content.', array('%model' => $model_name)), 'status');
+    drupal_set_message(t('%model has been deleted along with all of its associated content.', array('%model' => $model->getDisplayName())), 'status');
     $form_state['redirect'] = 'admin/content/smartdocs/models';
   }
   catch (Exception $e) {
@@ -1768,7 +1875,6 @@ function smartdocs_revision_list(Model $model) {
   );
 
   $is_latest_revision = TRUE;
-  /** @var Apigee\SmartDocs\Revision $revision */
   foreach ($revisions as $revision) {
     $links = array();
     foreach ($operations as $key => $op) {
@@ -1783,11 +1889,11 @@ function smartdocs_revision_list(Model $model) {
           ),
         ),
       );
-    }
-    if($op == 'Security Settings') {
-      // Removed 'models' from URL since menu routing can only be 9 items.
-      // See MENU_MAX_PARTS in menu.inc.
-      $links[$key . '-' . $revision->getUuid()]['href'] = 'admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber() . $key;
+      if ($op == 'Security Settings') {
+        // Removed 'models' from URL since menu routing can only be 9 items.
+        // See MENU_MAX_PARTS in menu.inc.
+        $links[$key . '-' . $revision->getUuid()]['href'] = 'admin/content/smartdocs/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber() . $key;
+      }
     }
 
     $caption = 'Revision #@rev';
@@ -1944,7 +2050,6 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
     'css' => array(
       drupal_get_path('module', 'views') . '/css/views-admin.ctools.css',
       drupal_get_path('module', 'smartdocs') . '/css/smartdocs.css',
-      drupal_get_path('theme', 'apigee_responsive') . '/css/bootstrap.min.css',
     ),
     'js' => array(
       drupal_get_path('module', 'smartdocs') . '/js/check-uncheck-all.js',
@@ -1973,7 +2078,6 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
     $security_schemes = array();
   }
   $security_scheme_display = array();
-  /** @var Apigee\SmartDocs\Security\SecurityScheme $security_scheme */
   foreach ($security_schemes as $security_scheme) {
     $security_scheme_display[$security_scheme->getName()] = $security_scheme->getName() . ' (' . $security_scheme->getType(TRUE) . ')';
   }
@@ -2030,7 +2134,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
       ),
     );
 
-    if($op == 'Security Settings') {
+    if ($op == 'Security Settings') {
       // Removed 'models' from URL since menu routing can only be 9 items.
       // See MENU_MAX_PARTS in menu.inc.
       $links[$key]['href'] = 'admin/content/smartdocs/' . $model->getUuid() . '/' . $key;
@@ -2142,7 +2246,6 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
       return $form;
     }
     $form['resources'] = array();
-    /** @var Apigee\SmartDocs\Resource $resource */
     foreach ($resources as $resource) {
       $resource_id = $resource->getUuid();
       $links = array();
@@ -2173,6 +2276,17 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
           ),
         ),
       );
+      $links['delete-' . $resource_id] = array(
+        'title' => t('Delete resource'),
+        'href' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/resource/delete/' . $rev_number . '/' . $resource_id,
+        'attributes' => array(
+          'title' => t('Delete resource'),
+          'class' => array(
+            'delete-' . $resource_id,
+            'views-ajax-link',
+          ),
+        ),
+      );
 
       $resource_set = array(
         'ops' => array('#markup' => theme('links__ctools_dropbutton', array('links' => $links))),
@@ -2185,7 +2299,6 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
       foreach ($resource->getMethods() as $method) {
         $method_count++;
 
-        /** @var Apigee\SmartDocs\Method $method */
         $tags = $method->getTags();
         if (!empty($tags)) {
           $has_tax = TRUE;
@@ -2232,7 +2345,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
 
           $ops['toggle-status-method-' . $method->getUuid()] = array(
             'title' => $op_title,
-            'href' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/method/toggle-status/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
+            'href' => 'admin/content/smartdocs/method-toggle-status/' . $model->getUuid() . '/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
             'attributes' => array(
               'title' => $op_title,
               'class' => array(
@@ -2244,7 +2357,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, Model $model
         }
         $ops['delete-method-' . $method->getUuid()] = array(
           'title' => t('Delete method'),
-          'href' => 'admin/content/smartdocs/models/' . $model->getUuid() . '/method/delete/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
+          'href' => 'admin/content/smartdocs/method-delete/' . $model->getUuid() . '/' . $rev_number . '/' . $resource->getUuid() . '/' . $method->getUuid(),
           'attributes' => array(
             'title' => t('Delete method'),
             'class' => array(
@@ -2591,6 +2704,121 @@ function smartdocs_resource_edit_submit($form, &$form_state) {
   catch (Exception $e) {
     drupal_set_message(t('Resource failed to save, please consult the logs.'), 'error');
   }
+}
+
+/**
+ * Constructor for delete-resource confirmation form.
+ *
+ * @param array $form
+ *   The form being constructed.
+ * @param array $form_state
+ *   The state of the form being constructed.
+ * @param Model $model
+ *   The model from which a resource is being deleted.
+ * @param Revision $revision
+ *   The revision from which a resource is being deleted.
+ * @param Resource $resource
+ *   The resource to be deleted.
+ *
+ * @return array
+ *   Render-array of the form.
+ */
+function smartdocs_resource_delete($form, &$form_state, Model $model, Revision $revision, Resource $resource) {
+
+  $method_uuids = $method_nids = array();
+  foreach ($resource->getMethods() as $method) {
+    $method_uuids[] = $method->getUuid();
+  }
+  $description = NULL;
+  if (count($method_uuids) > 0) {
+    $query = db_select('smartdata', 's');
+    $query->innerJoin('node', 'n', 's.nid = n.nid');
+    $result = $query->fields('n', array('nid'))
+      ->condition('s.model', $model->getName())
+      ->condition('s.revision', $revision->getRevisionNumber())
+      ->condition('s.resource', $resource->getUuid())
+      ->condition('s.method', $method_uuids)
+      ->execute();
+    while ($nid = $result->fetchField()) {
+      $method_nids[] = $nid;
+    }
+    if (count($method_nids) == 0) {
+      $description = t('This resource contains %methods methods.', array('%methods' => count($method_uuids)));
+    }
+    else {
+      $description = t('This resource contains %methods methods, of which %nids are rendered as Drupal nodes. Deleting this resource will also delete these methods and their Drupal content.',
+          array('%methods' => count($method_uuids), '%nids' => count($method_nids))
+      );
+    }
+  }
+  $question = t('Are you sure you wish to delete the %resourcename resource?', array('%resourcename' => $resource->getDisplayName()));
+  $cancel_path = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber();
+
+  $form['model'] = array(
+    '#type' => 'value',
+    '#value' => array('uuid' => $model->getUuid(), 'name' => $model->getName()),
+  );
+  $form['revision'] = array(
+    '#type' => 'value',
+    '#value' => array('uuid' => $revision->getUuid(), 'num' => $revision->getRevisionNumber()),
+  );
+  $form['resource'] = array(
+    '#type' => 'value',
+    '#value' => array('uuid' => $resource->getUuid(), 'name' => $resource->getDisplayName()),
+  );
+
+  $form['method_nids'] = array(
+    '#type' => 'value',
+    '#value' => $method_nids,
+  );
+
+  return confirm_form($form, $question, $cancel_path, $description);
+}
+
+/**
+ * Submit handler for the smartdocs_resource_delete form.
+ *
+ * Deletes the specified resource from its revision, and deletes method nodes
+ * pertaining thereunto, if any exist.
+ *
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   The state of the form being submitted.
+ */
+function smartdocs_resource_delete_submit($form, &$form_state) {
+  $model_uuid = $form_state['values']['model']['uuid'];
+  $model_name = $form_state['values']['model']['name'];
+  $revision_uuid = $form_state['values']['revision']['uuid'];
+  $revision_number = $form_state['values']['revision']['num'];
+  $resource_uuid = $form_state['values']['resource']['uuid'];
+  $resource_name = $form_state['values']['resource']['name'];
+
+  $resource = new Resource(devconnect_default_org_config(), $model_uuid, $revision_uuid);
+  $deleted_nodes = 0;
+  try {
+    $resource->delete($resource_uuid);
+    foreach ($form_state['values']['method_nids'] as $nid) {
+      node_delete($nid);
+      $deleted_nodes++;
+    }
+
+    db_delete('smartdata')
+      ->condition('model', $model_name)
+      ->condition('revision', $revision_number)
+      ->condition('resource', $resource_uuid)
+      ->execute();
+
+    $message = t('Resource %resource has been deleted.', array('%resource' => $resource_name));
+    if ($deleted_nodes) {
+      $message .= ' ' . t('%count nodes were also deleted.', array('%count' => $deleted_nodes));
+    }
+    drupal_set_message($message);
+  }
+  catch (Exception $e) {
+    drupal_set_message(t('Failed to delete resource %resource. Please examine the error logs for details.', array('%resource' => $resource_name)), 'error');
+  }
+  $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model_uuid . '/revisions/' . $revision_number;
 }
 
 /**

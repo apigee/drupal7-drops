@@ -13,12 +13,12 @@
  * @return Redis_Path_HashLookupInterface
  */
 function redis_path_backend_get() {
-  static $hashLookup;
+  $hashLookup = &drupal_static(__FUNCTION__, null);
 
   if (null === $hashLookup) {
     try {
       $className = Redis_Client::getClass(Redis_Client::REDIS_IMPL_PATH);
-      $hashLookup = new $className();
+      $hashLookup = new $className(Redis_Client::getClient(), 'path', Redis_Client::getDefaultPrefix('path'));
     } catch (Exception $e) {
       $hashLookup = new Redis_Path_NullHashLookup();
     }

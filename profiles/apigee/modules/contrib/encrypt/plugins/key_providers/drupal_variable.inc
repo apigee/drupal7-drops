@@ -5,14 +5,21 @@
  * Plugin definition for the Drupal Private Key key provider.
  */
 
-$plugin = array(
-  'title' => t('Drupal encrypt_drupal_variable_key variable'),
-  'description' => t('Use a variable called encrypt_drupal_variable_key, preferably set in your settings.php $conf array.'),
-  'key callback' => 'encrypt_get_encrypt_drupal_variable_key',
-  'settings form' => NULL,
-  'dependency callback' => '_encrypt_drupal_variable_is_present',
-  'static key' => TRUE,
-);
+$plugin = encrypt_drupal_variable_encrypt_key_providers();
+
+/**
+ * Implements MODULE_FILENAME_encrypt_key_providers().
+ */
+function encrypt_drupal_variable_encrypt_key_providers() {
+  return array(
+    'title' => t('Drupal encrypt_drupal_variable_key variable'),
+    'description' => t('Use a variable called encrypt_drupal_variable_key, preferably set in your settings.php $conf array.'),
+    'key callback' => 'encrypt_get_encrypt_drupal_variable_key',
+    'settings form' => NULL,
+    'dependency callback' => '_encrypt_drupal_variable_is_present',
+    'static key' => TRUE,
+  );
+}
 
 /**
  * Callback function to return a variable.

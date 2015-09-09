@@ -4,7 +4,7 @@ core = 7.x
 package = "DevConnect"
 php = 5.2.4
 version = 7.x-1.0
-project = devconnect_content_admin
+
 dependencies[] = admin_menu
 dependencies[] = block
 dependencies[] = book

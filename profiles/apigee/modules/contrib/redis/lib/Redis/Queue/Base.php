@@ -48,13 +48,6 @@ abstract class Redis_Queue_Base extends Redis_AbstractBackend implements
     const QUEUE_HKEY_SEQ = 'seq';
 
     /**
-     * Queue name
-     *
-     * @var string
-     */
-    protected $name;
-
-    /**
      * Get data HASH key
      *
      * Key will already be prefixed
@@ -63,7 +56,7 @@ abstract class Redis_Queue_Base extends Redis_AbstractBackend implements
      */
     public function getKeyForData()
     {
-        return $this->getKey(self::QUEUE_KEY_PREFIX, $this->name, 'data');
+        return $this->getKey('data');
     }
 
     /**
@@ -75,7 +68,7 @@ abstract class Redis_Queue_Base extends Redis_AbstractBackend implements
      */
     public function getKeyForQueue()
     {
-        return $this->getKey(self::QUEUE_KEY_PREFIX, $this->name, 'queued');
+        return $this->getKey('queued');
     }
 
     /**
@@ -87,7 +80,7 @@ abstract class Redis_Queue_Base extends Redis_AbstractBackend implements
      */
     public function getKeyForClaimed()
     {
-        return $this->getKey(self::QUEUE_KEY_PREFIX, $this->name, 'claimed');
+        return $this->getKey('claimed');
     }
 
     /**
@@ -96,10 +89,11 @@ abstract class Redis_Queue_Base extends Redis_AbstractBackend implements
      * Beware that DrupalQueueInterface does not defines the __construct
      * method in the interface yet is being used from DrupalQueue::get()
      *
-     * @param unknown $name
+     * @param mixed $client
+     * @param string $name
      */
-    public function __construct($name)
+    public function __construct($client, $name)
     {
-        $this->name = $name;
+        parent::__construct($client, self::QUEUE_KEY_PREFIX . $name);
     }
 }

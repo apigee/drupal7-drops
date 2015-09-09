@@ -1,0 +1,10 @@
+name = SmartDocs Proxy
+description = Proxies revision-loads for customers with huge models.
+package = DevConnect
+version = 7.x-1.0
+core = 7.x
+hidden = TRUE
+
+configure = admin/config/smartdocs/proxy
+
+dependencies[] = smartdocs

@@ -419,7 +419,7 @@
                         </td>
                         <td>
                             <p class="data" data-role="category">
-                                {{#each tags}}{{.}},{{/each}}
+                                {{#each tags}}{{.}}{{#unless @last}},{{/unless}}{{/each}}
                             </p>
                         </td>
                     </tr>

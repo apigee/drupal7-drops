@@ -172,7 +172,7 @@ function apigee_install_configure_variables(array &$context) {
   // Designed by Apigee in California.
   variable_set('date_default_timezone', 'America/Los_Angeles');
   variable_set('site_default_country', 'US');
-  variable_set('jquery_update_compression_type', 'none');
+  variable_set('jquery_update_compression_type', 'min');
   variable_set('jquery_update_jquery_cdn', 'google');
   variable_set('jquery_update_jquery_version', '1.7');
   variable_set('user_email_verification', FALSE);
@@ -701,7 +701,19 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
   );
 
   // Set default-true plugins.
-  foreach (array('drupalbreaks', 'tableresize', 'toolbarswitch', 'widget', 'wysiwygarea', 'trifold', 'featurette', 'jumbotron', 'carousel') as $plugin_name) {
+  $plugins_default_true = array(
+    'drupalbreaks',
+    'tableresize',
+    'toolbarswitch',
+    'widget',
+    'wysiwygarea',
+    'trifold',
+    'featurette',
+    'jumbotron',
+    'carousel',
+  );
+
+  foreach ($plugins_default_true as $plugin_name) {
     $plugins[$plugin_name]['default'] = 't';
   }
   // Set paths for bootstrap plugins.
@@ -852,29 +864,33 @@ function apigee_install_create_taxonomy_terms(array &$context) {
  *   Current state of installer.
  */
 function apigee_install_create_tutorial_content(array &$context) {
+  $startup_guide_body = '<p>The&nbsp;<em>developer portal</em>&nbsp;is a template portal, designed as a base that you can easily' .
+    ' customize to meet your specific requirements</p>' .
+    '<p>Your customized developer portal should educate developers about your API&mdash;what it is and how it\'s used. It' .
+    ' should also enable you to manage developer use of your API. This could include authorizing developers to use your API,' .
+    ' giving developers an easy way to create apps that use your API products, assigning developers specific roles and permissions' .
+    ' related to the API, or revoking developer access to the API as necessary. Beyond that, your developer portal can serve' .
+    ' as the focal point for community activity, where developers can contribute API-related content to social media repositories' .
+    ' such as blogs and forums.</p>' .
+    ' <p>View more information about developer portals at ' .
+    l(t('apigee.com'), 'http://apigee.com/docs/developer-channel/content/what-developer-portal') . '</p>';
+
+  $customizing_portal_body = '<p>You can customize the appearance of the developer portal to match your company theme, to add new content areas' .
+    ' to the portal, or to change the layout of any page on the portal. Much of this configuration requires a working knowledge' .
+    ' of ' . l(t('Drupal'), 'https://drupal.org') . '. However, there is documentation that describes some of the basic tasks that you might want to' .
+    ' perform to customize your portal.</p>' .
+    ' <p>View more information about customizing your developer portals at ' .
+    l(t('www.apigee.com'), 'http://apigee.com/docs/developer-channel/content/customize-appearance') . '.</p>';
+
   $posts = array(
     array(
       'title' => 'Portal Start Up Guide',
-      'body' => '<p>The&nbsp;<em>developer portal</em>&nbsp;is a template portal, designed as a base that you can easily' .
-        ' customize to meet your specific requirements</p>
-        <p>Your customized developer portal should educate developers about your API&mdash;what it is and how it\'s used. It' .
-        ' should also enable you to manage developer use of your API. This could include authorizing developers to use your API,' .
-        ' giving developers an easy way to create apps that use your API products, assigning developers specific roles and permissions' .
-        ' related to the API, or revoking developer access to the API as necessary. Beyond that, your developer portal can serve' .
-        ' as the focal point for community activity, where developers can contribute API-related content to social media repositories' .
-        ' such as blogs and forums.</p>' .
-        ' <p>View more information about developer portals at ' .
-        l('apigee.com', 'http://apigee.com/docs/developer-channel/content/what-developer-portal') . '</p>',
+      'body' => $startup_guide_body,
       'keyword' => 'Portal',
     ),
     array(
       'title' => 'Customizing your portal',
-      'body' => '<p>You can customize the appearance of the developer portal to match your company theme, to add new content areas' .
-        ' to the portal, or to change the layout of any page on the portal. Much of this configuration requires a working knowledge' .
-        ' of ' . l('Drupal', 'https://drupal.org') . '. However, there is documentation that describes some of the basic tasks that you might want to' .
-        ' perform to customize your portal.</p>' .
-        ' <p>View more information about customizing your developer portals at ' .
-        l('www.apigee.com', 'http://apigee.com/docs/developer-channel/content/customize-appearance') . '.</p>',
+      'body' => $customizing_portal_body,
       'keyword' => 'Tutorials',
     ),
   );
@@ -1050,9 +1066,9 @@ function apigee_install_create_faq_content(array &$context) {
  * Helper function that sets the file usage.
  *
  * @param int $fid
- *   File identifier
+ *   The file identifier.
  * @param int $nid
- *   Node identifier
+ *   The node identifier.
  */
 function _apigee_content_types_set_file_usage($fid, $nid) {
   $fid_exists = db_select('file_usage', 'fu')
@@ -1079,11 +1095,11 @@ function _apigee_content_types_set_file_usage($fid, $nid) {
  * Helper function to find (or create) an entry in the file_managed table.
  *
  * @param string $uri
- *   URI of the managed file
+ *   URI of the managed file.
  * @param string $filename
- *   Filename of the managed file
+ *   Filename of the managed file.
  * @param string $filemime
- *   MIME type of the managed file
+ *   MIME type of the managed file.
  * @param string $type
  *   Content-type to which file is attached.
  *
@@ -1572,7 +1588,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
     '#title' => t('Management API Endpoint URL'),
     '#required' => TRUE,
     '#default_value' => $endpoint,
-    '#description' => t('URL to which to make Edge REST calls. For on-prem installs you will need to change this value.'),
+    '#description' => t('URL to which to make Edge REST calls. For Apigee cloud, the value is <em>%url<em>. For on-prem installs you will need to change this value.', array('%url' => 'https://api.enterprise.apigee.com/v1')),
     '#attributes' => $attributes,
   );
   $form['user'] = array(
@@ -1689,7 +1705,7 @@ function apigee_endpoint_password_post_render($content, $element) {
  * Form submit handler that skips the devconnect installation piece.
  *
  * @param array $form
- *   The form being submitted
+ *   The form being submitted.
  * @param array $form_state
  *   State of the form being submitted.
  */
@@ -1703,7 +1719,7 @@ function apigee_skip_api_endpoint($form, &$form_state) {
  * Installs the endpoint credentials for the management server.
  *
  * @param array $form
- *   The form being submitted
+ *   The form being submitted.
  * @param array $form_state
  *   State of the form being submitted.
  */
@@ -1724,7 +1740,7 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
   Crypto::setKey($key);
   file_put_contents(DRUPAL_ROOT . '/' . $private_dir . '/.apigee', Crypto::encrypt(serialize($config)));
 
-  //reset the static cache
+  // Reset the static cache.
   drupal_static_reset('devconnect_default_org_config');
 
   $org = new Apigee\ManagementAPI\Organization(devconnect_default_org_config());
@@ -1783,20 +1799,50 @@ function apigee_smartdocs_import_model_content() {
   // Create sample SmartDocs  model.
   $model_display_name = 'Pet Store Example API';
   $model_description = 'Manage inventory and users through an example REST API patterned after the classic pet store demo.';
-  $operations[] = array('apigee_batch_smartdocs_create_model', array(SMARTDOCS_SAMPLE_PETSTORE_MODEL, $model_display_name, $model_description));
+  $operations[] = array(
+    'apigee_batch_smartdocs_create_model',
+    array(
+      SMARTDOCS_SAMPLE_PETSTORE_MODEL,
+      $model_display_name,
+      $model_description,
+    ),
+  );
 
   // Import pet store Swagger file into pet store model.
   $model_import_file = __DIR__ . '/modules/custom/devconnect/smartdocs/samples/petstore.swagger.json';
-  $operations[] = array('apigee_batch_smartdocs_import_model', array(SMARTDOCS_SAMPLE_PETSTORE_MODEL, $model_import_file, 'swagger', 'application/json'));
+  $operations[] = array(
+    'apigee_batch_smartdocs_import_model',
+    array(
+      SMARTDOCS_SAMPLE_PETSTORE_MODEL,
+      $model_import_file,
+      'swagger',
+      'application/json',
+    ),
+  );
 
   // Create sample SmartDocs  model.
   $model_display_name = 'Weather Example API';
   $model_description = 'Get weather reports for any location using the Yahoo Weather API.';
-  $operations[] = array('apigee_batch_smartdocs_create_model', array(SMARTDOCS_SAMPLE_WEATHER_MODEL, $model_display_name, $model_description));
+  $operations[] = array(
+    'apigee_batch_smartdocs_create_model',
+    array(
+      SMARTDOCS_SAMPLE_WEATHER_MODEL,
+      $model_display_name,
+      $model_description,
+    ),
+  );
 
   // Import pet store Swagger file into pet store model.
   $model_import_file = __DIR__ . '/modules/custom/devconnect/smartdocs/samples/weather.xml';
-  $operations[] = array('apigee_batch_smartdocs_import_model', array(SMARTDOCS_SAMPLE_WEATHER_MODEL, $model_import_file, 'wadl', 'application/xml'));
+  $operations[] = array(
+    'apigee_batch_smartdocs_import_model',
+    array(
+      SMARTDOCS_SAMPLE_WEATHER_MODEL,
+      $model_import_file,
+      'wadl',
+      'application/xml',
+    ),
+  );
 
   $batch = array(
     'operations' => $operations,
@@ -1812,6 +1858,7 @@ function apigee_smartdocs_import_model_content() {
  * Renders and publishes pet store and weather SmartDocs nodes.
  *
  * @return mixed
+ *   The batch API array.
  */
 function apigee_smartdocs_render_model_content() {
   global $install_state;
@@ -1825,40 +1872,21 @@ function apigee_smartdocs_render_model_content() {
   drupal_set_message('Rendering SmartDocs example documentation pages.', 'status');
   require_once drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc';
 
-  // Render weather model node.
-  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
-  $model->load(SMARTDOCS_SAMPLE_WEATHER_MODEL);
-  $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
-  $rev = max($model->getLatestRevisionNumber(), 1);
-  $revision->load($rev);
+  // Get batches to render model nodes.
+  $batch_weather = get_smartdocs_render_batch(SMARTDOCS_SAMPLE_WEATHER_MODEL);
+  $batch_pet = get_smartdocs_render_batch(SMARTDOCS_SAMPLE_PETSTORE_MODEL);
 
-  $selected = array();
-  foreach ($revision->getResources() as $resource) {
-    foreach ($resource->getMethods() as $method) {
-      $selected[$method->getUuid()] = $method->getUuid();
-    }
+  $operations = array();
+  if ($batch_weather != NULL) {
+    $operations = array_merge($operations, $batch_weather['operations']);
   }
-  $batch_weather = smartdocs_render($model, $revision, $selected, array('publish' => 'publish'), TRUE);
-
-  // Render pet store model nodes.
-  $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
-  $model->load(SMARTDOCS_SAMPLE_PETSTORE_MODEL);
-  $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
-  $rev = max($model->getLatestRevisionNumber(), 1);
-  $revision->load($rev);
-
-  $selected = array();
-
-  foreach ($revision->getResources() as $resource) {
-    foreach ($resource->getMethods() as $method) {
-      $selected[$method->getUuid()] = $method->getUuid();
-    }
+  if ($batch_pet != NULL) {
+    $operations = array_merge($operations, $batch_pet['operations']);
   }
-  $batch_pet = smartdocs_render($model, $revision, $selected, array('publish' => 'publish'), TRUE);
 
   // Merge the pet and weather batch to return.
   $batch = array(
-    'operations' => array_merge($batch_weather['operations'], $batch_pet['operations']),
+    'operations' => $operations,
     'title' => t('Rendering SmartDocs documentation pages'),
     'init_message' => t('SmartDocs rendering has started...'),
     'progress_message' => t('Processed @current out of @total.'),
@@ -1866,6 +1894,52 @@ function apigee_smartdocs_render_model_content() {
     'file' => drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc',
   );
 
+  return $batch;
+}
+
+/**
+ * Get batch for rendering all nodes for a model.
+ *
+ * @return array
+ *   The batch for Drupal batch API.
+ */
+function get_smartdocs_render_batch($model_machine_name) {
+
+  try {
+    $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
+    $model->load($model_machine_name);
+    $revision = new Apigee\SmartDocs\Revision($model->getConfig(), $model->getUuid());
+    $rev = max($model->getLatestRevisionNumber(), 1);
+    $revision->load($rev);
+  }
+  catch (Apigee\Exceptions\ResponseException $e) {
+    $message = $e->getResponse();
+    $message_object = @json_decode($message, TRUE);
+    if (is_array($message_object) && array_key_exists('message', $message_object)) {
+      $err_msg = $message_object['message'];
+    }
+    else {
+      $err_msg = $e->getMessage();
+    }
+    $msg_args = array('%model' => $model_machine_name, '!error_message' => $err_msg);
+    drupal_set_message(t('Error rendering SmartDocs methods for %model: !error_message', $msg_args), 'error');
+    watchdog('apigee', 'Error rendering SmartDocs methods for %model: !error_message', $msg_args, WATCHDOG_ERROR);
+    return NULL;
+  }
+  catch (Exception $e) {
+    $msg_args = array('%model' => $model_machine_name, '!error_message' => $e->getMessage());
+    drupal_set_message(t('Error rendering SmartDocs methods for %model: !error_message', $msg_args), 'error');
+    watchdog('apigee', 'Error rendering SmartDocs methods for %model: !error_message', $msg_args, WATCHDOG_ERROR);
+    return NULL;
+  }
+
+  $selected = array();
+  foreach ($revision->getResources() as $resource) {
+    foreach ($resource->getMethods() as $method) {
+      $selected[$method->getUuid()] = $method->getUuid();
+    }
+  }
+  $batch = smartdocs_render($model, $revision, $selected, array('publish' => 'publish'), TRUE);
   return $batch;
 }
 

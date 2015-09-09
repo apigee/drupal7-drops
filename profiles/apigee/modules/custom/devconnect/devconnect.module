@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * @file
+ * The core Apigee Dev Portal module.
+ *
+ * This module sets up basic Apigee Dev Portal configuration and REST API
+ * configuration.
+ */
+
 use Drupal\devconnect\Crypto;
 use Drupal\devconnect\ErrorHandling;
 use Drupal\devconnect\VariableCache;
@@ -39,8 +47,6 @@ function devconnect_init() {
  * Implements hook_menu_alter().
  *
  * Denies access to PHP execution URL in the devel module if it is enabled.
- *
- * @param $items
  */
 function devconnect_menu_alter(&$items) {
   if (isset($items['devel/php'])) {
@@ -48,15 +54,18 @@ function devconnect_menu_alter(&$items) {
   }
 }
 
+/**
+ * Implements hook_menu().
+ */
 function devconnect_menu() {
   $items = array();
   $items['admin/config/devconnect'] = array(
-    'title' => 'Dev Portal Settings',
+    'title' => 'Dev Portal',
     'description' => 'Apigee Edge authentication settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('devconnect_admin_form'),
     'access arguments' => array('administer organization settings'),
-    'file' => 'devconnect.admin.inc'
+    'file' => 'devconnect.admin.inc',
   );
   return $items;
 }
@@ -70,13 +79,11 @@ function devconnect_menu() {
  * @TODO: devconnect_downloads currently relies on presence of ds_code filter.
  *        That module should be reworked so that this is no longer the case,
  *        then the conditional below should be removed.
- *
- * @param $info
  */
 function devconnect_filter_info_alter(&$info) {
   if (!module_exists('devconnect_downloads')) {
     if (array_key_exists('ds_code', $info)) {
-      unset ($info['ds_code']);
+      unset($info['ds_code']);
     }
   }
   if (array_key_exists('php_code', $info)) {
@@ -86,8 +93,6 @@ function devconnect_filter_info_alter(&$info) {
 
 /**
  * Implements hook_variable_group_info().
- *
- * @return array
  */
 function devconnect_variable_group_info() {
   $groups['devconnect'] = array(
@@ -101,8 +106,6 @@ function devconnect_variable_group_info() {
 
 /**
  * Implements hook_permission().
- *
- * @return array
  */
 function devconnect_permission() {
   return array(
@@ -112,21 +115,22 @@ function devconnect_permission() {
     ),
     'view devconnect errors' => array(
       'title' => 'View DevConnect error detail',
-      'restrict access' => TRUE
-    )
+      'restrict access' => TRUE,
+    ),
   );
 }
 
 /**
- * Implements hook_cron.
+ * Implements hook_cron().
  */
 function devconnect_cron() {
-  // query & store environments
+  // Query & store environments.
   try {
     $dev_app = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_org_config());
     $environments = $dev_app->queryEnvironments();
     variable_set('devconnect_org_environments', $environments);
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     // Ignore any exceptions thrown. These probably result from
     // misconfiguration of the endpoint.
   }
@@ -135,24 +139,18 @@ function devconnect_cron() {
 
 /**
  * Implements hook_form_alter().
- *
- * @param $form
- * @param $form_state
- * @param $form_id
  */
 function devconnect_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'user_login') {
     $form['userpasswordlink'] = array(
-      '#markup' => '<br>' . l('Forgot your password?', 'user/password') . '<br><br>',
-      '#weight' => 100
+      '#markup' => '<br>' . l(t('Forgot your password?'), 'user/password') . '<br><br>',
+      '#weight' => 100,
     );
   }
 }
 
 /**
  * Implements hook_theme().
- *
- * @return array
  */
 function devconnect_theme() {
   $items = array();
@@ -165,7 +163,11 @@ function devconnect_theme() {
   $items['devconnect_error_message'] = array(
     'path' => $tpl_path,
     'template' => 'devconnect_error_message',
-    'variables' => array('summary' => NULL, 'detail' => NULL, 'severity' => 'error'),
+    'variables' => array(
+      'summary' => NULL,
+      'detail' => NULL,
+      'severity' => 'error',
+    ),
   );
   return $items;
 }
@@ -176,7 +178,10 @@ function devconnect_theme() {
  * Use devconnect_default_org_config() instead for all new code.
  *
  * @return \Apigee\Util\OrgConfig
+ *    The Org configuration.
+ *
  * @deprecated
+ *   Use devconnect_default_org_config() instead for all new code.
  */
 function devconnect_default_api_client() {
   return devconnect_default_org_config();
@@ -186,7 +191,10 @@ function devconnect_default_api_client() {
  * Returns a wrapper around org connection settings.
  *
  * @param string $requested_org
+ *    The requested org.
+ *
  * @return Apigee\Util\OrgConfig
+ *    The org configuration.
  */
 function devconnect_default_org_config($requested_org = 'default') {
   $configs = &drupal_static(__FUNCTION__, array());
@@ -215,11 +223,11 @@ function devconnect_default_org_config($requested_org = 'default') {
       'log_subscriber_format' => $subscriber_log_format,
       'http_options' => array(
         'connect_timeout' => intval($settings['connection_timeout']),
-        'timeout' => intval($settings['request_timeout'])
+        'timeout' => intval($settings['request_timeout']),
       ),
       'user_agent' => devconnect_get_build_version(),
       'variable_store' => new VariableCache(),
-      'referer' => url($_GET['q'], array('absolute' => TRUE))
+      'referer' => url($_GET['q'], array('absolute' => TRUE)),
     );
     if (function_exists('devconnect_debug_register')) {
       $options['debug_callbacks'] = array('devconnect_debug_register');
@@ -230,24 +238,27 @@ function devconnect_default_org_config($requested_org = 'default') {
 }
 
 /**
- * Gets the version of the current release from the buildInfo file if present,
+ * Gets the version of the current release.
+ *
+ * Get the release version from the buildInfo file if present,
  * or else from the version of the devconnect module.
  *
  * @return string
+ *   The current version of this release.
  */
 function devconnect_get_build_version() {
   static $build_version;
   if (!isset($build_version)) {
-    $buildInfo = FALSE;
+    $build_info = FALSE;
     if (file_exists(DRUPAL_ROOT . '/buildInfo')) {
-      $buildInfo = DRUPAL_ROOT . '/buildInfo';
+      $build_info = DRUPAL_ROOT . '/buildInfo';
     }
     elseif (file_exists(DRUPAL_ROOT . '/profiles/apigee/buildInfo')) {
-      $buildInfo = DRUPAL_ROOT . '/profiles/apigee/buildInfo';
+      $build_info = DRUPAL_ROOT . '/profiles/apigee/buildInfo';
     }
     $build_version = FALSE;
-    if ($buildInfo) {
-      $fp = fopen($buildInfo, 'r');
+    if ($build_info) {
+      $fp = fopen($build_info, 'r');
       $line = trim(fgets($fp));
       fclose($fp);
       if (preg_match('!([0-9.]{2,})$!', $line, $matches)) {
@@ -263,8 +274,9 @@ function devconnect_get_build_version() {
 }
 
 /**
- * Logs use of deprecated classes and functions (from pre-R21 days)
- * so that we can bring CS code up to current standards.
+ * Logs use of deprecated classes and functions (from pre-R21 days).
+ *
+ * Allows us to bring CS code up to current standards.
  */
 function _devconnect_warn_deprecated() {
   if (version_compare(PHP_VERSION, '5.4', '>=')) {
@@ -290,27 +302,19 @@ function _devconnect_warn_deprecated() {
     $subject = 'function ' . $frame['function'];
     $verb = 'invoked';
   }
-  $message = 'Deprecated %subject was %verb in file %file, line %line.';
   $args = array(
     '%subject' => $subject,
     '%verb' => $verb,
     '%file' => $frame['file'],
-    '%line' => $frame['line']
+    '%line' => $frame['line'],
   );
-  devconnect_default_org_config()->logger->warning(t($message, $args), array('type' => 'devconnect'));
+  devconnect_default_org_config()->logger->warning(t('Deprecated %subject was %verb in file %file, line %line.', $args), array('type' => 'devconnect'));
 }
 
 /**
  * Common error/notification handler for Edge faults.
  *
  * Invokes hook_devconnect_error_alter() to change how messages are displayed.
- *
- * @param int $error_code
- * @param string $summary
- * @param string $details
- * @param int $severity
- * @param int $display
- * @return bool|string
  */
 function devconnect_notify($error_code, $summary, $details, $severity = ErrorHandling::SEVERITY_ERROR, $display = ErrorHandling::DISPLAY_MESSAGE) {
   drupal_alter('devconnect_error', $error_code, $summary, $details, $severity, $display);
@@ -319,9 +323,11 @@ function devconnect_notify($error_code, $summary, $details, $severity = ErrorHan
     case ErrorHandling::SEVERITY_STATUS:
       $message_type = 'status';
       break;
+
     case ErrorHandling::SEVERITY_WARNING:
       $message_type = 'warning';
       break;
+
     default:
       $message_type = 'error';
       break;
@@ -337,14 +343,20 @@ function devconnect_notify($error_code, $summary, $details, $severity = ErrorHan
   return theme('devconnect_error_inline', array(
     'summary' => $summary,
     'detail' => $details,
-    'severity' => $message_type
+    'severity' => $message_type,
   ));
 }
 
+/**
+ * Get debug data.
+ */
 function devconnect_get_debug_data() {
   return Apigee\Util\DebugData::toArray();
 }
 
+/**
+ * Get crypt key.
+ */
 function devconnect_get_crypt_key() {
   $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
   if (is_file(DRUPAL_ROOT . '/' . $private_dir . '/.apigee.key')) {
@@ -375,6 +387,7 @@ function devconnect_get_crypt_key() {
  *   existed or whether it changed.
  *
  * @return array
+ *   The Edge connection settings.
  */
 function &devconnect_get_org_settings($force_write = FALSE) {
   devconnect_init();
@@ -384,9 +397,10 @@ function &devconnect_get_org_settings($force_write = FALSE) {
   $key = devconnect_get_crypt_key();
   Crypto::setKey($key);
 
-  if(substr($private_dir,0,1) == '/') {
+  if (substr($private_dir, 0, 1) == '/') {
     $config_file = $private_dir . '/.apigee';
-  } else {
+  }
+  else {
     $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
   }
 
@@ -434,7 +448,8 @@ function &devconnect_get_org_settings($force_write = FALSE) {
               if ($pass) {
                 $custom_vars['pass'] = $pass;
               }
-            } catch (Exception $e) {
+            }
+            catch (Exception $e) {
             }
           }
           $got_results = TRUE;
@@ -452,7 +467,7 @@ function &devconnect_get_org_settings($force_write = FALSE) {
       'pass' => '',
       'log_threshold' => 4,
       'connection_timeout' => 30,
-      'request_timeout' => 30
+      'request_timeout' => 30,
     );
   }
   elseif (array_key_exists('pass', $custom_vars)) {
@@ -461,14 +476,15 @@ function &devconnect_get_org_settings($force_write = FALSE) {
       if ($pass) {
         $custom_vars['pass'] = $pass;
       }
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
     }
   }
 
   if ($got_results) {
     if (!file_exists($config_file) || $force_write) {
       file_put_contents($config_file, Crypto::encrypt(serialize($custom_vars)));
-      // Let drush touch this file
+      // Let drush touch this file.
       @chmod($config_file, 0666);
       variable_del('devconnect_org_settings');
     }
@@ -498,7 +514,6 @@ function &devconnect_get_org_settings($force_write = FALSE) {
  *
  * log_severity: The watchdog severity to match against when deciding to
  * sent out an alert.
- *
  */
 function devconnect_devconnect_monitor_event_info() {
   return array(
@@ -508,115 +523,6 @@ function devconnect_devconnect_monitor_event_info() {
       'log_severity' => WATCHDOG_EMERGENCY,
     ),
   );
-}
-
-/**
- * Implements hook_update_projects_alter().
- *
- * Since we don't want jquery_update to update past version 2.3, we remove it
- * from the list of modules & themes that are candidates for update.
- *
- * @param $projects
- */
-function devconnect_update_projects_alter(&$projects) {
-  if (array_key_exists('jquery_update', $projects)) {
-    unset($projects['jquery_update']);
-  }
-}
-
-/**
- * Finds a useable cli version of PHP, of at least version 5.3.
- *
- * Special magic is required on Pantheon because PHP is outside the path.
- * Ditto for MAMP users.
- *
- * @return bool
- */
-function devconnect_php_cli() {
-  static $php_cli;
-
-  if (!isset($php_cli)) {
-    $php_cli = FALSE;
-    // Note: safe_mode is deprecated in PHP 5.3 and removed in 5.4.
-    // It is here largely as a fallback for OPDK installs who have ported
-    // their php.ini from a 5.2 or earlier install.
-    $safe_mode = strtolower(ini_get('safe_mode'));
-    $safe_mode = ($safe_mode == '1' || $safe_mode == 'on');
-    if (substr(php_uname(), 0, 7) == 'Windows' || $safe_mode) {
-      goto standard_exit;
-    }
-
-    if (is_dir('/opt/pantheon')) {
-      $php_dirs = array();
-      if ($dh = opendir('/opt/pantheon')) {
-        while (($file = readdir($dh)) !== FALSE) {
-          if (is_dir('/opt/pantheon/' . $file) && substr($file, 0, 4) == 'php-' && is_executable("/opt/pantheon/$file/php")) {
-            $php_dirs[] = $file;
-          }
-        }
-        closedir($dh);
-      }
-      if (count($php_dirs) > 0) {
-        // Get highest-versioned PHP.
-        rsort($php_dirs);
-        $php_cli = '/opt/pantheon/' . $php_dirs[0] . '/php';
-      }
-    }
-
-    // OSX developers using MAMP.
-    if (!$php_cli && is_dir('/Applications/MAMP/bin')) {
-      $php_dirs = array();
-      if ($dh = opendir('/Applications/MAMP/bin')) {
-        while (($file = readdir($dh)) !== FALSE) {
-          if (is_dir('/Applications/MAMP/bin/' . $file) && substr($file, 0, 4) == 'php5' && is_executable("/Applications/MAMP/bin/$file/bin/php")) {
-            $php_dirs[] = $file;
-          }
-        }
-        closedir($dh);
-      }
-      if (count($php_dirs) > 0) {
-        // Get highest-versioned PHP.
-        rsort($php_dirs);
-        $php_cli = '/Applications/MAMP/bin/' . $php_dirs[0] . '/bin/php';
-      }
-    }
-
-    // Presumably not on Pantheon.
-    if (!$php_cli) {
-      $path_elements = explode(PATH_SEPARATOR, $_SERVER['PATH']);
-      // /usr/local/bin may not be in Apache's path, but homebrew users
-      // might be using the PHP found there.
-      array_unshift($path_elements, '/usr/local/bin');
-      $versions = array('56', '55', '54', '53', '');
-      $suffixes = array('-cli', '');
-      foreach ($suffixes as $suffix) {
-        foreach ($versions as $version) {
-          foreach ($path_elements as $path) {
-            if (is_executable("$path/php$version$suffix")) {
-              $php_cli = "$path/php$version$suffix";
-              break 3; // breaks out of outermost foreach
-            }
-          }
-        }
-      }
-    }
-  }
-  // If we have an unversioned PHP executable, make sure its version is
-  // high enough for our purposes.
-  if (!empty($php_cli)) {
-    $php_base = basename($php_cli);
-    if ($php_base == 'php' || $php_base == 'php-cli') {
-      $output = shell_exec($php_cli . ' --version 2>&1');
-      list($line) = @explode(PHP_EOL, $output, 2);
-      $parts = @explode(' ', $line);
-      if (count($parts) < 2 || (substr($parts[1], 0, 1) != '5' && substr($parts[1], 0, 1) != '7') || !version_compare($parts[1], '5.3.0', '>')) {
-        $php_cli = FALSE;
-      }
-    }
-  }
-
-standard_exit:
-  return $php_cli;
 }
 
 /**

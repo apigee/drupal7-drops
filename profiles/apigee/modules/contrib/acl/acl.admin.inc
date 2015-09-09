@@ -30,7 +30,7 @@ function _acl_edit_form($acl_id, $label = NULL, $new_acl = FALSE) {
   $form = array(
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
-    '#title' => $label,
+    '#title' => check_plain($label),
     '#tree' => TRUE,
   );
 
@@ -95,7 +95,7 @@ function _acl_edit_form_after_build($form, &$form_state) {
     $user = db_query("SELECT uid, name FROM {users} WHERE name = :name", array(
       'name' => $form['add']['#value'],
     ))->fetchObject();
-    if (!$user || !$user->uid) {
+    if (!$user) {
       form_error($form['add'], t("Invalid user specified."));
     }
     else {

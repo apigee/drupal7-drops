@@ -89,8 +89,10 @@ function acl_remove_user($acl_id, $uid) {
 
 /**
  * Provide a form to edit the ACL that can be embedded in other forms.
+ *
  * Pass $new_acl=TRUE if you have no ACL yet, but do supply a string
- * like 'my_module_new_acl' as $acl_id anyway.
+ * like 'my_module_new_acl' as $acl_id anyway; create the ACL and set
+ * $form['acl_id'] before calling acl_save_form().
  */
 function acl_edit_form(&$form_state, $acl_id, $label = NULL, $new_acl = FALSE) {
   $form_state['build_info']['files'][] = _acl_module_load_include('admin.inc');
@@ -332,15 +334,12 @@ function acl_node_access_explain($row) {
       else {
         $acl->tag = $acl->name . '-' . $acl->number;
       }
-      $result = db_query("SELECT u.name FROM {acl_user} au, {users} u WHERE au.acl_id = :acl_id AND au.uid = u.uid", array(
-        'acl_id' => $row->gid,
-      ));
-      foreach ($result as $user) {
-        $users[] = $user->name;
+      foreach (user_load_multiple(acl_get_uids($row->gid)) as $account) {
+        $usernames[] = theme('username', array('account' => $account));
       }
-      if (isset($users)) {
-        $users = implode(', ', $users);
-        $interpretations[$row->gid] = _acl_get_explanation("$acl->module/$acl->tag: $users", $acl->acl_id, $acl->module, $acl->name, $acl->number, $users);
+      if (isset($usernames)) {
+        $usernames = implode(', ', $usernames);
+        $interpretations[$row->gid] = _acl_get_explanation("$acl->module/$acl->tag: $usernames", $acl->acl_id, $acl->module, $acl->name, $acl->number, $usernames);
       }
       elseif ($row->gid == 0) {
         $result = db_query("SELECT an.acl_id, a.module, a.name FROM {acl_node} an JOIN {acl} a ON an.acl_id = a.acl_id LEFT JOIN {acl_user} au ON a.acl_id = au.acl_id WHERE an.nid = :nid AND au.uid IS NULL", array(
@@ -366,10 +365,10 @@ function acl_node_access_explain($row) {
  * Helper function to ask the client for its interpretation of the given
  * grant record.
  */
-function _acl_get_explanation($text, $acl_id, $module, $name, $number, $users = NULL) {
-  $hook = $module .'_acl_explain';
+function _acl_get_explanation($text, $acl_id, $module, $name, $number, $usernames = NULL) {
+  $hook = $module . '_acl_explain';
   if (function_exists($hook)) {
-    return '<span title="'. $hook($acl_id, $name, $number, $users) .'">'. $text .'</span>';
+    return '<span title="' . $hook($acl_id, $name, $number, $usernames) . '">' . $text . '</span>';
   }
   return $text;
 }

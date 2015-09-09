@@ -3,14 +3,17 @@
 abstract class Redis_Tests_AbstractUnitTestCase extends DrupalUnitTestCase
 {
     /**
-     * Is autoloader enabled (system wide)
-     *
      * @var boolean
      */
     static protected $loaderEnabled = false;
 
     /**
-     * Enable the autoloader (system wide)
+     * Enable the autoloader
+     *
+     * This exists in this class in case the autoloader is not set into the
+     * settings.php file or another way
+     *
+     * @return void|boolean
      */
     static protected function enableAutoload()
     {
@@ -46,16 +49,6 @@ abstract class Redis_Tests_AbstractUnitTestCase extends DrupalUnitTestCase
         'redis_flush_mode'        => null,
         'redis_perm_ttl'          => null,
     );
-
-    /**
-     * Set up the Redis configuration
-     *
-     * Set up the needed variables using variable_set() if necessary.
-     *
-     * @return string
-     *   Client interface or null if not exists
-     */
-    abstract protected function getClientInterface();
 
     /**
      * Prepare Drupal environmment for testing
@@ -105,6 +98,16 @@ abstract class Redis_Tests_AbstractUnitTestCase extends DrupalUnitTestCase
     {
         Redis_Client::reset();
     }
+
+    /**
+     * Set up the Redis configuration.
+     *
+     * Set up the needed variables using variable_set() if necessary.
+     *
+     * @return string
+     *   Client interface or null if not exists
+     */
+    abstract protected function getClientInterface();
 
     /**
      * {@inheritdoc}

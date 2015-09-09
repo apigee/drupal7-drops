@@ -1,0 +1,287 @@
+<?php
+
+use Apigee\SmartDocs\Model;
+use Apigee\SmartDocs\Revision;
+
+define('SMARTDOCS_DEFAULT_PROXY_BASE', 'https://demo-test.apigee.net/smartdocs');
+
+/**
+ * Implements hook_menu().
+ */
+function smartdocs_proxy_menu() {
+  $items = array();
+
+  $items['admin/config/smartdocs/proxy'] = array(
+    'title' => 'SmartDocs proxy',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('smartdocs_proxy_settings'),
+    'access arguments' => array('administer smartdocs content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * For all SmartDocs URLs involving revisions, proxy the revision-load. Note
+ * that we remove all autoloaded path arguments and substitute them for simple
+ * placeholders.
+ */
+function smartdocs_proxy_menu_alter(&$items) {
+  $alterables = array(
+    'smartdocs_proxy_get_form' => array(
+      'admin/content/smartdocs/models/%smartdocs_model/export/%smartdocs_revision',
+      'admin/content/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision',
+      'admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security/add',
+      'admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security/%/edit',
+      'admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security/%/delete',
+      'admin/content/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/edit',
+      'admin/content/smartdocs/models/%smartdocs_model/resource/add/%smartdocs_revision',
+    ),
+    'smartdocs_proxy_get_form_with_resource' => array(
+      'admin/content/smartdocs/models/%smartdocs_model/resource/edit/%smartdocs_revision/%smartdocs_resource',
+      'admin/content/smartdocs/models/%smartdocs_model/resource/delete/%smartdocs_revision/%smartdocs_resource',
+      'admin/content/smartdocs/method-delete/%smartdocs_model/%smartdocs_revision/%smartdocs_resource/%smartdocs_method',
+    ),
+    'smartdocs_proxy_stub' => array(
+      'admin/content/smartdocs/models/%smartdocs_model/revisions/%smartdocs_revision/auth',
+      'admin/content/smartdocs/%smartdocs_model/revisions/%smartdocs_revision/security',
+    ),
+    'smartdocs_proxy_stub_with_resource' => array(
+      'admin/content/smartdocs/method-toggle-status/%smartdocs_model/%smartdocs_revision/%smartdocs_resource/%smartdocs_method',
+    ),
+  );
+  $replace_pairs = array(
+    '%smartdocs_model' => '%',
+    '%smartdocs_revision' => '%',
+    '%smartdocs_resource' => '%',
+    '%smartdocs_method' => '%',
+  );
+  foreach ($alterables as $page_callback => $urls) {
+    foreach ($urls as $url) {
+      $item = $items[$url];
+      $new_url = strtr($url, $replace_pairs);
+      unset($items[$url]);
+      if ($page_callback == 'smartdocs_proxy_stub' || $page_callback == 'smartdocs_proxy_stub_with_resource') {
+        array_unshift($item['page arguments'], $item['page callback']);
+      }
+      $item['page callback'] = $page_callback;
+      $items[$new_url] = $item;
+    }
+  }
+}
+
+/**
+ * Loads model and revision, and does a drupal_get_form using them as args.
+ *
+ * @return array
+ */
+function smartdocs_proxy_get_form() {
+  $args = func_get_args();
+  // $args[0] is the form name
+  $model_id = $args[1];
+  $revision_num = $args[2];
+  $model = smartdocs_proxy_load_model_hierarchy($model_id, $revision_num);
+  if (!$model) {
+    drupal_not_found();
+  }
+  $revision = $model->getActiveRevision();
+  if (!$revision) {
+    drupal_not_found();
+  }
+
+  $args[2] = $revision;
+  $args[1] = $model;
+
+  return call_user_func_array('drupal_get_form', $args);
+}
+
+/**
+ * Loads model, revision, resource, and method , and does a drupal_get_form.
+ *
+ * This is the same as smartdocs_proxy_get_form() above, except that it parses
+ * more of the arguments passed in.
+ *
+ * @return array
+ */
+function smartdocs_proxy_get_form_with_resource() {
+  $args = func_get_args();
+  // $args[0] is the form name
+  $model_id = $args[1];
+  $revision_num = $args[2];
+  $model = smartdocs_proxy_load_model_hierarchy($model_id, $revision_num);
+  if (!$model) {
+    drupal_not_found();
+  }
+  $revision = $model->getActiveRevision();
+  if (!$revision) {
+    drupal_not_found();
+  }
+
+  $args[2] = $revision;
+  $args[1] = $model;
+
+  // Load resource if specified.
+  if (isset($args[3])) {
+    $resource = smartdocs_resource_load($args[3]);
+    if (!$resource) {
+      drupal_not_found();
+    }
+    $args[3] = $resource;
+  }
+  // Load method if specified.
+  if (isset($args[4])) {
+    $method = smartdocs_method_load($args[4]);
+    if (!$method) {
+      drupal_not_found();
+    }
+    $args[4] = $method;
+  }
+
+  return call_user_func_array('drupal_get_form', $args);
+}
+
+/**
+ * Loads model & revision, substitutes into arg list, and invokes callback.
+ *
+ * @return mixed
+ */
+function smartdocs_proxy_stub() {
+  $args = func_get_args();
+  // $args[0] is the callback
+  $model_id = $args[1];
+  $revision_num = $args[2];
+  $model = smartdocs_proxy_load_model_hierarchy($model_id, $revision_num);
+
+  $args[2] = $model->getActiveRevision();
+  $args[1] = $model;
+
+  $callback = array_shift($args);
+  return call_user_func_array($callback, $args);
+}
+
+
+/**
+ * Loads model & revision, substitutes into arg list, and invokes callback.
+ *
+ * Same as smartdocs_proxy_stub above, but also loads resource and method
+ * if present.
+ *
+ * @return mixed
+ */
+function smartdocs_proxy_stub_with_resource() {
+  $args = func_get_args();
+  // $args[0] is the callback
+  $model_id = $args[1];
+  $revision_num = $args[2];
+  $model = smartdocs_proxy_load_model_hierarchy($model_id, $revision_num);
+
+  $args[2] = $model->getActiveRevision();
+  $args[1] = $model;
+  // Load resource if specified.
+  if (isset($args[3])) {
+    $resource = smartdocs_resource_load($args[3]);
+    if (!$resource) {
+      drupal_not_found();
+    }
+    $args[3] = $resource;
+  }
+  // Load method if specified.
+  if (isset($args[4])) {
+    $method = smartdocs_method_load($args[4]);
+    if (!$method) {
+      drupal_not_found();
+    }
+    $args[4] = $method;
+  }
+
+  $callback = array_shift($args);
+  return call_user_func_array($callback, $args);
+}
+
+/**
+ * Loads the model and revision, and a summary of resources & methods.
+ *
+ * @param string $model_id
+ *   UUID or name of the model.
+ * @param int $revision_num
+ *   Revision number to load.
+ *
+ * @return Model|bool
+ *   Returns the model with the active revision attached, or false if the
+ *   model, revision or skeletal resource/method hierarchy could not be loaded.
+ */
+function smartdocs_proxy_load_model_hierarchy($model_id, $revision_num) {
+  $model =& drupal_static('smartdocs_model');
+  $revision =& drupal_static('smartdocs_revision');
+  if ($model instanceof Model && ($model->getUuid() == $model_id || $model->getName() == $model_id)) {
+    $rev = $model->getActiveRevision();
+    if ($rev instanceof Revision && $rev->getRevisionNumber() == $revision_num) {
+      return $model;
+    }
+  }
+
+  $config = devconnect_default_org_config();
+  $org = $config->orgName;
+  $auth = $config->http_options['auth'];
+  if (empty($org) || empty($auth) || empty($auth[0]) || empty($auth[1])) {
+    return FALSE;
+  }
+
+  $model = new Model($config);
+  try {
+    $model->load($model_id);
+    $revision = new Revision($config, $model->getUuid());
+    $revision->load($revision_num, TRUE);
+  }
+  catch (Exception $e) {
+    return FALSE;
+  }
+
+  $url = variable_get('smartdocs_proxy_base_url', SMARTDOCS_DEFAULT_PROXY_BASE)
+    . '/o/' . rawurlencode($org) . '/apimodels/' . rawurlencode($model->getName())
+    . '/revisions/' . intval($revision_num) . '/skeleton';
+  $headers = array('Accept: application/json');
+  $ch = curl_init($url);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+  curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+  curl_setopt($ch, CURLOPT_USERPWD, $auth[0] . ':' . $auth[1]);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+  $raw_data = curl_exec($ch);
+  curl_close($ch);
+  if (!$raw_data || !($data = @json_decode($raw_data, TRUE)) || !is_array($data)) {
+    return FALSE;
+  }
+
+  $array = $revision->toArray();
+  $array['resources'] = $data;
+  Revision::fromArray($revision, $array);
+
+  $model->setActiveRevision($revision);
+  return $model;
+}
+
+/**
+ * Constructor for settings form.
+ *
+ * @param array $form
+ *   The form being constructed.
+ * @param array $form_state
+ *   State of the form being constructed.
+ *
+ * @return array
+ *   The newly-constructed form.
+ */
+function smartdocs_proxy_settings($form, &$form_state) {
+  $form['smartdocs_proxy_base_url'] = array(
+    '#title' => t('Proxy base URL'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#default_value' => variable_get('smartdocs_proxy_base_url', SMARTDOCS_DEFAULT_PROXY_BASE),
+  );
+  return system_settings_form($form);
+}

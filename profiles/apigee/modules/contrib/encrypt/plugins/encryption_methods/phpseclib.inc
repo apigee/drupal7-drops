@@ -5,12 +5,19 @@
  * Plugin definition for the phpseclib encryption method.
  */
 
-$plugin = array(
-  'title' => t('PHP Secure Communications Library (phpseclib)'),
-  'description' => t('Uses the <a href="http://phpseclib.sourceforge.net/">phpseclib</a> library. This method is only preferable if you cannot install mcrypt.'),
-  'encrypt callback' => '_encrypt_encryption_methods_phpseclib',
-  'dependency callback' => '_encrypt_phpseclib_dependencies',
-);
+$plugin = encrypt_phpseclib_encrypt_encryption_methods();
+
+/**
+ * Implements MODULE_FILENAME_encrypt_encryption_methods().
+ */
+function encrypt_phpseclib_encrypt_encryption_methods() {
+  return array(
+    'title' => t('PHP Secure Communications Library (phpseclib)'),
+    'description' => t('Uses the <a href="http://phpseclib.sourceforge.net/">phpseclib</a> library. This method is only preferable if you cannot install mcrypt.'),
+    'encrypt callback' => '_encrypt_encryption_methods_phpseclib',
+    'dependency callback' => '_encrypt_phpseclib_dependencies',
+  );
+}
 
 /**
  * Callback for Encrypt implementation: phpseclib.

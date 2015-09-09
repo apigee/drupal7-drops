@@ -287,6 +287,11 @@ function encrypt_config_form($form, &$form_state, $config = NULL) {
     }
   }
 
+  $form['created'] = array(
+    '#type' => 'value',
+    '#value' => $config['created'],
+  );
+
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -335,8 +340,6 @@ function encrypt_config_form_submit($form, &$form_state) {
     }
   }
 
-  $config_exists = (bool) db_query_range('SELECT 1 FROM {encrypt_config} WHERE name = :name', 0, 1, array(':name' => $form_state['values']['name']))->fetchField();
-
   $fields = array(
     'name' => (string) $form_state['values']['name'],
     'label' => (string) $form_state['values']['label'],
@@ -344,41 +347,24 @@ function encrypt_config_form_submit($form, &$form_state) {
     'method' => (string) $form_state['values']['encrypt_encryption_method'],
     'provider' => (string) $form_state['values']['encrypt_key_provider'],
     'enabled' => (int) $form_state['values']['enabled'],
-    'changed' => REQUEST_TIME,
+    'created' => $form_state['values']['created'],
   );
 
   if (empty($form_state['values']['encrypt_encryption_methods_' . $fields['method'] . '_settings'])) {
     $fields['method_settings'] = '';
   }
   else {
-    $fields['method_settings'] = serialize($form_state['values']['encrypt_encryption_methods_' . $fields['method'] . '_settings']);
+    $fields['method_settings'] = $form_state['values']['encrypt_encryption_methods_' . $fields['method'] . '_settings'];
   }
 
   if (empty($form_state['values']['encrypt_key_providers_' . $fields['provider'] . '_settings'])) {
     $fields['provider_settings'] = '';
   }
   else {
-    $fields['provider_settings'] = serialize($form_state['values']['encrypt_key_providers_' . $fields['provider'] . '_settings']);
+    $fields['provider_settings'] = $form_state['values']['encrypt_key_providers_' . $fields['provider'] . '_settings'];
   }
 
-  $t_args = array('%label' => $fields['label']);
-
-  if ($config_exists) {
-    db_update('encrypt_config')
-      ->fields($fields)
-      ->condition('name', $fields['name'])
-      ->execute();
-    drupal_set_message(t('The configuration %label has been updated.', $t_args));
-    watchdog('node', 'Updated encryption configuration %label.', $t_args, WATCHDOG_NOTICE, l(t('view'), ENCRYPT_MENU_PATH . '/list'));
-  }
-  else {
-    $fields['created'] = REQUEST_TIME;
-    db_insert('encrypt_config')
-      ->fields($fields)
-      ->execute();
-    drupal_set_message(t('The configuration %label has been added.', $t_args));
-    watchdog('node', 'Added encryption configuration %label.', $t_args, WATCHDOG_NOTICE, l(t('view'), ENCRYPT_MENU_PATH . '/list'));
-  }
+  encrypt_save_config($fields);
 
   $form_state['redirect'] = ENCRYPT_MENU_PATH . '/list';
 }

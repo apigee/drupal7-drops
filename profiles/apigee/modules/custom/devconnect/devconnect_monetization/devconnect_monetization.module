@@ -1952,17 +1952,3 @@ function devconnect_monetization_form_apigee_company_company_form_alter_submit(&
     $form_state['redirect'] = 'api_company/companies/list';
   }
 }
-
-/**
- * Implements hook_devconnect_app_attributes().
- */
-function devconnect_monetization_devconnect_app_attributes() {
-  global $user;
-  return array(
-    'SECONDARY_DEVELOPER' => array(
-      'name' => t('Secondary Developer'),
-      'type' => 'value',
-      'default' => $user->mail,
-    ),
-  );
-}

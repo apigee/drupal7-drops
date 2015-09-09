@@ -7,7 +7,7 @@ function smartdocs_views_default_views() {
   // Contains displays for Frontpage Block, Model index page and TOC block.
   $view = new view();
   $view->name = 'smartdocs_methods';
-  $view->description = '';
+  $view->description = 'This is the base view for listing methods in a given model. Whenever you create a new model, a per-model view is generated based on this one.';
   $view->tag = 'smartdocs';
   $view->base_table = 'node';
   $view->human_name = 'Smartdocs Method Listing';
@@ -201,6 +201,7 @@ EOM;
     ),
     'row_plugin' => 'fields',
     'fields' => $frontpage_fields,
+    'display_description' => 'By default, this block appears on the site front page. It lists the 5 most recently-updated published methods across all models.',
   );
 
   /* Display: Model index page */
@@ -218,6 +219,7 @@ EOM;
         'summary_options' => array('items_per_page' => 25),
       ),
     ),
+    'display_description' => 'This block provides the content for the model’s index page. It lists all published methods in the model.',
   );
 
   /* Display: Method TOC */
@@ -242,17 +244,16 @@ EOM;
         'summary_options' => array('items_per_page' => 25),
       ),
     ),
+    'display_description' => 'This block may optionally be placed in the sidebar to provide a table of contents for methods in the model.',
   );
 
   // Add the above view object to the array to be returned at the end.
   $views[$view->name] = $view;
 
   // SmartDocs model view.
-  // Contains page display to list all the models that have at least one
-  // published node.
   $view = new view();
   $view->name = 'smartdocs_models';
-  $view->description = '';
+  $view->description = 'Contains a page display to list all the models that have at least one published node.';
   $view->tag = 'smartdocs';
   $view->base_table = 'taxonomy_term_data';
   $view->human_name = 'SmartDocs Models';

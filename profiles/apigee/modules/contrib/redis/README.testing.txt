@@ -22,11 +22,11 @@ Run all PhpRedis tests
 
 php -f scripts/run-tests.sh -- --verbose --color \
     --url "http://yoursite" \
-    --class "PhpRedisCacheFixesUnitTestCase,PhpRedisCacheFlushUnitTestCase,PhpRedisLockingUnitTestCase,PhpRedisQueueUnitTestCase"
+    --class "Redis_Tests_Cache_PhpRedisFlushUnitTestCase,Redis_Tests_Cache_PhpRedisFixesUnitTestCase,Redis_Tests_Client_MockFactory,Redis_Tests_Lock_PhpRedisLockingUnitTestCase"
 
 Run all Predis tests
 ======================
 
 php -f scripts/run-tests.sh -- --verbose --color \
     --url "http://yoursite" \
-    --class "PredisCacheFixesUnitTestCase,PredisCacheFlushUnitTestCase,PredisLockingUnitTestCase,PredisQueueUnitTestCase"
+    --class "Redis_Tests_Cache_PredisFlushUnitTestCase,Redis_Tests_Cache_PredisFixesUnitTestCase,Redis_Tests_Client_MockFactory,Redis_Tests_Lock_PredisLockingUnitTestCase"

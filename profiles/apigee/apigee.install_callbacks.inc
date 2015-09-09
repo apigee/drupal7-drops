@@ -6,7 +6,7 @@
  */
 
 /**
- * Batch Operation Callback
+ * Batch operation callback.
  */
 function apigee_batch_smartdocs_create_model($model_machine_name, $model_display_name, $model_description) {
   // Enable SmartDocs module.
@@ -19,37 +19,71 @@ function apigee_batch_smartdocs_create_model($model_machine_name, $model_display
   try {
     $model->load($model_machine_name);
     $update = TRUE;
-  } catch (Apigee\Exceptions\ResponseException $e) {
+  }
+  catch (Apigee\Exceptions\ResponseException $e) {
     $update = FALSE;
   }
+
+  // If the model loaded, then no reason to modify it, just return.
+  if ($update) {
+    return;
+  }
+
   $model->setName($model_machine_name);
   $model->setDisplayName($model_display_name);
   $model->setDescription($model_description);
   try {
     $model->save($update);
-  } catch (Apigee\Exceptions\ResponseException $e) {
+  }
+  catch (Apigee\Exceptions\ResponseException $e) {
     $message = $e->getResponse();
-    $messageObj = @json_decode($message, TRUE);
-    if (is_array($messageObj) && array_key_exists('message', $messageObj)) {
-      $err_msg = $messageObj['message'];
+    $message_obj = @json_decode($message, TRUE);
+    if (is_array($message_obj) && array_key_exists('message', $message_obj)) {
+      $err_msg = $message_obj['message'];
     }
     else {
       $err_msg = $e->getMessage();
     }
-    drupal_set_message($err_msg, 'error');
+    $msg_args = array('%model' => $model_display_name, '!error_message' => $err_msg);
+
+    drupal_set_message(t('Error creating %model: !error_message', $msg_args), 'error');
+    watchdog('apigee', 'Error creating %model: !error_message', $msg_args, WATCHDOG_ERROR);
+
+  }
+  catch (Exception $e) {
+    $msg_args = array('%model' => $model_display_name, '!error_message' => $e->getMessage());
+
+    drupal_set_message(t('Error creating %model: !error_message', $msg_args), 'error');
+    watchdog('apigee', 'Error creating %model: !error_message', $msg_args, WATCHDOG_ERROR);
   }
 }
 
 /**
- * Batch Operation Callback
+ * Batch Operation Callback.
  */
 function apigee_batch_smartdocs_import_model($model_machine_name, $model_import_file, $document_format, $content_type) {
   // Create sample SmartDocs  model.
   $model = new Apigee\SmartDocs\Model(devconnect_default_org_config());
   try {
     $model->load($model_machine_name);
-  } catch (Apigee\Exceptions\ResponseException $e) {
-    drupal_set_message($e->getMessage(), 'error');
+  }
+  catch (Apigee\Exceptions\ResponseException $e) {
+    $message = $e->getResponse();
+    $message_obj = @json_decode($message, TRUE);
+    if (is_array($message_obj) && array_key_exists('message', $message_obj)) {
+      $err_msg = $message_obj['message'];
+    }
+    else {
+      $err_msg = $e->getMessage();
+    }
+    $msg_args = array('%model' => $model_machine_name, '!error_message' => $err_msg);
+    drupal_set_message(t('Error importing %model: !error_message', $msg_args), 'error');
+    watchdog('apigee', 'Error importing %model: !error_message', $msg_args, WATCHDOG_ERROR);
+  }
+  catch (Exception $e) {
+    $msg_args = array('%model' => $model_machine_name, '!error_message' => $e->getMessage());
+    drupal_set_message(t('Error importing %model: !error_message', $msg_args), 'error');
+    watchdog('apigee', 'Error importing %model: !error_message', $msg_args, WATCHDOG_ERROR);
   }
   if ($model->getLatestRevisionNumber() <= 0) {
     try {
@@ -57,16 +91,22 @@ function apigee_batch_smartdocs_import_model($model_machine_name, $model_import_
       $file_contents = file_get_contents($model_import_file);
       $model->importFile($file_contents, $document_format, $content_type);
       drupal_set_message('Sample model %model imported into SmartDocs.', array('%model' => $model->getDisplayName()), 'status');
-    } catch (Apigee\Exceptions\ResponseException $e) {
+    }
+    catch (Apigee\Exceptions\ResponseException $e) {
       $message = $e->getResponse();
-      $messageObj = @json_decode($message, TRUE);
-      if (is_array($messageObj) && array_key_exists('message', $messageObj)) {
-        $err_msg = $messageObj['message'];
+      $message_obj = @json_decode($message, TRUE);
+      if (is_array($message_obj) && array_key_exists('message', $message_obj)) {
+        $err_msg = $message_obj['message'];
       }
       else {
         $err_msg = $e->getMessage();
       }
-      drupal_set_message($err_msg, 'error');
+      drupal_set_message(t('Error importing %model: !error_message.', array('%model' => $model_machine_name, '!error_message' => $err_msg)), 'error');
+      watchdog('apigee', 'Error importing %model: !error_message.', array('%model' => $model_machine_name, '!error_message' => $err_msg), WATCHDOG_ERROR);
+    }
+    catch (Exception $e) {
+      drupal_set_message(t('Error importing %model: !error_message.', array('%model' => $model_machine_name, '!error_message' => $e->getMessage())), 'error');
+      watchdog('apigee', 'Error importing %model: !error_message.', array('%model' => $model_machine_name, '!error_message' => $e->getMessage()), WATCHDOG_ERROR);
     }
   }
 }

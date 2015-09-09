@@ -14,15 +14,20 @@
                 $(this).removeClass('open');
             });
 
+            // Load the app delete form in a modal.
             $('.apigee-modal-link-delete a').click(function() {
                 var hrefLocation = $(this).attr('href');
                 var identifier = $(this).attr('data-target');
+
+                // Open the empty modal.
                 $(identifier).modal();
                 if (($(identifier + ' .modal-body #devconnect_developer_application_delete').length == 0)) {
                     $(identifier + ' .modal-body').html('<p class="load-indicator" style="display:none;">' +
                         '<span class="label label-success" style="padding:5px;">Loading...</span></p>');
                     apigeePulsateForever(identifier + ' .modal-body .load-indicator');
                 }
+
+                // Load the page fragment (#devconnect_developer_application_delete) via an AJAX call.
                 $(identifier + ' .modal-body').load(hrefLocation + ' #devconnect_developer_application_delete', function() {
                     if (!($(identifier + ' .modal-body #devconnect_developer_application_delete').length == 0)) {
                         $(this).remove('.load-indicator');
@@ -31,14 +36,19 @@
                 return false;
             });
 
+            // Load the app edit form in a modal.
             $('.apigee-modal-link-edit a').click(function() {
                 var hrefLocation = $(this).attr('href');
                 var identifier = $(this).attr('data-target');
+
+                // Open the empty modal.
                 $(identifier).modal();
                 if (($(identifier + ' .modal-body #devconnect-developer-apps-edit-form').length == 0)) {
                     $(identifier + ' .modal-body').html('<p class="load-indicator" style="display:none;">' +
                         '<span class="label label-success" style="padding:5px;">Loading...</span></p>');
                     apigeePulsateForever(identifier + ' .modal-body .load-indicator');
+
+                    // Load the page fragment (#devconnect-developer-apps-edit-form) via an AJAX call.
                     $(identifier + ' .modal-body').load(hrefLocation + ' #devconnect-developer-apps-edit-form', function() {
                         if (!($(identifier + ' .modal-body #devconnect_developer_application_delete').length == 0)) {
                             $(this).remove('.load-indicator');

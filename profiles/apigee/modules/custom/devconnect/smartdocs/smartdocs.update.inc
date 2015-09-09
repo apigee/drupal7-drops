@@ -1267,7 +1267,49 @@ function _smartdocs_update_process_nodes() {
   if (in_array('private', $wrappers)) {
     $files = file_scan_directory('private://', '/_listing\.view$/');
     foreach ($files as $file) {
-      file_delete($file, TRUE);
+      // Since we don't know if the file is managed or not, look in the database
+      // to see.
+      $uri = $file->uri;
+      $file_object = _smartdocs_update_get_managed_file($uri);
+
+      // If a managed file, use file_delete().
+      if (!empty($file_object)) {
+        $result = FALSE;
+        try {
+          $result = file_delete($file_object, TRUE);
+          if ($result !== TRUE) {
+            $log_fn($t('Failed deleting managed file %uri. Result was %result', array(
+              '%uri' => $uri,
+              '%result' => print_r($result, TRUE),
+            )), 'error');
+            watchdog('smartdocs update', 'Failed deleting managed file %uri. Result was %result', array(
+              '%uri' => $uri,
+              '%result' => result,
+            ), WATCHDOG_ERROR);
+          }
+        }
+        catch (Exception $e) {
+          // Catch any exception trying to delete the file, we don't want the
+          // upgrade to break.
+          $log_fn($t('Failed deleting managed file %uri. Result was %result', array(
+            '%uri' => $uri,
+            '%result' => $e->getMessage()
+          )), 'error');
+          watchdog('smartdocs update', 'Failed deleting managed file %uri. Result was %result', array(
+            '%uri' => $uri,
+            '%result' => $e->getMessage()
+          ), WATCHDOG_ERROR);
+        }
+
+      }
+      // Else use file_unmanaged_delete().
+      else {
+        $result = file_unmanaged_delete($uri);
+        if ($result !== TRUE) {
+          drupal_set_message(t('Failed deleting unmanaged file %uri', array('%uri' => $uri, 'error')));
+        }
+      }
+
     }
   }
 
@@ -1343,4 +1385,19 @@ function smartdocs_update_default_template() {
   }
   catch (Exception $e) {
   }
+}
+
+/**
+ * Get the managed file from the database if it exists.
+ *
+ * @param $uri The URI for the file.
+ * @return bool|mixed The file object or FALSE if it does not exist in the db.
+ */
+function _smartdocs_update_get_managed_file($uri) {
+  $fid = db_query('SELECT fid FROM {file_managed} WHERE uri = :uri', array(':uri' => $uri))->fetchField();
+  if (!empty($fid)) {
+    $file_object = file_load($fid);
+    return $file_object;
+  }
+  return FALSE;
 }

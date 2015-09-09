@@ -174,9 +174,7 @@ function smartdocs_requirements($phase) {
           'value' => $t('The default method template has changed'),
         );
       }
-
       break;
-      // End switch $phase.
   }
   drupal_load('module', 'devconnect');
   devconnect_init();
@@ -395,12 +393,8 @@ function smartdocs_update_7501() {
 
   $result = $query->execute()->fetchField();
   if ($result) {
-    db_delete('menu_links')
-        ->condition('mlid', $result)
-        ->execute();
-    db_delete('menu_router')
-        ->condition('path', 'admin/smartdocs/models/add')
-        ->execute();
+    db_delete('menu_links')->condition('mlid', $result)->execute();
+    db_delete('menu_router')->condition('path', 'admin/smartdocs/models/add')->execute();
   }
   menu_rebuild();
 
@@ -437,7 +431,6 @@ function smartdocs_update_7501() {
   $model_list = $model->listModels();
 
   $success = $fail = 0;
-  /** @var Apigee\SmartDocs\Model $model */
   foreach ($model_list as $model) {
     $template = new Apigee\SmartDocs\Template($config, $model->getUuid());
     $html = FALSE;
@@ -485,7 +478,12 @@ function smartdocs_update_7501() {
   }
   if ($success || $fail) {
     $t = get_t();
-    return $t('%total SmartDocs template migrations attempted: %success successes, %fail failures', array('%total' => $success + $fail, '%success' => $success, '%fail' => $fail));
+    $args = array(
+      '%total' => $success + $fail,
+      '%success' => $success,
+      '%fail' => $fail,
+    );
+    return $t('%total SmartDocs template migrations attempted: %success successes, %fail failures', $args);
   }
 }
 
@@ -532,7 +530,6 @@ function smartdocs_update_7502() {
 
   drupal_load('module', 'devconnect_developer_apps');
   $products = entity_load('api_product', FALSE, array('show_private' => TRUE));
-  /** @var Drupal\devconnect_developer_apps\ApiProductEntity $product */
   foreach ($products as $product) {
     $value = variable_get($product->name . '_docs', NULL);
     if (isset($value)) {
@@ -548,10 +545,20 @@ function smartdocs_update_7502() {
 }
 
 /**
- * Remove smartdocs cache table if it exists.
+ * Clear model data out of SmartDocs cache table if it exists.
  */
 function smartdocs_update_7503() {
   if (db_table_exists('cache_smartdocs')) {
-    db_drop_table('cache_smartdocs');
+    cache_clear_all('model:', 'cache_smartdocs', TRUE);
   }
+}
+
+/**
+ * Create SmartDocs cache table if it does not exist, and rebuild admin menus.
+ */
+function smartdocs_update_7504() {
+  if (!db_table_exists('cache_smartdocs')) {
+    db_create_table('cache_smartdocs', drupal_get_schema_unprocessed('system', 'cache'));
+  }
+  menu_rebuild();
 }

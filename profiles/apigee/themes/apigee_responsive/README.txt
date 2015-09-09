@@ -1,9 +1,22 @@
 APIGEE RESPONSIVE THEME
------------------------
+=======================
 The Apigee Responsive theme is designed to be used with Apigee Dev Portal. It
 features a responsive theme so that your site looks good on computers and mobile
 devices.
 
+This theme is a subtheme of the bootstrap module
+(https://www.drupal.org/project/bootstrap) which is a theme that uses the
+Twitter bootstrap project (http://getbootstrap.com/) that helps developers
+quickly create nice looking websites that are mobile responsive.
+
+
+REQUIREMENTS
+------------
+1. Bootstrap requires a minimum jQuery version of 1.7 to function properly.
+   You must download and enable the jQuery Update module
+   (http://drupal.org/project/jquery_update/), 7.x-2.3 version or higher.
+   Navigate to the configuration page and ensure that the minimum version
+   selected is 1.7.
 
 SUBTHEMING
 ----------

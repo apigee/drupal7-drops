@@ -7,7 +7,7 @@
 <?php foreach ($form['resources'] as $i => &$resource) : ?>
   <?php if (!is_numeric($i)) continue; ?>
   <fieldset class="collapsible form-wrapper fieldset titled" id="edit-<?php print $i; ?>">
-      <div class="fieldset-description" style="position:relative;float:right;width:150px;top:4px;right:70px;"><?php print render($resource['ops']); ?></div>
+      <div class="fieldset-description resource-ops"><?php print render($resource['ops']); ?></div>
     <legend><span class="fieldset-title fieldset-legend"><span class="icon"></span><?php print check_plain($resource['#title']); ?></span></legend>
     <div class="fieldset-content fieldset-wrapper clearfix">
     <?php if (array_key_exists('#headers', $resource)) : ?>

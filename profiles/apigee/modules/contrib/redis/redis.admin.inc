@@ -27,13 +27,13 @@ function redis_settings_form($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t("Host"),
     '#default_value' => variable_get('redis_client_host', NULL),
-    '#description' => t("Redis server host. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_HOST)),
+    '#description' => t("Redis server host. Default is <em>@default</em>.", array('@default' => Redis_Client_Manager::REDIS_DEFAULT_HOST)),
   );
   $form['connection']['redis_client_port'] = array(
     '#type' => 'textfield',
     '#title' => t("Port"),
     '#default_value' => variable_get('redis_client_port', NULL),
-    '#description' => t("Redis server port. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_PORT)),
+    '#description' => t("Redis server port. Default is <em>@default</em>.", array('@default' => Redis_Client_Manager::REDIS_DEFAULT_PORT)),
   );
   $form['connection']['redis_client_socket'] = array(
     '#type' => 'textfield',

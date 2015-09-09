@@ -12,7 +12,7 @@ api = 2
 ; Deprecated
 projects[acl][type] = "module"
 projects[acl][subdir] = "contrib"
-projects[acl][version] = "1.0"
+projects[acl][version] = "1.1"
 
 ; Required by Monetization
 projects[addressfield][type] = "module"
@@ -153,7 +153,7 @@ projects[eck][version] = "2.0-rc7"
 ; Required by OPDK
 projects[encrypt][type] = "module"
 projects[encrypt][subdir] = "contrib"
-projects[encrypt][version] = "2.0"
+projects[encrypt][version] = "2.1"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
@@ -174,7 +174,7 @@ projects[environment_indicator][version] = "2.7"
 ; Enabled during profile install.
 projects[faq][type] = "module"
 projects[faq][subdir] = "contrib"
-projects[faq][version] = "1.0"
+projects[faq][version] = "1.1"
 
 ; Enabled during profile install.
 projects[features][type] = "module"
@@ -245,14 +245,9 @@ projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
 projects[i18n][version] = "1.13"
 
-; Enabled during profile install.
-projects[jquery_colorpicker][type] = "module"
-projects[jquery_colorpicker][subdir] = "contrib"
-projects[jquery_colorpicker][version] = "1.1"
-
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
-projects[jquery_update][version] = "2.3"
+projects[jquery_update][version] = "3.0-alpha2"
 
 ; Required for OPDK
 projects[ldap][type] = "module"
@@ -297,7 +292,7 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.x-dev"
+projects[media][version] = "2.0-beta1"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
@@ -372,7 +367,7 @@ projects[redirect][version] = "1.0-rc3"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-projects[redis][version] = "2.15"
+projects[redis][version] = "3.11"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
@@ -389,7 +384,7 @@ projects[services][version] = "3.12"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
-projects[services_views][version] = "1.0"
+projects[services_views][version] = "1.1"
 
 ; Required for OPDK
 projects[siteminder][type] = "module"
@@ -459,6 +454,7 @@ projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
 projects[views_bulk_operations][version] = "3.3"
 
+; Deprecated
 projects[views_queue][type] = "module"
 projects[views_queue][subdir] = "contrib"
 projects[views_queue][version] = "1.x-dev"
@@ -763,12 +759,6 @@ libraries[insertpre][destination] = "libraries"
 libraries[insertpre][directory_name] = "ckeditor/plugins/insertpre"
 libraries[insertpre][download][type] = "file"
 libraries[insertpre][download][url] = "http://download.ckeditor.com/insertpre/releases/insertpre_1.1.zip"
-
-; Used by jquery_colorpicker
-libraries[colorpicker][destination] = "libraries"
-libraries[colorpicker][directory_name] = "colorpicker"
-libraries[colorpicker][download][type] = "file"
-libraries[colorpicker][download][url] = "http://www.eyecon.ro/colorpicker/colorpicker.zip"
 
 ; Used by gauth
 libraries[google-api-php-client][destination] = "libraries"

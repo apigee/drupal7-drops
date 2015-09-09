@@ -2,13 +2,22 @@
 CHANGELOG for ACL for Drupal 7
 
 
-acl 7.x-1.0-dev:
+acl 7.x-1.x-dev:
+
+
+acl 7.x-1.1 (2015-08-27):
+  Enhancements:
+    - Improve minor coding nits (no functional changes).
+    - #2101809 by gisle, salvis: Improve support for the anonymous user.
+    - Revise the README.txt file.
+    - Make coder happy (no functional change).
+    - Enable the tests (no functional change).
+    - #1397828: Improve documentation of acl_edit_form() (no functional change).
 
 
 acl 7.x-1.0 (2011-11-26):
   Enhancements:
     - Add acl_node_add_acl_record() function to support extending the {acl_node} table.
-
 
 acl 7.x-1.0-rc1 (2011-08-10):
   Bug fixes:

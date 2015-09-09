@@ -1,5 +1,7 @@
 <?php
 
+define('ENFORCE_PHP_VERSION_AT_PROFILE_INSTALL', FALSE);
+
 /**
  * Implements hook_install().
  *
@@ -70,7 +72,12 @@ function apigee_profile_updates_requirements() {
   // upon which action is being performed. If MAINTENANCE_MODE is undefined,
   // we are on the site status report page.
   if (defined('MAINTENANCE_MODE')) {
-    $severity = (MAINTENANCE_MODE == 'install' ? REQUIREMENT_ERROR : REQUIREMENT_INFO);
+    if (MAINTENANCE_MODE == 'install') {
+      $severity = ENFORCE_PHP_VERSION_AT_PROFILE_INSTALL ? REQUIREMENT_ERROR : REQUIREMENT_INFO;
+    }
+    else {
+      $severity = REQUIREMENT_INFO;
+    }
     // NOTE: by using the 'php' key, we overwrite the system module's
     // PHP version check message, so there is less clutter.
     $php_key = 'php';
@@ -123,21 +130,50 @@ function apigee_profile_updates_update_7101() {
 }
 
 /**
- * Disables Rubik theme, enables Adminimal instead. Also enables Adminimal
+ * Disable Rubik theme, enables Adminimal instead. Also enables Adminimal
  * Admin Menu (unless admin_menu module is not enabled).
  */
 function apigee_profile_updates_update_7102() {
-  $path = drupal_get_path('theme', 'adminimal');
   $current_admin_theme = variable_get('admin_theme');
-  if ($current_admin_theme == 'rubik' && !empty($path)) {
+  if ($current_admin_theme == 'rubik') {
     variable_set('admin_theme', 'adminimal');
     theme_enable(array('adminimal'));
     theme_disable(array('rubik'));
     if (module_exists('admin_menu')) {
-      $path = drupal_get_path('module', 'adminimal_admin_menu');
-      if (!empty($path) && !module_exists('adminimal_admin_menu')) {
-        module_enable(array('adminimal_admin_menu'));
-      }
+      module_enable(array('adminimal_admin_menu'));
     }
   }
+}
+
+/**
+ * Entirely remove jquery_colorpicker module data unless it is in use.
+ */
+function apigee_profile_updates_update_7103() {
+  $module_info = db_select('system', 's')
+    ->fields('s', array('status'))
+    ->condition('name', 'jquery_colorpicker')
+    ->execute()
+    ->fetchAssoc();
+
+  // Does this row even exist in the system table?
+  if ($module_info) {
+    // Default to deleting it.
+    $delete = TRUE;
+    if ($module_info['status']) {
+      // Module is enabled, so see if anything is using it.
+      $count = db_select('field_config', 'f')
+        ->condition('type', 'jquery_colorpicker')
+        ->fields('f', array('field_name'))
+        ->execute()
+        ->rowCount();
+      if ($count > 0) {
+        // Module is in use for at least one field, so keep it.
+        $delete = FALSE;
+      }
+    }
+    if ($delete) {
+      db_delete('system')->condition('name', 'jquery_colorpicker')->execute();
+    }
+  }
+  system_rebuild_module_data();
 }

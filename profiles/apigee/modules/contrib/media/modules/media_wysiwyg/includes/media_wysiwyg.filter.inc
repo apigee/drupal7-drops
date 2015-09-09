@@ -321,8 +321,6 @@ function _media_wysiwyg_generate_tagMap($text) {
  * @return array
  *   An array of view modes that can be used on the file when embedded in the
  *   WYSIWYG.
- *
- * @deprecated
  */
 function media_wysiwyg_get_wysiwyg_allowed_view_modes($file) {
   $enabled_view_modes = &drupal_static(__FUNCTION__, array());
@@ -356,8 +354,6 @@ function media_wysiwyg_get_wysiwyg_allowed_view_modes($file) {
   }
 
   $view_modes = $enabled_view_modes[$file->type];
-  drupal_alter('media_wysiwyg_allowed_view_modes', $view_modes, $file);
-  // Invoke the deprecated/misspelled alter hook as well.
   drupal_alter('media_wysiwyg_wysiwyg_allowed_view_modes', $view_modes, $file);
   return $view_modes;
 }

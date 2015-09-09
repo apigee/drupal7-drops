@@ -74,8 +74,9 @@ function faq_node_access($node, $op, $account = NULL) {
  */
 function faq_menu() {
   $items = array();
+  $faq_path = variable_get('faq_path', 'faq-page');
 
-  $items['faq-page'] = array(
+  $items[$faq_path] = array(
     'title' => 'Frequently Asked Questions',
     'page callback' => 'faq_page',
     'access callback' => 'user_access',
@@ -84,7 +85,7 @@ function faq_menu() {
     'type' => MENU_SUGGESTED_ITEM,
   );
 
-  $items['faq-page/list'] = array(
+  $items[$faq_path . '/list'] = array(
     'title' => 'List',
     'page callback' => 'faq_page',
     'access callback' => 'user_access',
@@ -93,7 +94,7 @@ function faq_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
-  $items['faq-page/order'] = array(
+  $items[$faq_path . '/order'] = array(
     'title' => 'Order',
     'description' => 'Allows the user to configure the order of questions and answers on a FAQ page.',
     'file' => 'faq.admin.inc',
@@ -105,7 +106,7 @@ function faq_menu() {
     'weight' => -8,
   );
 
-  $items['faq-page/%'] = array(
+  $items[$faq_path . '/%'] = array(
     'title' => 'Frequently Asked Questions',
     'page callback' => 'faq_page',
     'page arguments' => array(1),
@@ -114,7 +115,7 @@ function faq_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['faq-page/%/list'] = array(
+  $items[$faq_path . '/%/list'] = array(
     'title' => 'List',
     'page callback' => 'faq_page',
     'page arguments' => array(1),
@@ -124,7 +125,7 @@ function faq_menu() {
     'weight' => -10,
   );
 
-  $items['faq-page/%/order'] = array(
+  $items[$faq_path . '/%/order'] = array(
     'title' => 'Order',
     'description' => 'Allows the user to configure the order of questions and answers on a FAQ page.',
     'file' => 'faq.admin.inc',
@@ -218,6 +219,14 @@ function faq_form($node, $form_state) {
   $form['title']['#description'] = t('Question to be answered.  This will appear in all question listings, such as the FAQ blocks.');
 
   return $form;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function faq_form_faq_general_settings_form_alter(&$form, &$form_state) {
+  $form['#validate'][] = 'faq_general_settings_form_validate';
+  $form['#submit'][] = 'faq_general_settings_form_submit';
 }
 
 /**
@@ -418,7 +427,7 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
   $output = $output_answers = '';
   drupal_add_css(drupal_get_path('module', 'faq') . '/faq.css');
   if (arg(0) == 'faq-page') {
-    drupal_set_title(variable_get('faq_title', 'Frequently Asked Questions'));
+    drupal_set_title(t(variable_get('faq_title', 'Frequently Asked Questions')));
   }
   if (!module_exists("taxonomy")) {
     $tid = 0;
@@ -536,7 +545,7 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
     // If we're viewing a specific category/term.
     if (!empty($tid)) {
       if ($term = taxonomy_term_load($tid)) {
-        $title = variable_get('faq_title', 'Frequently Asked Questions');
+        $title = t(variable_get('faq_title', 'Frequently Asked Questions'));
         if (arg(0) == 'faq-page' && is_numeric(arg(1))) {
           drupal_set_title($title . ($title ? ' - ' : '') . faq_tt("taxonomy:term:$term->tid:name", $term->name));
         }
@@ -576,6 +585,10 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
           $tree = taxonomy_get_tree($vid, 0, NULL, TRUE);
         }
 
+        if (function_exists('i18n_taxonomy_localize_terms')) {
+          $tree = i18n_taxonomy_localize_terms($tree);
+        }
+
         foreach ($tree as $term) {
           switch ($category_display) {
             case 'hide_qa':
@@ -603,7 +616,7 @@ function faq_page($tid = 0, $faq_display = '', $category_display = '') {
     }
   }
 
-  $faq_description = variable_get('faq_description', '');
+  $faq_description = t(variable_get('faq_description', ''));
   $format = variable_get('faq_description_format', 0);
   if ($format) {
     $faq_description = check_markup($faq_description, $format);
@@ -678,7 +691,9 @@ function _display_faq_by_category($faq_display, $category_display, $term, $displ
   }
   if (module_exists('i18n_select')) {
     $query->condition('n.language', i18n_select_langcodes());
-    $query->condition("{$td_alias}.language", i18n_select_langcodes());
+    if (module_exists('i18n_taxonomy')) {
+      $query->condition("{$td_alias}.language", i18n_select_langcodes());
+    }
   }
 
   // We only want the first column, which is nid, so that we can load all
@@ -1348,6 +1363,10 @@ function faq_get_child_categories_faqs($term, $theme_function, $default_weight, 
 
   $list = taxonomy_get_children($term->tid);
 
+  if (function_exists('i18n_taxonomy_localize_terms')) {
+    $list = i18n_taxonomy_localize_terms($list);
+  }
+
   if (!is_array($list)) {
     return '';
   }
@@ -1389,7 +1408,9 @@ function faq_get_child_categories_faqs($term, $theme_function, $default_weight, 
       }
       if (module_exists('i18n_select')) {
         $query->condition('n.language', i18n_select_langcodes());
-        $query->condition("{$td_alias}.language", i18n_select_langcodes());
+        if (module_exists('i18n_taxonomy')) {
+          $query->condition("{$td_alias}.language", i18n_select_langcodes());
+        }
       }
 
       // We only want the first column, which is nid, so that we can load all
@@ -1425,6 +1446,10 @@ function faq_get_child_categories_faqs($term, $theme_function, $default_weight, 
 function faq_view_child_category_headers($term) {
   $child_categories = array();
   $list = taxonomy_get_children($term->tid);
+
+  if (function_exists('i18n_taxonomy_localize_terms')) {
+    $list = i18n_taxonomy_localize_terms($list);
+  }
 
   foreach ($list as $tid => $child_term) {
     $term_node_count = faq_taxonomy_term_count_nodes($child_term->tid);
@@ -1600,7 +1625,7 @@ function faq_set_breadcrumb($term = NULL) {
         $breadcrumb[] = l(faq_tt("taxonomy:term:$term->tid:name", $term->name), 'faq-page/' . $term->tid);
       }
     }
-    $breadcrumb[] = l(variable_get('faq_title', 'Frequently Asked Questions'), 'faq-page');
+    $breadcrumb[] = l(t(variable_get('faq_title', 'Frequently Asked Questions')), 'faq-page');
     $breadcrumb[] = l(t('Home'), NULL, array('attributes' => array('title' => variable_get('site_name', ''))));
     $breadcrumb = array_reverse($breadcrumb);
     return drupal_set_breadcrumb($breadcrumb);

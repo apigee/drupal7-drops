@@ -3,7 +3,7 @@
 /**
  * Predis client specific implementation.
  */
-class Redis_Client_Predis implements Redis_Client_Interface {
+class Redis_Client_Predis implements Redis_Client_FactoryInterface {
 
   /**
    * Circular depedency breaker.
@@ -11,19 +11,15 @@ class Redis_Client_Predis implements Redis_Client_Interface {
   static protected $autoloaderRegistered = false;
 
   /**
-   * Predis version major.
+   * If the first cache get operation happens after the core autoloader has
+   * been registered to PHP, during our autoloader registration we will
+   * trigger it when calling class_exists(): core autoloader will then run
+   * cache_get() during autoloading but sadly this will run our autoloader
+   * registration once again. The second time we are called the circular
+   * dependency breaker will act and we will do nothing, ending up in a
+   * class instanciation attempt while the autoloader is still not loaded.
    */
-  static protected $predisVersionMajor = 1;
-
-  /**
-   * Get predis version major.
-   *
-   * @return int
-   */
-  static public function getPredisVersionMajor()
-  {
-      return self::$predisVersionMajor;
-  }
+  static protected $stupidCoreWorkaround = 0;
 
   /**
    * Define Predis base path if not already set, and if we need to set the
@@ -42,9 +38,9 @@ class Redis_Client_Predis implements Redis_Client_Interface {
 
     if (self::$autoloaderRegistered) {
       return;
-    } else {
-      self::$autoloaderRegistered = true;
     }
+
+    self::$stupidCoreWorkaround++;
 
     // If you attempt to set Drupal's bin cache_bootstrap using Redis, you
     // will experience an infinite loop (breaking by itself the second time
@@ -54,69 +50,77 @@ class Redis_Client_Predis implements Redis_Client_Interface {
     // file map, this will trigger this method to be called a second time
     // and boom! Adios bye bye. That's why this will be called early in the
     // 'redis.autoload.inc' file instead.
-    if (!class_exists('Predis\Client')) {
+    if (1 < self::$stupidCoreWorkaround || !class_exists('Predis\Client')) {
 
       if (!defined('PREDIS_BASE_PATH')) {
         $search = DRUPAL_ROOT . '/sites/all/libraries/predis';
+        define('PREDIS_BASE_PATH', $search);
       } else {
         $search = PREDIS_BASE_PATH;
       }
 
       if (is_dir($search . '/src')) { // Predis v1.x
-        self::$predisVersionMajor = 1;
-        define('PREDIS_BASE_PATH', $search);
+        define('PREDIS_VERSION_MAJOR', 1);
       } else if (is_dir($search . '/lib')) { // Predis v0.x
-        self::$predisVersionMajor = 0;
-        define('PREDIS_BASE_PATH', $search);
+        define('PREDIS_VERSION_MAJOR', 0);
       } else {
         throw new Exception("PREDIS_BASE_PATH constant must be set, Predis library must live in sites/all/libraries/predis.");
       }
 
       // Register a simple autoloader for Predis library. Since the Predis
       // library is PHP 5.3 only, we can afford doing closures safely.
-      switch (self::$predisVersionMajor) {
+      switch (PREDIS_VERSION_MAJOR) {
 
         case 0:
-          spl_autoload_register(function($classname) { // PSR-0 autoloader.
+          $autoload = function($classname) { // PSR-0 autoloader.
             if (0 === strpos($classname, 'Predis\\')) {
               $filename = PREDIS_BASE_PATH . '/lib/' . str_replace('\\', '/', $classname) . '.php';
               return (bool)require_once $filename;
             }
             return false;
-          });
+          };
           break;
 
         case 1:
           // Register a simple autoloader for Predis library. Since the Predis
           // library is PHP 5.3 only, we can afford doing closures safely.
-          spl_autoload_register(function($classname) { // PSR-4 autoloader
+          $autoload = function($classname) { // PSR-4 autoloader
             if (0 === strpos($classname, 'Predis\\')) {
               $filename = PREDIS_BASE_PATH . '/src/' . str_replace('\\', '/', substr($classname, 7)) . '.php';
               return (bool)require_once $filename;
             }
             return false;
-          });
+          };
           break;
       }
+
+      if ($autoload) {
+        spl_autoload_register($autoload);
+      }
+
+      // Same reason why we have the stupid core workaround, if this happens
+      // during a second autoload call, PHP won't call the newly registered
+      // autoloader function, so just load the file.
+      if (1 < self::$stupidCoreWorkaround) {
+        call_user_func($autoload, 'Predis\Client');
+      }
     }
+
+    self::$autoloaderRegistered = true;
   }
 
-  public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL, $socket = NULL) {
-    $connectionInfo = array(
-      'password' => $password,
-      'host'     => $host,
-      'port'     => $port,
-      'database' => $base
-    );
+  public function getClient($options = array()) {
 
-    if (!empty($socket)) {
-      $connectionInfo['scheme'] = 'unix';
-      $connectionInfo['path'] = $socket;
+    self::setPredisAutoload();
+
+    if (!empty($options['socket'])) {
+      $options['scheme'] = 'unix';
+      $options['path'] = $options['socket'];
     }
 
-    foreach ($connectionInfo as $key => $value) {
+    foreach ($options as $key => $value) {
       if (!isset($value)) {
-        unset($connectionInfo[$key]);
+        unset($options[$key]);
       }
     }
 
@@ -126,7 +130,11 @@ class Redis_Client_Predis implements Redis_Client_Interface {
     // account has logged in.
     date_default_timezone_set(@date_default_timezone_get());
 
-    $client = new \Predis\Client($connectionInfo);
+    $client = new \Predis\Client($options);
+
+    if (isset($options['base']) && 0 !== $options['base']) {
+        $client->select((int)$options['base']);
+    }
 
     return $client;
   }

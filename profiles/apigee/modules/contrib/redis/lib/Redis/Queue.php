@@ -18,7 +18,7 @@ class Redis_Queue implements DrupalReliableQueueInterface
     public function __construct($name)
     {
         $className = Redis_Client::getClass(Redis_Client::REDIS_IMPL_QUEUE);
-        $this->backend = new $className($name);
+        $this->backend = new $className(Redis_Client::getClient(), $name);
     }
 
     public function createItem($data)

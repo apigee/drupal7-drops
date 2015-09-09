@@ -48,10 +48,8 @@ function smartdocs_render(Model $model, Revision $revision, $selected, $options,
       if ($select == '0') {
         continue;
       }
-      /** @var Apigee\SmartDocs\Resource $resource */
       foreach ($revision->getResources() as $resource) {
         $resource_array = $resource->toArray();
-        /** @var Apigee\SmartDocs\Method $method */
         foreach ($resource->getMethods() as $method) {
           if ($select == $method->getUuid()) {
             $operations[] = array(
@@ -156,6 +154,36 @@ function smartdocs_render_nodes(array $model_array, array $revision_array, array
 
   $method = new Method($model->getConfig(), $model->getUuid(), $revision->getUuid(), $resource->getUuid());
   Method::fromArray($method, $method_array);
+  $method_name = $method->getDisplayName();
+  try {
+    $start = microtime(TRUE);
+    // Reload method in order to pick up tags and other details.
+    $method->load();
+    if (variable_get('smartdocs_log_transaction_time', 0)) {
+      $args = array(
+        '!method' => $method_name,
+        '!model' => $model->getDisplayName(),
+        '!time' => number_format(microtime(TRUE) - $start, 4),
+      );
+      watchdog('smartdocs', __FUNCTION__ . ': Loaded method !method from model !model in !time seconds.', $args, WATCHDOG_INFO);
+    }
+
+  }
+  catch (Exception $e) {
+    $message = t('Failed to load method :title from the Modeling API.', array(':title' => $method_name));
+    $context['message'] = $message;
+    $context['results'][] = $message;
+
+    $args = array(
+      '!method' =>$method_name,
+      '!model' => $model->getName(),
+      '!revision' => $revision->getRevisionNumber(),
+      '!resource' => $resource->getDisplayName(),
+      '!exception' => $e->getMessage(),
+    );
+    watchdog('smartdocs', "Exception loading method !method from model !model, revision !revision, resource !resource:\n!exception", $args, WATCHDOG_ERROR);
+    return;
+  }
 
   $exists = db_select('smartdata', 's')
     ->fields('s', array('nid'))
@@ -166,10 +194,10 @@ function smartdocs_render_nodes(array $model_array, array $revision_array, array
   if (!$exists) {
     drupal_load('module', 'smartdocs');
     smartdocs_render_node($model, $revision, $resource, $method, $publish, $context);
-    $context['message'] = t('Node: :title created', array(':title' => $method->getDisplayName()));
+    $context['message'] = t('Node: :title created', array(':title' => $method_name));
   }
   else {
-    $context['message'] = t('Node: :title already created', array(':title' => $method->getDisplayName()));
+    $context['message'] = t('Node: :title already created', array(':title' => $method_name));
   }
 }
 
@@ -186,5 +214,10 @@ function smartdocs_render_nodes(array $model_array, array $revision_array, array
 function smartdocs_render_finished($success, $results, $operations) {
   if (!$success) {
     drupal_set_message(t('The render failed, consult the logs for more information.'), 'error');
+  }
+  elseif (!empty($results)) {
+    foreach ($results as $message) {
+      drupal_set_message($message, 'warning');
+    }
   }
 }

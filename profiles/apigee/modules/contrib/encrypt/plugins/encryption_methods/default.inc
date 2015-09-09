@@ -5,11 +5,18 @@
  * Plugin definition for the Default encryption method.
  */
 
-$plugin = array(
-  'title' => t('Basic'),
-  'description' => t('This is the basic default encryption type that does not require any special extensions.'),
-  'encrypt callback' => 'encrypt_encryption_methods_basic',
-);
+$plugin = encrypt_default_encrypt_encryption_methods();
+
+/**
+ * Implements MODULE_FILENAME_encrypt_encryption_methods().
+ */
+function encrypt_default_encrypt_encryption_methods() {
+  return array(
+    'title' => t('Basic'),
+    'description' => t('This is the basic default encryption type that does not require any special extensions.'),
+    'encrypt callback' => 'encrypt_encryption_methods_basic',
+  );
+}
 
 /**
  * Callback for Encrypt implementation: default.
