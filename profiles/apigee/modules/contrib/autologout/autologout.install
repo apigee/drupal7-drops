@@ -74,3 +74,13 @@ function autologout_update_7400() {
 
   drupal_flush_all_caches();
 }
+
+/**
+ * Fix permission names in role_permission table
+ */
+function autologout_update_7401() {
+  db_update('role_permission')
+    ->fields(array('permission' => 'administer autologout'))
+    ->condition('permission', 'auto administer autologout', '=')
+    ->execute();
+}

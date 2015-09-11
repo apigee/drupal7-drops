@@ -143,18 +143,23 @@
       }
 
       function logout() {
-        $.ajax({
-          url: Drupal.settings.basePath + "?q=autologout_ahah_logout",
-          type: "POST",
-          success: function() {
-            window.location = localSettings.redirect_url;
-          },
-          error: function(XMLHttpRequest, textStatus) {
-            if (XMLHttpRequest.status == 403 || XMLHttpRequest.status == 404) {
+        if (localSettings.use_alt_logout_method) {
+          window.location = Drupal.settings.basePath + "?q=autologout_ahah_logout";
+        }
+        else {
+          $.ajax({
+            url: Drupal.settings.basePath + "?q=autologout_ahah_logout",
+            type: "POST",
+            success: function() {
               window.location = localSettings.redirect_url;
+            },
+            error: function(XMLHttpRequest, textStatus) {
+              if (XMLHttpRequest.status == 403 || XMLHttpRequest.status == 404) {
+                window.location = localSettings.redirect_url;
+              }
             }
-          }
-        });
+          });
+        }
       }
 
       /**

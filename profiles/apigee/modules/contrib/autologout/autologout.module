@@ -12,11 +12,11 @@ function autologout_permission() {
   return array(
     'change own logout threshold' => array(
       'title' => t('Change own logout threshold'),
-      'description' => t('Selected users will be able to edit there own logout threshold.'),
+      'description' => t('Selected users will be able to edit their own logout threshold.'),
     ),
     'administer autologout'  => array(
       'title' => t('Administer Autologout'),
-      'description' => t('Administer the autologout settings'),
+      'description' => t('Administer the autologout settings.'),
     ),
   );
 }
@@ -336,8 +336,13 @@ function autologout_user_profile_submit(&$form, &$form_state) {
   // display but wont sumbit without access.
   if ($access) {
     $userid = $form_state['user'] -> uid;
-    $val = $form_state['values']['autologout_user_' . $userid];
-    variable_set('autologout_user_' . $userid, $val);
+    $val = trim($form_state['values']['autologout_user_' . $userid]);
+    if (empty($val)) {
+      variable_del('autologout_user_' . $userid);
+    }
+    else {
+      variable_set('autologout_user_' . $userid, $val);
+    }
   }
 }
 
@@ -370,19 +375,29 @@ function autologout_init() {
   $redirect_url = variable_get('autologout_redirect_url', 'user/login');
   $redirect_query = drupal_get_destination() + array('autologout_timeout' => 1);
   $no_dialog = variable_get('autologout_no_dialog', FALSE);
+  $use_alt_logout_method = variable_get('autologout_use_alt_logout_method', FALSE);
   drupal_add_library('system', 'ui.dialog');
 
   // Get all settings JS will need for dialog.
-  $msg = t('@msg', array('@msg' => variable_get('autologout_message', 'Your session is about to expire. Do you want to reset it?')));
+  $msg = t(variable_get('autologout_message', 'Your session is about to expire. Do you want to reset it?'));
   $settings = array(
     'timeout' => $refresh_only ? ($timeout * 500) : ($timeout * 1000),
     'timeout_padding' => $timeout_padding * 1000,
-    'message' => t('@msg', array('@msg' => $msg)),
+    'message' => $msg,
     'redirect_url' => url($redirect_url, array('query' => $redirect_query)),
     'title' => t('@name Alert', array('@name' => variable_get('site_name', 'Drupal'))),
     'refresh_only' => $refresh_only,
     'no_dialog' => $no_dialog,
+    'use_alt_logout_method' => $use_alt_logout_method,
   );
+
+  // If this is an AJAX request, then the logout redirect url should still be
+  // referring to the page that generated this request
+  if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+    global $base_url;
+    $relative_url = str_replace($base_url . '/', '', $_SERVER['HTTP_REFERER']);
+    $settings['redirect_url'] = url($redirect_url, array('query' => array('destination' => urlencode($relative_url)), 'autologout_timeout' => 1));
+  }
 
   drupal_add_library('system', 'drupal.ajax');
   drupal_add_js(array('autologout' => $settings), 'setting');
@@ -488,6 +503,10 @@ function autologout_ahah_get_remaining_time() {
  */
 function autologout_ahah_set_last() {
   $_SESSION['autologout_last'] = time();
+
+   // Let others act.
+  global $user;
+  module_invoke_all('auto_logout_session_reset', $user);
 
   // Reset the timer.
   $markup = autologout_create_timer();
@@ -628,8 +647,9 @@ function _autologout_logout_role($user) {
  */
 function _autologout_inactivity_message() {
   $message = variable_get('autologout_inactivity_message', 'You have been logged out due to inactivity.');
+  drupal_alter('autologout_message', $message);
   if (!empty($message)) {
-    drupal_set_message(t($message));
+    drupal_set_message($message);
   }
 }
 

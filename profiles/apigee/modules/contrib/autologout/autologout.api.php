@@ -41,3 +41,13 @@ function hook_autologout_refresh_only() {
     return TRUE;
   }
 }
+
+/**
+ * Let others act when session is extended.
+ *
+ * Use case: Some applications might be embedding the some other
+ * applications via iframe which also requires to extend its sessions.
+ */
+ function hook_auto_logout_session_reset($user) {
+   $myOtherIframeApplication->resetSession($user->uid);
+ }

@@ -550,10 +550,7 @@ function smartdocs_revision_load($rev) {
     $revision = new Revision($model->getConfig(), $model->getUuid());
     try {
       $start = microtime(TRUE);
-      $revision->load($rev, TRUE);
-      foreach ($revision->getResources() as &$resource) {
-        $resource->load();
-      }
+      $revision->load($rev);
       if (variable_get('smartdocs_log_transaction_time', 0)) {
         $args = array(
           '!revision' => $rev,
@@ -561,7 +558,6 @@ function smartdocs_revision_load($rev) {
           '!time' => number_format(microtime(TRUE) - $start, 4),
         );
         watchdog('smartdocs', __FUNCTION__ . ': Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
-
       }
     }
     catch (ResponseException $e) {
