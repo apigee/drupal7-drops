@@ -1595,7 +1595,9 @@ function install_finished(&$install_state) {
 }
 
 /**
- * Batch callback for batch installation of modules.
+ * Implements callback_batch_operation().
+ *
+ * Performs batch installation of modules.
  */
 function _install_module_batch($module, $module_name, &$context) {
   // Install and enable the module right away, so that the module will be
@@ -1608,6 +1610,8 @@ function _install_module_batch($module, $module_name, &$context) {
 }
 
 /**
+ * Implements callback_batch_finished().
+ *
  * 'Finished' callback for module installation batch.
  */
 function _install_profile_modules_finished($success, $results, $operations) {
