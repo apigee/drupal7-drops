@@ -214,7 +214,7 @@ function smartdocs_settings($form, $form_state) {
   $form['settings']['api_proxy']['smartdocs_use_local_assets'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use local SmartDocs JS/CSS'),
-    '#default_value' => variable_get('smartdocs_use_local_assets', 0),
+    '#default_value' => variable_get('smartdocs_use_local_assets', 1),
     '#description' => t('By enabling this setting, you will use local assets hosted by Dev Portal.'),
   );
 
@@ -1362,16 +1362,29 @@ function smartdocs_model_settings(array $form, array &$form_state, Model $model)
     '#value' => $model->getName(),
   );
 
-  $def_css = 'https://smartdocs.apigee.com/6/static/css/main.css
-https://smartdocs.apigee.com/6/static/css/codemirror.css
-https://smartdocs.apigee.com/6/static/css/prism.css';
-  $def_js = "https://smartdocs.apigee.com/6/static/js/codemirror.js
-https://smartdocs.apigee.com/6/static/js/codemirror_javascript.js
-https://smartdocs.apigee.com/6/static/js/codemirror_xml.js
-https://smartdocs.apigee.com/6/static/js/prism.js
-https://smartdocs.apigee.com/6/static/js/base64_min.js
-https://smartdocs.apigee.com/6/static/js/model.js
-https://smartdocs.apigee.com/6/static/js/controller.js";
+  $asset_base_path = drupal_get_path('module', 'smartdocs') . '/local';
+  $css_files = array('main', 'codemirror', 'prism');
+  // Note: The sequence of these is significant. Do not reorder them unless
+  // you know what you're doing!
+  $js_files = array(
+    'codemirror',
+    'codemirror_javascript',
+    'codemirror_xml',
+    'prism',
+    'base64_min',
+    'model',
+    'controller',
+    'marked',
+  );
+
+  $def_css = '';
+  foreach ($css_files as $css_file) {
+    $def_css .= "$asset_base_path/css/v6/$css_file.css\n";
+  }
+  $def_js = '';
+  foreach ($js_files as $js_file) {
+    $def_js .= "$asset_base_path/js/v6/$js_file.js\n";
+  }
 
   $form['css_js'] = array(
     '#type' => 'fieldset',
@@ -1383,14 +1396,14 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
   $form['css_js']['smartdocs_css'] = array(
     '#type' => 'textarea',
     '#title' => t('CSS'),
-    '#rows' => 3,
-    '#default_value' => variable_get('smartdocs_css_' . $model_tid, $def_css),
+    '#rows' => count($css_files),
+    '#default_value' => variable_get('smartdocs_css_' . $model_tid, rtrim($def_css)),
   );
   $form['css_js']['smartdocs_js'] = array(
     '#type' => 'textarea',
     '#title' => t('Javascript'),
-    '#rows' => 7,
-    '#default_value' => variable_get('smartdocs_js_' . $model_tid, $def_js),
+    '#rows' => count($js_files),
+    '#default_value' => variable_get('smartdocs_js_' . $model_tid, rtrim($def_js)),
   );
 
   $form['css_js']['actions'] = array(
@@ -1798,6 +1811,15 @@ function smartdocs_model_delete_submit(array $form, array &$form_state) {
 
       taxonomy_term_delete($model_term->tid);
     }
+
+    // Remove any lingering views.
+    $view_name = $model_name . '_methods';
+    $view = views_get_view($view_name);
+    if ($view) {
+      views_delete_view($view);
+    }
+    // Make sure ctools is not caching the old view.
+    db_delete('ctools_object_cache')->condition('name', $view_name)->execute();
 
     menu_rebuild();
     drupal_flush_all_caches();

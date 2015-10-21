@@ -38,12 +38,27 @@ function adminimal_preprocess_html(&$vars) {
   // Add conditional CSS for IE6.
   drupal_add_css($adminimal_path . '/css/ie6.css', array('group' => CSS_THEME, 'browsers' => array('IE' => 'lte IE 6', '!IE' => FALSE), 'weight' => 999, 'preprocess' => TRUE));
 
+  //Add Homebox module support
+  if (module_exists('homebox')) {
+    drupal_add_css($adminimal_path . '/css/homebox_custom.css', array('group' => CSS_THEME, 'media' => 'all', 'weight' => 1));
+  }
+
   // Add theme name to body class.
   $vars['classes_array'][] = 'adminimal-theme';
 
   // Style checkbox and radio buttons in Webkit Browsers.
   if (theme_get_setting('style_checkboxes')) {
     $vars['classes_array'][] = 'style-checkboxes';
+  }
+
+  // Disable rounded buttons setting.
+  if (!theme_get_setting('rounded_buttons')) {
+    $vars['classes_array'][] = 'no-rounded-buttons';
+  }
+
+  // Enable sticky action buttons.
+  if (theme_get_setting('sticky_actions')) {
+    $vars['classes_array'][] = 'sticky-actions';
   }
 
   // Add icons to the admin configuration page.
@@ -103,6 +118,26 @@ function adminimal_preprocess_html(&$vars) {
   );
   drupal_add_html_head($viewport, 'viewport');
 
+  // Remove the no-sidebars class which is always added by core. Core assumes
+  // the sidebar regions are called sidebar_first and sidebar_second, which
+  // is not the case in this theme.
+  $key = array_search('no-sidebars', $vars['classes_array']);
+  if ($key !== FALSE) {
+    unset($vars['classes_array'][$key]);
+  }
+  // Add information about the number of sidebars.
+  if (!empty($vars['page']['sidebar_left']) && !empty($vars['page']['sidebar_right'])) {
+    $vars['classes_array'][] = 'two-sidebars';
+  }
+  elseif (!empty($vars['page']['sidebar_left'])) {
+    $vars['classes_array'][] = 'one-sidebar sidebar-left';
+  }
+  elseif (!empty($vars['page']['sidebar_right'])) {
+    $vars['classes_array'][] = 'one-sidebar sidebar-right';
+  }
+  else {
+    $vars['classes_array'][] = 'no-sidebars';
+  }
 }
 
 /**
@@ -115,7 +150,7 @@ function adminimal_preprocess_page(&$vars) {
     '#theme' => 'menu_local_tasks',
     '#secondary' => $vars['tabs']['#secondary'],
   );
-
+  unset($vars['page']['hidden']);
 }
 
 /**
@@ -243,7 +278,6 @@ function adminimal_admin_block($variables) {
   $output .= '</div>';
 
   return $output;
-
 }
 
 /**

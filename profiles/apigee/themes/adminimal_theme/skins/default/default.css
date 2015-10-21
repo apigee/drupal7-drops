@@ -1,7 +1,8 @@
 /* Style checkbox and radio buttons in Chrome + Safari + Opera */
 @supports (-webkit-appearance:none) {
   .style-checkboxes input[type=checkbox],
-  .style-checkboxes input[type=radio] {
+  .style-checkboxes input[type=radio],
+  .style-checkboxes input[type=checkbox]#edit-delete {
     -webkit-appearance:none;
     display: inline-block;
     position: relative;
@@ -10,12 +11,21 @@
     padding: 0;
     background: #fff;
     border: 1px solid #B5B5B5;
-    width: 16px;
-    height: 16px;
+    width: 16px !important;
+    height: 16px !important;
     -webkit-transition: all 0.5s ease;
     -o-transition: all 0.5s ease;
     transition: background 0.5s ease;
     outline: none;
+  }
+
+  .adminimal-theme .location .form-item input.form-checkbox {
+    width: 16px;
+    display: inline-block;
+  }
+
+  .style-checkboxes input[type=checkbox]#edit-delete {
+    margin-bottom: 0;
   }
 
   .style-checkboxes input[type=radio] {
@@ -30,6 +40,12 @@
     cursor: pointer;
   }
 
+  .style-checkboxes input[type=checkbox]#edit-delete:hover,
+  .style-checkboxes input[type=checkbox]#edit-delete:focus {
+    border-color: #D01616;
+    cursor: pointer;
+  }
+
   .style-checkboxes input[type=checkbox]:checked,
   .style-checkboxes input[type=checkbox]:disabled:checked,
   .style-checkboxes input[type=radio]:checked,
@@ -38,10 +54,26 @@
     box-shadow: inset 0px 0px 0px 4px #fff;
   }
 
+  .style-checkboxes input[type=checkbox]#edit-delete:checked,
+  .style-checkboxes input[type=checkbox]#edit-delete:disabled:checked {
+    background: #D01616;
+    box-shadow: inset 0px 0px 0px 4px #fff;
+  }
+
   .style-checkboxes input[type=checkbox]:disabled,
   .style-checkboxes input[type=radio]:disabled {
     opacity: .5;
     background: #E2E2E2;
+  }
+
+  .style-checkboxes input[type=checkbox]#edit-delete:disabled {
+    opacity: .5;
+    background: #E88181;
+  }
+
+  .style-checkboxes input[type=checkbox]:disabled:hover {
+    border-color: #B5B5B5;
+    cursor: default;
   }
 
   .style-checkboxes input[type=checkbox]:disabled:hover,
@@ -77,14 +109,20 @@ div.exposed-filters input#edit-submit {
 input.form-submit:hover,
 a.button:hover,
 div.exposed-filters input#edit-submit:hover {
-  background: #0074BD;
-  color: #fff;
+  background: #CECECE;
 }
 
 input.form-submit:active,
 a.button:active,
 div.exposed-filters input#edit-submit:active {
-  box-shadow: 0 2px 2px rgba(0,0,0,0.3) inset;
+  border-radius: 0;
+  border: none;
+}
+
+input.form-submit:focus,
+a.button:focus,
+div.exposed-filters input#edit-submit:focus {
+  outline: 3px solid #EFEFEF;
 }
 
 /* Green Button */
@@ -96,7 +134,9 @@ input#edit-save,
 input#edit-submit,
 input#edit-actions-save,
 .field-widget-inline-entity-form .container-inline .form-submit,
-#media-browser-page a.button-yes {
+#media-browser-page a.button-yes,
+input.add-new-condition,
+#edit-field-product-und-form-actions input.ief-entity-submit {
   cursor: pointer;
   border-radius: 0;
   border: none;
@@ -120,26 +160,41 @@ input#edit-save:hover,
 input#edit-submit:hover,
 input#edit-actions-save:hover,
 .field-widget-inline-entity-form .container-inline .form-submit:hover,
-#media-browser-page a.button-yes:hover {
+#media-browser-page a.button-yes:hover,
+input.add-new-condition:hover,
+#edit-field-product-und-form-actions input.ief-entity-submit:hover {
   background: #0a6700;
   border-radius: 0;
   border: none;
   color: #fff;
 }
 
-input#edit-submit:active,
+input[type="submit"][id^="edit-submit"]:active,
 input#edit-actions-submit:active,
 input[id^="save-continue"]:active,
 input[type="submit"][id^="edit-save"]:active,
 input#edit-save:active,
 input#edit-submit:active,
 .field-widget-inline-entity-form .container-inline .form-submit:active,
-input#edit-actions-save:active {
-  box-shadow: 0 2px 2px rgba(0,0,0,0.75) inset;
-  background: #333;
+input#edit-actions-save:active,
+input.add-new-condition:active,
+#edit-field-product-und-form-actions input.ief-entity-submit:active {
   border-radius: 0;
   border: none;
   color: #fff;
+}
+
+input[type="submit"][id^="edit-submit"]:focus,
+input#edit-actions-submit:focus,
+input[id^="save-continue"]:focus,
+input[type="submit"][id^="edit-save"]:focus,
+input#edit-save:focus,
+input#edit-submit:focus,
+.field-widget-inline-entity-form .container-inline .form-submit:focus,
+input#edit-actions-save:focus,
+input.add-new-condition:focus,
+#edit-field-product-und-form-actions input.ief-entity-submit:focus {
+  outline: 3px solid #D0E8CE;
 }
 
 /* Red Button */
@@ -150,7 +205,9 @@ input#edit-clear,
 a.button.remove,
 .page-node-delete input#edit-submit,
 input[id*="remove-button"],
-.page-admin-modules-uninstall input#edit-submit {
+.page-admin-modules-uninstall input#edit-submit,
+.remove-condition input,
+.field-widget-inline-entity-form .ief-entity-operations input[id*="remove"].form-submit {
   cursor: pointer;
   padding: 6px 10px;
   border-radius: 0;
@@ -173,7 +230,9 @@ input#edit-clear:hover,
 a.button.remove:hover,
 .page-node-delete input#edit-submit:hover,
 input[id*="remove-button"]:hover,
-body.page-admin-modules-uninstall input#edit-submit:hover {
+body.page-admin-modules-uninstall input#edit-submit:hover,
+.remove-condition input:hover,
+.field-widget-inline-entity-form .ief-entity-operations input[id*="remove"].form-submit:hover {
   background: #990000;
   border-radius: 0;
   border: none;
@@ -186,12 +245,24 @@ input#edit-remove:active,
 input#edit-clear:active,
 .page-node-delete input#edit-submit:active,
 input[id*="remove-button"]:active,
-body.page-admin-modules-uninstall input#edit-submit:active {
-  box-shadow: 0 2px 2px rgba(0,0,0,0.75) inset;
-  background: #333;
+body.page-admin-modules-uninstall input#edit-submit:active,
+.remove-condition input:active,
+.field-widget-inline-entity-form .ief-entity-operations input[id*="remove"].form-submit:active {
   border-radius: 0;
   border: none;
   color: #fff;
+}
+
+input#edit-delete:focus,
+input#remove-button:focus,
+input#edit-remove:focus,
+input#edit-clear:focus,
+.page-node-delete input#edit-submit:focus,
+input[id*="remove-button"]:focus,
+body.page-admin-modules-uninstall input#edit-submit:focus,
+.remove-condition input:focus,
+.field-widget-inline-entity-form .ief-entity-operations input[id*="remove"].form-submit:focus {
+  outline: 3px solid #FFD8D8;
 }
 
 /* Blue Button */
@@ -199,7 +270,8 @@ input#edit-preview,
 input#edit-next,
 input#preview-submit,
 input.ief-entity-submit,
-input[type="submit"][id^="edit-return"] {
+input[type="submit"][id^="edit-return"],
+.field-widget-inline-entity-form .ief-entity-operations input[id*="edit"] {
   cursor: pointer;
   border-radius: 0;
   border: none;
@@ -219,7 +291,8 @@ input#edit-preview:hover,
 input#edit-next:hover,
 input#preview-submit:hover,
 input.ief-entity-submit:hover,
-input[type="submit"][id^="edit-return"]:hover {
+input[type="submit"][id^="edit-return"]:hover,
+.field-widget-inline-entity-form .ief-entity-operations input[id*="edit"]:hover {
   background: #004c99;
   border-radius: 0;
   border: none;
@@ -230,19 +303,28 @@ input#edit-preview:active,
 input#edit-next:active,
 input#preview-submit:active,
 input.ief-entity-submit:active,
-input[type="submit"][id^="edit-return"]:active {
-  box-shadow: 0 2px 2px rgba(0,0,0,0.75) inset;
-  background: #333;
+input[type="submit"][id^="edit-return"]:active,
+.field-widget-inline-entity-form .ief-entity-operations input[id*="edit"]:active {
   border-radius: 0;
   border: none;
   color: #fff;
+}
+
+input#edit-preview:focus,
+input#edit-next:focus,
+input#preview-submit:focus,
+input.ief-entity-submit:focus,
+input[type="submit"][id^="edit-return"]:focus,
+.field-widget-inline-entity-form .ief-entity-operations input[id*="edit"]:focus {
+  outline: 3px solid #D2E4F7;
 }
 
 /* Orange Button */
 #edit-cancel,
 #edit-actions-cancel,
 input#edit-buttons-revert,
-#media-browser-page a.button-no {
+#media-browser-page a.button-no,
+.field-widget-inline-entity-form input[id*="cancel"] {
   cursor: pointer;
   border-radius: 0;
   border: none;
@@ -268,7 +350,8 @@ a#edit-cancel,a#edit-actions-cancel {
 #edit-cancel:hover,
 #edit-actions-cancel:hover,
 input#edit-buttons-revert:hover,
-#media-browser-page a.button-no:hover {
+#media-browser-page a.button-no:hover,
+.field-widget-inline-entity-form input[id*="cancel"]:hover {
   background: #ef6114;
   text-decoration: none;
   border-radius: 0;
@@ -278,12 +361,41 @@ input#edit-buttons-revert:hover,
 
 #edit-cancel:active,
 #edit-actions-cancel:active,
-input#edit-buttons-revert:active {
-  box-shadow: 0 2px 2px rgba(0,0,0,0.75) inset;
-  background: #333;
+input#edit-buttons-revert:active,
+.field-widget-inline-entity-form input[id*="cancel"]:active {
   border-radius: 0;
   border: none;
   color: #fff;
+}
+
+#edit-cancel:focus,
+#edit-actions-cancel:focus,
+input#edit-buttons-revert:focus,
+.field-widget-inline-entity-form input[id*="cancel"]:focus {
+  outline: 3px solid #FFE8D2;
+}
+
+html body input.disabled,
+html body input.disabled:hover,
+html body input.disabled:active,
+html body input.disabled:focus {
+  background-color: #A0A0A0;
+  color: #CCCCCC;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+input[type="submit"]:disabled {
+  background: repeating-linear-gradient(
+    -45deg,
+    #FFFFFF,
+    #D2D2D2 4px
+  ) !important;
+  color: #6B6B6B !important;
+  cursor: not-allowed !important;
+  outline: none !important;
+  opacity: 0.665 !important;
+  text-shadow: 1px 1px 0px #fff !important;
 }
 
 /* END Buttons */
@@ -319,6 +431,10 @@ ul.action-links a {
   transition: all, 0.3s;
 }
 
+body.no-rounded-buttons ul.action-links a {
+  border-radius: 0;
+}
+
 ul.action-links a:hover {
   text-decoration: none;
   background: #0074BD;
@@ -343,4 +459,8 @@ ul.action-links a:hover {
 
 .overlay #overlay-tabs {
   right: 2px;
+}
+
+body.sticky-actions .form-actions.form-wrapper {
+  box-shadow: -20px 2px 40px rgba(0,0,0,0.4);
 }

@@ -39,7 +39,8 @@ use Drupal\xautoload\DirectoryBehavior\Psr0DirectoryBehavior;
 class GenericPrefixMap {
 
   /**
-   * @var array[]
+   * @var DirectoryBehaviorInterface[][]
+   *   Format: $[$logical_base_path][$deep_path] = $behavior
    */
   protected $paths = array();
 

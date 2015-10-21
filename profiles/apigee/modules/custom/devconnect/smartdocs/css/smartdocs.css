@@ -554,3 +554,13 @@ body.tao .resource-ops {
 body.tao #smartdocs-revision-detail tbody .ctools-dropbutton {
     margin-top:0;
 }
+
+/** Format the request payload areas **/
+.request_payload .docs, .payload_text_schema {
+    margin: 5px 0;
+    border: 1px solid #cacaca;
+}
+
+.request_payload .docs {
+    padding: 23px;
+}

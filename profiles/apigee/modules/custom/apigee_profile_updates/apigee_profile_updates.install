@@ -1,6 +1,9 @@
 <?php
 
-define('ENFORCE_PHP_VERSION_AT_PROFILE_INSTALL', FALSE);
+/**
+ * @file
+ * Install, update and uninstall functions for the apigee profile.
+ */
 
 /**
  * Implements hook_install().
@@ -24,7 +27,7 @@ function apigee_profile_updates_install() {
     if (!isset($credential_dir)) {
       foreach (array(
                  'sites/default/files/private',
-                 'sites/default/private'
+                 'sites/default/private',
                ) as $private_dir) {
         if (is_dir(DRUPAL_ROOT . '/' . $private_dir) && is_writable(DRUPAL_ROOT . '/' . $private_dir)) {
           $credential_dir = $private_dir;
@@ -65,42 +68,6 @@ function apigee_profile_updates_install() {
 function apigee_profile_updates_requirements() {
   $requirements = array();
   $t = get_t();
-
-  // Don't error out in the case of updates, since this prevents update.php
-  // from running.
-  // MAINTENANCE_MODE (when defined) can be 'install' or 'update', depending
-  // upon which action is being performed. If MAINTENANCE_MODE is undefined,
-  // we are on the site status report page.
-  if (defined('MAINTENANCE_MODE')) {
-    if (MAINTENANCE_MODE == 'install') {
-      $severity = ENFORCE_PHP_VERSION_AT_PROFILE_INSTALL ? REQUIREMENT_ERROR : REQUIREMENT_INFO;
-    }
-    else {
-      $severity = REQUIREMENT_INFO;
-    }
-    // NOTE: by using the 'php' key, we overwrite the system module's
-    // PHP version check message, so there is less clutter.
-    $php_key = 'php';
-  }
-  else {
-    $severity = REQUIREMENT_ERROR;
-    // If we use 'php' as the key here, the display gets messed up on the
-    // status report.
-    $php_key = 'php-devportal';
-  }
-
-  drupal_load('module', 'apigee_profile_updates');
-  if (version_compare(PHP_VERSION, APIGEE_MINIMUM_PHP_VERSION, '<')) {
-    // Setting the weight to a negative number bumps the error message to the
-    // top. -1 puts it right under Drupal version and Install profile.
-    $requirements[$php_key] = array(
-      'description' => _apigee_profile_updates_warning_message(),
-      'severity' => $severity,
-      'title' => $t('PHP version'),
-      'value' => $t('Your PHP version is out-of-date.'),
-      'weight' => -1,
-    );
-  }
 
   if (!extension_loaded('openssl')) {
     $requirements['openssl'] = array(

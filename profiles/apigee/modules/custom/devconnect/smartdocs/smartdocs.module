@@ -271,14 +271,6 @@ function smartdocs_menu() {
 }
 
 /**
- * Implements hook_menu_alter().
- */
-function smartdocs_menu_alter(&$items) {
-  $items['taxonomy/term/%taxonomy_term']['title callback'] = 'smartdocs_taxonomy_term_title';
-  $items['taxonomy/term/%taxonomy_term']['page callback'] = 'smartdocs_taxonomy_term_page';
-}
-
-/**
  * Implements hook_permission().
  */
 function smartdocs_permission() {
@@ -345,9 +337,12 @@ function smartdocs_node_delete($node) {
       ->condition('nid', $node->nid)
       ->execute();
     if ($update) {
+      $model_tid = $node->field_smart_method_model[LANGUAGE_NONE][0]['tid'];
+      $model_term = taxonomy_term_load($model_tid);
+
       drupal_set_message(t('The node %title has also been unsynced from the %type model.', array(
         '%title' => $node->title,
-        '%type' => $node->type,
+        '%type' => $model_term->field_model_display_name[LANGUAGE_NONE][0]['value'],
       )), 'warning');
     }
   }
@@ -1611,107 +1606,6 @@ function _smartdocs_write_smartdata($node) {
 }
 
 /**
- * Title callback for taxonomy term pages.
- *
- * If the term has a "display name" field, that is returned rather than the
- * name property.
- *
- * @param object $term
- *   The taxonomy term for which a title should be generated.
- *
- * @return string
- *   The generated title.
- */
-function smartdocs_taxonomy_term_title($term) {
-  if (property_exists($term, 'field_model_display_name') && !empty($term->field_model_display_name[LANGUAGE_NONE][0]['value'])) {
-    return $term->field_model_display_name[LANGUAGE_NONE][0]['value'];
-  }
-  return $term->name;
-}
-
-/**
- * Page callback for taxonomy terms.
- *
- * If the term is a SmartDocs model, we display the view enumerating its
- * methods. Otherwise we fall back to the default term page provided by the
- * taxonomy module.
- *
- * @param object $term
- *   The taxonomy term for which a page is to be generated.
- *
- * @return array
- *   The render-array of items to be displayed on the page.
- */
-function smartdocs_taxonomy_term_page($term) {
-  if (!property_exists($term, 'field_model_display_name')) {
-    return taxonomy_term_page($term);
-  }
-  drupal_set_title(smartdocs_taxonomy_term_title($term));
-
-  // View names may only be 128 char long.
-  $view_name = substr($term->name . '_methods', 0, 128);
-  $view = views_get_view($view_name);
-  $view_args = array();
-  if (!$view) {
-    $view = views_get_view('smartdocs_methods');
-    $view_args[] = $term->tid;
-  }
-
-  // If user has no access to the view display, show them the door.
-  if (!$view->access(array('modelindex'))) {
-    drupal_access_denied();
-  }
-
-  $output = array();
-  if (!empty($term->description)) {
-    $output['description'] = array(
-      '#type' => 'markup',
-      '#markup' => $term->description,
-      '#prefix' => '<p class="model-description">',
-      '#suffix' => '</p>',
-    );
-  }
-
-  $output['methods'] = array(
-    '#type' => 'markup',
-    '#markup' => $view->preview('modelindex', $view_args),
-  );
-
-  views_add_contextual_links($output, 'block', $view, 'modelindex');
-
-  return $output;
-}
-
-/**
- * Implements hook_block_info().
- */
-function smartdocs_block_info() {
-  $blocks['method_toc'] = array(
-    'info' => t('Method Sidebar TOC'),
-    'cache' => DRUPAL_CACHE_PER_PAGE,
-  );
-  return $blocks;
-}
-
-/**
- * Implements hook_block_view().
- */
-function smartdocs_block_view($delta = 'method_toc') {
-  $block = array('subject' => '', 'content' => '');
-  $node = menu_get_object();
-  if (is_object($node) && property_exists($node, 'field_smart_method_model') && !empty($node->field_smart_method_model[LANGUAGE_NONE][0]['tid'])) {
-    $term = taxonomy_term_load($node->field_smart_method_model[LANGUAGE_NONE][0]['tid']);
-    if ($term) {
-      $block = array(
-        'subject' => t('@model_name Methods', array('@model_name' => smartdocs_taxonomy_term_title($term))),
-        'content' => views_get_view('smartdocs_methods')->preview('methodtoc', array($term->tid)),
-      );
-    }
-  }
-  return $block;
-}
-
-/**
  * Title callback for the revision details page.
  *
  * @param mixed $revision
@@ -1767,15 +1661,30 @@ function smartdocs_taxonomy_term_insert($term) {
  * corresponding to the model, we bail early. (The latter should never
  * happen!)
  *
- * @param Apigee\SmartDocs\Model $model
- *   The model for which we are creating a view.
+ * @param object $model
+ *   The model for which we are creating a view. This can either be a full-
+ *   fledged Apigee\SmartDocs\Model object or a taxonomy term.
  */
-function smartdocs_create_model_view(Model $model) {
+function smartdocs_create_model_view($model) {
+  if ($model instanceof Apigee\SmartDocs\Model) {
+    $model_name = $model->getName();
+    $model_display_name = $model->getDisplayName();
+    $model_description = $model->getDescription();
+    $term = NULL;
+  }
+  else {
+    // $model is a taxonomy term.
+    $model_name = $model->name;
+    $model_display_name = $model->field_model_display_name[LANGUAGE_NONE][0]['value'];
+    $model_description = $model->description;
+    $term = $model;
+  }
+
   // Cache to avoid re-querying for the same view.
   static $views_processed = array();
 
   // View names may only be 128 char long.
-  $view_name = substr($model->getName() . '_methods', 0, 128);
+  $view_name = substr($model_name . '_methods', 0, 128);
   if (in_array($view_name, $views_processed)) {
     return;
   }
@@ -1785,23 +1694,25 @@ function smartdocs_create_model_view(Model $model) {
     return;
   }
 
-  $term = taxonomy_get_term_by_name($model->getName(), 'smartdocs_models');
-  // Where possible, create a term for this model. We should never get this
-  // far in an ideal world, but there may be bad legacy data out there.
   if (empty($term)) {
-    $vocabs = taxonomy_vocabulary_machine_name_load('smartdocs_models');
-    if (!empty($vocabs)) {
-      $vocab = reset($vocabs);
-      $term = new stdClass();
-      $term->vid = $vocab->vid;
-      $term->name = $model->getName();
-      $term->description = $model->getDescription();
-      $term->field_model_display_name[LANGUAGE_NONE][0]['value'] = $model->getDisplayName();
-      taxonomy_term_save($term);
+    $term = taxonomy_get_term_by_name($model_name, 'smartdocs_models');
+    // Where possible, create a term for this model. We should never get this
+    // far in an ideal world, but there may be bad legacy data out there.
+    if (empty($term)) {
+      $vocabs = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+      if (!empty($vocabs)) {
+        $vocab = reset($vocabs);
+        $term = new stdClass();
+        $term->vid = $vocab->vid;
+        $term->name = $model_name;
+        $term->description = $model_description;
+        $term->field_model_display_name[LANGUAGE_NONE][0]['value'] = $model_display_name;
+        taxonomy_term_save($term);
+      }
     }
-  }
-  else {
-    $term = reset($term);
+    else {
+      $term = reset($term);
+    }
   }
   if (empty($term)) {
     return;
@@ -1811,28 +1722,48 @@ function smartdocs_create_model_view(Model $model) {
   $generic_views = smartdocs_views_default_views();
   $view = $generic_views['smartdocs_methods'];
   $view->name = $view_name;
-  $view->description = 'This view lists methods within the ' . $model->getDisplayName() . ' model.';
-  $view->human_name = $model->getDisplayName() . ' Method Listing';
+  $view->description = 'This view lists methods within the ' . $model_display_name . ' model.';
+  $view->human_name = $model_display_name . ' Method Listing';
 
   $view->display['default']->display_options['filters'] = array(
     'model_tid' => array(
       'id' => 'model_tid',
       'table' => 'field_data_field_smart_method_model',
       'field' => 'field_smart_method_model_tid',
-      'value' => $term->tid,
+      'value' => array($term->tid),
       'group' => 1,
       'expose' => array('operator' => FALSE),
     ),
   );
-  $view->display['frontpage']->display_options['title'] = $model->getDisplayName() . ' APIs';
+  $view->display['frontpage']->display_options['title'] = $model_display_name . ' APIs';
   $view->display['frontpage']->display_options['display_description'] = 'This block may be placed on the site home page. It lists the 5 most recently-updated published methods in the model.';
-  $view->display['modelindex']->display_options = array('display_description' => 'This block provides the content for the model’s index page. It lists all published methods in the ' . $model->getDisplayName() . ' model.');
+
+  // Turn the modelindex display into a page.
+  $display =& $view->display['modelindex'];
+  $display->display_plugin = 'page';
+  $display->display_options['display_description'] = str_replace('This block ', 'This display ', $display->display_options['display_description']);
+  $display->display_options['defaults'] = array('title' => FALSE, 'header' => FALSE);
+  $display->display_options['path'] = 'taxonomy/term/' . $term->tid;
+  $display->display_options['title'] = $model_display_name;
+  if (!empty($model_description)) {
+    $display->display_options['header'] = array(
+      'model_description' => array(
+        'id' => 'model_description',
+        'table' => 'views',
+        'field' => 'area',
+        'empty' => TRUE,
+        'content' => $model_description,
+        'format' => 'plain_text',
+      ),
+    );
+  }
 
   unset($view->display['methodtoc']->display_options['defaults']['arguments']);
   unset($view->display['methodtoc']->display_options['arguments']);
-  $view->display['methodtoc']->display_options['display_description'] = 'This block may optionally be placed in a sidebar to provide a table of contents for methods in the ' . $model->getDisplayName() . ' model.';
+  $view->display['methodtoc']->display_options['display_description'] = 'This block may optionally be placed in a sidebar to provide a table of contents for methods in the ' . $model_display_name . ' model.';
 
   views_save_view($view);
+  drupal_flush_all_caches();
   $views_processed[] = $view_name;
 }
 

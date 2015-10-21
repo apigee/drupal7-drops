@@ -54,6 +54,9 @@ class Method extends APIObject
     /** @var array */
     protected $tags;
 
+    /** @var array */
+    protected $apiSchema;
+
     // Authorship attributes (read-only)
     // Times are in milliseconds after Jan 1, 1970 UTC. Div by 1000 for Unix time.
     /** @var int */
@@ -111,6 +114,7 @@ class Method extends APIObject
         $this->tags = array();
         $this->metadata = array();
         $this->security = array();
+        $this->apiSchema = array();
 
         $this->createdTime = 0;
         $this->modifiedTime = 0;
@@ -288,6 +292,16 @@ class Method extends APIObject
         $this->tags = $tags;
     }
 
+    public function getApiSchema()
+    {
+        return $this->apiSchema;
+    }
+
+    public function setApiSchema(array $schema)
+    {
+        $this->apiSchema = $schema;
+    }
+
     public function getCreatedTime()
     {
         return floor($this->createdTime / 1000);
@@ -391,7 +405,7 @@ class Method extends APIObject
         $payload_keys = array(
             'name', 'verb', 'security', 'body', 'response', 'samples',
             'displayName', 'description', 'parameters', 'parameterGroups',
-            'customAttributes', 'tags', 'path'
+            'customAttributes', 'tags', 'path', 'apiSchema'
         );
         if ($verbose) {
             $payload_keys = array_merge($payload_keys, array(
@@ -472,7 +486,7 @@ class Method extends APIObject
     public function save($update = false)
     {
         $array_members = array('security', 'parameters', 'parameterGroups', 'tags', 'samples');
-        $object_members = array('body', 'response', 'customAttributes');
+        $object_members = array('body', 'response', 'customAttributes', 'apiSchema');
         $payload = $this->toArray(false);
         // Eliminate any customAttributes with empty keys or values.
         foreach ($payload['customAttributes'] as $key => $value) {

@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Handles developer-sync functionality
+ * Handles developer-sync functionality.
  */
 
 /**
@@ -285,7 +285,14 @@ function _devconnect_user_sync_to_edge($developers, $counters, &$context) {
  */
 function _devconnect_user_sync_finished($success, $results, $operations) {
   if ($success) {
-    $statistics = $results[0];
+    // Make sure $results is initialized, will not be if no users
+    // need to be synced.
+    if (isset($results[0])) {
+      $statistics = $results[0];
+    }
+    else {
+      $statistics = array();
+    }
     // Guarantee some default values.
     $statistics += array(
       'processed_edge' => 0,

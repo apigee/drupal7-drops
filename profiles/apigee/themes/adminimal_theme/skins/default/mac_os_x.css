@@ -4,12 +4,6 @@ body.mac div.admin-panel h3 {
   font-family: Helvetica !important;
 }
 
-body.mac .form-item label {
-  font-family: "Helvetica", sans-serif;
-  font-size: 14px;
-  line-height: 1.3;
-}
-
 body.mac .exposed-filters .form-item label {
   line-height: 38px;
 }
@@ -18,11 +12,13 @@ body.mac.style-checkboxes input[type=checkbox] {
   width: 14px;
   height: 14px;
   border-radius: 2px;
+  top: 2px;
 }
 
 body.mac.style-checkboxes input[type=radio] {
   width: 14px;
   height: 14px;
+  top: 2px;
 }
 
 body.mac.style-checkboxes input[type=checkbox]:checked,
@@ -45,11 +41,11 @@ body.mac input.form-file {
 }
 
 body.mac #branding h1.page-title {
-  margin: -4px 0 0px 0;
+  margin: -2px 0 4px 0;
 }
 
 body.mac div.add-or-remove-shortcuts {
-  padding-top: 13px;
+  padding-top: 15px;
 }
 
 body.adminimal-theme.mac .exposed-filters .container-inline .form-actions,

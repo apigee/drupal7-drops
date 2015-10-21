@@ -46,8 +46,8 @@ class EnvironmentSnapshotMaker {
     }
 
     // Check variable_get().
-    $observations['xautoload_cache_types'] = variable_get('xautoload_cache_types');
-    $observations['xautoload_cache_lazy'] = variable_get('xautoload_cache_lazy');
+    $observations[XAUTOLOAD_VARNAME_CACHE_TYPES] = variable_get(XAUTOLOAD_VARNAME_CACHE_TYPES);
+    $observations[XAUTOLOAD_VARNAME_CACHE_LAZY] = variable_get(XAUTOLOAD_VARNAME_CACHE_LAZY);
 
     $observations['db_connection_info'] = \Database::getConnectionInfo();
 

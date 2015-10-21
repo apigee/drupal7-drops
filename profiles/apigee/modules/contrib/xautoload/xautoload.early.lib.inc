@@ -7,8 +7,13 @@ use Drupal\xautoload\DIC\ServiceContainer;
 use Drupal\xautoload\DIC\ServiceFactory;
 use Drupal\xautoload\Main;
 
-define('XAUTOLOAD_LIB_DIR', dirname(__FILE__) . '/lib');
-define('XAUTOLOAD_SRC_DIR', dirname(__FILE__) . '/src');
+define('XAUTOLOAD_LIB_DIR', __DIR__ . '/lib');
+define('XAUTOLOAD_SRC_DIR', __DIR__ . '/src');
+define('XAUTOLOAD_VARNAME_CACHE_TYPES', 'xautoload_cache_types');
+define('XAUTOLOAD_VARNAME_CACHE_LAZY', 'xautoload_cache_lazy');
+define('XAUTOLOAD_VARNAME_REPLACE_CORE', 'xautoload_replace_core');
+define('XAUTOLOAD_VARNAME_CACHE_PREFIX', 'xautoload_cache_prefix');
+define('XAUTOLOAD_CACHENAME_LIBRARIES_INFO', 'xautoload_libraries_info');
 
 
 // Public API functions.
@@ -76,7 +81,7 @@ function _xautoload_register() {
   $_first_run = FALSE;
 
   // Register a temporary loader.
-  spl_autoload_register('_xautoload_autoload_temp');
+  spl_autoload_register('_xautoload_autoload_temp', TRUE, TRUE);
 
   // Some classes need to be loaded manually. Believe it!
   LoadClassInjectedAPI::forceAutoload();

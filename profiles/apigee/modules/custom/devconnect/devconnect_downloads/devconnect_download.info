@@ -3,6 +3,9 @@ core = 7.x
 package = DevConnect
 php = 5.2.4
 version = 7.x-1.0
+; Removing this module will allow us to remove ds and eck modules.
+description=Provide your developers a secure one time link for downloads.
+hidden=true
 
 ;dependencies[] = awssdk
 dependencies[] = ds

@@ -77,6 +77,8 @@ abstract class AbstractQueuedCachedClassLoader
     // Look if the cache has anything for this class.
     if (isset($this->classFiles[$class])) {
       $file = $this->classFiles[$class];
+      // The is_file() check may cost around 0.0045 ms per class file, but this
+      // depends on your system of course.
       if (is_file($file)) {
         require $file;
 

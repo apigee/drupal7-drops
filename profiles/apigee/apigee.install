@@ -10,7 +10,7 @@ require_once(DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypt
  */
 function apigee_install_tasks(&$install_state) {
   if (!array_key_exists('batch_configure_complete', $install_state)) {
-    $install_state['batch_configure_complete'] = false;
+    $install_state['batch_configure_complete'] = FALSE;
   }
   drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css', array('weight' => 9999));
   return array(
@@ -29,7 +29,11 @@ function apigee_install_tasks(&$install_state) {
     'apigee_install_create_admin_user' => array(
       'display_name' => t('Create an admin user'),
       'type' => 'form',
-    )
+    ),
+    'apigee_install_check_postrequisites' => array(
+      // display_name is unset here to prevent it from being displayed to the user.
+      'type' => 'function',
+    ),
   );
 }
 

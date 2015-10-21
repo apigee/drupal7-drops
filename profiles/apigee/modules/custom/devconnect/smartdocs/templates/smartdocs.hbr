@@ -1,38 +1,30 @@
-<div class="row">
+<!-- Apigee Dev Portal Method Template -->
+{{!--
+Apigee Dev Portal Method Template
+
+Available variables:
+  - apiId: The UUID of the model.
+  - apiName: The unique name of the model, for example 'petstore-example'.
+  - apiRevisionId: The revision of the model.
+  - baseUrl: The base URL of the model, for example 'http://api.apigee.com/v1'
+  - body: An object of attributes relating to the method body:
+     - contentType: The allowed Content-Type values of the body.
+     - parameters: An array of body parameters, will be populated with values
+       from Swagger 2.0 "in": "formData" parameters.
+Helper variables:
+  - none
+--}}
+<div class="row smartdocs-wrapper">
 <style>
-    body section.page-header {
-        display:none;
-
-    }
-
-    .CodeMirror {
-        min-height:150px;
-    }
-
-    .CodeMirror-scroll {
-        padding:0;
-    }
-
+    body section.page-header {display:none}
+    .CodeMirror {min-height:150px}
+    .CodeMirror-scroll {padding:0}
     /* Responsiveness */
-    @media(max-width:767px) {
-
-    }
-
-    @media(min-width:768px) {
-
-    }
-
-    @media(min-width:992px) {
-
-    }
-
-    @media(min-width:1200px) {
-
-    }
-
-    @media(min-width:1400px) {
-
-    }
+    @media(max-width:767px) {}
+    @media(min-width:768px) {}
+    @media(min-width:992px) {}
+    @media(min-width:1200px) {}
+    @media(min-width:1400px) {}
 </style>
 <!-- Main content -->
 <div class="col-sm-9" id="method_content">
@@ -61,7 +53,7 @@
         </div>
         <div class="description_and_url_container">
             <div class="description_container">
-                <div class="resource_description" data-allow-edit="true" data-role="method-description">{{{description}}}</div>
+                <div class="resource_description markdown" data-allow-edit="true" data-role="method-description">{{{description}}}</div>
             </div>
             <h3>Resource URL</h3>
             <div class="url_container">
@@ -99,14 +91,23 @@
                             {{/required}}
                         </td>
                         <td>
-                            {{#if required}}
-                            <input type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
+                            {{#if options}}
+                            <select name="{{name}}" data-role="multiple-value" data-default-value="{{defaultValue}}" class="form-control{{#if defaultValue}} has-default-value{{/if}}">
+                                {{#if required}}{{else}}<option value="">(no value)</option>{{/if}}
+                                {{#options}}
+                                <option value="{{.}}">{{.}}</option>
+                                {{/options}}
+                            </select>
                             {{else}}
-                            <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                                {{#if required}}
+                                    <input name="{{name}}" type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
+                                {{else}}
+                                    <input name="{{name}}" type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                                {{/if}}
                             {{/if}}
                         </td>
                         <td>
-                            <p data-role="description" data-allow-edit="true">{{{description}}}</p>
+                            <p data-role="description" data-allow-edit="true" class="markdown">{{{description}}}</p>
                         </td>
                     </tr>
                     {{/query-list}}
@@ -138,14 +139,23 @@
                             {{/required}}
                         </td>
                         <td>
-                            {{#if required}}
-                            <input type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
+                            {{#if options}}
+                                <select name="{{name}}" data-role="multiple-value" data-default-value="{{defaultValue}}" class="form-control{{#if defaultValue}} has-default-value{{/if}}">
+                                    {{#if required}}{{else}}<option value="">(no value)</option>{{/if}}
+                                    {{#options}}
+                                        <option value="{{.}}">{{.}}</option>
+                                    {{/options}}
+                                </select>
                             {{else}}
-                            <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                                {{#if required}}
+                                    <input type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
+                                {{else}}
+                                    <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                                {{/if}}
                             {{/if}}
                         </td>
                         <td style="vertical-align:middle">
-                            <p data-role="description" data-allow-edit="true">
+                            <p data-role="description" data-allow-edit="true" class="markdown">
                                 {{{ this.description }}}
                             </p>
                         </td>
@@ -156,6 +166,7 @@
             </div>
             {{/if-header-param}}
             {{#if body.parameters}}
+            <div class="body-parameters-wrapper">
                 <h3>Body Parameters</h3>
                 <hr>
                     <form enctype="multipart/form-data" method="post" name="formParams" id="formParams">
@@ -172,33 +183,43 @@
                                     <tbody>
                                     {{#each body.parameters}}
 
-                                            <tr data-role="body-param-list" data-scope="{{scope}}" data-dataType="{{dataType}}">
-                                                <td style="vertical-align:middle">
-                                                    <span data-role="name">{{this.name}}</span>
-                                                    {{#required}}
+                                        <tr data-role="body-param-list" data-scope="{{scope}}" data-dataType="{{dataType}}">
+                                            <td style="vertical-align:middle">
+                                                <span data-role="name">{{this.name}}</span>
+                                                {{#required}}
                                                     <br/>
                                                     <span class="required" data-role="required">(required)</span>
-                                                    {{/required}}
-                                                </td>
-                                                <td>
+                                                {{/required}}
+                                            </td>
+                                            <td>
+                                                {{#if options}}
+                                                <select name="{{this.name}}" data-role="multiple-value" data-default-value="{{defaultValue}}" class="form-control{{#if defaultValue}} has-default-value{{/if}}">
+                                                    {{#if required}}{{else}}<option value="">(no value)</option>{{/if}}
+                                                    {{#options}}
+                                                    <option value="{{.}}">{{.}}</option>
+                                                    {{/options}}
+                                                </select>
+                                                {{else}}
                                                     {{#if required}}
-                                                    <input type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
+                                                        <input name="{{this.name}}" type="text" class="form-control" data-role="value" value="{{defaultValue}}"/>
                                                     {{else}}
-                                                    <input type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
+                                                        <input name="{{this.name}}" type="text" class="form-control" data-role="value" placeholder="{{defaultValue}}" value=""/>
                                                     {{/if}}
-                                                </td>
-                                                <td style="vertical-align:middle">
-                                                    <p data-role="description" data-allow-edit="true">
-                                                        {{{ this.description }}}
-                                                    </p>
-                                                </td>
-                                            </tr>
+                                                {{/if}}
+                                            </td>
+                                            <td style="vertical-align:middle">
+                                                <p data-role="description" data-allow-edit="true" class="markdown">
+                                                    {{{ this.description }}}
+                                                </p>
+                                            </td>
+                                        </tr>
 
                                     {{/each}}
                                     </tbody>
                                 </table>
                             </div>
                     </form>
+            </div>
             {{/if}}
             {{#body}}
             {{#if attachments}}
@@ -231,8 +252,8 @@
                                 {{/if}}
                             </td>
                             <td>
-                                <p data-role="description" data-allow-edit="true">
-                                    {{description}}
+                                <p data-role="description" data-allow-edit="true" class="markdown">
+                                    {{{description}}}
                                 </p>
                             </td>
                         </tr>
@@ -246,40 +267,45 @@
         </div>
     </div>
 </div>
+
 {{#body}}
 <!-- Request payload section -->
 <div class="request_payload">
     <h3>Request Body</h3>
-    {{#if doc}}
+
     <ul class="nav nav-pills" data-role="request-payload-link">
         <li class="active">
             <a href="javascript:void(0)" data-role="example-link">Value</a>
         </li>
+        {{#if doc}}
         <li>
             <a href="javascript:void(0)" data-role="docs-link">Description</a>
         </li>
+        {{/if}}
         <li>
             <a href="javascript:void(0)" data-role="schema-link">Schema</a>
         </li>
     </ul>
-    {{/if}}
+    {{#if doc}}
     <div data-role="request-payload-docs" class="docs">
         {{{doc}}}
     </div>
+    {{/if}}
     <div data-role="request-payload-example">
         <textarea class="payload_text" data-format="{{contentType}}"></textarea>
     </div>
-    <div data-role="request-payload-schema">
+    <div data-role="request-payload-schema" style="display:none">
         <textarea class="payload_text_schema" data-format="{{contentType}}" style="width:100%;height:300px;"></textarea>
     </div>
 </div>
 {{/body}}
+
 {{#if-template-param this.parameters}}
 <div class="hide" data-role="template-params">
     {{#template-list this.parameters}}
     <p data-scope="{{scope}}">
         <span data-role="name">{{name}}</span>
-        <span data-role="description">{{description}}</span>
+        <span data-role="description" class="markdown">{{{description}}}</span>
         <span data-role="defaultValue">{{defaultValue}}</span>
         <span data-role="required">{{required}}</span>
     </p>
@@ -363,7 +389,7 @@
             <span data-role="code">{{code}}</span>
         </div>
         <div class="method_data description">
-            <p data-role="description" data-allow-edit="true">
+            <p data-role="description" data-allow-edit="true" class="markdown">
                 {{{description}}}
             </p>
         </div>
@@ -395,34 +421,51 @@
                             <p class="data auth_type" data-role="auth-type"></p>
                         </td>
                     </tr>
+                    {{!-- Only output Content Type if it exists, but make
+                         sure to check both body.contentType and parameters.
+                    --}}
+                    {{#if body.contentType}}
                     <tr>
                         <td>
                             <p class="title">Content Type</p>
                         </td>
                         <td>
-                            <p class="data" data-role="content-type">
-                                {{#if body.contentType}}
-                                    {{body.contentType}}
-                                {{else}}
-                                    {{#parameters}}
-                                        {{#each this.options}}
-                                            {{this}}<br/>
-                                        {{/each}}
-                                    {{/parameters}}
-                                {{/if}}
+                            <p class="data content-type-source-body" data-role="content-type">
+                                {{body.contentType}}
                             </p>
                         </td>
                     </tr>
-                    <tr>
-                        <td>
-                            <p class="title">Category</p>
-                        </td>
-                        <td>
-                            <p class="data" data-role="category">
-                                {{#each tags}}{{.}}{{#unless @last}},{{/unless}}{{/each}}
-                            </p>
-                        </td>
-                    </tr>
+                    {{else}}
+                        {{#if parameters}}
+                            <tr>
+                                <td>
+                                    <p class="title">Content Type</p>
+                                </td>
+                                <td>
+                                    <p class="data" data-role="content-type">
+                                        {{#parameters}}
+                                            {{#each this.options}}
+                                                {{this}}<br>
+                                            {{/each}}
+                                        {{/parameters}}
+                                    </p>
+                                </td>
+                            </tr>
+                        {{/if}}
+                    {{/if}}
+                    {{!-- Only output Category if it exists --}}
+                    {{#if tags}}
+                        <tr>
+                            <td>
+                                <p class="title">Category</p>
+                            </td>
+                            <td>
+                                <p class="data" data-role="category">
+                                    {{#each tags}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}
+                                </p>
+                            </td>
+                        </tr>
+                    {{/if}}
                     </tbody>
                 </div><!--/.resource_summary -->
             </table>
@@ -591,8 +634,8 @@
 </div>
 <!-- /.modal -->
 <script type="text/javascript">
-    var Apigee = Apigee || {}; // Look for a namespace 'Apigee', if it is not there, creates an empty one.
-    Apigee.APIModel = Apigee.APIModel || {}; // Look for a namespace 'APIModel' under 'Apigee', if it is not there, creates an empty one.
+    var Apigee = Apigee || {};
+    Apigee.APIModel = Apigee.APIModel || {};
     Apigee.APIModel.apiName = "{{apiName}}";
     Apigee.APIModel.revisionNumber = "{{revisionNumber}}";
     Apigee.APIModel.organizationName = "{{organizationName}}";
@@ -600,86 +643,158 @@
     Apigee.APIModel.methodId = "{{id}}";
     Apigee.APIModel.methodType = "details";
     Apigee.APIModel.apiKey = "";
-    Apigee.APIModel.location = ""; // will be 'header' or 'query'
+    Apigee.APIModel.location = "";
     Apigee.APIModel.templateAuthName = "";
-    var model = {{this}};
-    Apigee.APIModel.resourceName = "";
-    if(model.body && model.body.parameters) {
-        for(var i in model.body.parameters) {
-            if(model.body.parameters[i].schema) {
-                Apigee.APIModel.resourceName = JSON.parse(model.body.parameters[0].schema).$ref;
-                Apigee.APIModel.resourceName = Apigee.APIModel.resourceName.split("/");
-                Apigee.APIModel.resourceName = Apigee.APIModel.resourceName[Apigee.APIModel.resourceName.length-1];
+    Apigee.APIModel.verb="{{verb}}".toLowerCase();
+    // Init hasRawBody to false.
+    Apigee.APIModel.hasRawBody = false;
+
+    {{#if body}}
+    Apigee.APIModel.bodyParameters={{#if body.parameters}}{{{body.parameters}}}{{else}}false{{/if}}
+    Apigee.APIModel.bodySample={{#if body.sample}}"{{{body.sample}}}"{{else}}false{{/if}};
+    Apigee.APIModel.bodyDoc={{#if body.doc}}"{{{body.doc}}}"{{else}}false{{/if}};
+    {{else}}
+    Apigee.APIModel.bodyParameters=false;
+    Apigee.APIModel.bodySample=false;
+    Apigee.APIModel.bodyDoc=false;
+    {{/if}}
+    {{#if security}}
+    Apigee.APIModel.security = {{{security}}};
+    for (var k in Apigee.APIModel.security) {
+        if (typeof Apigee.APIModel.security[k] == 'string') {
+            Apigee.APIModel.security[k] = JSON.parse(Apigee.APIModel.security[k]);
+        }
+    }
+    {{else}}
+    Apigee.APIModel.security = false;
+    {{/if}}
+    Apigee.APIModel.originalExpandedSchema={{#if apiSchema.expandedSchema}}{{{apiSchema.expandedSchema}}}{{else}}false{{/if}};
+    Apigee.APIModel.expandedSchema={{#if apiSchema.expandedSchema}}{{{apiSchema.expandedSchema}}}{{else}}false{{/if}};
+
+    if(Apigee.APIModel.bodyParameters) {
+        for(var i in Apigee.APIModel.bodyParameters) {
+            // If a parameter is type of object, set hasRawBody to true so we can remove body parameters section.
+            if(Apigee.APIModel.bodyParameters[i].dataType && Apigee.APIModel.bodyParameters[i].dataType == "object") {
+                Apigee.APIModel.hasRawBody = true;
+            }
+            if(Apigee.APIModel.bodyParameters[i].schema) {
+                var resourceSchema = JSON.parse(Apigee.APIModel.bodyParameters[i].schema);
+                if (resourceSchema.$ref) {
+                    // There is a reference to the schema in the object.
+                    Apigee.APIModel.resourceName = resourceSchema.$ref;
+                    Apigee.APIModel.resourceName = Apigee.APIModel.resourceName.split("/");
+                    Apigee.APIModel.resourceName = Apigee.APIModel.resourceName[Apigee.APIModel.resourceName.length - 1];
+                    break;
+                } else if(resourceSchema.items.$ref) {
+                    // There is an array w/a reference.
+                    Apigee.APIModel.resourceName = resourceSchema.items.$ref;
+                    Apigee.APIModel.resourceName = Apigee.APIModel.resourceName.split("/");
+                    Apigee.APIModel.resourceName = Apigee.APIModel.resourceName[Apigee.APIModel.resourceName.length - 1];
+                }
             }
         }
     }
     var security = [];
-    if(model.security) {
-        for (i=0;i<model.security.length;i++){
-            security.push(JSON.parse(model.security[i]));
+    if(Apigee.APIModel.security) {
+        for (i=0;i<Apigee.APIModel.security.length;i++){
+            security.push(Apigee.APIModel.security[i]);
         }
     }
 
-    var newAuth = "";
-    jQuery("[data-role='auth-type']").text(newAuth);
+    var newAuth = [];
+    var authTypeEl = jQuery("[data-role='auth-type']");
+    authTypeEl.text(newAuth);
     for (var i in security){
         for (var keys in security[i]) {
-            if(security[i][keys].type) {
-                if (security[i][keys].type === "OAUTH2") {
-                    newAuth = "OAuth 2.0";
-                    secName = keys;
-                    jQuery("[data-role='auth-type']").append(newAuth + ", ");
-                }
-                if (security[i][keys].type === "APIKEY") {
-                    newAuth = "API Key";
-                    secName = keys;
-                    jQuery("[data-role='auth-type']").append(newAuth + ", ");
-                    if(security[i][keys].templateauths) {
-                        for(var key in security[i][keys].templateauths) {
-                            Apigee.APIModel.apiKey = security[i][keys].templateauths[key];
-                            Apigee.APIModel.location = security[i][keys].location.toLowerCase();
-                            Apigee.APIModel.templateAuthName = key.toLowerCase();
+            if (typeof security[i] == 'string') {
+                security[i] = JSON.parse(security[i]);
+            }
+            if (security[i][keys].type) {
+                switch (security[i][keys].type) {
+                    case 'OAUTH2':
+                        newAuth.push('OAuth 2.0');
+                        secName = keys;
+                        break;
+                    case 'BASIC':
+                        newAuth.push('HTTP Basic');
+                        break;
+                    case 'APIKEY':
+                        newAuth.push('API Key');
+                        if (security[i][keys].templateauths) {
+                            for (var key in security[i][keys].templateauths) {
+                                Apigee.APIModel.apiKey = security[i][keys].templateauths[key];
+                                Apigee.APIModel.location = security[i][keys].location.toLowerCase();
+                                Apigee.APIModel.templateAuthName = key.toLowerCase();
+                            }
                         }
-                    }
-                }
-                if (security[i][keys].type === "BASIC") {
-                    newAuth = "HTTP Basic";
-                    secName = keys;
-                    jQuery("[data-role='auth-type']").append(newAuth + ", ");
+                        break
                 }
             }
             else if (keys === "api_key") {
-                newAuth = "API Key";
-                jQuery("[data-role='auth-type']").append(newAuth + ", ");
+                newAuth.push("API Key");
             }
         }
     }
-    if (jQuery("[data-role='auth-type']").text() === "") {
-        jQuery("[data-role='auth-type']").append("None");
+    if (newAuth.length == 0) {
+        newAuth.push('None');
     }
-    var methodVerb = jQuery.trim(jQuery("[data-role='verb']:first").text().toLowerCase()); // Retrieve the verb from the first HTML element.
-    var payload = jQuery(".request_payload")
-    if (methodVerb != "post" && methodVerb != "put" && methodVerb != "patch") {
-        // remove request payload
+    authTypeEl.text(newAuth.join(', '));
+    var payload = jQuery(".request_payload");
+
+    var payloadTextSchemaEl = jQuery("textarea.payload_text_schema");
+    var originalSchemaObj = null;
+    if (Apigee.APIModel.expandedSchema) {
+        originalSchemaObj = Apigee.APIModel.expandedSchema;
+        expandSchema(originalSchemaObj);
+    }
+
+    if (Apigee.APIModel.verb != "post" && Apigee.APIModel.verb != "put" && Apigee.APIModel.verb != "patch") {
+        // Remove request payload for verbs that carry no payload.
         payload.remove();
     }
     else {
-         // If a sample exists, use it to populate the body payload textarea, else create an example from the api schema to populate the body payload
-         if (model.body && model.body.sample) {
-             jQuery("textarea.payload_text").val(model.body.sample);
-         }
-         else if (model.apiSchema && model.apiSchema.expandedSchema) {
-             var originalSchemaObj = JSON.parse(model.apiSchema.expandedSchema);
-             if(model.body.doc) {
-                 expandSchema(originalSchemaObj);
-                 jQuery("textarea.payload_text_schema").val(JSON.stringify(originalSchemaObj[Apigee.APIModel.resourceName].properties,null,4));
-                 jQuery("textarea.payload_text_schema").hide();
-             }
-         }
-         else {
-             payload.remove();
-         }
+        // If a sample exists, use it to populate the body payload text area,
+        // else create an example from the api schema to populate the body
+        // payload.
+        if (Apigee.APIModel.bodySample) {
+            // Class payload_text is the request body to send.
+            jQuery("textarea.payload_text").val(Apigee.APIModel.bodySample);
+        }
+
+        if (Apigee.APIModel.expandedSchema && Apigee.APIModel.resourceName != null) {
+            // Put the schema into the Schema tab in the response body.
+            var schemaString = JSON.stringify(originalSchemaObj[Apigee.APIModel.resourceName].properties, null, 4);
+            payloadTextSchemaEl.val(schemaString);
+        }
+
     }
+
+    // If any select box has a default value, make sure it is set.
+    jQuery('select.has-default-value').each(function(index) {
+        var defaultValue = jQuery(this).attr('data-default-value');
+        jQuery('option', this).each(function (idx) {
+            if (jQuery(this).attr('value') == defaultValue) {
+                jQuery(this).attr('selected', 'selected');
+            }
+        });
+    });
+
+
+    if (Apigee.APIModel.hasRawBody) {
+        // Remove the body parameters section if the raw body should be
+        // displayed.
+        jQuery(".body-parameters-wrapper").remove();
+    } else {
+        // If the API Model does not have a payload, then remove the payload
+        // section.
+        payload.remove();
+    }
+
+    var contentTypeElements = document.getElementsByClassName('content-type-source-body');
+    for (var k in contentTypeElements) {
+        contentTypeElements[k].innerHTML = contentTypeElements[k].innerHTML.replace(',', '<br>');
+    }
+
     function expandSchema (obj, originalObj) {
         for (var key in obj) {
             if (typeof obj[key] === "object") {
@@ -700,6 +815,13 @@
                 }
             }
         }
-    };
+    }
+
+    if (typeof marked != 'undefined') {
+        var descriptions = document.getElementsByClassName('markdown');
+        for (var i = 0; i < descriptions.length; i++) {
+            descriptions[i].innerHTML = marked(descriptions[i].innerHTML);
+        }
+    }
 </script>
 </div>

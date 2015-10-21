@@ -41,7 +41,7 @@ function _MYMODULE_autoload($class) {
 
   static $lib_dir;
   if (!isset($lib_dir)) {
-    $lib_dir = dirname(__FILE__) . '/lib/';
+    $lib_dir = __DIR__ . '/lib/';
   }
 
   // Replace MYMODULE with your module name.

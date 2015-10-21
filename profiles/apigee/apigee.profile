@@ -2096,60 +2096,59 @@ function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) 
   curl_close($ch);
   $response = json_decode($response_json, TRUE);
 
-  if (array_key_exists('count', $response)) {
-    if ($response['count'] != 0) {
-      return TRUE;
-    }
+  if (is_array($response) && array_key_exists('count', $response)) {
+    return (bool)$response['count'];
   }
-  else {
-    // The system could not check the SDN list, let Dev Portal team know.
-    $my_module = 'sdn_check_error';
-    $my_mail_token = 'apigee_profile';
-    $from = variable_get('system_mail', 'noreply@apigee.com');
 
-    $http_response_string = '';
+  // The system could not check the SDN list, let Dev Portal team know.
+  $my_module = 'sdn_check_error';
+  $my_mail_token = 'apigee_profile';
+  $from = variable_get('system_mail', 'noreply@apigee.com');
+
+  $http_response_string = '';
+  if (is_array($response)) {
     foreach ($response as $response_key => $response_value) {
       $http_response_string .= "$response_key => $response_value ";
     }
+  }
 
-    $pantheon_site_name = '';
-    if (array_key_exists('PANTHEON_SITE_NAME', $_SERVER) && array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
-      $pantheon_site_name = $_SERVER['PANTHEON_SITE_NAME'] . '.' . $_SERVER['PANTHEON_ENVIRONMENT'];
-    }
-    $pantheon_site_uuid = '';
-    if (array_key_exists('PANTHEON_SITE', $_SERVER)) {
-      $pantheon_site_uuid = $_SERVER['PANTHEON_SITE'];
-    }
+  $pantheon_site_name = '';
+  if (array_key_exists('PANTHEON_SITE_NAME', $_SERVER) && array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER)) {
+    $pantheon_site_name = $_SERVER['PANTHEON_SITE_NAME'] . '.' . $_SERVER['PANTHEON_ENVIRONMENT'];
+  }
+  $pantheon_site_uuid = '';
+  if (array_key_exists('PANTHEON_SITE', $_SERVER)) {
+    $pantheon_site_uuid = $_SERVER['PANTHEON_SITE'];
+  }
 
-    $message_body = array(
-      'The Specially Designated Nationals List (SDN) Validation check failed during a Dev Portal Pantheon site install.',
-      'URL: ' . $url,
-      'cURL Error Number: ' . $curl_errno,
-      'HTTP Status: ' . $http_status,
-      'HTTP Response: ' . $http_response_string,
-      'Pantheon Site Name: ' . $pantheon_site_name,
-      'Pantheon Site UUID: ' . $pantheon_site_uuid,
-    );
+  $message_body = array(
+    'The Specially Designated Nationals List (SDN) Validation check failed during a Dev Portal Pantheon site install.',
+    'URL: ' . $url,
+    'cURL Error Number: ' . $curl_errno,
+    'HTTP Status: ' . $http_status,
+    'HTTP Response: ' . $http_response_string,
+    'Pantheon Site Name: ' . $pantheon_site_name,
+    'Pantheon Site UUID: ' . $pantheon_site_uuid,
+  );
 
-    $message = array(
-      'id' => $my_module . '_' . $my_mail_token,
-      'to' => 'devportalbuild@apigee.com',
-      'subject' => 'Dev Portal Specially Designated Nationals List (SDN) Validation check failure',
-      'body' => $message_body,
-      'headers' => array(
-        'From' => $from,
-        'Sender' => $from,
-        'Return-Path' => $from,
-      ),
-    );
-    $system = drupal_mail_system($my_module, $my_mail_token);
+  $message = array(
+    'id' => $my_module . '_' . $my_mail_token,
+    'to' => 'devportalbuild@apigee.com',
+    'subject' => 'Dev Portal Specially Designated Nationals List (SDN) Validation check failure',
+    'body' => $message_body,
+    'headers' => array(
+      'From' => $from,
+      'Sender' => $from,
+      'Return-Path' => $from,
+    ),
+  );
+  $system = drupal_mail_system($my_module, $my_mail_token);
 
-    // The format function must be called before calling the mail function.
-    $message = $system->format($message);
+  // The format function must be called before calling the mail function.
+  $message = $system->format($message);
 
-    if (!$system->mail($message)) {
-      watchdog('apigee_install', "SDN Validation error email NOT sent." . implode(" ", $message_body), WATCHDOG_WARNING);
-    }
+  if (!$system->mail($message)) {
+    watchdog('apigee_install', "SDN Validation error email NOT sent." . implode(" ", $message_body), WATCHDOG_WARNING);
   }
   return FALSE;
 }
@@ -2179,6 +2178,15 @@ function apigee_install_create_admin_user_submit($form, &$form_state) {
   $account->field_last_name[LANGUAGE_NONE][0]['value'] = $form_state['values']['lastname'];
   user_save($account);
   $GLOBALS['install_state']['completed_task'] = install_verify_completed_task();
+}
+
+/**
+ * Batch callback to verify we meet minimum requirements.
+ */
+function apigee_install_check_postrequisites() {
+  if (!extension_loaded('openssl')) {
+    drupal_set_message(st('The OpenSSL PHP extension is required.'), 'error');
+  }
 }
 
 /**

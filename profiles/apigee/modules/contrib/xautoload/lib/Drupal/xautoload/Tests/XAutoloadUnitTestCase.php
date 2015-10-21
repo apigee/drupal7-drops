@@ -22,7 +22,7 @@ class XAutoloadUnitTestCase extends \DrupalUnitTestCase {
     // drupal_load('module', 'xautoload') would register namespaces for all
     // enabled modules, which is not intended for this unit test.
     // Instead, we just include xautoload.early.inc.
-    require_once dirname(__FILE__) . '/../../../../xautoload.early.inc';
+    require_once __DIR__ . '/../../../../xautoload.early.inc';
 
     // Make sure we use the regular loader, not the APC one.
     // Also make sure to prepend this one. Otherwise, the core class loader will

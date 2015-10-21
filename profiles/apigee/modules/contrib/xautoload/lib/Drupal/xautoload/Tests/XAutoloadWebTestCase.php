@@ -50,10 +50,10 @@ class XAutoloadWebTestCase extends \DrupalWebTestCase {
    */
   protected function xautoloadTestWithCacheTypes($cache_types, $cache_lazy) {
 
-    variable_set('xautoload_cache_types', $cache_types);
+    variable_set(XAUTOLOAD_VARNAME_CACHE_TYPES, $cache_types);
     $this->pass("Set cache types: " . var_export($cache_types, TRUE));
 
-    variable_set('xautoload_cache_lazy', $cache_lazy);
+    variable_set(XAUTOLOAD_VARNAME_CACHE_LAZY, $cache_lazy);
     $this->pass("Set cache lazy mode: " . var_export($cache_lazy, TRUE));
 
     // Enable xautoload.
@@ -168,10 +168,10 @@ class XAutoloadWebTestCase extends \DrupalWebTestCase {
 
     // Check early-bootstrap variables.
     $label = "$when: xautoload_cache_types:";
-    $this->assertEqualBlock($cache_types, $observations['xautoload_cache_types'], $label);
+    $this->assertEqualBlock($cache_types, $observations[XAUTOLOAD_VARNAME_CACHE_TYPES], $label);
 
     $label = "$when: xautoload_cache_lazy:";
-    $this->assertEqualInline($lazy, $observations['xautoload_cache_lazy'], $label);
+    $this->assertEqualInline($lazy, $observations[XAUTOLOAD_VARNAME_CACHE_LAZY], $label);
 
     // Check registered class loaders.
     $expected = $this->expectedAutoloadStackOrder($cache_types);

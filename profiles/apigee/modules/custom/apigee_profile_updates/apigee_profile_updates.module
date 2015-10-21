@@ -1,41 +1,5 @@
 <?php
-
-define('APIGEE_MINIMUM_PHP_VERSION', '5.5.0');
-
 /**
- * Implements hook_init().
- *
- * If the PHP version is too old and the user is on an admin page, show an
- * error message indicating that PHP needs to be upgraded.
+ * @file
+ * Nothing to see here, move along.
  */
-function apigee_profile_updates_init() {
-  // No need to show message if PHP is recent enough.
-  if (version_compare(PHP_VERSION, APIGEE_MINIMUM_PHP_VERSION, '>=')) {
-    return;
-  }
-  // Don't show messages on non-admin pages.
-  if (!path_is_admin($_GET['q']) || arg(0) == 'batch') {
-    return;
-  }
-
-  drupal_set_message(_apigee_profile_updates_warning_message(), 'error', FALSE);
-}
-
-/**
- * Generates a warning message which can be shown on the status report page, on
- * the profile-install requirements page, or in a warning message at the top of
- * every admin page.
- *
- * @return string
- */
-function _apigee_profile_updates_warning_message() {
-  $t = get_t();
-  $message = 'Your PHP installation is too old. Apigee Dev Portal requires at least PHP %version, but you are using PHP %old_version.';
-  $args = array('%version' => APIGEE_MINIMUM_PHP_VERSION, '%old_version' => PHP_VERSION);
-  if (defined('PANTHEON_ENVIRONMENT')) {
-    $message .= ' You can <a href="!url">configure your PHP version</a> by logging into your Pantheon dashboard '
-      . 'and selecting the “Settings” button at the top right.';
-    $args['!url'] = 'https://pantheon.io/docs/articles/sites/settings/toggling-between-php-versions/';
-  }
-  return $t($message, $args);
-}

@@ -17,7 +17,7 @@ projects[acl][version] = "1.1"
 ; Required by Monetization
 projects[addressfield][type] = "module"
 projects[addressfield][subdir] = "contrib"
-projects[addressfield][version] = "1.1"
+projects[addressfield][version] = "1.2"
 
 ; Enabled during profile install.
 projects[admin_menu][type] = "module"
@@ -169,7 +169,7 @@ projects[entity][version] = "1.6"
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
 projects[environment_indicator][subdir] = "contrib"
-projects[environment_indicator][version] = "2.7"
+projects[environment_indicator][version] = "2.8"
 
 ; Enabled during profile install.
 projects[faq][type] = "module"
@@ -179,7 +179,7 @@ projects[faq][version] = "1.1"
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.6"
+projects[features][version] = "2.7"
 
 projects[features_extra][type] = "module"
 projects[features_extra][subdir] = "contrib"
@@ -348,7 +348,7 @@ projects[oauthconnector][version] = "1.0-beta2"
 ; Enabled on install.
 projects[pathauto][type] = "module"
 projects[pathauto][subdir] = "contrib"
-projects[pathauto][version] = "1.2"
+projects[pathauto][version] = "1.3"
 
 projects[readonlymode][type] = "module"
 projects[readonlymode][subdir] = "contrib"
@@ -426,12 +426,12 @@ projects[util][version] = "1.0-rc2"
 ; Enabled on install.
 projects[uuid][type] = "module"
 projects[uuid][subdir] = "contrib"
-projects[uuid][version] = "1.0-alpha6"
+projects[uuid][version] = "1.0-beta1"
 
 ; Deprecated
 projects[uuid_features][type] = "module"
 projects[uuid_features][subdir] = "contrib"
-projects[uuid_features][version] = "1.x-dev"
+projects[uuid_features][version] = "1.0-alpha4"
 
 projects[variable][type] = "module"
 projects[variable][subdir] = "contrib"
@@ -466,7 +466,7 @@ projects[views_slideshow][version] = "3.1"
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.10"
+projects[webform][version] = "4.11"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -475,7 +475,7 @@ projects[wysiwyg_filter][version] = "1.6-rc2"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
-projects[xautoload][version] = "5.2"
+projects[xautoload][version] = "5.5"
 
 
 
@@ -483,7 +483,7 @@ projects[xautoload][version] = "5.2"
 
 ; Enabled during profile install for admin screens.
 projects[adminimal_theme][type] = "theme"
-projects[adminimal_theme][version] = "1.22"
+projects[adminimal_theme][version] = "1.23"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"

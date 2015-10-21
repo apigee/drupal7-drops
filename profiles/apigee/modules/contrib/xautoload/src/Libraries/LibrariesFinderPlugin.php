@@ -89,12 +89,12 @@ class LibrariesFinderPlugin implements FinderPluginInterface {
    * @return array[]
    */
   private function getLibrariesXautoloadInfo() {
-    $cached = $this->system->cacheGet('xautoload_libraries_info');
+    $cached = $this->system->cacheGet(XAUTOLOAD_CACHENAME_LIBRARIES_INFO);
     if (FALSE !== $cached) {
       return $cached->data;
     }
     $info = $this->buildLibrariesXautoloadInfo();
-    $this->system->cacheSet('xautoload_libraries_info', $info);
+    $this->system->cacheSet(XAUTOLOAD_CACHENAME_LIBRARIES_INFO, $info);
     return $info;
   }
 
@@ -113,7 +113,10 @@ class LibrariesFinderPlugin implements FinderPluginInterface {
       if (!is_callable($callback)) {
         continue;
       }
-      $path = $this->system->librariesGetPath($name);
+      /** See https://www.drupal.org/node/2473901 */
+      $path = isset($info['library path'])
+        ? $info['library path']
+        : $this->system->librariesGetPath($name);
       if (FALSE === $path) {
         continue;
       }

@@ -4,6 +4,13 @@
  * Handles installation of SmartDocs database schema.
  */
 
+if (defined('APIGEE_MINIMUM_PHP_VERSION')) {
+  define('SMARTDOCS_MINIMUM_PHP_VERSION', APIGEE_MINIMUM_PHP_VERSION);
+}
+else {
+  define('SMARTDOCS_MINIMUM_PHP_VERSION', '5.5.0');
+}
+
 /**
  * Implements hook_schema().
  */
@@ -561,4 +568,98 @@ function smartdocs_update_7504() {
     db_create_table('cache_smartdocs', drupal_get_schema_unprocessed('system', 'cache'));
   }
   menu_rebuild();
+}
+
+/**
+ * Warn if SmartDocs is not running on up-to-date PHP.
+ */
+function smartdocs_update_7505() {
+  if (version_compare(PHP_VERSION, SMARTDOCS_MINIMUM_PHP_VERSION, '<')) {
+    // Log the version incompatibility to dblog and return a message.
+    $args = array('!version' => SMARTDOCS_MINIMUM_PHP_VERSION, '!old_version' => PHP_VERSION);
+    $message = 'Your PHP installation is too old. SmartDocs now requires at least PHP !version, but you are using PHP !old_version.';
+    if (defined('PANTHEON_ENVIRONMENT')) {
+      $message .= ' You can configure your PHP version by logging into your Pantheon dashboard '
+        . 'and selecting the “Settings” button at the top right.';
+    }
+    watchdog('smartdocs', $message, $args, WATCHDOG_ERROR);
+    $t = get_t();
+    return $t($message, $args);
+    // We don't dare throw a DrupalUpdateException here, because users who
+    // check the 'run update.php' checkbox on the Pantheon dashboard will never
+    // see the failure.
+  }
+}
+
+/**
+ * Add a page display to all model-specific views.
+ */
+function smartdocs_update_7506() {
+  $t = get_t();
+  $is_drush = function_exists('drush_print');
+  $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+  if (!$vocab) {
+    return $t('Warning: vocabulary ‘!vocab’ not found!', array('!vocab' => 'smartdocs_models'));
+  }
+  $terms = taxonomy_term_load_multiple(NULL, array('vid' => $vocab->vid));
+  $update_count = 0;
+  foreach ($terms as $term) {
+    $view_name = $term->name . '_methods';
+    $view = views_get_view($view_name);
+    // Does model-specific view even exist?
+    if (!$view) {
+      drupal_load('module', 'smartdocs');
+      smartdocs_create_model_view($term);
+      if ($is_drush) {
+        drush_print('Created view for model ' . $term->name . '.');
+      }
+      $update_count++;
+      continue;
+    }
+    if (!array_key_exists('modelindex', $view->display)) {
+      // Bizarre. This model’s view is hosed. Can’t do much about it now.
+      if ($is_drush) {
+        drush_print('Model ' . $term->name . '’s view has no modelindex display.');
+      }
+      continue;
+    }
+    if ($view->display['modelindex']->display_plugin == 'page') {
+      // This should probably never happen outside of a debugging session.
+      // It indicates that this update rule has already been run.
+      if ($is_drush) {
+        drush_print('Model ' . $term->name . '’s view already has a page display.');
+      }
+      continue;
+    }
+    $display_name = $term->field_model_display_name[LANGUAGE_NONE][0]['value'];
+
+    // Modify the view's modelindex display to be a page view.
+    $display =& $view->display['modelindex'];
+    $display->display_plugin = 'page';
+    $display->display_options['display_description'] = str_replace('This block ', 'This display ', $display->display_options['display_description']);
+    $display->display_options['defaults'] = array('title' => FALSE, 'header' => FALSE);
+    $display->display_options['path'] = 'taxonomy/term/' . $term->tid;
+    $display->display_options['title'] = $display_name;
+    if (!empty($term->description)) {
+      $display->display_options['header'] = array(
+        'model_description' => array(
+          'id' => 'model_description',
+          'table' => 'views',
+          'field' => 'area',
+          'empty' => TRUE,
+          'content' => $term->description,
+          'format' => 'plain_text',
+        ),
+      );
+    }
+    views_save_view($view);
+    // Make sure no old copies are lingering in cache.
+    db_delete('ctools_object_cache')->condition('name', $view_name)->execute();
+
+    if ($is_drush) {
+      drush_print('Updated view for model ' . $term->name . '.');
+    }
+    $update_count++;
+  }
+  return $t('Views for %count models were updated.', array('%count' => $update_count));
 }

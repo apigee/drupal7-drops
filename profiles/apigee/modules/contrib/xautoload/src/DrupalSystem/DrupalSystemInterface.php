@@ -19,27 +19,33 @@ interface DrupalSystemInterface {
    * @param mixed $default
    *
    * @return mixed
+   *
+   * @see variable_get()
    */
   function variableGet($name, $default = NULL);
 
   /**
-   * Replacement of drupal_get_filename(), but returning an absolute path.
+   * Replacement of drupal_get_filename(), but returning an absolute file path.
    *
    * @param string $type
    * @param string $name
    *
    * @return string
    *   The result of drupal_get_filename() with DRUPAL_ROOT . '/' prepended.
+   *
+   * @see drupal_get_filename()
    */
   function drupalGetFilename($type, $name);
 
   /**
-   * @see drupal_get_path()
+   * Replacement of drupal_get_path(), but returning an absolute directory path.
    *
    * @param string $type
    * @param string $name
    *
    * @return string
+   *
+   * @see drupal_get_path()
    */
   function drupalGetPath($type, $name);
 

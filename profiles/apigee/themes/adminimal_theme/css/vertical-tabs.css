@@ -39,6 +39,11 @@ div.vertical-tabs ul li.vertical-tab-button a {
 div.vertical-tabs ul li.first a {
   border-top: 0;
 }
+
+div.vertical-tabs .vertical-tabs-pane ul li.first a {
+  border-top: 2px solid #0074BD;
+}
+
 div.vertical-tabs ul li.vertical-tab-button strong {
   font-size: 0.923em;
 }

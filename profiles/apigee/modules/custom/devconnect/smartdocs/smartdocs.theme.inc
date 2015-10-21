@@ -165,7 +165,7 @@ function smartdocs_preprocess_node(&$vars) {
         ), 'setting');
     }
 
-    if (!(bool) variable_get('smartdocs_use_local_assets', 0)) {
+    if (!(bool) variable_get('smartdocs_use_local_assets', 1)) {
       $def_css = 'https://smartdocs.apigee.com/6/static/css/main.css
 https://smartdocs.apigee.com/6/static/css/codemirror.css
 https://smartdocs.apigee.com/6/static/css/prism.css';

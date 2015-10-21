@@ -39,7 +39,7 @@ class CacheManager {
    * @return CacheManager
    */
   static function create(DrupalSystemInterface $system) {
-    $prefix = $system->variableGet('xautoload_cache_prefix', NULL);
+    $prefix = $system->variableGet(XAUTOLOAD_VARNAME_CACHE_PREFIX, NULL);
     $manager = new self($prefix, $system);
     if (empty($prefix)) {
       $manager->renewCachePrefix();
@@ -60,7 +60,7 @@ class CacheManager {
    */
   function renewCachePrefix() {
     $this->prefix = Util::randomString();
-    $this->system->variableSet('xautoload_cache_prefix', $this->prefix);
+    $this->system->variableSet(XAUTOLOAD_VARNAME_CACHE_PREFIX, $this->prefix);
     foreach ($this->observers as $observer) {
       $observer->setCachePrefix($this->prefix);
     }

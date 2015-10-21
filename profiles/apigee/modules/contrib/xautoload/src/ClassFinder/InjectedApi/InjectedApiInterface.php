@@ -134,4 +134,5 @@ interface InjectedApiInterface {
    *   FALSE|NULL, if we are interested in further candidates.
    */
   function claimPath($file);
+
 }

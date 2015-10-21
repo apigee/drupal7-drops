@@ -266,7 +266,7 @@ function environment_indicator_ui_form_submit(&$form, &$form_state) {
  * Helper function to check if the machine name is available.
  */
 function environment_indicator_machine_available($machine) {
-  return db_query("SELECT COUNT(*) FROM {environment_indicator_environment} WHERE machine = ':machine'", array(':machine' => $machine))->fetchField() > 0 && $machine != 'overwritten_environment';
+  return db_query("SELECT COUNT(*) FROM {environment_indicator_environment} WHERE machine = :machine", array(':machine' => $machine))->fetchField() > 0 && $machine != 'overwritten_environment';
 }
 
 /**
@@ -484,6 +484,7 @@ function environment_indicator_get_all($fixed = FALSE) {
   module_load_include('inc', 'ctools', 'includes/export');
   $environments = ctools_export_crud_load_all('environment_indicator_environment');
   $environments = array_filter($environments, '_environment_indicator_active');
+  uasort($environments, '_environment_indicator_sort');
   // Check if the regular expression is a environment name.
   return $fixed ? array_filter($environments, '_environment_indicator_regex_filter') : $environments;
 }
@@ -531,6 +532,13 @@ function environment_indicator_needs_js() {
  */
 function _environment_indicator_regex_filter($item) {
   return !preg_match("/[\*\?\[\]\(\)]/", $item->regexurl);
+}
+
+/**
+ * Sort callback for environment_indicator_get_all().
+ */
+function _environment_indicator_sort($a, $b) {
+  return $a->settings['weight'] - $b->settings['weight'];
 }
 
 /**

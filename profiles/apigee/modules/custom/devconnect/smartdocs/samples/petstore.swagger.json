@@ -164,7 +164,7 @@
       "get": {
         "tags": ["pet"],
         "summary": "Finds Pets by tags",
-        "description": "Muliple tags can be provided with comma seperated strings. Use tag1, tag2, tag3 for testing.",
+        "description": "Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.",
         "operationId": "findPetsByTags",
         "produces": [
           "application/xml",
@@ -405,6 +405,9 @@
           "application/xml",
           "application/json"
         ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -480,6 +483,7 @@
         "tags": ["user"],
         "summary": "Create user",
         "description": "This can only be done by the logged in user.",
+        "consumes": ["application/json"],
         "operationId": "createUser",
         "produces": [
           "application/xml",
@@ -532,6 +536,7 @@
           "application/xml",
           "application/json"
         ],
+        "consumes": ["application/json"],
         "parameters": [
           {
             "in": "body",
@@ -645,6 +650,7 @@
           "application/xml",
           "application/json"
         ],
+        "consumes": ["application/json"],
         "parameters": [
           {
             "name": "username",
