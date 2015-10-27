@@ -37,7 +37,7 @@ projects[adminimal_admin_menu][version] = "1.6"
 ; Enabled during profile install.
 projects[advanced_forum][type] = "module"
 projects[advanced_forum][subdir] = "contrib"
-projects[advanced_forum][version] = "2.5"
+projects[advanced_forum][version] = "2.6"
 
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
@@ -247,7 +247,7 @@ projects[i18n][version] = "1.13"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
-projects[jquery_update][version] = "3.0-alpha2"
+projects[jquery_update][version] = "3.0-alpha3"
 
 ; Required for OPDK
 projects[ldap][type] = "module"
@@ -466,7 +466,7 @@ projects[views_slideshow][version] = "3.1"
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.11"
+projects[webform][version] = "4.12"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -491,7 +491,7 @@ projects[bootstrap][version] = "3.0"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
-projects[rubik][version] = "4.2"
+projects[rubik][version] = "4.3"
 
 projects[tao][type] = "theme"
 projects[tao][version] = "3.1"
