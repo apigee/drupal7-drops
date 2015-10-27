@@ -272,6 +272,7 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
 
       try {
         $content_markup = trim($doc->getHtml(SMARTDOCS_TEMPLATE_NAME));
+        drupal_alter('smartdocs_method', $content_markup, $vars['node']);
         $write_cache = TRUE;
       }
       catch (ResponseException $e) {
@@ -358,7 +359,13 @@ function smartdocs_preprocess_devconnect_developer_apps_list(&$vars) {
         }
         if ($has_nodes) {
           // Yes, at least one published node exists.
-          $link_title = t(':model documentation', array(':model' => smartdocs_taxonomy_term_title($model_term)));
+          if (property_exists($model_term, 'field_model_display_name') && !empty($model_term->field_model_display_name[LANGUAGE_NONE][0]['value'])) {
+            $title = $model_term->field_model_display_name[LANGUAGE_NONE][0]['value'];
+          }
+          else {
+            $title = $model_term->name;
+          }
+          $link_title = t(':model documentation', array(':model' => $title));
           $app['smartdocs'][$product][] = l($link_title, 'taxonomy/term/' . $model_term->tid, array('attributes' => array('target' => '_blank')));
         }
       }
