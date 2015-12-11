@@ -144,3 +144,38 @@ function apigee_profile_updates_update_7103() {
   }
   system_rebuild_module_data();
 }
+
+/**
+ * Remove ckeditor_bootstrap module, rebuild registry.
+ */
+function apigee_profile_updates_update_7104() {
+  db_delete('system')->condition('name', 'ckeditor_bootstrap')->execute();
+
+  // Rebuild registry because Bootstrap theme update changed many things.
+  // This code is mostly copypasta from registry_rebuild.php.
+  cache_clear_all('lookup_cache', 'cache_bootstrap');
+  cache_clear_all('variables', 'cache_bootstrap');
+  cache_clear_all('module_implements', 'cache_bootstrap');
+  registry_rebuild();
+
+  cache_clear_all('*', 'cache', TRUE);
+  cache_clear_all('*', 'cache_form', TRUE);
+  drupal_flush_all_caches();
+
+  $parsed_files = registry_get_parsed_files();
+  // Remove files which don't exist anymore.
+  $missing_files = array();
+  foreach ($parsed_files as $filename => $file) {
+    if (!file_exists($filename)) {
+      $missing_files[] = $filename;
+    }
+  }
+  if (!empty($filenames)) {
+    db_delete('registry_file')->condition('filename', $missing_files)->execute();
+    db_delete('registry')->condition('filename', $missing_files)->execute();
+  }
+
+  cache_clear_all('*', 'cache', TRUE);
+  cache_clear_all('*', 'cache_form', TRUE);
+  drupal_flush_all_caches();
+}

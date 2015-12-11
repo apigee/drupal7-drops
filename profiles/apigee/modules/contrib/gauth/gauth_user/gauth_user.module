@@ -196,6 +196,9 @@ function gauth_user_services_save(&$account) {
       }
       $fields['services'] = check_plain($account['services']);
     }
+    if (isset($account['access_type'])) {
+      $fields['access_type'] = $account['access_type'];
+    }
     if (drupal_write_record('gauth_user_services', $fields, 'id') == SAVED_UPDATED) {
       return $fields;
     }
@@ -219,6 +222,7 @@ function gauth_user_services_save(&$account) {
       'developer_key' => check_plain($account['developer_key']),
       'client_id' => check_plain($account['client_id']),
       'client_secret' => check_plain($account['client_secret']),
+      'access_type' => $account['access_type'],
     );
     if (is_array($account['services'])) {
       $account['services'] = implode(",", $account['services']);

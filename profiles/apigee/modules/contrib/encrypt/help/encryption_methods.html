@@ -19,16 +19,23 @@ Create your plugin file. It should be a file called <strong>YOUR_PLUGIN.inc</str
 </li>
 
 <li>
-In your plugin file, declare your plugin. Here is an example from Encrypt's "Basic" encryption method.
+In your plugin file, declare your plugin. Here is an example from Encrypt's "Mcrypt AES CBC" encryption method.
 <pre>
-$plugin = array(
-  'title' => t('Mcrypt AES 256'),
-  'description' => t('This uses PHPs mcrypt extension and <a href="!url">AES-256</a>.', array('!url' => 'http://en.wikipedia.org/wiki/Advanced_Encryption_Standard')),
-  'encrypt callback' => 'encrypt_encryption_methods_mcrypt_rij_256',
-  'dependency callback' => 'mcrypt_extension_is_present',
-);
+$plugin = encrypt_mcrypt_aes_cbc_encrypt_encryption_methods();
+
+/**
+ * Implements MODULE_FILENAME_encrypt_encryption_methods().
+ */
+function encrypt_mcrypt_aes_cbc_encrypt_encryption_methods() {
+  return array(
+    'title' => t('Mcrypt AES (CBC Mode)'),
+    'description' => t('Uses PHP\'s Mcrypt extension and AES in CBC mode. The key MUST be 16, 24, or 32 bytes.'),
+    'encrypt callback' => '_encrypt_encryption_methods_mcrypt_aes_cbc',
+    'dependency callback' => '_encrypt_mcrypt_extension_is_present',
+  );
+}
 </pre>
-The plugin can just be declared in the global space; no need to wrap it in a function or anything. Available options for the $plugin array include:
+Available options for the $plugin array include:
 <dt>title</dt>
 <dd><strong>Required</strong>. The human-readable name for your encryption method. This will appear on the Encrypt admin page.</dd>
 <dt>description</dt>
@@ -39,13 +46,13 @@ The plugin can just be declared in the global space; no need to wrap it in a fun
 <dd>Optional. The name of a function in your plugin file that declares whether or not an encryption method's dependencies have been met. The function should return an array of error messages (if there are any) or an empty array or FALSE if all dependencies are met. For example:</dd>
 <dd><pre>
 /**
- * Callback to see if the MCrypt library is present.
+ * Callback to see if the Mcrypt library is present.
  */
-function _mcrypt_extension_is_present() {
+function _encrypt_mcrypt_extension_is_present() {
   $errors = array();
 
   if (!function_exists('mcrypt_encrypt')) {
-    $errors[] = t('MCrypt library not installed.');
+    $errors[] = t('Mcrypt library not installed.');
   }
 
   return $errors;

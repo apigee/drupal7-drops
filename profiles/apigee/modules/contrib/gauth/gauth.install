@@ -52,6 +52,13 @@ function gauth_schema() {
         'description' => 'The OAuth access token.',
         'type' => 'text',
       ),
+      'access_type' => array(
+        'description' => 'Stores the access type of the account',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'offline',
+      ),
       'is_authenticated' => array(
         'description' => 'Is the account authenticated and ready to use?.',
         'type' => 'int',
@@ -102,8 +109,8 @@ function gauth_requirements($phase) {
       'description' => '',
       'severity' => REQUIREMENT_OK,
     );
-    $info = libraries_load('google-api-php-client');
-    if (!$info['loaded']) {
+    $info = libraries_detect('google-api-php-client');
+    if (!$info['installed']) {
       $url = l($t('here'), $info['download url']);
       $version = array_keys($info['versions']);
       $requirements['gauth']['description'] = $t('Install version "@version" of the Google api php client library code (from !here) in a libraries directory such as "sites/all/libraries/google-api-php-client."', array('@version' => $version[0], '!here' => $url));
@@ -131,5 +138,23 @@ function gauth_update_7002() {
 
   db_update('gauth_accounts')
     ->fields(array('uid' => 1))
+    ->execute();
+}
+
+/**
+ * Add the gauth_accounts.access_type field.
+ */
+function gauth_update_7003() {
+  $field = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => 'offline',
+    'description' => 'Stores the access type of the account.',
+  );
+  db_add_field('gauth_accounts', 'access_type', $field);
+
+  db_update('gauth_accounts')
+    ->fields(array('access_type' => 'offline'))
     ->execute();
 }

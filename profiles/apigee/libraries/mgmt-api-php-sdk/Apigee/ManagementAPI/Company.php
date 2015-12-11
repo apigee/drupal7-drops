@@ -2,8 +2,9 @@
 
 namespace Apigee\ManagementAPI;
 
-use \Apigee\Exceptions\ResponseException;
-use \Apigee\Exceptions\ParameterException;
+use Apigee\Exceptions\ResponseException;
+use Apigee\Exceptions\ParameterException;
+use Apigee\Util\OrgConfig;
 
 /**
  * Abstracts the Company object in the Management API and allows clients to
@@ -172,7 +173,7 @@ class Company extends Base
      *
      * @param \Apigee\Util\OrgConfig $config
      */
-    public function __construct(\Apigee\Util\OrgConfig $config)
+    public function __construct(OrgConfig $config)
     {
         $this->init($config, '/o/' . rawurlencode($config->orgName) . '/companies');
         $this->blankValues();
@@ -211,7 +212,7 @@ class Company extends Base
      * Returns an array of Company objects representing all companies defined
      * for this org.
      *
-     * @return array
+     * @return Company[]
      */
     public function listCompaniesDetail()
     {
@@ -246,20 +247,20 @@ class Company extends Base
     /**
      * Saves this object's properties to the Edge server.
      *
-     * If $is_update is set to true, we assume that this is an update call.
+     * If $isUpdate is set to true, we assume that this is an update call.
      * If it is false, we assume that it is an insert. If null is passed in,
      * we attempt an update, and if it fails we attempt an insert. This is
      * much less efficient, so declaring $is_update as a boolean will yield
      * faster response times.
      *
-     * @param bool|null $force_update
+     * @param bool|null $isUpdate
      * @throws \Apigee\Exceptions\ResponseException
      * @throws \Exception
      */
-    public function save($is_update = false)
+    public function save($isUpdate = false)
     {
         // See if we need to brute-force this.
-        if ($is_update === null) {
+        if ($isUpdate === null) {
             try {
                 $this->save(true);
             } catch (ResponseException $e) {
@@ -287,10 +288,10 @@ class Company extends Base
             }
         }
         $url = null;
-        if ($is_update || $this->createdAt) {
+        if ($isUpdate || $this->createdAt) {
             $url = rawurlencode($this->name);
         }
-        if ($is_update) {
+        if ($isUpdate) {
             $this->put($url, $payload);
         } else {
               $this->post($url, $payload);
@@ -395,24 +396,19 @@ class Company extends Base
     /**
      * Get all companies which developer is part of.
      *
-     * @todo Validate that responseText makes sense to return here.
+     * You should directly call Developer::getCompanies() instead of calling
+     * this method.
+     *
+     * @deprecated
      *
      * @param string $developer_id
-     * @return string
+     * @return array
      */
     public function getDeveloperCompanies($developer_id)
     {
-        $url = '/organizations/'
-            . rawurlencode($this->config->orgName)
-            . '/developers/'
-            . rawurlencode($developer_id)
-            . '/companies';
-
-        $this->setBaseUrl($url);
-        $this->get();
-        $this->restoreBaseUrl();
-        $response = $this->responseText;
-        return $response;
+        $developer = new Developer($this->getConfig());
+        $developer->load($developer_id);
+        return $developer->getCompanies();
     }
 
 
@@ -477,22 +473,31 @@ class Company extends Base
     /**
      * Return an array of roles for a developer in a company.
      *
-     * @param string $developer_email The email of the developer.
-     * @param string $company_name The name of the company the developer belongs to.
-     * @return array An array of role names associated with the developer.
+     * @param string $developerEmail
+     *    The email of the developer.
+     * @param string $companyName
+     *    The name of the company the developer belongs to.
+     * @return string[]
+     *    An array of role names associated with the developer.
      */
-    public function getDeveloperRoles($developer_email, $company_name = null)
+    public function getDeveloperRoles($developerEmail, $companyName = null)
     {
-        $company_name = $company_name ? : $this->name;
-        if (empty($company_name)) {
+        $companyName = $companyName ?: $this->name;
+        if (empty($companyName)) {
             throw new ParameterException('No Company name given.');
         }
-        $url = rawurlencode($company_name) . '/developers/' . $developer_email;
+        $url = rawurlencode($companyName) . '/developers';
         $this->get($url);
 
-        $developer_companies = $this->responseObj['company'];
-        $roles = explode(',', $developer_companies[0]['role']);
-
+        $roles = array();
+        if ($this->responseObj && array_key_exists('developer', $this->responseObj)) {
+            foreach ($this->responseObj['developer'] as $developerInfo) {
+                if ($developerInfo['email'] == $developerEmail) {
+                    $roles = explode(',', $developerInfo['role']);
+                    break;
+                }
+            }
+        }
         return $roles;
     }
 }

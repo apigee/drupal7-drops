@@ -88,6 +88,6 @@ dependencies[] = webform
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20151026.2017
-version = "15.10.26.00"
+; Added by build script on 20151211.1023
+version = "15.12.11.00"
     

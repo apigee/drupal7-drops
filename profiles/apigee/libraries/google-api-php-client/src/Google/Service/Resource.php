@@ -127,9 +127,10 @@ class Google_Service_Resource
     }
 
     $method['parameters'] = array_merge(
-        $method['parameters'],
-        $this->stackParameters
+        $this->stackParameters,
+        $method['parameters']
     );
+
     foreach ($parameters as $key => $val) {
       if ($key != 'postBody' && ! isset($method['parameters'][$key])) {
         $this->client->getLogger()->error(
@@ -218,6 +219,10 @@ class Google_Service_Resource
       $upload = new Google_Http_MediaFileUpload($this->client, $request, $mimeType, $data);
     }
 
+    if (isset($parameters['alt']) && $parameters['alt']['value'] == 'media') {
+      $expected_class = null;
+    }
+    
     return $this->client->execute($request, $expected_class);
   }
 

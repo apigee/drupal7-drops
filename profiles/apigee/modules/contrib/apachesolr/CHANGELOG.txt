@@ -1,6 +1,10 @@
 Apache Solr integration 7.x-1.x, xxxx-xx-xx
 -----------------------------
 
+Apache Solr integration 7.x-1.8, 2015-12-02
+-----------------------------
+SA-CONTRIB-2015-170 by Dave Reid, theapi: fix for anonymous users can delete Solr environments that are not default.
+
 Apache Solr integration 7.x-1.7, 2014-08-29
 -----------------------------
 #2151325 by JulienD: Remove useless files[] directive from .info files.

@@ -37,6 +37,8 @@ function theme_gauth_account_list($variables) {
     t('Client Secret'),
     t('User'),
     t('Services'),
+    t('Access Type'),
+    t('Redirect Url'),
     array('data' => t('Operations'), 'colspan' => 3),
   );
   $rows = array();
@@ -49,6 +51,8 @@ function theme_gauth_account_list($variables) {
     $row[] = $account->client_secret;
     $row[] = l($account_user->name, "user/$account->uid");
     $row[] = implode(", ", gauth_google_services_names($account->services));
+    $row[] = $account->access_type;
+    $row[] = '<pre>' . gauth_callback_url() . '</pre>';
     $row[] = l(t('edit'), 'admin/config/services/gauth_account/edit/' . $account->id);
     $row[] = l(t('delete'), 'admin/config/services/gauth_account/delete/' . $account->id);
     $row[] = $account->is_authenticated ? l(t('Revoke'), 'gauth/revoke_token/' . $account->id) : l(t('Authenticate'), 'gauth/response_handler/' . $account->id);
@@ -105,21 +109,21 @@ function gauth_account_edit_form($form, &$form_state, $id = NULL) {
   $form['developer_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Api Key'),
-    '#description' => t('The api key of google account.'),
+    '#description' => t('The server api key of web application.'),
     '#default_value' => isset($account['developer_key']) ? $account['developer_key'] : '',
     '#required' => TRUE,
   );
   $form['client_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Client Id'),
-    '#description' => t('The client id of google account.'),
+    '#description' => t('The CLIENT ID in the "Client ID for web application" section.'),
     '#default_value' => isset($account['client_id']) ? $account['client_id'] : '',
     '#required' => TRUE,
   );
   $form['client_secret'] = array(
     '#type' => 'textfield',
     '#title' => t('Client Secret Key'),
-    '#description' => t('The client secrets key of google account.'),
+    '#description' => t('The CLIENT SECRET in the "Client ID for web application" section.'),
     '#default_value' => isset($account['client_secret']) ? $account['client_secret'] : '',
     '#required' => TRUE,
   );
@@ -127,11 +131,25 @@ function gauth_account_edit_form($form, &$form_state, $id = NULL) {
   $form['services'] = array(
     '#type' => 'select',
     '#title' => t('Services'),
-    '#description' => t('Services that will be enabled to be used by this account'),
+    '#description' => t('Services that will be enabled to be used by this account.'),
     '#options' => $options,
     '#multiple' => TRUE,
     '#default_value' => isset($account['services']) ? explode(",", $account['services']) : array(),
     '#required' => TRUE,
+  );
+  $form['access_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Access Type'),
+    '#description' => t('The Access Type of the account. Select offline if the site can perform actions even when the user is not online.'),
+    '#options' => array('offline' => t('Offline'), 'online' => t('Online')),
+    '#default_value' => isset($account['access_type']) ? $account['client_secret'] : 'offline',
+  );
+  $form['callback_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Redirect Url'),
+    '#description' => t('Copy this url and paste it in google project as a authorized redirect url.'),
+    '#default_value' => gauth_callback_url(),
+    '#attributes' => array('disabled' => 'disabled')
   );
   $form['uid'] = array(
     '#type' => 'value',

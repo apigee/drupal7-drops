@@ -1,11 +1,10 @@
 <?php
-global $user;
 /**
  * @file
  * Default theme implementation to display a single Drupal page.
  *
  * The doctype, html, head and body tags are not in this template. Instead they
- * can be found in the html.tpl.php template in this directory.
+ * can be found in the html.tpl.php template in the ../system directory.
  *
  * Available variables:
  *
@@ -39,7 +38,8 @@ global $user;
  * - $myappslink: provides a link for the users my apps page (with glyphicon)
  * - $profilelink: provides a link for the user profile page (with glyphicon)
  * - $logoutlink: provides a link for the user to log out (with glyphicon)
- * - $company_switcher: Provides the dropdown to switch companies if apigee_company module is enabled.
+ * - $company_switcher: Provides the dropdown to switch companies if
+ *   apigee_company module is enabled.
  *
  * Page content (in order of occurrence in the default page.tpl.php):
  * - $title_prefix (array): An array containing additional output populated by
@@ -102,19 +102,18 @@ global $user;
         <nav role="navigation">
           <?php if (!empty($primary_nav)): print render($primary_nav); endif; ?>
           <ul class="menu nav navbar-nav pull-right account-menu">
-            <?php if (user_is_anonymous()) { ?>
-              <li class="<?php echo (($current_path == "user/register") ? "active":""); ?>"><?php echo l(t("Register"), "user/register"); ?></li>
-              <li class="<?php echo (($current_path == "user/login") ? "active":""); ?>"><?php echo l(t("Login"), "user/login"); ?></li>
-            <?php } else {
-              $user_url =  'user/' . $user->uid; ?>
+            <?php if (user_is_anonymous()): ?>
+              <li class="<?php echo (($current_path == 'user/register') ? 'active' : ''); ?>"><?php echo l(t('Register'), 'user/register'); ?></li>
+              <li class="<?php echo (($current_path == 'user/login') ? 'active' : ''); ?>"><?php echo l(t('Login'), 'user/login'); ?></li>
+            <?php else: ?>
               <li class="first expanded dropdown">
                 <a data-toggle="dropdown" class="dropdown-toggle" data-target="#" title="" href="/user">
                   <?php print $user_mail_clipped; ?> <span class="caret"></span>
                 </a>
                 <ul class="dropdown-menu"><?php print $dropdown_links; ?></ul>
               </li>
-              <li class="last"><?php print l('Logout', 'user/logout'); ?></li>
-            <?php } ?>
+              <li class="last"><?php print l(t('Logout'), 'user/logout'); ?></li>
+            <?php endif; ?>
           </ul>
           <?php if (!empty($page['navigation'])): print render($page['navigation']); endif; ?>
         </nav>
@@ -150,7 +149,7 @@ global $user;
   </div>
 <?php endif; ?>
 <!-- Breadcrumbs -->
-<?php if($breadcrumb) : ?>
+<?php if ($breadcrumb): ?>
 <div class="container" id="breadcrumb-navbar">
   <div class="row">
     <br/>
@@ -161,12 +160,12 @@ global $user;
 </div>
 <?php endif; ?>
 <div class="master-container">
-  <?php if (drupal_is_front_page()) { ?>
+  <?php if (drupal_is_front_page()): ?>
     <section class="page-header">
       <div class="container">
         <div class="title">
           <?php if (theme_get_setting('welcome_message')): ?>
-            <h1><?php print theme_get_setting('welcome_message'); ?></h1>
+            <h1><?php print check_plain(theme_get_setting('welcome_message')); ?></h1>
           <?php else: ?>
             <h1><span class="welcome">Welcome</span><br />to the <span><?php print $site_name ?></span></h1>
           <?php endif; ?>
@@ -176,7 +175,7 @@ global $user;
         </div>
       </div>
     </section>
-  <?php } else { ?>
+  <?php else: ?>
     <section class="page-header">
       <div class="container">
         <div class="row">
@@ -186,7 +185,7 @@ global $user;
             <!-- Title -->
             <h1><?php print render($title); ?></h1>
             <!-- SubTitle -->
-            <?php if (!empty($subtitle)) { ?>
+            <?php if (!empty($subtitle)): ?>
               <br/>
               <p class="subtitle">
                 <span class="text-muted">
@@ -194,14 +193,14 @@ global $user;
                   <?php print render($subtitle); ?>
                 </span>
               </p>
-            <?php } ?>
+            <?php endif; ?>
             <!-- Title Suffix -->
             <?php print render($title_suffix); ?>
           </div>
         </div>
       </div>
     </section>
-  <?php } ?>
+  <?php endif; ?>
   <div class="page-content">
     <div class="main-container container">
 
@@ -248,8 +247,8 @@ global $user;
         <?php endif; ?>
 
       </div>
-      <?php if (drupal_is_front_page()) { ?>
-        <?php if (!empty($page['frontpage_panel_left']) || !empty($page['frontpage_panel_center']) || !empty($page['frontpage_panel_right'])) { ?>
+      <?php if (drupal_is_front_page()): ?>
+        <?php if (!empty($page['frontpage_panel_left']) || !empty($page['frontpage_panel_center']) || !empty($page['frontpage_panel_right'])): ?>
           <div class="row">
             <div class="col-sm-4">
               <?php if (!empty($page['frontpage_panel_left'])): ?>
@@ -267,8 +266,8 @@ global $user;
               <?php endif; ?>
             </div>
           </div>
-        <?php } ?>
-      <?php } ?>
+        <?php endif; ?>
+      <?php endif; ?>
     </div>
   </div>
   <div id="push"></div>

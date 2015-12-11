@@ -41,7 +41,7 @@ projects[advanced_forum][version] = "2.6"
 
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
-projects[apachesolr][version] = "1.7"
+projects[apachesolr][version] = "1.8"
 
 projects[autologout][type] = "module"
 projects[autologout][subdir] = "contrib"
@@ -79,10 +79,6 @@ projects[ckeditor][subdir] = "contrib"
 projects[ckeditor][version] = "1.16"
 ; see https://www.drupal.org/node/2454933
 projects[ckeditor][patch][2454933] = "https://www.drupal.org/files/issues/Issue_2454933.patch"
-
-projects[ckeditor_bootstrap][type] = "module"
-projects[ckeditor_bootstrap][subdir] = "contrib"
-projects[ckeditor_bootstrap][version] = "1.0-alpha1"
 
 projects[ckeditor_link][type] = "module"
 projects[ckeditor_link][subdir] = "contrib"
@@ -148,12 +144,12 @@ projects[ds][version] = "2.11"
 ; Deprecated. Required by devconnect_download which is also deprecated.
 projects[eck][type] = "module"
 projects[eck][subdir] = "contrib"
-projects[eck][version] = "2.0-rc7"
+projects[eck][version] = "2.0-rc8"
 
 ; Required by OPDK
 projects[encrypt][type] = "module"
 projects[encrypt][subdir] = "contrib"
-projects[encrypt][version] = "2.1"
+projects[encrypt][version] = "2.3"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
@@ -208,7 +204,7 @@ projects[ftools][version] = "1.6"
 ; Deprecated
 projects[gauth][type] = "module"
 projects[gauth][subdir] = "contrib"
-projects[gauth][version] = "1.4"
+projects[gauth][version] = "1.5-rc1"
 
 ; Deprecated
 projects[github_connect][type] = "module"
@@ -314,6 +310,8 @@ projects[metatag][version] = "1.7"
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
 projects[me][version] = "1.2"
+; see https://www.drupal.org/node/2555613
+projects[me][patch][2555613] = "https://www.drupal.org/files/issues/me-wsod_invalid_callback-2555613-3.patch"
 
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"
@@ -440,11 +438,7 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.11"
-; see https://www.drupal.org/node/1809958
-projects[views][patch][1809958] = "https://www.drupal.org/files/issues/fix-views-missing-dom-id-1809958-21.patch"
-; see https://www.drupal.org/node/1036962
-projects[views][patch][1036962] = "https://www.drupal.org/files/issues/views-ajax-nginx-1036962-71.patch"
+projects[views][version] = "3.13"
 
 projects[views_accordion][type] = "module"
 projects[views_accordion][subdir] = "contrib"
@@ -485,7 +479,7 @@ projects[xautoload][version] = "5.5"
 projects[adminimal_theme][type] = "theme"
 projects[adminimal_theme][version] = "1.23"
 
-; Not enabled, but used by Apigee Responsive theme.
+; Not enabled, but used by Apigee Responsive theme. Update to 3.1 with great care!
 projects[bootstrap][type] = "theme"
 projects[bootstrap][version] = "3.0"
 

@@ -119,15 +119,33 @@ function encrypt_config_form($form, &$form_state, $config = NULL) {
   }
 
   // Create a list of method titles to be used for radio buttons.
+  // Only display a deprecated method if it's the currently selected
+  // method for this configuration. List it at the bottom.
   $method_options = array();
   foreach ($methods as $id => $method) {
-    $method_options[$id] = $method['title'];
+    if (!$method['deprecated']) {
+      $method_options[$id] = $method['title'];
+    }
+  }
+  foreach ($methods as $id => $method) {
+    if ($method['deprecated'] && $id == $config['method']) {
+      $method_options[$id] = $method['title'] . ' <span class="encrypt-warning">' . t('(Deprecated)') . '</span>';
+    }
   }
 
   // Create a list of provider titles to be used for radio buttons.
+  // Only display a deprecated provider if it's the currently selected
+  // provider for this configuration. List it at the bottom.
   $provider_options = array();
   foreach ($providers as $id => $provider) {
-    $provider_options[$id] = $provider['title'];
+    if (!$provider['deprecated']) {
+      $provider_options[$id] = $provider['title'];
+    }
+  }
+  foreach ($providers as $id => $provider) {
+    if ($provider['deprecated'] && $id == $config['provider']) {
+      $provider_options[$id] = $provider['title'] . ' <span class="encrypt-warning">' . t('(Deprecated)') . '</span>';
+    }
   }
 
   $form = array();

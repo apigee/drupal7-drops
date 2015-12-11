@@ -93,16 +93,23 @@ function encrypt_schema() {
 function encrypt_install() {
   $t = get_t();
 
+  // Check if encrypt_drupal_variable_key already exists. If so, use it.
+  // Otherwise, set it.
+  if (!($key = variable_get('encrypt_drupal_variable_key', 0))) {
+    $key = base64_encode(drupal_random_bytes(16));
+    variable_set('encrypt_drupal_variable_key', $key);
+  }
+
   // Add a default configuration.
   db_insert('encrypt_config')
     ->fields(array(
       'name' => 'default',
       'label' => $t('Default'),
       'description' => $t('The default configuration.'),
-      'method' => 'default',
+      'method' => 'mcrypt_aes_cbc',
       'method_settings' => '',
-      'provider' => 'drupal_private_key',
-      'provider_settings' => '',
+      'provider' => 'drupal_variable',
+      'provider_settings' => serialize(array('method' => 'base64_decode')),
       'enabled' => 1,
       'created' => REQUEST_TIME,
       'changed' => REQUEST_TIME,
