@@ -111,7 +111,20 @@ function gauth_libraries_info() {
       'lines' => 40,
     ),
     'versions' => array(
-      '1.0.5-beta' => array(),
+      '1.0.5-beta' => array(
+        'files' => array(
+          'php' => array(
+            'src/Google/Client.php',
+          )
+        ),
+      ),
+      '1.1.5' => array(
+        'files' => array(
+          'php' => array(
+            'src/Google/autoload.php',
+          )
+        )
+      )
     ),
     'files' => array(
       'php' => array(
@@ -129,6 +142,16 @@ function gauth_user_delete($user) {
   $gauth_account = gauth_account_load_by_uid($user->uid);
   if ($gauth_account) {
     gauth_account_delete($gauth_account);
+  }
+}
+
+/**
+ * Implements hook_menu_site_status_alter().
+ */
+function gauth_menu_site_status_alter(&$menu_site_status, $path) {
+  if ($menu_site_status == MENU_SITE_OFFLINE && user_is_anonymous() && $path == 'gauth/response_handler') {
+    // Disable offline mode.
+    $menu_site_status = MENU_SITE_ONLINE;
   }
 }
 
@@ -157,9 +180,10 @@ function gauth_response_handler($account_id = NULL) {
       $client->setApplicationName("Google OAuth2");
       $client->setClientId($account['client_id']);
       $client->setClientSecret($account['client_secret']);
-      $client->setRedirectUri(url('gauth/response_handler', array('https' => TRUE, 'absolute' => TRUE)));
+      $client->setRedirectUri(gauth_callback_url());
       $client->setDeveloperKey($account['developer_key']);
       $scopes = gauth_google_services_scopes();
+      $client->setAccessType($account['access_type']);
       foreach (explode(",", $account['services']) as $service) {
         $client->addScope($scopes[$service]);
       }
@@ -193,6 +217,7 @@ function gauth_google_services_scopes() {
   return array(
     'adexchangeseller' => 'https://www.googleapis.com/auth/adexchange.seller',
     'adexchangebuyer' => 'https://www.googleapis.com/auth/adexchange.buyer',
+    'admin' => 'https://www.googleapis.com/auth/email.migration',
     'adsense' => 'https://www.googleapis.com/auth/adsense',
     'adsensehost' => 'https://www.googleapis.com/auth/adsensehost',
     'analytics' => array(
@@ -201,6 +226,21 @@ function gauth_google_services_scopes() {
       'https://www.googleapis.com/auth/analytics.manage.users',
       'https://www.googleapis.com/auth/analytics.provision',
     ),
+    'androidenterprise' => 'https://www.googleapis.com/auth/androidenterprise',
+    'androidpublisher' => 'https://www.googleapis.com/auth/androidpublisher',
+    'appsactivity' => array(
+      'https://www.googleapis.com/auth/activity',
+      'https://www.googleapis.com/auth/drive',
+      'https://www.googleapis.com/auth/drive.metadata',
+      'https://www.googleapis.com/auth/drive.metadata.readonly',
+      'https://www.googleapis.com/auth/drive.readonly'
+    ),
+    'appstate' => 'https://www.googleapis.com/auth/appstate',
+    'autoscaler' => array(
+      'https://www.googleapis.com/auth/compute',
+      'https://www.googleapis.com/auth/compute.readonly'
+    ),
+    'audit' => '',
     'bigquery' => array(
       'https://www.googleapis.com/auth/bigquery',
       'https://www.googleapis.com/auth/bigquery.insertdata',
@@ -210,21 +250,140 @@ function gauth_google_services_scopes() {
     'blogger' => 'https://www.googleapis.com/auth/blogger',
     'books' => 'https://www.googleapis.com/auth/books',
     'calendar' => 'https://www.googleapis.com/auth/calendar',
+    'civicinfo' => '',
+    'classroom' =>array(
+      'https://www.googleapis.com/auth/classroom.courses',
+      'https://www.googleapis.com/auth/classroom.courses.readonly',
+      'https://www.googleapis.com/auth/classroom.profile.emails',
+      'https://www.googleapis.com/auth/classroom.profile.photos',
+      'https://www.googleapis.com/auth/classroom.rosters',
+      'https://www.googleapis.com/auth/classroom.rosters.readonly'
+    ),
+    'cloudlatencytest' => 'https://www.googleapis.com/auth/monitoring.readonly',
+    'cloudmonitoring' => 'https://www.googleapis.com/auth/monitoring',
+    'cloudresourcemanager' => 'https://www.googleapis.com/auth/cloud-platform',
+    'clouduseraccounts' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/cloud.useraccounts',
+      'https://www.googleapis.com/auth/cloud.useraccounts.readonly',
+      'https://www.googleapis.com/auth/computeaccounts',
+      'https://www.googleapis.com/auth/computeaccounts.readonly'
+    ),
     'compute' => array(
       'https://www.googleapis.com/auth/compute',
       'https://www.googleapis.com/auth/devstorage.full_control',
     ),
+    'computeaccounts' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/computeaccounts',
+      'https://www.googleapis.com/auth/computeaccounts.readonly'
+    ),
+    'container' => 'https://www.googleapis.com/auth/cloud-platform',
+    'coordinate' => array(
+      'https://www.googleapis.com/auth/coordinate',
+      'https://www.googleapis.com/auth/coordinate.readonly'
+    ),
     'customsearch' => '',
+    'dataflow' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/userinfo.email'
+    ),
+    'datastore' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/datastore',
+      'https://www.googleapis.com/auth/userinfo.email'
+    ),
+    'deploymentmanager' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/ndev.cloudman',
+      'https://www.googleapis.com/auth/ndev.cloudman.readonly'
+    ),
     'dfareporting' => 'https://www.googleapis.com/auth/dfareporting',
+    'directory' => array(
+      'https://www.googleapis.com/auth/admin.directory.device.chromeos',
+      'https://www.googleapis.com/auth/admin.directory.device.chromeos.readonly',
+      'https://www.googleapis.com/auth/admin.directory.device.mobile',
+      'https://www.googleapis.com/auth/admin.directory.device.mobile.action',
+      'https://www.googleapis.com/auth/admin.directory.device.mobile.readonly',
+      'https://www.googleapis.com/auth/admin.directory.group',
+      'https://www.googleapis.com/auth/admin.directory.group.member',
+      'https://www.googleapis.com/auth/admin.directory.group.member.readonly',
+      'https://www.googleapis.com/auth/admin.directory.group.readonly',
+      'https://www.googleapis.com/auth/admin.directory.notifications',
+      'https://www.googleapis.com/auth/admin.directory.orgunit',
+      'https://www.googleapis.com/auth/admin.directory.orgunit.readonly',
+      'https://www.googleapis.com/auth/admin.directory.user',
+      'https://www.googleapis.com/auth/admin.directory.user.alias',
+      'https://www.googleapis.com/auth/admin.directory.user.alias.readonly',
+      'https://www.googleapis.com/auth/admin.directory.user.readonly',
+      'https://www.googleapis.com/auth/admin.directory.user.security',
+      'https://www.googleapis.com/auth/admin.directory.userschema',
+      'https://www.googleapis.com/auth/admin.directory.userschema.readonly'
+    ),
+    'dsn' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/ndev.clouddns.readonly',
+      'https://www.googleapis.com/auth/ndev.clouddns.readwrite'
+    ),
+    'doubleclickbidmanager' => '',
+    'doubleclicksearch' => 'https://www.googleapis.com/auth/doubleclicksearch',
     'drive' => array(
       'https://www.googleapis.com/auth/drive',
       'https://www.googleapis.com/auth/drive.appdata',
       'https://www.googleapis.com/auth/drive.file',
       'https://www.googleapis.com/auth/drive.scripts',
     ),
+    'exception' => '',
+    'fitness' => array(
+      'https://www.googleapis.com/auth/fitness.activity.read',
+      'https://www.googleapis.com/auth/fitness.activity.write',
+      'https://www.googleapis.com/auth/fitness.body.read',
+      'https://www.googleapis.com/auth/fitness.body.write',
+      'https://www.googleapis.com/auth/fitness.location.read',
+      'https://www.googleapis.com/auth/fitness.location.write'
+    ),
     'freebase' => '',
     'fustiontables' => 'https://www.googleapis.com/auth/fusiontables',
+    'games' => array(
+      'https://www.googleapis.com/auth/drive.appdata',
+      'https://www.googleapis.com/auth/games',
+      'https://www.googleapis.com/auth/plus.login'
+    ),
+    'gamesconfiguration' => 'https://www.googleapis.com/auth/androidpublisher',
+    'gamesmanagement' => array(
+      'https://www.googleapis.com/auth/games',
+      'https://www.googleapis.com/auth/plus.login'
+    ),
+    'genomics' => '',
+    'gmail' => array(
+      'https://mail.google.com',
+      'https://www.googleapis.com/auth/gmail.compose',
+      'https://www.googleapis.com/auth/gmail.insert',
+      'https://www.googleapis.com/auth/gmail.labels',
+      'https://www.googleapis.com/auth/gmail.modify',
+      'https://www.googleapis.com/auth/gmail.readonly'
+    ),
+    'groupmigration' => 'https://www.googleapis.com/auth/apps.groups.migration',
+    'groupsettings' => 'https://www.googleapis.com/auth/apps.groups.settings',
+    'identitytoolkit' => '',
     'licensing' => '',
+    'logging' => 'https://www.googleapis.com/auth/cloud-platform',
+    'manager' => array(
+      'https://www.googleapis.com/auth/appengine.admin',
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/compute',
+      'https://www.googleapis.com/auth/devstorage.read_write',
+      'https://www.googleapis.com/auth/ndev.cloudman',
+      'https://www.googleapis.com/auth/ndev.cloudman.readonly'
+    ),
+    'mapsengine' => array(
+      'https://www.googleapis.com/auth/mapsengine',
+      'https://www.googleapis.com/auth/mapsengine.readonly'
+    ),
+    'mirror' => array(
+      'https://www.googleapis.com/auth/glass.location',
+      'https://www.googleapis.com/auth/glass.timeline'
+    ),
     'oauth2' => array(
       'https://www.googleapis.com/auth/plus.login',
       'https://www.googleapis.com/auth/plus.me',
@@ -233,13 +392,77 @@ function gauth_google_services_scopes() {
     ),
     'orkut' => 'https://www.googleapis.com/auth/orkut',
     'pagespeedonline' => '',
+    'playmoviespartner' => '',
+    'plus' => array(
+      'https://www.googleapis.com/auth/plus.login',
+      'https://www.googleapis.com/auth/plus.me',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ),
+    'plusdomains' => array(
+      'https://www.googleapis.com/auth/plus.circles.read',
+      'https://www.googleapis.com/auth/plus.circles.write',
+      'https://www.googleapis.com/auth/plus.login',
+      'https://www.googleapis.com/auth/plus.me',
+      'https://www.googleapis.com/auth/plus.media.upload',
+      'https://www.googleapis.com/auth/plus.profiles.read',
+      'https://www.googleapis.com/auth/plus.stream.read',
+      'https://www.googleapis.com/auth/plus.stream.write',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ),
     'prediction' => array(
       'https://www.googleapis.com/auth/devstorage.full_control',
       'https://www.googleapis.com/auth/prediction',
     ),
+    'pubsub' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/pubsub'
+    ),
+    'qpxexpress' => '',
+    'replicapool' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/compute',
+      'https://www.googleapis.com/auth/compute.readonly'
+    ),
+    'replicapoolupdate' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/replicapool',
+      'https://www.googleapis.com/auth/replicapool.readonly'
+    ),
+    'reports' => array(
+      "https://www.googleapis.com/auth/admin.reports.audit.readonly",
+      "https://www.googleapis.com/auth/admin.reports.usage.readonly"
+    ),
+    'reseller' => array(
+      'https://www.googleapis.com/auth/apps.order',
+      'https://www.googleapis.com/auth/apps.order.readonly'
+    ),
+    'resource' => '',
+    'resourceviews' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/compute',
+      'https://www.googleapis.com/auth/compute.readonly',
+      'https://www.googleapis.com/auth/ndev.cloudman',
+      'https://www.googleapis.com/auth/ndev.cloudman.readonly',
+    ),
     'shopping' => 'https://www.googleapis.com/auth/content',
     'siteVerification' => 'https://www.googleapis.com/auth/siteverification',
     'storage' => 'https://www.googleapis.com/auth/devstorage.full_control',
+    'spectrum' => '',
+    'sqladmin' => array(
+      'https://www.googleapis.com/auth/cloud-platform',
+      'https://www.googleapis.com/auth/sqlservice.admin'
+    ),
+    'tagmanager' => array(
+      'https://www.googleapis.com/auth/tagmanager.delete.containers',
+      'https://www.googleapis.com/auth/tagmanager.edit.containers',
+      'https://www.googleapis.com/auth/tagmanager.edit.containerversions',
+      'https://www.googleapis.com/auth/tagmanager.manage.accounts',
+      'https://www.googleapis.com/auth/tagmanager.manage.users',
+      'https://www.googleapis.com/auth/tagmanager.publish',
+      'https://www.googleapis.com/auth/tagmanager.readonly'
+    ),
     'taskqueue' => array(
       'https://www.googleapis.com/auth/taskqueue',
       'https://www.googleapis.com/auth/taskqueue.consumer',
@@ -248,6 +471,10 @@ function gauth_google_services_scopes() {
     'translate' => '',
     'urlshortener' => 'https://www.googleapis.com/auth/urlshortener',
     'webfonts' => '',
+    'webmasters' => array(
+      'https://www.googleapis.com/auth/webmasters',
+      'https://www.googleapis.com/auth/webmasters.readonly'
+    ),
     'youtube' => array(
       'https://www.googleapis.com/auth/youtube',
       'https://www.googleapis.com/auth/youtube.readonly',
@@ -255,6 +482,13 @@ function gauth_google_services_scopes() {
       'https://www.googleapis.com/auth/youtubepartner',
       'https://www.googleapis.com/auth/youtubepartner-channel-audit',
     ),
+    'youtubeanalytics' => array(
+      'https://www.googleapis.com/auth/youtube',
+      'https://www.googleapis.com/auth/youtube.readonly',
+      'https://www.googleapis.com/auth/youtubepartner',
+      'https://www.googleapis.com/auth/yt-analytics-monetary.readonly',
+      'https://www.googleapis.com/auth/yt-analytics.readonly'
+    )
   );
 }
 
@@ -263,37 +497,88 @@ function gauth_google_services_scopes() {
  */
 function gauth_google_services_names($services = FALSE) {
   $names = array(
-    'adexchangeseller' => t('Google AdExchangeSeller'),
-    'adexchangebuyer' => t('Google Adexchangebuyer'),
-    'adsense' => t('Google AdSense'),
-    'adsensehost' => t('Google AdSenseHost'),
+    'adexchangeseller' => t('Ad Exchange Seller'),
+    'adexchangebuyer' => t('Ad Exchange Buyer'),
+    'admin' => t('Admin Reports'),
+    'adsense' => t('AdSense Management'),
+    'adsensehost' => t('AdSense Host'),
     'analytics' => t('Google Analytics'),
-    'bigquery' => t('Google Bigquery'),
-    'blogger' => t('Google Blogger'),
-    'books' => t('Google Books'),
-    'calendar' => t('Google Calendar'),
-    'compute' => t('Google Compute'),
+    'androidenterprise' => t('Google Play EMM / Google Android Enterprise'),
+    'androidpublisher' => t('Google Play Developer / Google Android Publisher'),
+    'appsactivity' => t('Google Apps Activity'),
+    'appstate' => t('Google App State'),
+    'autoscaler' => t('Google Compute Engine Autoscaler / Google Auto Scaler'),
+    'audit' => t('Google Partners'),
+    'bigquery' => t('Bigquery'),
+    'blogger' => t('Blogger'),
+    'books' => t('Books'),
+    'civicinfo' => t('Google Civic Information'),
+    'calendar' => t('Calendar'),
+    'classroom' => t('Google Classroom'),
+    'cloudlatencytest' => ('Google Cloud Network Performance Monitoring /  Google Cloud Latency Test'),
+    'cloudmonitoring' => t('Cloud Monitoring'),
+    'cloudresourcemanager' => t('Google Cloud Resource Manager'),
+    'clouduseraccounts' => t('Cloud User Accounts'),
+    'compute' => t('Compute Engine'),
+    'computeaccounts' => t('Google Compute Accounts'),
+    'container' => t('Google Container Engine'),
+    'coordinate' => t('Google Maps Coordinate'),
     'customsearch' => t('Google Customsearch'),
+    'dataflow' => t('Google Dataflow'),
+    'datastore' => t('Google Cloud Datastore'),
+    'deploymentmanager' => t('Google Deployment Manager'),
     'dfareporting' => t('Google Dfareporting'),
+    'directory' => t('Google Directory'),
+    'dns' => t('Google Cloud DNS'),
+    'doubleclickbidmanager' => t('Google DoubleClick Bid Manager'),
+    'doubleclicksearch' => t('Google DoubleClick Search'),
     'drive' => t('Google Drive'),
+    'exception' => t('Google Exception'),
+    'fitness' => t('Google Fitness'),
     'freebase' => t('Google Freebase'),
     'fusiontables' => t('Google Freebasetables'),
+    'games' => t('Google Games'),
+    'gamesconfiguration' => t('Google Games Configuration'),
+    'gamesmanagement' => t('Google Games Management'),
+    'genomics' => t('Google Genomics'),
+    'gmail' => t('Google Gmail'),
+    'groupmigration' => t('Google Group Migration'),
+    'groupsettings' => t('Google Group Settings'),
+    'identitytoolkit' => t('Google Identity Toolkit'),
     'licensing' => t('Google Licensing'),
-    'moderator' => t('Google Moderator'),
+    'logging' => t('Google Logging'),
+    'manager' => t('Google Manager'),
+    'mapsengine' => t('Google Maps Engine'),
+    'mirror' => t('Google Mirror'),
     'oauth2' => t('Google Oauth2'),
     'orkut' => t('Google Orkut'),
     'pagespeedonline' => t('Google Pagespeedonline'),
+    'playmoviespartner' => t('Google Playy Movies Partner'),
     'plus' => t('Google Plus'),
+    'plusdomains' => t('Google Plus Domains'),
     'prediction' => t('Google Prediction'),
+    'pubsub' => t('Google Pub Sub'),
+    'qpxexpress' => t('Google QPXExpress'),
+    'replicapool' => t('Google Replica pool'),
+    'replicapoolupdate' => t('Google Replica pool update'),
+    'reports' => t('Google Admin Reports'),
+    'reseller' => t('Google Enterprise Apps Reseller'),
+    'resource' => t('Google Api Discovery Service'),
+    'resourceviews' => t('Google Compute Engine Instance Groups'),
     'shopping' => t('Google Shopping'),
     'siteVerification' => t('Google SiteVerification'),
+    'spectrum' => t('Google Spectrum Database'),
+    'sqladmin' => t('Cloud SQL Administration'),
     'storage' => t('Google Storage'),
+    'tagmanager' => ('Tag Manager'),
     'taskqueue' => t('Google Taskqueue'),
     'tasks' => t('Google Tasks'),
     'translate' => t('Google Translate'),
     'urlshortener' => t('Google Urlshortener'),
     'webfonts' => t('Google Webfonts'),
+    'webmasters' => t('Webmaster Tools'),
     'youtube' => t('Google Youtube'),
+    'youtubeanalytics' => t('YouTube Analytics')
   );
   if (!$services) {
     return $names;
@@ -305,6 +590,14 @@ function gauth_google_services_names($services = FALSE) {
     }
     return $service_names;
   }
+}
+
+/**
+ * Checks https settings and returns appropriate callback url.
+ */
+function gauth_callback_url() {
+  global $is_https;
+  return url('gauth/response_handler', array('https' => $is_https, 'absolute' => TRUE));
 }
 
 /*** API Functions start ***/
@@ -401,6 +694,12 @@ function gauth_account_save(&$account) {
           $is_authenticated = FALSE;
         }
       }
+      if (isset($account['access_type'])) {
+        $fields['access_type'] = check_plain($account['access_type']);
+        if ($is_authenticated && $old_account['access_type'] != $account['access_type']) {
+          $is_authenticated = FALSE;
+        }
+      }
       $fields['is_authenticated'] = $is_authenticated;
     }
     // Let other modules modify the account before saving existing account.
@@ -433,6 +732,7 @@ function gauth_account_save(&$account) {
       'developer_key' => check_plain($account['developer_key']),
       'client_id' => check_plain($account['client_id']),
       'client_secret' => check_plain($account['client_secret']),
+      'access_type' => check_plain($account['access_type']),
       'uid' => $user->uid,
     );
     if (is_array($account['services'])) {
@@ -517,11 +817,36 @@ function gauth_client_get($account_id = NULL, $by_name = TRUE) {
     $client = new Google_Client();
     $client->setClientId($account['client_id']);
     $client->setAccessToken($account['access_token']);
+    $client->setAccessType($account['access_type']);
     $client->setClientSecret($account['client_secret']);
     $client->setDeveloperKey($account['developer_key']);
   }
   $client->setApplicationName("Google OAuth2");
-  $client->setRedirectUri(url('gauth/response_handler', array('https' => TRUE, 'absolute' => TRUE)));
+  $client->setRedirectUri(gauth_callback_url());
+  if ($account_id == NULL) {
+    return $client;
+  }
+  if ($client->isAccessTokenExpired()) {
+    if ($client->getRefreshToken() != '') { // Access Type is Offline
+      $client->refreshToken($client->getRefreshToken());
+      $token = $client->getAccessToken();
+      $account['access_token'] = $token;
+      drupal_write_record('gauth_accounts', $account, 'id');
+    }
+    else {
+      $names = explode('|', $account['name']);
+      if ($names[count($names)-1] == $GLOBALS['user']->uid) { // Services account
+        gauth_account_authenticate($account_id, $by_name);
+      }
+      else {
+        $client->revokeToken();
+        $account['is_authenticated'] = FALSE;
+        $account['access_token'] = '';
+        drupal_write_record('gauth_accounts', $account, 'id');
+        drupal_set_message(t('Access token is expired. If you are admin then you need to authenticate again. Consider configuring access type to offline.'));
+      }
+    }
+  }
   return $client;
 }
 
@@ -577,4 +902,3 @@ function gauth_account_load_by_uid($uid) {
       ->execute()
       ->fetchField();
 }
-

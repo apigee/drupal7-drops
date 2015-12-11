@@ -216,6 +216,21 @@ class Google_ClientTest extends BaseTest
     $_SERVER['SERVER_SOFTWARE'] = 'Google App Engine';
     $client = new Google_Client();
     $this->assertInstanceOf('Google_Cache_Memcache', $client->getCache());
+
+    // check Stream Handler is used
+    $http = $client->getHttpClient();
+    $class = new ReflectionClass(get_class($http));
+    $property = $class->getProperty('fsm');
+    $property->setAccessible(true);
+    $fsm = $property->getValue($http);
+
+    $class = new ReflectionClass(get_class($fsm));
+    $property = $class->getProperty('handler');
+    $property->setAccessible(true);
+    $handler = $property->getValue($fsm);
+
+    $this->assertInstanceOf('GuzzleHttp\Ring\Client\StreamHandler', $handler);
+
     unset($_SERVER['SERVER_SOFTWARE']);
   }
 
@@ -370,5 +385,37 @@ class Google_ClientTest extends BaseTest
     $client->fetchAccessTokenWithRefreshToken("REFRESH_TOKEN");
     $token = $client->getAccessToken();
     $this->assertEquals($token['id_token'], "ID_TOKEN");
+  }
+
+  /**
+   * Test fetching an access token with assertion credentials
+   * using "useApplicationDefaultCredentials"
+   */
+  public function testFetchAccessTokenWithAssertionFromEnv()
+  {
+    $this->checkServiceAccountCredentials();
+
+    $client = $this->getClient();
+    $client->useApplicationDefaultCredentials();
+    $token = $client->fetchAccessTokenWithAssertion();
+
+    $this->assertNotNull($token);
+    $this->assertArrayHasKey('access_token', $token);
+  }
+
+  /**
+   * Test fetching an access token with assertion credentials
+   * using "setAuthConfig"
+   */
+  public function testFetchAccessTokenWithAssertionFromFile()
+  {
+    $this->checkServiceAccountCredentials();
+
+    $client = $this->getClient();
+    $client->setAuthConfig(getenv('GOOGLE_APPLICATION_CREDENTIALS'));
+    $token = $client->fetchAccessTokenWithAssertion();
+
+    $this->assertNotNull($token);
+    $this->assertArrayHasKey('access_token', $token);
   }
 }

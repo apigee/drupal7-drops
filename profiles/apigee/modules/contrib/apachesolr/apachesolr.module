@@ -1279,10 +1279,7 @@ function apachesolr_environment_load($env_id) {
  */
 function apachesolr_environment_delete_page_access($permission, $environment) {
   $is_default = $environment['env_id'] == apachesolr_default_environment();
-  if ($is_default && !user_access($permission)) {
-    return FALSE;
-  }
-  return TRUE;
+  return !$is_default && user_access($permission);
 }
 
 /**

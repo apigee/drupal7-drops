@@ -3,6 +3,7 @@
 /**
  * @file
  * Plugin definition for the Default encryption method.
+ * THIS METHOD IS DEPRECATED AND SHOULD NOT BE USED FOR ENCRYPTION.
  */
 
 $plugin = encrypt_default_encrypt_encryption_methods();
@@ -15,6 +16,7 @@ function encrypt_default_encrypt_encryption_methods() {
     'title' => t('Basic'),
     'description' => t('This is the basic default encryption type that does not require any special extensions.'),
     'encrypt callback' => 'encrypt_encryption_methods_basic',
+    'deprecated' => TRUE,
   );
 }
 

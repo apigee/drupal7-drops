@@ -304,7 +304,7 @@ function apigee_install_configure_users(array &$context) {
   $user = (object) array(
     'uid' => 1,
     'name' => 'admin',
-    'pass' => md5(time()),
+    'pass' => user_password(15),
     'mail' => 'noreply@apigee.com',
     'field_first_name' => array(LANGUAGE_NONE => array(array('value' => 'drupal'))),
     'field_last_name' => array(LANGUAGE_NONE => array(array('value' => 'admin'))),
@@ -1648,7 +1648,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
  */
 function apigee_install_api_endpoint_validate($form, &$form_state) {
   // Short-circuit if we are skipping this step.
-  if ($form_state['triggering_element']['#name'] == 'skip') {
+  if (isset($form_state['triggering_element']) && $form_state['triggering_element']['#name'] == 'skip') {
     return;
   }
   $org = trim($form_state['values']['org']);

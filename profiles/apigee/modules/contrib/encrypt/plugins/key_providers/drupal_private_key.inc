@@ -3,6 +3,7 @@
 /**
  * @file
  * Plugin definition for the Drupal Private Key key provider.
+ * THIS PROVIDER IS DEPRECATED AND SHOULD NOT BE USED FOR ENCRYPTION.
  */
 
 $plugin = encrypt_drupal_private_key_encrypt_key_providers();
@@ -17,6 +18,7 @@ function encrypt_drupal_private_key_encrypt_key_providers() {
     'key callback' => 'encrypt_get_drupal_private_key',
     'settings form' => NULL,
     'static key' => TRUE,
+    'deprecated' => TRUE,
   );
 }
 

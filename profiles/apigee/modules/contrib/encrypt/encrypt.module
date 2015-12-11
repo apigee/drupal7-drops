@@ -30,7 +30,7 @@ function encrypt_help($path, $arg) {
       $output = '<p>' . t("The encrypt module Provides an API for two-way encryption. Drupal has no native way to do two-way encryption. PHP's ability to do two-way encryption is a little more involved than most people care to get into.  This module provides an easy way to encrypt() and decrypt().") . '</p>';
 
       if (!function_exists('mcrypt_encrypt')) {
-        $output .= '<p>' . t('MCrypt is currently not installed or configured properly on your server. If you would like to use the "MCrypt AES 256" method for encryption (highly recommended), follow the instructions for <a href="http://www.php.net/manual/en/mcrypt.setup.php">installing MCrypt</a>.') . '</p>';
+        $output .= '<p>' . t('Mcrypt is currently not installed or configured properly on your server. If you would like to use the "Mcrypt AES (CBC Mode)" method for encryption, follow the instructions for <a href="http://www.php.net/manual/en/mcrypt.setup.php">installing Mcrypt</a>.') . '</p>';
       }
 
       return $output;
@@ -137,6 +137,8 @@ function encrypt_ctools_plugin_type() {
       'dependency callback' => NULL,
       'dependency errors' => NULL,
       'settings form' => NULL,
+      'submit callback' => NULL,
+      'deprecated' => FALSE,
     ),
   );
   $plugins['key_providers'] = array(
@@ -151,6 +153,8 @@ function encrypt_ctools_plugin_type() {
       'dependency errors' => NULL,
       'settings form' => NULL,
       'static key' => TRUE,
+      'submit callback' => NULL,
+      'deprecated' => FALSE,
     ),
   );
 

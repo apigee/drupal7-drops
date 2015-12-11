@@ -37,6 +37,7 @@ function theme_gauth_user_services_list($variables) {
     t('Client Id'),
     t('Client Secret'),
     t('Services'),
+    t('Access Type'),
     array('data' => t('Operations'), 'colspan' => 2),
   );
   $rows = array();
@@ -47,6 +48,7 @@ function theme_gauth_user_services_list($variables) {
     $row[] = $account->client_id;
     $row[] = $account->client_secret;
     $row[] = implode(", ", gauth_google_services_names($account->services));
+    $row[] = $account->access_type;
     $row[] = l(t('edit'), 'admin/config/services/gauth_user/edit/' . $account->id);
     $row[] = l(t('delete'), 'admin/config/services/gauth_user/delete/' . $account->id);
     $rows[] = $row;
@@ -118,21 +120,21 @@ function gauth_user_services_edit_form($form, &$form_state, $id = NULL) {
   $form['developer_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Api Key'),
-    '#description' => t('The api key of google account.'),
+    '#description' => t('The server api key of the web application.'),
     '#default_value' => isset($account['developer_key']) ? $account['developer_key'] : '',
     '#required' => TRUE,
   );
   $form['client_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Client Id'),
-    '#description' => t('The client id of google account.'),
+    '#description' => t('The CLIENT ID in the "Client ID for web application" section.'),
     '#default_value' => isset($account['client_id']) ? $account['client_id'] : '',
     '#required' => TRUE,
   );
   $form['client_secret'] = array(
     '#type' => 'textfield',
     '#title' => t('Client Secret Key'),
-    '#description' => t('The client secrets key of google account.'),
+    '#description' => t('The CLIENT SECRET in the "Client ID for web application" section.'),
     '#default_value' => isset($account['client_secret']) ? $account['client_secret'] : '',
     '#required' => TRUE,
   );
@@ -140,11 +142,18 @@ function gauth_user_services_edit_form($form, &$form_state, $id = NULL) {
   $form['services'] = array(
     '#type' => 'select',
     '#title' => t('Services'),
-    '#description' => t('Services that will be enabled to be used by this account'),
+    '#description' => t('Services that will be enabled to be used by this account.'),
     '#options' => $options,
     '#multiple' => TRUE,
     '#default_value' => isset($account['services']) ? explode(",", $account['services']) : array(),
     '#required' => TRUE,
+  );
+  $form['access_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Access Type'),
+    '#description' => t('The Access Type of the account. Select offline if the site can perform actions even when the user is not online.'),
+    '#options' => array('offline' => t('Offline'), 'online' => t('Online')),
+    '#default_value' => $account['access_type'],
   );
   $form['submit'] = array(
     '#type' => 'submit',

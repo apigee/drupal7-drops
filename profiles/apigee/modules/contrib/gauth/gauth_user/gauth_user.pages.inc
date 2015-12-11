@@ -35,7 +35,8 @@ function theme_gauth_user_services_authenticate_list($variables) {
   foreach ($accounts as $account) {
     $row = array();
     $row[] = $account->name;
-    if ($GLOBALS['user']->uid == arg(1)) {
+    $me = (module_exists('me') && arg(1) == 'me');
+    if ($GLOBALS['user']->uid == arg(1) || $me) {
       $row[] = isset($account->is_authenticated) ? ($account->is_authenticated ? l(t('Revoke'), 'user/' . arg(1) . '/gauth_user/revoke/' . $account->id) : l(t('Authenticate'), 'gauth/response_handler/' . $account->id)) : l(t('Create and Authenticate'), 'user/' . arg(1) . '/gauth_user/add_authenticate/' . $account->id) ;
       $row[] = isset($account->is_authenticated) ? l(t('Delete'), 'user/' . arg(1) . '/gauth_user/delete/' . $account->id) : '';
       $header[] = array('data' => t('Operations'), 'colspan' => 2);

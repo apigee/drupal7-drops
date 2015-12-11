@@ -34,13 +34,18 @@ function encrypt_get_file_key($settings) {
     return;
   }
 
+  $key = file_get_contents($file_name);
+
   switch ($settings['method']) {
     case 'file_contents':
-      return file_get_contents($file_name);
+      return $key;
 
+    case 'base64_decode':
+      return base64_decode($key);
+
+    // This only exists for backward compatibility.
     case 'md5':
-      return md5_file($file_name);
-
+      return md5($key);
   }
 }
 
@@ -49,6 +54,16 @@ function encrypt_get_file_key($settings) {
  */
 function encrypt_file_key_settings_form($defaults) {
   $form = array();
+
+  $options = array(
+    'file_contents' => t('File contents'),
+    'base64_decode' => t('Base64 decode'),
+  );
+  // Add the MD5 option, if it is already being used, but flag it as
+  // not recommended.
+  if ($defaults['method'] == 'md5') {
+    $options['md5'] = t('MD5 (not recommended)');
+  }
 
   $form['path'] = array(
     '#type' => 'textfield',
@@ -65,10 +80,8 @@ function encrypt_file_key_settings_form($defaults) {
   $form['method'] = array(
     '#type' => 'select',
     '#title' => t('Method'),
-    '#options' => array(
-      'file_contents' => t('File Contents'),
-      'md5' => t('MD5'),
-    ),
+    '#description' => t('Choose an optional modification to the file contents.'),
+    '#options' => $options,
     '#default_value' => isset($defaults['method']) ? $defaults['method'] : 'file_contents',
   );
 
@@ -114,8 +127,12 @@ function encrypt_file_key_settings_form_submit($form, $form_state) {
 
   // Create a default key.
   $open_file = fopen($file, 'wb');
-  $new_key = md5(drupal_random_bytes(32));
-  fwrite($open_file, $new_key);
+  $key = drupal_random_bytes(16);
+  // Base64 encode the key, if required.
+  if ($form_state['values']['encrypt_key_providers_file_settings']['method'] == 'base64_decode') {
+    $key = base64_encode($key);
+  }
+  fwrite($open_file, $key);
   fclose($open_file);
 
   // Ensure that the file is only readable and writable by owner.

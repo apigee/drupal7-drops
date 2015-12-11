@@ -53,4 +53,8 @@ function gauth_login_uninstall() {
   variable_del('gauth_login_client_id');
   variable_del('gauth_login_client_secret');
   variable_del('gauth_login_developer_key');
+  variable_del('gauth_login_domain_restriction');
+  variable_del('gauth_login_create_user');
+  variable_del('gauth_login_create_user_not_allowed_message');
+  variable_del('gauth_login_prom_message');
 }
