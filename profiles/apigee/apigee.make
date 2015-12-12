@@ -310,8 +310,6 @@ projects[metatag][version] = "1.7"
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
 projects[me][version] = "1.2"
-; see https://www.drupal.org/node/2555613
-projects[me][patch][2555613] = "https://www.drupal.org/files/issues/me-wsod_invalid_callback-2555613-3.patch"
 
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"

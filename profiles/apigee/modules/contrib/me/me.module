@@ -167,12 +167,8 @@ function me_handler($parts, $callback) {
 
   $args = func_get_args();
 
-  if (!is_array($parts)){
-    $parts = array_pop($args);
-  }
-  if (!is_string($callback)) {
-    $callback = array_pop($args);
-  }
+  $parts = array_pop($args);
+  $callback = array_pop($args);
 
   // If we want the uid shown in the address bar, we need to do a redirect.
   if (me_variable_get('me_redirect') || _me_user_disabled() || !_me_handle_path($_GET['q'])) {
