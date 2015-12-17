@@ -47,10 +47,10 @@ projects[autologout][type] = "module"
 projects[autologout][subdir] = "contrib"
 projects[autologout][version] = "4.4"
 
-; Enabled during profile install.
+; Enabled during profile install; required by devconnect_blog
 projects[block_class][type] = "module"
 projects[block_class][subdir] = "contrib"
-projects[block_class][version] = "2.1"
+projects[block_class][version] = "2.2"
 
 ; Enabled during profile install.
 projects[bootstrap_modal_forms][type] = "module"

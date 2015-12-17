@@ -20,6 +20,7 @@ dependencies[] = apigee_gtm
 dependencies[] = apigee_profile_updates
 dependencies[] = apigee_sso_ui
 dependencies[] = block
+dependencies[] = block_class
 dependencies[] = bootstrap_modal_forms
 dependencies[] = ckeditor
 dependencies[] = comment
@@ -88,6 +89,6 @@ dependencies[] = webform
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20151211.1604
-version = "15.12.11.01"
+; Added by build script on 20151217.1053
+version = "15.12.17.00"
     
