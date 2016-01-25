@@ -1144,6 +1144,7 @@ function smartdocs_model_export(array $form, array &$form_state, array $model_ar
       watchdog('smartdocs', __FUNCTION__ . ': Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
     }
     drupal_set_title('Export Revision #' . $revision->getRevisionNumber());
+    $revision_array = $revision->toArray();
   }
 
   $breadcrumb = array();
