@@ -1,12 +1,27 @@
 <?php
+/**
+ * @file
+ * Administrative forms for Developer App configuration.
+ */
 
-function devconnect_developer_apps_config($form, &$form_state) {
+/**
+ * Constructor for admin configuration form.
+ *
+ * @param array $form
+ *   The form being constructed.
+ * @param array $form_state
+ *   State of the form being constructed.
+ *
+ * @return array
+ *   The newly-constructed form.
+ */
+function devconnect_developer_apps_config(array $form, array &$form_state) {
 
   $form['apiproduct'] = array(
     '#type' => 'fieldset',
     '#title' => t('API Product settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
 
   $handling = _devconnect_developer_apps_get_default_value('devconnect_api_product_handling', 'multiple_required', $form_state);
@@ -20,7 +35,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
       'single_unrequired' => t('Allow selection of a single API Product, but do not require it.'),
       'single_required' => t('Require selection of a single API Product.'),
       'multiple_unrequired' => t('Allow selection of multiple API Products, but do not require any.'),
-      'multiple_required' => t('Allow selection of multiple API Products, and require at least one.')
+      'multiple_required' => t('Allow selection of multiple API Products, and require at least one.'),
     ),
     '#required' => TRUE,
     '#ajax' => array(
@@ -28,7 +43,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
       'wrapper' => 'devconnect-default-api-product-wrapper',
       'method' => 'replace',
       'effect' => 'fade',
-    )
+    ),
   );
 
   $form['apiproduct']['devconnect_developer_apps_apiproduct_widget'] = array(
@@ -38,14 +53,13 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_developer_apps_apiproduct_widget', 'select', $form_state),
     '#options' => array(
       'select' => t('Dropdown select box'),
-      'checkboxes' => t('Checkboxes/radio buttons')
+      'checkboxes' => t('Checkboxes/radio buttons'),
     ),
-    '#required' => TRUE
+    '#required' => TRUE,
   );
 
   $required = (strpos($handling, 'default') === 0);
-  $product_required = ($required || strpos($handling, 'required') !== FALSE);
-  // Show check boxes if default_api_product option is chosen
+  // Show check boxes if default_api_product option is chosen.
   if ($handling == 'default_api_product') {
     $multiple = TRUE;
   }
@@ -109,7 +123,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Cache settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE
+    '#collapsed' => FALSE,
   );
   $form['cache']['devconnect_api_product_cache_enable'] = array(
     '#type' => 'checkbox',
@@ -128,7 +142,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Application UI Settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => TRUE,
   );
 
   $form['ui_settings']['myapis'] = array(
@@ -138,31 +152,31 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#options' => array(
       0 => 'App',
       1 => 'API',
-      2 => 'Key'
-    )
+      2 => 'Key',
+    ),
   );
 
   $form['callback'] = array(
     '#type' => 'fieldset',
     '#title' => t('Callback URL settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => TRUE,
   );
-
-  $callback_external = 'Callback URLs should be required for all production-grade apps using a ' .
-    '3-legged authentication scheme (see http://tetraph.com/covert_redirect/oauth2_openid_covert_redirect.html)';
 
   $form['callback']['devconnect_callback_handling'] = array(
     '#type' => 'radios',
     '#title' => t('Callback URL handling'),
-    '#description' => t($callback_external),
+    '#description' => t(
+      'Callback URLs should be required for all production-grade apps using a 3-legged authentication scheme to avoid a <a href="!url">Covert Redirect Vulnerability</a>.',
+      array('!url' => 'http://tetraph.com/covert_redirect/oauth2_openid_covert_redirect.html')
+    ),
     '#options' => array(
       'require' => t('Callback URL is required for all developer apps. %o', array('%o' => '(best practice)')),
       'optional' => t('Callback URL is optional for all developer apps.'),
-      'none' => t('Callback URL is neither required nor displayed.')
+      'none' => t('Callback URL is neither required nor displayed.'),
     ),
     '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_callback_handling', 'none', $form_state),
-    '#required' => TRUE
+    '#required' => TRUE,
   );
 
   $form['callback']['devconnect_validate_callback_url'] = array(
@@ -183,7 +197,7 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('App Performance settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#collapsed' => TRUE,
   );
 
   $form['credential_lifetime'] = array(
@@ -198,17 +212,17 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#title' => t('Default API key lifetime in days'),
     '#description' => t('When an app is newly-created, this is the default number of days until its API Key expires. A value of -1 indicates no set expiry.'),
     '#default_value' => variable_get('devconnect_developer_apps_key_expiry', -1),
-    '#post_render' => array('_devconnect_developer_apps_number_postrender')
+    '#post_render' => array('_devconnect_developer_apps_number_postrender'),
   );
 
   $form['analytics']['devconnect_show_analytics'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show Developer App analytics tab'),
     '#return_value' => '1',
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_show_analytics', 1, $form_state)
+    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_show_analytics', 1, $form_state),
   );
 
-  // Analytics environments
+  // Analytics environments.
   $options = $environments = array();
   try {
     $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_org_config());
@@ -218,18 +232,22 @@ function devconnect_developer_apps_config($form, &$form_state) {
         case 'prod':
           $env_name = 'Production';
           break;
+
         case 'test':
           $env_name = 'Test';
           break;
+
         case 'dev':
           $env_name = 'Development';
           break;
+
         default:
           $env_name = $environment;
       }
       $options[$environment] = t($env_name);
     }
-  } catch (Apigee\Exceptions\ResponseException $e) {
+  }
+  catch (Apigee\Exceptions\ResponseException $e) {
     // Ignore this exception. It is probably the result of a misconfigured
     // endpoint.
     $options = array('prod' => 'Production');
@@ -244,29 +262,59 @@ function devconnect_developer_apps_config($form, &$form_state) {
     '#type' => 'radios',
     '#title' => t('Environment to query for analytics data'),
     '#default_value' => variable_get('devconnect_analytics_environment', $default_env),
-    '#options' => $options
+    '#options' => $options,
   );
 
   $form['actions'] = array(
     '#type' => 'actions',
     'submit' => array(
       '#type' => 'submit',
-      '#value' => t('Save Changes')
-    )
+      '#value' => t('Save Changes'),
+    ),
   );
 
   return $form;
 }
 
-function _devconnect_developer_apps_render_apiproducts($form, &$form_state) {
+/**
+ * AJAX callback to re-render part of a form.
+ *
+ * @param array $form
+ *   The form being re-rendered.
+ * @param array $form_state
+ *   State of the form being re-rendered.
+ *
+ * @return array
+ *   The re-rendered Default API Product element of the form.
+ */
+function _devconnect_developer_apps_render_apiproducts(array $form, array &$form_state) {
   return $form['apiproduct']['devconnect_default_api_product'];
 }
 
-function _devconnect_developer_apps_number_postrender($content, $element) {
+/**
+ * Post-render callback to create an HTML5 number form element.
+ *
+ * @param string $content
+ *   Already-rendered HTML for this element and its wrappers.
+ * @param array $element
+ *   FAPI representation of the element which has been rendered.
+ *
+ * @return string
+ *   Modified rendering of the form element.
+ */
+function _devconnect_developer_apps_number_postrender($content, array $element) {
   return str_replace('type="text"', 'type="number" style="width:7em !important" min="-1"', $content);
 };
 
-function devconnect_developer_apps_config_submit($form, &$form_state) {
+/**
+ * Submit handler for the admin configuration form.
+ *
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
+ */
+function devconnect_developer_apps_config_submit(array $form, array &$form_state) {
   foreach ($form_state['values'] as $key => $value) {
     if (substr($key, 0, 10) != 'devconnect') {
       continue;
@@ -292,65 +340,4 @@ function devconnect_developer_apps_config_submit($form, &$form_state) {
     ->execute();
   cache_clear_all(NULL, 'cache_menu');
   drupal_set_message(t('The configuration options have been saved.'));
-}
-
-/**
- * Form constructor for admin page allowing repair of app attributes.
- *
- * @return array
- *   The newly-constructed form.
- */
-function devconnect_developer_apps_rebuild_attributes() {
-  $form = array();
-  $status = variable_get('devconnect_developer_apps_unescaped', 0);
-  if ($status > 0) {
-    // User has already made the fix, so don't show the form.
-    $form['message'] = array(
-      '#type' => 'markup',
-      '#markup' => t('You have successfully rebuilt developer attributes.'),
-    );
-    return $form;
-  }
-
-  $form['suppress'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Suppress message warning about rebuilding developer app attributes.'),
-    '#default_value' => $status,
-    '#return_value' => -1,
-  );
-
-  $form['actions'] = array('#type' => 'actions');
-  $form['actions']['do_not_update'] = array(
-    '#type' => 'submit',
-    '#value' => t('Do not rebuild now'),
-    '#name' => 'do_not_update',
-  );
-  $form['actions']['update'] = array(
-    '#type' => 'submit',
-    '#value' => t('Rebuild app attributes'),
-    '#name' => 'update',
-  );
-
-  return $form;
-}
-
-/**
- * Submit handler for the devconnect_developer_apps_rebuild_attributes form.
- *
- * Saves the results of the 'suppress message' checkbox. If appropriate, begins
- * batch process to repair all developer app attributes.
- *
- * @param array $form
- * @param array $form_state
- */
-function devconnect_developer_apps_rebuild_attributes_submit(array $form, array &$form_state) {
-  variable_set('devconnect_developer_apps_unescaped', intval($form_state['values']['suppress']));
-  if ($form_state['triggering_element']['#name'] == 'update') {
-    module_load_include('inc', 'devconnect_developer_apps', 'devconnect_developer_apps.batch');
-    $batch = devconnect_developer_apps_rebuild_apps_batch();
-    batch_set($batch);
-  }
-  else {
-    drupal_set_message(t('Your changes have been saved.'));
-  }
 }

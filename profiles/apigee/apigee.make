@@ -32,7 +32,7 @@ projects[admin_views][version] = "1.5"
 ; Enabled during profile install.
 projects[adminimal_admin_menu][type] = "module"
 projects[adminimal_admin_menu][subdir] = "contrib"
-projects[adminimal_admin_menu][version] = "1.6"
+projects[adminimal_admin_menu][version] = "1.7"
 
 ; Enabled during profile install.
 projects[advanced_forum][type] = "module"
@@ -50,7 +50,7 @@ projects[autologout][version] = "4.4"
 ; Enabled during profile install; required by devconnect_blog
 projects[block_class][type] = "module"
 projects[block_class][subdir] = "contrib"
-projects[block_class][version] = "2.2"
+projects[block_class][version] = "2.3"
 
 ; Enabled during profile install.
 projects[bootstrap_modal_forms][type] = "module"
@@ -76,9 +76,7 @@ projects[cck_phone][version] = "1.x-dev"
 ; Enabled during profile install.
 projects[ckeditor][type] = "module"
 projects[ckeditor][subdir] = "contrib"
-projects[ckeditor][version] = "1.16"
-; see https://www.drupal.org/node/2454933
-projects[ckeditor][patch][2454933] = "https://www.drupal.org/files/issues/Issue_2454933.patch"
+projects[ckeditor][version] = "1.17"
 
 projects[ckeditor_link][type] = "module"
 projects[ckeditor_link][subdir] = "contrib"
@@ -145,11 +143,6 @@ projects[ds][version] = "2.11"
 projects[eck][type] = "module"
 projects[eck][subdir] = "contrib"
 projects[eck][version] = "2.0-rc8"
-
-; Required by OPDK
-projects[encrypt][type] = "module"
-projects[encrypt][subdir] = "contrib"
-projects[encrypt][version] = "2.3"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
@@ -293,6 +286,11 @@ projects[media][version] = "2.0-beta1"
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
 ; Enabled during profile install.
+projects[media_ckeditor][type] = "module"
+projects[media_ckeditor][subdir] = "contrib"
+projects[media_ckeditor][version] = "2.0-alpha1"
+
+; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
 projects[media_youtube][version] = "3.0"
@@ -364,6 +362,8 @@ projects[redirect][version] = "1.0-rc3"
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
 projects[redis][version] = "3.11"
+; see https://www.drupal.org/node/2556643
+projects[redis][patch][2556643] = "https://www.drupal.org/files/issues/php_5_3_compatibility-2556643-12.patch"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
@@ -389,7 +389,7 @@ projects[siteminder][version] = "2.x-dev"
 
 projects[smtp][type] = "module"
 projects[smtp][subdir] = "contrib"
-projects[smtp][version] = "1.2"
+projects[smtp][version] = "1.3"
 
 ; Required by Monetization
 projects[special_menu_items][type] = "module"
@@ -477,7 +477,7 @@ projects[xautoload][version] = "5.5"
 projects[adminimal_theme][type] = "theme"
 projects[adminimal_theme][version] = "1.23"
 
-; Not enabled, but used by Apigee Responsive theme. Update to 3.1 with great care!
+; Not enabled, but used by Apigee Responsive theme. Update past 3.0 with great care!
 projects[bootstrap][type] = "theme"
 projects[bootstrap][version] = "3.0"
 
@@ -755,8 +755,8 @@ libraries[insertpre][download][url] = "http://download.ckeditor.com/insertpre/re
 ; Used by gauth
 libraries[google-api-php-client][destination] = "libraries"
 libraries[google-api-php-client][directory_name] = "google-api-php-client"
-libraries[google-api-php-client][download][type] = "git"
-libraries[google-api-php-client][download][url] = "https://github.com/google/google-api-php-client.git"
+libraries[google-api-php-client][download][type] = "file"
+libraries[google-api-php-client][download][url] = "https://github.com/google/google-api-php-client/archive/1.1.6.tar.gz"
 
 ; Used by devconnect_developer_apps. Can we update to the 4.0.x branch?
 libraries[highcharts][destination] = "libraries"
@@ -797,9 +797,8 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
-libraries[mgmt-api-php-sdk][download][branch] = "1.1.x"
-libraries[mgmt-api-php-sdk][download][type] = "git"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk.git"
+libraries[mgmt-api-php-sdk][download][type] = "file"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.4.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"

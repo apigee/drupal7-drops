@@ -156,13 +156,15 @@ function _apigee_account_session_info($token, $uuid) {
     $json = @json_decode($response_obj->data, TRUE);
 
     if (is_array($json) && $json['status'] == 'ok' && is_array($json['data']) && !$json['data']['disabled']) {
-      $aname = explode(' ', $json['data']['name']);
-      $session_info['field_first_name'] = reset($aname);
-      $session_info['field_last_name'] = end($aname);
-      $session_info['name'] = @array_shift(explode('-', $json['data']['username']));
+      $human_name = explode(' ', $json['data']['name']);
+      $user_name = explode('-', $json['data']['username']);
+      $session_info['field_first_name'] = reset($human_name);
+      $session_info['field_last_name'] = end($human_name);
+      $session_info['name'] = reset($user_name);
       $session_info['email'] = $json['data']['email'];
       $session_info['token'] = $json['data']['token'];
-      $session_info['password'] = md5(microtime());
+      $session_info['password'] = drupal_random_key(16);
+      $session_info['uuid'] = $json['data']['uuid'];
     }
   }
   return $session_info;

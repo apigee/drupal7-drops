@@ -112,6 +112,14 @@ function smartdocs_menu() {
     'file' => 'smartdocs.admin.inc',
     'type' => MENU_CALLBACK,
   );
+  $items['admin/content/smartdocs/models/%smartdocs_model/revert-template'] = array(
+    'title' => 'Revert template',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('smartdocs_model_revert_template', 4),
+    'access arguments' => array('administer smartdocs content'),
+    'file' => 'smartdocs.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
   $items['admin/content/smartdocs/models/%smartdocs_model/delete'] = array(
     'title' => 'Delete',
     'page callback' => 'drupal_get_form',
@@ -290,8 +298,15 @@ function smartdocs_permission() {
  */
 function smartdocs_oauth_callback() {
   $config =& devconnect_get_org_settings();
+  if (parse_url($config['endpoint'], PHP_URL_HOST) == 'api.enterprise.apigee.com') {
+    $proxy_root = 'https://apiconsole-prod.apigee.net';
+  }
+  else {
+    $proxy_root = preg_replace('!v1$!', '', rtrim($config['endpoint'], '/'));
+  }
+
   return theme('smartdocs_oauth_callback', array(
-    'proxy' => str_replace('v1/smartdocs', 'smartdocs/v1/sendrequest', variable_get('smartdocs_api_proxy_url', 'https://apiconsole-prod.apigee.net/v1/smartdocs')),
+    'proxy' => $proxy_root . '/smartdocs/v1/sendrequest',
     'endpoint' => $config['endpoint'],
   ));
 }
@@ -466,9 +481,9 @@ function smartdocs_format_json($obj) {
  * @param string $mid
  *   UUID or name of a model.
  *
- * @return \Apigee\SmartDocs\Model|bool
- *   Returns corresponding Model, or FALSE if it could not be loaded. This
- *   results in a 404 when invoked by the menu handler.
+ * @return array|bool
+ *   Returns array-ified corresponding Model, or FALSE if it could not be
+ *   loaded. This results in a 404 when invoked by the menu handler.
  */
 function smartdocs_model_load($mid) {
   if (!class_exists('Apigee\\SmartDocs\\Model')) {
@@ -507,7 +522,7 @@ function smartdocs_model_load($mid) {
     return FALSE;
   }
 
-  return $model;
+  return $model->toArray();
 }
 
 /**
@@ -519,9 +534,9 @@ function smartdocs_model_load($mid) {
  * @param string|int $rev
  *   Revision-number or UUID of the revision.
  *
- * @return \Apigee\SmartDocs\Revision|bool
- *   Returns corresponding Revision, or FALSE if it could not be loaded. This
- *   results in a 404 when invoked by the menu handler.
+ * @return array|bool
+ *   Returns array-ified corresponding Revision, or FALSE if it could not be
+ *   loaded. This results in a 404 when invoked by the menu handler.
  */
 function smartdocs_revision_load($rev) {
   $model =& drupal_static('smartdocs_model');
@@ -582,7 +597,7 @@ function smartdocs_revision_load($rev) {
     }
   }
 
-  return $revision;
+  return $revision->toArray();
 }
 
 /**
@@ -594,9 +609,9 @@ function smartdocs_revision_load($rev) {
  * @param string $res
  *   UUID of the requested resource.
  *
- * @return \Apigee\SmartDocs\Resource|bool
- *   Returns corresponding Resource, or FALSE if it could not be loaded. This
- *   results in a 404 when invoked by the menu handler.
+ * @return array|bool
+ *   Returns array-ified corresponding Resource, or FALSE if it could not be
+ *   loaded. This results in a 404 when invoked by the menu handler.
  */
 function smartdocs_resource_load($res) {
   $model =& drupal_static('smartdocs_model');
@@ -641,7 +656,7 @@ function smartdocs_resource_load($res) {
     }
   }
 
-  return $resource;
+  return $resource->toArray();
 }
 
 /**
@@ -653,9 +668,9 @@ function smartdocs_resource_load($res) {
  * @param string $method_id
  *   UUID of method to be loaded.
  *
- * @return \Apigee\SmartDocs\Method|bool
- *   Returns corresponding Method, or FALSE if it could not be loaded. This
- *   results in a 404 when invoked by the menu handler.
+ * @return array|bool
+ *   Returns array-ified corresponding Method, or FALSE if it could not be
+ *   loaded. This results in a 404 when invoked by the menu handler.
  */
 function smartdocs_method_load($method_id) {
   $model =& drupal_static('smartdocs_model');
@@ -701,7 +716,7 @@ function smartdocs_method_load($method_id) {
       return FALSE;
     }
   }
-  return $method;
+  return $method->toArray();
 }
 
 /**
@@ -721,13 +736,13 @@ function smartdocs_json_validate($json) {
 /**
  * Renders a node from a SmartDocs Method.
  *
- * @param Apigee\SmartDocs\Model $model
+ * @param Apigee\SmartDocs\Model|array $model
  *   Model from which node is to be rendered.
- * @param Apigee\SmartDocs\Revision $revision
+ * @param Apigee\SmartDocs\Revision|array $revision
  *   Revision from which node is to be rendered.
- * @param Apigee\SmartDocs\Resource $resource
+ * @param Apigee\SmartDocs\Resource|array $resource
  *   Resource from which node is to be rendered.
- * @param Apigee\SmartDocs\Method $method
+ * @param Apigee\SmartDocs\Method|array $method
  *   Method from which node is to be rendered.
  * @param bool $publish
  *   TRUE if node should be published.
@@ -737,9 +752,25 @@ function smartdocs_json_validate($json) {
  * @return object
  *   The node that was rendered.
  */
-function smartdocs_render_node(Model $model, Revision $revision, Resource $resource, Method $method, $publish, array &$context) {
+function smartdocs_render_node($model, $revision, $resource, $method, $publish, array &$context) {
 
-  $model_name = $model->getName();
+  if ($model instanceof Model) {
+    $model = $model->toArray();
+  }
+  if ($revision instanceof Revision) {
+    $revision = $revision->toArray();
+  }
+  if ($resource instanceof Resource) {
+    $resource = $resource->toArray();
+  }
+  if ($method instanceof Method) {
+    $method = $method->toArray();
+  }
+
+  $model_name = $model['name'];
+  if (empty($method['displayName'])) {
+    $method['displayName'] = $method['name'];
+  }
 
   $smartdocs_vocabs = array(
     'smartdocs_verbs',
@@ -780,13 +811,13 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
   }
 
   $query = array();
-  foreach ($method->getParameters() as $parameter) {
+  foreach ($method['parameters'] as $parameter) {
     if (strtolower($parameter['type']) == 'query') {
       $query[] = $parameter['name'];
     }
   }
-  $old_mpid = $model_name . $method->getPath() . '/' . strtoupper($method->getVerb()) . (empty($query) ? '' : '?' . implode('&', $query));
-  $new_mpid = $model_name . '|' . $method->getName();
+  $old_mpid = $model_name . $method['path'] . '/' . strtoupper($method['verb']) . (empty($query) ? '' : '?' . implode('&', $query));
+  $new_mpid = $model_name . '|' . $method['name'];
 
   $loaded = FALSE;
   $smartdata_result = db_select('smartdata', 's')
@@ -799,13 +830,13 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
     $node = node_load($smartdata_result['nid']);
     if (empty($node)) {
       // Should never happen!
-      db_delete('smartdata')->condition('method', $method->getUuid())->execute();
+      db_delete('smartdata')->condition('method', $method['id'])->execute();
       $smartdata_result = FALSE;
     }
     else {
       db_update('smartdata')
         ->fields(array(
-          'revision' => $revision->getRevisionNumber(),
+          'revision' => $revision['revisionNumber'],
           'mpid' => $new_mpid,
         ))
         ->condition('model', $model_name)
@@ -821,30 +852,33 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
     $node->status = intval($publish);
   }
 
+  $node->language = LANGUAGE_NONE;
   $node->revision = 1;
   $node->log = t('Revision: @rev - Method: @title - @method was synced from SmartDocs.', array(
-    '@rev' => $revision->getRevisionNumber(),
-    '@title' => $method->getDisplayName(),
-    '@method' => $method->getUuid(),
+    '@rev' => $revision['revisionNumber'],
+    '@title' => $method['displayName'],
+    '@method' => $method['id'],
   ));
   if ($loaded) {
-    $context['message'] = t('Syncing node ‘@name’', array('@name' => $method->getDisplayName()));
+    $context['message'] = t('Syncing node ‘@name’', array('@name' => $method['displayName']));
   }
   else {
-    $context['message'] = t('Creating node ‘@name’', array('@name' => $method->getDisplayName()));
+    $context['message'] = t('Creating node ‘@name’', array('@name' => $method['displayName']));
   }
 
-  $node->title = $method->getDisplayName();
-  $node->body[LANGUAGE_NONE][0]['value'] = $method->getDescription();
+  $node->title = $method['displayName'];
+  if (isset($method['description'])) {
+    $node->body[LANGUAGE_NONE][0]['value'] = $method['description'];
+  }
 
   // field_smart_method_verb
-  $verb = strtoupper($method->getVerb());
+  $verb = strtoupper($method['verb']);
   if (array_key_exists($verb, $verb_terms)) {
     $tid = $verb_terms[$verb];
   }
   else {
     $term = new stdClass();
-    $term->name = strtoupper($method->getVerb());
+    $term->name = strtoupper($method['verb']);
     $term->vid = $vocabularies['smartdocs_verbs'];
     taxonomy_term_save($term);
     $tid = $term->tid;
@@ -853,7 +887,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
 
   // field_smart_method_params
   $params = array();
-  foreach ($method->getParameters() as $parameter) {
+  foreach ($method['parameters'] as $parameter) {
     // Set some defaults.
     $parameter += array(
       'name' => '',
@@ -879,7 +913,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
   $node->field_smart_method_params[LANGUAGE_NONE] = $params;
 
   // field_smart_method_body_attach
-  $method_body = $method->getBody();
+  $method_body = $method['body'];
   $attachments = array();
   $body_attachments = (array_key_exists('attachments', $method_body) ? $method_body['attachments'] : array());
   foreach ($body_attachments as $attachment) {
@@ -936,7 +970,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
 
   // field_smart_method_errors.
   $errors = array();
-  $response = $method->getResponse();
+  $response = $method['response'];
   $response_errors = (array_key_exists('errors', $response) ? $response['errors'] : array());
   foreach ($response_errors as $error) {
     // Make sure code is never null.
@@ -956,7 +990,7 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
   // field_smart_method_tags.
   $tags = array();
   $vid = NULL;
-  foreach ($method->getTags() as $tag) {
+  foreach ($method['tags'] as $tag) {
     $tag_l = strtolower($tag);
     if (array_key_exists($tag_l, $tag_terms)) {
       $tid = $tag_terms[$tag_l];
@@ -973,28 +1007,28 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
   $node->field_smart_method_tags[LANGUAGE_NONE] = $tags;
 
   // field_smart_method_model.
-  $model_l = strtolower($model->getName());
+  $model_l = strtolower($model['name']);
   if (array_key_exists($model_l, $model_terms)) {
     $tid = $model_terms[$model_l];
   }
   else {
     $term = new stdClass();
-    $term->name = $model->getName();
-    $term->description = $model->getDescription();
-    $term->field_model_display_name[LANGUAGE_NONE][0]['value'] = $model->getDisplayName();
+    $term->name = $model['name'];
+    $term->description = $model['description'];
+    $term->field_model_display_name[LANGUAGE_NONE][0]['value'] = $model['displayName'];
     $term->vid = $vocabularies['smartdocs_models'];
     taxonomy_term_save($term);
     $tid = $term->tid;
   }
   $node->field_smart_method_model[LANGUAGE_NONE][0]['tid'] = $tid;
-  $node->field_smart_method_base_url[LANGUAGE_NONE][0]['value'] = $resource->getBaseUrl();
-  $node->field_smart_method_resource_path[LANGUAGE_NONE][0]['value'] = $resource->getPath();
-  $node->field_smart_method_uuid[LANGUAGE_NONE][0]['value'] = $method->getUuid();
-  $node->field_smart_method_resource_uuid[LANGUAGE_NONE][0]['value'] = $resource->getUuid();
-  $node->field_smart_method_revision_num[LANGUAGE_NONE][0]['value'] = $revision->getRevisionNumber();
+  $node->field_smart_method_base_url[LANGUAGE_NONE][0]['value'] = $resource['baseUrl'];
+  $node->field_smart_method_resource_path[LANGUAGE_NONE][0]['value'] = $resource['path'];
+  $node->field_smart_method_uuid[LANGUAGE_NONE][0]['value'] = $method['id'];
+  $node->field_smart_method_resource_uuid[LANGUAGE_NONE][0]['value'] = $resource['id'];
+  $node->field_smart_method_revision_num[LANGUAGE_NONE][0]['value'] = $revision['revisionNumber'];
 
   $node->field_smart_method_security[LANGUAGE_NONE] = array();
-  foreach ($method->getSecurity() as $security) {
+  foreach ($method['security'] as $security) {
     $node->field_smart_method_security[LANGUAGE_NONE][] = array('value' => $security);
   }
 
@@ -1004,9 +1038,9 @@ function smartdocs_render_node(Model $model, Revision $revision, Resource $resou
   if ($node->nid) {
     $record = array(
       'nid' => $node->nid,
-      'revision' => $revision->getRevisionNumber(),
-      'resource' => $resource->getUuid(),
-      'method' => $method->getUuid(),
+      'revision' => $revision['revisionNumber'],
+      'resource' => $resource['id'],
+      'method' => $method['id'],
       'model' => $model_name,
       'synced' => 1,
       'mpid' => $new_mpid,
@@ -1085,16 +1119,20 @@ function smartdocs_method_examples($which) {
 /**
  * Finds the nid associated with a given method, or FALSE if there is none.
  *
- * @param Method $method
+ * @param array|Method $method
  *   Method to query for a node.
  *
  * @return int|bool
  *   Node's nid, or FALSE if node was not found.
  */
-function _smartdocs_get_method_node(Method $method) {
+function _smartdocs_get_method_node($method) {
+  if ($method instanceof Method) {
+    $method = $method->toArray();
+  }
+
   return db_select('smartdata', 's')
     ->fields('s', array('nid'))
-    ->condition('method', $method->getUuid())
+    ->condition('method', $method['id'])
     ->execute()
     ->fetchField();
 }
@@ -1661,15 +1699,22 @@ function smartdocs_taxonomy_term_insert($term) {
  * corresponding to the model, we bail early. (The latter should never
  * happen!)
  *
- * @param object $model
+ * @param object|array $model
  *   The model for which we are creating a view. This can either be a full-
- *   fledged Apigee\SmartDocs\Model object or a taxonomy term.
+ *   fledged Apigee\SmartDocs\Model object, an array-ified Model, or a
+ *   taxonomy term.
  */
 function smartdocs_create_model_view($model) {
   if ($model instanceof Apigee\SmartDocs\Model) {
     $model_name = $model->getName();
     $model_display_name = $model->getDisplayName();
     $model_description = $model->getDescription();
+    $term = NULL;
+  }
+  elseif (is_array($model)) {
+    $model_name = $model['name'];
+    $model_display_name = $model['displayName'];
+    $model_description = $model['description'];
     $term = NULL;
   }
   else {
@@ -1799,4 +1844,52 @@ function _smartdocs_flush_cache() {
   }
   catch (Exception $e) {
   }
+}
+
+/**
+ * Strips out extraneous info from a revision to streamline batching.
+ *
+ * @param array|Revision $revision
+ *   Incoming revision (or its array representation) from which extra cruft
+ *   is to be stripped.
+ *
+ * @return array
+ *   A minimized representation of the revision.
+ */
+function smartdocs_prepare_revision($revision) {
+  if ($revision instanceof Revision) {
+    $revision = $revision->toArray();
+  }
+  $revision_array = array(
+    'id' => $revision['id'],
+    'revisionNumber' => $revision['revisionNumber'],
+    'resources' => array(),
+  );
+  foreach ($revision['resources'] as $resource) {
+    $resource_array = array(
+      'id' => $resource['id'],
+      'name' => $resource['name'],
+      'displayName' => empty($resource['displayName']) ? $resource['name'] : $resource['displayName'],
+      'baseUrl' => $resource['baseUrl'],
+      'path' => $resource['path'],
+      'methods' => array(),
+    );
+    foreach ($resource['methods'] as $method) {
+      $method_array = array(
+        'body' => $method['body'],
+        'id' => $method['id'],
+        'displayName' => empty($method['displayName']) ? $method['name'] : $method['displayName'],
+        'name' => $method['name'],
+        'parameters' => $method['parameters'],
+        'path' => $method['path'],
+        'response' => $method['response'],
+        'security' => $method['security'],
+        'tags' => $method['tags'],
+        'verb' => $method['verb'],
+      );
+      $resource_array['methods'][] = $method_array;
+    }
+    $revision_array['resources'][] = $resource_array;
+  }
+  return $revision_array;
 }

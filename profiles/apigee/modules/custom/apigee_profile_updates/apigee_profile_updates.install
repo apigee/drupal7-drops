@@ -146,10 +146,50 @@ function apigee_profile_updates_update_7103() {
 }
 
 /**
- * Remove ckeditor_bootstrap module, rebuild registry.
+ * Remove ckeditor_bootstrap module, use more modern jQuery, rebuild registry.
  */
 function apigee_profile_updates_update_7104() {
   db_delete('system')->condition('name', 'ckeditor_bootstrap')->execute();
+
+  // Rewrite the CKEditor settings, to make sure CKEditor Bootstrap plugins
+  // are removed from configuration.
+  $bootstrap_plugins = array(
+    'trifold',
+    'featurette',
+    'jumbotron',
+    'carousel',
+  );
+
+  // Perform actual database updates.
+  $rows = db_select('ckeditor_settings', 'c')
+    ->fields('c', array('name', 'settings'))
+    ->execute()
+    ->fetchAllKeyed();
+  foreach ($rows as $name => $settings) {
+    $settings = unserialize($settings);
+    // Remove plugin definition, if present
+    if (array_key_exists('loadPlugins', $settings)) {
+      foreach ($bootstrap_plugins as $plugin) {
+        if (array_key_exists($plugin, $settings['loadPlugins'])) {
+          unset ($settings['loadPlugins'][$plugin]);
+        }
+      }
+    }
+    // Remove plugins from toolbar.
+    if (array_key_exists('toolbar', $settings)) {
+      $settings['toolbar'] = preg_replace("/'(Trifold|Featurette|Jumbotron|Carousel)',?/", '', $settings['toolbar']);
+    }
+    // Write changes back to the database.
+    db_update('ckeditor_settings')
+      ->fields(array('settings' => serialize($settings)))
+      ->condition('name', $name)
+      ->execute();
+  }
+
+  // Use a more modern jQuery. 1.10 is the jQuery Update default.
+  variable_set('jquery_update_jquery_version', '1.10');
+  // Emulate features that were dropped in jQuery 1.9.
+  variable_set('jquery_update_jquery_migrate_enable', 1);
 
   // Rebuild registry because Bootstrap theme update changed many things.
   // This code is mostly copypasta from registry_rebuild.php.
@@ -170,12 +210,15 @@ function apigee_profile_updates_update_7104() {
       $missing_files[] = $filename;
     }
   }
-  if (!empty($filenames)) {
+  if (!empty($missing_files)) {
     db_delete('registry_file')->condition('filename', $missing_files)->execute();
     db_delete('registry')->condition('filename', $missing_files)->execute();
   }
+}
 
-  cache_clear_all('*', 'cache', TRUE);
-  cache_clear_all('*', 'cache_form', TRUE);
-  drupal_flush_all_caches();
+/**
+ * Enable media_ckeditor module.
+ */
+function apigee_profile_updates_update_7105() {
+  module_enable(array('media_ckeditor'));
 }

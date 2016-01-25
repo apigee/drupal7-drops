@@ -1,0 +1,55 @@
+CONTENTS OF THIS FILE
+---------------------
+
+ * Introduction
+ * Requirements
+ * Installation
+ * Technical details
+
+INTRODUCTION
+------------
+
+Current Maintainers:
+
+ * Devin Carlson <http://drupal.org/user/290182>
+
+Media CKEditor provides a bridge between Media and the stand-alone CKEditor
+module, allowing files to be embedded within a textarea using the media browser.
+
+REQUIREMENTS
+------------
+
+Media CKEditor has one dependency and needs three libraries.
+
+Contributed modules
+ * CKEditor - The latest development release.
+
+Libraries
+ * CKEditor - Version 4.3 or later.
+   http://ckeditor.com/download
+ * CKEditor Line Utilities plugin - Compatible with the installed version of CKEditor.
+   http://ckeditor.com/addon/lineutils
+ * CKEditor Widget plugin - Compatible with the installed version of CKEditor.
+   http://ckeditor.com/addon/widget
+
+INSTALLATION
+------------
+
+* Install Media CKEditor via the standard Drupal installation process:
+  'http://drupal.org/node/895232'.
+* If you weren't previously using the CKEditor WYSIWYG client-side editor,
+  download the CKEditor library (http://ckeditor.com/download) and extract it to
+  'sites/all/libraries' or 'sites/sitename/libraries' as you require. The
+  extracted folder must be named 'ckeditor'.
+* Download the Line Utilities plugin (http://ckeditor.com/addon/lineutils),
+  extract it and move it into the 'plugins' directory of the 'ckeditor' folder
+  so that it is available at 'ckeditor/plugins/lineutils'.
+* Download the Widget plugin (http://ckeditor.com/addon/widget), extract it and
+  move it into the 'plugins' directory of the 'ckeditor' folder so that it is
+  available at 'ckeditor/plugins/widget'.
+* Enable the 'Convert Media tags to markup' filter for the desired text formats
+  from the Text Formats configuration page: '/admin/config/content/formats'.
+* Enable the 'Plugin for embedding files using Media CKEditor' Media CKEditor
+  plugin for the desired text formats from the CKEditor configuration
+  page: '/admin/config/content/ckeditor'.
+* Disable CKEditor's Advanced Content Filter for each of the text formats.

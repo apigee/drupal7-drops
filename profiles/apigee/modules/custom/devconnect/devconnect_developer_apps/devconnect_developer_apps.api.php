@@ -164,11 +164,10 @@ function hook_devconnect_developer_app_delete(array $results, array &$form_state
  *   May be one of the following: list, detail, delete, edit
  * @param mixed $arg1
  *   If $op is 'list', 'detail' or 'edit', this is a reference to the $user object.
- *   If $op is 'edit', this is a reference to the $user object.
- *   Otherwise this is NULL
+ *   Otherwise this is NULL.
  * @param mixed $arg2
  *   If $op is 'edit', this is the app id (if set)
- *   Otherwise this is NULL
+ *   Otherwise this is NULL.
  */
 function hook_devconnect_developer_apps_prerender($op, $arg1 = NULL, $arg2 = NULL) {
   if ($op == 'list') {
@@ -183,11 +182,11 @@ function hook_devconnect_developer_apps_prerender($op, $arg1 = NULL, $arg2 = NUL
  *
  * @param array $api_products
  *   An Array of ApiProductEntity objects keyed by API Product "name" attribute.
- * @param stdClass|null $account
+ * @param stdClass $account
  *   The developer account.
  */
 function hook_apiproduct_list_alter(array &$api_products, $account = NULL) {
-  if ($account->uid == 1) {
+  if (empty($account) || $account->uid == 1) {
     unset($api_products['worlds_greatest_api']);
   }
 }
@@ -196,8 +195,11 @@ function hook_apiproduct_list_alter(array &$api_products, $account = NULL) {
  * Alter the label by which Developer Apps are called.
  *
  * @param string $label
+ *    Incoming default label for a Developer App.
  * @param mixed $form_value
+ *    Form element value from the devconnect_developer_apps_config form.
  * @param bool $plural
+ *    TRUE if the resulting label should be plural.
  */
 function hook_devconnect_developer_app_label_alter(&$label, $form_value, $plural) {
   if ($form_value == 3) {

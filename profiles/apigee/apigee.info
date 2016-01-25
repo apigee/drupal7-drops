@@ -60,6 +60,7 @@ dependencies[] = list
 dependencies[] = logintoboggan
 dependencies[] = me
 dependencies[] = media
+dependencies[] = media_ckeditor
 dependencies[] = media_internet
 dependencies[] = media_wysiwyg
 dependencies[] = media_youtube
@@ -89,6 +90,6 @@ dependencies[] = webform
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20160112.0702
-version = "16.01.12.00"
+; Added by build script on 20160125.0914
+version = "16.01.25.00"
     

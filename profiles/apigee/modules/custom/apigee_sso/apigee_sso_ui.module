@@ -35,13 +35,14 @@ function apigee_sso_ui_form_alter(&$form, &$form_state, $form_id) {
   global $base_url;
   switch ($form_id) {
     case 'user_login':
+      $vars = array();
       if (module_exists('github_connect')) {
         $client_id = variable_get('github_connect_client_id');
-        $destination = user_login_destination();
-        $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
-        $vars['github'] = $link;
-      } else {
-        $vars = array();
+        if ($client_id) {
+          $destination = user_login_destination();
+          $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
+          $vars['github'] = $link;
+        }
       }
       $form['sso_buttons'] = array(
         '#type' => 'markup',

@@ -6,7 +6,7 @@
  * ---------------------------------------------------------------------------------------------------
  * This file handles API Modeling docs page related event handling methods, method to receive oAuth 2 access token and code mirror editor invocation methods.
  * Depends:
- *  jquery_1.7.2.min.js, bootstrap-tooltip.js, codemirror.js, codemirror_javascript.js, codemirror_xml.js, prism.js, base64_min.js.
+ *  jquery_1.7.2.min.js, bootstrap-tooltip.js, codemirror.js, codemirror_javascript.js, codemirror_xml.js, base64_min.js.
  */
 var apiModelCommon; // An Instance of a 'Apigee.APIModel.Common' class.
 var apiModelMethods; // An Instance of a 'Apigee.APIModel.Methods' class.

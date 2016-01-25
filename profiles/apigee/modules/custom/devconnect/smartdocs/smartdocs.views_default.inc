@@ -1,5 +1,12 @@
 <?php
+/**
+ * @file
+ * Defines SmartDocs views.
+ */
 
+/**
+ * Implements hook_views_default_views().
+ */
 function smartdocs_views_default_views() {
   $views = array();
 
@@ -155,7 +162,7 @@ EOM;
         'id' => 'created',
         'table' => 'node',
         'field' => 'created',
-        'order' => 'DESC'
+        'order' => 'DESC',
       ),
     ),
     'filters' => array(
@@ -296,7 +303,7 @@ EOM;
         'required' => TRUE,
       ),
     ),
-     'fields' => array(
+    'fields' => array(
       'tid' => array(
         'id' => 'tid',
         'table' => 'taxonomy_term_data',
@@ -354,6 +361,13 @@ EOM;
   /* Display: Page */
   $handler = $view->new_display('page', 'Page', 'page');
   $handler->display->display_options['path'] = 'apis';
+  $handler->display->display_options['menu']['type'] = 'normal';
+  $handler->display->display_options['menu']['title'] = 'APIs';
+  $handler->display->display_options['menu']['description'] = 'View API Documenation';
+  $handler->display->display_options['menu']['weight'] = '0';
+  $handler->display->display_options['menu']['name'] = 'main-menu';
+  $handler->display->display_options['menu']['context'] = 0;
+  $handler->display->display_options['menu']['context_only_inline'] = 0;
 
   $views[$view->name] = $view;
   return $views;

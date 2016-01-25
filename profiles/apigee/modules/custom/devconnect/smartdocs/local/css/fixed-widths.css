@@ -1,0 +1,42 @@
+#method_content .resource_summary {
+    width: 236px;
+}
+#method_content .resource_summary div p.data {
+    width: 117px;
+}
+#method_content h2 {
+    width: 339px;
+}
+#method_content .method_table .title {
+    width: 150px;
+}
+#method_content .method_table .value, #index_content .method_table .value {
+    width: 168px;
+}
+#method_content .method_table .method_details .value input, #index_content .method_table .method_details .value input {
+    width: 144px;
+}
+#method_content .method_table .method_details .description, #method_content .method_table .method_title .description {
+    width: 336px;
+}
+#method_content .method_table select {
+    width: 144px;
+}
+#method_content .request_payload_doc_edit, #method_content .response_payload_doc_edit {
+    width: 600px;
+}
+#method_content.edit_mode [data-role="method-title"][data-allow-edit="true"] {
+    width: 244px;
+}
+#method_content.edit_mode .method_table .method_details [data-allow-edit="true"] {
+    width: 285px;
+}
+#method_content.edit_mode [data-role='request-payload-docs'], #method_content.edit_mode [data-role='request-payload-example'] {
+    width: 600px;
+}
+#method_content.edit_mode .resource_details {
+    width: 420px;
+}
+#method_content.edit_mode .description_container .resource_description, #method_content.edit_mode .description_container textarea {
+    width: 372px;
+}

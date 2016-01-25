@@ -80,9 +80,9 @@ abstract class Redis_AbstractBackend implements Redis_BackendInterface
      *
      * @return string
      */
-    public function getKey($parts = [])
+    public function getKey($parts = array())
     {
-        $key = [];
+        $key = array();
 
         if (null !== $this->prefix) {
             $key[] = $this->prefix;

@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Primarily Drupal hooks.
+ */
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function media_ckeditor_element_info_alter(&$types) {
+  $types['text_format']['#pre_render'][] = 'media_ckeditor_pre_render_text_format';
+}
+
+/**
+ * Adds CKEditor-specific JavaScript.
+ */
+function media_ckeditor_pre_render_text_format($element) {
+  // filter_process_format() copies properties to the expanded 'value' child
+  // element.
+  if (!isset($element['format'])) {
+    return $element;
+  }
+
+  $field = &$element['value'];
+  $settings = array(
+    'field' => $field['#id'],
+  );
+
+  if (!isset($field['#value'])) {
+    return $element;
+  }
+
+  // Add CKEditor-specific JS.
+  $element['#attached']['js'][] = array(
+    'data' => drupal_get_path('module', 'media_ckeditor') . '/js/plugins/media/library.js',
+    'type' => 'file',
+    'scope' => 'footer',
+    'weight' => -20,
+  );
+
+  return $element;
+}

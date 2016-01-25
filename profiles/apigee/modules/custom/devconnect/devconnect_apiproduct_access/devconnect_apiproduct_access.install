@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function devconnect_apiproduct_access_uninstall() {
+  // Remove all apiproduct_role_ variables.
+  $result = db_select('variable', 'v')
+    ->fields('v', array('name'))
+    ->condition('name', db_like('apiproduct_role_') . '%', 'LIKE')
+    ->execute();
+  foreach ($result as $row) {
+    variable_del($row->name);
+  }
+}
+
+/**
+ * Convert variables to lowercase with underscores instead of spaces.
+ *
+ * The variable set and get methods expects all variables to not be case
+ * sensitive.
+ */
+function devconnect_apiproduct_access_update_7400(&$sandbox) {
+  // Get all apiproduct_role_ variables and change to lower case.
+  $result = db_select('variable', 'v')
+    ->fields('v', array('name'))
+    ->condition('name', db_like('apiproduct_role_') . '%', 'LIKE')
+    ->execute();
+
+  foreach ($result as $row) {
+    if ($value = variable_get($row->name, FALSE)) {
+      // The variable_get() method is case sensitive.  Make the key for storing
+      // the product as the name in lowercase and spaces replaced with
+      // underscores.
+      $product_name_key = str_replace(' ', '_', strtolower($row->name));
+      variable_del($row->name);
+      variable_set($product_name_key, $value);
+    }
+  }
+}

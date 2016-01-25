@@ -1,14 +1,13 @@
 <?php
-
-require_once(DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php');
+/**
+ * @file
+ * Configures tasks specific to this profile.
+ */
 
 /**
  * Implements hook_install_tasks().
- *
- * @param $install_state
- * @return array
  */
-function apigee_install_tasks(&$install_state) {
+function apigee_install_tasks(array &$install_state) {
   if (!array_key_exists('batch_configure_complete', $install_state)) {
     $install_state['batch_configure_complete'] = FALSE;
   }
@@ -31,7 +30,8 @@ function apigee_install_tasks(&$install_state) {
       'type' => 'form',
     ),
     'apigee_install_check_postrequisites' => array(
-      // display_name is unset here to prevent it from being displayed to the user.
+      // display_name is unset here to prevent it from being displayed to the
+      // user.
       'type' => 'function',
     ),
   );
@@ -39,11 +39,8 @@ function apigee_install_tasks(&$install_state) {
 
 /**
  * Implements hook_install_tasks_alter().
- *
- * @param $tasks
- * @param $install_state
  */
-function apigee_install_tasks_alter(&$tasks, &$install_state) {
+function apigee_install_tasks_alter(array &$tasks, array &$install_state) {
   $tasks['install_select_profile']['function'] = 'apigee_install_select_profile';
   $tasks['install_select_locale']['function'] = 'apigee_install_select_locale';
   $tasks['install_load_profile']['function'] = 'apigee_install_load_profile';
@@ -52,9 +49,6 @@ function apigee_install_tasks_alter(&$tasks, &$install_state) {
     'function' => 'apigee_install_configure_batch',
     'display_name' => t('Create default content'),
     'run' => $install_state['batch_configure_complete'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
-    'type' => 'batch'
+    'type' => 'batch',
   );
-
 }
-
-

@@ -266,6 +266,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   public function load($ids = array(), $conditions = array()) {
     $orgs = self::getOrgs($conditions);
     $disableLogging = (isset($conditions['disableLogging']) && ($conditions['disableLogging'] === TRUE));
+    $minimalLoad = (isset($conditions['minimalLoad']) && ($conditions['minimalLoad'] === TRUE));
 
     $list = array();
     foreach ($orgs as $org) {
@@ -316,7 +317,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         }
         try {
           $list += $dev_app->listAllApps();
-          $this->addListToCache($list, $ids);
+          if (!$minimalLoad) {
+            $this->addListToCache($list, $ids);
+          }
         }
         catch (ResponseException $e) {
           self::$lastException = $e;
@@ -350,27 +353,31 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $list += array_values($sub_list);
       }
     }
-    $this->addListToCache($list, $ids);
+    if (!$minimalLoad) {
+      $this->addListToCache($list, $ids);
+    }
 
     $uids = array();
-    foreach ($list as $dev_app) {
-      if ($dev_app instanceof Apigee\ManagementAPI\DeveloperApp) {
-        $email = $dev_app->getDeveloperMail();
-        if (!array_key_exists($email, $uids)) {
-          $uids[strtolower($email)] = NULL;
+    if (!$minimalLoad) {
+      foreach ($list as $dev_app) {
+        if ($dev_app instanceof Apigee\ManagementAPI\DeveloperApp) {
+          $email = $dev_app->getDeveloperMail();
+          if (!array_key_exists($email, $uids)) {
+            $uids[strtolower($email)] = NULL;
+          }
         }
       }
-    }
 
-    if (!empty($uids)) {
-      $stmt = db_select('users', 'u');
-      $stmt->addExpression('LOWER(mail)', 'mail');
-      $uids = $stmt->fields('u', array('uid'))
-        ->condition('mail', array_keys($uids))
-        ->execute()
-        ->fetchAllKeyed();
+      if (!empty($uids)) {
+        $stmt = db_select('users', 'u');
+        $stmt->addExpression('LOWER(mail)', 'mail');
+        $uids = $stmt->fields('u', array('uid'))
+          ->condition('mail', array_keys($uids))
+          ->execute()
+          ->fetchAllKeyed();
+      }
+      $uids = array_flip($uids);
     }
-    $uids = array_flip($uids);
 
     $app_entities = array();
     $include_debug_data = (count($list) == 1);

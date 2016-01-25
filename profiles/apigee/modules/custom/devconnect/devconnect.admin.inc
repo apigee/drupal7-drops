@@ -21,6 +21,8 @@ function devconnect_admin_form($form, &$form_state) {
     $org_settings = $original_org_settings;
   }
 
+  $form['#attributes']['autocomplete'] = 'off';
+
   $form['original_org_settings'] = array(
     '#type' => 'value',
     '#value' => $org_settings

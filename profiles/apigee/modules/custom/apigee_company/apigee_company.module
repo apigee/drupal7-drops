@@ -892,7 +892,7 @@ function apigee_company_modify_user_roles_validate(&$form, &$form_state) {
   if (module_exists('devconnect_monetization') && !user_access('edit mint developers roles')) {
     form_set_error('', t('Sorry! You donot have access to perform this operation. Please reload the page and try again.'));
   }
-  elseif (!module_exists('devconnect_monetization') && !user_access('edit company developer roles')) {
+  elseif (!module_exists('devconnect_monetization') && !user_access('manage company users')) {
     // If we donot have devconnect_monetization module enabled then we check
     // for the permissions defined by the apigee_company module.
     form_set_error('', t('Sorry! You donot have access to perform this operation. Please reload the page and try again.'));

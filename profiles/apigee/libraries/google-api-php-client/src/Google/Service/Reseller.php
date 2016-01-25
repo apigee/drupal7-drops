@@ -698,7 +698,6 @@ class Google_Service_Reseller_Customer extends Google_Model
   );
   public $alternateEmail;
   public $customerDomain;
-  public $customerDomainVerified;
   public $customerId;
   public $kind;
   public $phoneNumber;
@@ -722,14 +721,6 @@ class Google_Service_Reseller_Customer extends Google_Model
   public function getCustomerDomain()
   {
     return $this->customerDomain;
-  }
-  public function setCustomerDomainVerified($customerDomainVerified)
-  {
-    $this->customerDomainVerified = $customerDomainVerified;
-  }
-  public function getCustomerDomainVerified()
-  {
-    return $this->customerDomainVerified;
   }
   public function setCustomerId($customerId)
   {

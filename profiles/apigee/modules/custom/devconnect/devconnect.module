@@ -10,7 +10,6 @@
 
 use Drupal\devconnect\Crypto;
 use Drupal\devconnect\ErrorHandling;
-use Drupal\devconnect\VariableCache;
 use Drupal\devconnect\WatchdogLogger;
 
 /**
@@ -34,7 +33,6 @@ function devconnect_init() {
 
     require_once __DIR__ . '/lib/Crypto.php';
     require_once __DIR__ . '/lib/ErrorHandling.php';
-    require_once __DIR__ . '/lib/VariableCache.php';
     require_once __DIR__ . '/lib/WatchdogLogger.php';
 
     $already_booted = TRUE;
@@ -226,7 +224,6 @@ function devconnect_default_org_config($requested_org = 'default') {
         'timeout' => intval($settings['request_timeout']),
       ),
       'user_agent' => devconnect_get_build_version(),
-      'variable_store' => new VariableCache(),
       'referer' => url($_GET['q'], array('absolute' => TRUE)),
     );
     if (function_exists('devconnect_debug_register')) {
@@ -271,44 +268,6 @@ function devconnect_get_build_version() {
     }
   }
   return $build_version;
-}
-
-/**
- * Logs use of deprecated classes and functions (from pre-R21 days).
- *
- * Allows us to bring CS code up to current standards.
- */
-function _devconnect_warn_deprecated() {
-  if (version_compare(PHP_VERSION, '5.4', '>=')) {
-    // Be more efficient when running PHP 5.4
-    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-  }
-  elseif (version_compare(PHP_VERSION, '5.3.6', '>=')) {
-    // Sigh. Pull entire backtrace.
-    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-  }
-  else {
-    // We are dealing with real dinosaurs here. Be even less efficient.
-    // PHP < 5.3.6 does not support any args to debug_backtrace().
-    $backtrace = debug_backtrace();
-  }
-  $frame = $backtrace[1];
-
-  if (isset($frame['class'])) {
-    $subject = 'class ' . $frame['class'];
-    $verb = 'instantiated';
-  }
-  else {
-    $subject = 'function ' . $frame['function'];
-    $verb = 'invoked';
-  }
-  $args = array(
-    '%subject' => $subject,
-    '%verb' => $verb,
-    '%file' => $frame['file'],
-    '%line' => $frame['line'],
-  );
-  devconnect_default_org_config()->logger->warning(t('Deprecated %subject was %verb in file %file, line %line.', $args), array('type' => 'devconnect'));
 }
 
 /**

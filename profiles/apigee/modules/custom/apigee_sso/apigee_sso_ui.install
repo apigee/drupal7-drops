@@ -1,9 +1,37 @@
 <?php
+/**
+ * @file
+ * Contains install/update routines for apigee_sso_ui.
+ */
 
 /**
- * Updates the weight of the apigee_sso modules in order to properly form_alter contrib additions to the form
+ * Makes apigee_sso_ui heavier than all other modules.
  */
-function apigee_sso_ui_update_7424(&$sandbox) {
+function apigee_sso_ui_install() {
+  _apigee_sso_ui_adjust_weight();
+}
+
+/**
+ * Updates the weight of the apigee_sso modules in order to properly form_alter contrib additions to the form.
+ */
+function apigee_sso_ui_update_7424() {
+  _apigee_sso_ui_adjust_weight();
+}
+
+/**
+ * Removes reference to obsolete apigee_sso module from system table.
+ */
+function apigee_sso_ui_update_7427() {
+  db_delete('system')
+    ->condition('type', 'module')
+    ->condition('name', 'apigee_sso')
+    ->execute();
+}
+
+/**
+ * Helper function to adjust module weight.
+ */
+function _apigee_sso_ui_adjust_weight() {
   $query = db_select('system', 's')
     ->condition('type', 'module')
     ->condition('status', '1')

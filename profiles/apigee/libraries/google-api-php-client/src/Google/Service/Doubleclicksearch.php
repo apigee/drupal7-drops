@@ -1005,7 +1005,6 @@ class Google_Service_Doubleclicksearch_ReportApiColumnSpec extends Google_Model
   public $groupByColumn;
   public $headerText;
   public $platformSource;
-  public $productReportPerspective;
   public $savedColumnName;
   public $startDate;
 
@@ -1065,14 +1064,6 @@ class Google_Service_Doubleclicksearch_ReportApiColumnSpec extends Google_Model
   public function getPlatformSource()
   {
     return $this->platformSource;
-  }
-  public function setProductReportPerspective($productReportPerspective)
-  {
-    $this->productReportPerspective = $productReportPerspective;
-  }
-  public function getProductReportPerspective()
-  {
-    return $this->productReportPerspective;
   }
   public function setSavedColumnName($savedColumnName)
   {

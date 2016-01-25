@@ -1,4 +1,4 @@
-<!-- Apigee Dev Portal Method Template -->
+<!-- Apigee Dev Portal Method Template v6.2 -->
 {{!--
 Apigee Dev Portal Method Template
 
@@ -403,7 +403,7 @@ Helper variables:
 <div class="col-sm-3">
     <div class="well well-sm">
         <div class="table-responsive">
-            <table class="table table-condensed">
+            <table class="table table-condensed table-resource-summary">
                 <div class="resource_summary">
                     <thead>
                     <tr>
@@ -435,23 +435,6 @@ Helper variables:
                             </p>
                         </td>
                     </tr>
-                    {{else}}
-                        {{#if parameters}}
-                            <tr>
-                                <td>
-                                    <p class="title">Content Type</p>
-                                </td>
-                                <td>
-                                    <p class="data" data-role="content-type">
-                                        {{#parameters}}
-                                            {{#each this.options}}
-                                                {{this}}<br>
-                                            {{/each}}
-                                        {{/parameters}}
-                                    </p>
-                                </td>
-                            </tr>
-                        {{/if}}
                     {{/if}}
                     {{!-- Only output Category if it exists --}}
                     {{#if tags}}
@@ -633,6 +616,8 @@ Helper variables:
     <!-- /.modal-dialog -->
 </div>
 <!-- /.modal -->
+<div id="apigee-apimodel-bodysample" style="display:none">{{body.sample}}</div>
+<div id="apigee-apimodel-bodydoc" style="display:none">{{body.doc}}</div>
 <script type="text/javascript">
     var Apigee = Apigee || {};
     Apigee.APIModel = Apigee.APIModel || {};
@@ -650,9 +635,17 @@ Helper variables:
     Apigee.APIModel.hasRawBody = false;
 
     {{#if body}}
-    Apigee.APIModel.bodyParameters={{#if body.parameters}}{{{body.parameters}}}{{else}}false{{/if}}
-    Apigee.APIModel.bodySample={{#if body.sample}}"{{{body.sample}}}"{{else}}false{{/if}};
-    Apigee.APIModel.bodyDoc={{#if body.doc}}"{{{body.doc}}}"{{else}}false{{/if}};
+    Apigee.APIModel.bodyParameters={{#if body.parameters}}{{{body.parameters}}}{{else}}false{{/if}};
+    // The following two divs contain HTML-encoded text, to allow us to handle
+    // text which includes quotes.
+    Apigee.APIModel.bodySample = jQuery('div#apigee-apimodel-bodysample').text();
+    if (Apigee.APIModel.bodySample.length == 0) {
+        Apigee.APIModel.bodySample = false;
+    }
+    Apigee.APIModel.bodyDoc = jQuery('div#apigee-apimodel-bodydoc').text();
+    if (Apigee.APIModel.bodyDoc.length == 0) {
+        Apigee.APIModel.bodyDoc = false;
+    }
     {{else}}
     Apigee.APIModel.bodyParameters=false;
     Apigee.APIModel.bodySample=false;
@@ -694,6 +687,10 @@ Helper variables:
             }
         }
     }
+
+    // -------------------------------------------------------------------------
+    // SECURITY
+    // -------------------------------------------------------------------------
     var security = [];
     if(Apigee.APIModel.security) {
         for (i=0;i<Apigee.APIModel.security.length;i++){
@@ -701,6 +698,8 @@ Helper variables:
         }
     }
 
+    // If security is set in the model, display the values in the resource
+    // summary table, and pull out the default security values if set.
     var newAuth = [];
     var authTypeEl = jQuery("[data-role='auth-type']");
     authTypeEl.text(newAuth);
@@ -730,7 +729,11 @@ Helper variables:
                         break
                 }
             }
-            else if (keys === "api_key") {
+            // If the security object does not have any template auths, it will
+            // have an attribute named "error" that will have the value
+            // "No templateAuth found for KEYNAME", where KEYNAME is the
+            // name of the security object.
+            else if (typeof security[i][keys] === "object" && security[i][keys].hasOwnProperty("error")) {
                 newAuth.push("API Key");
             }
         }
@@ -739,8 +742,11 @@ Helper variables:
         newAuth.push('None');
     }
     authTypeEl.text(newAuth.join(', '));
-    var payload = jQuery(".request_payload");
 
+    // -------------------------------------------------------------------------
+    // PAYLOAD
+    // -------------------------------------------------------------------------
+    var payload = jQuery(".request_payload");
     var payloadTextSchemaEl = jQuery("textarea.payload_text_schema");
     var originalSchemaObj = null;
     if (Apigee.APIModel.expandedSchema) {
@@ -784,15 +790,18 @@ Helper variables:
         // Remove the body parameters section if the raw body should be
         // displayed.
         jQuery(".body-parameters-wrapper").remove();
-    } else {
+    } else if (!Apigee.APIModel.bodySample && !Apigee.APIModel.bodyDoc) {
         // If the API Model does not have a payload, then remove the payload
         // section.
         payload.remove();
     }
-
+    // For any content-type listing, convert comma-delimited list into a
+    // columnar list.
     var contentTypeElements = document.getElementsByClassName('content-type-source-body');
-    for (var k in contentTypeElements) {
-        contentTypeElements[k].innerHTML = contentTypeElements[k].innerHTML.replace(',', '<br>');
+    for (var k = 0; k < contentTypeElements.length; k++) {
+        if(contentTypeElements[k] != null && contentTypeElements[k].hasOwnProperty('innerHTML')) {
+            contentTypeElements[k].innerHTML = contentTypeElements[k].innerHTML.replace(',', '<br>');
+        }
     }
 
     function expandSchema (obj, originalObj) {

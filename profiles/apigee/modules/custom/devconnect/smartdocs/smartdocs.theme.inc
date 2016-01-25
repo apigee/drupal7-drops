@@ -140,101 +140,63 @@ function smartdocs_preprocess_node(&$vars) {
   $model_term = $vars['field_smart_method_model'][0]['taxonomy_term'];
 
   if (!$vars['teaser']) {
+
     $org_settings = devconnect_get_org_settings();
+    $endpoint_host = parse_url($org_settings['endpoint'], PHP_URL_HOST);
+    $js_settings = array(
+      'oauth2AuthUrl' => base_path() . '/smartdocs/oauth/callback',
+      'apiModelBaseUrl' => preg_replace('!v1$!', '', rtrim($org_settings['endpoint'], '/')),
+      'useDefaultUrls' => ($endpoint_host == 'api.enterprise.apigee.com'),
+    );
+    drupal_add_js(array('smartdocs' => $js_settings), 'setting');
 
-    if ((bool) variable_get('smartdocs_use_api_proxy_url', 0)) {
-      drupal_add_js(
-        array(
-          'smartdocs' => array(
-            'isDrupal' => TRUE,
-            'apiModelBaseUrl' => variable_get('smartdocs_api_proxy_url'),
-            'oauth2AuthUrl' => base_path() . '/smartdocs/oauth/callback',
-          ),
-        ), 'setting');
+    $version = variable_get('smartdocs_local_asset_version', '6');
+    $path = drupal_get_path('module', 'smartdocs');
+    $css = array(
+      $path . '/local/css/main.css',
+      $path . '/local/css/codemirror.css',
+    );
+    if ($version < 3) {
+      // These versions declared element widths in px rather than %.
+      $css[] = $path . '/local/css/fixed-widths.css';
     }
-    else {
-      drupal_add_js(
-        array(
-          'smartdocs' => array(
-            'isDrupal' => TRUE,
-            'apiModelBaseUrl' => str_replace('/v1', '', $org_settings['endpoint']),
-            'oauth2AuthUrl' => base_path() . '/smartdocs/oauth/callback',
-            'dataProxyUrl' => variable_get('smartdocs_data_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1'),
-            'dataAuthUrl' => variable_get('smartdocs_data_auth_url', 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate'),
-          ),
-        ), 'setting');
+    elseif ($version == 3) {
+      // This version declared h2 widths as a narrow percentage.
+      $css[] = $path . '/local/css/narrow-h2.css';
     }
 
-    if (!(bool) variable_get('smartdocs_use_local_assets', 1)) {
-      $def_css = 'https://smartdocs.apigee.com/6/static/css/main.css
-https://smartdocs.apigee.com/6/static/css/codemirror.css
-https://smartdocs.apigee.com/6/static/css/prism.css';
-      $def_js = "https://smartdocs.apigee.com/6/static/js/codemirror.js
-https://smartdocs.apigee.com/6/static/js/codemirror_javascript.js
-https://smartdocs.apigee.com/6/static/js/codemirror_xml.js
-https://smartdocs.apigee.com/6/static/js/prism.js
-https://smartdocs.apigee.com/6/static/js/base64_min.js
-https://smartdocs.apigee.com/6/static/js/model.js
-https://smartdocs.apigee.com/6/static/js/controller.js";
+    $js = array(
+      $path . '/local/js/codemirror.js',
+      $path . '/local/js/codemirror_javascript.js',
+      $path . '/local/js/codemirror_xml.js',
+      $path . '/local/js/base64_min.js',
+    );
 
-      $js = preg_split('/\\r\\n|\\r|\\n/', variable_get('smartdocs_js_' . $model_term->tid, $def_js));
-      $css = preg_split('/\\r\\n|\\r|\\n/', variable_get('smartdocs_css_' . $model_term->tid, $def_css));
-      $i = 100;
-      foreach ($js as $file) {
-        $options = array(
-          'group' => JS_THEME,
-          'weight' => $i,
-          'type' => 'external',
-        );
-        drupal_add_js($file, $options);
-        $i++;
-      }
-      $i = 100;
-      foreach ($css as $file) {
-        $options = array(
-          'group' => CSS_THEME,
-          'weight' => $i,
-          'type' => 'external',
-        );
-        drupal_add_css($file, $options);
-        $i++;
-      }
+    if (variable_get('smartdocs_use_prism', 1)) {
+      $js[] = $path . '/local/js/prism.js';
+      $css[] = $path . '/local/css/prism.css';
     }
-    else {
-      $version = variable_get('smartdocs_local_asset_version', '6');
-      $path = drupal_get_path('module', 'smartdocs');
-      $css = array(
-        $path . '/local/css/v' . $version . '/main.css',
-        $path . '/local/css/v' . $version . '/codemirror.css',
-        $path . '/local/css/v' . $version . '/prism.css',
+    $js[] = $path . '/local/js/base64_min.js';
+    $js[] = $path . '/local/js/v' . $version . '/model.js';
+    $js[] = $path . '/local/js/v' . $version . '/controller.js';
+
+    $i = 100;
+    foreach ($js as $file) {
+      $options = array(
+        'group' => JS_THEME,
+        'weight' => $i,
       );
-      $js = array(
-        $path . '/local/js/v' . $version . '/codemirror.js',
-        $path . '/local/js/v' . $version . '/codemirror_javascript.js',
-        $path . '/local/js/v' . $version . '/codemirror_xml.js',
-        $path . '/local/js/v' . $version . '/prism.js',
-        $path . '/local/js/v' . $version . '/base64_min.js',
-        $path . '/local/js/v' . $version . '/model.js',
-        $path . '/local/js/v' . $version . '/controller.js',
+      drupal_add_js($file, $options);
+      $i++;
+    }
+    $i = 100;
+    foreach ($css as $file) {
+      $options = array(
+        'group' => CSS_THEME,
+        'weight' => $i,
       );
-      $i = 100;
-      foreach ($js as $file) {
-        $options = array(
-          'group' => JS_THEME,
-          'weight' => $i,
-        );
-        drupal_add_js($file, $options);
-        $i++;
-      }
-      $i = 100;
-      foreach ($css as $file) {
-        $options = array(
-          'group' => CSS_THEME,
-          'weight' => $i,
-        );
-        drupal_add_css($file, $options);
-        $i++;
-      }
+      drupal_add_css($file, $options);
+      $i++;
     }
 
     drupal_add_css(drupal_get_path('module', 'smartdocs') . '/css/smartdocs.css', array(
@@ -280,8 +242,8 @@ https://smartdocs.apigee.com/6/static/js/controller.js";
         // roundtrip. This is icky, but at least it shows SOMETHING to the end
         // user.
         $content_markup = theme('smartdocs_method', $vars);
-        $vars['content']['prefix'] = '<div class="col-sm-12">';
-        $vars['content']['suffix'] = '</div>';
+        $vars['content']['#prefix'] = '<div class="col-sm-12">';
+        $vars['content']['#suffix'] = '</div>';
       }
     }
 

@@ -8,7 +8,7 @@ if (defined('APIGEE_MINIMUM_PHP_VERSION')) {
   define('SMARTDOCS_MINIMUM_PHP_VERSION', APIGEE_MINIMUM_PHP_VERSION);
 }
 else {
-  define('SMARTDOCS_MINIMUM_PHP_VERSION', '5.5.0');
+  define('SMARTDOCS_MINIMUM_PHP_VERSION', '5.3.3');
 }
 
 /**
@@ -91,89 +91,10 @@ function smartdocs_requirements($phase) {
       break;
 
     case 'runtime':
-      $proxy_url = variable_get('data_proxy_url', NULL);
-      if (!isset($proxy_url)) {
-        $proxy_url = variable_get('smartdocs_data_proxy_url', NULL);
-      }
-      if (empty($proxy_url)) {
-        $result['smartdocs_proxy'] = array(
-          'severity' => REQUIREMENT_WARNING,
-          'title' => $t('Apigee SmartDocs'),
-          'description' => $t('The custom proxy URL is empty. Please configure the custom proxy URL under advanced settings on the !smartdocs_settings. !smartdocs_documentation.', array(
-            "!smartdocs_settings" => l($t('SmartDocs settings page'), 'admin/config/smartdocs/settings'),
-            "!smartdocs_documentation" => l($t('learn more'), 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array('fragment' => 'configuringthesmartdocsmodule')),
-          )),
-          'value' => $t('Missing custom proxy URL'),
-        );
-      }
-      elseif (!valid_url($proxy_url, TRUE)) {
-        $result['smartdocs_proxy'] = array(
-          'severity' => REQUIREMENT_WARNING,
-          'title' => $t('Apigee SmartDocs'),
-          'description' => $t('The custom proxy URL is not well-formed. Please configure the custom proxy URL under advanced settings on the !smartdocs_settings. !smartdocs_documentation.', array(
-            "!smartdocs_settings" => l($t('SmartDocs settings page'), 'admin/config/smartdocs/settings'),
-            "!smartdocs_documentation" => l($t('learn more'), 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array('fragment' => 'configuringthesmartdocsmodule')),
-          )),
-          'value' => $t('Misconfigured custom proxy URL'),
-        );
-      }
-      else {
-        // Make a request to the proxyURL to check if it is correct.
-        $request_url = $proxy_url . '/ping';
-
-        $client = new \Guzzle\Http\Client();
-        $config = devconnect_default_org_config();
-        $request = $client->head($request_url, NULL, array('timeout' => $config->http_options['timeout']));
-
-        try {
-          $response_code = $client->send($request)->getStatusCode();
-        }
-        catch (\Guzzle\Http\Exception\BadResponseException $e) {
-          $response_code = $e->getResponse()->getStatusCode();
-        }
-        catch (\Guzzle\Http\Exception\CurlException $e) {
-          $response_code = $e->getErrorNo();
-        }
-
-        switch ($response_code) {
-          case CURLE_OPERATION_TIMEOUTED:
-            $result['smartdocs_proxy'] = array(
-              'severity' => REQUIREMENT_ERROR,
-              'title' => $t('Apigee SmartDocs'),
-              'description' => $t('Unable to validate the proxy URL due to the request timing out. You can change the Request Timeout value in !devconnect_settings.', array('!devconnect_settings' => l($t('Dev Portal settings'), 'admin/config/devconnect'))),
-              'value' => $t('Request Timed Out'),
-            );
-            break;
-
-          // OK (with & without content).
-          case 200:
-          case 204:
-            $result['smartdocs_proxy'] = array(
-              'severity' => REQUIREMENT_OK,
-              'title' => $t('Apigee SmartDocs'),
-              'value' => $t('OK'),
-            );
-            break;
-
-          default:
-            $result['smartdocs_proxy'] = array(
-              'severity' => REQUIREMENT_WARNING,
-              'title' => $t('Apigee SmartDocs'),
-              'description' => $t('The custom proxy URL is unreachable as configured. Check the !smartdocs_settings or !learn_more.', array(
-                '!smartdocs_settings' => l($t('SmartDocs settings'), 'admin/config/smartdocs/settings'),
-                '!learn_more' => l($t('learn more'), 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array('fragment' => 'configuringthesmartdocsmodule')),
-              )),
-              'value' => $t('Invalid custom proxy URL'),
-            );
-            break;
-        }
-        // End switch $response_code.
-      }
-
       if (variable_get('smartdocs_custom_template_warning', FALSE)) {
         $result['smartdocs_template'] = array(
           'severity' => REQUIREMENT_WARNING,
-          'title' => $t('SmartDocs Custom Template'),
+          'title' => $t('SmartDocs custom template'),
           'description' => $t('The default SmartDocs method template has changed, but you are using a custom template. Please review the default template at %path and make sure your custom template is up-to-date. <a href=!url>Click here to dismiss this warning.</a>', array(
             '%path' => base_path() . drupal_get_path('module', 'smartdocs') . '/templates/smartdocs.hbr',
             '!url' => url('admin/config/smartdocs/custom-template-update'),
@@ -193,6 +114,16 @@ function smartdocs_requirements($phase) {
       'value' => $t('Edge SDK needs updating'),
     );
   }
+
+  if (module_exists('ds')) {
+    $result['smartdocs_ds_conflict'] = array(
+      'severity' => REQUIREMENT_WARNING,
+      'title' => $t('Module conflict'),
+      'description' => $t('The SmartDocs module is not compatible with the Display Suite module. If you are using SmartDocs, you should disable Display Suite.'),
+      'value' => $t('Conflict between SmartDocs and Display Suite'),
+    );
+  }
+
   return $result;
 }
 
@@ -236,18 +167,6 @@ function smartdocs_install() {
 
   module_load_include('inc', 'smartdocs', 'smartdocs.update');
   _smartdocs_update();
-  $item = array(
-    'menu_name' => 'main-menu',
-    'link_path' => 'apis',
-    'link_title' => 'APIs',
-    'weight' => 0,
-    'options' => array(
-      'attributes' => array(
-        'title' => 'APIs',
-      ),
-    ),
-  );
-  menu_link_save($item);
 }
 
 /**
@@ -459,7 +378,7 @@ function smartdocs_update_7501() {
     try {
       $html = $template->load('drupal-cms', 'method');
     }
-    catch  (Apigee\Exceptions\ResponseException $e) {
+    catch (Apigee\Exceptions\ResponseException $e) {
     }
     // If neither template existed, pull from our template file.
     if (!$html) {
@@ -476,7 +395,7 @@ function smartdocs_update_7501() {
       }
       $success++;
     }
-    catch  (Apigee\Exceptions\ResponseException $e) {
+    catch (Apigee\Exceptions\ResponseException $e) {
       if (function_exists('drush_print')) {
         drush_print('Could not migrate model ‘' . $model->getDisplayName() . '’ to the new SmartDocs template name.');
       }
@@ -662,4 +581,52 @@ function smartdocs_update_7506() {
     $update_count++;
   }
   return $t('Views for %count models were updated.', array('%count' => $update_count));
+}
+
+/**
+ * Make sure that fresh JS and CSS assets are served for SmartDocs methods.
+ */
+function smartdocs_update_7507() {
+  // Delete custom CSS/JS settings.
+  $var_names = db_select('variable', 'v')
+    ->fields('v', array('name'))
+    ->condition('name', db_like('smartdocs_css_') . '%', 'LIKE')
+    ->execute()
+    ->fetchCol();
+  foreach ($var_names as $var) {
+    variable_del($var);
+  }
+  $var_names = db_select('variable', 'v')
+    ->fields('v', array('name'))
+    ->condition('name', db_like('smartdocs_js_') . '%', 'LIKE')
+    ->execute()
+    ->fetchCol();
+  foreach ($var_names as $var) {
+    variable_del($var);
+  }
+
+  $old_vars = array(
+    'smartdocs_use_local_assets',
+    'smartdocs_data_proxy_url',
+    'smartdocs_data_auth_url',
+    'smartdocs_is_edge_mgmt_firewalled',
+    'smartdocs_use_api_proxy_url',
+    'smartdocs_api_proxy_url',
+  );
+  foreach ($old_vars as $var) {
+    variable_del($var);
+  }
+
+  _drupal_flush_css_js();
+}
+
+/**
+ * Remove "APIs" menu link in menu since SmartDocs view now creates it.
+ */
+function smartdocs_update_7508() {
+  db_delete('menu_links')
+    ->condition('module', 'menu')
+    ->condition('router_path', 'apis')
+    ->execute();
+  variable_set('menu_rebuild_needed', TRUE);
 }

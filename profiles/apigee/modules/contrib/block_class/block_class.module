@@ -32,7 +32,7 @@ function block_class_preprocess_block(&$vars) {
   if (!empty($block->css_class)) {
     $classes_array = explode(' ', $block->css_class);
     foreach ($classes_array as $class) {
-      $vars['classes_array'][] = drupal_html_class($class);
+      $vars['classes_array'][] = drupal_clean_css_identifier($class, array());
     }
   }
 }
@@ -56,7 +56,7 @@ function block_class_preprocess_panels_pane(&$vars) {
   if (!empty($block->css_class)) {
     $classes_array = explode(' ', $block->css_class);
     foreach ($classes_array as $class) {
-      $vars['classes_array'][] = drupal_html_class($class);
+      $vars['classes_array'][] = drupal_clean_css_identifier($class, array());
     }
   }
 }

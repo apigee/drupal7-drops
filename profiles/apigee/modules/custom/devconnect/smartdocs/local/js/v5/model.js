@@ -551,16 +551,16 @@ Apigee.APIModel.Editor = function() {
             }    
         }
 
-        window.apiModelEditor.initRequestPayloadEditor(); // Initialize the request payload sample editor.        
-        if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined" && typeof Drupal.settings.devconnect_docgen != "undefined" && Drupal.settings.devconnect_docgen.dataProxyUrl) {
-            Apigee.APIModel.proxyURL = Drupal.settings.devconnect_docgen.dataProxyUrl + "/sendrequest";
-            Apigee.APIModel.authUrl = Drupal.settings.devconnect_docgen.dataAuthUrl;
+        window.apiModelEditor.initRequestPayloadEditor(); // Initialize the request payload sample editor.
+        if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined" && typeof Drupal.settings.smartdocs != "undefined" && !Drupal.settings.smartdocs.useDefaultUrls) {
+            Apigee.APIModel.proxyURL = "https://apiconsole-prod.apigee.net/smartdocs/v1/sendrequest";
+            Apigee.APIModel.authUrl = 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate';
         } else {
             var proxyURLLocation = windowLocation.split("/apimodels/")[0];    
             if (Apigee.APIModel.apiModelBaseUrl) {
                 proxyURLLocation = Apigee.APIModel.apiModelBaseUrl +"/v1/o/" + Apigee.APIModel.organizationName;
             } else if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-                proxyURLLocation = Drupal.settings.devconnect_docgen.apiModelBaseUrl +"/v1/o/" + Apigee.APIModel.organizationName;
+                proxyURLLocation = Drupal.settings.smartdocs.apiModelBaseUrl +"/v1/o/" + Apigee.APIModel.organizationName;
             }
             proxyURLLocation = proxyURLLocation + "/apimodels/proxyUrl"; // Proxy URL location format: https://<domain name>/<alpha/beta/v1>/o/apihub/apimodels/proxyUrl
             self.makeAJAXCall({"url":proxyURLLocation, "callback":self.storeProxyURL}); // Make an AJAX call to retrieve proxy URL to make send request call.
@@ -590,7 +590,7 @@ Apigee.APIModel.Editor = function() {
         if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
             var oauth2AuthUrlPart1 = data.authUrl.split("redirect_uri=")[0];
             var oauth2AuthUrlPart2 = data.authUrl.split("redirect_uri=")[1];
-            oauth2AuthUrlPart2 = oauth2AuthUrlPart1+"redirect_uri="+encodeURIComponent(Drupal.settings.devconnect_docgen.oauth2AuthUrl+"?org="+Apigee.APIModel.organizationName+"&api="+Apigee.APIModel.apiName+"&revision="+Apigee.APIModel.revisionNumber) + "&client_id=" + oauth2AuthUrlPart2.split("client_id=")[1];
+            oauth2AuthUrlPart2 = oauth2AuthUrlPart1+"redirect_uri="+encodeURIComponent(Drupal.settings.smartdocs.oauth2AuthUrl+"?org="+Apigee.APIModel.organizationName+"&api="+Apigee.APIModel.apiName+"&revision="+Apigee.APIModel.revisionNumber) + "&client_id=" + oauth2AuthUrlPart2.split("client_id=")[1];
             window.open(oauth2AuthUrlPart2, "oauth2Window", "resizable=yes,scrollbars=yes,status=1,toolbar=1,height=500,width=500");
         } else {
             window.open(data.authUrl, "oauth2Window", "resizable=yes,scrollbars=yes,status=1,toolbar=1,height=500,width=500");
@@ -827,7 +827,7 @@ Apigee.APIModel.Editor = function() {
             var oauth2Url = window.location.href;
             oauth2Url = windowLocation.split("/resources/")[0];
             if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-                oauth2Url = Drupal.settings.devconnect_docgen.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber;
+                oauth2Url = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber;
             }
             if (Apigee.APIModel.apiModelBaseUrl) {
                 oauth2Url = Apigee.APIModel.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber;
@@ -1331,7 +1331,9 @@ Apigee.APIModel.Editor = function() {
                 requestContainerElement.append("<pre class='language-markup'><code class='language-markup' id='some-code'>"+bodyContent+"</code></pre>");
             }
         }
-        Prism.highlightAll(); // Update the Prism editor.
+        if (typeof Prism == 'object') {
+            Prism.highlightAll(); // Update the Prism editor.
+        }
     };
     /**
      * This method clears the error container and it's related arrays and variable.
@@ -1960,7 +1962,7 @@ jQuery(this).siblings("textarea").val(jQuery.trim(jQuery(this).html())).height(j
             lastEditScope = "resource";
             operationPath = operationPath.split("/methods/")[0];
             if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-                operationPath = Drupal.settings.devconnect_docgen.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber+"/resources/"+ Apigee.APIModel.resourceId;
+                operationPath = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber+"/resources/"+ Apigee.APIModel.resourceId;
             }
             if (Apigee.APIModel.apiModelBaseUrl) {
                 operationPath = Apigee.APIModel.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber+"/resources/"+ Apigee.APIModel.resourceId;
@@ -1973,7 +1975,7 @@ jQuery(this).siblings("textarea").val(jQuery.trim(jQuery(this).html())).height(j
             lastEditScope = "method";
             operationPath = operationPath.split("/doc?")[0]
             if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-                operationPath = Drupal.settings.devconnect_docgen.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+Apigee.APIModel.apiName+"/revisions/"+Apigee.APIModel.revisionNumber+"/resources/"+Apigee.APIModel.resourceId+"/methods/"+ Apigee.APIModel.methodId;
+                operationPath = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+Apigee.APIModel.apiName+"/revisions/"+Apigee.APIModel.revisionNumber+"/resources/"+Apigee.APIModel.resourceId+"/methods/"+ Apigee.APIModel.methodId;
             }
             if (Apigee.APIModel.apiModelBaseUrl) {
                 operationPath = Apigee.APIModel.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+Apigee.APIModel.apiName+"/revisions/"+Apigee.APIModel.revisionNumber+"/resources/"+Apigee.APIModel.resourceId+"/methods/"+ Apigee.APIModel.methodId;
@@ -2272,4 +2274,4 @@ Apigee.APIModel.SwaggerModelProperty = function(name, obj) {
         return result;
     };
 };
-Apigee.APIModel.sampleModels = {};    
+Apigee.APIModel.sampleModels = {};

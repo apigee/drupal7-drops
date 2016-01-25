@@ -5,6 +5,7 @@ package = DevConnect
 version = 7.x-4.25
 
 dependencies[] = devconnect_context
+dependencies[] = devconnect_user
 dependencies[] = devconnect_views
 dependencies[] = menu
 dependencies[] = faq

@@ -36,6 +36,9 @@ Apigee.APIModel.Common = function() {
     theParent.appendChild(theKid);
     theParent.insertBefore(theKid, theParent.firstChild);
   };
+  isOldMSIE = function() {
+    return (navigator.appName == 'Microsoft Internet Explorer' && navigator.userAgent.match(/msie [6-9]/i));
+  };
 
   // Public methods.
   /**
@@ -49,7 +52,7 @@ Apigee.APIModel.Common = function() {
     if (requestUrl.indexOf("targeturl=") != -1) {
       requestUrl = requestUrl.split("targeturl=")[0].toString();
     }
-    if (jQuery.browser.msie && window.XDomainRequest && parseInt(jQuery.browser.version) <= 9 && requestUrl.indexOf(currentHost) == -1) {
+    if (isOldMSIE() && window.XDomainRequest && requestUrl.indexOf(currentHost) == -1) {
       var requestURL = request.url;
       var defaultMethodType = (request.type) ? request.type : "get";
       if (requestURL.indexOf("targeturl") != -1) {
@@ -536,9 +539,9 @@ Apigee.APIModel.Methods = function() {
     }
 
     window.apiModelEditor.initRequestPayloadEditor(); // Initialize the request payload sample editor.
-    if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined" && typeof Drupal.settings.smartdocs != "undefined" && Drupal.settings.smartdocs.dataProxyUrl) {
-      Apigee.APIModel.proxyURL = Drupal.settings.smartdocs.dataProxyUrl + "/sendrequest";
-      Apigee.APIModel.authUrl = Drupal.settings.smartdocs.dataAuthUrl;
+      if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined" && typeof Drupal.settings.smartdocs != "undefined" && !Drupal.settings.smartdocs.useDefaultUrls) {
+        Apigee.APIModel.proxyURL = "https://apiconsole-prod.apigee.net/smartdocs/v1/sendrequest";
+        Apigee.APIModel.authUrl = 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate';
     } else {
       var proxyURLLocation = windowLocation.split("/apimodels/")[0];
       if (Apigee.APIModel.apiModelBaseUrl) {
@@ -1085,7 +1088,7 @@ Apigee.APIModel.Methods = function() {
         }
       }
     }
-    if ( jQuery.browser.msie && parseInt(jQuery.browser.version) <= 9 && jQuery("[data-role='body-param-list']").length) {
+    if (isOldMSIE() && jQuery("[data-role='body-param-list']").length) {
       headersList.push({"name" : "Content-Type", "value" : "application/x-www-form-urlencoded"});
     }
     urlToTest = urlToTest.replace(/\{/g,"").replace(/\}/g,"");
@@ -1153,7 +1156,7 @@ Apigee.APIModel.Methods = function() {
     var processDataValue = true;
     if (jQuery("[data-role='attachments-list']").length || (jQuery('[data-role="request-payload-example"]').length && jQuery("[data-role='body-param-list']").length)) {
       var multiPartTypes = "";
-      if ( jQuery.browser.msie && parseInt(jQuery.browser.version) <= 9) {
+      if (isOldMSIE()) {
         if (localStorage.getItem("unsupportedAttachmentFlag") == null) {
           self.showUnsupportedAttachmentAlertMessage();
         }
@@ -1385,7 +1388,9 @@ Apigee.APIModel.Methods = function() {
         requestContainerElement.append("<pre class='language-markup'><code class='language-markup' id='some-code'>"+bodyContent+"</code></pre>");
       }
     }
-    Prism.highlightAll(); // Update the Prism editor.
+    if (typeof Prism == 'object') {
+      Prism.highlightAll(); // Update the Prism editor.
+    }
   };
   /**
    * This method clears the error container and it's related arrays and variable.

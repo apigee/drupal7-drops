@@ -258,21 +258,21 @@ class Redis_Cache
         list($flushPerm, $flushVolatile) = $this->backend->getLastFlushTime();
 
         $checksum = $this->getValidChecksum(
-            max([
+            max(array(
                 $flushPerm,
                 $flushVolatile,
                 $permanent,
                 time(),
-            ])
+            ))
         );
 
         if ($permanent) {
             $this->backend->setLastFlushTimeFor($checksum, false);
             $this->backend->setLastFlushTimeFor($checksum, true);
-            $this->flushCache = [$checksum, $checksum];
+            $this->flushCache = array($checksum, $checksum);
         } else if ($volatile) {
             $this->backend->setLastFlushTimeFor($checksum, true);
-            $this->flushCache = [$flushPerm, $checksum];
+            $this->flushCache = array($flushPerm, $checksum);
         }
     }
 

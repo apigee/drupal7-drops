@@ -7,7 +7,10 @@
 use Apigee\ManagementAPI\Developer;
 use Apigee\Exceptions\ResponseException;
 use Apigee\Exceptions\ParameterException;
+use Apigee\Util\OrgConfig;
 use Drupal\devconnect_user\DeveloperEntity;
+use Guzzle\Log\PsrLogAdapter;
+use Guzzle\Plugin\Log\LogPlugin;
 
 class DeveloperController implements DrupalEntityControllerInterface, EntityAPIControllerInterface {
   /**
@@ -57,13 +60,22 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
 
     $list = array();
     foreach (self::getOrgs($conditions) as $org) {
-      $config = devconnect_default_org_config($org);
-      if (array_key_exists('suppressLogs', $conditions) && $conditions['suppressLogs']) {
-        $config->logger = new \Psr\Log\NullLogger();
-        $config->subscribers = array();
+      $config = clone devconnect_default_org_config($org);
+      // If so directed, make any HTTP error conditions log as WATCHDOG_INFO
+      // rather than WATCHDOG_ERROR. This allows us to not generate spurious
+      // errors in dblog, in situations where a failure is not unexpected.
+      if (array_key_exists('downgradeErrors', $conditions) && $conditions['downgradeErrors']) {
+        $logger =& $config->logger;
+        if ($logger instanceof Drupal\devconnect\WatchdogLogger) {
+          $logger::setForcedLogLevel(WATCHDOG_INFO);
+          if (!empty($config->subscribers)) {
+            $plugin = new LogPlugin(new PsrLogAdapter($logger), OrgConfig::LOG_SUBSCRIBER_FORMAT);
+            $config->subscribers = array($plugin);
+          }
+        }
       }
 
-      $dev_obj = new Developer(devconnect_default_org_config($org));
+      $dev_obj = new Developer($config);
       if (variable_get('devconnect_paging_enabled', FALSE) && method_exists($dev_obj, 'usePaging')) {
         $dev_obj->usePaging();
       }
@@ -184,7 +196,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     if (!empty($id) && is_scalar($id)) {
       $ids[] = $id;
     }
-    $conditions['suppressLogs'] = TRUE;
+    $conditions['downgradeErrors'] = TRUE;
     $entities = $this->load($ids, $conditions);
     return empty($entities) ? FALSE : reset($entities);
   }
