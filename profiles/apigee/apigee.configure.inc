@@ -554,7 +554,7 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
     ),
   );
 
-  $plugins['media']['path'] = '%plugin_dir%media/';
+  $plugins['media']['path'] = '%base_path%profiles/apigee/modules/contrib/media_ckeditor/js/plugins/media/';
   $plugins['media']['buttons'] = array(
     'Media' => array(
       'label' => 'Media',

@@ -81,7 +81,7 @@ function smartdocs_render($model, $revision, array $selected, array $options, $r
                   'path' => $resource['path'],
                 ),
                 array(
-                  'body' => $method['body'],
+                  'description' => $method['description'],
                   'id' => $method['id'],
                   'displayName' => empty($method['displayName']) ? $method['name'] : $method['displayName'],
                   'name' => $method['name'],

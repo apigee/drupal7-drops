@@ -1876,7 +1876,7 @@ function smartdocs_prepare_revision($revision) {
     );
     foreach ($resource['methods'] as $method) {
       $method_array = array(
-        'body' => $method['body'],
+        'description' => $method['description'],
         'id' => $method['id'],
         'displayName' => empty($method['displayName']) ? $method['name'] : $method['displayName'],
         'name' => $method['name'],

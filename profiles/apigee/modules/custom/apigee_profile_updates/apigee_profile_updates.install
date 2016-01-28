@@ -222,3 +222,27 @@ function apigee_profile_updates_update_7104() {
 function apigee_profile_updates_update_7105() {
   module_enable(array('media_ckeditor'));
 }
+
+
+/**
+ * Configure CKEditor to use correct path for media plugin.
+ */
+function apigee_profile_updates_update_7106() {
+  // Perform actual database updates.
+  $rows = db_select('ckeditor_settings', 'c')
+    ->fields('c', array('name', 'settings'))
+    ->execute()
+    ->fetchAllKeyed();
+  foreach ($rows as $name => $settings) {
+    $settings = unserialize($settings);
+    // Correct path in plugin definition, if present
+    if (array_key_exists('loadPlugins', $settings) && array_key_exists('media', $settings['loadPlugins'])) {
+      $settings['loadPlugins']['media']['path'] = '%base_path%profiles/apigee/modules/contrib/media_ckeditor/js/plugins/media/';
+      // Write changes back to the database.
+      db_update('ckeditor_settings')
+        ->fields(array('settings' => serialize($settings)))
+        ->condition('name', $name)
+        ->execute();
+    }
+  }
+}
