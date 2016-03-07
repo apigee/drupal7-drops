@@ -209,7 +209,8 @@ function devconnect_default_org_config($requested_org = 'default') {
 
     $subscribers = array();
     $subscriber_log_format = '';
-    if (defined('Apigee\\Util\\OrgConfig::LOG_SUBSCRIBER_FORMAT')) {
+    // Make sure OrgConfig class is autoloaded before we check for its constant.
+    if (class_exists('Apigee\\Util\\OrgConfig') && defined('Apigee\\Util\\OrgConfig::LOG_SUBSCRIBER_FORMAT')) {
       $subscribers[] = $logger;
       $subscriber_log_format = '<pre>' . Apigee\Util\OrgConfig::LOG_SUBSCRIBER_FORMAT . '</pre>';
     }

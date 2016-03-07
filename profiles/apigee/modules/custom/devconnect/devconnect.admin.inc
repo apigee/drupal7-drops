@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Handles the devconnect admin configuration screen.
+ */
 
 use Apigee\Exceptions\ResponseException;
 use Apigee\Util\OrgConfig;
@@ -6,7 +10,18 @@ use Apigee\ManagementAPI\Organization;
 
 define('DEVCONNECT_SHOW_CONFIG_FIELDS', FALSE);
 
-function devconnect_admin_form($form, &$form_state) {
+/**
+ * Constructor for devconnect admin form.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   State of the form being created.
+ *
+ * @return array
+ *   The newly-created form.
+ */
+function devconnect_admin_form(array $form, array &$form_state) {
   $original_org_settings = devconnect_get_org_settings();
   if (isset($form_state['input']['org_settings'])) {
     $org_settings = $form_state['input']['org_settings'][0];
@@ -25,7 +40,7 @@ function devconnect_admin_form($form, &$form_state) {
 
   $form['original_org_settings'] = array(
     '#type' => 'value',
-    '#value' => $org_settings
+    '#value' => $org_settings,
   );
 
   $form['connection_config_container'] = array(
@@ -36,7 +51,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#id' => 'edit-connection-config-container',
     'org_settings' => array(
       '#tree' => TRUE,
-    )
+    ),
   );
   $element =& $form['connection_config_container']['org_settings'][0];
   if (DEVCONNECT_SHOW_CONFIG_FIELDS || empty($org_settings['org']) || isset($form_state['input']['org_settings'])) {
@@ -46,7 +61,7 @@ function devconnect_admin_form($form, &$form_state) {
       '#required' => TRUE,
       '#default_value' => $org_settings['org'],
       '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
-      '#weight' => -6
+      '#weight' => -6,
     );
     $element['endpoint'] = array(
       '#type' => 'textfield',
@@ -54,7 +69,7 @@ function devconnect_admin_form($form, &$form_state) {
       '#required' => TRUE,
       '#default_value' => $org_settings['endpoint'],
       '#description' => t('URL to which to make Edge REST calls.'),
-      '#weight' => -5
+      '#weight' => -5,
     );
 
     $element['user'] = array(
@@ -131,7 +146,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#default_value' => $conn_timeout,
     '#description' => t('Number of seconds before an HTTP connection to Edge is assumed to have timed out.'),
     '#weight' => 10,
-    '#post_render' => array('devconnect_number_post_render')
+    '#post_render' => array('devconnect_number_post_render'),
   );
 
   $form['connection_config_container']['request_timeout'] = array(
@@ -141,7 +156,7 @@ function devconnect_admin_form($form, &$form_state) {
     '#default_value' => $req_timeout,
     '#description' => t('Number of seconds before an HTTP response from Edge is assumed to have timed out.'),
     '#weight' => 11,
-    '#post_render' => array('devconnect_number_post_render')
+    '#post_render' => array('devconnect_number_post_render'),
   );
 
   $default_log_threshold = (array_key_exists('log_threshold', $org_settings) ? intval($org_settings['log_threshold']) : WATCHDOG_WARNING);
@@ -160,9 +175,9 @@ function devconnect_admin_form($form, &$form_state) {
       WATCHDOG_ERROR => 'Error',
       WATCHDOG_CRITICAL => 'Critical',
       WATCHDOG_ALERT => 'Alert',
-      WATCHDOG_EMERGENCY => 'Emergency'
+      WATCHDOG_EMERGENCY => 'Emergency',
     ),
-    '#weight' => 12
+    '#weight' => 12,
   );
 
   if (empty($org_settings['org'])) {
@@ -210,12 +225,13 @@ function devconnect_admin_form($form, &$form_state) {
       '#weight' => 9,
       '#type' => 'item',
       '#title' => t('Connection Status'),
-      '#markup' => $status
+      '#markup' => $status,
     );
   }
 
   $modules = module_implements('variable_info');
-  sort($modules); // sort by name.
+  // Sort modules by name.
+  sort($modules);
   $my_variables = array();
   foreach ($modules as $module) {
     if (substr($module, 0, 10) == 'devconnect') {
@@ -296,20 +312,32 @@ function devconnect_admin_form($form, &$form_state) {
   return $form;
 }
 
-function devconnect_admin_form_submit($form, &$form_state) {
+/**
+ * Submit handler for the devconnect admin form.
+ *
+ * @param array $form
+ *   Form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
+ */
+function devconnect_admin_form_submit(array $form, array &$form_state) {
   $changes = array();
   // Read existing settings. These are our comparison baseline.
   $existing_config = devconnect_get_org_settings();
   // Prepare for new configuration.
   // Make sure we have some default values present.
-  $form_state['values'] += array('connection_timeout' => 8, 'request_timeout' => 8, 'log_threshold' => 3);
+  $form_state['values'] += array(
+    'connection_timeout' => 8,
+    'request_timeout' => 8,
+    'log_threshold' => 3,
+  );
   $new_config = array(
     'connection_timeout' => intval($form_state['values']['connection_timeout']),
     'request_timeout' => intval($form_state['values']['request_timeout']),
-    'log_threshold' => intval($form_state['values']['log_threshold'])
+    'log_threshold' => intval($form_state['values']['log_threshold']),
   );
 
-  // Set default org settings
+  // Set default org settings.
   if (isset($form_state['values']['org_settings'][0])) {
     $default_org = $form_state['values']['org_settings'][0];
   }
@@ -324,7 +352,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
       if (($field == 'user' || $field == 'pass') && empty($default_org[$field])) {
         $new_config[$field] = $existing_config[$field];
       }
-      // Use value from $form_state only if non-blank
+      // Use value from $form_state only if non-blank.
       elseif (array_key_exists($field, $default_org) && !empty($default_org[$field])) {
         $new_config[$field] = $default_org[$field];
       }
@@ -351,9 +379,10 @@ function devconnect_admin_form_submit($form, &$form_state) {
   $default_private_dir = variable_get('file_private_path', 'sites/default/files/private');
   $private_dir = variable_get('apigee_credential_dir', $default_private_dir);
 
-  if(substr($private_dir,0,1) == '/') {
+  if (substr($private_dir, 0, 1) == '/') {
     $config_file = $private_dir . '/.apigee';
-  } else {
+  }
+  else {
     $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
   }
 
@@ -380,7 +409,7 @@ function devconnect_admin_form_submit($form, &$form_state) {
     foreach ($changes as $key => $values) {
       $change_items[] = "$key was changed from “" . $values[0] . '” to “' . $values[1] . '”';
     }
-    $message = 'The following authentication configuration items were changed: ' . join(',', $change_items);
+    $message = 'The following authentication configuration items were changed: ' . implode(',', $change_items);
     watchdog('devconnect', $message, array(), WATCHDOG_INFO);
 
     try {
@@ -396,32 +425,68 @@ function devconnect_admin_form_submit($form, &$form_state) {
   drupal_set_message(t('Your changes have been saved.'), 'status');
 }
 
-function devconnect_password_post_render($content, $element) {
+/**
+ * Postrender callback for password form elements.
+ *
+ * @param string $content
+ *   Incoming rendered HTML of the element.
+ * @param array $element
+ *   FAPI representation of the element.
+ *
+ * @return string
+ *   Rendered HTML for the password form element.
+ */
+function devconnect_password_post_render($content, array $element) {
   return str_replace('type="text"', 'type="password"', $content);
 }
 
-function devconnect_number_post_render($content, $element) {
+/**
+ * Postrender callback for number form elements.
+ *
+ * @param string $content
+ *   Incoming rendered HTML of the element.
+ * @param array $element
+ *   FAPI representation of the element.
+ *
+ * @return string
+ *   Rendered HTML for the number form element.
+ */
+function devconnect_number_post_render($content, array $element) {
   return str_replace('type="text"', 'type="number" style="width:3em !important"', $content);
 }
 
 
 /**
- * Ajax Callback for Testing the Edge Connection
+ * Ajax Callback for testing the Edge connection.
+ *
+ * @param array $form
+ *   The form whose state is being changed.
+ * @param array $form_state
+ *   State of the form being changed.
+ *
+ * @return array
+ *   Connection status element of the form.
  */
-function _devconnect_test_management_connection_ajax($form, &$form_state) {
+function _devconnect_test_management_connection_ajax(array $form, array &$form_state) {
   return $form['connection_config_container']['connect_test']['test_connection_status'];
 }
 
-
 /**
- * Test connection with the Management server
+ * Test connection with the Management server.
  *
- * @param string $org - Organization that user has supplied
- * @param string $endpoint - Endpoint that user has supplied
- * @param string $user - Username that the user has supplied
- * @param string $pass - Password (unencrypted) that the user has supplied
- * @param int $timeout - Number of seconds until connection timeout, or zero for infinite
+ * @param string $org
+ *   Organization that user has supplied.
+ * @param string $endpoint
+ *   Endpoint that user has supplied.
+ * @param string $user
+ *   Username that the user has supplied.
+ * @param string $pass
+ *   Password (unencrypted) that the user has supplied.
+ * @param int $timeout
+ *   Number of seconds until connection timeout, or zero for infinite.
+ *
  * @return string
+ *   Success or failure message.
  */
 function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout = 4) {
   if (!valid_url($endpoint)) {
@@ -438,7 +503,7 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
     'http_options' => array(
       'connection_timeout' => $timeout,
       'follow_location' => FALSE,
-    )
+    ),
   );
 
   $config = new OrgConfig($org, $endpoint, $user, $pass, $options);
@@ -447,17 +512,19 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
   try {
     $org->load();
     return '<span style="color:green">' . t('Connection Successful') . '</span>';
-  } catch (ResponseException $e) {
+  }
+  catch (ResponseException $e) {
+    $e_code = $e->getCode();
     // Give a nicer message if the user/pass is incorrect.
-    if ($e->getCode() == 401) {
+    if ($e_code == 401) {
       $message = t('Edge Endpoint responded with 401 Unauthorized. Check the username and password.');
       return '<span style="color:red">' . $message . '</span>';
     }
 
     // If the user put in a non HTTPS endpoint, give them a hint that they may
     // want to use HTTPS instead.
-    if(substr($endpoint, 0, 5) != 'https') {
-      $message_try_ssl = t('DevPortal Endpoint may be SSL enabled. Try using <strong><em>@endpoint</em></strong> instead.',
+    if (substr($endpoint, 0, 5) != 'https') {
+      $message_try_ssl = t('Edge Endpoint may be SSL enabled. Try using <strong><em>@endpoint</em></strong> instead.',
         array('@endpoint' => str_replace('http', 'https', $endpoint))
       );
     }
@@ -467,19 +534,55 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
     if (!empty($response_text)) {
       $message = t('Edge connection unsuccessful. HTTP code: %error_code, server response: %server_response',
         array(
-          '%error_code' => $e->getCode(),
-          '%server_response' => $e->getResponse(),
+          '%error_code' => $e_code,
+          '%server_response' => $response_text,
         )
       );
       return '<span style="color:red">' . $message . '</span> ' . $message_try_ssl;
     }
 
-    // We have no response, show the error code.
-    $message = t('Edge connection unsuccessful. HTTP code: %error_code',
-      array(
-        '%error_code' => $e->getCode(),
-      )
-    );
+    // Create as verbose an error message as we can.
+    switch ($e_code) {
+      case CURLE_COULDNT_RESOLVE_PROXY:
+        $message = t('Edge connection unsuccessful; couldn’t resolve proxy.');
+        break;
+
+      case CURLE_COULDNT_RESOLVE_HOST:
+        $message = t('Edge connection unsuccessful; couldn’t resolve host.');
+        break;
+
+      case CURLE_COULDNT_CONNECT:
+        $message = t('Edge connection unsuccessful; failed to establish a connection to the host or proxy.');
+        break;
+
+      case CURLE_OPERATION_TIMEOUTED:
+        $message = t('Edge connection unsuccessful; HTTP timeout.');
+        break;
+
+      case CURLE_SSL_CONNECT_ERROR:
+        $message = t('Edge connection unsuccessful; a problem occurred somewhere in the SSL/TLS handshake.');
+        break;
+
+      case CURLE_TOO_MANY_REDIRECTS:
+        $message = t('Edge connection unsuccessful; too many redirects.');
+        break;
+
+      case CURLE_SSL_CACERT:
+        $message = t('Edge connection unsuccessful; the peer certificate cannot be authenticated with known CA certificates. This may occur if the system date is significantly skewed.');
+        break;
+
+      default:
+        if ($e_code < 100) {
+          $message = t('Edge connection failed with a CURL error code of %e. <a href="@url" target="_blank">Read more about CURL error codes.</a>', array(
+            '%e' => $e_code,
+            '@url' => 'https://curl.haxx.se/libcurl/c/libcurl-errors.html',
+          ));
+        }
+        else {
+          $message = t('Edge connection unsuccessful. HTTP code: %e', array('%e' => $e_code));
+        }
+        break;
+    }
     return '<span style="color:red">' . $message . '</span> ' . $message_try_ssl;
   }
 }

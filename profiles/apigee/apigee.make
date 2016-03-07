@@ -9,7 +9,7 @@ api = 2
 
 ; --- MODULES ---
 
-; Deprecated
+; Soft dependency of content_access
 projects[acl][type] = "module"
 projects[acl][subdir] = "contrib"
 projects[acl][version] = "1.1"
@@ -60,6 +60,7 @@ projects[bootstrap_modal_forms][download][type] = "git"
 projects[bootstrap_modal_forms][download][url] = "http://git.drupal.org/sandbox/bhasselbeck/2167991.git"
 projects[bootstrap_modal_forms][directory_name] = "bootstrap_modal_forms"
 
+; Deprecated
 projects[bugherd][type] = "module"
 projects[bugherd][subdir] = "contrib"
 projects[bugherd][version] = "1.0-beta4"
@@ -68,7 +69,7 @@ projects[captcha][type] = "module"
 projects[captcha][subdir] = "contrib"
 projects[captcha][version] = "1.3"
 
-; Deprecated?
+; Deprecated
 projects[cck_phone][type] = "module"
 projects[cck_phone][subdir] = "contrib"
 projects[cck_phone][version] = "1.x-dev"
@@ -80,7 +81,7 @@ projects[ckeditor][version] = "1.17"
 
 projects[ckeditor_link][type] = "module"
 projects[ckeditor_link][subdir] = "contrib"
-projects[ckeditor_link][version] = "2.3"
+projects[ckeditor_link][version] = "2.4"
 
 projects[commerce][type] = "module"
 projects[commerce][subdir] = "contrib"
@@ -123,6 +124,7 @@ projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
 projects[ctools][version] = "1.9"
 
+; Deprecated
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
 projects[date][version] = "2.9"
@@ -137,7 +139,7 @@ projects[diff][version] = "3.2"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
-projects[ds][version] = "2.11"
+projects[ds][version] = "2.12"
 
 ; Deprecated. Required by devconnect_download which is also deprecated.
 projects[eck][type] = "module"
@@ -170,6 +172,7 @@ projects[features][type] = "module"
 projects[features][subdir] = "contrib"
 projects[features][version] = "2.7"
 
+; Deprecated
 projects[features_extra][type] = "module"
 projects[features_extra][subdir] = "contrib"
 projects[features_extra][version] = "1.0"
@@ -189,7 +192,7 @@ projects[flood_control][type] = "module"
 projects[flood_control][subdir] = "contrib"
 projects[flood_control][version] = "1.0"
 
-; Features tools
+; Deprecated
 projects[ftools][type] = "module"
 projects[ftools][subdir] = "contrib"
 projects[ftools][version] = "1.6"
@@ -259,7 +262,7 @@ projects[linkchecker][version] = "1.2"
 ; Enabled during profile install.
 projects[link][type] = "module"
 projects[link][subdir] = "contrib"
-projects[link][version] = "1.3"
+projects[link][version] = "1.4"
 
 ; Enabled during profile install.
 projects[logintoboggan][type] = "module"
@@ -302,13 +305,14 @@ projects[menu_attributes][version] = "1.0-rc3"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.7"
+projects[metatag][version] = "1.13"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
 projects[me][version] = "1.2"
 
+; Deprecated
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"
 projects[migrate][version] = "2.8"
@@ -326,7 +330,7 @@ projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
 projects[nagios][version] = "1.3"
 
-; Deprecated?
+; Deprecated
 projects[node_export][type] = "module"
 projects[node_export][subdir] = "contrib"
 projects[node_export][version] = "3.0"
@@ -376,7 +380,7 @@ projects[rules][version] = "2.9"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.12"
+projects[services][version] = "3.13"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -415,6 +419,7 @@ projects[token][type] = "module"
 projects[token][subdir] = "contrib"
 projects[token][version] = "1.6"
 
+; Deprecated
 projects[util][type] = "module"
 projects[util][subdir] = "contrib"
 projects[util][version] = "1.0-rc2"
@@ -429,6 +434,7 @@ projects[uuid_features][type] = "module"
 projects[uuid_features][subdir] = "contrib"
 projects[uuid_features][version] = "1.0-alpha4"
 
+; Deprecated
 projects[variable][type] = "module"
 projects[variable][subdir] = "contrib"
 projects[variable][version] = "2.5"
@@ -438,6 +444,7 @@ projects[views][type] = "module"
 projects[views][subdir] = "contrib"
 projects[views][version] = "3.13"
 
+; Deprecated
 projects[views_accordion][type] = "module"
 projects[views_accordion][subdir] = "contrib"
 projects[views_accordion][version] = "1.1"
@@ -463,7 +470,7 @@ projects[webform][version] = "4.12"
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
 projects[wysiwyg_filter][subdir] = "contrib"
-projects[wysiwyg_filter][version] = "1.6-rc2"
+projects[wysiwyg_filter][version] = "1.6-rc3"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
@@ -798,7 +805,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.4.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.5.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"
@@ -811,6 +818,12 @@ libraries[SolrPhpClient][destination] = "libraries"
 libraries[SolrPhpClient][directory_name] = "SolrPhpClient"
 libraries[SolrPhpClient][download][type] = "file"
 libraries[SolrPhpClient][download][url] = "http://solr-php-client.googlecode.com/files/SolrPhpClient.r60.2011-05-04.zip"
+
+; Used by services, devconnect, smartdocs
+libraries[spyc][destination] = "libraries"
+libraries[spyc][directory_name] = "spyc"
+libraries[spyc][download][type] = "file"
+libraries[spyc][download][url] = "https://raw.githubusercontent.com/mustangostang/spyc/master/Spyc.php"
 
 ; Used by syntaxhighlighter
 libraries[syntaxhighlighter][destination] = "libraries"

@@ -10,7 +10,7 @@ Available variables:
   - body: An object of attributes relating to the method body:
      - contentType: The allowed Content-Type values of the body.
      - parameters: An array of body parameters, will be populated with values
-       from Swagger 2.0 "in": "formData" parameters.
+       from OpenAPI (Swagger) 2.0 "in": "formData" parameters.
 Helper variables:
   - none
 --}}
@@ -799,8 +799,8 @@ Helper variables:
     // columnar list.
     var contentTypeElements = document.getElementsByClassName('content-type-source-body');
     for (var k = 0; k < contentTypeElements.length; k++) {
-        if(contentTypeElements[k] != null && contentTypeElements[k].hasOwnProperty('innerHTML')) {
-            contentTypeElements[k].innerHTML = contentTypeElements[k].innerHTML.replace(',', '<br>');
+        if(contentTypeElements[k] != null && 'innerHTML' in contentTypeElements[k]) {
+            contentTypeElements[k].innerHTML = contentTypeElements[k].innerHTML.replace(/,/g, '<br>');
         }
     }
 

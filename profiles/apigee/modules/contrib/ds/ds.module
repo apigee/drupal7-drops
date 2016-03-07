@@ -613,6 +613,10 @@ function ds_entity_variables(&$vars) {
     if ($vars['elements']['#entity_type'] == 'taxonomy_term') {
       $object = 'term';
     }
+
+    // Get entity id and bundle
+    list($id,, $bundle) = entity_extract_ids($vars['elements']['#entity_type'], $vars[$object]);
+
     if (isset($vars[$object]->preprocess_fields)) {
       foreach ($vars[$object]->preprocess_fields as $field) {
 
@@ -657,12 +661,13 @@ function ds_entity_variables(&$vars) {
         $layout['layout'] = $layout['panels']['theme'];
       }
 
-      $bundle = strtr($vars['elements']['#bundle'], '-', '_');
+      $bundle = strtr($bundle, '-', '_');
       $vars['theme_hook_suggestions'][] = $layout['layout'];
       $vars['theme_hook_suggestions'][] = $layout['layout'] . '__' . $vars['elements']['#entity_type'];
       $vars['theme_hook_suggestions'][] = $layout['layout'] . '__' . $vars['elements']['#entity_type'] . '_' . $vars['elements']['#view_mode'];
       $vars['theme_hook_suggestions'][] = $layout['layout'] . '__' . $vars['elements']['#entity_type'] . '_' . $bundle;
       $vars['theme_hook_suggestions'][] = $layout['layout'] . '__' . $vars['elements']['#entity_type'] . '_' . $bundle . '_' . $vars['elements']['#view_mode'];
+      $vars['theme_hook_suggestions'][] = $layout['layout'] . '__' . $vars['elements']['#entity_type'] . '__' . $id;
     }
 
     // If the layout has wrapper class lets add it.
@@ -763,6 +768,13 @@ function ds_entity_variables(&$vars) {
 
       if (!empty($url)) {
         $vars['layout_attributes'] .= ' onclick="location.href=\'' . url($url) . '\'"';
+      }
+    }
+
+    // Set field weights for all fields, including pre-process.
+    foreach($layout_render_array as $region => &$fields) {
+      foreach ($fields as $field_key => &$field) {
+        $field['#weight'] = $field_key;
       }
     }
 
@@ -1030,6 +1042,9 @@ function ds_render_field($field) {
     }
     else {
       $uri_info = entity_uri($field['entity_type'], $field['entity']);
+    }
+    if (isset($settings['link class'])) {
+      $uri_info['options']['attributes']['class'][] = $settings['link class'];
     }
     $output = l($output, $uri_info['path'], $uri_info['options']);
     if ($title_field) {

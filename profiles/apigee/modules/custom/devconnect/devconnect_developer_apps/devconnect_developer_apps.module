@@ -1286,7 +1286,7 @@ function devconnect_developer_apps_show_delete_form(stdClass $user, $app_id) {
  *   The form being created.
  * @param array $form_state
  *   State of the form being created.
- * @param stdclass $user
+ * @param stdClass $user
  *   The user who is attempting to delete the app.
  * @param string $app_id
  *   UUID of the app being deleted.
@@ -1466,9 +1466,9 @@ function devconnect_developer_apps_detail(stdClass $user, $app_id) {
  * Does actual heavy lifting to build page displaying app detail.
  *
  * @param Drupal\devconnect_developer_apps\DeveloperAppEntity $entity
- *   Entity whose detail is to be displayed
+ *   Entity whose detail is to be displayed.
  * @param stdClass $user
- *   User object representing the person viewing the entity detail
+ *   User object representing the person viewing the entity detail.
  * @param bool $page
  *   TRUE if the entity is to be displayed on its own page. This entails
  *   setting breadcrumbs and page title.
@@ -1726,6 +1726,12 @@ function devconnect_developer_apps_module_implements_alter(&$implementations, $h
       $implementations = $new_impl;
     }
   }
+  elseif ($hook == 'token_info_alter') {
+    // Move our module to the last position in the list of implementors.
+    $value = $implementations['devconnect_developer_apps'];
+    unset($implementations['devconnect_developer_apps']);
+    $implementations['devconnect_developer_apps'] = $value;
+  }
 }
 
 /**
@@ -1759,7 +1765,7 @@ function _devconnect_developer_apps_template_is_overridden($template_name) {
  * @return string
  *   The rendered entity view.
  */
-function devconnect_developer_apps_view_full($entity, $page = TRUE) {
+function devconnect_developer_apps_view_full(DeveloperAppEntity $entity, $page = TRUE) {
   $uid = $entity->uid;
   if (user_is_logged_in() && $GLOBALS['user']->uid == $uid) {
     $user = $GLOBALS['user'];

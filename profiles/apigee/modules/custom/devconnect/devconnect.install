@@ -95,6 +95,19 @@ function devconnect_requirements($phase) {
     }
   }
 
+  $spyc_dir = libraries_get_path('spyc');
+  if (!$spyc_dir || !file_exists($spyc_dir . '/Spyc.php')) {
+    $requirements['devconnect_spyc'] = array(
+      'severity' => REQUIREMENT_ERROR,
+      'title' => 'Spyc',
+      'value' => $t('The Spyc library cannot be found.'),
+      'description' => $t('Please <a href="@url">download Spyc.php</a> and place it in <code>@dir</code>.', array(
+        '@url' => 'https://raw.github.com/mustangostang/spyc/master/Spyc.php',
+        '@dir' => '/sites/all/libraries/spyc',
+      )),
+    );
+  }
+
   return $requirements;
 }
 
@@ -315,7 +328,6 @@ function devconnect_update_7429() {
       ->condition('name', $extended_api_modules)
       ->execute();
   }
-  // TODO: prune cck_phone
 }
 
 /**

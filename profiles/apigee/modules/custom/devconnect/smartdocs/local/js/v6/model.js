@@ -1,12 +1,13 @@
 /*
- * Copyright (c) 2013, Apigee Corporation. All rights reserved.
+ * Copyright (c) 2013-2016, Apigee Corporation. All rights reserved.
  * Apigee(TM) and the Apigee logo are trademarks or
  * registered trademarks of Apigee Corp. or its subsidiaries. All other
  * trademarks are the property of their respective owners.
  */
 // This file contains API Modeling docs related class definitions.
-// This file is depends on JQuery, base64 jQuery plugin.
-// This file also use bootstrap editor, Codemirror's XML and JSON editor plugin and Prism editor plugin.
+// This file depends on JQuery with the base64 jQuery plugin.
+// This file also depends on bootstrap editor and Codemirror's XML and JSON
+// editor plugin, and uses the Prism editor plugin when available.
 
 /**
  * This class handles all commonly used functions in APIM docs such as:
@@ -23,13 +24,13 @@ Apigee.APIModel.Common = function() {
   // Private methods
   navigator.sayswho= (function(){
     var N= navigator.appName, ua= navigator.userAgent, tem;
-    var M= ua.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
+    var M= ua.match(/(opera|chrome|safari|firefox|msie|trident)\/?\s*(\.?\d+(\.\d+)*)/i);
     if(M && (tem= ua.match(/version\/([\.\d]+)/i))!= null) M[2]= tem[1];
     M= M? [M[1], M[2]]: [N, navigator.appVersion, '-?'];
     return M;
   })();
   showMessage = function(msg) {
-    theParent = document.getElementsByTagName("body")[0]
+    theParent = document.getElementsByTagName("body")[0];
     theKid = document.createElement("div");
     theKid.setAttribute("style","height:20px;width:100%;background-color:#F9F6C5;text-align:center;position:fixed;z-index:999;");
     theKid.innerHTML = msg;
@@ -43,8 +44,7 @@ Apigee.APIModel.Common = function() {
   // Public methods.
   /**
    * This method makes an AJAX call and handles the success/failure callback.
-   * @param {Object} request A request which contains all necessary information to make an AJAX like, method type, URL and so on..,
-   * @return {Void} make an AJAX call and handles succces and failure callback.
+   * @param {object} request A request which contains all necessary information to make an AJAX like, method type, URL and so on..,
    */
   this.makeAJAXCall = function(request) {
     var requestUrl = request.url.toString();
@@ -88,7 +88,7 @@ Apigee.APIModel.Common = function() {
           request.callback(xdr.responseText);
         } else {
           if (data) {
-            var responseStatusCode = data.responseStatusCode
+            var responseStatusCode = data.responseStatusCode;
             if (responseStatusCode) {
               if (parseInt(responseStatusCode) >= 400) {
                 if (request.errorCallback) {
@@ -143,7 +143,7 @@ Apigee.APIModel.Common = function() {
             request.callback(jqXHR.responseText);
           } else {
             if (data) {
-              var responseStatusCode = data.responseStatusCode
+              var responseStatusCode = data.responseStatusCode;
               if (responseStatusCode) {
                 if (parseInt(responseStatusCode) >= 400) {
                   if (request.errorCallback) {
@@ -214,9 +214,11 @@ Apigee.APIModel.Common = function() {
     }
   };
   /**
-   * This method parses the given JSON from a string.
-   * @param {String} theText A string which needs to convert as JSON,
-   * @return {Object} JSON object if the given text is a proper JSON.
+   * This method parses the given JSON from a string, and, where possible,
+   * returns the parsed object represented by the JSON. If unparseable, the
+   * original string is returned.
+   * @param {string} theText A string which needs to convert as JSON.
+   * @return {object|string}
    */
   this.parseAndReturn = function(theText) {
     var theJson = '';
@@ -228,10 +230,10 @@ Apigee.APIModel.Common = function() {
     return theJson;
   };
   /**
-   * This method fetches query parameter from the given URL.
-   * @param {String} queryURL An URL.
-   * @param {String} paramName A query parameter name.
-   * @return {String} param value if the param name available in the URL, otherwise returns an empty string.
+   * Fetches query parameter from the given URL.
+   * @param {string} queryURL An URL.
+   * @param {string} paramName A query parameter name.
+   * @return {string} param value if the param name available in the URL, otherwise returns an empty string.
    */
   this.getQueryParam = function(queryURL , paramName) {
     var QueryString = queryURL.split("?"); // Get the QueryString from the URL.
@@ -252,9 +254,9 @@ Apigee.APIModel.Common = function() {
     return ""; // // Return empty string, if there are no query params in the URL.
   };
   /**
-   * This method escapes the special characters like new line character, quotes and .., from a string.
-   * @param {String} str A String,
-   * @return {String} escaped charecters string.
+   * Escapes the special characters like new line character, quotes and .., from a string.
+   * @param {string} str A String,
+   * @return {string} escaped characters string.
    */
   this.escapeSpecialChars = function(str) {
     return str.replace(/\\n/g, "\\n")
@@ -267,9 +269,8 @@ Apigee.APIModel.Common = function() {
       .replace(/\\f/g, "\\f");
   };
   /**
-   * This method shows error message to the user.
-   * @param {String} errorMessage A error message string.
-   * @return {Void} displays error message.
+   * Shows error message to the user.
+   * @param {string} errorMessage A error message string.
    */
   this.showError = function(errorMessage) {
     jQuery("[data-role='error_container']").html(errorMessage).show();
@@ -319,7 +320,7 @@ Apigee.APIModel.Common = function() {
 Apigee.APIModel.Editor = function() {
   var editor; // A Code mirror editor for the request payload.
   /**
-   * This method initializes the request payload sample code mirror editor.
+   * Initializes the request payload sample code mirror editor.
    */
   this.initRequestPayloadEditor = function() {
     var requestPayloadExampleEl = jQuery('[data-role="request-payload-example"]');
@@ -345,15 +346,15 @@ Apigee.APIModel.Editor = function() {
 
   };
   /*
-   * Get the request payload sample editor value.
-   * @return {String} Value of a request payload editor.
+   * Gets the request payload sample editor value.
+   * @return {string} Value of a request payload editor.
    */
   this.getRequestPayLoad = function() {
     return editor.getValue();
   };
   /*
    * Set request payload sample editor value.
-   * @param {String} payload A request payload value.
+   * @param {string} payload A request payload value.
    */
   this.setRequestPayLoad = function(payload) {
     editor.setValue(payload);
@@ -395,7 +396,7 @@ Apigee.APIModel.Schema = function() {
     };
     /*
      * Set request payload sample editor value.
-     * @param {String} payload A request payload value.
+     * @param {string} payload A request payload value.
      */
     this.setRequestPayLoad = function(payload) {
         schema.setValue(payload);
@@ -431,7 +432,7 @@ Apigee.APIModel.Methods = function() {
 
   // Public methods.
   /**
-   * This method invokes the necessary details for the operation page.
+   * Invokes the necessary details for the operation page.
    */
   this.init = function() {
     // Convert the auth type value as user friendly text.
@@ -558,9 +559,8 @@ Apigee.APIModel.Methods = function() {
     self.getCustomTokenCredentials();
   };
   /**
-   * Success callback method of a proxy URL AJAX call.
-   * @param {Object} data - response content of a proxy URL AJAX call.
-   * @return {Void} sets proxy URL value to local variable 'proxyURL'.
+   * Success callback method of a proxy URL AJAX call: sets proxy URL value to local variable 'proxyURL'.
+   * @param {object} data - response content of a proxy URL AJAX call.
    */
   this.storeProxyURL = function(data) {
     Apigee.APIModel.proxyURL = data.proxyUrl;
@@ -568,11 +568,10 @@ Apigee.APIModel.Methods = function() {
     if (Apigee.APIModel.proxyURL.indexOf("/sendrequest") == -1 ) {
       Apigee.APIModel.proxyURL = Apigee.APIModel.proxyURL + "/sendrequest";
     }
-  }
+  };
   /**
-   * Success callback method of a OAuth2 web server auth URL AJAX call.
-   * @param {Object} data - response content of OAuth2 web server auth URL AJAX call.
-   * @return {Void} opens a new window to make OAuth dance.
+   * Success callback method of a OAuth2 web server auth URL AJAX call: opens a new window to make OAuth dance.
+   * @param {object} data - response content of OAuth2 web server auth URL AJAX call.
    */
   this.renderCallbackURL= function(data) {
     // Print out authUrl
@@ -584,7 +583,6 @@ Apigee.APIModel.Methods = function() {
 
   /**
    * Error callback method of a OAuth2 web server auth URL AJAX call.
-   * @return {Void} shows error message to the User.
    */
   this.handleOAuth2Failure = function() {
     self.showError("Unable to proceed because of missing OAuth configuration.");
@@ -622,9 +620,8 @@ Apigee.APIModel.Methods = function() {
     self.showError("Unable to proceed because of missing Custom token configuration.");
   };
   /**
-   * Update template param width based on number of charecter.
-   * @param {HTML Element} element - Template parameter input element.
-   * @return {Void} sets the input element's width based on number of charecters.
+   * Update template param width based on number of character: sets the input element's width based on number of characters.
+   * @param {object} element - Template parameter input element.
    */
   this.updateTemplateParamWidth= function(element, isRightArrow) {
     var value = element.text();
@@ -654,8 +651,7 @@ Apigee.APIModel.Methods = function() {
     }
   };
   /**
-   * This method updates the authentication container based on the auth type value to make Send request AJAX call.
-   * @return {Void} updates the authentication container.
+   * Updates the authentication container based on the auth type value to make Send request AJAX call.
    */
   this.updateAuthContainer = function() {
     if (authType.indexOf("No auth") != -1) {
@@ -767,7 +763,6 @@ Apigee.APIModel.Methods = function() {
   };
   /**
    * The request/response link click event handler - Show/Hide request/response tab content, based on the link.
-   * @return {Void} Show/Hide request/response tab content.
    */
   this.swapSampleRequestResponseContainer = function() {
     var $currentElement = jQuery(this);
@@ -1021,7 +1016,12 @@ Apigee.APIModel.Methods = function() {
 
         if (jQuery.trim(queryParamValue).length >= 1) {
           var separator = (isFistParam) ? "" : "&";
-          queryParamString += separator + queryParamName + "=" + encodeURIComponent(decodeURIComponent(queryParamValue));
+          try{
+              queryParamValue = decodeURIComponent(queryParamValue);
+          }catch(e){
+              //Ignore any decoding error
+          }
+          queryParamString += separator + queryParamName + "=" + encodeURIComponent(queryParamValue);
           isFistParam = false;
         }
 
@@ -1098,7 +1098,7 @@ Apigee.APIModel.Methods = function() {
     if (queryParamString != "") {
       var separator = "?";
       if (urlToTest.indexOf("?") != -1) {
-        separator = "&"
+        separator = "&";
       }
       urlToTest =  urlToTest + separator + queryParamString; // Append query params.
     }
@@ -1113,14 +1113,14 @@ Apigee.APIModel.Methods = function() {
     }
     if (errorMessage != "") { // Display error message, if any of the required param is missing.
       jQuery("body").scrollTop(0);
-      jQuery("[data-role='error_container']").html(errorMessage).show();;
+      jQuery("[data-role='error_container']").html(errorMessage).show();
       self.clearMissingArray();
     }
     if (selectedAuthScheme  == "basicauth") { // Add basic details in send request proxy API call.
       if (basicAuth) {
         if(localStorage.apisBasicAuthDetails && apiName==localStorage.apisBasicAuthDetails.split("@@@")[0]) {
           if (basicAuth != localStorage.apisBasicAuthDetails.split("@@@")[2]) {
-            basicAuth = localStorage.apisBasicAuthDetails.split("@@@")[2]
+            basicAuth = localStorage.apisBasicAuthDetails.split("@@@")[2];
             jQuery("[data-role='basic_auth_container']").find(".link_open_basicauth").html(localStorage.apisBasicAuthDetails.split("@@@")[1]);
           }
         }
@@ -1148,9 +1148,15 @@ Apigee.APIModel.Methods = function() {
     urlToTest = Apigee.APIModel.proxyURL+"?targeturl="+urlToTest;
     // If a method has an attachment, we need to modify the standard AJAX the following way.
     var bodyPayload = null;
-    var contentTypeValue = "application/x-www-form-urlencoded;charset=utf-8";
-    if (jQuery.trim(jQuery("[data-role='content-type']").text()) != "" ) {
-      contentTypeValue = jQuery.trim(jQuery("[data-role='content-type']").text());
+    var contentTypeValue = false;
+    // Only set contentType for HTTP verbs that take a body entity.
+    if (methodVerb == 'put' || methodVerb == 'post' || methodVerb == 'patch') {
+      // In the case of multiple content types, pick the first one.
+      // TODO: allow selection of active content type.
+      contentTypeValue = jQuery.trim(jQuery("[data-role='content-type']").html().split(/(<br>|,)/)[0]);
+      if (contentTypeValue == '') {
+        contentTypeValue = "application/x-www-form-urlencoded;charset=utf-8";
+      }
     }
 
     var processDataValue = true;
@@ -1227,13 +1233,19 @@ Apigee.APIModel.Methods = function() {
 
     results.push('-X ' + methodVerb.toUpperCase());
 
-    // If the Content-Type is set, put that in cURL display.
-    if (contentTypeValue) {
-      results.push('--header "Content-Type: ' + contentTypeValue + '"');
-    }
+    var content_type_processed = false;
     if (headersList) {
       for (var i=0,l=headersList.length; i<l; i++) {
         results.push('--header "' + headersList[i].name + ': ' + headersList[i].value + '"');
+        if( headersList[i].name == 'Content-Type') {
+            content_type_processed = true;
+        }
+      }
+    }
+    if(!content_type_processed) {
+      // If the Content-Type is set, put that in cURL display.
+      if (contentTypeValue) {
+          results.push('--header "Content-Type: ' + contentTypeValue + '"');
       }
     }
 
@@ -1271,7 +1283,7 @@ Apigee.APIModel.Methods = function() {
       data = jQuery.parseJSON(data); // Parse the JSON.
     }
     Apigee.lastResponse = data;
-    rawCode = unescape(data.responseContent); // Stores response content.
+    rawCode = decodeURIComponent(data.responseContent); // Stores response content.
     //rawCode = jQuery.parseJSON(rawCode); //:TODO:: check the proxy and fix the issue and remove it.
     //rawCode = unescape(rawCode.responseContent); //:TODO:: check the proxy and fix the issue and remove it.
     // Response line fine details construction.
@@ -1296,9 +1308,9 @@ Apigee.APIModel.Methods = function() {
     responseContainerString += "<dl>";
     for (var i=0; i<data.responseHeaders.length; i++) {
       responseContainerString +=  "<dt>";
-      responseContainerString += unescape(data.responseHeaders[i].name);
+      responseContainerString += decodeURIComponent(data.responseHeaders[i].name);
       responseContainerString += ": </dt><dd>";
-      responseContainerString += unescape(data.responseHeaders[i].value);
+      responseContainerString += decodeURIComponent(data.responseHeaders[i].value);
       responseContainerString +=  "</dd>";
     }
     responseContainerString += "</dl>";
@@ -1471,9 +1483,8 @@ Apigee.APIModel.Methods = function() {
 
   };
   /**
-   * This method clears session storage variables.
-   * @param {String} type A type of auth scheme (basicauth or oauth2).
-   * @return {Void} clears session storage variables.
+   * Clears session storage variables.
+   * @param {string} type A type of auth scheme (basicauth or oauth2).
    */
   this.clearSessionStorage = function(type) {
     type = (typeof type.data == "undefined") ? type : type.data;
@@ -1730,10 +1741,11 @@ Apigee.APIModel.InlineEdit = function() {
   //Public methods.
   /**
    * This method initializes the edit mode based on the mode.
-   * @param {Int} mode - Mode type. type 1 provides basic edit functionalities 2 provides advance edit.
-   * @return {Void} checks whether user already signed in or not using session storage variable.
+   *
+   * Checks whether user already signed in or not using session storage variable.
    * If yes, stores the basic auth details in local variable and construct the inline edit mode.
    * If no, opens pop up basic authentication dialog and stores the basic auth details in local variable and construct the inline edit mode.
+   * @param {number} mode - Mode type. type 1 provides basic edit functionalities 2 provides advance edit.
    */
   this.init = function(mode) {
     editMode = mode;
@@ -1982,7 +1994,7 @@ Apigee.APIModel.InlineEdit = function() {
     currentEditableElementValue = "";
     return false;
 
-  }
+  };
   this.documentClickHandler = function() {
     descriptionEditFlag = false;
     if(currentEditableElement) {
@@ -2002,7 +2014,7 @@ Apigee.APIModel.InlineEdit = function() {
       jQuery("[data-role='confirm_modal']").modal('show');
       Apigee.APIModel.initInlineEditAdminAuthEvents();
     }
-  }
+  };
   this.handleConfirmDialogSave = function() {
     descriptionEditFlag = false;
     currentEditableElement.siblings("a.allow_edit.ok").trigger("click");
@@ -2216,7 +2228,7 @@ Apigee.APIModel.InlineEdit = function() {
    */
   this.handleAPICallSuccess = function(data) {
     descriptionEditFlag = false;
-    data = unescape(data.responseContent);
+    data = decodeURIComponent(data.responseContent);
     data = JSON.parse(data);
     currentEditableElementValue = jQuery.trim(currentEditableElement.html());
     jQuery("[data-role='method-title']").html(data.displayName);

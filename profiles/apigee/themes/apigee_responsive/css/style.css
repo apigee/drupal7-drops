@@ -524,6 +524,11 @@ header.navbar.navbar-nav > .dropdown > a .caret {
 .my-apps-panels td {
     word-wrap:break-word;
 }
+
+.my-apps-app-keys .key-expire-date .is-expired {
+    color: #d9534f;
+}
+
 div#forum .table {
     margin-bottom:0px;
 }

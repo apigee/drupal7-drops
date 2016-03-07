@@ -492,7 +492,7 @@ function smartdocs_model_load($mid) {
   }
   $model =& drupal_static('smartdocs_model');
   if ($model instanceof Model && ($model->getUuid() == $mid || $model->getName() == $mid)) {
-    return $model;
+    return $model->toArray();
   }
 
   $log_transaction_time = variable_get('smartdocs_log_transaction_time', 0);
@@ -511,13 +511,13 @@ function smartdocs_model_load($mid) {
   }
   catch (ResponseException $e) {
     if ($log_transaction_time) {
-      watchdog_exception('smartdocs', 'Failed to load model !model', array('!model' => $mid), WATCHDOG_WARNING);
+      watchdog_exception('smartdocs', $e, 'Failed to load model !model', array('!model' => $mid), WATCHDOG_WARNING);
     }
     return FALSE;
   }
   catch (ParameterException $e) {
     if ($log_transaction_time) {
-      watchdog_exception('smartdocs', 'Failed to load model !model (Invalid UUID)', array('!model' => $mid), WATCHDOG_WARNING);
+      watchdog_exception('smartdocs', $e, 'Failed to load model !model (Invalid UUID)', array('!model' => $mid), WATCHDOG_WARNING);
     }
     return FALSE;
   }
@@ -545,7 +545,7 @@ function smartdocs_revision_load($rev) {
   }
   $revision =& drupal_static('smartdocs_revision');
   if ($revision instanceof Revision && ($revision->getUuid() == $rev || $revision->getRevisionNumber() == $rev)) {
-    return $revision;
+    return $revision->toArray();
   }
 
   $is_uuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $rev);
@@ -621,7 +621,7 @@ function smartdocs_resource_load($res) {
   }
   $resource =& drupal_static('smartdocs_resource');
   if ($resource instanceof Resource && $resource->getUuid() == $res) {
-    return $resource;
+    return $resource->toArray();
   }
 
   $found_resource = FALSE;
@@ -681,7 +681,7 @@ function smartdocs_method_load($method_id) {
   }
   $method =& drupal_static('smartdocs_method');
   if ($method instanceof Method && $method->getUuid() == $method_id) {
-    return $method;
+    return $method->toArray();
   }
 
   $found_method = FALSE;
@@ -1886,6 +1886,7 @@ function smartdocs_prepare_revision($revision) {
         'security' => $method['security'],
         'tags' => $method['tags'],
         'verb' => $method['verb'],
+        'body' => $method['body'],
       );
       $resource_array['methods'][] = $method_array;
     }

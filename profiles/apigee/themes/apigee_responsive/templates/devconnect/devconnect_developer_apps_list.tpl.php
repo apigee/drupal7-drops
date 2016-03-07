@@ -51,7 +51,7 @@ $i = 0;
     </div>
   </div>
   <div class="row">
-  <div class="col-sm-12">
+  <div class="col-sm-12 my-apps-app-keys">
   <?php // more than one application ?>
   <?php foreach ($applications as $app): ?>
     <?php $status = apigee_responsive_app_status($app); ?>
@@ -63,7 +63,19 @@ $i = 0;
               <?php if ((bool) $app['new_status']) : ?><span class="badge">new</span>&nbsp;&nbsp;<?php endif; ?>
               <a data-toggle="collapse" data-parent="#my-apps-accordion" href="#my-apps-collapse<?php print $i; ?>"><strong><?php print check_plain($app['app_name']); ?></strong></a>
             </div>
-            <div class="status-label"><?php print _apigee_responsive_status_label_callback($status, TRUE); ?></div>
+            <div class="status-label">
+                <?php print _apigee_responsive_status_label_callback($status, TRUE); ?>
+                <?php
+                    $expiry = $app['credential']['expires'];
+                    $hasExpiration = isset($app['credential']['expires']) && ($expiry != -1);
+                    $isExpired = $hasExpiration && (time() > $expiry);
+                ?>
+                <?php if ($isExpired): ?>
+                    <span class="label label-danger pull-right" style="margin-right:10px;">
+                        <?php print t('Expired') ?>
+                    </span>
+                <?php endif; ?>
+            </div>
           </h4>
         </div>
         <div id="my-apps-collapse<?php print $i; ?>" class="my-apps-panels panel-collapse collapse">
@@ -176,16 +188,24 @@ $i = 0;
                           <td><?php print format_date($app['credential']['issued']); ?></td>
                         </tr>
                         <tr>
-                          <td class="key"><strong><?php print t('Key Expires'); ?></strong></td>
-                          <td><?php
-                            $exp = $app['credential']['expires'];
-                            if ($exp == -1) {
-                              print t('Never');
-                            }
-                            else {
-                              print format_date($exp);
-                            }
-                            ?></td>
+                          <td class="key">
+                            <?php if ($isExpired): ?>
+                              <span class="label label-danger"><?php print t('Expired'); ?></span>
+                            <?php else: ?>
+                                <strong><?php print t('Expires'); ?></strong>
+                            <?php endif; ?>
+                          </td>
+                          <td class="key-expire-date">
+                            <?php if ($hasExpiration): ?>
+                                <?php if ($isExpired): ?>
+                                    <span class="key-expire-date-value is-expired"><?php print format_date($expiry); ?></span>
+                                <?php else: ?>
+                                    <span class="key-expire-date-value"><?php print format_date($expiry); ?></span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                              <span class="key-expire-date-value"><?php print t('Never'); ?></span>
+                            <?php endif; ?>
+                          </td>
                         </tr>
         <?php endif; ?>
                       </tbody>

@@ -391,9 +391,7 @@ function smartdocs_model_list() {
       'export' => 'Export',
       'delete' => 'Delete',
     );
-    if (!$node_count) {
-      unset($operations['settings']);
-    }
+
     foreach ($operations as $op => $disp) {
       $ops['list-' . $op] = array(
         'title' => $disp,
@@ -427,10 +425,9 @@ function smartdocs_model_list() {
   );
 
   $empty_msg = t('No models have been created. <a href="@add_model">Create a new model</a> or <a href="@read_docs">read the documentation</a> to get started.', array(
-      '@add_model' => url('admin/content/smartdocs/models/add'),
-      '@read_docs' => url('http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis'),
-    )
-  );
+    '@add_model' => url('admin/content/smartdocs/models/add'),
+    '@read_docs' => url('http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis'),
+  ));
 
   $output['table'] = array(
     '#theme' => 'table',
@@ -802,8 +799,8 @@ function smartdocs_import_model(array $form, array $form_state, array $model_arr
     '#title' => t('Choose format'),
     '#options' => array(
       'wadl' => 'WADL',
-      'swagger_json' => 'Swagger - JSON',
-      'swagger_yaml' => 'Swagger - YAML',
+      'swagger_json' => 'OpenAPI (Swagger) - JSON',
+      'swagger_yaml' => 'OpenAPI (Swagger) - YAML',
       'apigee_json' => 'SmartDocs - JSON',
     ),
     '#default_value' => array('swagger_yaml'),
@@ -944,6 +941,8 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
       $document_format = 'swagger';
   }
 
+  $file_contents = NULL;
+
   if ($form_state['values']['upload_type'] == 'url') {
     // Importing a URL.
     $url = trim($form_state['values']['url']);
@@ -957,6 +956,13 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
           '!time' => number_format(microtime(TRUE) - $start, 4),
         );
         watchdog('smartdocs', 'Imported URL into revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+      }
+
+      if ($document_format == 'swagger') {
+        $response = drupal_http_request($url);
+        if ($response->code == 200) {
+          $file_contents = $response->data;
+        }
       }
 
       // Parameters to use in success message to user.
@@ -1019,11 +1025,141 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
       $form_state['redirect'] = FALSE;
       return;
     }
+
+
+  }
+  // Danger, Will Robinson! Hack incoming!
+  // Work around Modeling API bugs regarding parameter enums. See MGMT-2664.
+  if (isset($file_contents) && $document_format == 'swagger') {
+    if (substr($content_type, -4) == 'yaml') {
+      require_once libraries_get_path('spyc') . '/Spyc.php';
+      $swagger_obj = spyc_load($file_contents);
+    }
+    else {
+      $swagger_obj = json_decode($file_contents, TRUE);
+    }
+    if (!empty($swagger_obj) && intval($swagger_obj['swagger']) >= 2) {
+      $resource_enums = array();
+      $method_enums = array();
+      $verbs = array('get', 'post', 'put', 'patch', 'options', 'head', 'delete');
+      foreach ($swagger_obj['paths'] as $path => $resource) {
+        // Handle resource parameters.
+        if (array_key_exists('parameters', $resource)) {
+          foreach ($resource['parameters'] as $parameter) {
+            if (array_key_exists('enum', $parameter)) {
+              $resource_enums[$path][$parameter['name']] = $parameter['enum'];
+            }
+          }
+        }
+        // Handle method parameters.
+        foreach ($verbs as $verb) {
+          if (array_key_exists($verb, $resource)) {
+            if (array_key_exists('parameters', $resource[$verb])) {
+              foreach ($resource[$verb]['parameters'] as $parameter) {
+                if (array_key_exists('enum', $parameter)) {
+                  $method_enums[$path][$verb][$parameter['name']] = $parameter['enum'];
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (count($resource_enums) > 0 || count($method_enums) > 0) {
+        // Reload the model to make sure we get the latest revision number.
+        $model->load();
+        $revision_id = $model->getLatestRevisionNumber();
+        // Load our active revision.
+        $rev = new Revision($model->getConfig(), $model->getUuid());
+        $rev->load($revision_id);
+        $resources = $rev->getResources();
+
+        foreach ($resources as $resource) {
+          $path = $resource->getPath();
+          // See if this resource has any resource-level params with an enum
+          // member; if so, apply fixes.
+          if (array_key_exists($path, $resource_enums)) {
+            $resource_modified = FALSE;
+            $params = $resource->getParameters();
+            foreach ($resource_enums[$path] as $param_name => $param_enum) {
+              $index = _smartdocs_find_named_param($params, $param_name);
+              if ($index >= 0) {
+                $params[$index]['options'] = $param_enum;
+                $resource->setParameters($params);
+                $resource_modified = TRUE;
+              }
+            }
+            if ($resource_modified) {
+              $resource->save(TRUE);
+            }
+          }
+
+          // Now handle any method-level params.
+          if (array_key_exists($path, $method_enums)) {
+            foreach ($method_enums[$path] as $verb => $params) {
+              $verb = strtolower($verb);
+              // Find the corresponding method.
+              $target_method = NULL;
+              foreach ($resource->getMethods() as $method) {
+                if (strtolower($method->getVerb()) == $verb) {
+                  $target_method = $method;
+                  break;
+                }
+              }
+              // Did we find our method? Answer should always be yes.
+              if ($target_method) {
+                $method_modified = FALSE;
+                $target_params = $target_method->getParameters();
+                foreach ($params as $param_name => $param_enum) {
+                  $index = _smartdocs_find_named_param($target_params, $param_name);
+                  if ($index >= 0) {
+                    $target_params[$index]['options'] = $param_enum;
+                    $target_method->setParameters($target_params);
+                    $method_modified = TRUE;
+                  }
+                }
+                if ($method_modified) {
+                  $target_method->save(TRUE);
+                }
+              }
+            }
+          }
+
+        }
+        // Finished cycling through resources.
+      }
+    }
+    // Finished twiddling Swagger file import. End of horrible hack.
+  }
+
+  // If we are updating, we need to invalidate cache.
+  if ($model->getLatestRevisionNumber() > 1) {
+    _smartdocs_flush_cache();
   }
 
   drupal_set_message(t('Revision %revision has been created from from %source_name %source', $message_vars), 'status');
   watchdog('smartdocs', 'Model %model_name revision %revision has been created from from @source_name %source', $message_vars, WATCHDOG_INFO);
   $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision;
+}
+
+/**
+ * Finds index of parameter in an array, matching on name.
+ *
+ * @param array $params
+ *   Params , either attached to a Resource or a Method.
+ * @param string $param_name
+ *   Name of the param to be matched.
+ *
+ * @return int
+ *   Array offset of parameter.
+ */
+function _smartdocs_find_named_param(array $params, $param_name) {
+  foreach ($params as $i => $param) {
+    if ($param['name'] == $param_name) {
+      return $i;
+    }
+  }
+  return -1;
 }
 
 /**
@@ -1167,18 +1303,33 @@ function smartdocs_model_export(array $form, array &$form_state, array $model_ar
   $options = array(
     'json' => 'SmartDocs JSON',
     // DEVSOL-1434: Edge API cannot handle WADL exports for now.
-    // 'wadl' => 'WADL',
   );
   $form['file_type'] = array(
     '#type' => 'select',
     '#title' => t('Select export file type'),
     '#options' => $options,
     '#default_value' => '',
+    '#weight' => 1,
+    '#suffix' => '<br>',
   );
+  // Don't show export selectbox if there is only one option.
+  if (count($options) == 1) {
+    $form['file_type']['#access'] = FALSE;
+    $form['file_type']['#default_value'] = 'json';
+
+    $form['caption'] = array(
+      '#type' => 'markup',
+      '#markup' => t('Your model will be exported in SmartDocs’s internal JSON format.'),
+      '#prefix' => '<p>',
+      '#suffix' => '</p>',
+      '#weight' => 0,
+    );
+  }
+
   $form['options']['submit_export'] = array(
     '#type' => 'submit',
     '#value' => t('Export'),
-    '#prefix' => '<br>',
+    '#weight' => 2,
   );
   return $form;
 }
@@ -1196,17 +1347,18 @@ function smartdocs_model_export_submit($form, &$form_state) {
   Model::fromArray($model, $form_state['values']['model']);
   $revision = new Revision($model->getConfig(), $model->getUuid());
   Revision::fromArray($revision, $form_state['values']['revision']);
+  $revision_num = $revision->getRevisionNumber();
 
-  $export_type = $form_state['input']['file_type'];
-  $filename = $model->getName() . '.' . $export_type;
+  $export_type = $form_state['values']['file_type'];
+  $filename = $model->getName() . '.rev' . $revision_num . '.' . $export_type;
 
   try {
     $start = microtime(TRUE);
-    $data = $revision->export($export_type);
+    $data = $revision->export($export_type, $revision_num);
     if (variable_get('smartdocs_log_transaction_time', 0)) {
       $args = array(
         '!model' => $model->getUuid(),
-        '!revision' => $revision->getRevisionNumber(),
+        '!revision' => $revision_num,
         '!time' => number_format(microtime(TRUE) - $start, 4),
       );
       watchdog('smartdocs', 'Exported revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
@@ -1331,7 +1483,20 @@ function smartdocs_model_settings(array $form, array &$form_state, array $model_
   return $form;
 }
 
-function smartdocs_model_revert_template($form, &$form_state, array $model) {
+/**
+ * Form constructor for confirm-template-revert action.
+ *
+ * @param array $confirm_form
+ *   Form being constructed.
+ * @param array $form_state
+ *   State of form being constructed.
+ * @param array $model
+ *   Array representation of model whose template is being reverted.
+ *
+ * @return array
+ *   Newly-created form.
+ */
+function smartdocs_model_revert_template(array $confirm_form, array &$form_state, array $model) {
 
   $confirm_form['model_uuid'] = array(
     '#type' => 'value',
@@ -1412,7 +1577,8 @@ function smartdocs_model_settings_submit($form, &$form_state) {
       watchdog('smartdocs', 'Saved method template for model !model in !time seconds', $args, WATCHDOG_INFO);
     }
     drupal_set_message($status_message);
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     $msg_args = array('%model_name' => $model_name, '%error' => $e->getMessage());
     drupal_set_message(t('Cannot save SmartDocs template for model %model_name. %error', $msg_args));
     watchdog('smartdocs', 'Cannot save SmartDocs template for model %model_name. %error', $msg_args, WATCHDOG_ERROR);
@@ -2426,7 +2592,7 @@ function smartdocs_revision_detail_submit($form, &$form_state) {
       $options = array('publish' => ($form_state['values']['operation'] == 'render_publish_nodes'));
 
       module_load_include('inc', 'smartdocs', 'batch/smartdocs.render');
-      batch_set(smartdocs_render($model_array, $revision_array, $selected, $options));
+      batch_set(smartdocs_render($model_array, $revision_array, $selected, $options, FALSE));
       break;
 
     case 'publish_nodes':

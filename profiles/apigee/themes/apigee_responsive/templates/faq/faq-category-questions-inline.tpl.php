@@ -61,7 +61,7 @@ else {
 }
 
 ?>
-<a id="top"></a>
+<a id="faq-top"></a>
 <div class="faq-category-group">
   <!-- category header with title, link, image, description, and count of
   questions inside -->

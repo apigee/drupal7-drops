@@ -22,7 +22,7 @@
  *   Tells whether $node['body'] contains the full body or just the teaser
  */
 ?>
-<a id="top"></a>
+<a id="faq-top"></a>
 <div>
   <?php if (count($nodes)): ?>
     <?php foreach ($nodes as $node): ?>

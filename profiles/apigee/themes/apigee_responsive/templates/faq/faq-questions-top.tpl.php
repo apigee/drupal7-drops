@@ -30,7 +30,7 @@
  *   Represents the number of items.
  */
 ?>
-  <a id="top"></a>
+  <a id="faq-top"></a>
   <div class="panel panel-default">
     <div class="panel-heading">Questions</div>
     <ul class="list-group">

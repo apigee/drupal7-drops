@@ -56,9 +56,9 @@ function devconnect_apiproduct_access_admin_form($form, &$form_state) {
     // the product as the name in lowercase and spaces replaced with
     // underscores.
     $product_name_key = str_replace(' ', '_', strtolower($product->name));
-    $product_roles = variable_get('apiproduct_role_' . $product_name_key);
+    $product_roles = variable_get('apiproduct_role_' . $product_name_key, FALSE);
 
-    if (!$product_roles) {
+    if ($product_roles === FALSE) {
       // If product roles variable is not set, then set default of all logged
       // in developers having access.
       $product_roles = array(DRUPAL_AUTHENTICATED_RID => DRUPAL_AUTHENTICATED_RID);
