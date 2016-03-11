@@ -1153,8 +1153,11 @@ Apigee.APIModel.Methods = function() {
     if (methodVerb == 'put' || methodVerb == 'post' || methodVerb == 'patch') {
       // In the case of multiple content types, pick the first one.
       // TODO: allow selection of active content type.
-      contentTypeValue = jQuery.trim(jQuery("[data-role='content-type']").html().split(/(<br>|,)/)[0]);
-      if (contentTypeValue == '') {
+      var contentTypeElement = jQuery("[data-role='content-type']");
+      if (contentTypeElement.length) {
+        contentTypeValue = jQuery.trim(contentTypeElement.html().split(/(<br>|,)/)[0]);
+      }
+      if (contentTypeValue === '' || contentTypeValue === false) {
         contentTypeValue = "application/x-www-form-urlencoded;charset=utf-8";
       }
     }

@@ -1,4 +1,4 @@
-<!-- Apigee Dev Portal Method Template v6.2 -->
+<!-- Apigee Dev Portal Method Template v6.3 -->
 {{!--
 Apigee Dev Portal Method Template
 
@@ -785,12 +785,11 @@ Helper variables:
         });
     });
 
-
     if (Apigee.APIModel.hasRawBody) {
         // Remove the body parameters section if the raw body should be
         // displayed.
         jQuery(".body-parameters-wrapper").remove();
-    } else if (!Apigee.APIModel.bodySample && !Apigee.APIModel.bodyDoc) {
+    } else {
         // If the API Model does not have a payload, then remove the payload
         // section.
         payload.remove();
