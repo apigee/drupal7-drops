@@ -1286,7 +1286,7 @@ Apigee.APIModel.Methods = function() {
       data = jQuery.parseJSON(data); // Parse the JSON.
     }
     Apigee.lastResponse = data;
-    rawCode = decodeURIComponent(data.responseContent); // Stores response content.
+    rawCode = unescape(data.responseContent); // Stores response content.
     //rawCode = jQuery.parseJSON(rawCode); //:TODO:: check the proxy and fix the issue and remove it.
     //rawCode = unescape(rawCode.responseContent); //:TODO:: check the proxy and fix the issue and remove it.
     // Response line fine details construction.
@@ -1377,8 +1377,8 @@ Apigee.APIModel.Methods = function() {
     requestContainerString += "</dl>";
     requestContainerElement.html(requestContainerString);
     curlContainerElement.html("<pre>" + Apigee.curl.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') + "</pre>");
-    // Resquest content construction.
-    bodyContent = decodeURIComponent(data.requestContent);
+    // Request content construction.
+    bodyContent = unescape(data.requestContent);
     bodyContent = bodyContent.replace(/[^\x00-\x7F]/g, "###");
     if(bodyContent.indexOf("###") != -1) {
       bodyContent = bodyContent.replace(bodyContent.substring(bodyContent.indexOf("###"),bodyContent.lastIndexOf("###")+3), "[BINARY DATA]");
@@ -2231,7 +2231,7 @@ Apigee.APIModel.InlineEdit = function() {
    */
   this.handleAPICallSuccess = function(data) {
     descriptionEditFlag = false;
-    data = decodeURIComponent(data.responseContent);
+    data = unescape(data.responseContent);
     data = JSON.parse(data);
     currentEditableElementValue = jQuery.trim(currentEditableElement.html());
     jQuery("[data-role='method-title']").html(data.displayName);

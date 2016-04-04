@@ -1,32 +1,44 @@
 <?php
 /**
  * @file
- * Entity Class for the Apigee Company Entity
+ * Entity Class for the Apigee Company Entity.
  */
 
+/**
+ * Entity class for apigee_company entity.
+ */
 class ApigeeCompanyEntity {
 
   /**
+   * Machine name of the company.
+   *
    * @var string
    */
   public $name = '';
 
   /**
+   * Key-value pairs of company attributes.
+   *
    * @var array
    */
   public $attributes = array();
 
   /**
+   * Display name of the company.
+   *
    * @var string
    */
   public $displayName = '';
 
   /**
-   * @var status
+   * Status of the company.
+   *
+   * @var string
    */
   public $status = '';
 
   /**
+   * List of developers in the company.
    *
    * @var array
    */
@@ -37,7 +49,7 @@ class ApigeeCompanyEntity {
    *
    * @param array $values
    *   Associative array with keys as the class properties and values as their
-   *   values
+   *   values.
    */
   public function __construct($values = array()) {
     // Set initial values.
@@ -62,6 +74,5 @@ class ApigeeCompanyEntity {
     }
     return $this->attributes[$name];
   }
-
 
 }

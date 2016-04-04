@@ -16,6 +16,7 @@ function theme_developer_app_tabs(array $variables) {
       $output .= ' class="active"';
       $first_tab = FALSE;
     }
+    $output .= ' data-link-type="' . (substr($tab_link['path'], 0, 1) == '#' ? 'local' : 'external') . '"';
     $output .= '>';
     $tab_link += array('text' => '', 'path' => '#', 'options' => array());
 

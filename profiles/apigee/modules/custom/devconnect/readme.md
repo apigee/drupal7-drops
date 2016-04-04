@@ -1,39 +1,34 @@
-Main readme moved to Apigee-Drupal repo: [https://github.com/apigee/apigee-drupal/blob/7.x-1.x/README.md](https://github.com/apigee/apigee-drupal/blob/7.x-1.x/README.md)
+# Summary of modules:
 
-Summary of submodules:
+## Required core functionality
+* `devconnect`: Exposes and configures the Edge API.
+* `devconnect_user`: Maps Drupal users to Edge developers.
+* `devconnect_developer_apps`: Enables functionality related to apps and keys.
 
-* devconnect_admin_notify: enabled by default
-* devconnect_app_attributes: enabled by default
-* devconnect_blog: enabled by default
-* devconnect_blog_content_types: enabled during apigee.profile install process
-* devconnect_content_admin: disabled by default. Feature. Should we deprecate this?
-* devconnect_content_authoring: disabled by default. Feature. Should we deprecate this?
-* devconnect_content_creation_menu: enabled by default
-* devconnect_context: enabled by default (dependency of devconnect_default_structure).
-* devconnect_debug: disabled by default. HIDDEN.
-* devconnect_default_structure: enabled in new installs via apigee.profile.
-* devconnect_developer_apps: enabled by default.
-* devconnect_docgen: disabled by default.
-* devconnect_downloads: disabled by default. Used by some customers.
-* devconnect_homepage: enabled by default. Supplies header block for homepage.
-* devconnect_key_value_map: disabled by default. For use in customer customizations.
-* devconnect_monetization: disabled by default. Used by some customers.
-* devconnect_partner: disabled by default. HIDDEN.
-* devconnect_ui: disabled by default. Deprecated; will be removed in 14.08
-* devconnect_user: enabled by default.
-* devconnect_views: enabled by default (dependency of devconnect_default_structure).
-* devportal_updates: disabled by default. For use with OPDK sites only.
+## Optional core functionality
+* `devconnect_app_attributes`: Allows configuration of custom attributes for apps. Enabled by default for apigee profile.
+* `devconnect_apiproduct_access`: Allows RBAC for API products.
+* `devconnect_key_value_map`: Thin wrapper around Edge SDK to allow key-value map use. Currently entirely unused.
+* `devconnect_monetization`: Exposes Mint functionality.
+* `smartdocs`: Exposes Modeling functionality. Enabled by default for apigee profile.
 
-Available Translations:
+## Profile-related functionality
+* `devconnect_admin_notify`: Notifies admin of new user registrations. Enabled by default for apigee profile.
+* `devconnect_blog`: Exposes blog eye candy. Enabled by default for apigee profile.
+* `devconenct_blog_content_types`: Creates image, audio, video content-types at install time. No other functionality. Required by `devconnect_blog` and therefore enabled by default for apigee profile.
+* `devconnect_content_creation_menu`: Hand-holding for newbie content creators. Enabled by default for apigee profile.
+* `devconnect_context`: Sets up context rules for block placement. Required by `devconnect_default_structure` and therefore enabled by default for apigee profile.
+* `devconnect_default_structure`: Configures blocks, views and menus. Enabled by default for apigee profile.
+* `devconnect_homepage`: Provides the home page header block. Enabled by default for apigee profile.
+* `devconnect_monitor`: Sends emails when watchdog logs an error.
+* `devconnect_status`: Provides a status report on Edge configuration.
+* `devconnect_views`: Provides default views used by profile. Required by `devconnect_default_structure` and therefore enabled by default for apigee profile.
 
-* English (default)
-* Japanese (ja) (pending)
-** Instructions on installing languages
-> 1) Install Content Translation, Internationalization, Locale, Localization Update, and other contributed
-> translation modules.
->
-> 2) Take the desired language from the module (arranged by language symbol)
-> and upload it to the language update page.
->
-> 3) Ensure the translation strings are in the database, and in the strings translation page.
-
+## Deprecated/Hidden
+* `devconnect_content_admin`: Features to set up content admin for profile. No longer in use.
+* `devconnect_debug`: Displays all Edge calls at bottom of page. Hidden, can be useful for troubleshooting.
+* `devconnect_docgen`: Precursor to SmartDocs GA. Hidden, no longer in use.
+* `devconnect_download`: Provides one-time download links via S3. Depends on Display Suite which is incompatible with SmartDocs. Hidden, no longer in use.
+* `devconnect_multiorg`: Allowed configuration of multiple Edge orgs. Irreparably broken! Hidden, no longer in use.
+* `devconnect_partner`: Allows partners to organize users into groups which can own apps in common. Hidden.
+* `devportal_updates`: Allows OPDK sites to determine if they need updates. Polls nonexistent update server and is therefore broken.

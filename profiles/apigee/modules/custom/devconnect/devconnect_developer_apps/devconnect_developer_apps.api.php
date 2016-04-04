@@ -195,15 +195,20 @@ function hook_apiproduct_list_alter(array &$api_products, $account = NULL) {
  * Alter the label by which Developer Apps are called.
  *
  * @param string $label
- *    Incoming default label for a Developer App.
+ *   Incoming default label for a Developer App.
  * @param mixed $form_value
- *    Form element value from the devconnect_developer_apps_config form.
+ *   Form element value from the devconnect_developer_apps_config form.
  * @param bool $plural
- *    TRUE if the resulting label should be plural.
+ *   TRUE if the resulting label should be plural.
+ * @param bool $lowercase
+ *   TRUE if the resulting label is for lowercase usage.
  */
-function hook_devconnect_developer_app_label_alter(&$label, $form_value, $plural) {
+function hook_devconnect_developer_app_label_alter(&$label, $form_value, $plural = TRUE, $lowercase = FALSE) {
   if ($form_value == 3) {
     $label = 'Chimpanzee' . ($plural ? 's' : '');
+    if ($lowercase) {
+      $label = lcfirst($label);
+    }
   }
 }
 

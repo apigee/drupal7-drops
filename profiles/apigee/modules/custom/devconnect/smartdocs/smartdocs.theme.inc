@@ -141,6 +141,12 @@ function smartdocs_preprocess_node(&$vars) {
 
   if (!$vars['teaser']) {
 
+    // Make SmartDocs work in themes that don't include bootstrap.
+    $js = drupal_get_js();
+    if (strpos($js, 'bootstrap') === FALSE) {
+      drupal_add_js('//netdna.bootstrapcdn.com/twitter-bootstrap/3.0.2/js/bootstrap.min.js');
+    }
+
     $org_settings = devconnect_get_org_settings();
     $endpoint_host = parse_url($org_settings['endpoint'], PHP_URL_HOST);
     $js_settings = array(
@@ -149,6 +155,15 @@ function smartdocs_preprocess_node(&$vars) {
       'useDefaultUrls' => ($endpoint_host == 'api.enterprise.apigee.com'),
     );
     drupal_add_js(array('smartdocs' => $js_settings), 'setting');
+
+    $script = 'var Apigee=Apigee||{};Apigee.APIModel=Apigee.APIModel||{};';
+    $options = array(
+      'type' => 'inline',
+      'group' => JS_LIBRARY,
+      'requires_jquery' => FALSE,
+      'weight' => -9999,
+    );
+    drupal_add_js($script, $options);
 
     $version = variable_get('smartdocs_local_asset_version', '6');
     $path = drupal_get_path('module', 'smartdocs');

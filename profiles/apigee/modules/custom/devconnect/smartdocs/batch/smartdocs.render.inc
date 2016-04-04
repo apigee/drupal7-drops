@@ -181,6 +181,7 @@ function smartdocs_render_nodes(array $model_array, array $revision_array, array
     Method::fromArray($method, $method_array);
     $method->load();
     $method_array['tags'] = $method->getTags();
+    $method_array['body'] = $method->getBody();
     if (variable_get('smartdocs_log_transaction_time', 0)) {
       $args = array(
         '!method' => $method_array['name'],

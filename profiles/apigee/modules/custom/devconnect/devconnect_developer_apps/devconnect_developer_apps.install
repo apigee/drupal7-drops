@@ -10,15 +10,35 @@
 function devconnect_developer_apps_install() {
   _devconnect_developer_apps_assign_perms();
   _devconnect_developer_apps_register_cache_handlers();
-  variable_set('devconnect_developer_apps_unescaped', 1);
+  // Enable analytics by default.
+  variable_set('devconnect_show_analytics', 1);
 }
 
 /**
  * Implements hook_uninstall().
  */
 function devconnect_developer_apps_uninstall() {
-  variable_del('cache_class_developer_app');
-  variable_del('cache_class_api_product');
+  $variables = array(
+    'cache_class_developer_app',
+    'cache_class_api_product',
+    'devconnect_analytics_environment',
+    'devconnect_api_product_cache_enable',
+    'devconnect_api_product_handling',
+    'devconnect_callback_handling',
+    'devconnect_default_api_product',
+    'devconnect_developer_apps_apiproduct_widget',
+    'devconnect_developer_apps_cache_cron',
+    'devconnect_developer_apps_key_expiry',
+    'devconnect_show_analytics',
+    'devconnect_show_apiproduct_status',
+    'devconnect_tooltip_callback_url',
+    'devconnect_validate_callback_url',
+    'myapis',
+    'myapis_label',
+  );
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
 }
 
 /**
@@ -186,6 +206,6 @@ function devconnect_developer_apps_update_7433() {
 /**
  * Remove all references to unescaped developer-app attributes.
  */
-function devconnect_developer_apps_update_7434() {
+function devconnect_developer_apps_update_7435() {
   variable_del('devconnect_developer_apps_unescaped');
 }

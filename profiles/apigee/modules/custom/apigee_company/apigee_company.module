@@ -64,7 +64,6 @@ function apigee_company_menu() {
     'description' => 'Create a new company.',
     'access callback' => 'user_is_logged_in',
     'page callback' => 'apigee_company_company_form_wrapper',
-    'page arguments' => array(apigee_company_company_new()),
   );
 
   $items['api_company/company/developers'] = array(
@@ -109,9 +108,9 @@ function apigee_company_menu() {
 }
 
 /**
- * Implements apigee_company_menu_alter().
+ * Implements hook_menu_alter().
  */
-function apigee_company_menu_alter(&$items) {
+function apigee_company_menu_alter(array &$items) {
   $items['user/%user/apps']['title'] = '!apps';
   $items['user/%user/apps']['title arguments'] = array('!apps' => _devconnect_developer_apps_get_app_label(TRUE));
 }
@@ -155,6 +154,10 @@ function apigee_company_block_switch_company() {
 
 /**
  * Gets a themed table of pending invitations for a developer.
+ *
+ * @param string|null $developer_id
+ *   ID of the developer whose invitations are to be displayed.
+ *
  * @return string
  *   the themed html for the developer invitations table.
  */
@@ -164,10 +167,10 @@ function apigee_company_developer_invitations($developer_id = NULL) {
   try {
     $invite_requests = entity_load('apigee_company_invitation', array(), array(
       'developerId' => $developer_id,
-      'state' => 'PENDING'
+      'state' => 'PENDING',
     ));
   }
-  catch(Exception $e) {
+  catch (Exception $e) {
     drupal_set_message(t('There was a problem displaying your invitations.'), 'error');
   }
   return theme("apigee_company_developer_invitations", array('invitations' => $invite_requests));
@@ -176,9 +179,7 @@ function apigee_company_developer_invitations($developer_id = NULL) {
 /**
  * Function to get a themed list companies that a developer belongs to.
  *
- * @global type $user
- *
- * @param string $developer_email
+ * @param string|null $developer_email
  *   The email of the developer whose companies are to be listed.
  *
  * @return string
@@ -200,6 +201,7 @@ function apigee_company_developer_companies($developer_email = NULL) {
  * Menu call back to list the developers of a company.
  */
 function apigee_company_company_developers() {
+  $output = '';
   // Add the Ctools styles for the modify role modal form.
   ctools_include('modal');
   ctools_modal_add_js();
@@ -211,7 +213,7 @@ function apigee_company_company_developers() {
         'height' => 400,
       ),
     ),
-      ), 'setting');
+  ), 'setting');
 
   $company = apigee_company_get_current_context_company();
   $company_name = $company->name;
@@ -235,7 +237,10 @@ function apigee_company_company_developers() {
       }
     }
 
-    $output = theme('apigee_company_company_developers', array('developers' => $developers, 'company_name' => $company_display_name));
+    $output = theme('apigee_company_company_developers', array(
+      'developers' => $developers,
+      'company_name' => $company_display_name,
+    ));
   }
 
   if (user_access('manage company users')) {
@@ -321,21 +326,25 @@ function apigee_company_entity_info() {
 /**
  * Implements hook_entity_info_alter().
  */
-function apigee_company_entity_info_alter(&$entity_info) {
+function apigee_company_entity_info_alter(array &$entity_info) {
   $entity_info['developer_app']['controller class'] = 'ApigeeCompanyAppController';
 }
 
 /**
  * Form callback wrapper: create or edit a company.
  *
- * @param object $company
+ * @param ApigeeCompanyEntity $company
  *   The company object to edit through the form.
- * @param object $account
- *   For new companies, the user account.
+ *
+ * @return array
+ *   The company-edit form as a render-array.
  *
  * @see apigee_company_company_form()
  */
-function apigee_company_company_form_wrapper($company, $account = NULL) {
+function apigee_company_company_form_wrapper($company = NULL) {
+  if (!isset($company)) {
+    $company = entity_get_controller('apigee_company')->create(array());
+  }
   // Set the page title and a default company if necessary.
   if (empty($company->name)) {
     drupal_set_title(t('Create company'));
@@ -356,8 +365,18 @@ function apigee_company_company_new() {
 
 /**
  * Form callback: create or edit an company.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   State of the form being created.
+ * @param ApigeeCompanyEntity $company
+ *   The company being created or edited.
+ *
+ * @return array
+ *   The newly-created form.
  */
-function apigee_company_company_form($form, &$form_state, $company) {
+function apigee_company_company_form(array $form, array &$form_state, $company) {
 
   $form['company_display_name'] = array(
     '#type' => 'textfield',
@@ -381,7 +400,7 @@ function apigee_company_company_form($form, &$form_state, $company) {
       'replace' => '-',
       'error' => 'The internal name must contain only lowercase letters, numbers and hyphens.',
     ),
-    // A menu's machine name cannot be changed.
+    // A company's machine name cannot be changed.
     '#disabled' => !empty($company->name),
   );
 
@@ -401,17 +420,18 @@ function apigee_company_company_form($form, &$form_state, $company) {
     '#weight' => 40,
   );
 
-  // We append the validate handler to #validate in case a form callback_wrapper
-  // is used to add validate handlers earlier.
-  // $form['#validate'][] = 'commerce_order_order_form_validate';
-
   return $form;
 }
 
 /**
  * Form API Callback: Handles the submit for the company create form.
+ *
+ * @param array $form
+ *   Form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
-function apigee_company_company_form_submit($form, &$form_state) {
+function apigee_company_company_form_submit(array $form, array &$form_state) {
   // @TODO: Finish this call when we use company w/out Mint.
   // $company_values = array(
   // 'name' => $form_state['values']['company_internal_name'],
@@ -422,13 +442,17 @@ function apigee_company_company_form_submit($form, &$form_state) {
   // $saved = entity_save('apigee_company', $company_entity);
   // if (!$saved) {
   // }
-
 }
 
 /**
- * Returns whether a menu name already exists.
+ * Returns whether a company name already exists.
  *
- * @see menu_edit_menu()
+ * @param string $value
+ *   Company name to be checked.
+ *
+ * @return bool
+ *   TRUE if the company name already exists, FALSE otherwise.
+ *
  * @see form_validate_machine_name()
  */
 function apigee_company_company_machine_name_exists($value) {
@@ -439,7 +463,7 @@ function apigee_company_company_machine_name_exists($value) {
 /**
  * Menu callback to accept or deny a request.
  *
- * @param object $invitation
+ * @param ApigeeCompanyInvitationEntity $invitation
  *   The invitation object.
  * @param string $action
  *   The Action to be performed on the invitation.
@@ -447,7 +471,6 @@ function apigee_company_company_machine_name_exists($value) {
 function apigee_company_update_request($invitation, $action) {
   global $user;
 
-  $state = '';
   switch ($action) {
     case 'accept':
       $state = 'ACCEPTED';
@@ -473,17 +496,16 @@ function apigee_company_update_request($invitation, $action) {
       '%response_message' => $response->message,
       '%developer' => $invitation->developerId,
       '%company' => $invitation->companyId,
-      '%action' => $action,
+      '@action' => $action,
     );
-    drupal_set_message(t('There was an error %actioning invitation from company %company: %response_message', $t_args), 'error');
-    watchdog('apigee_company', 'Error developer %developer ' . $action . 'ing request from company %company: %response_message', $t_args, WATCHDOG_ERROR);
+    drupal_set_message(t('There was an error @actioning invitation from company %company: %response_message', $t_args), 'error');
+    watchdog('apigee_company', 'Error developer %developer @actioning request from company %company: %response_message', $t_args, WATCHDOG_ERROR);
   }
   else {
-    // Add the Developer role for the developer in the company that he just
+    // Add the Developer role for the developer in the company that he/she just
     // joined by accepting the invite. This is required because the backend
     // does not assigns the developer role in the company, by default to a
     // developer when the developer accepts the invitation.
-
     if ($action == 'accept') {
       $developer_role = APIGEE_COMPANY_DEVELOPER_ROLE_NAME;
       if (module_exists('devconnect_monetization')) {
@@ -492,18 +514,29 @@ function apigee_company_update_request($invitation, $action) {
       $saved = entity_get_controller('apigee_company')->updateDeveloper($invitation->companyId, $invitation->developerId, $developer_role);
     }
     drupal_set_message("Invitation updated successfully");
-    watchdog('apigee_company', 'Developer %developer ' . $state . ' request from company %company:', array(
+    watchdog('apigee_company', 'Developer %developer %state request from company %company:', array(
       '%developer' => $invitation->developerId,
+      '%state' => $state,
       '%company' => $invitation->companyId,
-        ), WATCHDOG_NOTICE);
+    ), WATCHDOG_NOTICE);
   }
   drupal_goto(drupal_get_destination());
 }
 
 /**
  * Form API call back: Returns the form to add a user to a company.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   State of the form being created.
+ * @param string|null $company_id
+ *   ID of the company.
+ *
+ * @return array
+ *   The newly-created form.
  */
-function apigee_company_invite_user_form($form, &$form_state, $company_id = NULL) {
+function apigee_company_invite_user_form(array $form, array &$form_state, $company_id = NULL) {
   // @TODO remove the $company_id if that is not required in case we are
   // using a global value.
   $form = array();
@@ -530,8 +563,13 @@ function apigee_company_invite_user_form($form, &$form_state, $company_id = NULL
 
 /**
  * Form API Callback: Validation for the user invite form.
+ *
+ * @param array $form
+ *   Form being validated.
+ * @param array $form_state
+ *   State of the form being validated.
  */
-function apigee_company_invite_user_form_validate($form, &$form_state) {
+function apigee_company_invite_user_form_validate(array $form, array &$form_state) {
   if (!valid_email_address($form_state['values']['developer_email'])) {
     form_set_error('developer_email', t('Please enter a valid email address'));
   }
@@ -539,8 +577,13 @@ function apigee_company_invite_user_form_validate($form, &$form_state) {
 
 /**
  * Form Api Callback: Submit handler for the user invite form.
+ *
+ * @param array $form
+ *   Form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
-function apigee_company_invite_user_form_submit($form, &$form_state) {
+function apigee_company_invite_user_form_submit(array $form, array &$form_state) {
   global $user;
 
   $developer_id = $form_state['values']['developer_email'];
@@ -573,13 +616,15 @@ function apigee_company_invite_user_form_submit($form, &$form_state) {
     watchdog('apigee_company', 'Developer %developer invited to company %company:', array(
       '%developer' => $developer_id,
       '%company' => $company_id,
-        ), WATCHDOG_NOTICE);
+    ), WATCHDOG_NOTICE);
   }
 }
 
 /**
  * Get a themed list of developer companies and invitations.
+ *
  * @global object $user
+ *
  * @return string
  *   Themed html for the company list and invitations.
  */
@@ -603,7 +648,7 @@ function apigee_company_company_list() {
  * @param array $variables
  *   The variables to be passed to the theme functions.
  */
-function apigee_company_preprocess_apigee_company_developer_invitations(&$variables) {
+function apigee_company_preprocess_apigee_company_developer_invitations(array &$variables) {
 
   $invitations = $variables['invitations'];
   $invitation_vars = array();
@@ -617,32 +662,34 @@ function apigee_company_preprocess_apigee_company_developer_invitations(&$variab
       $company = entity_load_single('apigee_company', $company_name);
     }
 
-    $accept = l(t('Accept'), 'api_company/invite/' .  $invitation->id . '/accept',
-        array(
-          'query' => array(
-            'destination' => $_GET['q'],
+    $accept = l(t('Accept'), 'api_company/invite/' . $invitation->id . '/accept',
+      array(
+        'query' => array(
+          'destination' => $_GET['q'],
+        ),
+        'attributes' => array(
+          'class' => array(
+            'btn',
+            'btn-default',
+            'accept-invite-btn',
           ),
-          'attributes' => array(
-            'class' => array(
-              'btn',
-              'btn-default',
-              'accept-invite-btn'),
+        ),
+      )
+    );
+    $decline = l(t('Decline'), 'api_company/invite/' . $invitation->id . '/deny',
+      array(
+        'query' => array(
+          'destination' => $_GET['q'],
+        ),
+        'attributes' => array(
+          'class' => array(
+            'btn',
+            'btn-default',
+            'deny-invite-btn',
           ),
-        )
-        );
-    $decline = l(t('Decline'), 'api_company/invite/' .  $invitation->id . '/deny',
-        array(
-          'query' => array(
-            'destination' => $_GET['q'],
-          ), 'attributes' => array(
-            'class' => array(
-              'btn',
-              'btn-default',
-              'deny-invite-btn',
-            ),
-          ),
-        )
-        );
+        ),
+      )
+    );
     $invitation_vars[$invitation->id] = array(
       'invitation' => $invitation,
       'company_name' => $company->displayName,
@@ -654,8 +701,18 @@ function apigee_company_preprocess_apigee_company_developer_invitations(&$variab
 
 /**
  * Form API callback: Returns the confirmation form to remove a developer.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   The state of the form being created.
+ * @param string $developer_email
+ *   Email of the developer being removed.
+ *
+ * @return array
+ *   The newly-created form.
  */
-function apigee_company_remove_developer($form, &$form_state, $developer_email) {
+function apigee_company_remove_developer(array $form, array &$form_state, $developer_email) {
   $path = 'api_company/company/developers';
   drupal_add_css(drupal_get_path('module', 'apigee_company') . '/css/apigee_company.css', 'file');
   $form['developer_email'] = array(
@@ -669,8 +726,13 @@ function apigee_company_remove_developer($form, &$form_state, $developer_email) 
 
 /**
  * Form API callback: Submit handler for the remove developer form.
+ *
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
-function apigee_company_remove_developer_submit($form, &$form_state) {
+function apigee_company_remove_developer_submit(array $form, array &$form_state) {
   $developer_email = $form_state['values']['developer_email'];
   module_load_include('inc', 'apigee_company', 'includes/apigee_company_switcher');
   $company = apigee_company_get_current_context_company();
@@ -692,7 +754,7 @@ function apigee_company_remove_developer_submit($form, &$form_state) {
     watchdog('apigee_company', 'Developer %email removed from company %company', array(
       '%email' => $developer_email,
       '%company' => $company->name,
-        ), WATCHDOG_NOTICE);
+    ), WATCHDOG_NOTICE);
     $form_state['redirect'] = 'api_company/company/developers';
     drupal_set_message(t('Developer removed successfully.'));
   }
@@ -702,12 +764,12 @@ function apigee_company_remove_developer_submit($form, &$form_state) {
  * Utility function that returns and indexed array of company objects.
  *
  * @param array $company_ids
- *   an indexed array of company machine names
+ *   An indexed array of company machine names.
  *
  * @return array
  *   An array of company entities.
  */
-function apigee_company_get_company_objects($company_ids) {
+function apigee_company_get_company_objects(array $company_ids) {
   $company_list = entity_load('apigee_company', $company_ids);
   return $company_list;
 }
@@ -715,7 +777,8 @@ function apigee_company_get_company_objects($company_ids) {
 /**
  * Returns the current_company_context in the session.
  *
- * If there is no company in the context the NULL is returned.
+ * @return ApigeeCompanyEntity|null
+ *   Current company in context, or NULL if none.
  */
 function apigee_company_get_current_context_company() {
   return empty($_SESSION['apigee_company_default_company']) ? NULL : $_SESSION['apigee_company_default_company'];
@@ -723,6 +786,9 @@ function apigee_company_get_current_context_company() {
 
 /**
  * Set the current company context for this user.
+ *
+ * @param ApigeeCompanyEntity|null $company
+ *   Company to be saved in context, or NULL if none.
  */
 function apigee_company_set_current_context_company($company) {
   $_SESSION['apigee_company_default_company'] = $company;
@@ -730,8 +796,18 @@ function apigee_company_set_current_context_company($company) {
 
 /**
  * Form API callback: Confirmation form when a developer leaves a company.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   The state of the form being created.
+ * @param string $company_name
+ *   Name of the company developer is leaving.
+ *
+ * @return array
+ *   The newly-created form.
  */
-function apigee_company_developer_leave($form, &$form_state, $company_name) {
+function apigee_company_developer_leave(array $form, array &$form_state, $company_name) {
   global $user;
 
   $path = 'api_company/companies/list';
@@ -754,8 +830,13 @@ function apigee_company_developer_leave($form, &$form_state, $company_name) {
 
 /**
  * Form API callback: Submit handler for the developer leave form.
+ *
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
-function apigee_company_developer_leave_submit($form, &$form_state) {
+function apigee_company_developer_leave_submit(array $form, array &$form_state) {
   $developer_email = $form_state['values']['developer_email'];
   $company_name = $form_state['values']['company_name'];
   $is_successful = entity_get_controller('apigee_company')->removeDeveloper($developer_email, $company_name);
@@ -775,7 +856,7 @@ function apigee_company_developer_leave_submit($form, &$form_state) {
     watchdog('apigee_company', 'Developer %email left from company %company', array(
       '%email' => $developer_email,
       '%company' => $company_name,
-        ), WATCHDOG_NOTICE);
+    ), WATCHDOG_NOTICE);
 
     // Make sure that the context is set to null and the developer's roles are
     // updated to the default after if the developer leaves the company in the
@@ -799,12 +880,15 @@ function apigee_company_developer_leave_submit($form, &$form_state) {
  */
 function apigee_company_company_pending_developer_invitations() {
   if (!user_access('manage company users')) {
-    return;
+    drupal_access_denied();
   }
   $company = apigee_company_get_current_context_company();
   $invitations = array();
   if (!empty($company)) {
-    $invitations = entity_load('apigee_company_invitation', array(), array('companyId' => $company->name, 'state' => 'PENDING'));
+    $invitations = entity_load('apigee_company_invitation', array(), array(
+      'companyId' => $company->name,
+      'state' => 'PENDING',
+    ));
   }
 
   return theme('apigee_company_company_pending_developer_invitations', array('invitations' => $invitations));
@@ -812,6 +896,14 @@ function apigee_company_company_pending_developer_invitations() {
 
 /**
  * Ctools menu callback.
+ *
+ * @param bool $js
+ *   True if AJAX output is expected.
+ * @param string $developer_email
+ *   Email of developer whose role is being handled.
+ *
+ * @return array
+ *   User-role form.
  */
 function apigee_company_modify_role_ctools_callback($js, $developer_email) {
   if ($js) {
@@ -832,14 +924,24 @@ function apigee_company_modify_role_ctools_callback($js, $developer_email) {
     drupal_exit();
   }
   else {
-    return drupal_get_form('apigee_company_modify_user_roles', $developer_id);
+    return drupal_get_form('apigee_company_modify_user_roles', $developer_email);
   }
 }
 
 /**
  * Form API callback: The modify user roles form.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   The state of the form being created.
+ * @param string $developer_email
+ *   Email of developer whose roles are being modified.
+ *
+ * @return array
+ *   The newly-created form.
  */
-function apigee_company_modify_user_roles($form, &$form_state, $developer_email = NULL) {
+function apigee_company_modify_user_roles(array $form, array &$form_state, $developer_email = NULL) {
   $developer_email = $form_state['developer_email'] ? $form_state['developer_email'] : $developer_email;
   if (module_exists('devconnect_monetization')) {
     $roles = array(
@@ -854,6 +956,7 @@ function apigee_company_modify_user_roles($form, &$form_state, $developer_email 
       APIGEE_COMPANY_DEVELOPER_ROLE_NAME => APIGEE_COMPANY_DEVELOPER_ROLE_NAME,
     );
   }
+  $developer_roles = NULL;
   $company = apigee_company_get_current_context_company();
   if ($company) {
     $developer_roles = entity_get_controller('apigee_company')->getDeveloperRoles($developer_email, $company->name);
@@ -885,23 +988,34 @@ function apigee_company_modify_user_roles($form, &$form_state, $developer_email 
 
 /**
  * Form API callback: Validation for the modify user roles form.
+ *
+ * @param array $form
+ *   The form being validated.
+ * @param array $form_state
+ *   State of the form being validated.
  */
-function apigee_company_modify_user_roles_validate(&$form, &$form_state) {
+function apigee_company_modify_user_roles_validate(array &$form, array &$form_state) {
   // If devconnect_monetization  module is enabled then we check for the
   // permissions defined by the devconnect_monetization module.
   if (module_exists('devconnect_monetization') && !user_access('edit mint developers roles')) {
     form_set_error('', t('Sorry! You donot have access to perform this operation. Please reload the page and try again.'));
   }
   elseif (!module_exists('devconnect_monetization') && !user_access('manage company users')) {
-    // If we donot have devconnect_monetization module enabled then we check
+    // If we do not have devconnect_monetization module enabled then we check
     // for the permissions defined by the apigee_company module.
     form_set_error('', t('Sorry! You donot have access to perform this operation. Please reload the page and try again.'));
   }
 }
+
 /**
  * Form API callback: Submit handler for the modify user roles form.
+ *
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
-function apigee_company_modify_user_roles_submit(&$form, &$form_state) {
+function apigee_company_modify_user_roles_submit(array &$form, array &$form_state) {
   global $user;
   $roles = $form_state['values']['roles'];
   $developer_email = $form_state['developer_email'];
@@ -918,9 +1032,15 @@ function apigee_company_modify_user_roles_submit(&$form, &$form_state) {
   $saved = entity_get_controller('apigee_company')->updateDeveloper($company->name, $developer_email, $developer_roles);
   if (!$saved) {
     $e = ApigeeCompanyController::getLastException();
-    $response = @json_decode($e->response);
+    $response_message = $e->getMessage();
+    if ($e instanceof Apigee\Exceptions\ResponseException) {
+      $response = @json_decode($e->getResponse(), TRUE);
+      if (is_array($response) && array_key_exists('message', $response)) {
+        $response_message = $response['message'];
+      }
+    }
     $t_args = array(
-      '%response_message' => $response->message,
+      '%response_message' => $response_message,
       '%developer' => $developer_email,
       '%company' => $company->displayName,
     );
@@ -938,7 +1058,7 @@ function apigee_company_modify_user_roles_submit(&$form, &$form_state) {
     )));
     watchdog('apigee_company', 'Developer %email left from company %company', array(
       '%developer' => $developer_email,
-        ), WATCHDOG_NOTICE);
+    ), WATCHDOG_NOTICE);
   }
 
   $form_state['ajax_commands'][] = ctools_ajax_command_reload();
@@ -950,8 +1070,8 @@ function apigee_company_modify_user_roles_submit(&$form, &$form_state) {
  * @param string $id
  *   The id of the invitation.
  *
- * @return object
- *   The invitation object.
+ * @return ApigeeCompanyInvitationEntity|bool
+ *   The invitation object, or false if it could not be loaded.
  */
 function apigee_company_invitation_load($id = NULL) {
   if (isset($id)) {
@@ -963,8 +1083,18 @@ function apigee_company_invitation_load($id = NULL) {
 
 /**
  * Form API callback: Confirmation form for cancelling an invitation.
+ *
+ * @param array $form
+ *   The form being created.
+ * @param array $form_state
+ *   The state of the form being created.
+ * @param ApigeeCompanyInvitationEntity $invitation
+ *   The invitation being canceled.
+ *
+ * @return array
+ *   The newly-created form.
  */
-function apigee_company_cancel_invitation($form, &$form_state, $invitation) {
+function apigee_company_cancel_invitation(array $form, array &$form_state, $invitation) {
 
   $path = 'api_company/company/developers';
   drupal_add_css(drupal_get_path('module', 'apigee_company') . '/css/apigee_company.css', 'file');
@@ -980,8 +1110,13 @@ function apigee_company_cancel_invitation($form, &$form_state, $invitation) {
 
 /**
  * Form API callback: Handles the submit for the cancel invitation form.
+ *
+ * @param array $form
+ *   The form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
  */
-function apigee_company_cancel_invitation_submit($form, &$form_state) {
+function apigee_company_cancel_invitation_submit(array $form, array &$form_state) {
   $invitation = $form_state['values']['invitation'];
   $developer_email = $invitation->developerId;
   entity_delete('apigee_company_invitation', $invitation->id);
@@ -991,7 +1126,7 @@ function apigee_company_cancel_invitation_submit($form, &$form_state) {
   )));
   watchdog('apigee_company', 'Request sent to developer %developer cancelled successfully.', array(
     '%developer' => $developer_email,
-      ), WATCHDOG_NOTICE);
+  ), WATCHDOG_NOTICE);
 }
 
 /**
@@ -1003,9 +1138,9 @@ function apigee_company_cancel_invitation_submit($form, &$form_state) {
  * @param string $role
  *   The user role name.
  *
- * @return FALSE
- *   if the role belongs to any of the default monetization or company roles,
- *   TRUE otherwise.
+ * @return bool
+ *   FALSE if the role belongs to any of the default monetization or company
+ *   roles, TRUE otherwise.
  */
 function _apigee_company_filter_default_roles($role) {
   // We should remove only the roles that are added either by the
@@ -1051,7 +1186,6 @@ function apigee_company_update_user_roles() {
   $current_user_roles = $user->roles;
 
   $company = apigee_company_get_current_context_company();
-  $new_roles = array();
   if ($company) {
     // If there is a company in the context the get
     // the user's role in the company.
@@ -1109,10 +1243,9 @@ function apigee_company_user_logout($account) {
  */
 function apigee_company_preprocess_devconnect_developer_apps_list(&$vars) {
   // Set Title.
-  $my = '';
   $company = apigee_company_get_current_context_company();
   if ($company) {
-    $my = $company->displayName . "'s";
+    $my = $company->displayName . "’s";
   }
   else {
     if ($vars['user']->uid == $GLOBALS['user']->uid) {
@@ -1122,7 +1255,10 @@ function apigee_company_preprocess_devconnect_developer_apps_list(&$vars) {
       $my = $vars['user']->name . "'s";
     }
   }
-  $title = t('!my !apps_or_apis', array('!my' => $my, '!apps_or_apis' => $vars['plural']));
+  $title = t('!my !apps_or_apis', array(
+    '!my' => $my,
+    '!apps_or_apis' => $vars['plural'],
+  ));
 
   drupal_set_title($title);
 }

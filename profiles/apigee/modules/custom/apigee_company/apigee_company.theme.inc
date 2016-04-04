@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Theme functions
+ * Theme functions.
  */
 
 /**
@@ -17,7 +17,7 @@
  * @return string
  *   HTML table of developer's invitations.
  */
-function theme_apigee_company_developer_invitations($variables) {
+function theme_apigee_company_developer_invitations(array $variables) {
   $invitations = $variables['invitations'];
   drupal_add_css(drupal_get_path('module', 'apigee_company') . '/css/apigee_company.css', 'file');
 
@@ -41,16 +41,15 @@ function theme_apigee_company_developer_invitations($variables) {
       'colspan' => 2,
     ),
   );
-  $attributes = array(
-    'class' => array('apigee-company-tables', 'developers-invitation-list'),
-  );
-  return theme('table', array(
+  $vars = array(
     'header' => $header,
     'rows' => $rows,
-    'attributes' => $attributes,
+    'attributes' => array(
+      'class' => array('apigee-company-tables', 'developers-invitation-list'),
+    ),
     'empty' => t('You do not have any company invitations.'),
-      )
   );
+  return theme('table', $vars);
 }
 
 /**
@@ -140,8 +139,7 @@ function theme_apigee_company_developer_companies($variables) {
  * @return string
  *   HTML table of developers.
  */
-function theme_apigee_company_company_developers($variables) {
-  global $user;
+function theme_apigee_company_company_developers(array $variables) {
   $developers = $variables['developers'];
   $company_name = $variables['company_name'];
   drupal_add_css(drupal_get_path('module', 'apigee_company') . '/css/apigee_company.css', 'file');
@@ -169,7 +167,8 @@ function theme_apigee_company_company_developers($variables) {
           'class' => array(
             'ctools-use-modal',
             'ctools-modal-company-role-modal-style',
-            'btn', 'btn-default',
+            'btn',
+            'btn-default',
             'modify-role-btn',
           ),
         ),
@@ -218,17 +217,14 @@ function theme_apigee_company_company_developers($variables) {
     unset($header['actions']);
   }
 
-  $attributes = array(
-    'class' => array('apigee-company-tables', 'company-developers-list'),
-  );
-  $company_user_list = theme('table', array(
+  $vars = array(
     'header' => $header,
     'rows' => $rows,
-    'attributes' => $attributes,
-      )
+    'attributes' => array(
+      'class' => array('apigee-company-tables', 'company-developers-list'),
+    ),
   );
-
-  return $company_user_list;
+  return theme('table', $vars);
 }
 
 /**
@@ -256,7 +252,7 @@ function theme_apigee_company_company_developers($variables) {
  * @return string
  *   HTML for the table switcher.
  */
-function theme_apigee_company_switcher($variables) {
+function theme_apigee_company_switcher(array $variables) {
   $company_links = array();
 
   // Create link for each company.
@@ -290,10 +286,7 @@ function theme_apigee_company_switcher($variables) {
 
   // Theme using ctools dropbutton.
   drupal_add_css(drupal_get_path('module', 'views') . '/css/views-admin.ctools.css');
-  $context_links = theme('links__ctools_dropbutton', array(
-    'links' => $company_links,
-      )
-  );
+  $context_links = theme('links__ctools_dropbutton', array('links' => $company_links));
 
   $output = '<label>' . t('Switch Company') . '</label>';
   $output .= '<div class="company-switcher">' . $context_links . '</div>';
@@ -309,7 +302,7 @@ function theme_apigee_company_switcher($variables) {
  * @return string
  *   HTML table of pending developer invitations for a company.
  */
-function theme_apigee_company_company_pending_developer_invitations($variables) {
+function theme_apigee_company_company_pending_developer_invitations(array $variables) {
   $invitations = $variables['invitations'];
   drupal_add_css(drupal_get_path('module', 'apigee_company') . '/css/apigee_company.css', 'file');
 
@@ -317,7 +310,8 @@ function theme_apigee_company_company_pending_developer_invitations($variables) 
   $row_link_options = array(
     'query' => array('destination' => $_GET['q']),
     'attributes' => array(
-      'class' => array('btn', 'btn-default', 'cancel-invite-btn')),
+      'class' => array('btn', 'btn-default', 'cancel-invite-btn'),
+    ),
   );
 
   foreach ($invitations as $invitation) {
@@ -341,13 +335,16 @@ function theme_apigee_company_company_pending_developer_invitations($variables) 
     ),
   );
   $attributes = array(
-    'class' => array('apigee-company-tables', 'company-developer-invitation-list'),
+    'class' => array(
+      'apigee-company-tables',
+      'company-developer-invitation-list',
+    ),
   );
-  return theme('table', array(
+  $vars = array(
     'header' => $header,
     'rows' => $rows,
     'attributes' => $attributes,
     'empty' => t('No pending company invitations.'),
-      )
   );
+  return theme('table', $vars);
 }

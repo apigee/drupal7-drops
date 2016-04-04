@@ -44,7 +44,7 @@ $i = 0;
 <?php if ($application_count): ?>
   <div class="row">
     <div class="col-sm-12">
-      <h2 class="featurette-heading"><?php print t("These are your $plural_downcase!"); ?>
+      <h2 class="featurette-heading"><?php print t('These are your @apps!', array('@apps' => $plural_downcase)); ?>
         <span class="text-muted"><?php print t('Explore them!'); ?></span>
       </h2>
       <hr>
@@ -308,12 +308,13 @@ $i = 0;
     </div>
   </div>
 <?php else : ?>
-  <?php // only one application ?>
+  <?php // no apps ?>
   <div class="row">
     <div class="col-sm-12">
-      <h2 class="featurette-heading"><?php print t("These are your $plural_downcase!"); ?>
-        <span class="text-muted"><?php print t('Explore them!'); ?></span>
+      <h2 class="featurette-heading"><?php print t('Looks like you don’t have any  @apps.', array('@apps' => $plural_downcase)); ?>
+        <span class="text-muted"><?php print t('Get started by adding one.'); ?></span>
       </h2>
     </div>
   </div>
 <?php endif; // application_count ?>
+

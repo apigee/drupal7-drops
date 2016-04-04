@@ -7,23 +7,13 @@
 use Apigee\ManagementAPI\CompanyInvitation;
 use Apigee\Exceptions\ResponseException;
 
+/**
+ * Controller class for the apigee_company_invitation entity.
+ */
 class ApigeeCompanyInvitationController implements DrupalEntityControllerInterface, EntityAPIControllerInterface {
 
   /**
-   * Entity type.
-   *
-   * @var string
-   */
-  protected $entityType;
-
-  /**
-   * The entity info.
-   *
-   * @var array.
-   */
-  protected $entityInfo;
-
-  /**
+   * The last exception thrown, if any.
    *
    * @var \Exception
    */
@@ -33,8 +23,6 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
    * {@inheritdoc}
    */
   public function __construct($entity_type) {
-    $this->entityInfo = entity_get_info($entity_type);
-    $this->entityType = $entity_type;
   }
   /**
    * {@inheritdoc}
@@ -42,19 +30,10 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
   public function create(array $values = array()) {
     // Add is_new property if it is not set.
     $values += array('is_new' => TRUE);
-
-    // If there is a class for this entity type, instantiate it now.
-    if (isset($this->entityInfo['entity class']) && $class = $this->entityInfo['entity class']) {
-      $entity = new $class($values, $this->entityType);
-    }
-    else {
-      // Otherwise use a good old stdClass.
-      $entity = (object) $values;
-    }
-
+    $entity = new ApigeeCompanyInvitationEntity($values);
+    $entity_type = 'apigee_company_invitation';
     // Allow other modules to alter the created entity.
-    drupal_alter('apigee_company_entity_create', $this->entityType, $entity);
-
+    drupal_alter('apigee_company_entity_create', $entity_type, $entity);
     return $entity;
   }
 
@@ -84,7 +63,6 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
 
     $config = self::getConfig();
     $invitation = new CompanyInvitation($config);
-    $invitations = array();
     if (array_key_exists('developerId', $conditions)) {
       $state = array_key_exists('state', $conditions) ? $conditions['state'] : NULL;
       $invitations = $invitation->getAllInvitationsForDeveloper($conditions['developerId'], $state);
@@ -157,10 +135,10 @@ class ApigeeCompanyInvitationController implements DrupalEntityControllerInterfa
       $config = self::getConfig();
       $invitation = new CompanyInvitation($config);
       $invitation->setSourceDeveloperEmail($user->mail);
-      try{
+      try {
         $invitation->delete($id);
       }
-      catch (ResponseException $e){
+      catch (ResponseException $e) {
         self::$lastException = $e;
         return FALSE;
       }

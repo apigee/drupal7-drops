@@ -47,6 +47,9 @@ function devconnect_developer_apps_analytics_form() {
     '#default_value' => $metric_default
   );
 
+  $date_format = variable_get('date_format_short', 'm/d/Y - H:i');
+  $date_format = str_replace(' - ', ' ', $date_format);
+
   $from = 0;
   if (isset($_GET['from'])) {
     $from = $_GET['from'];
@@ -54,15 +57,26 @@ function devconnect_developer_apps_analytics_form() {
   if (!$from) {
     $from = strtotime('-1 day');
   }
-  $from_text = gmdate('m/d/Y H:i', $from) . ' UTC';
+  $from_text = gmdate($date_format, $from);
+  $to = 0;
+  if (isset($_GET['to'])) {
+    $to = $_GET['to'];
+  }
+  if (!$to) {
+    $to = time();
+  }
+  $to_text = gmdate($date_format, $to);
 
   drupal_add_library('system', 'ui.tabs');
-  drupal_add_library('system', 'ui.datepicker'); // need to add the library as the timepicker datemethod relies on classes within it.
-  drupal_add_js(drupal_get_path('module', 'devconnect_developer_apps') . '/js/jquery-ui-timepicker-addon.js');
-  drupal_add_js('jQuery(document).ready(function(){
-    jQuery("#edit-date-from").datetimepicker();
-    jQuery("#edit-date-to").datetimepicker();
-  });', 'inline');
+
+  $timepicker_path = libraries_get_path('datetimepicker') . '/';
+  drupal_add_js($timepicker_path . '/build/jquery.datetimepicker.full.min.js');
+  drupal_add_css($timepicker_path . 'jquery.datetimepicker.css');
+  drupal_add_css(drupal_get_path('module', 'devconnect_developer_apps') . '/css/timepicker.css');
+  drupal_add_js("jQuery(document).ready(function(){
+    jQuery('#edit-date-from').datetimepicker({format:'$date_format',step:5});
+    jQuery('#edit-date-to').datetimepicker({format:'$date_format',step:5});
+  });", 'inline');
 
 
   $form['date_from'] = array(
@@ -71,17 +85,9 @@ function devconnect_developer_apps_analytics_form() {
     '#required' => TRUE,
     '#size' => 25,
     '#default_value' => $from_text,
-    '#attributes' => array('class' => array('pickadate'))
+    '#attributes' => array('class' => array('pickadate')),
+    '#post_render' => array('devconnect_developer_apps_analytics_date_postrender'),
   );
-
-  $to = 0;
-  if (isset($_GET['to'])) {
-    $to = $_GET['to'];
-  }
-  if (!$to) {
-    $to = time();
-  }
-  $to_text = gmdate('m/d/Y H:i', $to) . ' UTC';
 
   $form['date_to'] = array(
     '#type' => 'textfield',
@@ -89,7 +95,8 @@ function devconnect_developer_apps_analytics_form() {
     '#required' => TRUE,
     '#size' => 25,
     '#default_value' => $to_text,
-    '#attributes' => array('class' => array('pickadate'))
+    '#attributes' => array('class' => array('pickadate')),
+    '#post_render' => array('devconnect_developer_apps_analytics_date_postrender'),
   );
 
   $form['submit'] = array(
@@ -98,6 +105,10 @@ function devconnect_developer_apps_analytics_form() {
   );
 
   return $form;
+}
+
+function devconnect_developer_apps_analytics_date_postrender($element, $children) {
+  return str_replace('</div>', '<span class="utc">' . t('UTC') . '</span></div>', $element);
 }
 
 function devconnect_developer_apps_analytics_form_validate($form, &$form_state) {

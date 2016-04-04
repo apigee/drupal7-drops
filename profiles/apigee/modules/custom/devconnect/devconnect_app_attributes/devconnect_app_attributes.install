@@ -1,0 +1,12 @@
+<?php
+/**
+ * @file
+ * Uninstall routine for Devconnect Developer App Attributes.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function devconnect_app_attributes_uninstall() {
+  variable_del('app_attributes');
+}

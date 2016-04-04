@@ -7,26 +7,24 @@
 use Apigee\ManagementAPI\Company;
 use Apigee\Exceptions\ResponseException;
 
+/**
+ * Controller class for the apigee_company entity.
+ */
 class ApigeeCompanyController implements DrupalEntityControllerInterface, EntityAPIControllerInterface {
 
   /**
-   * Entity type for this controller instance.
+   * The last exception thrown, if any.
    *
-   * @var string
-   */
-  protected $entityType;
-  protected $entityInfo;
-
-  /**
    * @var \Exception
    */
   protected static $lastException;
 
+
   /**
-   * Get the org config.
+   * Gets the configuration for the requested org.
    *
-   * @return array
-   *   The org configurations
+   * @return \Apigee\Util\OrgConfig
+   *   Configuration for the default org.
    */
   protected static function getConfig() {
     return devconnect_default_org_config();
@@ -36,8 +34,6 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
    * {@inheritdoc}
    */
   public function __construct($entity_type) {
-    $this->entityInfo = entity_get_info($entity_type);
-    $this->entityType = $entity_type;
   }
 
   /**
@@ -46,18 +42,10 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
   public function create(array $values = array()) {
     // Add is_new property if it is not set.
     $values += array('is_new' => TRUE);
-
-    // If there is a class for this entity type, instantiate it now.
-    if (isset($this->entityInfo['entity class']) && $class = $this->entityInfo['entity class']) {
-      $entity = new $class($values, $this->entityType);
-    }
-    else {
-      // Otherwise use a good old stdClass.
-      $entity = (object) $values;
-    }
-
+    $entity = new ApigeeCompanyEntity($values);
+    $entity_type = 'apigee_company';
     // Allow other modules to alter the created entity.
-    drupal_alter('apigee_company_entity_create', $this->entityType, $entity);
+    drupal_alter('apigee_company_entity_create', $entity_type, $entity);
 
     return $entity;
   }
@@ -104,17 +92,14 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
       $company = new Company($config);
       foreach ($ids as $id) {
         $company->load($id);
-        // $entities[$company->getName()] = $company;
 
         $array = $company->toArray();
         $entity = new ApigeeCompanyEntity($array);
         $entity->developers = $company->listDevelopers();
         $entities[$company->getName()] = $entity;
       }
-      return $entities;
     }
-
-    if (empty($ids) && empty($conditions)) {
+    elseif (empty($conditions)) {
       // Load all companies for this org.
       $config = self::getConfig();
       $company = new Company($config);
@@ -125,8 +110,9 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
         $entity->developers = $company->listDevelopers();
         $entities[$company->getName()] = $entity;
       }
-      return $entities;
     }
+    // TODO: What if $ids is empty, but $conditions isn't?
+    return $entities;
   }
 
   /**
@@ -169,7 +155,6 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
    *   TRUE if the developer was removed successfully, else FALSE.
    */
   public function removeDeveloper($developer_email, $company_name = NULL) {
-    $company_name = $company_name ?: $this->name;
     $config = self::getConfig();
     $company = new Company($config);
 
@@ -197,10 +182,10 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
   public function getDeveloperRoles($developer_email, $company_name) {
     $config = self::getConfig();
     $company = new Company($config);
-    try{
+    try {
       $developer_roles = $company->getDeveloperRoles($developer_email, $company_name);
     }
-    catch(ResponseException $e){
+    catch (ResponseException $e) {
       self::$lastException = $e;
       return FALSE;
     }

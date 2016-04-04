@@ -31,7 +31,7 @@ print $add_app;
 
   <?php if ($application_count) : ?>
 
-    <h2><?php print t("These are your $plural_downcase!"); ?></h2>
+    <h2><?php print t('These are your @apps!', array('@apps' => $plural_downcase)); ?></h2>
     <h3><?php print t('Add more, edit or delete them as you like.'); ?></h3>
     <hr>
 
@@ -39,7 +39,7 @@ print $add_app;
     foreach ($applications as $app) {
       print '<div class="app-delete">';
       if (!empty($app['delete_url'])) {
-        print '<button class="btn primary action button-processed" title="' . t("Delete $singular") . '" data-url="' . $app['delete_url'] . '"></button>';
+        print '<button class="btn primary action button-processed" title="' . t('Delete @app', array('@app' => $singular)) . '" data-url="' . $app['delete_url'] . '"></button>';
       }
       print '</div>';
       print '<div class="app-content"><h4 class="app-title">' . l($app['app_name'], $app['detail_url']) . '</h4>';
@@ -51,7 +51,7 @@ print $add_app;
     }
     ?>
   <?php else: ?>
-    <h2><?php print t("Looks like you don’t have any $plural_downcase"); ?></h2>
+    <h2><?php print t('Looks like you don’t have any @apps.', array('@apps' => $plural_downcase)); ?></h2>
     <h3><?php print t('Get started by adding one.'); ?></h3>
   <?php endif; ?>
 </form>

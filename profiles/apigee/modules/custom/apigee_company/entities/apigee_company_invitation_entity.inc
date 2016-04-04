@@ -4,22 +4,28 @@
  * Entity Class for the Apigee Company Invitation Entity.
  */
 
+/**
+ * Entity class for apigee_company_invitation entity.
+ */
 class ApigeeCompanyInvitationEntity {
 
   /**
    * Company ID.
+   *
    * @var string
    */
   public $companyId = '';
 
   /**
    * Created date.
+   *
    * @var string
    */
   public $created_at = '';
 
   /**
    * Developer ID.
+   *
    * @var string
    */
   public $developerId = '';
@@ -33,43 +39,50 @@ class ApigeeCompanyInvitationEntity {
 
   /**
    * Last updated date.
+   *
    * @var string
    */
   public $lastmodified_at = '';
 
   /**
-   * The org id
+   * The org id.
+   *
    * @var string
    */
   public $orgId = '';
 
   /**
    * The entity that initiated the request.
+   *
    * @var string
    */
   public $requestor = '';
 
   /**
    * The current state of the request.
+   *
    * @var string
    */
   public $state = '';
 
   /**
    * The type of request.
+   *
    * @var string
    */
   public $type = '';
 
 
   /**
-   *The source developer email address.
+   * The source developer email address.
+   *
    * @var string
    */
   public $sourceDeveloperEmail = '';
 
   /**
-   *The response Url to be sent in the email to the developer.
+   * The response Url to be sent in the email to the developer.
+   *
    * @var string
    */
   public $responseUrl = '';
@@ -80,7 +93,7 @@ class ApigeeCompanyInvitationEntity {
    *
    * @param array $values
    *   Associative array with keys as the class properties and values as their
-   *   values
+   *   values.
    */
   public function __construct($values) {
     // Set initial values.

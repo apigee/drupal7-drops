@@ -155,7 +155,7 @@ projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues
 ; Enabled during profile install.
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
-projects[entity][version] = "1.6"
+projects[entity][version] = "1.7"
 
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
@@ -170,7 +170,7 @@ projects[faq][version] = "1.1"
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.7"
+projects[features][version] = "2.8"
 
 ; Deprecated
 projects[features_extra][type] = "module"
@@ -301,7 +301,7 @@ projects[media_youtube][version] = "3.0"
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
 projects[menu_attributes][subdir] = "contrib"
-projects[menu_attributes][version] = "1.0-rc3"
+projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
@@ -380,7 +380,7 @@ projects[rules][version] = "2.9"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.13"
+projects[services][version] = "3.14"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -474,7 +474,7 @@ projects[wysiwyg_filter][version] = "1.6-rc3"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
-projects[xautoload][version] = "5.5"
+projects[xautoload][version] = "5.6"
 
 
 
@@ -482,7 +482,7 @@ projects[xautoload][version] = "5.5"
 
 ; Enabled during profile install for admin screens.
 projects[adminimal_theme][type] = "theme"
-projects[adminimal_theme][version] = "1.23"
+projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme. Update past 3.0 with great care!
 projects[bootstrap][type] = "theme"
@@ -782,6 +782,12 @@ libraries[jquery_selectlist][destination] = "libraries"
 libraries[jquery_selectlist][directory_name] = "jquery.selectlist"
 libraries[jquery_selectlist][download][type] = "file"
 libraries[jquery_selectlist][download][url] = "http://odyniec.net/projects/selectlist/jquery.selectlist-0.6.1.zip"
+
+; Used by devconnect_developer_apps
+libraries[datetimepicker][destination] = "libraries"
+libraries[datetimepicker][directory_name] = "datetimepicker"
+libraries[datetimepicker][download][type] = "file"
+libraries[datetimepicker][download][url] = "https://github.com/xdan/datetimepicker/archive/2.5.1.tar.gz"
 
 ; Used by views_slideshow
 libraries[json2][destination] = "libraries"

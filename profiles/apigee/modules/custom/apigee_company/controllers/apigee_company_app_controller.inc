@@ -8,10 +8,14 @@ use Apigee\ManagementAPI\DeveloperApp;
 use Apigee\ManagementAPI\CompanyApp;
 use Apigee\Exceptions\ResponseException;
 use Apigee\Exceptions\ParameterException;
-use Drupal\devconnect_developer_apps\DeveloperAppEntity;
 use Apigee\ManagementAPI\Company;
-use Apigee\ManagementAPI\Developer;
 
+/**
+ * Entity controller class for developer_app entity.
+ *
+ * This class overrides the usual developer_app controller when apigee_company
+ * is enabled.
+ */
 class ApigeeCompanyAppController extends DeveloperAppController {
 
   /**
@@ -41,6 +45,8 @@ class ApigeeCompanyAppController extends DeveloperAppController {
 
     // If company is null, do the normal saving of developer apps.
     if ($company_in_context == NULL) {
+      // We cannot do entity_get_controller() here, because we want the
+      // original, non-altered developer_app controller in this case.
       $developer_app_controller = new DeveloperAppController('developer_app');
       $is_saved = $developer_app_controller->save($entity);
       return $is_saved;
@@ -60,20 +66,14 @@ class ApigeeCompanyAppController extends DeveloperAppController {
       $company->setName($entity['companyName']);
       $company->setDisplayName($entity['companyName']);
       $company->save();
-      cache_clear_all('emc_company_apps:', 'cache_emc_company', TRUE);
       $company->load($entity['companyName']);
     }
 
     $is_update = !empty($entity['appId']);
     $dev_app = new CompanyApp($config, $company);
-    // $product_cache = $entity['apiProductCache'];
-    // unset ($entity['apiProductCache']);
     $dev_app->fromArray($entity);
-    // $dev_app->setApiProductCache($product_cache);
     try {
       $dev_app->save($is_update);
-      // $this->appCache[$dev_app->getAppId()] = $dev_app;
-      // cache_clear_all('emc_company_apps:', 'cache_emc_company', TRUE);
     }
     catch (ResponseException $e) {
       self::$lastException = $e;
@@ -84,7 +84,6 @@ class ApigeeCompanyAppController extends DeveloperAppController {
     // Copy incoming UID to outgoing UID.
     $dev_app_array['uid'] = $entity['uid'];
     $last_app = new ApigeeCompanyAppEntity($dev_app_array);
-    devconnect_developer_apps_write_to_cache($last_app);
     self::$lastApp = $last_app;
 
     return ($is_update ? SAVED_UPDATED : SAVED_NEW);
@@ -135,6 +134,8 @@ class ApigeeCompanyAppController extends DeveloperAppController {
     $orgs = self::getOrgs($conditions);
     $disable_logging = (isset($conditions['disableLogging']) && ($conditions['disableLogging'] === TRUE));
 
+    $app_list = array();
+
     $list = array();
     foreach ($orgs as $org) {
       $config = devconnect_default_org_config($org);
@@ -159,7 +160,6 @@ class ApigeeCompanyAppController extends DeveloperAppController {
 
       $company_app_api = new CompanyApp($config, $company_in_context->name);
 
-      $app_list = array();
       if (isset($identifier) && empty($ids)) {
         // Fetch all apps in the org.
         try {
@@ -204,110 +204,6 @@ class ApigeeCompanyAppController extends DeveloperAppController {
     return $app_entities;
   }
 
-//  /**
-//   * Sets the key status for a given developer app.
-//   *
-//   * Status may be TRUE|FALSE, 1|0, or approve|revoke.
-//   *
-//   * @param Drupal\devconnect_developer_apps\DeveloperAppEntity $entity
-//   * @param string $status
-//   * @return bool
-//   */
-//  public static function setKeyStatus(DeveloperAppEntity &$entity, $status) {
-//    try {
-//      $da = self::getAppFromEntity($entity);
-//      if ($da) {
-//        $da->setKeyStatus($status);
-//        cache_clear_all('emc_company_apps:', 'cache_emc_company', TRUE);
-//        $entity = new ApigeeCompanyAppEntity($da->toArray());
-//        return TRUE;
-//      }
-//      return FALSE;
-//    }
-//    catch (ParameterException $e) {
-//      return FALSE;
-//    }
-//    catch (ResponseException $e) {
-//      return FALSE;
-//    }
-//  }
-
-//  /**
-//   * Deletes a named attribute from an app. Returns TRUE if successful, else
-//   * FALSE. Note that if the Edge SDK is not recent enough, this functionality
-//   * may be missing; in such a case, FALSE will consistently be returned.
-//   *
-//   * @param DeveloperAppEntity $entity
-//   * @param string $attr_name
-//   * @return bool
-//   */
-//  public static function deleteAttribute(DeveloperAppEntity &$entity, $attr_name) {
-//    if (!method_exists('Apigee\ManagementAPI\DeveloperApp', 'deleteAttribute')) {
-//      return FALSE;
-//    }
-//    try {
-//      $da = self::getAppFromEntity($entity);
-//      if ($da) {
-//        $success = $da->deleteAttribute($attr_name);
-//        if ($success) {
-//          cache_clear_all('emc_company_apps:', 'cache_emc_company', TRUE);
-//          $entity = new ApigeeCompanyAppEntity($da->toArray());
-//        }
-//        return TRUE;
-//      }
-//      return FALSE;
-//    } catch (ParameterException $e) {
-//      return FALSE;
-//    } catch (ResponseException $e) {
-//      return FALSE;
-//    }
-//  }
-
-//  /**
-//   * Deletes a named attribute from an app's credential. Returns TRUE if
-//   * successful, else FALSE. Note that if the Edge SDK is not recent enough,
-//   * this functionality may be missing; in such a case, FALSE will consistently
-//   * be returned.
-//   *
-//   * @param DeveloperAppEntity $entity
-//   * @param string $attr_name
-//   * @return bool
-//   */
-//  public static function deleteCredentialAttribute(ApigeeCompanyAppEntity &$entity, $attr_name) {
-//    if (!method_exists('Apigee\ManagementAPI\DeveloperApp', 'deleteCredentialAttribute')) {
-//      return FALSE;
-//    }
-//    try {
-//      $da = self::getAppFromEntity($entity);
-//      if ($da) {
-//        $success = $da->deleteCredentialAttribute($attr_name);
-//        if ($success) {
-//          cache_clear_all('emc_company_apps:', 'cache_emc_company', TRUE);
-//          $entity = new ApigeeCompanyAppEntity($da->toArray());
-//        }
-//        return TRUE;
-//      }
-//      return FALSE;
-//    } catch (ParameterException $e) {
-//      return FALSE;
-//    } catch (ResponseException $e) {
-//      return FALSE;
-//    }
-//  }
-//  private static function &getAppFromEntity(ApigeeCompanyAppEntity $entity) {
-//    try {
-//      $config = self::getConfig($entity);
-//      $da = new CompanyApp($config, $entity->companyName);
-//      $da->fromArray((array) $entity);
-//      return $da;
-//    } catch (ParameterException $e) {
-//      return FALSE;
-//    } catch (ResponseException $e) {
-//      return FALSE;
-//    }
-//  }
-
-
   /**
    * {@inheritdoc}
    */
@@ -321,7 +217,7 @@ class ApigeeCompanyAppController extends DeveloperAppController {
         // If entity is in our cache, we can make one fewer server roundtrips.
         if (array_key_exists($id, $this->appCache)) {
           $dev_app = $this->appCache[$id];
-          unset ($this->appCache[$id]);
+          unset($this->appCache[$id]);
         }
         else {
           // Not in cache. Fetch, then delete.
@@ -340,9 +236,7 @@ class ApigeeCompanyAppController extends DeveloperAppController {
         }
         if (isset($dev_app)) {
           try {
-            $entity = new DeveloperAppEntity($dev_app->toArray());
             $dev_app->delete();
-            devconnect_developer_apps_delete_from_cache($entity);
             $deleted_count++;
           }
           catch (ResponseException $e) {
@@ -354,107 +248,6 @@ class ApigeeCompanyAppController extends DeveloperAppController {
         }
       }
     }
-  }
-
-
-  /**
-   * Determines if an app exists with the given appId or set of conditions.
-   *
-   * This is accomplished without writing to logs or watchdog. If the app
-   * exists, the DeveloperAppEntity is returned, else FALSE.
-   *
-   * @param string|null $appId
-   *   The the uuid of the app to be loaded.
-   * @param array $conditions
-   *   An array of condition for the apps to be loaded.
-   *
-   * @return bool|\Drupal\devconnect_developer_apps\DeveloperAppEntity
-   *   A fully loaded Developer App Entity on success, False otherwise
-   */
-  public function loadIfExists($appId = NULL, $conditions = array(), $criteria = NULL) {
-    return FALSE;
-
-//    if ($criteria) {
-//      // Check if displayName is unique for existing app
-//      $display_names = db_select('cache_emc_company', 'e')
-//        ->fields('e', array('data'))
-//        ->condition('e.cid', '--app_human_names--')
-//        ->execute()
-//        ->fetchField();
-//
-//      if (!empty($display_names)) {
-//        $displaynames = unserialize($display_names);
-//        if ($displaynames[$conditions['name']]) {
-//          return TRUE;
-//        } else {
-//          return FALSE;
-//        }
-//      }
-//    } else {
-//      // Check cached array of company names first
-//      $app_names = db_select('cache_emc_company', 'e')
-//        ->fields('e', array('data'))
-//        ->condition('e.cid', '--app_names--')
-//        ->execute()
-//        ->fetchField();
-//
-//
-//      if (!empty($app_names)) {
-//        $appnames = unserialize($app_names);
-//        if ($appnames[$conditions['name']]) {
-//          return TRUE;
-//        } else {
-//          return FALSE;
-//        }
-//      }
-//    }
-//
-//    if (!empty($appId) && array_key_exists($appId, $this->appCache)) {
-//      return $this->appCache[$appId];
-//    }
-//
-//    $ids = array();
-//    if (!empty($appId) && is_scalar($appId)) {
-//      $ids[] = $appId;
-//    }
-//
-//    $conditions2 = array();
-//    $conditions2['disableLogging'] = TRUE;
-//    $entities = $this->load($ids, $conditions2);
-//
-//    if ($criteria) {
-//      // Grab app_names from cacche
-//      $display_names = db_select('cache_emc_company', 'e')
-//        ->fields('e', array('data'))
-//        ->condition('e.cid', '--app_human_names--')
-//        ->execute()
-//        ->fetchField();
-//
-//      if (!empty($display_names)) {
-//        $displaynames = unserialize($display_names);
-//        if ($displaynames[$conditions['name']]) {
-//          return TRUE;
-//        } else {
-//          return FALSE;
-//        }
-//      }
-//    } else {
-//      // Grab app_names from cache
-//      $app_names = db_select('cache_emc_company', 'e')
-//        ->fields('e', array('data'))
-//        ->condition('e.cid', '--app_names--')
-//        ->execute()
-//        ->fetchField();
-//
-//      if (!empty($app_names)) {
-//        $appnames = unserialize($app_names);
-//        if ($appnames[$conditions['name']]) {
-//          return TRUE;
-//        } else {
-//          return FALSE;
-//        }
-//      }
-//    }
   }
 
 }

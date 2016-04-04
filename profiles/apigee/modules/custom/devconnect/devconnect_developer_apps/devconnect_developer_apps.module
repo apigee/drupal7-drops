@@ -75,6 +75,10 @@ function devconnect_developer_apps_preprocess_devconnect_developer_apps_list(&$v
     }
   }
 
+  usort($vars['applications'], function($a, $b) {
+    return strcasecmp($a['app_name'], $b['app_name']);
+  });
+
   // Set title.
   if ($vars['user']->uid == $GLOBALS['user']->uid) {
     $title = t('My @label', array('@label' => $vars['plural']));
@@ -92,18 +96,18 @@ function devconnect_developer_apps_menu() {
   $items = array();
   $items['user/%user/apps'] = array(
     'title' => 'My !apps',
-    'title arguments' => array('!apps' => _devconnect_developer_apps_get_app_label(TRUE)),
+    'title arguments' => array('!apps' => _devconnect_developer_apps_get_app_label(TRUE, TRUE)),
     'page callback' => 'devconnect_developer_apps_getlist',
     'page arguments' => array(1),
     'access callback' => 'devconnect_developer_apps_access',
     'access arguments' => array(1, 'view'),
-    'menu_name' => 'main-menu',
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 0,
+    'menu_name' => 'user-menu',
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 1,
   );
 
   $items['user/%user/app-detail/%'] = array(
-    'title' => '!app Detail',
+    'title' => '!app detail',
     'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE)),
     'page callback' => 'devconnect_developer_apps_detail',
     'page arguments' => array(1, 3),
@@ -114,8 +118,8 @@ function devconnect_developer_apps_menu() {
   );
 
   $items['user/%user/apps/add'] = array(
-    'title' => 'Add New !app',
-    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE)),
+    'title' => 'Add new !app',
+    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE, TRUE)),
     'page callback' => 'devconnect_developer_apps_show_edit_form',
     'page arguments' => array(1),
     'access callback' => 'devconnect_developer_apps_access',
@@ -126,7 +130,7 @@ function devconnect_developer_apps_menu() {
 
   $items['user/%user/apps/%/edit-app'] = array(
     'title' => 'Edit !app',
-    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE)),
+    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE, TRUE)),
     'page callback' => 'devconnect_developer_apps_show_edit_form',
     'page arguments' => array(1, 3),
     'access callback' => 'devconnect_developer_apps_access',
@@ -137,7 +141,7 @@ function devconnect_developer_apps_menu() {
 
   $items['user/%user/apps/%/delete'] = array(
     'title' => 'Delete !app',
-    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE)),
+    'title arguments' => array('!app' => _devconnect_developer_apps_get_app_label(FALSE, TRUE)),
     'page callback' => 'devconnect_developer_apps_show_delete_form',
     'page arguments' => array(1, 3),
     'access callback' => 'devconnect_developer_apps_access',
@@ -167,6 +171,17 @@ function devconnect_developer_apps_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_menu_link_alter().
+ *
+ * Makes "My apps" menu item be a top-level menu item.
+ */
+function devconnect_developer_apps_menu_link_alter(array &$item) {
+  if ($item['link_path'] == 'user/%/apps' && $item['menu_name'] == 'user-menu') {
+    $item['plid'] = 0;
+  }
 }
 
 /**
@@ -425,12 +440,6 @@ function devconnect_developer_apps_theme($existing, $type, $theme, $path) {
       'applications' => '',
       'user' => NULL,
     ),
-    'path' => $template_path,
-  );
-
-  $items['devconnect_developer_credentials_list'] = array(
-    'template' => 'devconnect_developer_credentials_list',
-    'arguments' => array('credentials' => NULL),
     'path' => $template_path,
   );
 
@@ -1569,6 +1578,25 @@ function _devconnect_developer_apps_detail(DeveloperAppEntity $entity, stdClass 
     return theme('devconnect_developer_app', $info);
   }
 
+  // Make sure tabs will work, even on themes that are not bootstrap-based.
+  // The following has been proven to work on Bartik.
+  $js = drupal_get_js();
+  if (strpos($js, 'bootstrap') === FALSE) {
+    // Non-bootstrap themes will rely on jQuery UI's tabs.
+    if (strpos($js, 'jquery-ui.') === FALSE) {
+      drupal_add_js('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js');
+      drupal_add_css('//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css');
+    }
+    // Register our tabs, but then unbind all custom jQuery events from external
+    // links.
+    $script = 'jQuery(function(){
+      jQuery("#developer-app-detail-tabs").tabs();
+      jQuery("[data-link-type=\'external\'] > a").unbind();
+    });';
+    drupal_add_js($script, 'inline');
+  }
+
+
   $uid_arg = (module_exists('me') && $GLOBALS['user']->uid == $info['account']->uid ? 'me' : $info['account']->uid);
   $show_api_products = (!empty($info['credentials']) && !empty($info['credentials'][0]['apiproducts']) && variable_get('devconnect_api_product_handling', 'multiple_required') != 'no_api_product');
 
@@ -1599,8 +1627,10 @@ function _devconnect_developer_apps_detail(DeveloperAppEntity $entity, stdClass 
 
   drupal_alter('devconnect_developer_app_details', $tabs, $panes);
 
-  return theme('developer_app_tabs', array('tab_links' => $tabs))
-    . theme('developer_app_panes', array('panes' => $panes));
+  return '<div id="developer-app-detail-tabs">'
+    . theme('developer_app_tabs', array('tab_links' => $tabs))
+    . theme('developer_app_panes', array('panes' => $panes))
+    . '</div>';
 }
 
 /**
@@ -2006,15 +2036,17 @@ function devconnect_developer_apps_admin_menu_cache_info() {
  *
  * @param bool $plural
  *   TRUE if the label should be plural.
+ * @param bool $lowercase
+ *   TRUE if the label should be lowercase.
  *
  * @return string
  *   Numerically-appropriate label for developer app(s).
  */
-function _devconnect_developer_apps_get_app_label($plural = FALSE) {
+function _devconnect_developer_apps_get_app_label($plural = FALSE, $lowercase = FALSE) {
   $form_value = variable_get('myapis', 0);
   switch (variable_get('myapis', 0)) {
     case 0:
-      $label = 'App';
+      $label = $lowercase ? 'app' : 'App';
       break;
 
     case 1:
@@ -2022,7 +2054,7 @@ function _devconnect_developer_apps_get_app_label($plural = FALSE) {
       break;
 
     case 2:
-      $label = 'Key';
+      $label = $lowercase ? 'key' : 'Key';
       break;
 
     default:
@@ -2032,6 +2064,6 @@ function _devconnect_developer_apps_get_app_label($plural = FALSE) {
   if ($plural) {
     $label .= 's';
   }
-  drupal_alter('devconnect_developer_app_label', $label, $form_value, $plural);
+  drupal_alter('devconnect_developer_app_label', $label, $form_value, $plural, $lowercase);
   return $label;
 }

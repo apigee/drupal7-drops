@@ -10,7 +10,8 @@
 /**
  * Generates the drop down for switching companies.
  *
- * @global type $user
+ * @global object $user
+ *
  * @return string
  *   HTML for the drop down
  */
@@ -19,7 +20,7 @@ function apigee_company_context_switcher() {
 
   // Do not show switcher if user is not logged in.
   if (!user_is_logged_in()) {
-    return;
+    return '';
   }
 
   $user_company = array(
@@ -95,7 +96,6 @@ function apigee_company_switch($company_id) {
  *
  * If no user email is given then returns the list of companies
  * for the current user.
- * @global type $user
  *
  * @param string $developer_email
  *   The email of the developer.
