@@ -88,7 +88,7 @@
       // media_get_file_without_label().
       //
       // Finds the media-element class.
-      var classRegex = 'class=[\'"][^\'"]*?media-element';
+      var classRegex = 'class=([\'"])[^\\1]*?media-element';
       // Image tag with the media-element class.
       var regex = '<img[^>]+' + classRegex + '[^>]*?>';
       // Or a span with the media-element class (used for documents).
@@ -98,10 +98,14 @@
       var matches = content.match(RegExp(regex, 'gi'));
       if (matches) {
         for (i = 0; i < matches.length; i++) {
-          markup = matches[i];
-          macro = Drupal.media.filter.create_macro($(markup));
-          Drupal.settings.tagmap[macro] = markup;
-          content = content.replace(markup, macro);
+          var markup = matches[i];
+          var macro = Drupal.media.filter.create_macro($(markup));
+          // If we have a truthy response, store the macro and perform the
+          // replacement.
+          if (macro) {
+            Drupal.settings.tagmap[macro] = markup;
+            content = content.replace(markup, macro);
+          }
         }
       }
 

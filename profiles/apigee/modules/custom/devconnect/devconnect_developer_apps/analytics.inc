@@ -70,9 +70,13 @@ function devconnect_developer_apps_analytics_form() {
   drupal_add_library('system', 'ui.tabs');
 
   $timepicker_path = libraries_get_path('datetimepicker') . '/';
-  drupal_add_js($timepicker_path . '/build/jquery.datetimepicker.full.min.js');
+  drupal_add_js($timepicker_path . 'build/jquery.datetimepicker.full.min.js');
   drupal_add_css($timepicker_path . 'jquery.datetimepicker.css');
-  drupal_add_css(drupal_get_path('module', 'devconnect_developer_apps') . '/css/timepicker.css');
+  $css_options = array(
+    'group' => CSS_THEME,
+    'weight' => 9999,
+  );
+  drupal_add_css(drupal_get_path('module', 'devconnect_developer_apps') . '/css/timepicker.css', $css_options);
   drupal_add_js("jQuery(document).ready(function(){
     jQuery('#edit-date-from').datetimepicker({format:'$date_format',step:5});
     jQuery('#edit-date-to').datetimepicker({format:'$date_format',step:5});

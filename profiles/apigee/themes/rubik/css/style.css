@@ -465,6 +465,31 @@ div.views-exposed-form input.form-text,
 div.views-exposed-form input.form-autocomplete {
   height: 28px;
 }
+/* Views grouped filters in admin. */
+#views-ajax-body .scroll.form-wrapper > *:not(.tabledrag-toggle-weight-wrapper) {
+  float: left;
+  width: 100%;
+  /* It's horrible to do this, but it's the best option for now. */
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+#views-ajax-body .tabledrag-toggle-weight-wrapper {
+  position: relative;
+}
+#views-ajax-body .scroll.form-wrapper table {
+  float: none;
+}
+#views-ajax-body .scroll.form-wrapper > .views-left-40 {
+  width: 40%;
+}
+#views-ajax-body .scroll.form-wrapper > .views-right-60 {
+  width: 59%;
+  float: right;
+}
+#views-ajax-body #edit-options-more {
+  margin-top: 10px;
+}
 /* Views header on administrative pages (displayed while editing a view). */
 .views-display-top {
   padding: 10px;
@@ -501,5 +526,13 @@ creating a view. */
 .view-workbench-moderation tbody .views-field-moderation-actions li a:hover {
   background-color: #52a8be;
   color: #fff;
+}
+/* Make sure that OpenLayers maps are displayed. */
+#page img.olTileImage {
+  max-width: inherit;
+}
+/* Use monospace font on devel/php form. */
+#devel-execute-form textarea {
+  font-family: monospace;
 }
 /* Fixes for other modules end */

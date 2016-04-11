@@ -22,10 +22,6 @@
      -moz-box-shadow: none;
           box-shadow: none;
 }
-#ctools-button-9 {
-   z-index: 1;
-   top: 12px;
-}
 #views-ui-edit-form div#edit-actions.form-actions.form-wrapper {
    float: right;
 }
@@ -228,6 +224,10 @@ select.form-select:focus {
 .views-ui-dialog .scroll {
   border: none;
   padding: 8px 10px 8px 0;
+}
+/* Force the Views UI operations table cell to have relative positioning. */
+td.views-ui-operations {
+  position: relative;
 }
 /* Form buttons. */
 .views-ui-dialog .form-buttons {

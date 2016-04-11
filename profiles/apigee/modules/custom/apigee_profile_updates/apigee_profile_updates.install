@@ -56,6 +56,8 @@ function apigee_profile_updates_install() {
       variable_del('apigee_crypt_key');
     }
   }
+
+  _apigee_profile_updates_set_weight();
 }
 
 /**
@@ -78,6 +80,24 @@ function apigee_profile_updates_requirements() {
   }
 
   return $requirements;
+}
+
+/**
+ * Sets apigee_profile_updates to be heavier than environment_indicator.
+ */
+function _apigee_profile_updates_set_weight() {
+  $weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('name', 'environment_indicator')
+    ->execute()
+    ->fetchField();
+  // If environment_indicator is not found, $weight === FALSE.
+  // Even if it wasn't found, we still increment the weight. This will enable
+  // correct behavior in case environment_indicator is enabled later.
+  db_update('system')
+    ->fields(array('weight' => intval($weight) + 1))
+    ->condition('name', 'apigee_profile_updates')
+    ->execute();
 }
 
 /**
@@ -245,4 +265,11 @@ function apigee_profile_updates_update_7106() {
         ->execute();
     }
   }
+}
+
+/**
+ * Set module weight relative to environment_indicator when appropriate.
+ */
+function apigee_profile_updates_update_7107() {
+  _apigee_profile_updates_set_weight();
 }

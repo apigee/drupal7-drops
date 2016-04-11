@@ -210,3 +210,15 @@ function apigee_profile_updates_menu() {
   );
   return $items;
 }
+
+/**
+ * Implements hook_admin_menu_output_alter().
+ *
+ * @param array $content
+ */
+function apigee_profile_updates_admin_menu_output_alter(array &$content) {
+  if (array_key_exists('account', $content) && array_key_exists('environment_indicator', $content)) {
+    $weight = $content['account']['#weight'];
+    $content['environment_indicator']['#weight'] = $weight + 1;
+  }
+}

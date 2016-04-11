@@ -218,7 +218,7 @@ $i = 0;
                 <hr>
         <?php foreach ($app['credential']['apiProducts'] as $product): ?>
                 <div class="panel panel-default">
-                  <div class="panel-heading"><?php print t('API Product:'); ?> <strong><?php print $product['displayName']; ?></strong></div>
+                  <div class="panel-heading"><?php print t('API Product:'); ?> <strong><?php print check_plain($product['displayName']); ?></strong></div>
                   <div class="table-responsive">
                     <table class="table" style="border:0;">
                       <tbody>
@@ -242,7 +242,7 @@ $i = 0;
               <?php foreach ($docs as $link): ?>
                   <div class="panel panel-default">
                     <div class="panel-heading">
-                      <strong><?php print $product['displayName']; ?></strong> <?php print t('Documentation:'); ?> <?php print $link; ?></div>
+                      <strong><?php print check_plain($product['displayName']); ?></strong> <?php print t('Documentation:'); ?> <?php print $link; ?></div>
                   </div>
                   <br>
               <?php endforeach; // link ?>
@@ -268,7 +268,7 @@ $i = 0;
                             <td>
                               <ul style="margin:0;padding:0;">
                                 <?php foreach ($app['credential']['apiProducts'] as $product): ?>
-                                  <li style="margin:0;padding:0;list-style-type:none;"><?php print $product['displayName']; ?></li>
+                                  <li style="margin:0;padding:0;list-style-type:none;"><?php print check_plain($product['displayName']); ?></li>
                                 <?php endforeach; ?>
                               </ul>
                             </td>

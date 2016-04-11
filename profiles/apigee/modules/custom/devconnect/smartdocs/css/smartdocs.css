@@ -1,23 +1,5 @@
-body #method_content h1,
-body #method_content h2,
-body #method_content h4,
-body #method_content h5,
-body #method_content h6,
-body #method_content p,
-body #method_content a,
-body #method_content span,
-body #method_content td,
-body #method_content tr,
-body #method_content th,
-body #method_content .resource_description,
-#method_content .operation_container .authentication .title,
-#method_content button#send_request,
-#method_content .request_response_tabs a.selected {
-    font-family: Helvetica,Arial,sans-serif;
-}
-
 body #method_content pre span {
-    font-family: monospace;
+    font-family: monospace; /* Courier */
 }
 
 .modal[role="dialog"] .modal-body #user-login input,
@@ -183,7 +165,6 @@ body.page-admin-smartdocs .api-model-table-operations {
     border-radius: 3px 3px 3px 3px;
     color: #FFFFFF;
     float: left;
-    font-family: "Arial";
     font-size: 11px;
     line-height: 14px;
     margin: 4px 0 0;
@@ -231,8 +212,7 @@ body.page-admin-smartdocs .api-model-table-operations {
 .node-teaser .method_details .title p.resource_path,
 .view .method_details .title p.resource_path {
     margin:0;
-    padding:0;
-    padding-top:5px;
+    padding:5px 0 0 0;
     color: #AAAAAA;
 }
 
@@ -294,66 +274,10 @@ body.page-node #container #index_container {
 body.page-node #container h2 {
     width:610px;
     padding-bottom:15px;
-    font-family: "ars_maquette_proregular", Arial,sans-serif;
 }
 
 body #resource_URL input {
-    font-family: Courier;
-}
-body #container h2 {
-    font-family: "ars_maquette_proregular",Helvetica,Arial,sans-serif;
-}
-body #container .resource_description {
-    font-family: "ars_maquette_proregular",Helvetica,Arial,sans-serif;
-}
-body #container h3 {
-    font-family: 'ars_maquette_probold',Helvetica,Arial,sans-serif;
-}
-body #container h3 a {
-    font-family: 'ars_maquette_probold',Helvetica,Arial,sans-serif;
-}
-body .resource_summary h4 {
-    font-family: "ars_maquette_probold",Helvetica,Arial,sans-serif;
-}
-body .resource_summary div p.title {
-    font-family: "ars_maquette_probold",Helvetica,Arial,sans-serif;
-}
-body .method_table .method_title .method_data,
-body .method_table .method_details .title span:first-child,
-body .param_table .param_title div,
-body .param_table .param_details .title span:first-child,
-body .method_edit label {
-    font-family: "ars_maquette_probold",Helvetica,Arial,sans-serif;
-}
-body .method_table .method_details .title span.required {
-    font-family: "ars_maquette_proitalic",Helvetica,Arial,sans-serif;
-}
-body button#send_request {
-    font-family: 'ars_maquette_promedium',Helvetica,Arial,sans-serif;
-}
-body button#send_request span {
-    font-family: "ars_maquette_proregular",Helvetica,Arial,sans-serif;
-}
-body .request_response_tabs a.selected {
-    font-family: "ars_maquette_probold",Helvetica,Arial,sans-serif;
-}
-body #container .operation_container .authentication .title {
-    font-family: ars_maquette_probold,Helvetica,Arial,sans-serif;
-}
-body #content #error_container span, .modal .error_container span {
-    font-family: "ars_maquette_probold",Helvetica,Arial,sans-serif;
-}
-body .edit_link_container {
-    font-family: 'ars_maquette_probold',Helvetica,Arial,sans-serif;
-}
-body #operation_edit_modal h4 {
-    font-family: 'ars_maquette_probold',Helvetica,Arial,sans-serif;
-}
-body #container .edit_mode label {
-    font-family: "ars_maquette_probold",Helvetica,Arial,sans-serif;
-}
-body #container .edit_mode .resource_details .verb_container p {
-    font-family: "ars_maquette_probold",Helvetica,Arial,sans-serif;
+    font-family: monospace;
 }
 
 form#devconnect-docgen-model-detail table td.description-field {
@@ -376,7 +300,7 @@ body.front section.block div.method_data {
 }
 
 body.front .method_details {
-    padding:0px;
+    padding:0;
 }
 body.front .method_details .verb-auth {
     width:80px;
@@ -389,27 +313,6 @@ body.front section.block div.method_data {
 #block-views-home-featured-forum-posts-block {
     border-left: 1px dashed #E0E0E0;
     border-right: 1px dashed #E0E0E0;
-}
-
-#devconnect-docgen-import-content .progress-disabled {
-    float:left;
-    margin-bottom:10px;
-}
-
-#devconnect-docgen-import-content #import-format {
-    clear:both;
-}
-#devconnect-docgen-import-content .ajax-progress {
-    float:left;
-}
-
-#devconnect-docgen-import-content .ajax-progress .throbber,
-#devconnect-docgen-import-content .ajax-progress .message {
-    float:left;
-}
-
-#devconnect-docgen-import-content .ajax-progress .message {
-    width:250px;
 }
 
 .page-content .container .col-sm-12 {
@@ -439,39 +342,6 @@ table.table td p.data {
 .page-admin-smartdocs .templateauth-help {
     border: 1px solid #ccc;
     padding: 10px;
-}
-/* Responsiveness */
-/**
-* Smallest
-*/
-@media(max-width:767px) {
-    #block-views-home-featured-forum-posts-block {
-        border-left: 0px dashed #E0E0E0;
-        border-right: 0px dashed #E0E0E0;
-    }
-}
-
-/**
-* Biggest
-  and Second Biggest
-  and Third Biggest
-*/
-@media(min-width:768px) {
-    #block-views-home-featured-forum-posts-block {
-        border-left: 0px dashed #E0E0E0;
-        border-right: 0px dashed #E0E0E0;
-    }
-}
-
-/**
-* Biggest
-  and Second Biggest
-*/
-@media(min-width:992px) {
-    #block-views-home-featured-forum-posts-block {
-        border-left: 1px dashed #E0E0E0;
-        border-right: 1px dashed #E0E0E0;
-    }
 }
 
 /** Styles for the model list page **/
@@ -513,10 +383,10 @@ table.table td p.data {
     font-size: 14px;
 }
 #method_content [data-role='method_url_container'] {
-    font-family: Courier;
+    font-family: monospace;
 }
 #method_content .url_container > p >span {
-    font-family: Courier;
+    font-family: monospace;
 }
 #method_content .table>thead>tr>th {
     border-bottom: none;

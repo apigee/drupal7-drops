@@ -875,7 +875,7 @@ Analytics styles
 }
 #devconnect-developer-apps-analytics-form #edit-date-from,
 #devconnect-developer-apps-analytics-form #edit-date-to {
-    width:175px;
+    margin-right: 2px;
 }
 
 #devconnect-developer-apps-analytics-form label {
@@ -1640,4 +1640,8 @@ input#edit-registered-for-tax-vat-0[type="radio"], input#edit-registered-for-tax
     padding: 3px 1em 3px .8em;
     cursor: pointer;
     min-height: 0;
+}
+
+#admin-menu, #admin-menu .dropdown  {
+    z-index: 1031;
 }

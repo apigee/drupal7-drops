@@ -85,7 +85,7 @@ projects[ckeditor_link][version] = "2.4"
 
 projects[commerce][type] = "module"
 projects[commerce][subdir] = "contrib"
-projects[commerce][version] = "1.11"
+projects[commerce][version] = "1.13"
 
 projects[commerce_custom_line_items][type] = "module"
 projects[commerce_custom_line_items][subdir] = "contrib"
@@ -139,7 +139,7 @@ projects[diff][version] = "3.2"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
-projects[ds][version] = "2.12"
+projects[ds][version] = "2.13"
 
 ; Deprecated. Required by devconnect_download which is also deprecated.
 projects[eck][type] = "module"
@@ -287,6 +287,8 @@ projects[media][subdir] = "contrib"
 projects[media][version] = "2.0-beta1"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
+; see https://www.drupal.org/node/2631934
+projects[media][patch][2631934] = "https://www.drupal.org/files/issues/media-2631934-media-element-wysiwyg-false-3.patch"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
@@ -305,7 +307,7 @@ projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.13"
+projects[metatag][version] = "1.14"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -333,7 +335,7 @@ projects[nagios][version] = "1.3"
 ; Deprecated
 projects[node_export][type] = "module"
 projects[node_export][subdir] = "contrib"
-projects[node_export][version] = "3.0"
+projects[node_export][version] = "3.1"
 
 projects[oauth][type] = "module"
 projects[oauth][subdir] = "contrib"
@@ -484,13 +486,13 @@ projects[xautoload][version] = "5.6"
 projects[adminimal_theme][type] = "theme"
 projects[adminimal_theme][version] = "1.24"
 
-; Not enabled, but used by Apigee Responsive theme. Update past 3.0 with great care!
+; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.0"
+projects[bootstrap][version] = "3.5"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
-projects[rubik][version] = "4.3"
+projects[rubik][version] = "4.4"
 
 projects[tao][type] = "theme"
 projects[tao][version] = "3.1"

@@ -702,6 +702,13 @@ html.js .collapsed .fieldset-content {
 .container-inline {
   margin: 0 0 10px;
 }
+/* File uploads. */
+.form-type-managed-file input[type="submit"].progress-disabled {
+  float: none;
+}
+.form-type-managed-file .ajax-progress-throbber {
+  margin-top: 5px;
+}
 /* Forms end */
 
 /*******************************************************************************
@@ -1253,6 +1260,28 @@ div.ctools-modal-content .color-form .form-item input {
 td.ctools-export-ui-operations {
   position: relative;
 }
+/* Administration Menu. */
+#admin-menu-wrapper {
+  overflow: visible;
+}
+#admin-menu .admin-menu-search .form-item {
+  border: 0;
+}
+#admin-menu .admin-menu-search input.admin-menu-search {
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 0;
+}
+#admin-menu .dropdown .admin-menu-search-results {
+  top: 21px;
+}
+body.adminimal-menu #admin-menu .dropdown .admin-menu-search-results {
+  top: 29px;
+}
+#admin-menu .dropdown li ul,
+#admin-menu .dropdown li li {
+  width: 160px!important;
+}
 /* Adminimal Administration Menu. */
 body.adminimal-menu {
   margin-top: 29px!important;
@@ -1261,10 +1290,12 @@ body.adminimal-menu .admin-menu-search > .form-item {
   border: none;
   position: static;
 }
+#admin-menu .admin-menu-search input,
 body.adminimal-menu #admin-menu-search input[type="text"] {
   height: 28px;
   padding-top: 0;
   padding-bottom: 0;
+  width: 160px;
 }
 body.adminimal-menu #admin-menu-search input[type="text"]:hover,
 body.adminimal-menu #admin-menu-search input[type="text"]:focus {
@@ -1275,5 +1306,12 @@ body.adminimal-menu #admin-menu-search input[type="text"]:focus {
 }
 body.adminimal-menu #admin-menu-search input[type="text"]:focus {
   background: #666;
+}
+/* Date. */
+fieldset.date-combo .container-inline-date .date-padding {
+  padding: 0;
+}
+fieldset.date-combo .container-inline-date > .form-item {
+  margin-bottom: 0;
 }
 /* Other contrib modules end */

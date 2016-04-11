@@ -1,6 +1,9 @@
 #edit-date-from, #edit-date-to {
-    margin-right: 2px !important;
+    margin-right: 2px;
 }
 span.utc {
-    margin-right: 10px !important;
+    margin-right: 1em;
+    margin-bottom: 0;
+    vertical-align: middle;
+    display: inline-block;
 }

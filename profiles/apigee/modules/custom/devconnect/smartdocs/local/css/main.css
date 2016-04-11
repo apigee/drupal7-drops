@@ -23,7 +23,6 @@
     font-weight: normal;
     line-height: 22px;
     padding: 40px 0 0 0;
-    font-family: 'ars_maquette_probold',"ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
 }
 #method_content input.error, #modal_container.modal input.error, [role="dialog"].modal input.error {
     border: 1px solid #B94A48;
@@ -49,9 +48,6 @@
 #modal_container.modal .modal-header .close, [role="dialog"].modal .modal-header .close {
   margin-top: 4px;
 }
-#method_content [data-role="error_container"] span, #method_content .modal .error_container span {
-  font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
-}
 #method_content .table th {
     background-color: #F9F9F9;
 }
@@ -74,7 +70,6 @@
 #index_content h2 {
     margin: 0;
     width: auto;
-    font-family: "ars_maquette_proregular","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     font-size: 26px;
     line-height: 30px;
 }
@@ -130,7 +125,6 @@
 #method_content .resource_summary h4 {
     font-size: 16px;
     margin: 0;
-    font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     padding-bottom: 4px;
 }
 #method_content .resource_summary div {
@@ -139,7 +133,6 @@
     clear: both;
 }
 #method_content .resource_summary div p.title {
-    font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     float: left;
 }
 #method_content .resource_summary div p.data {
@@ -163,10 +156,8 @@
     text-align: center;
     text-transform: uppercase;
     font-size: 11px;
-    float: left;
     margin-top: 4px;
     line-height: 14px;
-    font-family: "Arial";
     background-color: #DDDDDD;
 }
 #method_content .verb.get, #method_content .verb.GET, #index_content .verb.get, #index_content .verb.GET {
@@ -195,7 +186,6 @@
 
 /* Method title */
 #method_content h2 {
-    font-family: "ars_maquette_proregular","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     font-size: 26px;
     line-height: 30px;
     margin: 0 0 0 10px;
@@ -207,13 +197,11 @@
 /* Method Description */
 #method_content .resource_description {
     padding: 5px 0 0;
-    font-family: "ars_maquette_proregular","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     min-height: 72px;
 }
 
 /* Template Params */
 #method_content [data-role='method_url_container'] {
-    font-family: Courier;
     line-height: 19px;
     padding-top: 10px;
     font-size: 14px;
@@ -230,8 +218,7 @@
     border-bottom: solid thin #CCC;
     border-radius: 0;
     outline: none;
-    color: #49afcd;
-    font-family: Courier;
+    font-family: monospace;
     color: #0088CC;
     text-align: center;
     margin:0;
@@ -300,11 +287,7 @@
 #method_content .method_table .method_details .title, #index_content .method_table .method_details .title {
     line-height: 13px;
 }
-#method_content .method_table .method_title .method_data, #method_content .method_table .method_details .title span:first-child, #index_content .method_table .method_title .method_data, #index_content .method_table .method_details .title span:first-child {
-    font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
-}
 #method_content .method_table .method_details .title span.required, #index_content .method_table .method_details .title span.required {
-    font-family: "ars_maquette_proitalic","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     font-size: 12px;
     color:#aaa;
 }
@@ -393,7 +376,6 @@
 }
 #method_content .operation_container .authentication .title {
     color: #686969;
-    font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     font-size: 14px;
 }
 #method_content .operation_container .authentication .details span {
@@ -417,12 +399,10 @@
     line-height: 15px;
     margin: 0;
     float: left;
-    font-family: 'ars_maquette_promedium',"ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
 }
 #method_content button#send_request span {
     color: #64c7ef;
     font-size: 12px;
-    font-family: "ars_maquette_proregular","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
 }
 #method_content a.link_reset_default {
     display: inline-block;
@@ -446,7 +426,6 @@
 }
 #method_content .request_response_tabs a.selected {
     background-color: #f8f8f9;
-    font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     color: #686969;
     border-radius: 4px 4px 0 0;
 }
@@ -663,7 +642,6 @@
 }
 #method_content.edit_mode .resource_details .verb_container p {
     float: left;
-    font-family: "ars_maquette_probold","ars-maquette-web","Myriad Pro","Gill Sans","Lucida Sans",Verdana,Geneva,sans-serif;
     padding-left: 3px;
     width: 53px;
 }
