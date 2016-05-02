@@ -487,11 +487,6 @@ function devconnect_developer_apps_getlist(stdClass $user) {
   $module_path = drupal_get_path('module', 'devconnect_developer_apps');
   drupal_add_css("$module_path/devconnect_developer_apps.css");
 
-  if (user_access('delete developer apps')) {
-    $theme_path = base_path() . drupal_get_path('theme', 'apigee_devconnect');
-    drupal_add_css("span.delete{background-image:url($theme_path/images/cross-circle.png);}", array('type' => 'inline'));
-  }
-
   $path = libraries_get_path('jquery.selectlist');
   drupal_add_js(array('devconnect_developer_apps' => array('selectlist' => 'true')), 'setting');
   drupal_add_js($path . '/scripts/jquery.selectlist.min.js');
@@ -597,7 +592,7 @@ function devconnect_developer_apps_show_edit_form(stdClass $account, $app_id = N
  * Form constructor for adding/editing apps.
  *
  * Built via a menu callback to drupal_get_form().
- * Incoming URL: user/%user/apps/add, user/%user/apps/%/edit-app
+ * Incoming URL: user/%user/apps/add, user/%user/apps/%/edit-app.
  *
  * @param array $form
  *   The form being created.
@@ -938,11 +933,6 @@ function devconnect_developer_apps_edit_form(array $form, array &$form_state, st
       drupal_add_js(drupal_get_path('module', 'devconnect_developer_apps') . '/devconnect_developer_apps.js');
       drupal_add_css($path . '/css/selectlist.css');
       drupal_add_css(drupal_get_path('module', 'devconnect_developer_apps') . '/devconnect_developer_apps.css');
-
-      // TODO: Remove dependency on legacy theme.
-      $theme_path = base_path() . drupal_get_path('theme', 'apigee_devconnect');
-      $options = array('type' => 'inline');
-      drupal_add_css("span.delete{background-image:url($theme_path/images/cross-circle.png);}", $options);
     }
   }
 
@@ -1273,7 +1263,7 @@ function devconnect_developer_apps_machine_name_exists($value, array $element, a
  * Page callback to embed app-delete form.
  *
  * Incoming URL takes the following form:
- * - user/%user/apps/%/delete
+ * - user/%user/apps/%/delete.
  *
  * @param stdClass $user
  *   The user attempting to delete an app.
@@ -1595,7 +1585,6 @@ function _devconnect_developer_apps_detail(DeveloperAppEntity $entity, stdClass 
     });';
     drupal_add_js($script, 'inline');
   }
-
 
   $uid_arg = (module_exists('me') && $GLOBALS['user']->uid == $info['account']->uid ? 'me' : $info['account']->uid);
   $show_api_products = (!empty($info['credentials']) && !empty($info['credentials'][0]['apiproducts']) && variable_get('devconnect_api_product_handling', 'multiple_required') != 'no_api_product');
@@ -1939,15 +1928,8 @@ function devconnect_developer_apps_get_api_products($show_private = FALSE, $name
   $second_run = FALSE;
 
   while (TRUE) {
-    $query = db_select('dc_api_product', 'a')
-      ->fields('a', array(
-        'name',
-        'display_name',
-        'approval_type',
-        'description',
-        'is_public',
-        'org_name',
-      ))
+    $query = db_select('dc_api_product', 'p')
+      ->fields('p')
       ->condition('org_name', $org_name);
     if (!$show_private) {
       $query->condition('is_public', 1);
@@ -1964,6 +1946,12 @@ function devconnect_developer_apps_get_api_products($show_private = FALSE, $name
       $api_product->name = $row->name;
       $api_product->displayName = $row->display_name;
       $api_product->orgName = $row->org_name;
+      if (property_exists($row, 'environments')) {
+        $api_product->environments = explode(',', $row->environments);
+      }
+      if (property_exists($row, 'attributes') && !empty($row->attributes)) {
+        $api_product->attributes = unserialize($row->attributes);
+      }
       $api_products[$row->name] = $api_product;
     }
     if (!empty($api_products) || $second_run) {

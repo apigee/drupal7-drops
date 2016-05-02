@@ -22,7 +22,7 @@ use Apigee\Exceptions\ResponseException;
 function devconnect_mint_payment_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
 
 
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
 
   $form = array(
@@ -363,7 +363,7 @@ function devconnect_mint_payment_commerce_checkout_pane_info(){
 
 function devconnect_mint_payment_review_top_up_details_pane_checkout_form(&$form, $form_state, $checkout_pane, $order) {
 
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $org = new Organization($config);
   $org->load();
 
@@ -388,7 +388,7 @@ function devconnect_mint_payment_review_top_up_details_pane_checkout_form(&$form
 
 function devconnect_mint_payment_purchase_plan($order) {
 
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $package = new MonetizationPackage($config);
   $developer = devconnect_monetization_developer_load();
 

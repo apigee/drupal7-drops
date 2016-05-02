@@ -27,6 +27,7 @@ function devconnect_init() {
     // During migrations, we might get an empty lib dir due to bad cached
     // install_profile value.
     if (empty($lib_dir)) {
+      // TODO: Find some way of removing profile-specific dreck from modules.
       $lib_dir = 'profiles/apigee/libraries/mgmt-api-php-sdk';
     }
     require_once $lib_dir . '/vendor/autoload.php';
@@ -38,17 +39,6 @@ function devconnect_init() {
     $already_booted = TRUE;
 
     Crypto::setKey(devconnect_get_crypt_key());
-  }
-}
-
-/**
- * Implements hook_menu_alter().
- *
- * Denies access to PHP execution URL in the devel module if it is enabled.
- */
-function devconnect_menu_alter(&$items) {
-  if (isset($items['devel/php'])) {
-    $items['devel/php']['access callback'] = FALSE;
   }
 }
 
@@ -69,33 +59,12 @@ function devconnect_menu() {
 }
 
 /**
- * Implements hook_filter_info_alter().
- *
- * Removes Display Suite and PHP Code filters if they are enabled, because
- * they expose security vulnerabilities.
- *
- * @TODO: devconnect_downloads currently relies on presence of ds_code filter.
- *        That module should be reworked so that this is no longer the case,
- *        then the conditional below should be removed.
- */
-function devconnect_filter_info_alter(&$info) {
-  if (!module_exists('devconnect_downloads')) {
-    if (array_key_exists('ds_code', $info)) {
-      unset($info['ds_code']);
-    }
-  }
-  if (array_key_exists('php_code', $info)) {
-    unset($info['php_code']);
-  }
-}
-
-/**
  * Implements hook_variable_group_info().
  */
 function devconnect_variable_group_info() {
   $groups['devconnect'] = array(
     'title' => t('Devconnect settings'),
-    'description' => t('Settings for this Devconnect instance. Change these values with great care!'),
+    'description' => t('Settings for this Dev Portal instance. Change these values with great care!'),
     'access' => 'administer organization settings',
     'path' => array('admin/config/devconnect'),
   );
@@ -134,19 +103,6 @@ function devconnect_cron() {
   }
 }
 
-
-/**
- * Implements hook_form_alter().
- */
-function devconnect_form_alter(&$form, &$form_state, $form_id) {
-  if ($form_id == 'user_login') {
-    $form['userpasswordlink'] = array(
-      '#markup' => '<br>' . l(t('Forgot your password?'), 'user/password') . '<br><br>',
-      '#weight' => 100,
-    );
-  }
-}
-
 /**
  * Implements hook_theme().
  */
@@ -168,21 +124,6 @@ function devconnect_theme() {
     ),
   );
   return $items;
-}
-
-/**
- * Backwards-compatibility wrapper for devconnect_default_org_config().
- *
- * Use devconnect_default_org_config() instead for all new code.
- *
- * @return \Apigee\Util\OrgConfig
- *    The Org configuration.
- *
- * @deprecated
- *   Use devconnect_default_org_config() instead for all new code.
- */
-function devconnect_default_api_client() {
-  return devconnect_default_org_config();
 }
 
 /**
@@ -215,6 +156,9 @@ function devconnect_default_org_config($requested_org = 'default') {
       $subscriber_log_format = '<pre>' . Apigee\Util\OrgConfig::LOG_SUBSCRIBER_FORMAT . '</pre>';
     }
 
+    $user_agent = 'DevConnect';
+    drupal_alter('devconnect_user_agent', $user_agent);
+
     $options = array(
       'logger' => $logger,
       'user_mail' => $user_mail,
@@ -224,7 +168,7 @@ function devconnect_default_org_config($requested_org = 'default') {
         'connect_timeout' => intval($settings['connection_timeout']),
         'timeout' => intval($settings['request_timeout']),
       ),
-      'user_agent' => devconnect_get_build_version(),
+      'user_agent' => $user_agent,
       'referer' => url($_GET['q'], array('absolute' => TRUE)),
     );
     if (function_exists('devconnect_debug_register')) {
@@ -233,42 +177,6 @@ function devconnect_default_org_config($requested_org = 'default') {
     $configs[$requested_org] = new Apigee\Util\OrgConfig($settings['org'], $settings['endpoint'], $settings['user'], $settings['pass'], $options);
   }
   return $configs[$requested_org];
-}
-
-/**
- * Gets the version of the current release.
- *
- * Get the release version from the buildInfo file if present,
- * or else from the version of the devconnect module.
- *
- * @return string
- *   The current version of this release.
- */
-function devconnect_get_build_version() {
-  static $build_version;
-  if (!isset($build_version)) {
-    $build_info = FALSE;
-    if (file_exists(DRUPAL_ROOT . '/buildInfo')) {
-      $build_info = DRUPAL_ROOT . '/buildInfo';
-    }
-    elseif (file_exists(DRUPAL_ROOT . '/profiles/apigee/buildInfo')) {
-      $build_info = DRUPAL_ROOT . '/profiles/apigee/buildInfo';
-    }
-    $build_version = FALSE;
-    if ($build_info) {
-      $fp = fopen($build_info, 'r');
-      $line = trim(fgets($fp));
-      fclose($fp);
-      if (preg_match('!([0-9.]{2,})$!', $line, $matches)) {
-        $build_version = 'DevPortal/' . $matches[1];
-      }
-    }
-    if (!$build_version) {
-      $info = system_get_info('module', 'devconnect');
-      $build_version = 'devconnect/' . $info['version'];
-    }
-  }
-  return $build_version;
 }
 
 /**
@@ -351,6 +259,8 @@ function devconnect_get_crypt_key() {
  */
 function &devconnect_get_org_settings($force_write = FALSE) {
   devconnect_init();
+
+  // Find the dir that the crypt key is stored in.
   $default_private_dir = variable_get('file_private_path', 'sites/default/files/private');
   $private_dir = variable_get('apigee_credential_dir', $default_private_dir);
 
@@ -364,6 +274,8 @@ function &devconnect_get_org_settings($force_write = FALSE) {
     $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
   }
 
+  // First, check to see if encrypted credentials are stored in private
+  // filesystem. This is the current and preferred mechanism.
   $got_results = FALSE;
   $yaml_file = NULL;
   if (file_exists($config_file)) {
@@ -385,10 +297,15 @@ function &devconnect_get_org_settings($force_write = FALSE) {
       }
     }
   }
+  // Credentials are not stored using current technique. See if they are stored
+  // in the database (very old devportal legacy).
   if (!$got_results) {
     $custom_vars = variable_get('devconnect_org_settings', NULL);
     $got_results = !empty($custom_vars);
     if (!$got_results) {
+      // Nope. Now check to see if they are in YAML files. Such files *SHOULD*
+      // be in the configured private filesystem, but due to migrations etc.
+      // they could conceivably be in other semi-standard paths.
       $possible_paths = array('sites/default/private', 'sites/default/files/private');
       $private_filesystem = variable_get('file_private_path', NULL);
       if ($private_filesystem) {
@@ -397,6 +314,7 @@ function &devconnect_get_org_settings($force_write = FALSE) {
       foreach ($possible_paths as $config_path) {
         $yaml_file = "$config_path/config/active/devconnect.settings.yml";
         if (file_exists($yaml_file)) {
+          // Found a YAML file, now let's try to read it.
           if (!module_exists('libraries')) {
             module_load_include('module', 'libraries');
           }
@@ -419,6 +337,8 @@ function &devconnect_get_org_settings($force_write = FALSE) {
     }
   }
 
+  // No configuration found anywhere. Here are the default values to be used
+  // as a final fallback.
   if (empty($custom_vars)) {
     $custom_vars = array(
       'org' => '',

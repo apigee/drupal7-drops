@@ -1,5 +1,9 @@
 <?php
 
+if (!class_exists('Redis_Tests_AbstractUnitTestCase')) {
+  require_once(__DIR__ . '/../AbstractUnitTestCase.php');
+}
+
 /**
  * Bugfixes made over time test class.
  */

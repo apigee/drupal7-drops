@@ -126,7 +126,7 @@ function apigee_responsive_form_system_theme_settings_alter(&$form, $form_state)
     '#description'   => t("Define the logo size for the header of the site"),
   );
   $form_state['values']['logo_size'] = theme_get_setting('logo_size');
-  $size = apigee_devconnect_logo_size_example($form, $form_state);
+  $size = apigee_responsive_logo_size_example($form, $form_state);
   $form['devconnect_settings']['logo_variant']['logo_size'] = array(
     '#type' => 'select',
     '#default_value' => theme_get_setting('logo_size'),
@@ -138,7 +138,7 @@ function apigee_responsive_form_system_theme_settings_alter(&$form, $form_state)
     '#submit' => array('apigee_devconnect_logo_size_submit'),
     '#ajax' => array(
       'wrapper' => 'logo-size-example',
-      'callback' => 'apigee_devconnect_logo_size_example',
+      'callback' => 'apigee_responsive_logo_size_example',
       'effect' => 'fade',
       'progress' => 'none',
     ),
@@ -151,19 +151,19 @@ function apigee_responsive_form_system_theme_settings_alter(&$form, $form_state)
  *
  * Depends on the placehold.it service.
  */
-function apigee_devconnect_logo_size_example($form, $form_state) {
+function apigee_responsive_logo_size_example($form, $form_state) {
   $html = '<div id="logo-size-example" style="float:left;clear:both;">';
   switch ($form_state['values']['logo_size']) {
     case 'standard':
-      $html .= '<img src="http://placehold.it/71x26">';
+      $html .= '<img src="//placehold.it/71x26">';
       break;
 
     case 'big':
-      $html .= '<img src="http://placehold.it/272x100">';
+      $html .= '<img src="//placehold.it/272x100">';
       break;
 
     case 'bigger':
-      $html .= '<img src="http://placehold.it/372x136">';
+      $html .= '<img src="//placehold.it/372x136">';
       break;
 
     default:

@@ -372,7 +372,7 @@ function devconnect_mint_worldpay_mint_provider_id() {
 function devconnect_mint_worldpay_is_payment_method_enabled() {
   $message_writer = drupal_is_cli() ? 'drush_log' : 'drupal_set_message';
   try {
-    $config = devconnect_monetization_default_org_config();
+    $config = devconnect_default_org_config();
     $providerAPIObj = new Provider($config);
     $providers = $providerAPIObj->getList();
 

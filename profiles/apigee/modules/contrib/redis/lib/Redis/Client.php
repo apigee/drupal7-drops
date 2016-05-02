@@ -68,7 +68,7 @@ class Redis_Client
         // connect to. To mirror what core does with database caching we use
         // the DB credentials to inform our cache key.
       if (null === self::$globalPrefix) {
-            if (isset($GLOBALS['db_url'])) {
+            if (isset($GLOBALS['db_url']) && is_string($GLOBALS['db_url'])) {
                 // Drupal 6 specifics when using the cache_backport module, we
                 // therefore cannot use \Database class to determine database
                 // settings.

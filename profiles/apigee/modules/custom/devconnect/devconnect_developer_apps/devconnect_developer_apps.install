@@ -74,31 +74,31 @@ function devconnect_developer_apps_schema() {
     'description' => 'Caches API Product info',
     'fields' => array(
       'name' => array(
-        'description' => 'Primary Key: machine name of the API Product',
+        'description' => 'Primary Key: machine name of the API Product.',
         'type' => 'char',
         'length' => 64,
         'not null' => TRUE,
       ),
       'display_name' => array(
-        'description' => 'Display name of the API Product',
+        'description' => 'Display name of the API Product.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ),
       'approval_type' => array(
-        'description' => 'Key approval type: 0 = auto, 1 = manual',
+        'description' => 'Key approval type: 0 = auto, 1 = manual.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
       ),
       'description' => array(
-        'description' => 'API Product description',
+        'description' => 'API Product description.',
         'type' => 'text',
         'size' => 'medium',
         'not null' => TRUE,
       ),
       'is_public' => array(
-        'description' => 'Indicates whether API Product is private or public',
+        'description' => 'Indicates whether API Product is private or public.',
         'type' => 'int',
         'unsigned' => TRUE,
         'size' => 'tiny',
@@ -106,10 +106,22 @@ function devconnect_developer_apps_schema() {
         'default' => 1,
       ),
       'org_name'      => array(
-        'description' => 'Org name',
+        'description' => 'Org to which the API Product belongs.',
         'type'        => 'varchar',
         'length'      => 255,
         'not null'    => TRUE,
+      ),
+      'environments'  => array(
+        'description' => 'Comma-delimited list of environments in which the API Product is available.',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
+      'attributes' => array(
+        'description' => 'Serialized API Product attributes.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
       ),
     ),
     'primary key' => array('name', 'org_name'),
@@ -208,4 +220,18 @@ function devconnect_developer_apps_update_7433() {
  */
 function devconnect_developer_apps_update_7435() {
   variable_del('devconnect_developer_apps_unescaped');
+}
+
+/**
+ * Add environments and attributes fields to API Products table.
+ */
+function devconnect_developer_apps_update_7436() {
+  db_truncate('dc_api_product')->execute();
+  $schema = devconnect_developer_apps_schema();
+  if (!db_field_exists('dc_api_product', 'environments')) {
+    db_add_field('dc_api_product', 'environments', $schema['dc_api_product']['fields']['environments']);
+  }
+  if (!db_field_exists('dc_api_product', 'attributes')) {
+    db_add_field('dc_api_product', 'attributes', $schema['dc_api_product']['fields']['attributes']);
+  }
 }

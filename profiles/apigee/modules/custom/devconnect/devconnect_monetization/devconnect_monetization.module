@@ -50,17 +50,6 @@ use Apigee\Mint\Types\Country;
 module_load_include('php', 'devconnect_monetization', 'MintCacheManager');
 
 /**
- * Returns a wrapper around org connection settings.
- *
- * @return Apigee\Util\OrgConfig
- * @deprecated
- * @throws Exception
- */
-function devconnect_monetization_default_org_config() {
-  return devconnect_default_org_config();
-}
-
-/**
  * Redirects the developer depending on either a POSTPAID or a PREPAID developer
  * @param Developer $developer
  */

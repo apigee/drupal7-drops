@@ -482,7 +482,7 @@ function devconnect_monetization_company_details_form_submit_developer(&$form, &
  */
 function devconnect_monetization_company_bank_details_form($form, $form_state, \Apigee\Mint\Developer $developer) {
 
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   // If we have the company in the context then we set the developer email to company name
   // so that the bank details are fetched for the company.
   $company = apigee_company_get_current_context_company();
@@ -994,7 +994,7 @@ function devconnect_monetization_user_remove_from_company($uid, \Apigee\Mint\Dev
  */
 function devconnect_monetization_list_tncs(\Apigee\Mint\Developer $developer) {
 
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $tnc = new TermAndCondition($config);
   $tncs = $tnc->getList(TRUE);
 
@@ -1099,7 +1099,7 @@ function devconnect_monetization_accept_tnc_form_submit($form, &$form_state) {
     }
     $tnc_id = $form_state['input']['tnc_id'];
 
-    $config = devconnect_monetization_default_org_config();
+    $config = devconnect_default_org_config();
     $org = new Organization($config);
     $org->load();
 
@@ -1140,7 +1140,7 @@ function devconnect_monetization_form_devconnect_monetization_company_details_fo
     return;
   }
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
 
   $developerBalance = new DeveloperBalance($developer_id, $config);
   $balances = $developerBalance->getList();
@@ -1275,7 +1275,7 @@ function devconnect_monetization_recurring_payment_form_validate($form, $form_st
 
 function devconnect_monetization_recurring_payment_form_submit($form, $form_state) {
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $developerBalance = new DeveloperBalance($developer_id, $config);
   foreach ($form_state['input']['balances']['items'] as $currency => $new_setup) {
     $new_setup['provider'] = $form_state['values']['balances']['items'][$currency]['provider'];

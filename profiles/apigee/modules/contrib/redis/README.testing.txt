@@ -17,16 +17,24 @@ Cleanup environment
 
 php -f scripts/run-tests.sh -- --clean
 
+Run common tests
+================
+
+
+php -f scripts/run-tests.sh -- --verbose --color \
+    --url "http://yoursite" \
+    --class "Redis_Tests_Client_UnitTestCase"
+
 Run all PhpRedis tests
 ======================
 
 php -f scripts/run-tests.sh -- --verbose --color \
-    --url "http://yoursite" \
-    --class "Redis_Tests_Cache_PhpRedisFlushUnitTestCase,Redis_Tests_Cache_PhpRedisFixesUnitTestCase,Redis_Tests_Client_MockFactory,Redis_Tests_Lock_PhpRedisLockingUnitTestCase"
+    --url "http://laborange.net" \
+    --class "Redis_Tests_Cache_PhpRedisFixesUnitTestCase,Redis_Tests_Cache_PhpRedisFlushUnitTestCase,Redis_Tests_Cache_PhpRedisShardedFixesUnitTestCase,Redis_Tests_Cache_PhpRedisShardedFlushUnitTestCase,Redis_Tests_Cache_PhpRedisShardedWithPipelineFixesUnitTestCase,Redis_Tests_Lock_PhpRedisLockingUnitTestCase,Redis_Tests_Path_PhpRedisPathUnitTestCase,Redis_Tests_Queue_PhpRedisQueueUnitTestCase"
 
 Run all Predis tests
 ======================
 
 php -f scripts/run-tests.sh -- --verbose --color \
     --url "http://yoursite" \
-    --class "Redis_Tests_Cache_PredisFlushUnitTestCase,Redis_Tests_Cache_PredisFixesUnitTestCase,Redis_Tests_Client_MockFactory,Redis_Tests_Lock_PredisLockingUnitTestCase"
+    --class "Redis_Tests_Cache_PredisFixesUnitTestCase,Redis_Tests_Cache_PredisFlushUnitTestCase,Redis_Tests_Cache_PredisShardedFixesUnitTestCase,Redis_Tests_Cache_PredisShardedFlushUnitTestCase,Redis_Tests_Cache_PredisShardedWithPipelineFixesUnitTestCase,Redis_Tests_Lock_PredisLockingUnitTestCase,Redis_Tests_Path_PredisPathUnitTestCase"

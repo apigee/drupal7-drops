@@ -1,5 +1,9 @@
 <?php
 
+if (!class_exists('Redis_Tests_Lock_LockingUnitTestCase')) {
+  require_once(__DIR__ . '/LockingUnitTestCase.php');
+}
+
 class Redis_Tests_Lock_PhpRedisLockingUnitTestCase extends Redis_Tests_Lock_LockingUnitTestCase
 {
     public static function getInfo()

@@ -280,7 +280,7 @@ function devconnect_monetization_get_purchased_plans(\Apigee\Mint\Developer $dev
   else {
     $developer_or_company_id = _devconnect_monetization_get_developer_id(TRUE);
   }
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $developer_rate_plan = new DeveloperRatePlan($developer_or_company_id, $config);
   $purchased_package_plans = array();
   $developer_rate_plans = $developer_rate_plan->getList();

@@ -173,10 +173,6 @@ function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
       $form['field_first_name']['#weight'] = $account_weight - 2;
       $form['field_last_name']['#weight'] = $account_weight - 1;
 
-      drupal_add_css(drupal_get_path('module', 'devconnect_user') . '/devconnect_user.css',
-        array('group' => CSS_THEME, 'every_page' => TRUE)
-      );
-
       $tnc_url = _devconnect_user_get_tnc_url($form['#user']);
       if ($tnc_url == 'legal' && module_exists('legal')) {
         if (isset($form['field_terms_and_conditions'])) {

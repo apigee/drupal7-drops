@@ -1,5 +1,9 @@
 <?php
 
+if (!class_exists('Redis_Tests_Cache_FlushUnitTestCase')) {
+  require_once(__DIR__ . '/FlushUnitTestCase.php');
+}
+
 class Redis_Tests_Cache_PhpRedisFlushUnitTestCase extends Redis_Tests_Cache_FlushUnitTestCase
 {
     public static function getInfo()

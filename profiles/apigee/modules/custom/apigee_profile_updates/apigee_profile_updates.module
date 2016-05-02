@@ -114,14 +114,16 @@ function apigee_profile_updates_form_system_modules_alter(array &$form, array &$
     $deprecated_modules = _apigee_profile_updates_deprecated_module_info();
 
     foreach ($form['modules'] as $package_name => $package) {
-      foreach ($package as $module_name => $module) {
-        if (substr($module_name, 0, 1) == '#') {
-          continue;
-        }
-        if (isset($deprecated_modules[$module_name])) {
-          $form['modules'][$package_name][$module_name]['name']['#markup'] .= ' <em>' . t('(Deprecated)') . '</em>';
-          if (!$module['enable']['#default_value']) {
-            $form['modules'][$package_name][$module_name]['enable']['#disabled'] = TRUE;
+      if (is_array($package)) {
+        foreach ($package as $module_name => $module) {
+          if (substr($module_name, 0, 1) == '#') {
+            continue;
+          }
+          if (isset($deprecated_modules[$module_name])) {
+            $form['modules'][$package_name][$module_name]['name']['#markup'] .= ' <em>' . t('(Deprecated)') . '</em>';
+            if (!$module['enable']['#default_value']) {
+              $form['modules'][$package_name][$module_name]['enable']['#disabled'] = TRUE;
+            }
           }
         }
       }
@@ -214,11 +216,98 @@ function apigee_profile_updates_menu() {
 /**
  * Implements hook_admin_menu_output_alter().
  *
- * @param array $content
+ * Moves the environment indicator to the left of user-switcher dropdown which
+ * appears when devel and admin_menu modules are enabled.
  */
 function apigee_profile_updates_admin_menu_output_alter(array &$content) {
   if (array_key_exists('account', $content) && array_key_exists('environment_indicator', $content)) {
     $weight = $content['account']['#weight'];
     $content['environment_indicator']['#weight'] = $weight + 1;
+  }
+}
+
+/**
+ * Implements hook_filter_info_alter().
+ *
+ * Removes Display Suite and PHP Code filters if they are enabled, because
+ * they expose security vulnerabilities.
+ */
+function apigee_profile_updates_filter_info_alter(&$info) {
+  if (array_key_exists('ds_code', $info)) {
+    unset($info['ds_code']);
+  }
+  if (array_key_exists('php_code', $info)) {
+    unset($info['php_code']);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function apigee_profile_updates_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'user_login') {
+    $form['userpasswordlink'] = array(
+      '#markup' => '<br>' . l(t('Forgot your password?'), 'user/password') . '<br><br>',
+      '#weight' => 100,
+    );
+  }
+}
+
+/**
+ * Gets the version of the current release.
+ *
+ * Get the release version from the buildInfo file if present,
+ * or else from the version of the devconnect module.
+ *
+ * @return string
+ *   The current version of this release.
+ */
+function apigee_profile_updates_get_build_version() {
+  static $build_version;
+  if (!isset($build_version)) {
+    $build_info = FALSE;
+    if (file_exists(DRUPAL_ROOT . '/buildInfo')) {
+      $build_info = DRUPAL_ROOT . '/buildInfo';
+    }
+    elseif (file_exists(DRUPAL_ROOT . '/profiles/apigee/buildInfo')) {
+      $build_info = DRUPAL_ROOT . '/profiles/apigee/buildInfo';
+    }
+    $build_version = FALSE;
+    if ($build_info) {
+      $fp = fopen($build_info, 'r');
+      $line = trim(fgets($fp));
+      fclose($fp);
+      if (preg_match('!([0-9.]{2,})$!', $line, $matches)) {
+        $build_version = 'DevPortal/' . $matches[1];
+      }
+    }
+    if (!$build_version) {
+      $info = system_get_info('module', 'devconnect');
+      if (!empty($info)) {
+        $build_version = 'devconnect/' . $info['version'];
+      }
+    }
+    if (!$build_version) {
+      $build_version = 'Drupal/' . VERSION . ';PHP/' . PHP_VERSION;
+    }
+  }
+  return $build_version;
+}
+
+/**
+ * Implements hook_devconnect_user_agent_alter().
+ */
+function apigee_profile_updates_devconnect_user_agent_alter(&$user_agent) {
+  $user_agent = apigee_profile_updates_get_build_version();
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Denies access to PHP execution URL in the devel module if it is enabled.
+ */
+function apigee_profile_updates_menu_alter(&$items) {
+  if (isset($items['devel/php'])) {
+    $items['devel/php']['access callback'] = FALSE;
   }
 }

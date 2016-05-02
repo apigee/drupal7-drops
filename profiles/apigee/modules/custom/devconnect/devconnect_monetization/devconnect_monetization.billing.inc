@@ -21,7 +21,7 @@ use Apigee\Mint\DeveloperBalance;
  * @return string
  */
 function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $developer) {
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $organization = new Organization($config);
   $currencies = $organization->listSupportedCurrencies();
   $top_up_form = NULL;
@@ -172,7 +172,7 @@ function devconnect_monetization_billing_documents(\Apigee\Mint\Developer $devel
 
 function devconnect_monetization_top_up_balance_form($form, $form_state) {
 
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $organization = new Organization($config);
   $currencies = $organization->listSupportedCurrencies();
 
@@ -311,7 +311,7 @@ function devconnect_monetization_download_report($currency_id, $date, \Apigee\Mi
       $developer_or_company_id = $company->name;
     }
 
-    $org = new Organization(devconnect_monetization_default_org_config());
+    $org = new Organization(devconnect_default_org_config());
     $response = $org->getPrepaidBalanceReport($month, $year, $developer_or_company_id, $currency_id);
 
     header('Content-Disposition: attachment; filename="Prepaid_Balance-' . $month . $year . '_' . time() . '.csv"');
@@ -358,7 +358,7 @@ function devconnect_monetization_download_report($currency_id, $date, \Apigee\Mi
 
 function devconnect_monetization_download_prepaid_report_form($form, $form_state) {
 
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
 
   $organization = new Organization($config);
   $currencies = $organization->listSupportedCurrencies();
@@ -431,7 +431,7 @@ function devconnect_monetization_download_prepaid_report_form($form, $form_state
 function devconnect_monetization_billing_get_billing_months_by_year($form, &$form_state) {
 
   $year = $form_state['values']['year'];
-  $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
+  $billing_document = new BillingDocument(devconnect_default_org_config());
   $billing_months = $billing_document->listBillingMonths();
   $months = array();
   /** @var Apigee\Mint\DataStructures\BillingMonth $billing_month */
@@ -476,7 +476,7 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
 
   $preferences = isset($account->field_mint_rev_reprt_preferences[LANGUAGE_NONE][0]['value']) ? json_decode($account->field_mint_rev_reprt_preferences[LANGUAGE_NONE][0]['value']) : NULL;
   $preferences = $preferences != NULL ? (array) $preferences : array();
-  $org = new Organization(devconnect_monetization_default_org_config());
+  $org = new Organization(devconnect_default_org_config());
   $org->load();
   $currencies = $org->listSupportedCurrencies();
   $currency_options = array();
@@ -713,7 +713,7 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
  */
 function devconnect_monetization_billing_document_form($form, &$form_state, \Apigee\Mint\Developer $developer) {
 
-  $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
+  $billing_document = new BillingDocument(devconnect_default_org_config());
   $billing_months = $billing_document->listBillingMonths();
 
   $months = array();
@@ -823,7 +823,7 @@ function devconnect_monetization_billing_document_form_submit(&$form, &$form_sta
     }
 
     list($month, $year) = explode('-', $form_state['values']['billing_month']);
-    $billing_document = new BillingDocument(devconnect_monetization_default_org_config());
+    $billing_document = new BillingDocument(devconnect_default_org_config());
     if (strlen($form_state['values']['search-billing-doc'])) {
       try {
         $billing_docs = $billing_document->searchBillingDoc($form_state['values']['search-billing-doc'], $developer_or_company_id);
@@ -855,7 +855,7 @@ function devconnect_monetization_billing_document_form_submit(&$form, &$form_sta
 function devconnect_monetization_billing_get_billing_document($doc_id, \Apigee\Mint\Developer $developer) {
   try {
     $doc_id = rawurldecode($doc_id);
-    $doc = new BillingDocument(devconnect_monetization_default_org_config());
+    $doc = new BillingDocument(devconnect_default_org_config());
     $doc->load($doc_id);
     $report = $doc->getFile();
 

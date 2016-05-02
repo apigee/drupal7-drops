@@ -142,14 +142,21 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
     }
   }
 
+  $release_ver = '';
   if (module_exists('devconnect')) {
     $settings = devconnect_get_org_settings();
     $org_name = $settings['org'];
     $org_user = $settings['user'];
-    $release_ver = devconnect_get_build_version();
+    $can_get_build_version = TRUE;
+    if (!module_exists('apigee_profile_updates')) {
+      $can_get_build_version = drupal_load('module', 'apigee_profile_updates');
+    }
+    if ($can_get_build_version) {
+      $release_ver = apigee_profile_updates_get_build_version();
+    }
   }
   else {
-    $org_name = $org_user = $release_ver = '';
+    $org_name = $org_user = '';
   }
   $smtp_host = (string)_apigee_checklist_smtp_host();
 

@@ -53,3 +53,12 @@ function hook_devconect_org_settings_alter(array &$org_settings, $requested_org)
 function hook_get_configured_orgs() {
   return array('default', 'mySuperSpecialOrg');
 }
+
+/**
+ * Allows the user agent string sent by devconnect to be changed.
+ *
+ * @param string $user_agent
+ */
+function hook_devconnect_user_agent_alter(&$user_agent) {
+  $user_agent = 'Mozilla/1.22 (compatible; MSIE 2.0; Windows 95)';
+}

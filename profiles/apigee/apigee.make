@@ -170,7 +170,7 @@ projects[faq][version] = "1.1"
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.8"
+projects[features][version] = "2.10"
 
 ; Deprecated
 projects[features_extra][type] = "module"
@@ -367,9 +367,7 @@ projects[redirect][version] = "1.0-rc3"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-projects[redis][version] = "3.11"
-; see https://www.drupal.org/node/2556643
-projects[redis][patch][2556643] = "https://www.drupal.org/files/issues/php_5_3_compatibility-2556643-12.patch"
+projects[redis][version] = "3.12"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"

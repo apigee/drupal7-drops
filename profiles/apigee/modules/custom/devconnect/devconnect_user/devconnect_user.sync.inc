@@ -159,7 +159,8 @@ function _devconnect_user_sync_from_edge($developers, $counters, &$context) {
       $context['sandbox']['progress']++;
       continue;
     }
-    $edge_user_name = $developer->userName;
+    // Make sure only legal characters are in the Drupal user name.
+    $edge_user_name = preg_replace("![^A-Za-z0-9 ._'-]!", '', $developer->userName);
     // Now find an untaken Drupal username. If there is already a user with
     // the name in question, start appending numbers until we find an untaken
     // name.

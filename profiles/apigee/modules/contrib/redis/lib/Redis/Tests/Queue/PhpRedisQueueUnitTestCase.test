@@ -1,5 +1,9 @@
 <?php
 
+if (!class_exists('Redis_Tests_Queue_QueueUnitTestCase')) {
+  require_once(__DIR__ . '/QueueUnitTestCase.php');
+}
+
 class Redis_Tests_Queue_PhpRedisQueueUnitTestCase extends Redis_Tests_Queue_QueueUnitTestCase
 {
     public static function getInfo()

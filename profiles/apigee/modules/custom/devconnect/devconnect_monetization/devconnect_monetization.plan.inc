@@ -360,7 +360,7 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
   }
 
   // Get DeveloperRatePlans.
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $developer_rate_plan = new DeveloperRatePlan($developer_or_company_id, $config);
 
   // Is this a purchase or end of a plan?
@@ -517,7 +517,7 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
     }
   }
   else {
-    $config = devconnect_monetization_default_org_config();
+    $config = devconnect_default_org_config();
     $developer_rate_plans = $developer_rate_plan->getList();
 
     $rate_plan = new RatePlan($package->getId(), $config);
@@ -1321,7 +1321,7 @@ function devconnect_monetization_insufficient_top_up_form_output($form) {
  * Remove a plan from a developer.
  */
 function devconnect_monetization_remove_plan_from_user($package, $dev_rate_plan_id) {
-  $config = devconnect_monetization_default_org_config();
+  $config = devconnect_default_org_config();
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
 
   $dev_rate_plan_id = rawurldecode($dev_rate_plan_id);

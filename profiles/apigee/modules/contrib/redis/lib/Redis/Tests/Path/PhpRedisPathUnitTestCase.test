@@ -1,5 +1,9 @@
 <?php
 
+if (!class_exists('Redis_Tests_Path_PathUnitTestCase')) {
+  require_once(__DIR__ . '/PathUnitTestCase.php');
+}
+
 class Redis_Tests_Path_PhpRedisPathUnitTestCase extends Redis_Tests_Path_PathUnitTestCase
 {
     public static function getInfo()

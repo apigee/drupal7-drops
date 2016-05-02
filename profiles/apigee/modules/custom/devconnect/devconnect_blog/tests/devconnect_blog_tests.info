@@ -3,6 +3,7 @@ description = Automated tests for devconnect_blog
 core = 7.x
 package = DevConnect
 version = 7.x-4.25
+hidden = TRUE
 
 dependencies[] = views
 dependencies[] = devconnect_blog

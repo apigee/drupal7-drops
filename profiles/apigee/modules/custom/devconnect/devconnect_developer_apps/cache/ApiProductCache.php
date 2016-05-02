@@ -1,18 +1,31 @@
 <?php
+/**
+ * @file
+ * Handles caching for API Products.
+ */
 
 namespace Drupal\devconnect_developer_apps;
 
+/**
+ * Class ApiProductCache.
+ *
+ * @package Drupal\devconnect_developer_apps
+ */
 class ApiProductCache implements \DrupalCacheInterface {
 
-  // $cid is orgName:appId
+  /**
+   * {@inheritdoc}
+   *
+   * $cid is orgName:appId.
+   */
   public function get($cid) {
 
-    list($orgName, $productName) = explode(':', $cid, 2);
+    list($org_name, $product_name) = explode(':', $cid, 2);
 
     $prod_result = db_select('dc_api_product', 'p')
-      ->fields('p', array('name', 'display_name', 'approval_type', 'description', 'is_public', 'org_name'))
-      ->condition('name', $productName)
-      ->condition('org_name', $orgName)
+      ->fields('p')
+      ->condition('name', $product_name)
+      ->condition('org_name', $org_name)
       ->execute();
     if ($prod_result->rowCount() == 0) {
       return FALSE;
@@ -24,26 +37,35 @@ class ApiProductCache implements \DrupalCacheInterface {
     $product->displayName = $row['display_name'];
     $product->approvalType = ($row['approval_type'] ? 'auto' : 'manual');
     $product->description = $row['description'];
-    $product->isPublic = (bool)$row['is_public'];
+    $product->isPublic = (bool) $row['is_public'];
     $product->orgName = $row['org_name'];
+    if (array_key_exists('environments', $row)) {
+      $product->environments = explode(',', $row['environments']);
+    }
+    if (array_key_exists('attributes', $row) && !empty($row['attributes'])) {
+      $product->attributes = unserialize($row['attributes']);
+    }
 
     return $product;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getMultiple(&$cids) {
     $orgs = array();
     foreach ($cids as $cid) {
-      list($orgName, $productName) = explode(':', $cid, 2);
-      $orgs[$orgName][] = $productName;
+      list($org_name, $product_name) = explode(':', $cid, 2);
+      $orgs[$org_name][] = $product_name;
     }
 
     $products = array();
 
-    foreach ($orgs as $orgName => $productNames) {
+    foreach ($orgs as $org_name => $product_names) {
       $prod_result = db_select('dc_api_product', 'p')
-        ->fields('p', array('name', 'display_name', 'approval_type', 'description', 'is_public', 'org_name'))
-        ->condition('name', $productNames)
-        ->condition('org_name', $orgName)
+        ->fields('p')
+        ->condition('name', $product_names)
+        ->condition('org_name', $org_name)
         ->execute();
 
       if ($prod_result->rowCount() == 0) {
@@ -58,8 +80,14 @@ class ApiProductCache implements \DrupalCacheInterface {
         $product->displayName = $row['display_name'];
         $product->approvalType = ($row['approval_type'] ? 'auto' : 'manual');
         $product->description = $row['description'];
-        $product->isPublic = (bool)$row['is_public'];
+        $product->isPublic = (bool) $row['is_public'];
         $product->orgName = $row['org_name'];
+        if (array_key_exists('environments', $row)) {
+          $product->environments = explode(',', $row['environments']);
+        }
+        if (array_key_exists('attributes', $row) && !empty($row['attributes'])) {
+          $product->attributes = unserialize($row['attributes']);
+        }
 
         $found_prod_names[] = $product->name;
         $cid = $product->orgName . ':' . $product->name;
@@ -80,21 +108,35 @@ class ApiProductCache implements \DrupalCacheInterface {
     return $products;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function set($cid, $entity, $expire = CACHE_PERMANENT) {
     $cid = $entity->orgName . ':' . $entity->name;
     $this->clear($cid);
+
+    $fields = array(
+      'name' => $entity->name,
+      'org_name' => $entity->orgName,
+      'display_name' => $entity->displayName,
+      'approval_type' => ($entity->approvalType == 'auto' ? 0 : 1),
+      'description' => $entity->description,
+      'is_public' => $entity->isPublic ? 1 : 0,
+    );
+    if (db_field_exists('dc_api_product', 'environments')) {
+      $fields['environments'] = implode(',', $entity->environments);
+    }
+    if (db_field_exists('dc_api_product', 'attributes')) {
+      $fields['attributes'] = serialize($entity->attributes);
+    }
     db_insert('dc_api_product')
-      ->fields(array(
-        'name' => $entity->name,
-        'org_name' => $entity->orgName,
-        'display_name' => $entity->displayName,
-        'approval_type' => ($entity->approvalType == 'auto' ? 0 : 1),
-        'description' => $entity->description,
-        'is_public' => $entity->isPublic ? 1 : 0
-      ))
+      ->fields($fields)
       ->execute();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function clear($cid = NULL, $wildcard = FALSE) {
     if (empty($cid) || ($wildcard && $cid == '*')) {
       db_truncate('dc_api_product')->execute();
@@ -104,31 +146,34 @@ class ApiProductCache implements \DrupalCacheInterface {
     $org_op = $prod_op = '=';
     if ($wildcard) {
       if (strpos($cid, ':') !== FALSE) {
-        list($orgName, $productName) = explode(':', $cid, 2);
+        list($org_name, $product_name) = explode(':', $cid, 2);
       }
       else {
-        $orgName = $cid;
-        $productName = '*';
+        $org_name = $cid;
+        $product_name = '*';
       }
 
-      if (strpos($orgName, '*') !== FALSE) {
-        $orgName = str_replace('*', '%', $orgName);
+      if (strpos($org_name, '*') !== FALSE) {
+        $org_name = str_replace('*', '%', $org_name);
         $org_op = 'LIKE';
       }
-      if (strpos($productName, '*') !== FALSE) {
-        $productName = str_replace('*', '%', $productName);
+      if (strpos($product_name, '*') !== FALSE) {
+        $product_name = str_replace('*', '%', $product_name);
         $prod_op = 'LIKE';
       }
     }
     else {
-      list($orgName, $productName) = @explode(':', $cid, 2);
+      list($org_name, $product_name) = @explode(':', $cid, 2);
     }
     db_delete('dc_api_product')
-      ->condition('org_name', $orgName, $org_op)
-      ->condition('name', $productName, $prod_op)
+      ->condition('org_name', $org_name, $org_op)
+      ->condition('name', $product_name, $prod_op)
       ->execute();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function isEmpty() {
     $app_id = db_select('dc_api_product', 'a')
       ->range(0, 1)
@@ -137,4 +182,5 @@ class ApiProductCache implements \DrupalCacheInterface {
       ->fetchCol();
     return empty($app_id);
   }
+
 }
