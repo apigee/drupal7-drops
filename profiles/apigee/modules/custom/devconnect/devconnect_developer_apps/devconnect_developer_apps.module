@@ -1817,7 +1817,7 @@ function devconnect_developer_apps_sync_products($org = 'default', $set_messages
     $org = $config->orgName;
   }
 
-  $api_products = entity_load('api_product', array(), array('orgName' => $org));
+  $api_products = entity_load('api_product', array(), array('orgName' => $org, 'show_private' => TRUE));
   $count = count($api_products);
   if ($has_drush) {
     drush_print('Loaded ' . $count . ' api_products');

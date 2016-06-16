@@ -540,34 +540,11 @@ Apigee.APIModel.Methods = function() {
     }
 
     window.apiModelEditor.initRequestPayloadEditor(); // Initialize the request payload sample editor.
-      if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined" && typeof Drupal.settings.smartdocs != "undefined" && !Drupal.settings.smartdocs.useDefaultUrls) {
-        Apigee.APIModel.proxyURL = "https://apiconsole-prod.apigee.net/smartdocs/v1/sendrequest";
-        Apigee.APIModel.authUrl = 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate';
-    } else {
-      var proxyURLLocation = windowLocation.split("/apimodels/")[0];
-      if (Apigee.APIModel.apiModelBaseUrl) {
-        proxyURLLocation = Apigee.APIModel.apiModelBaseUrl +"/v1/o/" + Apigee.APIModel.organizationName;
-      } else if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-        proxyURLLocation = Drupal.settings.smartdocs.apiModelBaseUrl +"/v1/o/" + Apigee.APIModel.organizationName;
-      }
-      proxyURLLocation = proxyURLLocation + "/apimodels/proxyUrl"; // Proxy URL location format: https://<domain name>/<alpha/beta/v1>/o/apihub/apimodels/proxyUrl
-      self.makeAJAXCall({"url":proxyURLLocation, "callback":self.storeProxyURL}); // Make an AJAX call to retrieve proxy URL to make send request call.
-    }
-
+    Apigee.APIModel.proxyURL = Drupal.settings.smartdocs.proxyUrl;
+    Apigee.APIModel.authUrl = Drupal.settings.smartdocs.authUrl;
     Apigee.APIModel.initMethodsPageEvents();
     Apigee.APIModel.initMethodsAuthDialogsEvents();
     self.getCustomTokenCredentials();
-  };
-  /**
-   * Success callback method of a proxy URL AJAX call: sets proxy URL value to local variable 'proxyURL'.
-   * @param {object} data - response content of a proxy URL AJAX call.
-   */
-  this.storeProxyURL = function(data) {
-    Apigee.APIModel.proxyURL = data.proxyUrl;
-    Apigee.APIModel.authUrl = data.authUrl;
-    if (Apigee.APIModel.proxyURL.indexOf("/sendrequest") == -1 ) {
-      Apigee.APIModel.proxyURL = Apigee.APIModel.proxyURL + "/sendrequest";
-    }
   };
   /**
    * Success callback method of a OAuth2 web server auth URL AJAX call: opens a new window to make OAuth dance.
@@ -816,13 +793,7 @@ Apigee.APIModel.Methods = function() {
       }
     } else if (parentClass.attr('data-role') == 'oauth2_modal') {
       var oauth2Url = window.location.href;
-      oauth2Url = windowLocation.split("/revisions/")[0];
-      if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-        oauth2Url = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName;
-      }
-      if (Apigee.APIModel.apiModelBaseUrl) {
-        oauth2Url = Apigee.APIModel.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName;
-      }
+      oauth2Url = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName;
       self.closeAuthModal();
       // Make an AJAX call to retrieve an auth URL.
       self.makeAJAXCall({"url":oauth2Url+"/templateauths/"+secName+"/authUrl",dataType:"json", "callback":self.renderCallbackURL, "errorCallback" :self.handleOAuth2Failure});
@@ -2032,32 +2003,19 @@ Apigee.APIModel.InlineEdit = function() {
    * If it is Cancel icon, Resets the editable elements value.
    */
   this.makeAPICall = function(e) {
-    var operationPath = location.href;
+    var operationPath = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber+"/resources/"+ Apigee.APIModel.resourceId;
     editingFlag = false;
     currentEditableElement.removeClass("editing");
     var jsonBody = '';
     if (currentEditableElement.attr("data-role") == "description" && currentEditableElement.parent().parent().attr("data-scope") == "resource") {
       lastEditScope = "resource";
-      operationPath = operationPath.split("/methods/")[0];
-      if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-        operationPath = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber+"/resources/"+ Apigee.APIModel.resourceId;
-      }
-      if (Apigee.APIModel.apiModelBaseUrl) {
-        operationPath = Apigee.APIModel.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+ Apigee.APIModel.apiName+"/revisions/"+ Apigee.APIModel.revisionNumber+"/resources/"+ Apigee.APIModel.resourceId;
-      }
 
       // Resource level params Header, Query, Template params contruction.
       jsonBody += '{"parameters": [' + constructParams("general","resource") + ' ]';
       jsonBody += ', "parameterGroups": [ ' + constructParamGroups("resource") + ' ]}';
     } else {
       lastEditScope = "method";
-      operationPath = operationPath.split("/doc?")[0]
-      if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-        operationPath = Drupal.settings.smartdocs.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+Apigee.APIModel.apiName+"/revisions/"+Apigee.APIModel.revisionNumber+"/resources/"+Apigee.APIModel.resourceId+"/methods/"+ Apigee.APIModel.methodId;
-      }
-      if (Apigee.APIModel.apiModelBaseUrl) {
-        operationPath = Apigee.APIModel.apiModelBaseUrl + "/v1/o/" + Apigee.APIModel.organizationName + "/apimodels/"+Apigee.APIModel.apiName+"/revisions/"+Apigee.APIModel.revisionNumber+"/resources/"+Apigee.APIModel.resourceId+"/methods/"+ Apigee.APIModel.methodId;
-      }
+      operationPath += "/methods/"+ Apigee.APIModel.methodId;
       // Description text construction.
       var descriptionText =  jQuery.trim(jQuery("textarea.resource_description_edit").val());
       if (currentEditableElement.attr("data-role") != "method-description") {

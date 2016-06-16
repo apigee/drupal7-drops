@@ -552,35 +552,11 @@ Apigee.APIModel.Editor = function() {
         }
 
         window.apiModelEditor.initRequestPayloadEditor(); // Initialize the request payload sample editor.
-        if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined" && typeof Drupal.settings.smartdocs != "undefined" && !Drupal.settings.smartdocs.useDefaultUrls) {
-            Apigee.APIModel.proxyURL = "https://apiconsole-prod.apigee.net/smartdocs/v1/sendrequest";
-            Apigee.APIModel.authUrl = 'https://api.enterprise.apigee.com/v1/users/{user}/authenticate';
-        } else {
-            var proxyURLLocation = windowLocation.split("/apimodels/")[0];    
-            if (Apigee.APIModel.apiModelBaseUrl) {
-                proxyURLLocation = Apigee.APIModel.apiModelBaseUrl +"/v1/o/" + Apigee.APIModel.organizationName;
-            } else if (typeof Drupal != "undefined" && typeof Drupal.settings != "undefined") {
-                proxyURLLocation = Drupal.settings.smartdocs.apiModelBaseUrl +"/v1/o/" + Apigee.APIModel.organizationName;
-            }
-            proxyURLLocation = proxyURLLocation + "/apimodels/proxyUrl"; // Proxy URL location format: https://<domain name>/<alpha/beta/v1>/o/apihub/apimodels/proxyUrl
-            self.makeAJAXCall({"url":proxyURLLocation, "callback":self.storeProxyURL}); // Make an AJAX call to retrieve proxy URL to make send request call.
-        }        
-        
+        Apigee.APIModel.proxyURL = Drupal.settings.smartdocs.proxyUrl;
+        Apigee.APIModel.authUrl = Drupal.settings.smartdocs.authUrl;
         Apigee.APIModel.initMethodsPageEvents();
         Apigee.APIModel.initMethodsAuthDialogsEvents();
     };
-    /**
-     * Success callback method of a proxy URL AJAX call.
-     * @param {Object} data - response content of a proxy URL AJAX call.
-     * @return {Void} sets proxy URL value to local variable 'proxyURL'.
-     */
-    this.storeProxyURL = function(data) {
-        Apigee.APIModel.proxyURL = data.proxyUrl;
-        Apigee.APIModel.authUrl = data.authUrl;
-        if (Apigee.APIModel.proxyURL.indexOf("/sendrequest") == -1 ) {
-            Apigee.APIModel.proxyURL = Apigee.APIModel.proxyURL + "/sendrequest";
-        }        
-    }
     /**
      * Success callback method of a OAuth2 web serser auth URL AJAX call.
      * @param {Object} data - response content of OAuth2 web serser auth URL AJAX call.

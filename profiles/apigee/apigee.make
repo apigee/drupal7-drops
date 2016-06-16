@@ -442,7 +442,7 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.13"
+projects[views][version] = "3.14"
 
 ; Deprecated
 projects[views_accordion][type] = "module"
@@ -487,6 +487,8 @@ projects[adminimal_theme][version] = "1.24"
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
 projects[bootstrap][version] = "3.5"
+; see https://www.drupal.org/node/2594243
+projects[bootstrap][patch][2594243] = "https://www.drupal.org/files/issues/autocomplete_js-2594243-9.patch"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
@@ -811,7 +813,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.5.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.6.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"

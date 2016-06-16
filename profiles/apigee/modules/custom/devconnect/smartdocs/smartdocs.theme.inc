@@ -150,9 +150,10 @@ function smartdocs_preprocess_node(&$vars) {
     $org_settings = devconnect_get_org_settings();
     $endpoint_host = parse_url($org_settings['endpoint'], PHP_URL_HOST);
     $js_settings = array(
-      'oauth2AuthUrl' => base_path() . '/smartdocs/oauth/callback',
+      'oauth2AuthUrl' => rtrim(base_path(), '/') . '/smartdocs/oauth/callback',
       'apiModelBaseUrl' => preg_replace('!v1$!', '', rtrim($org_settings['endpoint'], '/')),
-      'useDefaultUrls' => ($endpoint_host == 'api.enterprise.apigee.com'),
+      'authUrl' => $org_settings['endpoint'] . '/users/{user}/authenticate',
+      'proxyUrl' => variable_get('smartdocs_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1/sendrequest'),
     );
     drupal_add_js(array('smartdocs' => $js_settings), 'setting');
 

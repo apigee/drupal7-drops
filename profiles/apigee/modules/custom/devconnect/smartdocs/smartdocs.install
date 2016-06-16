@@ -4,13 +4,6 @@
  * Handles installation of SmartDocs database schema.
  */
 
-if (defined('APIGEE_MINIMUM_PHP_VERSION')) {
-  define('SMARTDOCS_MINIMUM_PHP_VERSION', APIGEE_MINIMUM_PHP_VERSION);
-}
-else {
-  define('SMARTDOCS_MINIMUM_PHP_VERSION', '5.3.3');
-}
-
 /**
  * Implements hook_schema().
  */
@@ -487,27 +480,6 @@ function smartdocs_update_7504() {
     db_create_table('cache_smartdocs', drupal_get_schema_unprocessed('system', 'cache'));
   }
   menu_rebuild();
-}
-
-/**
- * Warn if SmartDocs is not running on up-to-date PHP.
- */
-function smartdocs_update_7505() {
-  if (version_compare(PHP_VERSION, SMARTDOCS_MINIMUM_PHP_VERSION, '<')) {
-    // Log the version incompatibility to dblog and return a message.
-    $args = array('!version' => SMARTDOCS_MINIMUM_PHP_VERSION, '!old_version' => PHP_VERSION);
-    $message = 'Your PHP installation is too old. SmartDocs now requires at least PHP !version, but you are using PHP !old_version.';
-    if (defined('PANTHEON_ENVIRONMENT')) {
-      $message .= ' You can configure your PHP version by logging into your Pantheon dashboard '
-        . 'and selecting the “Settings” button at the top right.';
-    }
-    watchdog('smartdocs', $message, $args, WATCHDOG_ERROR);
-    $t = get_t();
-    return $t($message, $args);
-    // We don't dare throw a DrupalUpdateException here, because users who
-    // check the 'run update.php' checkbox on the Pantheon dashboard will never
-    // see the failure.
-  }
 }
 
 /**

@@ -126,9 +126,10 @@ function smartdocs_settings($form, $form_state) {
 
   // Do not collapse advanced settings if an advanced setting is set.
   if (
-    variable_get('smartdocs_custom_template_file', 0)
+    variable_get('smartdocs_custom_template_file', FALSE)
     || variable_get('smartdocs_local_asset_version', 6) != 6
     || variable_get('smartdocs_use_prism', 1) != 1
+    || variable_get('smartdocs_proxy_url', FALSE)
   ) {
     $is_advanced_settings_collapsed = FALSE;
   }
@@ -203,6 +204,45 @@ function smartdocs_settings($form, $form_state) {
     '#title' => t('Include Prism syntax highlighter'),
     '#default_value' => variable_get('smartdocs_use_prism', 1),
     '#description' => t('When checked, JSON and XML syntax of request and response bodies will be highlighted using the Prism JavaScript library.'),
+  );
+
+  $config = devconnect_get_org_settings();
+  $endpoint_parts = parse_url($config['endpoint']);
+  if ($endpoint_parts['host'] == 'api.enterprise.apigee.com') {
+    $description = t('You should not need to edit this value unless one or more of your APIs is on a private network.');
+  }
+  else {
+    if (isset($endpoint_parts['port'])) {
+      $port = $endpoint_parts['port'];
+      // Commence black magick.
+      // If this is a default on-prem install (as indicated by an 8080
+      // endpoint), the default port for the SmartDocs proxy is 59001.
+      if ($port == 8080) {
+        $port = 59001;
+      }
+      $port = ':' . $port;
+    }
+    else {
+      $port = '';
+    }
+    $proxy_url = $endpoint_parts['scheme'] . '://'
+      . $endpoint_parts['host'] . $port . '/'
+      . preg_replace('!/v1$!', '', $endpoint_parts['path']);
+
+    $proxy_url = rtrim($proxy_url, '/') . '/smartdocs/v1/sendrequest';
+
+    $args = array(
+      '%proxy' => $proxy_url,
+      '%default' => 'https://apiconsole-prod.apigee.net/smartdocs/v1/sendrequest',
+    );
+    $description = t('If your dev portal will be exposed to users in an internal network who do not have access to the external internet, or if one or more of your APIs is on a private network, you should populate this field with the value %proxy (after making sure that the hostname resolves correctly for your users). If you leave it blank, a default value of %default will be used.', $args);
+  }
+
+  $form['settings']['smartdocs_proxy_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('SmartDocs proxy URL'),
+    '#description' => $description,
+    '#default_value' => variable_get('smartdocs_proxy_url'),
   );
 
   $form = system_settings_form($form);

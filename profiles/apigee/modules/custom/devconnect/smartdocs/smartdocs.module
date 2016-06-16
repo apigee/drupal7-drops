@@ -298,15 +298,8 @@ function smartdocs_permission() {
  */
 function smartdocs_oauth_callback() {
   $config =& devconnect_get_org_settings();
-  if (parse_url($config['endpoint'], PHP_URL_HOST) == 'api.enterprise.apigee.com') {
-    $proxy_root = 'https://apiconsole-prod.apigee.net';
-  }
-  else {
-    $proxy_root = preg_replace('!v1$!', '', rtrim($config['endpoint'], '/'));
-  }
-
   return theme('smartdocs_oauth_callback', array(
-    'proxy' => $proxy_root . '/smartdocs/v1/sendrequest',
+    'proxy' => trim(variable_get('smartdocs_proxy_url', 'https://apiconsole-prod.apigee.net/smartdocs/v1/sendrequest')),
     'endpoint' => $config['endpoint'],
   ));
 }

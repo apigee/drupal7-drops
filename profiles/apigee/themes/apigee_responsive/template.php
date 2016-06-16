@@ -43,6 +43,7 @@ function apigee_responsive_preprocess_html(&$vars) {
   }
 
   $inline_css = <<< EOF
+.navbar-nav > li > span > span.caret {border-bottom-color: $header_txt_color; border-top-color: $header_txt_color; color: $header_txt_color;}
 .faq .collapsed {display:block !important;}
 body header.navbar {background-color: $header_bg_color;}
 body header.navbar {border-color: $header_bg_color;}
@@ -94,10 +95,8 @@ body .btn:hover, body .btn:focus, body .btn:active, body .open .dropdown-toggle.
 .navbar-nav > li > span:hover {color: $header_hover_txt_color;}
 .navbar-nav > li.expanded span:hover, .navbar-nav > li.expanded.active {background-color: $header_hover_bg_color;}
 .navbar-nav > li > span > span.caret {border-bottom-color: $header_txt_color; border-top-color: $header_txt_color; color: $header_txt_color;}
+.modal-body #user-register-form .form-type-password.col-md-4 { width: 100%; }
 EOF;
-
-  // Main menu expanded drop down colors.
-  drupal_add_css(".navbar-nav > li > span > span.caret {border-bottom-color: $header_txt_color; border-top-color: $header_txt_color; color: $header_txt_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
 
   switch (theme_get_setting('logo_size')) {
     case 'big':

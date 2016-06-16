@@ -139,9 +139,10 @@ var oldPrototype = Drupal.jsAC.prototype;
  */
 Drupal.jsAC = function ($input, db, $context) {
   var ac = this;
-  this.$context = $context;
+  // fallback to the global context if we were not passed one
+  this.$context = $context || $(document);
   this.input = $input[0];
-  this.ariaLive = $context.find('#' + this.input.id + '-autocomplete-aria-live');
+  this.ariaLive = this.$context.find('#' + this.input.id + '-autocomplete-aria-live');
   this.db = db;
   $input
     .keydown(function (event) { return ac.onkeydown(this, event); })
