@@ -1,6 +1,0 @@
-name = SmartDocs alpha (DEPRECATED)
-description = "This module is deprecated. Please enable SmartDocs instead."
-package = "DevConnect"
-core = 7.x
-version = "7.x-14.03.24-beta"
-hidden = TRUE

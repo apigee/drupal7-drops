@@ -1,7 +1,7 @@
 name = Devconnect Blog Tests
 description = Automated tests for devconnect_blog
 core = 7.x
-package = DevConnect
+package = Dev Portal - Profile
 version = 7.x-4.25
 hidden = TRUE
 

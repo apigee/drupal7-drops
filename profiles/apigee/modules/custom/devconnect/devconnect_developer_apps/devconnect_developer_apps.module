@@ -1867,7 +1867,7 @@ function devconnect_developer_apps_cron() {
 
   // Find out if we need to fetch all developer apps. This is necessary if
   // there is a Rule to take action when app status changes.
-  if (module_exists('rules')) {
+  if (variable_get('devconnect_developer_apps_enable_status_rules', 0) && module_exists('rules')) {
     $has_status_rule = FALSE;
     $rules = entity_load('rules_config');
     foreach ($rules as $rule) {
@@ -2054,4 +2054,28 @@ function _devconnect_developer_apps_get_app_label($plural = FALSE, $lowercase = 
   }
   drupal_alter('devconnect_developer_app_label', $label, $form_value, $plural, $lowercase);
   return $label;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for devconnect_admin_form.
+ */
+function devconnect_developer_apps_form_devconnect_admin_form_alter(array &$form, array &$form_state) {
+  $form['experimental']['devconnect_developer_apps_enable_status_rules'] = array(
+    '#title' => t('Check all key statuses on cron'),
+    '#description' => t('When this box is checked, every cron run will load all apps from Edge to check to see if any key’s status has changed. This can be useful for small sites to notify developers when their keys have been approved or revoked, but for sites with large numbers of developers or apps it is unreliable due to cron timeouts.'),
+    '#type' => 'checkbox',
+    '#return_value' => 1,
+    '#default_value' => variable_get('devconnect_developer_apps_enable_status_rules', 0),
+  );
+  $form['#submit'][] = 'devconnect_developer_apps_devconnect_admin_form_submit';
+}
+
+/**
+ * Form submit handler for devconnect_admin_form.
+ *
+ * @param array $form
+ * @param array $form_state
+ */
+function devconnect_developer_apps_devconnect_admin_form_submit(array $form, array &$form_state) {
+  variable_set('devconnect_developer_apps_enable_status_rules', $form_state['values']['devconnect_developer_apps_enable_status_rules']);
 }

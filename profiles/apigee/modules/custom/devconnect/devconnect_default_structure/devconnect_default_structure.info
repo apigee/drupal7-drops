@@ -1,7 +1,7 @@
 name = Devconnect Default Structure
 description = Configures blocks, views and menus
 core = 7.x
-package = DevConnect
+package = Dev Portal - Profile
 version = 7.x-4.25
 
 dependencies[] = devconnect_context

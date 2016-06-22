@@ -111,8 +111,9 @@ function metatag_views_page_alter(&$page) {
         $metatags = array(LANGUAGE_NONE => $metatags);
       }
 
-      // Translate all of the meta tags using i18n.
-      metatag_translate_metatags($metatags[LANGUAGE_NONE], 'metatag_views:' . $view->name . METATAG_VIEWS_CONTEXT_SEPARATOR . $view->current_display);
+      // Translate all of the meta tags using i18n, but don't update the
+      // strings.
+      metatag_translate_metatags($metatags[LANGUAGE_NONE], 'metatag_views:' . $view->name . METATAG_VIEWS_CONTEXT_SEPARATOR . $view->current_display, NULL, FALSE);
 
       // Build options for meta tag rendering.
       $options = array();

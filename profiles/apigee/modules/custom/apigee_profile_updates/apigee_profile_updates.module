@@ -29,7 +29,6 @@ function _apigee_profile_updates_deprecated_modules() {
     'i18n_translation', 'i18n_user', 'i18n_variable', 'i18n_test',
     'migrate', 'migrate_example', 'migrate_example_oracle', 'migrate_example_baseball', 'migrate_ui',
     'node_export', 'node_export_dependency', 'node_export_features', 'node_export_feeds', 'node_export_relation',
-    'strongarm',
     'util', 'admin_page_fieldsets', 'admin_pages', 'block_tracker', 'comment_box', 'edit_link',
     'flood_report', 'log_cleanup', 'logged_in', 'no_index', 'node_add_order', 'quick_list',
     'related_blog', 'search_image_button', 'top_buttons', 'welcome_page',

@@ -1,7 +1,7 @@
 name = Devconnect Views
 description = Default views used in Dev Portal
 core = 7.x
-package = DevConnect
+package = Dev Portal - Profile
 version = 7.x-4.24
 
 dependencies[] = views

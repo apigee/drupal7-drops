@@ -1,9 +1,10 @@
-name = Devconnect Testing
-description = Provides Unit testing for Devconnect Modules
-package = DevConnect
+name = Devconnect Developer Apps testing
+description = Provides Unit testing for Devconnect Developer Apps
+package = Dev Portal - Core
 core = 7.x
 dependencies[] = devconnect
 dependencies[] = devconnect_user
 dependencies[] = me
+hidden = TRUE
 
 files[] = DeveloperAppEntityTestCase.test

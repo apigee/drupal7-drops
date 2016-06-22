@@ -12,7 +12,7 @@ function devconnect_developer_apps_rules_event_info() {
 
   $items['devconnect_developer_app_create'] = array(
     'label' => t('Upon creation of a developer app'),
-    'group' => 'Devconnect',
+    'group' => 'Developer apps',
     'variables' => array(
       'app' => array('type' => 'developer_app', 'label' => t('created app'))
     )
@@ -20,7 +20,7 @@ function devconnect_developer_apps_rules_event_info() {
 
   $items['devconnect_developer_app_update'] = array(
     'label' => t('Upon update of a developer app'),
-    'group' => 'Devconnect',
+    'group' => 'Developer apps',
     'variables' => array(
       'app' => array('type' => 'developer_app', 'label' => t('updated app'))
     )
@@ -28,25 +28,30 @@ function devconnect_developer_apps_rules_event_info() {
 
   $items['devconnect_developer_app_delete'] = array(
     'label' => t('Upon deletion of a developer app'),
-    'group' => 'Devconnect',
+    'group' => 'Developer apps',
     'variables' => array(
       'app' => array('type' => 'developer_app', 'label' => t('deleted app'))
     )
   );
 
-  $statuses = array('revoked', 'pending', 'approved');
-  foreach ($statuses as $from) {
-    foreach ($statuses as $to) {
-      if ($to == $from) {
-        continue;
+  if (variable_get('devconnect_developer_apps_enable_status_rules', 0)) {
+    $statuses = array('revoked', 'pending', 'approved');
+    foreach ($statuses as $from) {
+      foreach ($statuses as $to) {
+        if ($to == $from) {
+          continue;
+        }
+        $items['devconnect_developer_app_status_' . $from . '_' . $to] = array(
+          'label' => t("Upon change of a developer app’s overall status from $from to $to"),
+          'group' => 'Developer apps',
+          'variables' => array(
+            'app' => array(
+              'type' => 'developer_app',
+              'label' => t('updated app')
+            ),
+          )
+        );
       }
-      $items['devconnect_developer_app_status_' . $from . '_' . $to] = array(
-        'label' => t("Upon change of a developer app’s overall status from $from to $to"),
-        'group' => 'Devconnect',
-        'variables' => array(
-          'app' => array('type' => 'developer_app', 'label' => t('updated app')),
-        )
-      );
     }
   }
 
@@ -153,7 +158,7 @@ function devconnect_developer_apps_rules_action_info() {
   );
   $actions['devconnect_developer_apps_create_app'] = array(
     'label' => t('Create a Developer Application'),
-    'group' => 'Devconnect',
+    'group' => 'Developer apps',
     'parameter' => $parameters,
     'named parameter' => TRUE,
   );

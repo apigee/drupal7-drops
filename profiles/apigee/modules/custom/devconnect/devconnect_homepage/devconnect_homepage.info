@@ -2,5 +2,5 @@ name = "Devconnect Homepage"
 ; This module functionality should be put in the profile_update module?
 description = "Homepage Header Block"
 core = "7.x"
-package = "DevConnect"
+package = "Dev Portal - Profile"
 version = "7.x-4.23"

@@ -1,7 +1,7 @@
 name = DevConnect Monetization Base Recurring Payment
 description = Common commerce features between Payment Provides and Mint module
 core = 7.x
-package = DevConnect Mint
+package = Dev Portal - Mint
 php = 5.3
 version = 7.x-4.24
 

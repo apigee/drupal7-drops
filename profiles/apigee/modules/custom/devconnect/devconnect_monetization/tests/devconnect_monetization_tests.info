@@ -1,7 +1,7 @@
 name = Tests for DevConnect Monetization
 description = Tests the objects in the Apigee Mint API hierarchy
 core = 7.x
-package = DevConnect
+package = Dev Portal - Mint
 php = 5.3
 version = 7.x-4.22
 hidden = TRUE

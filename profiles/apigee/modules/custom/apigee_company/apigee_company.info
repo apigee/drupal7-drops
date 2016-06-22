@@ -1,6 +1,6 @@
 name = Apigee Company
 description = Provides the company feature integration with Apigee Edge.
-package = DevConnect Mint
+package = Dev Portal - Mint
 core = 7.x
 version = 7.x-1.0
 

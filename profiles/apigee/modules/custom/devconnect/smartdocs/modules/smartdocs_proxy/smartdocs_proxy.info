@@ -1,6 +1,6 @@
 name = SmartDocs Proxy
 description = Proxies revision-loads for customers with huge models.
-package = DevConnect
+package = Dev Portal - SmartDocs
 version = 7.x-1.0
 core = 7.x
 hidden = TRUE

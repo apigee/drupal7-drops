@@ -112,7 +112,7 @@ projects[content_access][version] = "1.2-beta2"
 ; Enabled during profile install.
 projects[context][type] = "module"
 projects[context][subdir] = "contrib"
-projects[context][version] = "3.6"
+projects[context][version] = "3.7"
 
 ; Enabled during profile install.
 projects[context_condition_theme][type] = "module"
@@ -139,7 +139,7 @@ projects[diff][version] = "3.2"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
-projects[ds][version] = "2.13"
+projects[ds][version] = "2.14"
 
 ; Deprecated. Required by devconnect_download which is also deprecated.
 projects[eck][type] = "module"
@@ -185,7 +185,7 @@ projects[field_group][version] = "1.5"
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.0-beta2"
+projects[file_entity][version] = "2.0-beta3"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -217,7 +217,7 @@ projects[github_connect][patch][2292767] = "https://www.drupal.org/files/issues/
 
 projects[google_analytics][type] = "module"
 projects[google_analytics][subdir] = "contrib"
-projects[google_analytics][version] = "2.1"
+projects[google_analytics][version] = "2.2"
 
 projects[gravatar][type] = "module"
 projects[gravatar][subdir] = "contrib"
@@ -253,7 +253,7 @@ projects[legal][version] = "1.5"
 ; Enabled during profile install.
 projects[libraries][type] = "module"
 projects[libraries][subdir] = "contrib"
-projects[libraries][version] = "2.2"
+projects[libraries][version] = "2.3"
 
 projects[linkchecker][type] = "module"
 projects[linkchecker][subdir] = "contrib"
@@ -284,7 +284,7 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-beta1"
+projects[media][version] = "2.0-beta2"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 ; see https://www.drupal.org/node/2631934
@@ -307,7 +307,7 @@ projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.14"
+projects[metatag][version] = "1.16"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -356,9 +356,7 @@ projects[readonlymode][version] = "1.2"
 
 projects[recaptcha][type] = "module"
 projects[recaptcha][subdir] = "contrib"
-projects[recaptcha][version] = "2.0"
-; see https://www.drupal.org/node/2530156
-projects[recaptcha][patch][2530156] = "https://www.drupal.org/files/issues/recaptcha-2530156-3-arg-separator.patch"
+projects[recaptcha][version] = "2.1"
 
 ; Enabled on install.
 projects[redirect][type] = "module"
@@ -393,7 +391,7 @@ projects[siteminder][version] = "2.x-dev"
 
 projects[smtp][type] = "module"
 projects[smtp][subdir] = "contrib"
-projects[smtp][version] = "1.3"
+projects[smtp][version] = "1.4"
 
 ; Required by Monetization
 projects[special_menu_items][type] = "module"
@@ -474,7 +472,7 @@ projects[wysiwyg_filter][version] = "1.6-rc3"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
-projects[xautoload][version] = "5.6"
+projects[xautoload][version] = "5.7"
 
 
 

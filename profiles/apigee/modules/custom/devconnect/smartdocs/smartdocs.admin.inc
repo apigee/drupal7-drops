@@ -1071,9 +1071,26 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
   // Danger, Will Robinson! Hack incoming!
   // Work around Modeling API bugs regarding parameter enums. See MGMT-2664.
   if (isset($file_contents) && $document_format == 'swagger') {
+    $swagger_obj = FALSE;
     if (substr($content_type, -4) == 'yaml') {
-      require_once libraries_get_path('spyc') . '/Spyc.php';
-      $swagger_obj = spyc_load($file_contents);
+      // Don't bother chewing through the Swagger if enums do not appear to be
+      // present. This is not foolproof, but it eliminates false negatives.
+      if (strpos($file_contents, 'enum:') !== FALSE) {
+        require_once libraries_get_path('spyc') . '/Spyc.php';
+        try {
+          $swagger_obj = spyc_load($file_contents);
+        }
+        catch (Exception $e) {
+          // Spyc may throw "Too many keys" exception in edge cases where it
+          // fails to parse valid well-formed YAML. This occurs when an object
+          // or array is written in "short syntax" and spans more than one line.
+          // See https://github.com/mustangostang/spyc/issues/30
+          // This same bug also afflicts Symfony\Yaml, though PECL yaml reads
+          // the data correctly (using libyaml).
+          watchdog_exception('smartdocs', $e);
+          drupal_set_message(t('Warning: If your model contains parameter enums, they may not have imported correctly.'), 'warning');
+        }
+      }
     }
     else {
       $swagger_obj = json_decode($file_contents, TRUE);
@@ -1084,7 +1101,7 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
       $verbs = array('get', 'post', 'put', 'patch', 'options', 'head', 'delete');
       foreach ($swagger_obj['paths'] as $path => $resource) {
         // Handle resource parameters.
-        if (array_key_exists('parameters', $resource)) {
+        if (array_key_exists('parameters', $resource) && is_array($resource['parameters'])) {
           foreach ($resource['parameters'] as $parameter) {
             if (array_key_exists('enum', $parameter)) {
               $resource_enums[$path][$parameter['name']] = $parameter['enum'];
@@ -1094,7 +1111,7 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
         // Handle method parameters.
         foreach ($verbs as $verb) {
           if (array_key_exists($verb, $resource)) {
-            if (array_key_exists('parameters', $resource[$verb])) {
+            if (array_key_exists('parameters', $resource[$verb]) && is_array($resource[$verb]['parameters'])) {
               foreach ($resource[$verb]['parameters'] as $parameter) {
                 if (array_key_exists('enum', $parameter)) {
                   $method_enums[$path][$verb][$parameter['name']] = $parameter['enum'];
@@ -2774,18 +2791,28 @@ function smartdocs_resource_edit(array $form, array &$form_state, array $model, 
     '#default_value' => isset($resource) && count($resource['parameters']) > 0 ? smartdocs_format_json($resource['parameters']) : NULL,
   );
 
-  $example = smartdocs_method_examples('parameters');
-  if (!empty($example)) {
-    $form['examples'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Examples'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
-    $form['examples']['ex'] = array(
-      '#markup' => $example,
-    );
+  $example = <<<EOM
+<pre>[
+  {
+    &quot;dataType&quot;:&quot;string&quot;,
+    &quot;type&quot;:&quot;query&quot;,
+    &quot;name&quot;:&quot;shirtsize&quot;,
+    &quot;default&quot;:&quot;lower&quot;,
+    &quot;description&quot;:&quot;Shirt size.&quot;,
+    &quot;options&quot;:[&quot;s&quot;,&quot;m&quot;,&quot;l&quot;]
   }
+]</pre>
+EOM;
+
+  $form['examples'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Examples'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['examples']['ex'] = array(
+    '#markup' => $example,
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#submit' => array('smartdocs_resource_edit_submit'),

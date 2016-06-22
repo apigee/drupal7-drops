@@ -1,7 +1,7 @@
 name = DevConnect Monetization Payment
 description = Provides connection between Apigee's monetization services and Worldpay System to allow developers to add money to an account.
 core = 7.x
-package = DevConnect Mint
+package = Dev Portal - Mint
 php = 5.3
 version = 7.x-4.22
 

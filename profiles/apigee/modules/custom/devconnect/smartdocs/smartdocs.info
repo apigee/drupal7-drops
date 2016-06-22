@@ -1,6 +1,6 @@
 name = SmartDocs
 description = Provides integration to Apigee SmartDocs API
-package = DevConnect
+package = Dev Portal - SmartDocs
 version = 7.x-5.9
 core = 7.x
 

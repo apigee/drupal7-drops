@@ -5,7 +5,7 @@
  */
 
 define('SMARTDOCS_SAMPLE_PETSTORE_MODEL', 'petstore_example');
-define('SMARTDOCS_SAMPLE_WEATHER_MODEL', 'weather_example');
+define('SMARTDOCS_SAMPLE_HELLOWORLD_MODEL', 'helloworld_example');
 
 /**
  * Create model and import Swagger/WADL file to load content.
@@ -46,13 +46,13 @@ function apigee_smartdocs_import_model_content() {
   );
 
   // Create sample SmartDocs  model.
-  $model_display_name = 'Weather Example API';
-  $model_description = 'Get weather reports for any location using the Yahoo Weather API.';
-  $model_base_url = 'http://weather.yahooapis.com';
+  $model_display_name = 'Hello World API';
+  $model_description = 'A simple "hello world" API.';
+  $model_base_url = 'http://mocktarget.apigee.net';
   $operations[] = array(
     'apigee_batch_smartdocs_create_model',
     array(
-      SMARTDOCS_SAMPLE_WEATHER_MODEL,
+      SMARTDOCS_SAMPLE_HELLOWORLD_MODEL,
       $model_display_name,
       $model_description,
       $model_base_url,
@@ -60,14 +60,14 @@ function apigee_smartdocs_import_model_content() {
   );
 
   // Import pet store Swagger file into pet store model.
-  $model_import_file = __DIR__ . '/modules/custom/devconnect/smartdocs/samples/weather.xml';
+  $model_import_file = __DIR__ . '/modules/custom/devconnect/smartdocs/samples/helloworld.yaml';
   $operations[] = array(
     'apigee_batch_smartdocs_import_model',
     array(
-      SMARTDOCS_SAMPLE_WEATHER_MODEL,
+      SMARTDOCS_SAMPLE_HELLOWORLD_MODEL,
       $model_import_file,
-      'wadl',
-      'application/xml',
+      'swagger',
+      'application/yaml',
     ),
   );
 
@@ -82,7 +82,7 @@ function apigee_smartdocs_import_model_content() {
 }
 
 /**
- * Renders and publishes pet store and weather SmartDocs nodes.
+ * Renders and publishes pet store and hello-world SmartDocs nodes.
  *
  * @return mixed
  *   The batch API array.
@@ -100,18 +100,18 @@ function apigee_smartdocs_render_model_content() {
   require_once drupal_get_path('module', 'smartdocs') . '/batch/smartdocs.render.inc';
 
   // Get batches to render model nodes.
-  $batch_weather = get_smartdocs_render_batch(SMARTDOCS_SAMPLE_WEATHER_MODEL);
+  $batch_hello = get_smartdocs_render_batch(SMARTDOCS_SAMPLE_HELLOWORLD_MODEL);
   $batch_pet = get_smartdocs_render_batch(SMARTDOCS_SAMPLE_PETSTORE_MODEL);
 
   $operations = array();
-  if ($batch_weather != NULL) {
-    $operations = array_merge($operations, $batch_weather['operations']);
+  if ($batch_hello != NULL) {
+    $operations = array_merge($operations, $batch_hello['operations']);
   }
   if ($batch_pet != NULL) {
     $operations = array_merge($operations, $batch_pet['operations']);
   }
 
-  // Merge the pet and weather batch to return.
+  // Merge the pet and hello-world batch to return.
   $batch = array(
     'operations' => $operations,
     'title' => t('Rendering SmartDocs documentation pages'),

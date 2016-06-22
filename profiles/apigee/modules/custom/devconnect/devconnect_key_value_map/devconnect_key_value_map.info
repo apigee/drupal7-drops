@@ -1,7 +1,7 @@
 name = DevConnect Key-Value Maps
 description = Thin wrapper around Key-Value Map class in Devconnect SDK
 core = 7.x
-package = DevConnect
+package = Dev Portal - Extensions
 php = 5.2.4
 version = 7.x-4.23
 

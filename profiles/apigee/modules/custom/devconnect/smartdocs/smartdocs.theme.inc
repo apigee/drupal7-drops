@@ -343,7 +343,7 @@ function smartdocs_preprocess_devconnect_developer_apps_list(&$vars) {
           else {
             $title = $model_term->name;
           }
-          $link_title = t(':model documentation', array(':model' => $title));
+          $link_title = t('@model documentation', array('@model' => $title));
           $app['smartdocs'][$product][] = l($link_title, 'taxonomy/term/' . $model_term->tid, array('attributes' => array('target' => '_blank')));
         }
       }

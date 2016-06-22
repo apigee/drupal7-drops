@@ -1,5 +1,5 @@
 name = SmartDocs Attachments
 description = Provides field widgets for displaying SmartDocs body attachments
-package = DevConnect
+package = Dev Portal - SmartDocs
 version = 7.x-4.5
 core = 7.x

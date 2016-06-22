@@ -243,7 +243,7 @@ function apigee_responsive_preprocess_region(&$vars) {
  * Implements hook_preprocess_block().
  */
 function apigee_responsive_preprocess_block(&$vars) {
-  $is_apigee_home_block = $vars['block']->bid == 'views-devconnect_blog-block_1' || $vars['block']->bid == 'views-home_featured_forum_posts-block' || $vars['block']->bid == 'views-weather_listing-block_1'  || $vars['block']->bid == 'views-smartdocs_methods-frontpage';
+  $is_apigee_home_block = $vars['block']->bid == 'views-devconnect_blog-block_1' || $vars['block']->bid == 'views-home_featured_forum_posts-block' || $vars['block']->bid == 'views-smartdocs_methods-frontpage';
   // Add custom css classes to the default apigee blocks in the home page.
   if (drupal_is_front_page() && $vars['block']->module == 'views' && $is_apigee_home_block) {
     $vars['classes_array'][] = 'col-md-4';

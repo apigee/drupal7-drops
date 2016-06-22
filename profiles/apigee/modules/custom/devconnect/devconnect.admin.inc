@@ -46,7 +46,7 @@ function devconnect_admin_form(array $form, array &$form_state) {
   $form['connection_config_container'] = array(
     '#title' => t('Connection Configuration'),
     '#type' => 'fieldset',
-    '#collapsible' => FALSE,
+    '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#id' => 'edit-connection-config-container',
     'org_settings' => array(
@@ -242,8 +242,10 @@ function devconnect_admin_form(array $form, array &$form_state) {
   $weight = 0;
 
   $form['devconnect_config_container'] = array(
-    '#title' => t('Dev Portal Configuration'),
+    '#title' => t('Dev Portal UI configuration'),
     '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
   );
 
   foreach ($my_variables as $name => $info) {
@@ -307,9 +309,53 @@ function devconnect_admin_form(array $form, array &$form_state) {
     $form[$set . '_container'][$name] = $form_element;
   }
 
+  $form['experimental'] = array(
+    '#title' => t('Experimental features'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#after_build' => array('_devconnect_hide_if_empty'),
+  );
+  $form['experimental']['description'] = array(
+    '#type' => 'markup',
+    '#markup' => '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="24" height="32" style="float:left;margin-right:1em">
+  <g transform="translate(0,31) scale(0.0375,-0.0375)">
+   <path style="stroke:none; fill:#ff4300" d="M347 439l180 -366c16 -32 -1 -51 -29 -51 h-358c-28 0 -45 19 -29 51l180 366h56z"/>
+   <path style="stroke:#999; stroke-width: 28px; fill:none" d="M260 744c0 18 118 18 118 0c0 -38 -19 -22 -19 -56v-220l200 -394c23 -45 -2 -74 -42 -74h-396c-40 0 -65 29 -42 74l200 394v220c0 34 -19 18 -19 56z" />
+  </g>
+  <circle cx="11" cy="22" r="1.5" style="stroke:none;fill:white"/>
+  <circle cx="14" cy="25.5" r="2" style="stroke:none;fill:white"/>
+</svg>'
+      . '<p>' . t('This is a testing ground for experimental features that aren’t quite ready for prime time.<br>They may <strong>change</strong>, <strong>break</strong> or <strong>disappear</strong> at any time.') . '</p>',
+  );
+
   $form = system_settings_form($form);
   $form['#submit'] = array('devconnect_admin_form_submit');
   return $form;
+}
+
+/**
+ * After-build callback for 'experimental' fieldset element.
+ *
+ * If no other modules have added anything to this fieldset, hide the whole
+ * thing.
+ *
+ * @param array $element
+ *
+ * @return array
+ */
+function _devconnect_hide_if_empty(array $element) {
+  $has_content = FALSE;
+  foreach (array_keys($element) as $key) {
+    if (substr($key, 0, 1) != '#' && $key != 'description') {
+      $has_content = TRUE;
+      break;
+    }
+  }
+  if (!$has_content) {
+    $element['#access'] = FALSE;
+  }
+  return $element;
 }
 
 /**

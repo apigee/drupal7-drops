@@ -1052,64 +1052,6 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
 }
 
 /**
- * Provides JSON Example Structures for Methods in SmartDocs.
- *
- * @param string $which
- *   Which section of the form do we need an example for?
- *
- * @return string
- *   Plaintext output.
- */
-function smartdocs_method_examples($which) {
-  switch ($which) {
-    case 'parameterGroups':
-      $example = '{
-  "minChoice":"1",
-  "maxChoice":"2",
-  "parameters":[
-    {
-      "dataType":"string",
-      "type":"query",
-      "name":"shirtsize",
-      "default":"lower",
-      "description":"Shirtsize.",
-      "options":["s","m","l"]
-    } ]
-}';
-      return '<pre>' . $example . '</pre>';
-
-    case 'parameters':
-      $example = '[
-    {
-        "dataType": "string",
-        "defaultValue": "",
-        "description": "Set the weather location as a WOEID.",
-        "name": "w",
-        "required": true,
-        "type": "QUERY"
-    }
-]';
-      return '<pre>' . $example . '</pre>';
-
-    case 'tags':
-      $example = '[
-    "Get Weather"
-]';
-      return '<pre>' . $example . '</pre>';
-
-    case 'customAttributes':
-      $example = '[
-  "name":"someattr",
-  "value":"somevalue"
-]';
-      return '<pre>' . $example . '</pre>';
-
-    default:
-      return NULL;
-  }
-}
-
-/**
  * Finds the nid associated with a given method, or FALSE if there is none.
  *
  * @param array|Method $method
@@ -1756,22 +1698,23 @@ function smartdocs_create_model_view($model) {
     return;
   }
 
-  module_load_include('inc', 'smartdocs', 'smartdocs.views_default');
-  $generic_views = smartdocs_views_default_views();
-  $view = $generic_views['smartdocs_methods'];
+  $view = views_get_view('smartdocs_methods');
+
+  // Unset the vid so that when we save, we perform an insert rather than an
+  // update.
+  $view->vid = NULL;
+  $view->disabled = FALSE;
   $view->name = $view_name;
   $view->description = 'This view lists methods within the ' . $model_display_name . ' model.';
   $view->human_name = $model_display_name . ' Method Listing';
 
-  $view->display['default']->display_options['filters'] = array(
-    'model_tid' => array(
-      'id' => 'model_tid',
-      'table' => 'field_data_field_smart_method_model',
-      'field' => 'field_smart_method_model_tid',
-      'value' => array($term->tid),
-      'group' => 1,
-      'expose' => array('operator' => FALSE),
-    ),
+  $view->display['default']->display_options['filters']['model_tid'] = array(
+    'id' => 'model_tid',
+    'table' => 'field_data_field_smart_method_model',
+    'field' => 'field_smart_method_model_tid',
+    'value' => array($term->tid),
+    'group' => 1,
+    'expose' => array('operator' => FALSE),
   );
   $view->display['frontpage']->display_options['title'] = $model_display_name . ' APIs';
   $view->display['frontpage']->display_options['display_description'] = 'This block may be placed on the site home page. It lists the 5 most recently-updated published methods in the model.';
@@ -1780,10 +1723,11 @@ function smartdocs_create_model_view($model) {
   $display =& $view->display['modelindex'];
   $display->display_plugin = 'page';
   $display->display_options['display_description'] = str_replace('This block ', 'This display ', $display->display_options['display_description']);
-  $display->display_options['defaults'] = array('title' => FALSE, 'header' => FALSE);
   $display->display_options['path'] = 'taxonomy/term/' . $term->tid;
+  $display->display_options['defaults']['title'] = FALSE;
   $display->display_options['title'] = $model_display_name;
   if (!empty($model_description)) {
+    $display->display_options['defaults']['header'] = FALSE;
     $display->display_options['header'] = array(
       'model_description' => array(
         'id' => 'model_description',
@@ -1795,10 +1739,23 @@ function smartdocs_create_model_view($model) {
       ),
     );
   }
+  if (array_key_exists('model_tid', $display->display_options['arguments'])) {
+    unset($display->display_options['arguments']['model_tid']);
+    if (empty($display->display_options['arguments'])) {
+      unset($display->display_options['defaults']['arguments']);
+      unset($display->display_options['arguments']);
+    }
+  }
 
-  unset($view->display['methodtoc']->display_options['defaults']['arguments']);
-  unset($view->display['methodtoc']->display_options['arguments']);
-  $view->display['methodtoc']->display_options['display_description'] = 'This block may optionally be placed in a sidebar to provide a table of contents for methods in the ' . $model_display_name . ' model.';
+  $display =& $view->display['methodtoc'];
+  if (array_key_exists('model_tid', $display->display_options['arguments'])) {
+    unset($display->display_options['arguments']['model_tid']);
+    if (empty($display->display_options['arguments'])) {
+      unset($display->display_options['defaults']['arguments']);
+      unset($display->display_options['arguments']);
+    }
+  }
+  $display->display_options['display_description'] = 'This block may optionally be placed in a sidebar to provide a table of contents for methods in the ' . check_plain($model_display_name) . ' model.';
 
   views_save_view($view);
   drupal_flush_all_caches();

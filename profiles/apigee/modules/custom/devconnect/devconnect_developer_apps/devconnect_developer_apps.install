@@ -235,3 +235,32 @@ function devconnect_developer_apps_update_7436() {
     db_add_field('dc_api_product', 'attributes', $schema['dc_api_product']['fields']['attributes']);
   }
 }
+
+/**
+ * Determine whether to set the flag to enable app-status rule triggers.
+ */
+function devconnect_developer_apps_update_7437() {
+  if (variable_get('devconnect_developer_apps_enable_status_rules', 0)) {
+    // Box was checked before we had a chance to run the update!
+    return;
+  }
+  $flag_value = 0;
+  // Set the flag value to 1 if there is at least one rule involving an
+  // app-status event.
+  if (module_exists('rules')) {
+    drupal_load('module', 'rules');
+    $rules = entity_load('rules_config');
+    foreach ($rules as $rule) {
+      if ($rule instanceof RulesReactionRule) {
+        foreach ($rule->events() as $event) {
+          if (substr($event, 0, 32) == 'devconnect_developer_app_status_') {
+            $flag_value = 1;
+            break 2;
+          }
+        }
+      }
+    }
+    // The 'break 2' above breaks to here.
+  }
+  variable_set('devconnect_developer_apps_enable_status_rules', $flag_value);
+}

@@ -1,9 +1,9 @@
 name = DevConnect Limit API Product by Role
 description = Allows API Products to be limited by Drupal role
 core = 7.x
-package = DevConnect
+package = Dev Portal - Extensions
 php = 5.3
-version = 7.x-4.2
+version = 7.x-4.3
 
 dependencies[] = devconnect_developer_apps
 

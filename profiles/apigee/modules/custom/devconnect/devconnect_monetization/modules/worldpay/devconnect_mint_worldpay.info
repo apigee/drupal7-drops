@@ -1,7 +1,7 @@
 name = DevConnect Monetization Recurring Payment Worldpay
 description = Provides connection between Apigee's monetization services and Worldpay Payment Provider enabling recurring payments through the Corporate Gateway
 core = 7.x
-package = DevConnect Mint
+package = Dev Portal - Mint
 php = 5.3
 version = 7.x-4.24
 

@@ -25,10 +25,4 @@
 * `devconnect_views`: Provides default views used by profile. Required by `devconnect_default_structure` and therefore enabled by default for apigee profile.
 
 ## Deprecated/Hidden
-* `devconnect_content_admin`: Features to set up content admin for profile. No longer in use.
 * `devconnect_debug`: Displays all Edge calls at bottom of page. Hidden, can be useful for troubleshooting.
-* `devconnect_docgen`: Precursor to SmartDocs GA. Hidden, no longer in use.
-* `devconnect_download`: Provides one-time download links via S3. Depends on Display Suite which is incompatible with SmartDocs. Hidden, no longer in use.
-* `devconnect_multiorg`: Allowed configuration of multiple Edge orgs. Irreparably broken! Hidden, no longer in use.
-* `devconnect_partner`: Allows partners to organize users into groups which can own apps in common. Hidden.
-* `devportal_updates`: Allows OPDK sites to determine if they need updates. Polls nonexistent update server and is therefore broken.

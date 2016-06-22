@@ -65,7 +65,12 @@ function apigee_gtm_init() {
       'webapp.version' => $build_version,
     ),
   );
-  if (array_key_exists('aac_session', $_SESSION) && array_key_exists('uuid', $_SESSION['aac_session'])) {
+  if (
+    isset($_SESSION)
+    && is_array($_SESSION)
+    && array_key_exists('aac_session', $_SESSION)
+    && array_key_exists('uuid', $_SESSION['aac_session'])
+  ) {
     $data_layer[0]['user.uuid'] = $_SESSION['aac_session']['uuid'];
   }
 

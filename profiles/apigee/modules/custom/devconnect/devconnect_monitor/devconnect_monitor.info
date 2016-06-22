@@ -1,5 +1,5 @@
 name = DevConnect Monitor
 description = Monitor and alerting for Apigee Dev Portal.
 core = 7.x
-package = DevConnect
+package = Dev Portal - Extensions
 version = 7.x-1.0
