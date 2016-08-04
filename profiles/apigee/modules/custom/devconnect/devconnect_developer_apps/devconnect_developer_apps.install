@@ -264,3 +264,28 @@ function devconnect_developer_apps_update_7437() {
   }
   variable_set('devconnect_developer_apps_enable_status_rules', $flag_value);
 }
+
+/**
+ * Migrate devconnect_developer_apps_create_app rules to new format.
+ */
+function devconnect_developer_apps_update_7438() {
+  if (!module_exists('rules')) {
+    return;
+  }
+  drupal_load('module', 'rules');
+  $rules = entity_load('rules_config');
+  foreach ($rules as $rule) {
+    if ($rule instanceof RulesReactionRule) {
+      $actions = $rule->actions();
+      /** @var RulesAction $action */
+      foreach ($actions as $action) {
+        if ($action->getElementName() == 'devconnect_developer_apps_create_app') {
+          if (is_string($action->settings['api_products']) && strpos($action->settings['api_products'], '\n\r') !== FALSE) {
+            $action->settings['api_products'] = explode('\n\r', $action->settings['api_products']);
+            $action->save();
+          }
+        }
+      }
+    }
+  }
+}

@@ -68,6 +68,7 @@ function bootstrap_css_alter(&$css) {
     }
   }
   if (!empty($excludes)) {
+    $excludes = array_merge($excludes, str_replace('.css', '-rtl.css', $excludes));
     $css = array_diff_key($css, drupal_map_assoc($excludes));
   }
 }
@@ -90,11 +91,6 @@ function bootstrap_element_info_alter(&$info) {
       $cached[$theme] = array();
       foreach (array_keys($info) as $type) {
         $element = array();
-
-        // Ensure elements that have a base type with the #input set match.
-        if (isset($info[$type]['#base_type']) && isset($info[$type][$info[$type]['#base_type']]['#input'])) {
-          $element['#input'] = $info[$info[$type]['#base_type']]['#input'];
-        }
 
         // Replace fieldset theme implementations with bootstrap_panel.
         if (!empty($info[$type]['#theme']) && $info[$type]['#theme'] === 'fieldset') {

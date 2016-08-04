@@ -2,4 +2,4 @@ name = Apigee SSO UI
 description = User-interface elements for Single-Sign-On via Github, Twitter and Apigee.
 core = 7.x
 package = "Apigee"
-version = "7.x-4.27"
+version = "7.x-4.28"

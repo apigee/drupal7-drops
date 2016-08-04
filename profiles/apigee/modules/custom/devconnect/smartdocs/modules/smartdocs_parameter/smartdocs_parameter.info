@@ -1,5 +1,7 @@
 name = SmartDocs Parameters
 description = Provides field widgets for displaying SmartDocs parameters
 package = Dev Portal - SmartDocs
-version = 7.x-4.6
+version = 7.x-4.7
 core = 7.x
+
+dependencies[] = uuid

@@ -99,36 +99,29 @@ function gauth_theme() {
  * Implements hook_libraries_info().
  */
 function gauth_libraries_info() {
-  $path = libraries_get_path('google-api-php-client');
-  set_include_path($path."/src/" . PATH_SEPARATOR . get_include_path());
+  $config_dir = conf_path();
+  $lib_path = 'sites/all/libraries/google-api-php-client';
+  if (file_exists(DRUPAL_ROOT . '/' . $config_dir . '/libraries')) {
+    $lib_path = $config_dir . '/libraries/google-api-php-client';
+  }
+  $file_path = 'src/Google/Client.php';
+  $include_path = 'vendor/autoload.php';
+  if (!file_exists(DRUPAL_ROOT . '/' . $lib_path . '/vendor')) { // Composer install;
+    $file_path = 'google/apiclient/src/Google/Client.php';
+    $include_path = 'autoload.php';
+  }
   $libraries['google-api-php-client'] = array(
     'name' => 'Google OAuth2 Library',
     'vendor url' => 'http://code.google.com/p/google-api-php-client',
-    'download url' => 'http://github.com/google/google-api-php-client/archive/master.zip',
+    'download url' => 'https://github.com/google/google-api-php-client/releases',
     'version arguments' => array(
-      'file' => 'src/Google/Client.php',
-      'pattern' => '/LIBVER = "([0-9\.a-z]+)/',
+      'file' => $file_path,
+      'pattern' => '/LIBVER = "([0-9\.a-z\-]+)/',
       'lines' => 40,
-    ),
-    'versions' => array(
-      '1.0.5-beta' => array(
-        'files' => array(
-          'php' => array(
-            'src/Google/Client.php',
-          )
-        ),
-      ),
-      '1.1.5' => array(
-        'files' => array(
-          'php' => array(
-            'src/Google/autoload.php',
-          )
-        )
-      )
     ),
     'files' => array(
       'php' => array(
-        'src/Google/Client.php',
+        $include_path,
       ),
     ),
   );
@@ -190,7 +183,7 @@ function gauth_response_handler($account_id = NULL) {
     }
     if (isset($_GET['code'])) {
       $client->authenticate($_GET['code']);
-      $account['access_token'] = $client->getAccessToken();
+      $account['access_token'] = json_encode($client->getAccessToken());
       gauth_account_save($account);
       unset($_SESSION['gauth_account_id']);
       if (!user_access('administer site configuration') && module_exists('gauth_user')) {
@@ -830,7 +823,7 @@ function gauth_client_get($account_id = NULL, $by_name = TRUE) {
     if ($client->getRefreshToken() != '') { // Access Type is Offline
       $client->refreshToken($client->getRefreshToken());
       $token = $client->getAccessToken();
-      $account['access_token'] = $token;
+      $account['access_token'] = json_encode($token);
       drupal_write_record('gauth_accounts', $account, 'id');
     }
     else {

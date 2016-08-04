@@ -4,17 +4,21 @@
  * Supplies administrative functions for SmartDocs.
  */
 
+use Apigee\Exceptions\ResponseException;
 use Apigee\SmartDocs\Method;
 use Apigee\SmartDocs\Model;
 use Apigee\SmartDocs\Resource;
 use Apigee\SmartDocs\Revision;
-use Apigee\SmartDocs\Template;
 use Apigee\SmartDocs\Security;
-use Apigee\SmartDocs\Security\SecurityScheme;
+use Apigee\SmartDocs\Template;
 use Apigee\SmartDocs\TemplateAuth;
+use Apigee\SmartDocs\Security\ApiKeyScheme;
+use Apigee\SmartDocs\Security\ApiKeyTemplateAuthScheme;
+use Apigee\SmartDocs\Security\BasicScheme;
+use Apigee\SmartDocs\Security\Oauth2Scheme;
+use Apigee\SmartDocs\Security\Oauth2TemplateAuthScheme;
+use Apigee\SmartDocs\Security\SecurityScheme;
 use Apigee\SmartDocs\Security\TemplateAuthScheme;
-
-use Apigee\Exceptions\ResponseException;
 
 /**
  * SmartDocs Settings Form.
@@ -357,7 +361,11 @@ function smartdocs_template_remove_managed_file($managed_file) {
  */
 function smartdocs_template_add_managed_file($managed_file) {
   // If our file is already marked as used we do not need to increase the count.
-  $count = db_query("SELECT 'count' FROM {file_usage} WHERE fid=:fid", array('fid' => $managed_file))->fetchField();
+  $count = db_select('file_usage', 'f')
+    ->fields('f', array('count'))
+    ->condition('fid', $managed_file)
+    ->execute()
+    ->fetchField();
   if (empty($count)) {
     // Load the file via file id.
     $file = file_load($managed_file);
@@ -389,6 +397,7 @@ function smartdocs_model_list() {
   $models = $model->listModels();
 
   $table_rows = array();
+  /** @var Model $model */
   foreach ($models as $model) {
     $node_count = $published_count = 0;
     $latest_rev = $model->getLatestRevisionNumber();
@@ -654,6 +663,7 @@ function smartdocs_model_exist($name) {
   catch (ResponseException $e) {
     return FALSE;
   }
+  /** @var Model $model */
   foreach ($models as $model) {
     if ($model->getName() == $name) {
       return TRUE;
@@ -1009,7 +1019,7 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
       $message_vars = array(
         '%model_name' => $model->getName(),
         '%revision' => $revision,
-        '%source_name' => "URL",
+        '@source_name' => "URL",
         '%source' => $url,
       );
     }
@@ -1055,7 +1065,7 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
       $message_vars = array(
         '%model_name' => $model->getName(),
         '%revision' => $revision,
-        '%source_name' => 'file',
+        '@source_name' => 'file',
         '%source' => $file_obj->filename,
       );
     }
@@ -1194,8 +1204,8 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
     _smartdocs_flush_cache();
   }
 
-  drupal_set_message(t('Revision %revision has been created from from %source_name %source', $message_vars), 'status');
-  watchdog('smartdocs', 'Model %model_name revision %revision has been created from from @source_name %source', $message_vars, WATCHDOG_INFO);
+  drupal_set_message(t('Revision %revision has been created from @source_name from %source.', $message_vars), 'status');
+  watchdog('smartdocs', 'Model %model_name revision %revision has been created from @source_name from %source.', $message_vars, WATCHDOG_INFO);
   $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision;
 }
 
@@ -1222,9 +1232,9 @@ function _smartdocs_find_named_param(array $params, $param_name) {
 /**
  * Handles exceptions encountered when importing a model.
  *
- * @param Apigee\Exceptions\ResponseException $e
+ * @param ResponseException $e
  *   The exception that was thrown.
- * @param Apigee\SmartDocs\Model $model
+ * @param Model $model
  *   The model being imported.
  * @param string $source_name
  *   The type of import ('file' or 'URL').
@@ -1728,6 +1738,7 @@ function smartdocs_model_template_auth($form, &$form_state, array $model_array) 
     );
     watchdog('smartdocs', 'Loaded all template auth schemes for model !model in !time seconds', $args, WATCHDOG_INFO);
   }
+  /** @var TemplateAuthScheme $scheme */
   foreach ($schemes as $scheme) {
     $template_auth_scheme = NULL;
     $scheme_name = $scheme->getName();
@@ -1750,59 +1761,55 @@ function smartdocs_model_template_auth($form, &$form_state, array $model_array) 
       '#value' => $scheme->getType(),
     );
 
-    switch ($scheme->getType()) {
-
-      case 'OAUTH2':
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['type_display'] = array(
-          '#type' => 'markup',
-          '#markup' => '<div class="templateauth-type"><span>Type:</span> Oauth2 </div>',
-        );
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['clientId'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Client Id'),
-          '#required' => FALSE,
-          '#default_value' => !empty($template_auth_scheme) ? $template_auth_scheme->getClientId() : '',
-        );
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['clientSecret'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Client Secret'),
-          '#required' => FALSE,
-          '#default_value' => !empty($template_auth_scheme) ? $template_auth_scheme->getClientSecret() : '',
-        );
-        if (!empty($template_auth_scheme)) {
-          // @TODO: Use $template_auth_scheme->getCallbackUrl(); when the
-          // backend return the callback url in the response for
-          // loadAllSchemes() call.
-          $config = devconnect_default_org_config();
-          $callback_url = $config->endpoint . '/o/' . $config->orgName . '/apimodels/' . $model->getName() . '/templateauths/' . $template_auth_scheme->getName() . '/callback';
-          if (isset($callback_url)) {
-            $form['auth_schemes']['template_auth_schemes'][$scheme_name]['callbackUrl'] = array(
-              '#type' => 'markup',
-              '#markup' => '<div class="templateauth-type"><span>Callback Url:</span>' . $callback_url . '</div>',
-            );
-          }
+    if ($scheme instanceof Oauth2Scheme) {
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['type_display'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div class="templateauth-type"><span>Type:</span> Oauth2 </div>',
+      );
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['clientId'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Client Id'),
+        '#required' => FALSE,
+        '#default_value' => $template_auth_scheme instanceof Oauth2TemplateAuthScheme ? $template_auth_scheme->getClientId() : '',
+      );
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['clientSecret'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Client Secret'),
+        '#required' => FALSE,
+        '#default_value' => !empty($template_auth_scheme) ? $template_auth_scheme->getClientSecret() : '',
+      );
+      if ($template_auth_scheme instanceof Oauth2TemplateAuthScheme) {
+        // @TODO: Use $template_auth_scheme->getCallbackUrl(); when the
+        // backend return the callback url in the response for
+        // loadAllSchemes() call.
+        $config = devconnect_default_org_config();
+        $callback_url = $config->endpoint . '/o/' . $config->orgName . '/apimodels/' . $model->getName() . '/templateauths/' . $template_auth_scheme->getName() . '/callback';
+        if (isset($callback_url)) {
+          $form['auth_schemes']['template_auth_schemes'][$scheme_name]['callbackUrl'] = array(
+            '#type' => 'markup',
+            '#markup' => '<div class="templateauth-type"><span>Callback Url:</span>' . $callback_url . '</div>',
+          );
         }
+      }
+    }
+    elseif ($scheme instanceof ApiKeyScheme) {
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['type'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div class="templateauth-type"><span>Type:</span>  Apikey </div>',
+      );
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['keyName'] = array(
+        '#type' => 'value',
+        '#value' => $scheme->getParamName(),
+      );
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['keyValue'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Value for the apikey parameter !param', array('!param' => '<em>' . $scheme->getParamName() . '</em>')),
+        '#default_value' => $template_auth_scheme instanceof ApiKeyTemplateAuthScheme ? $template_auth_scheme->getKeyValue() : '',
+        '#required' => FALSE,
+      );
+    }
+    elseif ($scheme instanceof BasicScheme) {
 
-        break;
-
-      case 'APIKEY':
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['type'] = array(
-          '#type' => 'markup',
-          '#markup' => '<div class="templateauth-type"><span>Type:</span>  Apikey </div>',
-        );
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['keyName'] = array(
-          '#type' => 'value',
-          '#value' => $scheme->getParamName(),
-        );
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['keyValue'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Value for the apikey parameter !param', array('!param' => '<em>' . $scheme->getParamName() . '</em>')),
-          '#default_value' => !empty($template_auth_scheme) ? $template_auth_scheme->getKeyValue() : '',
-          '#required' => FALSE,
-        );
-        break;
-
-      case 'BASIC':
         $form['auth_schemes']['template_auth_schemes'][$scheme_name]['type_display'] = array(
           '#type' => 'markup',
           '#markup' => '<div class="templateauth-type"><span>Type:</span> Basic </div>',
@@ -1811,7 +1818,6 @@ function smartdocs_model_template_auth($form, &$form_state, array $model_array) 
           '#type' => 'markup',
           '#markup' => '<div class="form-item">No configuration options.</div>',
         );
-        break;
     }
     $form['auth_schemes']['template_auth_schemes'][$scheme_name]['is_update'] = array(
       '#type' => 'value',
@@ -2497,6 +2503,10 @@ function smartdocs_revision_detail(array $form, array &$form_state, array $model
           $synced = (bool) $row['synced'];
           $edit_method_url = 'node/' . $row['nid'] . '/edit';
         }
+        else {
+          $link = NULL;
+          $edit_method_url = NULL;
+        }
 
         if ($has_node && $published) {
           $published_count++;
@@ -2547,6 +2557,10 @@ function smartdocs_revision_detail(array $form, array &$form_state, array $model
           if (array_key_exists($security_scheme_name, $security_scheme_display)) {
             $auth[] = $security_scheme_display[$security_scheme_name];
           }
+        }
+
+        if (empty($method['displayName'])) {
+          $method['displayName'] = $method['name'];
         }
 
         $resource_set['methods'][$method['id']] = array(
@@ -3261,6 +3275,9 @@ function smartdocs_model_security_scheme(array $form, array &$form_state, array 
     }
     $type = $scheme->getType();
   }
+  else {
+    $scheme = NULL;
+  }
 
   $form['scheme_action'] = array(
     '#type' => 'value',
@@ -3334,18 +3351,18 @@ function smartdocs_model_security_scheme(array $form, array &$form_state, array 
             'AUTHORIZATION_CODE' => t('Authorization Code'),
           ),
           '#required' => TRUE,
-          '#default_value' => isset($scheme) ? $scheme->getGrantType() : 'AUTHORIZATION_CODE',
+          '#default_value' => $scheme instanceof Oauth2Scheme ? $scheme->getGrantType() : 'AUTHORIZATION_CODE',
         );
         $form['auth_fields']['authorizationUrl'] = array(
           '#type' => 'textfield',
           '#title' => t('Authorization URL'),
           '#required' => TRUE,
-          '#default_value' => isset($scheme) ? $scheme->getAuthorizationUrl() : '',
+          '#default_value' => $scheme instanceof Oauth2Scheme ? $scheme->getAuthorizationUrl() : '',
         );
         $form['auth_fields']['accessTokenUrl'] = array(
           '#type' => 'textfield',
           '#title' => t('Access token url'),
-          '#default_value' => isset($scheme) ? $scheme->getAccessTokenUrl() : '',
+          '#default_value' => $scheme instanceof Oauth2Scheme ? $scheme->getAccessTokenUrl() : '',
         );
         $form['auth_fields']['advanced_settings']['authorizationVerb'] = array(
           '#type' => 'radios',
@@ -3355,7 +3372,7 @@ function smartdocs_model_security_scheme(array $form, array &$form_state, array 
             'POST' => t('POST'),
           ),
           '#required' => TRUE,
-          '#default_value' => !isset($scheme) ? $scheme->getAuthorizationVerb() : 'GET',
+          '#default_value' => $scheme instanceof Oauth2Scheme ? $scheme->getAuthorizationVerb() : 'GET',
         );
         $form['auth_fields']['advanced_settings']['in'] = array(
           '#type' => 'select',
@@ -3366,12 +3383,12 @@ function smartdocs_model_security_scheme(array $form, array &$form_state, array 
           ),
           '#description' => t('How the access token will be passed when using the send request feature.'),
           '#required' => TRUE,
-          '#default_value' => isset($scheme) ? $scheme->getIn() : 'HEADER',
+          '#default_value' => $scheme instanceof Oauth2Scheme ? $scheme->getIn() : 'HEADER',
         );
         $form['auth_fields']['advanced_settings']['accessTokenParamName'] = array(
           '#type' => 'textfield',
           '#title' => t('Access token parameter name'),
-          '#default_value' => isset($scheme) ? $scheme->getAccessTokenParamName() : 'access_token',
+          '#default_value' => $scheme instanceof Oauth2Scheme ? $scheme->getAccessTokenParamName() : 'access_token',
           '#description' => t('Override the OAuth specification\'s "access_token" name in the query string (non-standard).'),
           '#states' => array(
             'visible' => array(
@@ -3392,7 +3409,7 @@ function smartdocs_model_security_scheme(array $form, array &$form_state, array 
         $form['auth_fields']['advanced_settings']['scopes'] = array(
           '#type' => 'textarea',
           '#title' => t('Scopes'),
-          '#default_value' => isset($scheme) ? json_encode((object) $scheme->getScopes()) : '{}',
+          '#default_value' => $scheme instanceof Oauth2Scheme ? json_encode((object) $scheme->getScopes()) : '{}',
           '#description' => t('Please enter a JSON object of scopes, e.g:
                             {
                               "write:pets": "modify pets in your account",
@@ -3407,7 +3424,7 @@ function smartdocs_model_security_scheme(array $form, array &$form_state, array 
           '#type' => 'textfield',
           '#title' => t('Param Name'),
           '#required' => TRUE,
-          '#default_value' => isset($scheme) ? $scheme->getParamName() : '',
+          '#default_value' => $scheme instanceof ApiKeyScheme ? $scheme->getParamName() : '',
         );
         $form['auth_fields']['in'] = array(
           '#type' => 'select',
@@ -3418,7 +3435,7 @@ function smartdocs_model_security_scheme(array $form, array &$form_state, array 
             'BODY' => t('Body'),
           ),
           '#required' => TRUE,
-          '#default_value' => isset($scheme) ? $scheme->getIn() : 'HEADER',
+          '#default_value' => $scheme instanceof ApiKeyScheme ? $scheme->getIn() : 'HEADER',
         );
         break;
 
@@ -3688,11 +3705,13 @@ function smartdocs_security_scheme_list(array $model, array $revision) {
     t('Type'),
     t('Operations'),
   );
+  /** @var SecurityScheme $scheme */
   foreach ($schemes as $scheme) {
     $operations = array(
       'edit' => 'Edit',
       'delete' => 'Delete',
     );
+    $ops = array();
     foreach ($operations as $op => $disp) {
       $ops['list-' . $op] = array(
         'title' => $disp,

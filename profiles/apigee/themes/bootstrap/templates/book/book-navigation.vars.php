@@ -13,7 +13,7 @@
  *
  * @ingroup theme_preprocess
  */
-function bootstrap_process_book_navigation(&$variables) {
+function bootstrap_preprocess_book_navigation(&$variables) {
   $variables['tree'] = _bootstrap_book_children($variables['book_link']);
 }
 

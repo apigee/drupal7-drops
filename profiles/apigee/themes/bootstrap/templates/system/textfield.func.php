@@ -55,7 +55,7 @@ function bootstrap_textfield($variables) {
       // The throbber's background image must be set here because sites may not
       // be at the root of the domain (ie: /) and this value cannot be set via
       // CSS.
-      $output .= '<span class="autocomplete-throbber" style="background-image:url(' . url('misc/throbber.gif') . ')"></span>';
+      $output .= '<span class="autocomplete-throbber" style="background-image:url(' . file_create_url('misc/throbber.gif') . ')"></span>';
       $output .= '</span></div>';
     }
     $extra = '<input' . drupal_attributes($attributes) . ' />';

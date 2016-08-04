@@ -545,11 +545,22 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
     $timeout = 4;
   }
 
+  $settings = devconnect_get_org_settings();
+  drupal_alter('devconnect_org_settings', $settings, $org);
+
+  // Merge in any HTTP options that may have been provided by implementors of
+  // hook_devconnect_org_settings_alter().
+  $http_options = array_key_exists('http_options', $settings) ? $settings['http_options'] : array();
+  $http_options['connect_timeout'] = $timeout;
+  $http_options['follow_location'] = FALSE;
+
+  $user_agent = 'DevConnect';
+  drupal_alter('devconnect_user_agent', $user_agent);
+
   $options = array(
-    'http_options' => array(
-      'connection_timeout' => $timeout,
-      'follow_location' => FALSE,
-    ),
+    'http_options' => $http_options,
+    'user_agent' => $user_agent,
+    'referer' => url($_GET['q'], array('absolute' => TRUE)),
   );
 
   $config = new OrgConfig($org, $endpoint, $user, $pass, $options);
@@ -573,6 +584,9 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
       $message_try_ssl = t('Edge Endpoint may be SSL enabled. Try using <strong><em>@endpoint</em></strong> instead.',
         array('@endpoint' => str_replace('http', 'https', $endpoint))
       );
+    }
+    else {
+      $message_try_ssl = '';
     }
 
     // See if we get a response from server to get a better idea what happened.

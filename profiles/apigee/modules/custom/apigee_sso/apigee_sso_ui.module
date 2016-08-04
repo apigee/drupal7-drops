@@ -1,13 +1,4 @@
 <?php
-
-/**
- * Implements hook_init().
- */
-function apigee_sso_ui_init() {
-  drupal_add_css(drupal_get_path('module', 'apigee_sso_ui') . '/apigee_sso.css',
-    array('group' => CSS_THEME, 'every_page' => TRUE));
-}
-
 /**
  * Implements hook_theme().
  *
@@ -19,7 +10,9 @@ function apigee_sso_ui_theme() {
       'template' => 'apigee-sso-ui-signin-block',
       'path' => drupal_get_path('module', 'apigee_sso_ui') . "/templates",
       'variables' => array(
-        'github' => null
+        'github' => FALSE,
+        'apigee' => FALSE,
+        'twitter' => FALSE,
       ),
     )
   );
@@ -27,28 +20,31 @@ function apigee_sso_ui_theme() {
 
 /**
  * Implements hook_form_alter().
- * @param $form
- * @param $form_state
- * @param $form_id
+ *
+ * @param array $form
+ * @param array $form_state
+ * @param string $form_id
  */
-function apigee_sso_ui_form_alter(&$form, &$form_state, $form_id) {
-  global $base_url;
+function apigee_sso_ui_form_alter(array &$form, array &$form_state, $form_id) {
   switch ($form_id) {
     case 'user_login':
-      $vars = array();
-      if (module_exists('github_connect')) {
-        $client_id = variable_get('github_connect_client_id');
-        if ($client_id) {
-          $destination = user_login_destination();
-          $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
-          $vars['github'] = $link;
-        }
-      }
-      $form['sso_buttons'] = array(
-        '#type' => 'markup',
-        '#markup' => theme('apigee_sso_ui_signin_block', $vars),
-        '#weight' => -99
+      $vars = array(
+        'github' => FALSE,
+        'apigee' => FALSE,
+        'twitter' => FALSE,
       );
+      // Conditionally populate $vars with real values.
+      template_preprocess_apigee_sso_ui_signin_block($vars);
+
+      if($vars['github'] || $vars['apigee'] || $vars['twitter']) {
+        $form['sso_buttons'] = array(
+          '#type' => 'markup',
+          '#markup' => theme('apigee_sso_ui_signin_block', $vars),
+          '#weight' => -99
+        );
+        drupal_add_css(drupal_get_path('module', 'apigee_sso_ui') . '/apigee_sso.css',
+          array('group' => CSS_THEME, 'every_page' => TRUE));
+      }
       if (isset($form['twitter_signin'])) {
         unset($form['twitter_signin']);
       }
@@ -90,18 +86,38 @@ function apigee_sso_ui_block_view($delta = '') {
 }
 
 /**
- * Implements template_preprocess_HOOK
+ * Implements template_preprocess_HOOK() for apigee_sso_ui_signin_block().
  *
- * This is done to make sure that the github url is always available whenever the apigee_sso_ui_signin_block is rendered if the github module is enabled
- * @param $vars
+ * This is done to make sure that the github url is always available whenever
+ * the apigee_sso_ui_signin_block is rendered if the github module is enabled.
+ *
+ * @param array $vars
  */
-function template_preprocess_apigee_sso_ui_signin_block(&$vars){
+function template_preprocess_apigee_sso_ui_signin_block(array &$vars){
   if (module_exists('github_connect')) {
     global $base_url;
-    // how the github_connect module generated the url.
+    // Copypasta from github_connect module.
     $client_id = variable_get('github_connect_client_id');
-    $destination = user_login_destination();
-    $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
-    $vars['github'] = $link;
+    if ($client_id) {
+      $destination = user_login_destination();
+      $link = 'https://github.com/login/oauth/authorize?client_id=' . $client_id . '&scope=user,public&redirect_uri=' . urlencode($base_url . '/github/register/create?destination=' . $destination['destination']);
+      $vars['github'] = $link;
+    }
+  }
+
+  if (module_exists('apigee_account')) {
+    if (array_key_exists('HTTPS', $_SERVER) && strtolower($_SERVER['HTTPS']) == 'on') {
+      $server_name = strtolower($_SERVER['HTTP_HOST']);
+      if ($server_name == 'localhost' || preg_match('!\.apigee\.com$!', $server_name)) {
+        $vars['apigee'] = TRUE;
+      }
+    }
+  }
+  if (module_exists('twitter_signin')) {
+    $key = variable_get('twitter_consumer_key', '');
+    $secret = variable_get('twitter_consumer_secret', '');
+    if (!empty($key) && !empty($secret)) {
+      $vars['twitter'] = TRUE;
+    }
   }
 }

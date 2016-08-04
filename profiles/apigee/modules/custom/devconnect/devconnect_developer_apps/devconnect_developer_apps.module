@@ -1061,7 +1061,9 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
     'name' => $machine_name,
     'orgName' => !isset($form_state['input']['orgName']) ? 'default' : $form_state['input']['orgName'],
   );
-  $app_exists = entity_get_controller('developer_app')->loadIfExists(FALSE, $criteria);
+  /** @var DeveloperAppController $controller */
+  $controller = entity_get_controller('developer_app');
+  $app_exists = $controller->loadIfExists(FALSE, $criteria);
 
   if ($app_exists) {
     // Throw form back to user.
@@ -1255,7 +1257,9 @@ function devconnect_developer_apps_machine_name_exists($value, array $element, a
     // Is this the right thing to do?
     return TRUE;
   }
-  $entity = entity_get_controller('developer_app')->loadIfExists($value, array('mail' => $form_state['values']['user']->mail));
+  /** @var DeveloperAppController $controller */
+  $controller = entity_get_controller('developer_app');
+  $entity = $controller->loadIfExists($value, array('mail' => $form_state['values']['user']->mail));
   return ($entity !== FALSE);
 }
 

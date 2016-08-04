@@ -46,7 +46,15 @@ function bootstrap_status_messages($variables) {
     'info' => 'info',
   );
 
-  foreach (drupal_get_messages($display) as $type => $messages) {
+  // Retrieve messages.
+  $message_list = drupal_get_messages($display);
+
+  // Allow the disabled_messages module to filter the messages, if enabled.
+  if (module_exists('disable_messages') && variable_get('disable_messages_enable', '1')) {
+    $message_list = disable_messages_apply_filters($message_list);
+  }
+
+  foreach ($message_list as $type => $messages) {
     $class = (isset($status_class[$type])) ? ' alert-' . $status_class[$type] : '';
     $output .= "<div class=\"alert alert-block$class messages $type\">\n";
     $output .= "  <a class=\"close\" data-dismiss=\"alert\" href=\"#\">&times;</a>\n";

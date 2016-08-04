@@ -112,8 +112,10 @@ function gauth_requirements($phase) {
     $info = libraries_detect('google-api-php-client');
     if (!$info['installed']) {
       $url = l($t('here'), $info['download url']);
-      $version = array_keys($info['versions']);
-      $requirements['gauth']['description'] = $t('Install version "@version" of the Google api php client library code (from !here) in a libraries directory such as "sites/all/libraries/google-api-php-client."', array('@version' => $version[0], '!here' => $url));
+      $documentation = l($t('gooogle api php client installation'), 'https://github.com/google/google-api-php-client#installation');
+      dsm($info);
+      $version = isset($info['versions']) && !empty($info['versions']) ? array_keys($info['versions']) : array('2.0.0');
+      $requirements['gauth']['description'] = $t('Install version "@version" or latest version of the Google api php client library code (from !here) in a libraries directory such as "sites/all/libraries/google-api-php-client". You can also use composer to install, read more at !documentation.  The path should be "sites/all/libraries/google-api-php-client"', array('@version' => $version[0], '!here' => $url, '!documentation' => $documentation));
       $requirements['gauth']['severity'] = REQUIREMENT_ERROR;
     }
     else {

@@ -48,7 +48,7 @@ function bootstrap_file_widget_multiple($variables) {
   $rows = array();
   foreach ($widgets as $key => &$widget) {
     // Save the uploading row for last.
-    if ($widget['#file'] == FALSE) {
+    if (!isset($widget['#file']) || $widget['#file'] === FALSE) {
       $widget['#title'] = $element['#file_upload_title'];
       $widget['#description'] = $element['#file_upload_description'];
       continue;

@@ -43,11 +43,19 @@ INSTALLATION
 1. Copy this module directory to your sites/all/modules or
    sites/SITENAME/modules directory.
 
-2. Download the latest release of google php client library and
+2. Download the latest release of google php client library from
+   https://github.com/google/google-api-php-client/releases and
    extract it in libraries folder of the site, mostly located at
    sites/all/libraries, the path is 
   'sites/all/libraries/google-api-php-client/src..'
-   Note that version 1.3 of this module required google-api-php-client 0.6.0 and
+
+   You may use composer to install without downloading the file which is fine.
+   The final path afer installation should be 'sites/all/libraries/google-api-php-client'
+
+   In case of normal release install it will have src folder and incase of composer it won't have that.
+
+   Note that version 1.6 is tested and will only work with google-api-php-client 2.0.0 or later,
+   version 1.3 of this module required google-api-php-client 0.6.0 and
    1.4 is tested with 1.0.5-beta release of google-api-php-client.
 
 3. Enable the module and manage accounts at

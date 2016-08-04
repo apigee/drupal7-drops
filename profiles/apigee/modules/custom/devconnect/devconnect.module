@@ -144,6 +144,12 @@ function devconnect_default_org_config($requested_org = 'default') {
     $settings = devconnect_get_org_settings();
     drupal_alter('devconnect_org_settings', $settings, $requested_org);
 
+    // Merge in any HTTP options that may have been provided by implementors of
+    // hook_devconnect_org_settings_alter().
+    $http_options = array_key_exists('http_options', $settings) ? $settings['http_options'] : array();
+    $http_options['connect_timeout'] = $settings['connection_timeout'];
+    $http_options['timeout'] = $settings['request_timeout'];
+
     $logger = new WatchdogLogger();
     $logger::setLogThreshold($settings['log_threshold']);
     $user_mail = user_is_logged_in() ? $GLOBALS['user']->mail : NULL;
@@ -164,10 +170,7 @@ function devconnect_default_org_config($requested_org = 'default') {
       'user_mail' => $user_mail,
       'subscribers' => $subscribers,
       'log_subscriber_format' => $subscriber_log_format,
-      'http_options' => array(
-        'connect_timeout' => intval($settings['connection_timeout']),
-        'timeout' => intval($settings['request_timeout']),
-      ),
+      'http_options' => $http_options,
       'user_agent' => $user_agent,
       'referer' => url($_GET['q'], array('absolute' => TRUE)),
     );

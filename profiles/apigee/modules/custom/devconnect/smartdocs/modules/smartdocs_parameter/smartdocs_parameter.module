@@ -81,6 +81,16 @@ function smartdocs_parameter_field_formatter_info() {
  */
 function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
 
+  if (module_exists('uuid')) {
+    $css_id = uuid_generate();
+  }
+  else {
+    $css_id = '';
+    for ($i = 0; $i < 32; $i++) {
+      $css_id .= chr(mt_rand(ord('a'), ord('z')));
+    }
+  }
+
   $element['name'] = array(
     '#title' => t('Name'),
     '#type' => 'textfield',
@@ -101,6 +111,7 @@ function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $in
     '#default_value' => (isset($items[$delta]['default_value']) ? $items[$delta]['default_value'] : NULL),
     '#attributes' => array('class' => array('smartdocs-parameter-default-value')),
   );
+
   $element['required'] = array(
     '#title' => t('Required'),
     '#type' => 'checkbox',
@@ -141,6 +152,7 @@ function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $in
     '#default_value' => (isset($items[$delta]['data_type']) ? strtolower($items[$delta]['data_type']) : NULL),
     '#options' => $data_type_options,
     '#attributes' => array('class' => array('smartdocs-parameter-data-type')),
+    '#id' => 'data_type-' . $css_id,
   );
 
   $type_options = array(
@@ -160,6 +172,20 @@ function smartdocs_parameter_field_widget_form(&$form, &$form_state, $field, $in
     '#default_value' => (isset($items[$delta]['type']) ? strtolower($items[$delta]['type']) : NULL),
     '#options' => $type_options,
     '#attributes' => array('class' => array('smartdocs-parameter-type')),
+  );
+
+  // Schema is only shown when type is 'body' and name is 'body'.
+  $element['body_schema'] = array(
+    '#title' => t('Schema'),
+    '#type' => 'textarea',
+    '#default_value' => (isset($items[$delta]['body_schema']) ? $items[$delta]['body_schema'] : NULL),
+    '#attributes' => array('class' => array('smartdocs-parameter-body-schema')),
+    '#id' => 'body_schema-' . $css_id,
+    '#states' => array(
+      'visible' => array(
+        '#data_type-' . $css_id => array('value' => 'object'),
+      ),
+    ),
   );
 
   $default_value = NULL;
@@ -197,6 +223,7 @@ function smartdocs_parameter_theme() {
         'data_type' => '',
         'type' => '',
         'options' => '',
+        'body_schema' => '',
       ),
     ),
   );
@@ -233,6 +260,18 @@ function theme_smartdocs_parameter(&$vars) {
   if (!empty($vars['options'])) {
     $output .= '<div class="smartdocs-parameter-options">' . check_plain($vars['options']) . '</div>';
   }
+
+  if (!empty($vars['schema'])) {
+    $non_object_types = array(
+      'integer', 'long', 'float', 'double', 'number',
+      'string', 'byte', 'boolean', 'date', 'dateTime',
+      'array',
+    );
+    if (!in_array($vars['data_type'], $non_object_types)) {
+      $output .= '<div class="smartdocs-parameter-schema">' . check_plain($vars['schema']) . '</div>';
+    }
+  }
+
   $output .= '</div>';
   return $output;
 }

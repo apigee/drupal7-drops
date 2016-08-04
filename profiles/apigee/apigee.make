@@ -27,7 +27,7 @@ projects[admin_menu][version] = "3.0-rc5"
 ; Enabled during profile install.
 projects[admin_views][type] = "module"
 projects[admin_views][subdir] = "contrib"
-projects[admin_views][version] = "1.5"
+projects[admin_views][version] = "1.6"
 
 ; Enabled during profile install.
 projects[adminimal_admin_menu][type] = "module"
@@ -200,7 +200,7 @@ projects[ftools][version] = "1.6"
 ; Deprecated
 projects[gauth][type] = "module"
 projects[gauth][subdir] = "contrib"
-projects[gauth][version] = "1.5-rc1"
+projects[gauth][version] = "1.7"
 
 ; Deprecated
 projects[github_connect][type] = "module"
@@ -307,7 +307,7 @@ projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.16"
+projects[metatag][version] = "1.17"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -356,7 +356,7 @@ projects[readonlymode][version] = "1.2"
 
 projects[recaptcha][type] = "module"
 projects[recaptcha][subdir] = "contrib"
-projects[recaptcha][version] = "2.1"
+projects[recaptcha][version] = "2.2"
 
 ; Enabled on install.
 projects[redirect][type] = "module"
@@ -378,7 +378,7 @@ projects[rules][version] = "2.9"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.14"
+projects[services][version] = "3.16"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -425,7 +425,7 @@ projects[util][version] = "1.0-rc2"
 ; Enabled on install.
 projects[uuid][type] = "module"
 projects[uuid][subdir] = "contrib"
-projects[uuid][version] = "1.0-beta1"
+projects[uuid][version] = "1.0-beta2"
 
 ; Deprecated
 projects[uuid_features][type] = "module"
@@ -463,7 +463,7 @@ projects[views_slideshow][version] = "3.1"
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.12"
+projects[webform][version] = "4.13"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -484,9 +484,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.5"
-; see https://www.drupal.org/node/2594243
-projects[bootstrap][patch][2594243] = "https://www.drupal.org/files/issues/autocomplete_js-2594243-9.patch"
+projects[bootstrap][version] = "3.6"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"

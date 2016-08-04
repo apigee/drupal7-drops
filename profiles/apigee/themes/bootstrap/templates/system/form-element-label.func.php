@@ -37,10 +37,14 @@ function bootstrap_form_element_label(&$variables) {
 
   // Extract variables.
   $output = '';
-  $title = isset($element['#title']) ? filter_xss_admin($element['#title']) . ' ' : '';
-  if ($title && ($required = !empty($element['#required']) ? theme('form_required_marker', array('element' => $element)) : '')) {
-    $title .= $required;
+
+  $title = !empty($element['#title']) ? filter_xss_admin($element['#title']) : '';
+
+  // Only show the required marker if there is an actual title to display.
+  if ($title && $required = !empty($element['#required']) ? theme('form_required_marker', array('element' => $element)) : '') {
+    $title .= ' ' . $required;
   }
+
   $display = isset($element['#title_display']) ? $element['#title_display'] : 'before';
   $type = !empty($element['#type']) ? $element['#type'] : FALSE;
   $checkbox = $type && $type === 'checkbox';

@@ -880,6 +880,13 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
 
   // field_smart_method_params
   $params = array();
+
+  $non_object_types = array(
+    'integer', 'long', 'float', 'double', 'number',
+    'string', 'byte', 'boolean', 'date', 'dateTime',
+    'array',
+  );
+
   foreach ($method['parameters'] as $parameter) {
     // Set some defaults.
     $parameter += array(
@@ -891,6 +898,7 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
       'type' => 'body',
       'options' => NULL,
       'defaultValue' => NULL,
+      'schema' => NULL,
     );
     $params[] = array(
       'name' => $parameter['name'],
@@ -901,6 +909,7 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
       'type' => $parameter['type'],
       'options' => (is_array($parameter['options']) ? json_encode($parameter['options']) : ''),
       'default_value' => $parameter['defaultValue'],
+      'body_schema' => (in_array($parameter['data_type'], $non_object_types) ? NULL : $parameter['schema']),
     );
   }
   $node->field_smart_method_params[LANGUAGE_NONE] = $params;
@@ -937,6 +946,7 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
       'type' => 'body',
       'options' => NULL,
       'defaultValue' => NULL,
+      'schema' => NULL,
     );
     $params[] = array(
       'name' => $parameter['name'],
@@ -947,6 +957,7 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
       'type' => $parameter['type'],
       'options' => (is_array($parameter['options']) ? json_encode($parameter['options']) : ''),
       'default_value' => $parameter['defaultValue'],
+      'body_schema' => (in_array($parameter['data_type'], $non_object_types) ? NULL : $parameter['schema']),
     );
   }
   $node->field_smart_method_body_params[LANGUAGE_NONE] = $params;
@@ -1367,38 +1378,44 @@ function smartdocs_node_presave($node) {
   $method_obj->setVerb($verb_term->name);
 
   $params = array();
-  foreach ($node->field_smart_method_params[LANGUAGE_NONE] as $index => $param) {
-    if (!is_int($index) || !is_array($param)) {
-      continue;
+  if (!empty($node->field_smart_method_params[LANGUAGE_NONE])) {
+    foreach ($node->field_smart_method_params[LANGUAGE_NONE] as $index => $param) {
+      if (!is_int($index) || !is_array($param)) {
+        continue;
+      }
+      if (empty($param['name']) || empty($param['data_type']) || empty($param['type'])) {
+        continue;
+      }
+      $params[] = _smartdocs_prepare_parameter($param);
     }
-    if (empty($param['name']) || empty($param['data_type']) || empty($param['type'])) {
-      continue;
-    }
-    $params[] = _smartdocs_prepare_parameter($param);
   }
   $method_obj->setParameters($params);
 
   $body = $method_obj->getBody();
   $body['attachments'] = array();
   $body['parameters'] = array();
-  foreach ($node->field_smart_method_body_attach[LANGUAGE_NONE] as $attach) {
-    if (empty($attach['name'])) {
-      continue;
+  if (!empty($node->field_smart_method_body_attach[LANGUAGE_NONE])) {
+    foreach ($node->field_smart_method_body_attach[LANGUAGE_NONE] as $attach) {
+      if (empty($attach['name'])) {
+        continue;
+      }
+      $body['attachments'][] = array(
+        'name' => $attach['name'],
+        'description' => (array_key_exists('description', $attach) ? (string) $attach['description'] : ''),
+        'required' => (array_key_exists('required', $attach) ? (bool) $attach['required'] : FALSE),
+      );
     }
-    $body['attachments'][] = array(
-      'name' => $attach['name'],
-      'description' => (array_key_exists('description', $attach) ? (string) $attach['description'] : ''),
-      'required' => (array_key_exists('required', $attach) ? (bool) $attach['required'] : FALSE),
-    );
   }
-  foreach ($node->field_smart_method_body_params[LANGUAGE_NONE] as $index => $param) {
-    if (!is_int($index) || !is_array($param)) {
-      continue;
+  if (!empty($node->field_smart_method_body_params[LANGUAGE_NONE])) {
+    foreach ($node->field_smart_method_body_params[LANGUAGE_NONE] as $index => $param) {
+      if (!is_int($index) || !is_array($param)) {
+        continue;
+      }
+      if (empty($param['name']) || empty($param['data_type']) || empty($param['type'])) {
+        continue;
+      }
+      $body['parameters'][] = _smartdocs_prepare_parameter($param);
     }
-    if (empty($param['name']) || empty($param['data_type']) || empty($param['type'])) {
-      continue;
-    }
-    $body['parameters'][] = _smartdocs_prepare_parameter($param);
   }
 
   $other_body_fields = array(
@@ -1419,30 +1436,36 @@ function smartdocs_node_presave($node) {
 
   $response = $method_obj->getResponse();
   $response['errors'] = array();
-  foreach ($node->field_smart_method_errors[LANGUAGE_NONE] as $error) {
-    if (empty($error['code']) || empty($error['http_code'])) {
-      continue;
+  if (!empty($node->field_smart_method_errors[LANGUAGE_NONE])) {
+    foreach ($node->field_smart_method_errors[LANGUAGE_NONE] as $error) {
+      if (empty($error['code']) || empty($error['http_code'])) {
+        continue;
+      }
+      $response['errors'][] = array(
+        'code' => $error['code'],
+        'description' => (array_key_exists('description', $error) ? (string) $error['description'] : ''),
+        'httpCode' => intval($error['http_code']),
+      );
     }
-    $response['errors'][] = array(
-      'code' => $error['code'],
-      'description' => (array_key_exists('description', $error) ? (string) $error['description'] : ''),
-      'httpCode' => intval($error['http_code']),
-    );
   }
   $method_obj->setResponse($response);
 
   $tags = array();
-  if (property_exists($node, 'field_smart_method_tags') && array_key_exists(LANGUAGE_NONE, $node->field_smart_method_tags)) {
+  if (property_exists($node, 'field_smart_method_tags') && !empty($node->field_smart_method_tags[LANGUAGE_NONE])) {
     foreach ($node->field_smart_method_tags[LANGUAGE_NONE] as $tag) {
-      $tags[] = $tag['name'];
+      if (isset($tag['name'])) {
+        $tags[] = $tag['name'];
+      }
     }
   }
   $method_obj->setTags($tags);
 
   $security = array();
-  foreach ($node->field_smart_method_security[LANGUAGE_NONE] as $s) {
-    if (!empty($s['value'])) {
-      $security[] = $s['value'];
+  if (!empty($node->field_smart_method_security[LANGUAGE_NONE])) {
+    foreach ($node->field_smart_method_security[LANGUAGE_NONE] as $s) {
+      if (!empty($s['value'])) {
+        $security[] = $s['value'];
+      }
     }
   }
   $method_obj->setSecurity($security);
@@ -1526,6 +1549,9 @@ function _smartdocs_prepare_parameter(array $param) {
   );
   if (!empty($param['default_value'])) {
     $param_obj['defaultValue'] = $param['default_value'];
+  }
+  if ($param['name'] == 'body' && $param['type'] == 'body' && !empty($param['body_schema'])) {
+    $param_obj['schema'] = $param['body_schema'];
   }
   $options = @json_decode($param['options']);
   if (is_array($options) && !empty($options)) {

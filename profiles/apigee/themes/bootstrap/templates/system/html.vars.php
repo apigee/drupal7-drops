@@ -38,7 +38,6 @@ function bootstrap_preprocess_html(&$variables) {
 
   // BODY element attributes.
   $variables['body_attributes_array'] = array(
-    'role'  => 'document',
     'class' => &$variables['classes_array'],
   );
   $variables['body_attributes_array'] += $variables['attributes_array'];

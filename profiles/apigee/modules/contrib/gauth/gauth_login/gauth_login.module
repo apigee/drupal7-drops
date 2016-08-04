@@ -37,13 +37,6 @@ function gauth_login_menu() {
 }
 
 /**
- * Implements hook_libraries_info_alter().
- */
-function gauth_login_libraries_info_alter(&$libraries) {
-  $libraries['google-api-php-client']['files']['php'][] = 'src/Google/Service/Oauth2.php';
-}
-
-/**
  * Implementation of hook_gauth_google_response().
  */
 function gauth_login_gauth_google_response() {

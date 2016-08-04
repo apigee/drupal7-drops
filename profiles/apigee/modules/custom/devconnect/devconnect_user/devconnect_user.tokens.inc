@@ -24,7 +24,7 @@ function devconnect_user_token_info() {
   );
   $dev['developerId'] = array(
     'name' => t('Developer ID'),
-    'description' => t('Developer ID (internal to KMS) for this developer.'),
+    'description' => t('Developer ID (internal to Edge) for this developer.'),
   );
   $dev['firstName'] = array(
     'name' => t('First Name'),

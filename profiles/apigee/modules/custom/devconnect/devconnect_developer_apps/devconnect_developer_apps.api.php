@@ -15,7 +15,7 @@
  *     credential (associative array -- see documentation under hook_devconnect_developer_app_alter below)
  *     delete_url (string)
  *     edit_url (string)
- *     raw_data (associative array returned from KMS)
+ *     raw_data (associative array returned from Edge)
  */
 function hook_devconnect_developer_app_list_alter(array &$parameters) {
   foreach (array_keys($parameters['applications']) as $i) {
@@ -45,7 +45,7 @@ function hook_devconnect_developer_app_list_alter(array &$parameters) {
  *     analytics_chart (string -- only here if this instance is so configured)
  *     page_title (string; will be set as the page title)
  *     breadcrumb (array; will be set as the Drupal breadcrumb)
- *     raw_data (associative array returned from KMS)
+ *     raw_data (associative array returned from Edge)
  *   Each member of the credentials array consists of the following:
  *     consumer_key (string)
  *     consumer_secret (string)
@@ -116,7 +116,7 @@ function hook_devconnect_developer_app_presave(array &$form_state) {
  * If you do something to the developer_app entity in an implementation of this
  * hook such as deleting it, you should return FALSE here.
  *
- * @param $results (associative array returned from KMS)
+ * @param $results (associative array returned from Edge)
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form.
  *   $form_state['storage']['entity'] holds the developer_app entity.
@@ -145,7 +145,7 @@ function hook_devconnect_developer_app_predelete(array &$form_state) {
 /**
  * Take some action right after a developer app is deleted.
  *
- * @param $results (associative array returned from KMS)
+ * @param $results (associative array returned from Edge)
  * @param $form_state (array)
  *   consists of $form_state from devconnect_developer_apps_edit_form
  * @return bool

@@ -5,9 +5,9 @@ dependencies[] = gauth
 package = Google Api
 configure = admin/config/services/gauth_user
 
-; Information added by Drupal.org packaging script on 2015-11-27
-version = "7.x-1.5-rc1"
+; Information added by Drupal.org packaging script on 2016-07-31
+version = "7.x-1.7"
 core = "7.x"
 project = "gauth"
-datestamp = "1448658242"
+datestamp = "1469975040"
 

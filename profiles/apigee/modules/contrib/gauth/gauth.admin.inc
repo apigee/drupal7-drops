@@ -142,7 +142,7 @@ function gauth_account_edit_form($form, &$form_state, $id = NULL) {
     '#title' => t('Access Type'),
     '#description' => t('The Access Type of the account. Select offline if the site can perform actions even when the user is not online.'),
     '#options' => array('offline' => t('Offline'), 'online' => t('Online')),
-    '#default_value' => isset($account['access_type']) ? $account['client_secret'] : 'offline',
+    '#default_value' => isset($account['access_type']) ? $account['access_type'] : 'offline',
   );
   $form['callback_url'] = array(
     '#type' => 'textfield',

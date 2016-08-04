@@ -52,16 +52,24 @@ function smartdocs_parameter_field_schema($field) {
         'size' => 'medium',
         'not null' => FALSE,
       ),
+      'body_schema' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => FALSE,
+      ),
     ),
   );
 }
 
 /**
- * Adds default_value table field to all SmartDocs Parameter field instances.
+ * Adds a table field to all SmartDocs Parameter field instances.
+ *
+ * @param string $field_name
+ *   Name of the field to be added.
  */
-function smartdocs_parameter_update_7406() {
+function _smartdocs_parameter_add_field($field_name) {
   $schema = smartdocs_parameter_field_schema(NULL);
-  $field_def = $schema['columns']['default_value'];
+  $field_def = $schema['columns'][$field_name];
 
   $param_fields = db_select('field_config', 'f')
     ->fields('f', array('field_name'))
@@ -69,15 +77,35 @@ function smartdocs_parameter_update_7406() {
     ->execute()
     ->fetchCol();
   foreach ($param_fields as $param_field) {
-    $field_name = $param_field . '_default_value';
+    $full_field_name = $param_field . '_' . $field_name;
     foreach (array('data', 'revision') as $table_type) {
       $table_name = 'field_' . $table_type . '_' . $param_field;
-      if (!db_field_exists($table_name, $field_name)) {
+      if (!db_field_exists($table_name, $full_field_name)) {
         if (function_exists('drush_print')) {
-          drush_print('Adding field ' . $field_name . ' to table ' . $table_name);
+          drush_print('Adding field ' . $full_field_name . ' to table ' . $table_name);
         }
-        db_add_field($table_name, $field_name, $field_def);
+        db_add_field($table_name, $full_field_name, $field_def);
       }
     }
   }
+}
+
+/**
+ * Add default_value table field to all SmartDocs Parameter field instances.
+ */
+function smartdocs_parameter_update_7406() {
+  _smartdocs_parameter_add_field('default_value');
+}
+
+
+/**
+ * Add schema table field to all SmartDocs Parameter field instances.
+ */
+function smartdocs_parameter_update_7407() {
+  // Try enabling UUID module if it is not enabled. If it is not enabled, this
+  // will fail silently.
+  if (!module_exists('uuid')) {
+    module_enable(array('uuid'));
+  }
+  _smartdocs_parameter_add_field('body_schema');
 }

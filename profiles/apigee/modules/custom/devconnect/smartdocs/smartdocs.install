@@ -8,6 +8,7 @@
  * Implements hook_schema().
  */
 function smartdocs_schema() {
+  $schema['cache_smartdocs'] = drupal_get_schema_unprocessed('system', 'cache');
   $schema['smartdata'] = array(
     'description' => 'Provides all of the necessary data for smartdocs.',
     'fields' => array(

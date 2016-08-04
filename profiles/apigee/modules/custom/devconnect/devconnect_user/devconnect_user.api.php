@@ -14,7 +14,7 @@
 function hook_devconnect_user_save(array $results, array &$edit, $account) {
   $action = ($account->uid ? 'created' : 'updated');
   $user_name = $edit['data']['name'];
-  drupal_set_message("User $user_name was $action in KMS.");
+  drupal_set_message("User $user_name was $action in Edge.");
 }
 
 /**

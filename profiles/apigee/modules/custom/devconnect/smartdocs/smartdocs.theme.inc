@@ -355,7 +355,19 @@ function smartdocs_preprocess_devconnect_developer_apps_list(&$vars) {
  * Implements hook_preprocess_HOOK() for smartdocs_method().
  */
 function smartdocs_preprocess_smartdocs_method(&$vars) {
-  $vars['path'] = $vars['field_smart_method_resource_path'][0]['value'];
-  $vars['verb'] = $vars['field_smart_method_verb'][0]['taxonomy_term']->name;
+  $terms = &drupal_static(__FUNCTION__, array());
+  if (empty($terms)) {
+    $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_verbs');
+    if ($vocab) {
+      $terms = taxonomy_get_tree($vocab->vid);
+      $terms = array_reduce($terms, function($result, $item) {
+        $result[$item->tid] = $item;
+        return $result;
+      }, array());
+    }
+  }
+  $tid = $vars['field_smart_method_verb'][LANGUAGE_NONE][0]['tid'];
+  $vars['path'] = $vars['field_smart_method_resource_path'][LANGUAGE_NONE][0]['value'];
+  $vars['verb'] = array_key_exists($tid, $terms) ? $terms[$tid]->name : '';
   $vars['body'] = $vars['content']['body']['#items'][0]['value'];
 }

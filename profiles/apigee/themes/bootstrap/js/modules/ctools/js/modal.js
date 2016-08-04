@@ -103,12 +103,12 @@
     $('#modalContent .modal-body').html(Drupal.theme(settings.throbberTheme));
   };
 
-  Drupal.CTools.Modal.dismiss = function() {
-    if (Drupal.CTools.Modal.modal) {
-      $('body').removeClass('modal-open');
-      Drupal.CTools.Modal.unmodalContent(Drupal.CTools.Modal.modal);
-    }
-  };
+  /**
+   * Remove modal class from body when closing modal.
+   */
+  $(document).on('CToolsDetachBehaviors', function() {
+    $('body').removeClass('modal-open');
+  });
 
   /**
    * Provide the HTML to create the modal dialog in the Bootstrap style.
