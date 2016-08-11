@@ -217,7 +217,7 @@ projects[github_connect][patch][2292767] = "https://www.drupal.org/files/issues/
 
 projects[google_analytics][type] = "module"
 projects[google_analytics][subdir] = "contrib"
-projects[google_analytics][version] = "2.2"
+projects[google_analytics][version] = "2.3"
 
 projects[gravatar][type] = "module"
 projects[gravatar][subdir] = "contrib"
