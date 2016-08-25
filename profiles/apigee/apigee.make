@@ -122,7 +122,7 @@ projects[context_condition_theme][version] = "1.0"
 ; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.9"
+projects[ctools][version] = "1.10"
 
 ; Deprecated
 projects[date][type] = "module"
@@ -257,7 +257,7 @@ projects[libraries][version] = "2.3"
 
 projects[linkchecker][type] = "module"
 projects[linkchecker][subdir] = "contrib"
-projects[linkchecker][version] = "1.2"
+projects[linkchecker][version] = "1.3"
 
 ; Enabled during profile install.
 projects[link][type] = "module"
@@ -275,7 +275,7 @@ projects[mailsystem][version] = "2.34"
 
 projects[markdown][type] = "module"
 projects[markdown][subdir] = "contrib"
-projects[markdown][version] = "1.2"
+projects[markdown][version] = "1.4"
 
 projects[mediaelement][type] = "module"
 projects[mediaelement][subdir] = "contrib"

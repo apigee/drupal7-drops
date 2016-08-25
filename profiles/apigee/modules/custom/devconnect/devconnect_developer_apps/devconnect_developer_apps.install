@@ -277,9 +277,8 @@ function devconnect_developer_apps_update_7438() {
   foreach ($rules as $rule) {
     if ($rule instanceof RulesReactionRule) {
       $actions = $rule->actions();
-      /** @var RulesAction $action */
       foreach ($actions as $action) {
-        if ($action->getElementName() == 'devconnect_developer_apps_create_app') {
+        if ($action instanceof RulesAction && $action->getElementName() == 'devconnect_developer_apps_create_app') {
           if (is_string($action->settings['api_products']) && strpos($action->settings['api_products'], '\n\r') !== FALSE) {
             $action->settings['api_products'] = explode('\n\r', $action->settings['api_products']);
             $action->save();

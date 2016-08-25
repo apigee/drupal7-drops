@@ -59,6 +59,7 @@ function _apigee_profile_updates_deprecated_modules() {
  */
 function _apigee_profile_updates_deprecated_module_info($enabled_only = FALSE) {
   $modules = _apigee_profile_updates_deprecated_modules();
+  $deprecated_modules = array();
 
   $result = db_select('system', 's')
     ->fields('s', array('name', 'filename', 'status'))
@@ -88,17 +89,14 @@ function _apigee_profile_updates_deprecated_module_info($enabled_only = FALSE) {
     }
     else {
       // Module is already in sites/all.
-      $prune = true;
+      $prune = TRUE;
     }
-    if ($prune) {
-      $index = array_search($name, $modules);
-      if ($index !== FALSE) {
-        unset($modules[$index]);
-      }
+    if (!$prune) {
+      $deprecated_modules[] = $name;
     }
   }
 
-  return $modules;
+  return $deprecated_modules;
 }
 
 /**
@@ -137,7 +135,7 @@ function apigee_profile_updates_form_system_modules_alter(array &$form, array &$
  * @param array $vars
  */
 function apigee_profile_updates_preprocess_page(array &$vars) {
-  if (!path_is_admin($_GET['q'])) {
+  if (!path_is_admin($_GET['q']) || !user_access('administer modules')) {
     return;
   }
   $modules = _apigee_profile_updates_deprecated_module_info(TRUE);
