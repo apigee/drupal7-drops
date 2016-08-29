@@ -10,6 +10,7 @@
  *  - logon and make sure memberships revoked
  */
 
+drupal_load('module', 'ldap_test');
 module_load_include('php', 'ldap_test', 'LdapTestCase.class');
 require_once(drupal_get_path('module', 'ldap_authorization_og') . '/LdapAuthorizationConsumerOG.class.php');
 

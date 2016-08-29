@@ -66,7 +66,7 @@ function ldap_sso_boot() {
         }
 
         require_once DRUPAL_ROOT . '/includes/common.inc';
-        require_once DRUPAL_ROOT . '/includes/path.inc';
+        require_once DRUPAL_ROOT . '/' . variable_get('path_inc', 'includes/path.inc');
         $ldap_authentication_conf = variable_get('ldap_authentication_conf', array());
 
         if (isset($ldap_authentication_conf['seamlessLogin']) && $ldap_authentication_conf['seamlessLogin'] == 1 && ($login_attempted != 'true')) {
@@ -286,8 +286,6 @@ function ldap_sso_user_login_sso() {
     global $user;
     $user = ldap_authentication_user_login_authenticate_validate(array(), $fake_form_state, TRUE);
 
-    // Reload the account to ensure we have a fully populated user object.
-    $user = user_load($user->uid);
 
     if ($detailed_watchdog_log) {
       $watchdog_tokens['!uid'] = is_object($user) ? $user->uid : NULL;
@@ -295,6 +293,9 @@ function ldap_sso_user_login_sso() {
     }
 
     if ($user && $user->uid > 0) {
+      // Reload the account to ensure we have a fully populated user object.
+      $user = user_load($user->uid);
+
       if ($auth_conf->seamlessLogin == 1) {
         if ($detailed_watchdog_log) {
           watchdog('ldap_authentication', 'ldap_sso_user_login_sso.remote_user.user_success.seamlessLogin', $watchdog_tokens, WATCHDOG_DEBUG);

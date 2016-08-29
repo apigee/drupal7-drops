@@ -234,7 +234,7 @@ class LdapServer {
     }
 
     if ($bindpw) {
-      $this->bindpw = ldap_servers_decrypt($bindpw);
+      $this->bindpw = ($bindpw == '') ? '' : ldap_servers_decrypt($bindpw);
     }
 
     $this->paginationEnabled = (boolean)(ldap_servers_php_supports_pagination() && $this->searchPagination);

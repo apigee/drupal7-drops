@@ -225,6 +225,7 @@ function ldap_user_ldap_attributes_needed_alter(&$attributes, $params) {
       case 'ldap_user_insert_drupal_user':
       case 'ldap_user_update_drupal_user':
       case 'ldap_user_ldap_associate':
+      case 'all':
         $attributes[$ldap_server->user_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->user_attr]); // array($ldap_server->user_attr, 0, NULL);
         $attributes[$ldap_server->mail_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->mail_attr]);
         $attributes[$ldap_server->picture_attr] = ldap_servers_set_attribute_map(@$attributes[$ldap_server->picture_attr]);
@@ -528,10 +529,11 @@ function ldap_user_form_user_register_form_alter(&$form, $form_state) {
   }
   $ldap_user_conf = ldap_user_conf();
   if ($ldap_user_conf->disableAdminPasswordField == TRUE) {
-    $form['account']['pass']['#required'] = FALSE;
-    $form['account']['pass']['#disabled'] = TRUE;
+    $form['account']['pass']['#type'] = 'value';
     $form['account']['pass']['#value'] = user_password(20);
-    $form['account']['pass']['#description'] = t('An LDAP setting at /admin/config/people/ldap/user has disabled the password fields. Drupal will store a 20 character random password in the Drupal "users" table, and the user will login with their LDAP password.');
+    $form['account']['pass_disabled']['#type'] = 'fieldset';
+    $form['account']['pass_disabled']['#title'] = t('Password');
+    $form['account']['pass_disabled'][]['#markup'] = t('An LDAP setting at /admin/config/people/ldap/user has disabled the password fields. Drupal will store a 20 character random password in the Drupal "users" table, and the user will login with their LDAP password.');
   }
 
   $ldap_fieldset = array();

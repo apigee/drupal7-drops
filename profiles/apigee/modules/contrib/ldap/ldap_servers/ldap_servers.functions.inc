@@ -379,14 +379,20 @@ function ldap_server_massage_text($value, $value_type, $context) {
     */
 
     function ldap_pear_hex2asc($string) {
+
+      if (version_compare(PHP_VERSION, '5.3.0') >= 0) {
         $string = preg_replace_callback(
           "/\\\([0-9A-Fa-f]{2})/",
           function ($m){
             return chr(hexdec($m[1]));
           },
           $string);
+      }
+      else {
+        $string = preg_replace("/\\\([0-9A-Fa-f]{2})/e", "''.chr(hexdec('\\1')).''", $string);
+      }
 
-        return $string;
+      return $string;
     }
 
     /**

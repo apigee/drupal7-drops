@@ -155,6 +155,13 @@ body .open .dropdown-toggle.btn {
     color:#ffffff;
 }
 
+div.search-container {
+    margin-top: 74px;
+}
+body.admin-menu div.search-container {
+    margin-top: 0;
+}
+
 form.search-form div.input-group {
     float:right;
     width:1px;

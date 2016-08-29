@@ -288,7 +288,7 @@ class LdapUserConfAdmin extends LdapUserConf {
     );
 */
 
-    $form['server_mapping_preamble'] = array(
+    $form['basic_to_drupal']['server_mapping_preamble'] = array(
       '#type' => 'markup',
       '#markup' => t('
 The relationship between a Drupal user and an LDAP entry is defined within the LDAP server configurations.
@@ -300,7 +300,6 @@ When more than one ldap server is enabled for provisioning data (or simply more 
 mappings need to be setup for each server.  If no tables are listed below, you have not enabled any provisioning servers at
 the top of this form.
 '),
-
     );
 
     foreach (array(LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER, LDAP_USER_PROV_DIRECTION_TO_LDAP_ENTRY) as $direction) {

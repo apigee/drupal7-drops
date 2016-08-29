@@ -220,7 +220,7 @@ function _ldap_authentication_verify_user_profile() {
  */
 function ldap_authentication_init() {
   $auth_conf = ldap_authentication_get_valid_conf();
-  if ($auth_conf->templateUsagePromptUser) {
+  if ($auth_conf && $auth_conf->templateUsagePromptUser) {
     ldap_authentication_check_for_email_template();
   }
 }
@@ -342,7 +342,7 @@ function ldap_authentication_show_reset_pwd($user = NULL) {
 
   if ($user->uid == 0) {
     // hide reset password for anonymous users if ldap only authentication and password updates are disabled, otherwise show
-    if ($auth_conf->authenticationMode != LDAP_AUTHENTICATION_EXCLUSIVE) {
+    if ($auth_conf->authenticationMode == LDAP_AUTHENTICATION_EXCLUSIVE) {
       if ($auth_conf->passwordOption == LDAP_AUTHENTICATION_PASSWORD_FIELD_ALLOW) {
         return TRUE;
       }

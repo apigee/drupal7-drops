@@ -244,7 +244,7 @@ projects[jquery_update][version] = "3.0-alpha3"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
-projects[ldap][version] = "2.0-beta8"
+projects[ldap][version] = "2.0-beta11"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
@@ -378,7 +378,7 @@ projects[rules][version] = "2.9"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.16"
+projects[services][version] = "3.17"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -411,6 +411,10 @@ projects[sumo][directory_name] = "sumo"
 projects[syntaxhighlighter][type] = "module"
 projects[syntaxhighlighter][subdir] = "contrib"
 projects[syntaxhighlighter][version] = "2.0"
+
+projects[taxonomy_access][type] = "module"
+projects[taxonomy_access][subdir] = "contrib"
+projects[taxonomy_access][version] = "1.0"
 
 ; Enabled on install.
 projects[token][type] = "module"
@@ -463,7 +467,7 @@ projects[views_slideshow][version] = "3.1"
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.13"
+projects[webform][version] = "4.14"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -821,7 +825,7 @@ libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/arch
 libraries[SolrPhpClient][destination] = "libraries"
 libraries[SolrPhpClient][directory_name] = "SolrPhpClient"
 libraries[SolrPhpClient][download][type] = "file"
-libraries[SolrPhpClient][download][url] = "http://solr-php-client.googlecode.com/files/SolrPhpClient.r60.2011-05-04.zip"
+libraries[SolrPhpClient][download][url] = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/solr-php-client/SolrPhpClient.r60.2011-05-04.zip"
 
 ; Used by services, devconnect, smartdocs
 libraries[spyc][destination] = "libraries"

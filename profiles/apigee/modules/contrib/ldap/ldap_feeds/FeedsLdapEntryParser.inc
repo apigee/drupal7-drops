@@ -34,6 +34,10 @@ class FeedsLdapEntryParser extends FeedsParser {
           if ($ldap_attributes[$source_lcase]['count'] == 1 && is_scalar($ldap_attributes[$source_lcase][0])) {
             $parsed_item[$source] = (string)$ldap_attributes[$source_lcase][0];
           }
+          else {
+            unset($ldap_attributes[$source_lcase]['count']);
+            $parsed_item[$source] = $ldap_attributes[$source_lcase];
+          }
         }
         else {
           $parsed_item[$source] = '';

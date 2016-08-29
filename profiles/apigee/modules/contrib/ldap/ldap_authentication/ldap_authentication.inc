@@ -121,7 +121,7 @@ function _ldap_authentication_form_user_profile_form_alter(&$form, $form_state) 
 /**
  * Replaces the email address in $ldap_user with one from the template in
  * $auth_conf.
- * 
+ *
  * @param array $ldap_user
  *   LDAP user entry
  * @param LdapAuthenticationConf $auth_conf
@@ -156,17 +156,21 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
 
   // Default to name
   $entered_name = $form_state['values']['name'];
-  $authname_drupal_property = 'name';
+  $authname_drupal_property = $form_field_name = 'name';
 
   // Email registration module populates name even though user entered email
   if (!empty($form_state['values']['email'])) {
     $entered_name = $form_state['values']['email'];
     $authname_drupal_property = 'mail';
+    $form_field_name = 'email';
   }
 
   // $authname is the name the user is authenticated with from the logon form // patch 1599632
   $authname = $entered_name;
 
+  if (empty($form_state['values']['pass']) || empty ($form_state['values'][$form_field_name])) {
+    return FALSE;
+  }
   /*
    * If a fake form state was passed into this function from
    * _ldap_authentication_user_login_sso(), there will be a value outside of the
@@ -266,9 +270,9 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
   $email_template_tokens = array(
     '@username' => $drupal_accountname,
   );
-  
+
   $email_template_used = FALSE;
-  
+
   /**
    * Ensures that we respect the email template handling settings.
    */
@@ -288,7 +292,7 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
         break;
     }
   }
-  
+
   /**
    * VI. Find or create corresponding drupal account and set authmaps
    *
@@ -354,9 +358,9 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
    * VI.C: existing Drupal account with incorrect email.  fix email if appropriate
    *
    */
-  if ((!($auth_conf->templateUsageNeverUpdate && $email_template_used)) && 
-      $drupal_account_exists && 
-      $drupal_account->mail != $ldap_user['mail'] && 
+  if ((!($auth_conf->templateUsageNeverUpdate && $email_template_used)) &&
+      $drupal_account_exists &&
+      $drupal_account->mail != $ldap_user['mail'] &&
       (
         $auth_conf->emailUpdate == LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_ENABLE_NOTIFY ||
         $auth_conf->emailUpdate == LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_ENABLE
@@ -448,7 +452,7 @@ function _ldap_authentication_user_login_authenticate_validate(&$form_state, $re
     else {
       $user_edit = array('name' => $drupal_accountname, 'status' => 1);
     }
-    
+
     // If the email template was used, we want to pass in the email that was
     // generated so that its not overridden by the provisioner.
     if ($email_template_used) {

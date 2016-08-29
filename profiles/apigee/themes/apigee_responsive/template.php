@@ -152,7 +152,7 @@ EOF;
  */
 function apigee_responsive_preprocess_page(&$vars) {
   global $user;
-  if (module_exists('apachesolr')) {
+  if (module_exists('search')) {
     $search = drupal_get_form('search_form');
     $search['basic']['keys']['#size'] = 20;
     $search['basic']['keys']['#title'] = '';
@@ -185,14 +185,6 @@ function apigee_responsive_preprocess_page(&$vars) {
 
   $link_logout_html = '<span class="glyphicon glyphicon-off"></span>&nbsp;&nbsp; ' . t('Logout');
   $vars['logoutlink'] = l($link_logout_html, 'user/logout', array('html' => TRUE));
-
-  // Custom Search.
-  $vars['search'] = FALSE;
-  if (theme_get_setting('toggle_search') && module_exists('search')) {
-    $search = drupal_get_form('search_form');
-    $search['basic']['keys']['#attributes']['placeholder'] = t('Keyword');
-    $vars['search'] = $search;
-  }
 
   $second_arg = module_exists('me') ? 'me' : $GLOBALS['user']->uid;
 

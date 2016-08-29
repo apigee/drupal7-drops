@@ -121,30 +121,19 @@
   </div>
 </header>
 <!-- Breadcrumbs -->
-<?php if (!empty($search_form)): ?>
+<?php if (!empty($search_form) || !empty($company_switcher)): ?>
   <div class="container search-container">
     <div class="row">
-      <?php if(!empty($company_switcher)):?>
+      <?php if (!empty($company_switcher)):?>
         <div class="col-xs-6">
           <div class="apigee-company-switcher-container"><?php print $company_switcher; ?></div>
         </div>
       <?php endif;?>
-      <div class="col-xs-6 pull-right">
-        <?php print render($search_form);?>
-      </div>
-    </div>
-  </div>
-<?php elseif (!empty($search)): ?>
-  <div class="container search-container">
-    <div class="row">
-      <?php if(!empty($company_switcher)):?>
-        <div class="col-xs-6">
-            <div class="apigee-company-switcher-container"><?php print $company_switcher; ?></div>
+      <?php if (!empty($search_form)): ?>
+        <div class="col-xs-6 pull-right">
+          <?php print render($search_form);?>
         </div>
-      <?php endif;?>
-      <div class="col-xs-6 pull-right">
-        <?php print render($search);?>
-      </div>
+      <?php endif; ?>
     </div>
   </div>
 <?php endif; ?>

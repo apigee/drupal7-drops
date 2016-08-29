@@ -28,6 +28,7 @@ function ldap_servers_uninstall() {
  */
 function ldap_servers_requirements($phase) {
   $requirements = array();
+  $t = get_t();
 
   if ($phase == 'install') {
     $requirements['ldap_extension_loaded']['title'] = t('LDAP Extension Loaded');
@@ -55,6 +56,48 @@ function ldap_servers_requirements($phase) {
       See http://drupal.org/node/1023016. This message will go away when the ldapauth database table is removed.');
   }
   // check that ldapauth not installed.
+
+  // Check enabled LDAP servers are configured and Drupal can connect to them.
+  if ($phase == 'runtime') {
+    $requirements['ldap_servers_enabled'] = array(
+      'title' => $t('LDAP Server status'),
+      'value' =>  $t('Disabled'),
+      'severity' => REQUIREMENT_WARNING,
+    );
+
+    $servers = ldap_servers_get_servers(NULL, 'enabled');
+    if (!empty($servers)) {
+      unset($requirements['ldap_servers_enabled']);
+
+      foreach ($servers as $server) {
+        $server_req_key = 'ldap_servers_sid_' . $server->sid;
+        $server_tokens = array(
+          '@host' => $server->address,
+          '@sid' => $server->sid,
+        );
+        $requirements[$server_req_key] = array(
+          'title' => $t('LDAP Server status: @sid (@host)', $server_tokens),
+          'value' =>  $t('Connection: Failed, check logs for details.', $server_tokens),
+          'severity' => REQUIREMENT_ERROR,
+        );
+
+        try {
+          $connect_result = $server->connect();
+          if ($connect_result == LDAP_SUCCESS) {
+            $bind_result = $server->bind();
+            if ($bind_result == LDAP_SUCCESS) {
+              $requirements[$server_req_key]['value'] = $t('Connection: Success, Bind: Success', $server_tokens);
+              $requirements[$server_req_key]['severity'] = REQUIREMENT_OK;
+            }
+          }
+          $server->disconnect();
+        }
+        catch (Exception $e) {
+        }
+      }
+    }
+  }
+
   return $requirements;
 }
 
@@ -287,7 +330,7 @@ function ldap_servers_update_7107() {
 
 
 function ldap_servers_db_field_exists($table, $field_name) {
-  if (!ldap_servers_db_field_exists($table, $field_name) && !ldap_servers_db_field_exists($table, drupal_strtolower($field_name)) ) {
+  if (!db_field_exists($table, $field_name) && !db_field_exists($table, drupal_strtolower($field_name)) ) {
     return false;
   }
   else {
@@ -300,7 +343,7 @@ function ldap_servers_db_field_exists($table, $field_name) {
 function ldap_servers_update_7108() {
 
   foreach (array('groupFunctionalityUnused', 'groupNested', 'groupSearchAll', 'groupUserMembershipsAttrExists', 'groupDeriveFromDn', 'groupUserMembershipsAttrExists') as $tinyint_field_name) {
-    if (!ldap_servers_ldap_servers_db_field_exists('ldap_servers', $tinyint_field_name))  {
+    if (!ldap_servers_db_field_exists('ldap_servers', $tinyint_field_name))  {
       db_add_field('ldap_servers', $tinyint_field_name, array(
         'type' => 'int',
         'size' => 'tiny',
@@ -796,21 +839,22 @@ function ldap_servers_update_7205() {
 }
 
 
-
 /**
  * Add LDAP Referrals fields in schema
  */
 function ldap_servers_update_7206() {
-  db_add_field(
-    'ldap_servers',
-    'followrefs',
-    array(
-      'type' => 'int',
-      'size' => 'tiny',
-      'not null' => FALSE,
-      'default' => 0,
-    )
-  );
+  if (!ldap_servers_db_field_exists('ldap_servers', 'followrefs')) {
+    db_add_field(
+      'ldap_servers',
+      'followrefs',
+      array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => FALSE,
+        'default' => 0,
+      )
+    );
+  }
 }
 
 function ldap_servers_install_update_schema($schema, &$change_log) {

@@ -606,14 +606,11 @@ class LdapUserConf {
         if (!$ldap_user_prov_entry_exists) {
           $user_entity->ldap_user_prov_entries['und'][] = array(
             'value' =>  $ldap_user_prov_entry,
-            'format' => NULL,
-            'save_value' => $ldap_user_prov_entry,
           );
-          $edit = array(
-            'ldap_user_prov_entries' => $user_entity->ldap_user_prov_entries,
-          );
-          $account = user_load($account->uid);
-          $account = user_save($account, $edit);
+
+          // Save the field without calling user_save()
+          field_attach_presave('user', $user_entity);
+          field_attach_update('user', $user_entity);
         }
 
       }

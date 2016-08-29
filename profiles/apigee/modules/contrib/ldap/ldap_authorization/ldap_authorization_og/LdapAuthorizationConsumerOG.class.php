@@ -583,6 +583,7 @@ class LdapAuthorizationConsumerOG extends LdapAuthorizationConsumerAbstract {
       $this->og2Revokes($og_actions, $user, $user_auth_data); 
     }
 
+    $user_edit = array('data' => $user->data);
     $user_edit['data']['ldap_authorizations'][$this->consumerType] = $user_auth_data;
     $user = user_save($user, $user_edit);
     $user_auth_data = $user->data['ldap_authorizations'][$this->consumerType];  // reset this variable because user save hooks can impact it.
