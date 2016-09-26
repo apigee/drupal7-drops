@@ -71,8 +71,10 @@
 				// ajust mute button style
 				if (volume === 0) {
 					mute.removeClass('mejs-mute').addClass('mejs-unmute');
+					mute.children('button').attr('title', mejs.i18n.t('Unmute')).attr('aria-label', mejs.i18n.t('Unmute'));
 				} else {
 					mute.removeClass('mejs-unmute').addClass('mejs-mute');
+					mute.children('button').attr('title', mejs.i18n.t('Mute')).attr('aria-label', mejs.i18n.t('Mute'));
 				}
 
                 // top/left of full size volume slider background
@@ -118,7 +120,6 @@
 				
 					var
 						railHeight = volumeTotal.height(),
-						totalTop = parseInt(volumeTotal.css('top').replace(/px/,''),10),
 						newY = e.pageY - totalOffset.top;
 						
 					volume = (railHeight - newY) / railHeight;
@@ -173,7 +174,7 @@
                 var volume = Math.floor(media.volume*100);
 
 				volumeSlider.attr({
-					'aria-label': mejs.i18n.t('volumeSlider'),
+					'aria-label': mejs.i18n.t('Volume Slider'),
 					'aria-valuemin': 0,
 					'aria-valuemax': 100,
 					'aria-valuenow': volume,
@@ -210,10 +211,10 @@
 					var volume = media.volume;
 					switch (keyCode) {
                         case 38: // Up
-                            volume += 0.1;
+                            volume = Math.min(volume + 0.1, 1);
                             break;
                         case 40: // Down
-                            volume = volume - 0.1;
+                            volume = Math.max(0, volume - 0.1);
                             break;
                         default:
                             return true;
@@ -223,9 +224,6 @@
 					positionVolumeHandle(volume);
 					media.setVolume(volume);
 					return false;
-				})
-				.bind('blur', function () {
-					volumeSlider.hide();
 				});
 
 			// MUTE button
@@ -251,21 +249,20 @@
 				}
 				updateVolumeSlider(e);
 			}, false);
-
-			if (t.container.is(':visible')) {
-				// set initial volume
-				positionVolumeHandle(player.options.startVolume);
-
-				// mutes the media and sets the volume icon muted if the initial volume is set to 0
-				if (player.options.startVolume === 0) {
-					media.setMuted(true);
-				}
-
-				// shim gets the startvolume as a parameter, but we have to set it on the native <video> and <audio> elements
-				if (media.pluginType === 'native') {
-					media.setVolume(player.options.startVolume);
-				}
+			
+			// mutes the media and sets the volume icon muted if the initial volume is set to 0
+			if (player.options.startVolume === 0) {
+				media.setMuted(true);
 			}
+			
+			// shim gets the startvolume as a parameter, but we have to set it on the native <video> and <audio> elements
+			if (media.pluginType === 'native') {
+				media.setVolume(player.options.startVolume);
+			}
+			
+			t.container.on('controlsresize', function() {
+				positionVolumeHandle(media.volume);
+			});
 		}
 	});
 	

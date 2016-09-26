@@ -12,6 +12,8 @@ function devconnect_developer_apps_install() {
   _devconnect_developer_apps_register_cache_handlers();
   // Enable analytics by default.
   variable_set('devconnect_show_analytics', 1);
+  // If this is a fresh install, no need to rebuild the registry.
+  variable_set('devconnect_developer_apps_autoload_register', TRUE);
 }
 
 /**
@@ -35,6 +37,7 @@ function devconnect_developer_apps_uninstall() {
     'devconnect_validate_callback_url',
     'myapis',
     'myapis_label',
+    'devconnect_developer_apps_autoload_register',
   );
   foreach ($variables as $variable) {
     variable_del($variable);
@@ -287,4 +290,12 @@ function devconnect_developer_apps_update_7438() {
       }
     }
   }
+}
+
+/**
+ * Force a registry-rebuild to allow classes to be autoloaded.
+ */
+function devconnect_developer_apps_update_7439() {
+  drupal_load('module', 'devconnect_developer_apps');
+  devconnect_developer_apps_init();
 }

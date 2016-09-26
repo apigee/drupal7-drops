@@ -562,16 +562,15 @@ function smartdocs_add_model_validate(array $form, array &$form_state) {
  *   State of the form being submitted.
  */
 function smartdocs_add_model_submit(array $form, array &$form_state) {
-
   $model = new Model(devconnect_default_org_config());
   $model->setName(trim($form_state['values']['model_name']));
   $model->setDisplayName(trim($form_state['values']['display_name']));
   $model->setDescription(trim($form_state['values']['model_description']));
-
+  module_invoke_all('smartdocs_model_presave', $model);
   $success = FALSE;
   try {
     $model->save();
-
+    module_invoke_all('smartdocs_model_postsave', $model);
     // Get the content of the custom template.
     $custom_template_file = variable_get('smartdocs_custom_template_file', NULL);
     $template_content = FALSE;
@@ -609,10 +608,12 @@ function smartdocs_add_model_submit(array $form, array &$form_state) {
       $template_content = file_get_contents($path);
     }
 
+    module_invoke_all('smartdocs_template_presave', $model->getName(), $template_content);
     $template = new Template(devconnect_default_org_config(), $model->getUuid());
     $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $template_content, TRUE);
 
     $success = TRUE;
+    module_invoke_all('smartdocs_template_postsave', $model->getName(), $template);
     module_invoke_all('smartdocs_model_update', $model->getUuid());
     $form_state['values']['model_id'] = $model->getUuid();
 
@@ -1008,11 +1009,9 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
         watchdog('smartdocs', 'Imported URL into revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
       }
 
-      if ($document_format == 'swagger') {
-        $response = drupal_http_request($url);
-        if ($response->code == 200) {
-          $file_contents = $response->data;
-        }
+      $response = drupal_http_request($url);
+      if ($response->code == 200) {
+        $file_contents = $response->data;
       }
 
       // Parameters to use in success message to user.
@@ -1075,8 +1074,6 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
       $form_state['redirect'] = FALSE;
       return;
     }
-
-
   }
   // Danger, Will Robinson! Hack incoming!
   // Work around Modeling API bugs regarding parameter enums. See MGMT-2664.
@@ -1139,6 +1136,8 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
         // Load our active revision.
         $rev = new Revision($model->getConfig(), $model->getUuid());
         $rev->load($revision_id);
+        module_invoke_all('smartdocs_import_revision_resources_presave', $model, $rev, $resource_enums);
+        module_invoke_all('smartdocs_import_revision_methods_presave', $model, $rev, $method_enums);
         $resources = $rev->getResources();
 
         foreach ($resources as $resource) {
@@ -1157,7 +1156,9 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
               }
             }
             if ($resource_modified) {
+              module_invoke_all('smartdocs_resource_presave', $resource, $revision, $model, TRUE);
               $resource->save(TRUE);
+              module_invoke_all('smartdocs_resource_postsave', $resource, $revision, $model, TRUE);
             }
           }
 
@@ -1186,18 +1187,23 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
                   }
                 }
                 if ($method_modified) {
+                  module_invoke_all('smartdocs_method_presave', $target_method, $model->getName(), $rev->getUuid(), $resource->getUuid(), TRUE);
                   $target_method->save(TRUE);
+                  module_invoke_all('smartdocs_method_postsave', $target_method, $model->getName(), $rev->getUuid(), $resource->getUuid(), TRUE);
                 }
               }
             }
           }
-
         }
         // Finished cycling through resources.
+        module_invoke_all('smartdocs_import_revision_resources_postsave', $model, $rev, $resource_enums);
+        module_invoke_all('smartdocs_import_revision_methods_postsave', $model, $rev, $method_enums);
       }
     }
     // Finished twiddling Swagger file import. End of horrible hack.
   }
+
+  module_invoke_all('smartdocs_model_import', $file_contents, $content_type, $document_format, $model, $form_state['values']['upload_type']);
 
   // If we are updating, we need to invalidate cache.
   if ($model->getLatestRevisionNumber() > 1) {
@@ -1513,7 +1519,7 @@ function smartdocs_model_settings(array $form, array &$form_state, array $model_
 
   $form['model_uuid'] = array(
     '#type' => 'value',
-    '#value' => $model_array['uuid'],
+    '#value' => $model_array['id'],
   );
   $form['model_name'] = array(
     '#type' => 'value',
@@ -1634,6 +1640,7 @@ function smartdocs_model_settings_submit($form, &$form_state) {
 
   try {
     $template_obj = new Template(devconnect_default_org_config(), $model_name);
+    module_invoke_all('smartdocs_template_presave', $model_name, $html);
     $start = microtime(TRUE);
     $template_obj->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
     if (variable_get('smartdocs_log_transaction_time', 0)) {
@@ -1643,6 +1650,8 @@ function smartdocs_model_settings_submit($form, &$form_state) {
       );
       watchdog('smartdocs', 'Saved method template for model !model in !time seconds', $args, WATCHDOG_INFO);
     }
+    module_invoke_all('smartdocs_template_postsave', $model_name, $html);
+    module_invoke_all('smartdocs_template_reverted', $model_name);
     drupal_set_message($status_message);
   }
   catch (Exception $e) {
@@ -1853,6 +1862,7 @@ function smartdocs_model_template_auth_submit($form, &$form_state) {
       $is_update = $payload['is_update'];
       unset($payload['is_update']);
       $scheme = TemplateAuthScheme::fromArray($payload);
+      module_invoke_all('smartdocs_template_auth_scheme_presave', $template_auth, $scheme, $model_id, $is_update);
       $start = microtime(TRUE);
       $template_auth->save($scheme, $is_update);
       if (variable_get('smartdocs_log_transaction_time', 0)) {
@@ -1863,6 +1873,7 @@ function smartdocs_model_template_auth_submit($form, &$form_state) {
         );
         watchdog('smartdocs', 'Saved template auth scheme !scheme to model !model in !time seconds', $args, WATCHDOG_INFO);
       }
+      module_invoke_all('smartdocs_template_auth_scheme_postsave', $template_auth, $scheme, $model_id, $is_update);
     }
     catch (Exception $e) {
       $success = FALSE;
@@ -1937,6 +1948,7 @@ function smartdocs_model_delete_submit(array $form, array &$form_state) {
   Model::fromArray($model, $form_state['values']['model']);
   $model_name = $model->getName();
   $model_uuid = $model->getUuid();
+  module_invoke_all('smartdocs_model_predelete', $model_name);
 
   try {
     $start = microtime(TRUE);
@@ -1948,6 +1960,7 @@ function smartdocs_model_delete_submit(array $form, array &$form_state) {
       );
       watchdog('smartdocs', 'Deleted model !model in !time seconds', $args, WATCHDOG_INFO);
     }
+    module_invoke_all('smartdocs_model_postdelete', $model_name);
 
     // Delete all nodes in this model.
     $model_terms = taxonomy_get_term_by_name($model_name, 'smartdocs_models');
@@ -1959,9 +1972,9 @@ function smartdocs_model_delete_submit(array $form, array &$form_state) {
         ->entityCondition('bundle', 'smart_method')
         ->fieldCondition('field_smart_method_model', 'tid', $model_term->tid, '=')
         ->execute();
-      $nids = array_keys($result['node']);
 
-      if (!empty($nids)) {
+      if (!empty($result['node'])) {
+        $nids = array_keys($result['node']);
         db_delete('smartdata')
           ->condition('nid', $nids)
           ->execute();
@@ -2189,6 +2202,7 @@ function smartdocs_add_revision_submit($form, &$form_state) {
   $revision->setDescription($form_state['values']['description']);
   $revision->setReleaseVersion($form_state['values']['version']);
   $revision->setDisplayName($form_state['values']['display_name']);
+  module_invoke_all('smartdocs_revision_presave', $revision, $model);
   try {
     $start = microtime(TRUE);
     $revision->save();
@@ -2200,6 +2214,7 @@ function smartdocs_add_revision_submit($form, &$form_state) {
       );
       watchdog('smartdocs', 'Created revision !revision for model !model in !time seconds', $args, WATCHDOG_INFO);
     }
+    module_invoke_all('smartdocs_revision_postsave', $revision, $model);
     module_invoke_all('smartdocs_model_update', $model->getUuid());
     drupal_set_message(t('Revision was created successfully'));
 
@@ -2883,6 +2898,7 @@ function smartdocs_resource_edit_submit($form, &$form_state) {
   $resource->setDescription($form_state['values']['description']);
   $resource->setPath($form_state['values']['path']);
   $resource->setParameters($parameters);
+  module_invoke_all('smartdocs_resource_presave', $resource, $revision, $model, $update);
 
   try {
     $start = microtime(TRUE);
@@ -2902,6 +2918,7 @@ function smartdocs_resource_edit_submit($form, &$form_state) {
     else {
       drupal_set_message(t('Resource has been created successfully.'));
     }
+    module_invoke_all('smartdocs_resource_postsave', $resource, $revision, $model, $update);
     module_invoke_all('smartdocs_model_update', $model->getUuid());
     $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model->getUuid() . '/revisions/' . $revision->getRevisionNumber();
   }
@@ -2937,15 +2954,14 @@ function smartdocs_resource_delete(array $form, array &$form_state, array $model
   if (count($method_uuids) > 0) {
     $query = db_select('smartdata', 's');
     $query->innerJoin('node', 'n', 's.nid = n.nid');
-    $result = $query->fields('n', array('nid'))
-      ->condition('s.model', $model['name'])
+    $query->fields('n', array('nid'));
+    $query->fields('s', array('method'));
+    $query->condition('s.model', $model['name'])
       ->condition('s.revision', $revision['revisionNumber'])
       ->condition('s.resource', $resource['id'])
-      ->condition('s.method', $method_uuids)
-      ->execute();
-    while ($nid = $result->fetchField()) {
-      $method_nids[] = $nid;
-    }
+      ->condition('s.method', $method_uuids);
+    $method_nids = $query->execute()->fetchAllKeyed();
+    $method_uuids = array_flip($method_nids);
     if (count($method_nids) == 0) {
       $description = t('This resource contains %methods methods.', array('%methods' => count($method_uuids)));
     }
@@ -2976,6 +2992,11 @@ function smartdocs_resource_delete(array $form, array &$form_state, array $model
     '#value' => $method_nids,
   );
 
+  $form['method_uuids'] = array(
+    '#type' => 'value',
+    '#value' => $method_uuids,
+  );
+
   return confirm_form($form, $question, $cancel_path, $description);
 }
 
@@ -2999,11 +3020,14 @@ function smartdocs_resource_delete_submit($form, &$form_state) {
   $resource_name = $form_state['values']['resource']['name'];
 
   $resource = new Resource(devconnect_default_org_config(), $model_uuid, $revision_uuid);
+  module_invoke_all('smartdocs_resource_predelete', $resource, $revision_uuid, $model_name);
   $deleted_nodes = 0;
   try {
     $resource->delete($resource_uuid);
     foreach ($form_state['values']['method_nids'] as $nid) {
+      module_invoke_all('smartdocs_method_node_predelete', $form_state['values']['method_uuids'][$nid], $nid, $resource, $revision_uuid, $model_name);
       node_delete($nid);
+      module_invoke_all('smartdocs_method_node_postdelete', $form_state['values']['method_uuids'][$nid], $nid, $resource, $revision_uuid, $model_name);
       $deleted_nodes++;
     }
 
@@ -3022,6 +3046,7 @@ function smartdocs_resource_delete_submit($form, &$form_state) {
   catch (Exception $e) {
     drupal_set_message(t('Failed to delete resource %resource. Please examine the error logs for details.', array('%resource' => $resource_name)), 'error');
   }
+  module_invoke_all('smartdocs_resource_postdelete', $resource, $revision_uuid, $model_name);
   $form_state['redirect'] = 'admin/content/smartdocs/models/' . $model_uuid . '/revisions/' . $revision_number;
 }
 
@@ -3189,24 +3214,36 @@ function smartdocs_method_delete_submit($form, &$form_state) {
   $method = new Method(devconnect_default_org_config(), $form_state['values']['model_uuid'], $form_state['values']['revision_uuid'], $form_state['values']['resource_uuid']);
   Method::fromArray($method, $form_state['values']['method']);
   $method_name = $method->getDisplayName();
+  $action = $form_state['values']['node_action'];
+  $model_uuid = $form_state['values']['model_uuid'];
+  $revision_uuid = $form_state['values']['revision_uuid'];
+  $resource_uuid = $form_state['values']['resource_uuid'];
+
   $nid = $form_state['values']['nid'];
   if ($nid) {
-    db_delete('smartdata')
-      ->condition('nid', $nid)
-      ->execute();
-    switch ($form_state['values']['node_action']) {
-      case 'delete':
-        node_delete($nid);
+    switch ($action) {
+      case 'unpublish':
+      case 'keep':
+        module_invoke_all('smartdocs_method_node_preaction', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid, $action);
+        db_delete('smartdata')->condition('nid', $nid)->execute();
+        if ($action == 'unpublish') {
+          $node = node_load($nid);
+          $node->status = 0;
+          node_save($node);
+        }
+        module_invoke_all('smartdocs_method_node_postaction', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid, $action);
         break;
 
-      case 'unpublish':
-        $node = node_load($nid);
-        $node->status = 0;
-        node_save($node);
+      case 'delete':
+        module_invoke_all('smartdocs_method_node_predelete', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid);
+        db_delete('smartdata')->condition('nid', $nid)->execute();
+        node_delete($nid);
+        module_invoke_all('smartdocs_method_node_postdelete', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid);
         break;
     }
   }
   try {
+    module_invoke_all('smartdocs_method_predelete', $method, $model_uuid, $revision_uuid, $resource_uuid);
     $start = microtime(TRUE);
     $method->delete();
     if (variable_get('smartdocs_log_transaction_time', 0)) {
@@ -3220,6 +3257,7 @@ function smartdocs_method_delete_submit($form, &$form_state) {
       watchdog('smartdocs', 'Deleted method !method from resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
     }
     module_invoke_all('smartdocs_model_update', $form_state['values']['model_uuid']);
+    module_invoke_all('smartdocs_method_postdelete', $method, $form_state['values']['model_uuid'], $form_state['values']['revision_uuid'], $form_state['values']['resource_uuid']);
     drupal_set_message(t('Method ‘@method’ was successfully deleted.', array('@method' => $method_name)));
   }
   catch (ResponseException $e) {
@@ -3628,7 +3666,9 @@ function smartdocs_model_security_scheme_submit($form, &$form_state) {
       break;
   }
   try {
+    drupal_alter('smartdocs_model_security_scheme', $payload);
     $scheme = SecurityScheme::fromArray($payload);
+    module_invoke_all('smartdocs_model_security_scheme_presave', $scheme, $model, $revision, $is_update);
     $start = microtime(TRUE);
     $security->save($scheme, $is_update);
     if (variable_get('smartdocs_log_transaction_time', 0)) {
@@ -3640,6 +3680,7 @@ function smartdocs_model_security_scheme_submit($form, &$form_state) {
       );
       watchdog('smartdocs', 'Saved security scheme !scheme to revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
     }
+    module_invoke_all('smartdocs_model_security_scheme_postsave', $scheme, $model, $revision, $is_update);
     drupal_set_message(t("The security scheme has been saved"), "status");
   }
   catch (Exception $e) {
@@ -3801,6 +3842,7 @@ function smartdocs_model_security_delete_submit($form, &$form_state) {
   $delete_templateauth = $form_state['values']['delete_templateauth'];
 
   $security = new Security(devconnect_default_org_config(), $model_id, $revision_id);
+  module_invoke_all('smartdocs_security_predelete', $security, $model_id, $revision_id);
   try {
     $start = microtime(TRUE);
     $security->delete($scheme_name);
@@ -3813,8 +3855,10 @@ function smartdocs_model_security_delete_submit($form, &$form_state) {
       );
       watchdog('smartdocs', 'Deleted security scheme !scheme from revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
     }
+    module_invoke_all('smartdocs_security_postdelete', $security, $model_id, $revision_id);
     if ($delete_templateauth) {
       $templateauth = new TemplateAuth(devconnect_default_org_config(), $model_id);
+      module_invoke_all('smartdocs_template_auth_scheme_predelete', $scheme_name, $model_id);
       $start = microtime(TRUE);
       $templateauth->delete($scheme_name);
       if ($log_transaction_time) {
@@ -3822,6 +3866,7 @@ function smartdocs_model_security_delete_submit($form, &$form_state) {
         unset($args['!revision']);
         watchdog('smartdocs', 'Deleted templateauth !scheme from model !model in !time seconds', $args, WATCHDOG_INFO);
       }
+      module_invoke_all('smartdocs_template_auth_scheme_postdelete', $scheme_name, $model_id);
     }
     drupal_set_message(t('Successfully deleted scheme !scheme_name', array('!scheme_name' => $scheme_name)));
   }
@@ -3918,6 +3963,7 @@ function smartdocs_edit_revision_submit($form, &$form_state) {
   $revision->setDescription($form_state['values']['description']);
   $revision->setReleaseVersion($form_state['values']['version']);
   $revision->setBaseUrl($form_state['values']['base_url']);
+  module_invoke_all('smartdocs_revision_presave', $revision, $model);
 
   try {
     $start = microtime(TRUE);
@@ -3930,6 +3976,7 @@ function smartdocs_edit_revision_submit($form, &$form_state) {
       );
       watchdog('smartdocs', 'Saved revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
     }
+    module_invoke_all('smartdocs_revision_postsave', $revision, $model);
     module_invoke_all('smartdocs_model_update', $model->getUuid());
 
     $rev = $revision->getRevisionNumber();

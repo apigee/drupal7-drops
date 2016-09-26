@@ -254,9 +254,8 @@ function apigee_batch_smartdocs_create_model($model_machine_name, $model_display
   $model->setDescription($model_description);
   try {
     $model->save($update);
-    if ($model->getLatestRevisionNumber() == -1) {
-      throw new Exception('Invalid latestRevisionNumber of -1');
-    }
+    // Ignore errors in which latestRevisionNumber is -1. These will be handled
+    // when the model is imported.
   }
   catch (Apigee\Exceptions\ResponseException $e) {
     $message = $e->getResponse();

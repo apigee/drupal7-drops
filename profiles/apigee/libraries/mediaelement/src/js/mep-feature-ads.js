@@ -43,16 +43,21 @@
 
 	$.extend(mejs.MepDefaults, {
 		// URL to a media file
-		adsPrerollMediaUrl: '',
+		adsPrerollMediaUrl: [],
 		
 		// URL for lcicking ad
-		adsPrerollAdUrl: '',
+		adsPrerollAdUrl: [],
 
 		// if true, allows user to skip the pre-roll ad
 		adsPrerollAdEnableSkip: false,
 		
 		// if adsPrerollAdEnableSkip=true and this is a positive number, it will only allow skipping after the time has elasped
-		adsPrerollAdSkipSeconds: -1
+		adsPrerollAdSkipSeconds: -1,
+
+		// keep track of the index for the preroll ads to be able to show more than one preroll. Used for 
+        // VAST3.0 Adpods
+		indexPreroll: 0,
+
 	});
 
 	$.extend(MediaElementPlayer.prototype, {
@@ -86,7 +91,7 @@
 							'<a href="#" target="_blank">&nbsp;</a>' + 
 							'<div class="mejs-ads-skip-block">' + 
 								'<span class="mejs-ads-skip-message"></span>' +
-								'<span class="mejs-ads-skip-button">Skip Ad &raquo;</span>' +
+								'<span class="mejs-ads-skip-button">' + mejs.i18n.t('Skip ad') + '&raquo;</span>' +
 							'</div>' +
 						'</div>')
 							.insertBefore( layers.find('.mejs-overlay-play') )
@@ -115,9 +120,9 @@
 			t.media.addEventListener('canplay', 		t.adsMediaTryingToStartProxy );
 			t.media.addEventListener('loadedmetadata', 	t.adsMediaTryingToStartProxy );	
 			
-			console.log('setup ads', t.options.adsPrerollMediaUrl);
+			console.log('setup ads', t.options.adsPrerollMediaUrl[t.options.indexPreroll]);
 			
-			if (t.options.adsPrerollMediaUrl != '') {
+			if (t.options.indexPreroll < t.options.adsPrerollMediaUrl.length) {
 				t.adsStartPreroll();
 			}					
 		},
@@ -139,7 +144,7 @@
 					
 			var t = this;
 			
-			console.log('adsStartPreroll', 'url', t.options.adsPrerollMediaUrl);
+			console.log('adsStartPreroll', 'url', t.options.adsPrerollMediaUrl[t.options.indexPreroll]);
 			
 			
 			t.media.addEventListener('loadedmetadata', 		t.adsPrerollMetaProxy );	
@@ -147,11 +152,14 @@
 			t.media.addEventListener('ended', 				t.adsPrerollEndedProxy )
 			t.media.addEventListener('timeupdate', 			t.adsPrerollUpdateProxy );
 			
-			// change URLs to the preroll ad
-			t.adsCurrentMediaUrl = t.media.src;
-			t.adsCurrentMediaDuration = t.media.duration;
+			// change URLs to the preroll ad. Only save the video to be shown on first
+			// ad showing.
+			if (t.options.indexPreroll == 0) {
+				t.adsCurrentMediaUrl = t.media.src;
+				t.adsCurrentMediaDuration = t.media.duration;
+			}
 						
-			t.media.setSrc(t.options.adsPrerollMediaUrl);
+			t.media.setSrc(t.options.adsPrerollMediaUrl[t.options.indexPreroll]);
 			t.media.load();
 			
 			// if autoplay was on, or if the user pressed play 
@@ -177,7 +185,7 @@
 			
 			setTimeout(function() {
 				t.controls.find('.mejs-duration').html( 
-					mejs.Utility.secondsToTimeCode(newDuration, t.options.alwaysShowHours || newDuration > 3600, t.options.showTimecodeFrameCount,  t.options.framesPerSecond || 25)
+					mejs.Utility.secondsToTimeCode(newDuration, t.options)
 					);
 			}, 250);
 		},
@@ -190,12 +198,15 @@
 			
 			// turn off controls until the preroll is done
 			t.disableControls();
-			t.hideControls();
 			
 			// enable clicking through
-			if (t.options.adsPrerollAdUrl != '') {
-				t.adsLayer.show();
-				t.adsLayer.find('a').attr('href', t.options.adsPrerollAdUrl);
+			t.adsLayer.show();
+			if (t.options.adsPrerollAdUrl[t.options.indexPreroll] != '') {			
+				t.adsLayer.find('a').attr('href', t.options.adsPrerollAdUrl[t.options.indexPreroll]);
+			}
+			else {
+				t.adsLayer.find('a').attr('href', '#');
+				t.adsLayer.find('a').attr('target', '');
 			}
 			
 			// possibly allow the skip button to work
@@ -203,7 +214,7 @@
 				t.adsSkipBlock.show();
 
 				if (t.options.adsPrerollAdSkipSeconds > 0) {
-					t.adsSkipMessage.html('Skip in ' + t.options.adsPrerollAdSkipSeconds.toString() + ' seconds.').show();
+					t.adsSkipMessage.html(mejs.i18n.t('Skip in') + ' ' + t.options.adsPrerollAdSkipSeconds.toString() + ' ' + mejs.i18n.t('seconds') ).show();
 					t.adsSkipButton.hide();					
 				} else {
 					t.adsSkipMessage.hide();
@@ -228,7 +239,7 @@
 					t.adsSkipButton.show();
 					t.adsSkipMessage.hide();				
 				} else {
-					t.adsSkipMessage.html('Skip in ' + Math.round( t.options.adsPrerollAdSkipSeconds - t.media.currentTime ).toString() + ' seconds.')
+					t.adsSkipMessage.html(mejs.i18n.t('Skip in') + ' ' + Math.round( t.options.adsPrerollAdSkipSeconds - t.media.currentTime ).toString() + ' ' + mejs.i18n.t('seconds') )
 				}
 			
 			}
@@ -243,7 +254,11 @@
 
 			t.container.trigger('mejsprerollended');
 
-			t.adRestoreMainMedia();
+			t.options.indexPreroll++;
+			if (t.options.indexPreroll < t.options.adsPrerollMediaUrl.length) 
+				t.adsStartPreroll();
+			else
+				t.adRestoreMainMedia();
 		},
 		
 		adRestoreMainMedia: function() {
@@ -259,7 +274,6 @@
 			}, 10);
 			
 			t.enableControls();
-			t.showControls();	
 			
 			t.adsLayer.hide();				
 			
@@ -268,6 +282,8 @@
 			t.media.removeEventListener('timeupdate', 		t.adsPrerollUpdateProxy);
 			
 			t.container.trigger('mejsprerollmainstarted');
+
+
 		},
 
 		adsAdClick: function(e) {
@@ -291,8 +307,21 @@
 			t.container.trigger('mejsprerollskipclicked');
 			t.container.trigger('mejsprerollended');
 		
-			t.adRestoreMainMedia();
+			t.options.indexPreroll++;
+			if (t.options.indexPreroll < t.options.adsPrerollMediaUrl.length) 
+				t.adsStartPreroll();
+			else
+				t.adRestoreMainMedia();
 		},
+
+		// tells calling function if ads have finished running
+		prerollAdsFinished: function() {
+			var t = this;
+			if ( t.options.indexPreroll == t.options.adsPrerollMediaUrl.length )
+				return true;
+			else
+				return false;
+	 	},
 		
 		// fires off fake XHR requests
 		adsLoadUrl: function(url) {
@@ -306,6 +335,8 @@
 				img = null;
 			}
 		}
+
+
 		
 	});
 

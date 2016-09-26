@@ -116,7 +116,7 @@ function apigee_profile_updates_form_system_modules_alter(array &$form, array &$
           if (substr($module_name, 0, 1) == '#') {
             continue;
           }
-          if (isset($deprecated_modules[$module_name])) {
+          if (in_array($module_name, $deprecated_modules)) {
             $form['modules'][$package_name][$module_name]['name']['#markup'] .= ' <em>' . t('(Deprecated)') . '</em>';
             if (!$module['enable']['#default_value']) {
               $form['modules'][$package_name][$module_name]['enable']['#disabled'] = TRUE;

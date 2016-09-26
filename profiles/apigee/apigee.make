@@ -123,6 +123,8 @@ projects[context_condition_theme][version] = "1.0"
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
 projects[ctools][version] = "1.10"
+; see https://www.drupal.org/node/2645612
+projects[ctools][patch][2645612] = "https://www.drupal.org/files/issues/2645612-6.patch"
 
 ; Deprecated
 projects[date][type] = "module"
@@ -141,21 +143,21 @@ projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
 projects[ds][version] = "2.14"
 
-; Deprecated. Required by devconnect_download which is also deprecated.
+; Deprecated.
 projects[eck][type] = "module"
 projects[eck][subdir] = "contrib"
 projects[eck][version] = "2.0-rc8"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
-projects[entityreference][version] = "1.1"
+projects[entityreference][version] = "1.2"
 ; see https://www.drupal.org/node/2170193
 projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
 
 ; Enabled during profile install.
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
-projects[entity][version] = "1.7"
+projects[entity][version] = "1.8"
 
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
@@ -166,6 +168,8 @@ projects[environment_indicator][version] = "2.8"
 projects[faq][type] = "module"
 projects[faq][subdir] = "contrib"
 projects[faq][version] = "1.1"
+; see https://www.drupal.org/node/2646470
+projects[faq][patch][2646470] = "https://www.drupal.org/files/issues/faq-2646470-php-warning.patch"
 
 ; Enabled during profile install.
 projects[features][type] = "module"
@@ -765,7 +769,7 @@ libraries[insertpre][download][url] = "http://download.ckeditor.com/insertpre/re
 libraries[google-api-php-client][destination] = "libraries"
 libraries[google-api-php-client][directory_name] = "google-api-php-client"
 libraries[google-api-php-client][download][type] = "file"
-libraries[google-api-php-client][download][url] = "https://github.com/google/google-api-php-client/archive/1.1.6.tar.gz"
+libraries[google-api-php-client][download][url] = "https://github.com/google/google-api-php-client/archive/1.1.7.tar.gz"
 
 ; Used by devconnect_developer_apps. Can we update to the 4.0.x branch?
 libraries[highcharts][destination] = "libraries"
@@ -789,7 +793,7 @@ libraries[jquery_selectlist][download][url] = "http://odyniec.net/projects/selec
 libraries[datetimepicker][destination] = "libraries"
 libraries[datetimepicker][directory_name] = "datetimepicker"
 libraries[datetimepicker][download][type] = "file"
-libraries[datetimepicker][download][url] = "https://github.com/xdan/datetimepicker/archive/2.5.1.tar.gz"
+libraries[datetimepicker][download][url] = "https://github.com/xdan/datetimepicker/archive/2.5.4.tar.gz"
 
 ; Used by views_slideshow
 libraries[json2][destination] = "libraries"
@@ -807,19 +811,19 @@ libraries[maskmoney][download][url] = "https://raw.githubusercontent.com/plentz/
 libraries[mediaelement][destination] = "libraries"
 libraries[mediaelement][directory_name] = "mediaelement"
 libraries[mediaelement][download][type] = "file"
-libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement/archive/2.16.4.tar.gz"
+libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement/archive/2.22.1.tar.gz"
 
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.6.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.7.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"
 libraries[plupload][directory_name] = "plupload"
 libraries[plupload][download][type] = "file"
-libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/archive/v2.1.2.zip"
+libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/archive/v2.1.9.zip"
 
 ; Used by apachesolr
 libraries[SolrPhpClient][destination] = "libraries"

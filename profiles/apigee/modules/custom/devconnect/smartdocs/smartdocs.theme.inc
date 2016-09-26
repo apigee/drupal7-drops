@@ -360,7 +360,7 @@ function smartdocs_preprocess_smartdocs_method(&$vars) {
     $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_verbs');
     if ($vocab) {
       $terms = taxonomy_get_tree($vocab->vid);
-      $terms = array_reduce($terms, function($result, $item) {
+      $terms = array_reduce($terms, function ($result, $item) {
         $result[$item->tid] = $item;
         return $result;
       }, array());

@@ -498,8 +498,9 @@ function smartdocs_model_load($mid) {
       $args = array(
         '!model' => $mid,
         '!time' => number_format(microtime(TRUE) - $start, 4),
+        '!func' => __FUNCTION__,
       );
-      watchdog('smartdocs', __FUNCTION__ . ': Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
+      watchdog('smartdocs', '!func: Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
     }
   }
   catch (ResponseException $e) {
@@ -559,8 +560,9 @@ function smartdocs_revision_load($rev) {
           '!revision' => $rev,
           '!model' => $model->getUuid(),
           '!time' => number_format(microtime(TRUE) - $start, 4),
+          '!func' => __FUNCTION__,
         );
-        watchdog('smartdocs', __FUNCTION__ . ': Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+        watchdog('smartdocs', '!func: Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
       }
     }
     catch (ResponseException $e) {
@@ -637,8 +639,9 @@ function smartdocs_resource_load($res) {
           '!revision' => $revision->getRevisionNumber(),
           '!model' => $model->getUuid(),
           '!time' => number_format(microtime(TRUE) - $start, 4),
+          '!func' => __FUNCTION__,
         );
-        watchdog('smartdocs', __FUNCTION__ . ': Loaded resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+        watchdog('smartdocs', '!func: Loaded resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
       }
     }
     catch (ResponseException $e) {
@@ -698,8 +701,9 @@ function smartdocs_method_load($method_id) {
           '!revision' => $revision->getRevisionNumber(),
           '!model' => $model->getUuid(),
           '!time' => number_format(microtime(TRUE) - $start, 4),
+          '!func' => __FUNCTION__,
         );
-        watchdog('smartdocs', __FUNCTION__ . ': Loaded method !method of resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+        watchdog('smartdocs', '!func: Loaded method !method of resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
       }
     }
     catch (ResponseException $e) {
@@ -1038,7 +1042,9 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
 
   // Set a flag so that smartdocs_node_presave() is skipped.
   $node->method_already_created = TRUE;
+  module_invoke_all('smartdocs_method_node_presave', $node, $model, $revision, $resource, $method);
   node_save($node);
+  module_invoke_all('smartdocs_method_node_postsave', $node, $model, $revision, $resource, $method);
   if ($node->nid) {
     $record = array(
       'nid' => $node->nid,
@@ -1145,8 +1151,9 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
             '!revision' => $revision,
             '!resource' => $resource,
             '!time' => number_format(microtime(TRUE) - $start, 4),
+            '!func' => __FUNCTION__,
           );
-          watchdog('smartdocs', __FUNCTION__ . ': Loaded resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+          watchdog('smartdocs', '!func: Loaded resource !resource of revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
         }
         $resource_path = $resource_obj->getPath();
         $resource_base_url = $resource_obj->getBaseUrl();
@@ -1303,8 +1310,9 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
           '!revision' => $revision,
           '!resource' => $resource,
           '!time' => number_format(microtime(TRUE) - $start, 4),
+          '!func' => __FUNCTION__,
         );
-        watchdog('smartdocs', __FUNCTION__ . ': Loaded resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
+        watchdog('smartdocs', '!func: Loaded resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
       }
     }
     catch (Exception $e) {
@@ -1356,8 +1364,9 @@ function smartdocs_node_presave($node) {
           '!resource' => $resource_uuid,
           '!method' => $method_obj->getUuid(),
           '!time' => number_format(microtime(TRUE) - $start, 4),
+          '!func' => __FUNCTION__,
         );
-        watchdog('smartdocs', __FUNCTION__ . ': Loaded method !method of resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
+        watchdog('smartdocs', '!func: Loaded method !method of resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
       }
     }
     catch (Exception $e) {
@@ -1480,6 +1489,7 @@ function smartdocs_node_presave($node) {
   $new_mpid = $model_name . '|' . $method_obj->getName();
 
   try {
+    module_invoke_all('smartdocs_method_presave', $method_obj, $model_name, $revision_num, $resource_uuid, $is_update);
     $start = microtime(TRUE);
     $method_obj->save($is_update);
     if ($log_transaction_time) {
@@ -1492,6 +1502,7 @@ function smartdocs_node_presave($node) {
       );
       watchdog('smartdocs', 'Saved method !method in resource !resource of revision !revision of model !model in !time seconds', $args, WATCHDOG_INFO);
     }
+    module_invoke_all('smartdocs_method_postsave', $method_obj, $model_name, $revision_num, $resource_uuid, $is_update);
     drupal_set_message(t('Modeling API was successfully updated.'));
     // Make sure node has method_uuid populated.
     if (!$is_update) {
@@ -1644,8 +1655,9 @@ function smartdocs_taxonomy_term_insert($term) {
       $args = array(
         '!model' => $model->getUuid(),
         '!time' => number_format(microtime(TRUE) - $start, 4),
+        '!func' => __FUNCTION__,
       );
-      watchdog('smartdocs', __FUNCTION__ . ': Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
+      watchdog('smartdocs', '!func: Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
     }
     smartdocs_create_model_view($model);
   }
@@ -1705,9 +1717,8 @@ function smartdocs_create_model_view($model) {
     // Where possible, create a term for this model. We should never get this
     // far in an ideal world, but there may be bad legacy data out there.
     if (empty($term)) {
-      $vocabs = taxonomy_vocabulary_machine_name_load('smartdocs_models');
-      if (!empty($vocabs)) {
-        $vocab = reset($vocabs);
+      $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_models');
+      if (!empty($vocab)) {
         $term = new stdClass();
         $term->vid = $vocab->vid;
         $term->name = $model_name;
@@ -1723,8 +1734,13 @@ function smartdocs_create_model_view($model) {
   if (empty($term)) {
     return;
   }
-
   $view = views_get_view('smartdocs_methods');
+  // During profile-install via drush, the above might return NULL.
+  if (empty($view)) {
+    module_load_include('inc', 'smartdocs', 'smartdocs.views_default');
+    $views = smartdocs_views_default_views();
+    $view = $views['smartdocs_methods'];
+  }
 
   // Unset the vid so that when we save, we perform an insert rather than an
   // update.

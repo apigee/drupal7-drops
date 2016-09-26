@@ -239,13 +239,13 @@ function faq_form_faq_general_settings_form_alter(&$form, &$form_state) {
  */
 function faq_insert($node) {
   $items = field_get_items('node', $node, 'field_detailed_question');
-  $detailed_question = reset($items);
+  $detailed_question = !empty($items) ? $items[0]['value'] : '';
   db_insert('faq_questions')
     ->fields(array(
       'nid' => $node->nid,
       'vid' => $node->vid,
       'question' => $node->title,
-      'detailed_question' => $detailed_question['value'],
+      'detailed_question' => $detailed_question,
     ))
     ->execute();
 }

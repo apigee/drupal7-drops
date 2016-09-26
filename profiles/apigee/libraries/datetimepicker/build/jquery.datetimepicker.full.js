@@ -575,7 +575,7 @@ var DateFormatter;
         }
     };
 })();/**
- * @preserve jQuery DateTimePicker plugin v2.4.9
+ * @preserve jQuery DateTimePicker plugin v2.5.4
  * @homepage http://xdsoft.net/jqplugins/datetimepicker/
  * @author Chupurnov Valeriy (<chupurnov@gmail.com>)
  */
@@ -1091,6 +1091,15 @@ var DateFormatter;
 					"Dumengia", "Glindesdi", "Mardi", "Mesemna", "Gievgia", "Venderdi", "Sonda"
 				]
 			},
+			ka: { // Georgian
+				months: [
+					'იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'
+				],
+				dayOfWeekShort: [
+					"კვ", "ორშ", "სამშ", "ოთხ", "ხუთ", "პარ", "შაბ"
+				],
+				dayOfWeek: ["კვირა", "ორშაბათი", "სამშაბათი", "ოთხშაბათი", "ხუთშაბათი", "პარასკევი", "შაბათი"]
+			},
 		},
 		value: '',
 		rtl: false,
@@ -1180,31 +1189,31 @@ var DateFormatter;
 		beforeShowDay: null,
 
 		enterLikeTab: true,
-        showApplyButton: false
+		showApplyButton: false
 	};
 
 	var dateHelper = null,
 		globalLocaleDefault = 'en',
 		globalLocale = 'en';
-	
+
 	var dateFormatterOptionsDefault = {
 		meridiem: ['AM', 'PM']
 	};
-	
+
 	var initDateFormatter = function(){
 		var locale = default_options.i18n[globalLocale],
 			opts = {
 				days: locale.dayOfWeek,
 				daysShort: locale.dayOfWeekShort,
 				months: locale.months,
-				monthsShort: $.map(locale.months, function(n){ return n.substring(0, 3) }),			
+				monthsShort: $.map(locale.months, function(n){ return n.substring(0, 3) }),
 			};
-		
+
 	 	dateHelper = new DateFormatter({
 			dateSettings: $.extend({}, dateFormatterOptionsDefault, opts)
 		});
 	};
-		
+
 	// for locale settings
 	$.datetimepicker = {
 		setLocale: function(locale){
@@ -1214,6 +1223,9 @@ var DateFormatter;
 				// reinit date formatter
 				initDateFormatter();
 			}
+		},
+		setDateFormatter: function(dateFormatter) {
+			dateHelper = dateFormatter;
 		},
 		RFC_2822: 'D, d M Y H:i:s O',
 		ATOM: 'Y-m-d\TH:i:sP',
@@ -1225,7 +1237,7 @@ var DateFormatter;
 		RSS: 'D, d M Y H:i:s O',
 		W3C: 'Y-m-d\TH:i:sP'
 	};
-	
+
 	// first init date formatter
 	initDateFormatter();
 
@@ -1276,7 +1288,6 @@ var DateFormatter;
 					}
 					return out;
 				},
-				move = 0,
 				timebox,
 				parentHeight,
 				height,
@@ -1346,7 +1357,7 @@ var DateFormatter;
 							calcOffset(event);
 						}
 					})
-					.on('touchend touchcancel', function (event) {
+					.on('touchend touchcancel', function () {
 						touchStart =  false;
 						startTopScroll = 0;
 					});
@@ -1408,7 +1419,7 @@ var DateFormatter;
 					}
 				});
 
-				timeboxparent.on('touchend touchcancel', function (event) {
+				timeboxparent.on('touchend touchcancel', function () {
 					start = false;
 					startTop = 0;
 				});
@@ -1419,7 +1430,7 @@ var DateFormatter;
 
 	$.fn.datetimepicker = function (opt, opt2) {
 		var result = this,
-            KEY0 = 48,
+			KEY0 = 48,
 			KEY9 = 57,
 			_KEY0 = 96,
 			_KEY9 = 105,
@@ -1448,7 +1459,7 @@ var DateFormatter;
 
 			lazyInit = function (input) {
 				input
-					.on('open.xdsoft focusin.xdsoft mousedown.xdsoft touchstart', function initOnActionCallback(event) {
+					.on('open.xdsoft focusin.xdsoft mousedown.xdsoft touchstart', function initOnActionCallback() {
 						if (input.is(':disabled') || input.data('xdsoft_datetimepicker')) {
 							return;
 						}
@@ -1477,20 +1488,21 @@ var DateFormatter;
 				timepicker = $('<div class="xdsoft_timepicker active"><button type="button" class="xdsoft_prev"></button><div class="xdsoft_time_box"></div><button type="button" class="xdsoft_next"></button></div>'),
 				timeboxparent = timepicker.find('.xdsoft_time_box').eq(0),
 				timebox = $('<div class="xdsoft_time_variant"></div>'),
-                applyButton = $('<button type="button" class="xdsoft_save_selected blue-gradient-button">Save Selected</button>'),
+				applyButton = $('<button type="button" class="xdsoft_save_selected blue-gradient-button">Save Selected</button>'),
 
 				monthselect = $('<div class="xdsoft_select xdsoft_monthselect"><div></div></div>'),
 				yearselect = $('<div class="xdsoft_select xdsoft_yearselect"><div></div></div>'),
 				triggerAfterOpen = false,
 				XDSoft_datetime,
-	
+
 				xchangeTimer,
 				timerclick,
 				current_time_index,
 				setPos,
 				timer = 0,
-				timer1 = 0,
-				_xdsoft_datetime;
+				_xdsoft_datetime,
+				forEachAncestorOf,
+				throttle;
 
 			if (options.id) {
 				datetimepicker.attr('id', options.id);
@@ -1553,7 +1565,7 @@ var DateFormatter;
 					event.stopPropagation();
 					event.preventDefault();
 				})
-				.on('touchstart mousedown.xdsoft', '.xdsoft_option', function (event) {
+				.on('touchstart mousedown.xdsoft', '.xdsoft_option', function () {
 					if (_xdsoft_datetime.currentTime === undefined || _xdsoft_datetime.currentTime === null) {
 						_xdsoft_datetime.currentTime = _xdsoft_datetime.now();
 					}
@@ -1576,52 +1588,12 @@ var DateFormatter;
 				});
 
 			datetimepicker.getValue = function () {
-                return _xdsoft_datetime.getCurrentTime();
-            };
+				return _xdsoft_datetime.getCurrentTime();
+			};
 
 			datetimepicker.setOptions = function (_options) {
-				var highlightedDates = {},
-					getCaretPos = function (input) {
-						try {
-							if (document.selection && document.selection.createRange) {
-								var range = document.selection.createRange();
-								return range.getBookmark().charCodeAt(2) - 2;
-							}
-							if (input.setSelectionRange) {
-								return input.selectionStart;
-							}
-						} catch (e) {
-							return 0;
-						}
-					},
-					setCaretPos = function (node, pos) {
-						node = (typeof node === "string" || node instanceof String) ? document.getElementById(node) : node;
-						if (!node) {
-							return false;
-						}
-						if (node.createTextRange) {
-							var textRange = node.createTextRange();
-							textRange.collapse(true);
-							textRange.moveEnd('character', pos);
-							textRange.moveStart('character', pos);
-							textRange.select();
-							return true;
-						}
-						if (node.setSelectionRange) {
-							node.setSelectionRange(pos, pos);
-							return true;
-						}
-						return false;
-					},
-					isValidValue = function (mask, value) {
-						var reg = mask
-							.replace(/([\[\]\/\{\}\(\)\-\.\+]{1})/g, '\\$1')
-							.replace(/_/g, '{digit+}')
-							.replace(/([0-9]{1})/g, '{digit$1}')
-							.replace(/\{digit([0-9]{1})\}/g, '[0-$1_]{1}')
-							.replace(/\{digit[\+]\}/g, '[0-9_]{1}');
-						return (new RegExp(reg)).test(value);
-					};
+				var highlightedDates = {};
+
 				options = $.extend(true, {}, options, _options);
 
 				if (_options.allowTimes && $.isArray(_options.allowTimes) && _options.allowTimes.length) {
@@ -1639,7 +1611,7 @@ var DateFormatter;
 				if (_options.allowDateRe && Object.prototype.toString.call(_options.allowDateRe)==="[object String]") {
 					options.allowDateRe = new RegExp(_options.allowDateRe);
 				}
-				
+
 				if (_options.highlightedDates && $.isArray(_options.highlightedDates) && _options.highlightedDates.length) {
 					$.each(_options.highlightedDates, function (index, value) {
 						var splitData = $.map(value.split(','), $.trim),
@@ -1706,7 +1678,7 @@ var DateFormatter;
 				}
 
 				if (_options.disabledWeekDays && $.isArray(_options.disabledWeekDays) && _options.disabledWeekDays.length) {
-				    options.disabledWeekDays = $.extend(true, [], _options.disabledWeekDays);
+					options.disabledWeekDays = $.extend(true, [], _options.disabledWeekDays);
 				}
 
 				if ((options.open || options.opened) && (!options.inline)) {
@@ -1775,105 +1747,37 @@ var DateFormatter;
 					.find('.' + options.next)
 						.css('visibility', !options.nextButton ? 'hidden' : 'visible');
 
-				if (options.mask) {
-					input.off('keydown.xdsoft');
+				setMask(options);
 
-					if (options.mask === true) {
-						options.mask = options.format
-							.replace(/Y/g, '9999')
-							.replace(/F/g, '9999')
-							.replace(/m/g, '19')
-							.replace(/d/g, '39')
-							.replace(/H/g, '29')
-							.replace(/i/g, '59')
-							.replace(/s/g, '59');
-					}
-
-					if ($.type(options.mask) === 'string') {
-						if (!isValidValue(options.mask, input.val())) {
-							input.val(options.mask.replace(/[0-9]/g, '_'));
-							setCaretPos(input[0], 0);
-						}
-
-						input.on('keydown.xdsoft', function (event) {
-							var val = this.value,
-								key = event.which,
-								pos,
-								digit;
-
-							if (((key >= KEY0 && key <= KEY9) || (key >= _KEY0 && key <= _KEY9)) || (key === BACKSPACE || key === DEL)) {
-								pos = getCaretPos(this);
-								digit = (key !== BACKSPACE && key !== DEL) ? String.fromCharCode((_KEY0 <= key && key <= _KEY9) ? key - KEY0 : key) : '_';
-
-								if ((key === BACKSPACE || key === DEL) && pos) {
-									pos -= 1;
-									digit = '_';
-								}
-
-								while (/[^0-9_]/.test(options.mask.substr(pos, 1)) && pos < options.mask.length && pos > 0) {
-									pos += (key === BACKSPACE || key === DEL) ? -1 : 1;
-								}
-
-								val = val.substr(0, pos) + digit + val.substr(pos + 1);
-								if ($.trim(val) === '') {
-									val = options.mask.replace(/[0-9]/g, '_');
-								} else {
-									if (pos === options.mask.length) {
-										event.preventDefault();
-										return false;
-									}
-								}
-
-								pos += (key === BACKSPACE || key === DEL) ? 0 : 1;
-								while (/[^0-9_]/.test(options.mask.substr(pos, 1)) && pos < options.mask.length && pos > 0) {
-									pos += (key === BACKSPACE || key === DEL) ? -1 : 1;
-								}
-
-								if (isValidValue(options.mask, val)) {
-									this.value = val;
-									setCaretPos(this, pos);
-								} else if ($.trim(val) === '') {
-									this.value = options.mask.replace(/[0-9]/g, '_');
-								} else {
-									input.trigger('error_input.xdsoft');
-								}
-							} else {
-								if (([AKEY, CKEY, VKEY, ZKEY, YKEY].indexOf(key) !== -1 && ctrlDown) || [ESC, ARROWUP, ARROWDOWN, ARROWLEFT, ARROWRIGHT, F5, CTRLKEY, TAB, ENTER].indexOf(key) !== -1) {
-									return true;
-								}
-							}
-
-							event.preventDefault();
-							return false;
-						});
-					}
-				}
 				if (options.validateOnBlur) {
 					input
 						.off('blur.xdsoft')
 						.on('blur.xdsoft', function () {
-							if (options.allowBlank && !$.trim($(this).val()).length) {
+							if (options.allowBlank && (!$.trim($(this).val()).length || (typeof options.mask == "string" && $.trim($(this).val()) === options.mask.replace(/[0-9]/g, '_')))) {
 								$(this).val(null);
 								datetimepicker.data('xdsoft_datetime').empty();
-							} else if (!dateHelper.parseDate($(this).val(), options.format)) {
-								var splittedHours   = +([$(this).val()[0], $(this).val()[1]].join('')),
-									splittedMinutes = +([$(this).val()[2], $(this).val()[3]].join(''));
-
-								// parse the numbers as 0312 => 03:12
-								if (!options.datepicker && options.timepicker && splittedHours >= 0 && splittedHours < 24 && splittedMinutes >= 0 && splittedMinutes < 60) {
-									$(this).val([splittedHours, splittedMinutes].map(function (item) {
-										return item > 9 ? item : '0' + item;
-									}).join(':'));
-								} else {
-									$(this).val(dateHelper.formatDate(_xdsoft_datetime.now(), options.format));
-								}
-
-								datetimepicker.data('xdsoft_datetime').setCurrentTime($(this).val());
 							} else {
+								var d = dateHelper.parseDate($(this).val(), options.format);
+								if (d) { // parseDate() may skip some invalid parts like date or time, so make it clear for user: show parsed date/time
+									$(this).val(dateHelper.formatDate(d, options.format));
+								} else {
+									var splittedHours   = +([$(this).val()[0], $(this).val()[1]].join('')),
+										splittedMinutes = +([$(this).val()[2], $(this).val()[3]].join(''));
+	
+									// parse the numbers as 0312 => 03:12
+									if (!options.datepicker && options.timepicker && splittedHours >= 0 && splittedHours < 24 && splittedMinutes >= 0 && splittedMinutes < 60) {
+										$(this).val([splittedHours, splittedMinutes].map(function (item) {
+											return item > 9 ? item : '0' + item;
+										}).join(':'));
+									} else {
+										$(this).val(dateHelper.formatDate(_xdsoft_datetime.now(), options.format));
+									}
+								}
 								datetimepicker.data('xdsoft_datetime').setCurrentTime($(this).val());
 							}
 
 							datetimepicker.trigger('changedatetime.xdsoft');
+							datetimepicker.trigger('close.xdsoft');
 						});
 				}
 				options.dayOfWeekStartPrev = (options.dayOfWeekStart === 0) ? 6 : options.dayOfWeekStart - 1;
@@ -1951,8 +1855,20 @@ var DateFormatter;
 					return !isNaN(d.getTime());
 				};
 
-				_this.setCurrentTime = function (dTime) {
-					_this.currentTime = (typeof dTime === 'string') ? _this.strToDateTime(dTime) : _this.isValidDate(dTime) ? dTime : _this.now();
+				_this.setCurrentTime = function (dTime, requireValidDate) {
+					if (typeof dTime === 'string') {
+						_this.currentTime = _this.strToDateTime(dTime);
+					}
+					else if (_this.isValidDate(dTime)) {
+						_this.currentTime = dTime;
+					}
+					else if (!dTime && !requireValidDate && options.allowBlank) {
+						_this.currentTime = null;
+					}
+					else {
+						_this.currentTime = _this.now();
+					}
+					
 					datetimepicker.trigger('xchange.xdsoft');
 				};
 
@@ -2095,17 +2011,17 @@ var DateFormatter;
 			_xdsoft_datetime = new XDSoft_datetime();
 
 			applyButton.on('touchend click', function (e) {//pathbrite
-                e.preventDefault();
-                datetimepicker.data('changed', true);
-                _xdsoft_datetime.setCurrentTime(getCurrentValue());
-                input.val(_xdsoft_datetime.str());
-                datetimepicker.trigger('close.xdsoft');
-            });
+				e.preventDefault();
+				datetimepicker.data('changed', true);
+				_xdsoft_datetime.setCurrentTime(getCurrentValue());
+				input.val(_xdsoft_datetime.str());
+				datetimepicker.trigger('close.xdsoft');
+			});
 			mounth_picker
 				.find('.xdsoft_today_button')
 				.on('touchend mousedown.xdsoft', function () {
 					datetimepicker.data('changed', true);
-					_xdsoft_datetime.setCurrentTime(0);
+					_xdsoft_datetime.setCurrentTime(0, true);
 					datetimepicker.trigger('afterOpen.xdsoft');
 				}).on('dblclick.xdsoft', function () {
 					var currentDate = _xdsoft_datetime.getCurrentTime(), minDate, maxDate;
@@ -2167,7 +2083,20 @@ var DateFormatter;
 						} else if ($this.hasClass(options.prev) && top - options.timeHeightInTimePicker >= 0) {
 							timebox.css('marginTop', '-' + (top - options.timeHeightInTimePicker) + 'px');
 						}
-						timeboxparent.trigger('scroll_element.xdsoft_scroller', [Math.abs(parseInt(timebox.css('marginTop'), 10) / (height - pheight))]);
+                        /**
+                         * Fixed bug:
+                         * When using css3 transition, it will cause a bug that you cannot scroll the timepicker list.
+                         * The reason is that the transition-duration time, if you set it to 0, all things fine, otherwise, this
+                         * would cause a bug when you use jquery.css method.
+                         * Let's say: * { transition: all .5s ease; }
+                         * jquery timebox.css('marginTop') will return the original value which is before you clicking the next/prev button,
+                         * meanwhile the timebox[0].style.marginTop will return the right value which is after you clicking the
+                         * next/prev button.
+                         * 
+                         * What we should do:
+                         * Replace timebox.css('marginTop') with timebox[0].style.marginTop.
+                         */
+                        timeboxparent.trigger('scroll_element.xdsoft_scroller', [Math.abs(parseInt(timebox[0].style.marginTop, 10) / (height - pheight))]);
 						period = (period > 10) ? 10 : period - 10;
 						if (!stop) {
 							timer = setTimeout(arguments_callee4, v || period);
@@ -2189,6 +2118,10 @@ var DateFormatter;
 					xchangeTimer = setTimeout(function () {
 
 						if (_xdsoft_datetime.currentTime === undefined || _xdsoft_datetime.currentTime === null) {
+							//In case blanks are allowed, delay construction until we have a valid date 
+							if (options.allowBlank)
+								return;
+								
 							_xdsoft_datetime.currentTime = _xdsoft_datetime.now();
 						}
 
@@ -2260,11 +2193,11 @@ var DateFormatter;
 							}
 
 							if(options.allowDateRe && Object.prototype.toString.call(options.allowDateRe) === "[object RegExp]"){
-								if(!options.allowDateRe.test(start.dateFormat(options.formatDate))){
+								if(!options.allowDateRe.test(dateHelper.formatDate(start, options.formatDate))){
 									classes.push('xdsoft_disabled');
 								}
 							} else if(options.allowDates && options.allowDates.length>0){
-								if(options.allowDates.indexOf(start.dateFormat(options.formatDate)) === -1){
+								if(options.allowDates.indexOf(dateHelper.formatDate(start, options.formatDate)) === -1){
 									classes.push('xdsoft_disabled');
 								}
 							} else if ((maxDate !== false && start > maxDate) || (minDate !== false && start < minDate) || (customDateSettings && customDateSettings[0] === false)) {
@@ -2272,7 +2205,9 @@ var DateFormatter;
 							} else if (options.disabledDates.indexOf(dateHelper.formatDate(start, options.formatDate)) !== -1) {
 								classes.push('xdsoft_disabled');
 							} else if (options.disabledWeekDays.indexOf(day) !== -1) {
-							    classes.push('xdsoft_disabled');
+								classes.push('xdsoft_disabled');
+							}else if (input.is('[readonly]')) {
+								classes.push('xdsoft_disabled');
 							}
 
 							if (customDateSettings && customDateSettings[1] !== "") {
@@ -2346,11 +2281,12 @@ var DateFormatter;
 							optionDateTime = new Date(_xdsoft_datetime.currentTime);
 							optionDateTime.setHours(h);
 							optionDateTime.setMinutes(m);
-							classes = [];
+							classes = [];			
 							if ((options.minDateTime !== false && options.minDateTime > optionDateTime) || (options.maxTime !== false && _xdsoft_datetime.strtotime(options.maxTime).getTime() < now.getTime()) || (options.minTime !== false && _xdsoft_datetime.strtotime(options.minTime).getTime() > now.getTime())) {
 								classes.push('xdsoft_disabled');
-							}
-							if ((options.minDateTime !== false && options.minDateTime > optionDateTime) || ((options.disabledMinTime !== false && now.getTime() > _xdsoft_datetime.strtotime(options.disabledMinTime).getTime()) && (options.disabledMaxTime !== false && now.getTime() < _xdsoft_datetime.strtotime(options.disabledMaxTime).getTime()))) {
+							} else if ((options.minDateTime !== false && options.minDateTime > optionDateTime) || ((options.disabledMinTime !== false && now.getTime() > _xdsoft_datetime.strtotime(options.disabledMinTime).getTime()) && (options.disabledMaxTime !== false && now.getTime() < _xdsoft_datetime.strtotime(options.disabledMaxTime).getTime()))) {
+								classes.push('xdsoft_disabled');
+							} else if (input.is('[readonly]')) {
 								classes.push('xdsoft_disabled');
 							}
 
@@ -2504,7 +2440,6 @@ var DateFormatter;
 					}
 				});
 
-
 			datepicker
 				.on('mousewheel.xdsoft', function (event) {
 					if (!options.scrollMonth) {
@@ -2567,59 +2502,131 @@ var DateFormatter;
 
 			current_time_index = 0;
 
-			setPos = function () {
-				/**
-                 * 修复输入框在window最右边，且输入框的宽度小于日期控件宽度情况下，日期控件显示不全的bug。
-                 * Bug fixed - The datetimepicker will overflow-y when the width of the date input less than its, which
-                 * could causes part of the datetimepicker being hidden.
-                 * by Soon start
-                 */
-                var offset = datetimepicker.data('input').offset(),
-                    datetimepickerelement = datetimepicker.data('input')[0],
-                    top = offset.top + datetimepickerelement.offsetHeight - 1,
-                    left = offset.left,
-                    position = "absolute",
-                    node;
-
-                if ((document.documentElement.clientWidth - offset.left) < datepicker.parent().outerWidth(true)) {
-                    var diff = datepicker.parent().outerWidth(true) - datetimepickerelement.offsetWidth;
-                    left = left - diff;
-                }
-                /**
-                 * by Soon end
-                 */
-				if (datetimepicker.data('input').parent().css('direction') == 'rtl')
-					left -= (datetimepicker.outerWidth() - datetimepicker.data('input').outerWidth());
-				if (options.fixed) {
-					top -= $(window).scrollTop();
-					left -= $(window).scrollLeft();
-					position = "fixed";
-				} else {
-					if (top + datetimepickerelement.offsetHeight > $(window).height() + $(window).scrollTop()) {
-						top = offset.top - datetimepickerelement.offsetHeight + 1;
-					}
-					if (top < 0) {
-						top = 0;
-					}
-					if (left + datetimepickerelement.offsetWidth > $(window).width()) {
-						left = $(window).width() - datetimepickerelement.offsetWidth;
-					}
-				}
-
-				node = datetimepicker[0];
+			/**
+			 * Runs the callback for each of the specified node's ancestors.
+			 *
+			 * Return FALSE from the callback to stop ascending.
+			 *
+			 * @param {DOMNode} node
+			 * @param {Function} callback
+			 * @returns {undefined}
+			 */
+			forEachAncestorOf = function (node, callback) {
 				do {
 					node = node.parentNode;
-					if (window.getComputedStyle(node).getPropertyValue('position') === 'relative' && $(window).width() >= node.offsetWidth) {
-						left = left - (($(window).width() - node.offsetWidth) / 2);
+
+					if (callback(node) === false) {
 						break;
 					}
 				} while (node.nodeName !== 'HTML');
-				datetimepicker.css({
-					left: left,
-					top: top,
-					position: position
-				});
 			};
+
+			/**
+			 * Sets the position of the picker.
+			 *
+			 * @returns {undefined}
+			 */
+			setPos = function () {
+				var dateInputOffset,
+					dateInputElem,
+					verticalPosition,
+					left,
+					position,
+					datetimepickerElem,
+					dateInputHasFixedAncestor,
+					$dateInput,
+					windowWidth,
+					verticalAnchorEdge,
+					datetimepickerCss,
+					windowHeight,
+					windowScrollTop;
+
+				$dateInput = datetimepicker.data('input');
+				dateInputOffset = $dateInput.offset();
+				dateInputElem = $dateInput[0];
+
+				verticalAnchorEdge = 'top';
+				verticalPosition = (dateInputOffset.top + dateInputElem.offsetHeight) - 1;
+				left = dateInputOffset.left;
+				position = "absolute";
+
+				windowWidth = $(window).width();
+				windowHeight = $(window).height();
+				windowScrollTop = $(window).scrollTop();
+
+				if ((document.documentElement.clientWidth - dateInputOffset.left) < datepicker.parent().outerWidth(true)) {
+					var diff = datepicker.parent().outerWidth(true) - dateInputElem.offsetWidth;
+					left = left - diff;
+				}
+
+				if ($dateInput.parent().css('direction') === 'rtl') {
+					left -= (datetimepicker.outerWidth() - $dateInput.outerWidth());
+				}
+
+				if (options.fixed) {
+					verticalPosition -= windowScrollTop;
+					left -= $(window).scrollLeft();
+					position = "fixed";
+				} else {
+					dateInputHasFixedAncestor = false;
+
+					forEachAncestorOf(dateInputElem, function (ancestorNode) {
+						if (window.getComputedStyle(ancestorNode).getPropertyValue('position') === 'fixed') {
+							dateInputHasFixedAncestor = true;
+							return false;
+						}
+					});
+
+					if (dateInputHasFixedAncestor) {
+						position = 'fixed';
+
+						//If the picker won't fit entirely within the viewport then display it above the date input.
+						if (verticalPosition + datetimepicker.outerHeight() > windowHeight + windowScrollTop) {
+							verticalAnchorEdge = 'bottom';
+							verticalPosition = (windowHeight + windowScrollTop) - dateInputOffset.top;
+						} else {
+							verticalPosition -= windowScrollTop;
+						}
+					} else {
+						if (verticalPosition + dateInputElem.offsetHeight > windowHeight + windowScrollTop) {
+							verticalPosition = dateInputOffset.top - dateInputElem.offsetHeight + 1;
+						}
+					}
+
+					if (verticalPosition < 0) {
+						verticalPosition = 0;
+					}
+
+					if (left + dateInputElem.offsetWidth > windowWidth) {
+						left = windowWidth - dateInputElem.offsetWidth;
+					}
+				}
+
+				datetimepickerElem = datetimepicker[0];
+
+				forEachAncestorOf(datetimepickerElem, function (ancestorNode) {
+					var ancestorNodePosition;
+
+					ancestorNodePosition = window.getComputedStyle(ancestorNode).getPropertyValue('position');
+
+					if (ancestorNodePosition === 'relative' && windowWidth >= ancestorNode.offsetWidth) {
+						left = left - ((windowWidth - ancestorNode.offsetWidth) / 2);
+						return false;
+					}
+				});
+
+				datetimepickerCss = {
+					position: position,
+					left: left,
+					top: '',  //Initialize to prevent previous values interfering with new ones.
+					bottom: ''  //Initialize to prevent previous values interfering with new ones.
+				};
+
+				datetimepickerCss[verticalAnchorEdge] = verticalPosition;
+
+				datetimepicker.css(datetimepickerCss);
+			};
+
 			datetimepicker
 				.on('open.xdsoft', function (event) {
 					var onShow = true;
@@ -2655,7 +2662,7 @@ var DateFormatter;
 					}
 					event.stopPropagation();
 				})
-				.on('toggle.xdsoft', function (event) {
+				.on('toggle.xdsoft', function () {
 					if (datetimepicker.is(':visible')) {
 						datetimepicker.trigger('close.xdsoft');
 					} else {
@@ -2665,7 +2672,6 @@ var DateFormatter;
 				.data('input', input);
 
 			timer = 0;
-			timer1 = 0;
 
 			datetimepicker.data('xdsoft_datetime', _xdsoft_datetime);
 			datetimepicker.setOptions(options);
@@ -2698,11 +2704,139 @@ var DateFormatter;
 				return ct || 0;
 			}
 
+			function setMask(options) {
+
+				var isValidValue = function (mask, value) {
+					var reg = mask
+						.replace(/([\[\]\/\{\}\(\)\-\.\+]{1})/g, '\\$1')
+						.replace(/_/g, '{digit+}')
+						.replace(/([0-9]{1})/g, '{digit$1}')
+						.replace(/\{digit([0-9]{1})\}/g, '[0-$1_]{1}')
+						.replace(/\{digit[\+]\}/g, '[0-9_]{1}');
+					return (new RegExp(reg)).test(value);
+				},
+				getCaretPos = function (input) {
+					try {
+						if (document.selection && document.selection.createRange) {
+							var range = document.selection.createRange();
+							return range.getBookmark().charCodeAt(2) - 2;
+						}
+						if (input.setSelectionRange) {
+							return input.selectionStart;
+						}
+					} catch (e) {
+						return 0;
+					}
+				},
+				setCaretPos = function (node, pos) {
+					node = (typeof node === "string" || node instanceof String) ? document.getElementById(node) : node;
+					if (!node) {
+						return false;
+					}
+					if (node.createTextRange) {
+						var textRange = node.createTextRange();
+						textRange.collapse(true);
+						textRange.moveEnd('character', pos);
+						textRange.moveStart('character', pos);
+						textRange.select();
+						return true;
+					}
+					if (node.setSelectionRange) {
+						node.setSelectionRange(pos, pos);
+						return true;
+					}
+					return false;
+				};
+				if(options.mask) {
+					input.off('keydown.xdsoft');
+				}
+				if (options.mask === true) {
+														if (typeof moment != 'undefined') {
+																	options.mask = options.format
+																			.replace(/Y{4}/g, '9999')
+																			.replace(/Y{2}/g, '99')
+																			.replace(/M{2}/g, '19')
+																			.replace(/D{2}/g, '39')
+																			.replace(/H{2}/g, '29')
+																			.replace(/m{2}/g, '59')
+																			.replace(/s{2}/g, '59');
+														} else {
+																	options.mask = options.format
+																			.replace(/Y/g, '9999')
+																			.replace(/F/g, '9999')
+																			.replace(/m/g, '19')
+																			.replace(/d/g, '39')
+																			.replace(/H/g, '29')
+																			.replace(/i/g, '59')
+																			.replace(/s/g, '59');
+														}
+				}
+
+				if ($.type(options.mask) === 'string') {
+					if (!isValidValue(options.mask, input.val())) {
+						input.val(options.mask.replace(/[0-9]/g, '_'));
+						setCaretPos(input[0], 0);
+					}
+
+					input.on('keydown.xdsoft', function (event) {
+						var val = this.value,
+							key = event.which,
+							pos,
+							digit;
+
+						if (((key >= KEY0 && key <= KEY9) || (key >= _KEY0 && key <= _KEY9)) || (key === BACKSPACE || key === DEL)) {
+							pos = getCaretPos(this);
+							digit = (key !== BACKSPACE && key !== DEL) ? String.fromCharCode((_KEY0 <= key && key <= _KEY9) ? key - KEY0 : key) : '_';
+
+							if ((key === BACKSPACE || key === DEL) && pos) {
+								pos -= 1;
+								digit = '_';
+							}
+
+							while (/[^0-9_]/.test(options.mask.substr(pos, 1)) && pos < options.mask.length && pos > 0) {
+								pos += (key === BACKSPACE || key === DEL) ? -1 : 1;
+							}
+
+							val = val.substr(0, pos) + digit + val.substr(pos + 1);
+							if ($.trim(val) === '') {
+								val = options.mask.replace(/[0-9]/g, '_');
+							} else {
+								if (pos === options.mask.length) {
+									event.preventDefault();
+									return false;
+								}
+							}
+
+							pos += (key === BACKSPACE || key === DEL) ? 0 : 1;
+							while (/[^0-9_]/.test(options.mask.substr(pos, 1)) && pos < options.mask.length && pos > 0) {
+								pos += (key === BACKSPACE || key === DEL) ? -1 : 1;
+							}
+
+							if (isValidValue(options.mask, val)) {
+								this.value = val;
+								setCaretPos(this, pos);
+							} else if ($.trim(val) === '') {
+								this.value = options.mask.replace(/[0-9]/g, '_');
+							} else {
+								input.trigger('error_input.xdsoft');
+							}
+						} else {
+							if (([AKEY, CKEY, VKEY, ZKEY, YKEY].indexOf(key) !== -1 && ctrlDown) || [ESC, ARROWUP, ARROWDOWN, ARROWLEFT, ARROWRIGHT, F5, CTRLKEY, TAB, ENTER].indexOf(key) !== -1) {
+								return true;
+							}
+						}
+
+						event.preventDefault();
+						return false;
+					});
+				}
+			}
+
 			_xdsoft_datetime.setCurrentTime(getCurrentValue());
 
 			input
 				.data('xdsoft_datetimepicker', datetimepicker)
-				.on('open.xdsoft focusin.xdsoft mousedown.xdsoft touchstart', function (event) {
+				.on('open.xdsoft focusin.xdsoft mousedown.xdsoft touchstart', function () {
 					if (input.is(':disabled') || (input.data('xdsoft_datetimepicker').is(':visible') && options.closeOnInputClick)) {
 						return;
 					}
@@ -2713,13 +2847,15 @@ var DateFormatter;
 						}
 
 						triggerAfterOpen = true;
-						_xdsoft_datetime.setCurrentTime(getCurrentValue());
-
+						_xdsoft_datetime.setCurrentTime(getCurrentValue(), true);
+						if(options.mask) {
+							setMask(options);
+						}
 						datetimepicker.trigger('open.xdsoft');
 					}, 100);
 				})
 				.on('keydown.xdsoft', function (event) {
-					var val = this.value, elementSelector,
+					var elementSelector,
 						key = event.which;
 					if ([ENTER].indexOf(key) !== -1 && options.enterLikeTab) {
 						elementSelector = $("input:visible,textarea:visible,button:visible,a:visible");
@@ -2731,6 +2867,9 @@ var DateFormatter;
 						datetimepicker.trigger('close.xdsoft');
 						return true;
 					}
+				})
+				.on('blur.xdsoft', function () {
+					datetimepicker.trigger('close.xdsoft');
 				});
 		};
 		destroyDateTimePicker = function (input) {
@@ -2760,8 +2899,8 @@ var DateFormatter;
 					ctrlDown = false;
 				}
 			});
-		
-        this.each(function () {
+
+		this.each(function () {
 			var datetimepicker = $(this).data('xdsoft_datetimepicker'), $input;
 			if (datetimepicker) {
 				if ($.type(opt) === 'string') {
@@ -2790,10 +2929,10 @@ var DateFormatter;
 						$input = datetimepicker.data('input');
 						$input.trigger('blur.xdsoft');
 						break;
-                    default:
-                        if (datetimepicker[opt] && $.isFunction(datetimepicker[opt])) {
-                            result = datetimepicker[opt](opt2);
-                        }
+					default:
+						if (datetimepicker[opt] && $.isFunction(datetimepicker[opt])) {
+							result = datetimepicker[opt](opt2);
+						}
 					}
 				} else {
 					datetimepicker
@@ -2810,8 +2949,9 @@ var DateFormatter;
 			}
 		});
 
-        return result;
+		return result;
 	};
+
 	$.fn.datetimepicker.defaults = default_options;
 
 	function HighlightedDate(date, desc, style) {
@@ -2820,7 +2960,6 @@ var DateFormatter;
 		this.desc = desc;
 		this.style = style;
 	}
-
 }));
 /*!
  * jQuery Mousewheel 3.1.13

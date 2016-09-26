@@ -4,20 +4,34 @@
  * Provides developer app functionality.
  */
 
-module_load_include('php', 'devconnect_developer_apps', 'controllers/DeveloperAppController');
-module_load_include('php', 'devconnect_developer_apps', 'controllers/ApiProductController');
-
-module_load_include('php', 'devconnect_developer_apps', 'entities/DeveloperAppEntity');
-module_load_include('php', 'devconnect_developer_apps', 'entities/ApiProductEntity');
-
-module_load_include('php', 'devconnect_developer_apps', 'cache/DeveloperAppCache');
-module_load_include('php', 'devconnect_developer_apps', 'cache/ApiProductCache');
-
-use Apigee\ManagementAPI\DeveloperApp;
-use Apigee\ManagementAPI\APIProduct;
 use Drupal\devconnect\ErrorHandling;
 use Drupal\devconnect_developer_apps\ApiProductEntity;
 use Drupal\devconnect_developer_apps\DeveloperAppEntity;
+
+require_once __DIR__ . '/cache/ApiProductCache.php';
+require_once __DIR__ . '/entities/ApiProductEntity.php';
+require_once __DIR__ . '/entities/DeveloperAppEntity.php';
+
+/**
+ * Implements hook_init().
+ *
+ * If entity-related files are not being autoloaded, it means that the registry
+ * needs to be rebuilt.
+ *
+ * The API Product cache class must have its own autoloader rule, because
+ * Drupal 7's built-in autoloader cannot handle namespaced classes. Doh!
+ */
+function devconnect_developer_apps_init() {
+  if (!variable_get('devconnect_developer_apps_autoload_register')) {
+    // Make sure that ancient installs which have not run update.php in forever
+    // do not have a special cache class for developer apps, as this code was
+    // removed.
+    variable_del('cache_class_developer_app');
+    // Force Drupal to register files[] from devconnect_developer_apps.info.
+    registry_rebuild();
+    variable_set('devconnect_developer_apps_autoload_register', TRUE);
+  }
+}
 
 /**
  * Implements hook_preprocess_HOOK() for devconnect_developer_apps_list.tpl.php.
@@ -37,7 +51,10 @@ function devconnect_developer_apps_preprocess_devconnect_developer_apps_list(&$v
 
   if (user_access('create developer apps')) {
     $link_text = t('Add a new @label', array('@label' => $vars['singular']));
-    $vars['add_app'] = l($link_text, 'user/' . $vars['user']->uid . '/apps/add', array('html' => TRUE, 'attributes' => array('class' => array('add-app'))));
+    $vars['add_app'] = l($link_text, 'user/' . $vars['user']->uid . '/apps/add', array(
+      'html' => TRUE,
+      'attributes' => array('class' => array('add-app'))
+    ));
   }
   else {
     $vars['add_app'] = FALSE;
@@ -75,7 +92,7 @@ function devconnect_developer_apps_preprocess_devconnect_developer_apps_list(&$v
     }
   }
 
-  usort($vars['applications'], function($a, $b) {
+  usort($vars['applications'], function ($a, $b) {
     return strcasecmp($a['app_name'], $b['app_name']);
   });
 
@@ -84,7 +101,10 @@ function devconnect_developer_apps_preprocess_devconnect_developer_apps_list(&$v
     $title = t('My @label', array('@label' => $vars['plural']));
   }
   else {
-    $title = t('@name’s @label', array('@label' => $vars['plural'], '@name' => $vars['user']->name));
+    $title = t('@name’s @label', array(
+      '@label' => $vars['plural'],
+      '@name' => $vars['user']->name
+    ));
   }
   drupal_set_title($title);
 }
@@ -268,6 +288,9 @@ function devconnect_developer_apps_entity_info() {
       'label' => t('API Product'),
       'controller class' => 'ApiProductController',
       'fieldable' => FALSE,
+      'entity keys' => array(
+        'id' => 'name',
+      ),
     ),
   );
   return $info;
@@ -277,102 +300,135 @@ function devconnect_developer_apps_entity_info() {
  * Implements hook_entity_property_info().
  */
 function devconnect_developer_apps_entity_property_info() {
-  // Make sure devconnect_init has run. This is necessary in certain cases
-  // when upgrading <= R23 sites to R24.
-  devconnect_init();
-
-  // Create a dummy app object just so we can get its property names.
-  $dev_app = new DeveloperApp(devconnect_default_org_config(), '');
-  $raw_properties = $dev_app->getAppProperties();
-  $dev_app_properties = array();
-  foreach ($raw_properties as $raw_property) {
-    if ($raw_property == 'createdAt' || $raw_property == 'modifiedAt') {
-      $type = 'date';
-    }
-    elseif (substr($raw_property, -1) == 's') {
-      $type = 'list';
-    }
-    else {
-      $type = 'text';
-    }
-    $dev_app_properties[$raw_property] = array(
-      'label' => t(_devconnect_developer_apps_humanify_name($raw_property)),
-      'type' => $type,
-    );
-  }
-  $dev_app_properties['uid'] = array(
-    'label' => t('Drupal User ID'),
-    'type' => 'integer',
+  // NOTE: obscure, never-used properties are skipped here. If you need them,
+  // you can always implement hook_entity_property_info_alter().
+  $dev_app_properties = array(
+    'orgName' => array(
+      'label' => t('Org name'),
+      'type' => 'string',
+    ),
+    'apiProducts' => array(
+      'label' => t('API products'),
+      'type' => 'list',
+    ),
+    'appId' => array(
+      'label' => t('App UUID'),
+      'type' => 'string',
+    ),
+    'attributes' => array(
+      'label' => t('Attributes'),
+      'type' => 'list',
+    ),
+    'callbackUrl' => array(
+      'label' => t('Callback URL'),
+      'type' => 'uri',
+    ),
+    'createdAt' => array(
+      'label' => t('Creation date'),
+      'type' => 'date',
+    ),
+    'modifiedAt' => array(
+      'label' => t('Modification date'),
+      'type' => 'date',
+    ),
+    'developerId' => array(
+      'label' => t('Developer ID'),
+      'type' => 'string',
+    ),
+    'name' => array(
+      'label' => t('Machine name'),
+      'type' => 'string',
+    ),
+    'status' => array(
+      'label' => t('App status'),
+      'type' => 'string',
+    ),
+    'description' => array(
+      'label' => t('Description'),
+      'type' => 'string',
+    ),
+    'consumerKey' => array(
+      'label' => t('API key'),
+      'type' => 'string',
+    ),
+    'consumerSecret' => array(
+      'label' => t('Consumer secret'),
+      'type' => 'string',
+    ),
+    'credentialStatus' => array(
+      'label' => t('Credential status'),
+      'type' => 'string',
+    ),
+    'credentialIssuedAt' => array(
+      'label' => t('Credential issue date'),
+      'type' => 'date',
+    ),
+    'credentialExpiresAt' => array(
+      'label' => t('Credential expiry date'),
+      'type' => 'date',
+    ),
+    'developer' => array(
+      'label' => t('Developer email'),
+      'type' => 'string',
+    ),
+    'overallStatus' => array(
+      'label' => t('Overall app/credential status'),
+      'type' => 'string',
+    ),
+    'uid' => array(
+      'label' => t('Drupal user ID'),
+      'type' => 'integer',
+    ),
   );
 
-  $raw_properties = APIProduct::getAPIProductProperties();
-  $api_product_properties = array();
-  foreach ($raw_properties as $raw_property) {
-    if ($raw_property == 'createdAt' || $raw_property == 'modifiedAt') {
-      $type = 'date';
-    }
-    elseif (substr($raw_property, -1) == 's') {
-      $type = 'list';
-    }
-    else {
-      $type = 'text';
-    }
-    $api_product_properties[$raw_property] = array(
-      'label' => t(_devconnect_developer_apps_humanify_name($raw_property)),
-      'type' => $type,
-    );
-  }
+  $api_product_properties = array(
+    'orgName' => array(
+      'label' => t('Org name'),
+      'type' => 'string',
+    ),
+    'approvalType' => array(
+      'label' => t('Approval type'),
+      'type' => 'string',
+    ),
+    'createdAt' => array(
+      'label' => t('Creation date'),
+      'type' => 'date',
+    ),
+    'modifiedAt' => array(
+      'label' => t('Modification date'),
+      'type' => 'date',
+    ),
+    'description' => array(
+      'label' => t('Description'),
+      'type' => 'string',
+    ),
+    'displayName' => array(
+      'label' => t('Display name'),
+      'type' => 'string',
+    ),
+    'environments' => array(
+      'label' => t('Environments'),
+      'type' => 'list',
+    ),
+    'name' => array(
+      'label' => t('Machine name'),
+      'type' => 'string',
+    ),
+    'attributes' => array(
+      'label' => t('Attributes'),
+      'type' => 'list',
+    ),
+    'isPublic' => array(
+      'label' => t('Is public?'),
+      'type' => 'boolean',
+    ),
+  );
 
   $info = array(
     'developer_app' => array('properties' => $dev_app_properties),
     'api_product' => array('properties' => $api_product_properties),
   );
   return $info;
-}
-
-/**
- * Convenience function to turn camelCase name into Proper Case name.
- *
- * @param string $name
- *   Name of the field to be rendered in human-readable form.
- *
- * @return string
- *   User-friendly name of the field.
- */
-function _devconnect_developer_apps_humanify_name($name) {
-
-  // Special cases.
-  switch ($name) {
-    case 'consumerKey':
-      return 'API Key';
-
-    case 'consumerSecret':
-      return 'Secret';
-
-    case 'developer':
-      return 'Developer Email';
-  }
-
-  $human_readable_name = '';
-  for ($i = 0; $i < strlen($name); $i++) {
-    $char = substr($name, $i, 1);
-    if ($i == 0) {
-      $char = strtoupper($char);
-    }
-    elseif ($char >= 'A' && $char <= 'Z') {
-      $char = ' ' . $char;
-    }
-    $human_readable_name .= $char;
-  }
-
-  $callback = function ($matches) {
-    return $matches[1] . strtoupper($matches[2]) . $matches[3];
-  };
-
-  // Capitalize API, ID, URL.
-  $human_readable_name = preg_replace_callback('!(^|\s)(Api|Id|Url)(\s|$)!', $callback, $human_readable_name);
-
-  return $human_readable_name;
 }
 
 /**
@@ -429,7 +485,7 @@ function _devconnect_developer_apps_get_default_value($name, $default, array $fo
 /**
  * Implements hook_theme().
  */
-function devconnect_developer_apps_theme($existing, $type, $theme, $path) {
+function devconnect_developer_apps_theme() {
   $items = array();
   $template_path = drupal_get_path('module', 'devconnect_developer_apps') . '/templates';
 
@@ -626,7 +682,10 @@ function devconnect_developer_apps_edit_form(array $form, array &$form_state, st
   // Set title.
   $label = _devconnect_developer_apps_get_app_label(FALSE);
   if (isset($app_name)) {
-    $header_caption = t('Editing @label “@app”', array('@app' => $app_name, '@label' => $label));
+    $header_caption = t('Editing @label “@app”', array(
+      '@app' => $app_name,
+      '@label' => $label
+    ));
     $button_caption = t('Save @label', array('@label' => $label));
   }
   else {
@@ -643,7 +702,10 @@ function devconnect_developer_apps_edit_form(array $form, array &$form_state, st
     $breadcrumb_caption = t('My @label', array('@label' => $label));
   }
   else {
-    $breadcrumb_caption = t('@name’s @label', array('@name' => $account->name, '@label' => $label));
+    $breadcrumb_caption = t('@name’s @label', array(
+      '@name' => $account->name,
+      '@label' => $label
+    ));
   }
   // Build breadcrumbs.
   $breadcrumb = array();
@@ -759,7 +821,10 @@ function devconnect_developer_apps_edit_form(array $form, array &$form_state, st
       $default_value = (isset($entity->attributes[$machine_name]) ? $entity->attributes[$machine_name] : NULL);
     }
     if ($type == 'value') {
-      $form[$form_field_name] = array('#type' => 'value', '#value' => $default_value);
+      $form[$form_field_name] = array(
+        '#type' => 'value',
+        '#value' => $default_value
+      );
     }
     else {
       $uses_options = FALSE;
@@ -1332,7 +1397,10 @@ function devconnect_developer_apps_delete_form(array $form, array &$form_state, 
   $form['are_you_sure'] = array(
     '#markup' => t(
       'Deleting the ‘@name’ @label will also delete all of its data. This action cannot be undone.<br><br>',
-      array('@name' => $entity->name, '@label' => _devconnect_developer_apps_get_app_label(FALSE))
+      array(
+        '@name' => $entity->name,
+        '@label' => _devconnect_developer_apps_get_app_label(FALSE)
+      )
     ),
   );
 
@@ -1430,7 +1498,10 @@ function devconnect_developer_apps_check_uuid($app_id, $path, stdClass $user = N
   if (!isset($user)) {
     $user = $GLOBALS['user'];
   }
-  $entities = entity_load('developer_app', FALSE, array('mail' => $user->mail, 'name' => $app_id));
+  $entities = entity_load('developer_app', FALSE, array(
+    'mail' => $user->mail,
+    'name' => $app_id
+  ));
   $entity = reset($entities);
   if (empty($entity)) {
     drupal_not_found();
@@ -1601,9 +1672,15 @@ function _devconnect_developer_apps_detail(DeveloperAppEntity $entity, stdClass 
   }
   $label_text = _devconnect_developer_apps_get_app_label(FALSE);
   $tabs[] = array('text' => t("$label_text Details"), 'path' => '#details');
-  $tabs[] = array('text' => t("Edit $label_text"), 'path' => 'user/' . $uid_arg . '/apps/' . $entity->appId . '/edit-app');
+  $tabs[] = array(
+    'text' => t("Edit $label_text"),
+    'path' => 'user/' . $uid_arg . '/apps/' . $entity->appId . '/edit-app'
+  );
   if ($show_analytics) {
-    $tabs[] = array('text' => t("$label_text Performance"), 'path' => '#performance');
+    $tabs[] = array(
+      'text' => t("$label_text Performance"),
+      'path' => '#performance'
+    );
   }
 
   module_load_include('inc', 'devconnect_developer_apps', 'devconnect_developer_apps.theme');
@@ -1621,9 +1698,9 @@ function _devconnect_developer_apps_detail(DeveloperAppEntity $entity, stdClass 
   drupal_alter('devconnect_developer_app_details', $tabs, $panes);
 
   return '<div id="developer-app-detail-tabs">'
-    . theme('developer_app_tabs', array('tab_links' => $tabs))
-    . theme('developer_app_panes', array('panes' => $panes))
-    . '</div>';
+  . theme('developer_app_tabs', array('tab_links' => $tabs))
+  . theme('developer_app_panes', array('panes' => $panes))
+  . '</div>';
 }
 
 /**
@@ -1821,7 +1898,10 @@ function devconnect_developer_apps_sync_products($org = 'default', $set_messages
     $org = $config->orgName;
   }
 
-  $api_products = entity_load('api_product', array(), array('orgName' => $org, 'show_private' => TRUE));
+  $api_products = entity_load('api_product', array(), array(
+    'orgName' => $org,
+    'show_private' => TRUE
+  ));
   $count = count($api_products);
   if ($has_drush) {
     drush_print('Loaded ' . $count . ' api_products');

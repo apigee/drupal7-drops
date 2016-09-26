@@ -13,7 +13,7 @@
 			player.sourcechooserButton =
 				$('<div class="mejs-button mejs-sourcechooser-button">'+
 					'<button type="button" aria-controls="' + t.id + '" title="' + t.options.sourcechooserText + '" aria-label="' + t.options.sourcechooserText + '"></button>'+
-					'<div class="mejs-sourcechooser-selector">'+
+					'<div class="mejs-sourcechooser-selector mejs-offscreen">'+
 						'<ul>'+
 						'</ul>'+
 					'</div>'+
@@ -22,9 +22,9 @@
 
 					// hover
 					.hover(function() {
-						$(this).find('.mejs-sourcechooser-selector').css('visibility','visible');
+						$(this).find('.mejs-sourcechooser-selector').removeClass('mejs-offscreen');
 					}, function() {
-						$(this).find('.mejs-sourcechooser-selector').css('visibility','hidden');
+						$(this).find('.mejs-sourcechooser-selector').addClass('mejs-offscreen');
 					})
 
 					// handle clicks to the language radio buttons
@@ -45,7 +45,7 @@
 								if (!paused) {
 									media.play();
 								}
-								media.removeEventListener("canplay", canPlayAfterSourceSwitchHandler);
+								media.removeEventListener("canplay", canPlayAfterSourceSwitchHandler, true);
 							};
 							media.addEventListener('canplay', canPlayAfterSourceSwitchHandler, true);
 							media.load();

@@ -147,6 +147,7 @@ function devconnect_default_org_config($requested_org = 'default') {
     // Merge in any HTTP options that may have been provided by implementors of
     // hook_devconnect_org_settings_alter().
     $http_options = array_key_exists('http_options', $settings) ? $settings['http_options'] : array();
+    $curl_options = array_key_exists('curl_options', $settings) ? $settings['curl_options'] : array();
     $http_options['connect_timeout'] = $settings['connection_timeout'];
     $http_options['timeout'] = $settings['request_timeout'];
 
@@ -171,6 +172,7 @@ function devconnect_default_org_config($requested_org = 'default') {
       'subscribers' => $subscribers,
       'log_subscriber_format' => $subscriber_log_format,
       'http_options' => $http_options,
+      'curl_options' => $curl_options,
       'user_agent' => $user_agent,
       'referer' => url($_GET['q'], array('absolute' => TRUE)),
     );

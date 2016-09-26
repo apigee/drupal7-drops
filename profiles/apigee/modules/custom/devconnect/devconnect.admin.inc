@@ -553,12 +553,14 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
   $http_options = array_key_exists('http_options', $settings) ? $settings['http_options'] : array();
   $http_options['connect_timeout'] = $timeout;
   $http_options['follow_location'] = FALSE;
+  $curl_options = array_key_exists('curl_options', $settings) ? $settings['curl_options'] : array();
 
   $user_agent = 'DevConnect';
   drupal_alter('devconnect_user_agent', $user_agent);
 
   $options = array(
     'http_options' => $http_options,
+    'curl_options' => $curl_options,
     'user_agent' => $user_agent,
     'referer' => url($_GET['q'], array('absolute' => TRUE)),
   );

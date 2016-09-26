@@ -144,6 +144,8 @@ class WatchdogLogger extends AbstractLogger {
     $message = filter_xss($message);
     $message = preg_replace("!Authorization: Basic [A-Za-z0-9+\\=]+!", 'Authorization: Basic [**masked**]', $message);
 
+    $message = '<pre>' . $message . '</pre>';
+
     if ($use_watchdog_exception) {
       watchdog_exception($type, $message, NULL, array(), $severity);
     }
