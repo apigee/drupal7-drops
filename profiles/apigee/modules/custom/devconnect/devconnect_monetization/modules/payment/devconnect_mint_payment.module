@@ -133,7 +133,7 @@ function devconnect_mint_payment_submit_form_validate($payment_method, $pane_for
       $valid = FALSE;
     }
 
-    if (strlent($pane_form['replenish_amount']['#value']) && $replenish_amount == 0) {
+    if (strlen($pane_form['replenish_amount']['#value']) && $replenish_amount == 0) {
       drupal_set_message(t('Replenish amount must be a valid numeric value.'), 'error');
       $valid = FALSE;
     }

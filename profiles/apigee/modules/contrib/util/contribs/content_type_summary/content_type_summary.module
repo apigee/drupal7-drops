@@ -1,0 +1,99 @@
+<?php
+/**
+ * @file
+ * Simple Content Type Summary.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function content_type_summary_menu() {
+  $items = array();
+
+  $items['admin/content/summary'] = array(
+    'title' => 'Content Type Summary',
+    'description' => 'Basic information about content types on this site.',
+    'page callback' => 'content_type_summary_report',
+    'access arguments' => array('access administration pages'),
+    );
+
+  return $items;
+}
+
+/**
+ * Menu callback.
+ */
+function content_type_summary_report() {
+  $output = '';
+
+  $types = node_type_get_types();
+//  dpm($types, 'node_type_get_types');
+
+  $auto_entitylabel_present = module_exists('auto_entitylabel');
+
+  // I don't know what this is, but I see a lot of it.
+  $modules = array('initialize' => 'Initialize');
+  foreach (module_list() as $module => $desc) {
+    $modules[$module] = filter_xss(ucwords(str_replace('_', ' ', $module)));
+  }
+
+  $table = array(
+    'header' => array(
+      t('Readable Type'),
+      t('Machine Type'),
+      t('Module'),
+      array('data' => t('Published'), 'align' => 'center'),
+      t('Promoted'),
+      t('Revisions'),
+      t('Has Title'),
+      t('Has Help'),
+      t('Number Published'),
+      t('Number Unpublished'),
+      t('Fields'),
+      ),
+    'rows' => array(),
+    'attributes' => array('id' => 'content-type-summary', 'style' => 'width:auto;'),
+    'empty' => t('Strangely, I cannot find any content types.'),
+    );
+  $published_query = "SELECT COUNT(*) FROM {node} WHERE status = 1 AND type = :type";
+  $unpublished_query = "SELECT COUNT(*) FROM {node} WHERE status <> 1 AND type = :type";
+  foreach ($types as $type => $info) {
+    $options = variable_get('node_options_' . $type, NULL);
+    $args = array(
+      ':type' => $type,
+      );
+    $has_title = (empty($info->has_title) ? "&chi;" : "&#10004;");
+    if ($auto_entitylabel_present) {
+      // Does this type have an automatic label?
+      $auto = auto_entitylabel_get_setting('node_' . $type);
+      // If it is set to non-auto, just let current value stand.
+      // Otherwise, differentiate between auto and "if empty".
+      if ($auto) {
+        $has_title = ($auto == 1 ? "&alpha;" : "&empty;");
+      }
+    }
+
+    $table['rows'][] = array(
+      l($info->name, 'admin/structure/types/manage/' . $type),
+      filter_xss($type),
+      $modules[$info->module],
+      array('data' => (in_array('status', $options) ? "&#10004;" : "&chi;"), 'align' => 'center'),
+      array('data' => (in_array('promote', $options) ? "&#10004;" : "&chi;"), 'align' => 'center'),
+      array('data' => (in_array('revision', $options) ? "&#10004;" : "&chi;"), 'align' => 'center'),
+      array('data' => $has_title, 'align' => 'center'),
+      array('data' => (empty($info->help) ? "&chi;" : "&#10004;"), 'align' => 'center'),
+      array('data' => number_format(db_query($published_query, $args)->fetchField(), 0), 'align' => 'right'),
+      array('data' => number_format(db_query($unpublished_query, $args)->fetchField(), 0), 'align' => 'right'),
+      array('data' => number_format(count(field_info_instances('node', $type)), 0), 'align' => 'right'),
+      );
+  }
+
+  $output .= theme('table', $table);
+  if ($auto_entitylabel_present) {
+    $output .= '<p>'
+      . "Title: &alpha; &rArr; automatic; &empty; &rArr; automatic if empty."
+      . '</p>';
+  }
+
+  return $output;
+}

@@ -1314,12 +1314,14 @@ function devconnect_monetization_admin_permissions() {
   return devconnect_monetization_permission() + array(
     'access checkout' => 'access checkout',
     'manage company users' => 'manage company users',
+    'view company users' => 'view company users',
   );
 }
 
 function devconnect_monetization_finance_permissions() {
   $permissions = devconnect_monetization_permission() + array(
     'access checkout' => 'access checkout',
+    'view company users' => 'view company users',
   );
   unset($permissions['purchase mint plan']);
   unset($permissions['delete mint plan']);
@@ -1332,7 +1334,9 @@ function devconnect_monetization_finance_permissions() {
 }
 
 function devconnect_monetization_developer_permissions() {
-  $permissions = devconnect_monetization_permission();
+  $permissions = devconnect_monetization_permission() + array(
+    'view company users' => 'view company users',
+  );
   unset($permissions['access mint monetization']);
   unset($permissions['purchase mint plan']);
   unset($permissions['delete mint plan']);

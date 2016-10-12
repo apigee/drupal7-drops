@@ -305,7 +305,7 @@ function devconnect_developer_apps_entity_property_info() {
   $dev_app_properties = array(
     'orgName' => array(
       'label' => t('Org name'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'apiProducts' => array(
       'label' => t('API products'),
@@ -313,7 +313,7 @@ function devconnect_developer_apps_entity_property_info() {
     ),
     'appId' => array(
       'label' => t('App UUID'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'attributes' => array(
       'label' => t('Attributes'),
@@ -333,31 +333,31 @@ function devconnect_developer_apps_entity_property_info() {
     ),
     'developerId' => array(
       'label' => t('Developer ID'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'name' => array(
       'label' => t('Machine name'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'status' => array(
       'label' => t('App status'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'description' => array(
       'label' => t('Description'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'consumerKey' => array(
       'label' => t('API key'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'consumerSecret' => array(
       'label' => t('Consumer secret'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'credentialStatus' => array(
       'label' => t('Credential status'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'credentialIssuedAt' => array(
       'label' => t('Credential issue date'),
@@ -369,11 +369,11 @@ function devconnect_developer_apps_entity_property_info() {
     ),
     'developer' => array(
       'label' => t('Developer email'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'overallStatus' => array(
       'label' => t('Overall app/credential status'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'uid' => array(
       'label' => t('Drupal user ID'),
@@ -384,11 +384,11 @@ function devconnect_developer_apps_entity_property_info() {
   $api_product_properties = array(
     'orgName' => array(
       'label' => t('Org name'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'approvalType' => array(
       'label' => t('Approval type'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'createdAt' => array(
       'label' => t('Creation date'),
@@ -400,11 +400,11 @@ function devconnect_developer_apps_entity_property_info() {
     ),
     'description' => array(
       'label' => t('Description'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'displayName' => array(
       'label' => t('Display name'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'environments' => array(
       'label' => t('Environments'),
@@ -412,7 +412,7 @@ function devconnect_developer_apps_entity_property_info() {
     ),
     'name' => array(
       'label' => t('Machine name'),
-      'type' => 'string',
+      'type' => 'text',
     ),
     'attributes' => array(
       'label' => t('Attributes'),
@@ -475,7 +475,7 @@ function _devconnect_developer_apps_get_default_value($name, $default, array $fo
   if (!empty($form_state['input']) && array_key_exists($name, $form_state['input'])) {
     return $form_state['input'][$name];
   }
-  if (array_key_exists($name, $form_state['values'])) {
+  if (!empty($form_state['values']) && array_key_exists($name, $form_state['values'])) {
     return $form_state['values'][$name];
   }
   return variable_get($name, $default);

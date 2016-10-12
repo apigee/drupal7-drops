@@ -1,0 +1,13 @@
+name = Node Type
+description = Lists nodes of a given type.
+core = 7.x
+package = Util
+dependencies[] = util
+dependencies[] = node
+
+; Information added by Drupal.org packaging script on 2016-09-27
+version = "7.x-1.0"
+core = "7.x"
+project = "util"
+datestamp = "1475002440"
+

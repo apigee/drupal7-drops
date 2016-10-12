@@ -285,8 +285,13 @@ function apigee_responsive_preprocess_bootstrap_modal_forms(&$vars) {
         $vars['modal_form']['openid_identifier']['#prefix'] = '<div class="apigee-responsive-openidhide" style="display:none">';
         $vars['modal_form']['openid_identifier']['#suffix'] = '</div>';
       }
-      $vars['sso'] = $vars['modal_form']['sso_buttons'];
-      unset($vars['modal_form']['sso_buttons']);
+      if (isset($vars['modal_form']['sso_buttons'])) {
+        $vars['sso'] = $vars['modal_form']['sso_buttons'];
+        unset($vars['modal_form']['sso_buttons']);
+      }
+      else {
+        $vars['sso'] = '';
+      }
       break;
 
     case 'register':

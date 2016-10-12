@@ -1,0 +1,201 @@
+<?php
+/**
+ * @file
+ * Display information about field/instance.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function field_info_menu() {
+  $items = array();
+
+  $items['admin/config/system/util/field_info'] = array(
+    'title' => 'Field Info',
+    'access arguments' => array('administer site configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('field_info_form'),
+    'type' => MENU_LOCAL_TASK,
+    );
+
+  return $items;
+}
+
+/**
+ * Form for field usage.
+ */
+function field_info_form($form, $form_state) {
+  $form['field_info_field_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Field Name'),
+    '#description' => t('Fill in the name of a field to find out more about it.'),
+    '#default_value' => (isset($form_state['values']['field_info_field_name']) ?
+      $form_state['values']['field_info_field_name'] : ''),
+    );
+
+  if (isset($form_state['field_info_field_list'])) {
+    $form['list'] = array(
+      '#type' => 'markup',
+      '#markup' => $form_state['field_info_field_list'],
+      );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Get information'),
+    );
+
+  return $form;
+}
+
+/**
+ * Settings form submission handler.
+ */
+function field_info_form_submit($form, &$form_state) {
+  $field_name = $form_state['values']['field_info_field_name'];
+  $info = field_info_field($field_name);
+//  dpm($info, "field_info_field($field_name)");
+
+  $items = array();
+  $list = '';
+  $noyes = array(t('No'), t('Yes'));
+
+  if (!$info) {
+    $items[] = t('None');
+  }
+
+  $list .= '<h3>' . t('Field Information') . '</h3>';
+
+  $items[] = t('Field name: @name', array('@name' => $info['field_name']));
+  $items[] = t('Field ID: @id', array('@id' => $info['id']));
+  $items[] = t('Translatable: @val', array('@val' => $noyes[$info['translatable']]));
+  $items[] = t('Active: @val', array('@val' => $noyes[$info['active']]));
+  $items[] = t('Locked: @val', array('@val' => $noyes[$info['locked']]));
+  $items[] = t('Deleted: @val', array('@val' => $noyes[$info['deleted']]));
+  $items[] = t('Cardinality: @val', array('@val' => ($info['cardinality'] == -1 ? t('Unlimited') : $info['cardinality'])));
+  $items[] = t('Field type: @val', array('@val' => $info['type']));
+
+  $mod = db_query("SELECT info FROM {system} WHERE name = :mod ",
+    array(':mod' => $info['module']))->fetchField();
+  if ($mod) {
+    $data = unserialize($mod);
+    $items[] = t('Module: @val.', array('@val' => $data['name'] . ' (' . $data['version'] . ')'));
+  }
+
+  $list .= theme('item_list', array('items' => $items));
+
+  $sets = array(
+    'header' => array(t('Setting name'), t('Value')),
+    'rows' => array(),
+    'empty' => t('No settings found.'),
+    'attributes' => array('style' => 'width:auto;'),
+    );
+  foreach ($info['settings'] as $name => $stuff) {
+    $attrs = array();
+    if (is_array($stuff)) {
+      foreach ($stuff as $key => $value) {
+        if (is_array($value)) {
+          $attrs[] = filter_xss($key) . " &rArr; " . filter_xss(print_r($value, TRUE));
+        }
+        else {
+          $attrs[] = filter_xss($key) . " &rArr; " . check_plain($value);
+        }
+      }
+    }
+    else {
+      if (is_bool($stuff)) {
+        $attrs[] = filter_xss($name) . " &rArr; " . $noyes[$stuff];
+      }
+      else {
+        $attrs[] = filter_xss($name) . " &rArr; " . check_plain($stuff);
+      }
+    }
+
+    $sets['rows'][] = array(
+      filter_xss($name),
+      theme('item_list', array('items' => $attrs)),
+      );
+  }
+  $list .= theme('table', $sets);
+
+  $cols = array(
+    'header' => array(t('Column name'), t('Attributes')),
+    'rows' => array(),
+    'empty' => t('No columns found.'),
+    'attributes' => array('style' => 'width:auto;'),
+    );
+  foreach ($info['columns'] as $name => $stuff) {
+    $attrs = array();
+    foreach ($stuff as $key => $value) {
+      $attrs[] = filter_xss($key) . " &rArr; " . filter_xss($value);
+    }
+    $cols['rows'][] = array(
+      filter_xss($name),
+      theme('item_list', array('items' => $attrs)),
+      );
+  }
+  $list .= theme('table', $cols);
+
+  $instances = array();
+  foreach ($info['bundles'] as $entity_type => $bundles) {
+    foreach ($bundles as $key => $bundle) {
+      $instances[$entity_type][$bundle] = field_info_instance($entity_type, $field_name, $bundle);
+    }
+  }
+
+  $list .= '<h3>' . t('Instance Information') . '</h3>';
+  $instance_list = array(
+    'header' => array(t('Entity Type'), t('Bundle Types'), t('Information')),
+    'rows' => array(),
+    'empty' => t('No instances found.'),
+    'attributes' => array('style' => 'width:auto;'),
+    );
+  foreach ($instances as $entity_type => $bundle_info) {
+    foreach ($bundle_info as $bundle_name => $instance) {
+//      dpm($instance, "Instance for $entity_type, $bundle_name, $field_name");
+      $stuff = array();
+      $stuff[] = array(t('Instance ID:'), $instance['id']);
+      $stuff[] = array(t('Field label:'), check_plain($instance['label']));
+      $stuff[] = array(t('Required:'), $noyes[$instance['required']]);
+
+      $instance_list['rows'][] = array(
+        filter_xss($entity_type),
+        filter_xss($bundle_name),
+        theme('table', array('rows' => $stuff)),
+        );
+    }
+  }
+  $list .= theme('table', $instance_list);
+
+  $list .= '<h3>' . t('Table Information for field_data_' . $field_name) . '</h3>';
+  $properties = db_query("SHOW COLUMNS FROM field_data_" . $field_name);
+  $table = array(
+    'header' => array(
+      t('Column Name'),
+      t('Type'),
+      t('Null'),
+      t('Key'),
+      t('Default'),
+      t('Extra'),
+      ),
+    'rows' => array(),
+    'empty' => t('No columns found.'),
+    'attributes' => array('style' => 'width:auto;'),
+    );
+  foreach ($properties as $row) {
+//    dpm($row);
+    $table['rows'][] = array(
+      $row->Field,
+      $row->Type,
+      $row->Null,
+      $row->Key,
+      $row->Default,
+      $row->Extra,
+      );
+  }
+  $list .= theme('table', $table);
+
+  $form_state['field_info_field_list'] = $list;
+
+  $form_state['rebuild'] = TRUE;
+}

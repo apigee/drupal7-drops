@@ -17,10 +17,17 @@ define('APIGEE_COMPANY_DEVELOPER_ROLE_NAME', 'Developer');
 function apigee_company_permission() {
   $permissions = array();
 
-  // @TODO: add other permissions that are required to this list.
   $permissions['manage company users'] = array(
     'title' => t('Manage company users'),
     'description' => t('Invite, remove and manage roles for users in a company.'),
+  );
+  $permissions['view company users'] = array(
+    'title' => t('View company users'),
+    'description' => t('view the users in a company.'),
+  );
+  $permissions['create apigee company'] = array(
+    'title' => t('Create a new Company'),
+    'description' => t('Ability to create a new company'),
   );
   return $permissions;
 }
@@ -53,7 +60,7 @@ function apigee_company_menu() {
     'type' => MENU_CALLBACK,
   );
   $items['api_company/company_invitation/cancel/%apigee_company_invitation'] = array(
-    'access callback' => 'user_is_logged_in',
+    'access arguments' => array('manage company users'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('apigee_company_cancel_invitation', 3),
     'type' => MENU_CALLBACK,
@@ -62,20 +69,20 @@ function apigee_company_menu() {
   $items['api_company/developer/company/add'] = array(
     'title' => 'Create Company',
     'description' => 'Create a new company.',
-    'access callback' => 'user_is_logged_in',
+    'access arguments' => array('create apigee company'),
     'page callback' => 'apigee_company_company_form_wrapper',
   );
 
   $items['api_company/company/developers'] = array(
     'title' => 'Company Developers',
     'description' => 'List company developers.',
-    'access callback' => 'user_is_logged_in',
+    'access arguments' => array('view company users'),
     'page callback' => 'apigee_company_company_developers',
   );
   $items['api_company/company/developer/%/remove'] = array(
     'title' => 'Remove developer',
     'description' => 'Remove a developer from a company',
-    'access callback' => 'user_is_logged_in',
+    'access arguments' => array('manage company users'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('apigee_company_remove_developer', 3),
   );
@@ -100,7 +107,7 @@ function apigee_company_menu() {
 
   $items['api_company/%ctools_js/developer/%/modify_role'] = array(
     'title' => 'Modify Developer Roles',
-    'access callback' => 'user_is_logged_in',
+    'access arguments' => array('manage company users'),
     'page callback' => 'apigee_company_modify_role_ctools_callback',
     'page arguments' => array(1, 3),
   );

@@ -428,7 +428,7 @@ projects[token][version] = "1.6"
 ; Deprecated
 projects[util][type] = "module"
 projects[util][subdir] = "contrib"
-projects[util][version] = "1.0-rc2"
+projects[util][version] = "1.0"
 
 ; Enabled on install.
 projects[uuid][type] = "module"

@@ -5,9 +5,9 @@ dependencies[] = util
 dependencies[] = comment
 package = Util
 
-; Information added by Drupal.org packaging script on 2014-01-22
-version = "7.x-1.0-rc2"
+; Information added by Drupal.org packaging script on 2016-09-27
+version = "7.x-1.0"
 core = "7.x"
 project = "util"
-datestamp = "1390427606"
+datestamp = "1475002440"
 

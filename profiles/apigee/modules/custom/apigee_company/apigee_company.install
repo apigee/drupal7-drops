@@ -15,4 +15,43 @@ function apigee_company_install() {
     ->condition('name', 'apigee_company')
     ->execute();
 
+  // By default allow all users to create a company.
+  db_merge('role_permission')
+      ->key(array(
+        'rid' => DRUPAL_AUTHENTICATED_RID,
+        'permission' => 'create apigee company',
+      ))
+      ->fields(array(
+        'module' => 'apigee_company',
+      ))
+      ->execute();
+  // View company users permission for all monetization or company roles.
+  $roles = array();
+  if(module_exists('devconnect_monetization')){
+    $roles[] = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
+    $roles[] = user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME);
+    $roles[] = user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME);
+  }
+  else {
+    $roles[] = user_role_load_by_name(APIGEE_COMPANY_ADMIN_ROLE_NAME);
+    $roles[] = user_role_load_by_name(APIGEE_COMPANY_DEVELOPER_ROLE_NAME);
+  }
+  foreach ($roles as $role) {
+    db_merge('role_permission')
+      ->key(array(
+        'rid' => $role->rid,
+        'permission' => 'view company users',
+      ))
+      ->fields(array(
+        'module' => 'apigee_company',
+      ))
+      ->execute();
+  }
+}
+
+/**
+ * Update function to set the view company users permission for all monetization or company roles
+ */
+function apigee_company_update_7000(){
+  apigee_company_install();
 }

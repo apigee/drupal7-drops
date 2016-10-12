@@ -1,0 +1,69 @@
+<?php
+/**
+ * @file
+ * Content Type Checks to warn admins about potential problems.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function content_type_checks_requirements($phase) {
+  $requirements = array();
+  switch ($phase) {
+    case 'runtime':
+      $result = db_query("SELECT type, name, module, custom, disabled FROM {node_type}");
+      $disabled = $missing_module = array();
+      foreach ($result as $row) {
+        if ($row->disabled) {
+          $disabled[] = $row->name;
+        }
+        if ($row->module != 'node' && !module_exists($row->module)) {
+          $missing_module[] = ucwords($row->module) . " ($row->name)";
+        }
+      }
+      if ($missing_module) {
+        $list = array();
+        $requirements['content_type_check_module_exists'] = array(
+          'title' => t('Content Type Module Missing'),
+          'value' => format_plural(count($missing_module),
+            'Missing content type module: @list',
+            'Missing content type modules: @list',
+            array('@list' => implode(', ', $missing_module))),
+          'severity' => REQUIREMENT_ERROR,
+          );
+      }
+
+      if ($disabled) {
+        $requirements['content_type_check_disabled'] = array(
+          'title' => t('Content Type Disabled'),
+          'value' => format_plural(count($disabled), 'Disabled content type: @list', 'Disabled content types: @list',
+            array('@list' => implode(', ', $disabled))),
+          'severity' => REQUIREMENT_WARNING,
+          );
+      }
+
+      $result = db_query("SELECT n.type, COUNT(n.type) AS how_many FROM {node} n "
+        . "LEFT JOIN {node_type} t ON t.type = n.type "
+        . "WHERE t.type IS NULL "
+        . "GROUP BY n.type ");
+      $unknown = array();
+      $count = 0;
+      foreach ($result as $row) {
+        $count += $row->how_many;
+        $unknown[] = $row->type;
+      }
+      if ($count) {
+        $requirements['content_type_check_unknown_type'] = array(
+          'title' => t('Content Type Unknown'),
+          'value' => format_plural(count($unknown),
+            'Unknown content type found: %list',
+            'Unknown content types found: %list',
+            array('%list' => implode(', ', $unknown))),
+          'severity' => REQUIREMENT_WARNING,
+          );
+      }
+
+      break;
+  }
+  return $requirements;
+}

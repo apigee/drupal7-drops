@@ -28,7 +28,6 @@ function _devconnect_developer_apps_analytics_metrics() {
     'end_point_response_time' => t('Endpoint Response Time'),
     'message_count' => t('Message Count'),
     'error_count' => t('Error Count'),
-    'user_count' => t('User Count'),
   );
 }
 
@@ -446,9 +445,6 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name, $
     // We pass the altered version of the parameters to the call to get the
     // analytics data.
     $datapoints = $dca->getByAppName($developer_id, $app_name, $info['metric'], $info['start'], $info['end'], $info['unit'], $info['metric'], $info['order']);
-  } catch (Apigee\Exceptions\EnvironmentException $e) {
-    watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
-    return FALSE;
   } catch (Apigee\Exceptions\ParameterException $e) {
     watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
     return FALSE;

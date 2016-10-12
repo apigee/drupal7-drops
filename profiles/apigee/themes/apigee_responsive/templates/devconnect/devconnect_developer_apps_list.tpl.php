@@ -149,7 +149,7 @@ $i = 0;
                         <tr>
                           <td class="key"><strong><?php print t('Consumer Key'); ?></strong></td>
                           <td>
-                            <span<?php print ($status == 'Revoked' || $status == 'Pending' ? ' class="striked"' : ''); ?>"><?php print $app['credential']['consumerKey']; ?></span>
+                            <span<?php print ($status == 'Revoked' || $status == 'Pending' ? ' class="striked"' : ''); ?>><?php print $app['credential']['consumerKey']; ?></span>
         <?php if ($status == 'Pending'): ?>
                             <hr>
                             <?php print t('Some products associated with this application are in <span class="label label-default">pending</span> status.'); ?>
@@ -179,7 +179,7 @@ $i = 0;
                         <tr>
                           <td class="key"><strong><?php print t('Consumer Secret'); ?></strong></td>
                           <td>
-                            <span<?php print ($status == 'Revoked' || $status == 'Pending' ? ' class="striked"' : ''); ?>"><?php print $app['credential']['consumerSecret']; ?></span>
+                            <span<?php print ($status == 'Revoked' || $status == 'Pending' ? ' class="striked"' : ''); ?>><?php print $app['credential']['consumerSecret']; ?></span>
                           </td>
                         </tr>
         <?php if ($status == 'Approved'): ?>

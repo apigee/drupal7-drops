@@ -1,0 +1,82 @@
+<?php
+/**
+ * @file
+ * Simple Content Type Summary.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function node_type_menu() {
+  $items = array();
+
+  $items['node/type/%'] = array(
+    'title' => 'Node Type',
+    'title callback' => 'node_type_title',
+    'title arguments' => array(2),
+    'description' => 'List nodes of the specified type.',
+    'page callback' => 'node_type_list',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    );
+
+  return $items;
+}
+
+/**
+ * Menu title callback.
+ */
+function node_type_title($type) {
+  $type_info = node_type_get_type($type);
+  return $type_info->name . ' Content';
+}
+
+/**
+ * Menu callback.
+ */
+function node_type_list($type) {
+  $css = '.node {border-top: 1px solid #ccc; margin-bottom: 1em;}
+    .node.even {background-color: #f4f4f4;}
+    .node-type-description {font-style: italic; margin: 0 2em;}';
+  drupal_add_css($css, 'inline');
+  $view_mode = 'teaser';
+  $type_info = node_type_get_type($type);
+
+  $output = array(
+    'description' => array(
+      '#type' => 'markup',
+      '#markup' => '<p class="node-type-description">'
+        . filter_xss($type_info->description)
+        . '</p>',
+      ));
+
+  $query = new EntityFieldQuery();
+
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', $type)
+    ->propertyCondition('status', NODE_PUBLISHED)
+    ->propertyOrderBy('sticky', 'DESC')
+    ->propertyOrderBy('changed', 'DESC')
+    ->range(0, 10)
+    ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+  $result = $query->execute();
+
+  $output['nodes'] = node_view_multiple(node_load_multiple(array_keys($result['node'])), $view_mode);
+  $output['pager']['#markup'] = theme('pager', $query->pager);
+
+  return $output;
+}
+
+/**
+ * Implements hook_preprocess_node().
+ * Add zebra striping.
+ */
+function node_type_preprocess_node(&$variables) {
+  static $class = 'even';
+  $zebra = array('even' => 'odd', 'odd' => 'even');
+
+  $class = $zebra[$class];
+  $variables['classes_array'][] = $class;
+}

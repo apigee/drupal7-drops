@@ -1,0 +1,71 @@
+<?php
+/**
+ * @file
+ * Display information about module use.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function module_info_menu() {
+  $items = array();
+
+  $items['admin/config/system/util/module_info'] = array(
+    'title' => 'Module Info',
+    'access arguments' => array('administer site configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('module_info_form'),
+    'type' => MENU_LOCAL_TASK,
+    );
+
+  return $items;
+}
+
+/**
+ * Form for module usage.
+ */
+function module_info_form($form, $form_state) {
+  $form = array();
+
+  $form['module_info_hook_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Hook Name'),
+    '#description' => t('Fill in the name of a hook (sans "hook") to find out who implements it.'),
+    '#default_value' => (isset($form_state['values']['module_info_hook_name']) ?
+      $form_state['values']['module_info_hook_name'] : ''),
+    );
+
+  if (isset($form_state['module_info_hook_list'])) {
+    $form['list'] = array(
+      '#type' => 'markup',
+      '#markup' => $form_state['values']['module_info_hook_list'],
+      );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Get information'),
+    );
+
+  return $form;
+}
+
+/**
+ * Settings form submission handler.
+ */
+function module_info_form_submit($form, $form_state) {
+  $hook = $form_state['values']['module_info_hook_name'];
+  $items = module_implements($hook);
+  if (!$items) {
+    $items[] = t('None');
+  }
+  $list = theme('item_list', 
+    array(
+      'items' => $items,
+      'title' => t('Modules implementing hook_@hook', array('@hook' => $hook)),
+      ));
+  $form_state['values']['module_info_hook_list'] = $list;
+  drupal_set_message($list);
+
+  $form_state['rebuild'] = TRUE;
+}

@@ -107,8 +107,10 @@ function theme_block_tracker_item($variables) {
 
   if (!isset($titles["$item->module-$item->delta"])) {
     $blocks = module_invoke($item->module, 'block_info');
-    if ($title = $blocks[$item->delta]) {
-      $titles["$item->module-$item->delta"] = $blocks[$item->delta]['info'];
+    if ($blocks && isset($blocks[$item->delta])) {
+      if ($blocks[$item->delta]) {
+        $titles["$item->module-$item->delta"] = $blocks[$item->delta]['info'];
+      }
     }
   }
 

@@ -59,34 +59,7 @@ function util_menu() {
     'type' => MENU_NORMAL_ITEM,
     );
 
-  $menu['blocks'] = array(
-    'title' => 'Block List Test',
-    'page callback' => 'util_blocks',
-    'access arguments' => array('access content'),
-    'type' => MENU_NORMAL_ITEM,
-    );
-
   return $menu;
-}
-
-function util_blocks() {
-  $table = array(
-    'rows' => array(),
-    'header' => array(t('Bid'), t('Theme'), t('Module'), t('Delta'), t('Region'), t('Title')),
-    'attributes' => array('style' => 'width: 100%;'),
-    );
-  $results = db_query("SELECT * FROM {block} WHERE status = 1 ORDER BY theme, region, weight");
-  foreach ($results as $row) {
-    $table['rows'][] = array(
-      array('data' => $row->bid, 'align' => 'right'),
-      $row->theme,
-      $row->module,
-      $row->delta,
-      $row->region,
-      $row->title,
-      );
-  }
-  return theme('table', $table);
 }
 
 function util_page() {

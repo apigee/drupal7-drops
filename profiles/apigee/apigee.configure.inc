@@ -324,7 +324,7 @@ function apigee_install_base_ckeditor_settings(array &$context) {
   }
   module_load_include('module', 'filter');
   $filters = filter_get_filters();
-  if (!in_array('filtered_html', array_keys($filters))) {
+  if (!array_key_exists('filtered_html', $filters)) {
     filter_format_save((object) array(
         'format' => 'filtered_html',
         'name' => 'Filtered HTML',
@@ -489,14 +489,14 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
       'module' => 'filter',
     ))->execute();
   }
-  if (!in_array('full_html', array_keys($filters))) {
+  if (!array_key_exists('full_html', $filters)) {
     // Exported format: Full HTML.
     filter_format_save((object) array(
         'format' => 'full_html',
         'name' => 'Full HTML',
         'cache' => 1,
         'status' => 1,
-        'weight' => 0,
+        'weight' => -10,
         'filters' => array(
           'ckeditor_link_filter' => array(
             'weight' => 0,

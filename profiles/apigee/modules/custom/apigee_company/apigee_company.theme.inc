@@ -82,7 +82,11 @@ function theme_apigee_company_developer_companies($variables) {
     }
 
     // @TODO: This URL should be modified by monetization module.
-    $company_link_options = array('query' => array('destination' => 'users/me/monetization/company/developers'));
+    if (module_exists('devconnect_monetization')) {
+      $company_link_options = array('query' => array('destination' => 'users/me/monetization/company/developers'));
+    } else {
+      $company_link_options = array('query' => array('destination' => 'api_company/company/developers'));
+    }
     $company_cell = l($company->displayName, 'api_company/company/switch/' . $company->name, $company_link_options);
 
     $rows[] = array(
@@ -120,7 +124,9 @@ function theme_apigee_company_developer_companies($variables) {
       'class' => array('btn', 'btn-default', 'create-company-btn'),
     ),
   );
-  $output .= l(t('Create company'), "api_company/developer/company/add", $link_options);
+  if (user_access('create apigee company')) {
+    $output .= l(t('Create company'), "api_company/developer/company/add", $link_options);
+  }
   $output .= '</div>';
 
   return $output;
