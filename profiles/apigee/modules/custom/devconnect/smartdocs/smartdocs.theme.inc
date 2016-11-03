@@ -148,7 +148,6 @@ function smartdocs_preprocess_node(&$vars) {
     }
 
     $org_settings = devconnect_get_org_settings();
-    $endpoint_host = parse_url($org_settings['endpoint'], PHP_URL_HOST);
     $js_settings = array(
       'oauth2AuthUrl' => rtrim(base_path(), '/') . '/smartdocs/oauth/callback',
       'apiModelBaseUrl' => preg_replace('!v1$!', '', rtrim($org_settings['endpoint'], '/')),

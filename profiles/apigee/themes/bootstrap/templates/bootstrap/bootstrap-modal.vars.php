@@ -45,6 +45,7 @@ function bootstrap_preprocess_bootstrap_modal(&$variables) {
 function bootstrap_process_bootstrap_modal(&$variables) {
   $variables['attributes'] = drupal_attributes($variables['attributes']);
   $variables['dialog_attributes'] = drupal_attributes($variables['dialog_attributes']);
+  $variables['heading'] = _bootstrap_filter_xss(render($variables['heading']));
   $variables['body'] = render($variables['body']);
   $variables['footer'] = render($variables['footer']);
 }

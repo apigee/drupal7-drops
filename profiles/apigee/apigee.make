@@ -122,9 +122,7 @@ projects[context_condition_theme][version] = "1.0"
 ; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.10"
-; see https://www.drupal.org/node/2645612
-projects[ctools][patch][2645612] = "https://www.drupal.org/files/issues/2645612-6.patch"
+projects[ctools][version] = "1.11"
 
 ; Deprecated
 projects[date][type] = "module"
@@ -239,7 +237,7 @@ projects[http_client][version] = "2.4"
 ; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
-projects[i18n][version] = "1.13"
+projects[i18n][version] = "1.14"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
@@ -288,11 +286,9 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-beta2"
+projects[media][version] = "2.0-beta5"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
-; see https://www.drupal.org/node/2631934
-projects[media][patch][2631934] = "https://www.drupal.org/files/issues/media-2631934-media-element-wysiwyg-false-3.patch"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
@@ -492,7 +488,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.6"
+projects[bootstrap][version] = "3.8"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
@@ -765,7 +761,7 @@ libraries[insertpre][directory_name] = "ckeditor/plugins/insertpre"
 libraries[insertpre][download][type] = "file"
 libraries[insertpre][download][url] = "http://download.ckeditor.com/insertpre/releases/insertpre_1.1.zip"
 
-; Used by gauth
+; Used by gauth. Cannot update to 2.x because it depends on PHP >= 5.4
 libraries[google-api-php-client][destination] = "libraries"
 libraries[google-api-php-client][directory_name] = "google-api-php-client"
 libraries[google-api-php-client][download][type] = "file"
@@ -795,12 +791,6 @@ libraries[datetimepicker][directory_name] = "datetimepicker"
 libraries[datetimepicker][download][type] = "file"
 libraries[datetimepicker][download][url] = "https://github.com/xdan/datetimepicker/archive/2.5.4.tar.gz"
 
-; Used by views_slideshow
-libraries[json2][destination] = "libraries"
-libraries[json2][directory_name] = "json2"
-libraries[json2][download][type] = "file"
-libraries[json2][download][url] = "https://raw.githubusercontent.com/douglascrockford/JSON-js/master/json2.js"
-
 ; Used by devconnect_monetization
 libraries[maskmoney][destination] = "libraries"
 libraries[maskmoney][directory_name] = "maskmoney"
@@ -817,19 +807,13 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.7.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.8.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"
 libraries[plupload][directory_name] = "plupload"
 libraries[plupload][download][type] = "file"
 libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/archive/v2.1.9.zip"
-
-; Used by apachesolr
-libraries[SolrPhpClient][destination] = "libraries"
-libraries[SolrPhpClient][directory_name] = "SolrPhpClient"
-libraries[SolrPhpClient][download][type] = "file"
-libraries[SolrPhpClient][download][url] = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/solr-php-client/SolrPhpClient.r60.2011-05-04.zip"
 
 ; Used by services, devconnect, smartdocs
 libraries[spyc][destination] = "libraries"

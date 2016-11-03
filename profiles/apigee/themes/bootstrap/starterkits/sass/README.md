@@ -1,6 +1,6 @@
 <!-- @file Instructions for subtheming using the Sass Starterkit. -->
-<!-- @defgroup sub_theming_sass -->
-<!-- @ingroup sub_theming -->
+<!-- @defgroup subtheme_sass -->
+<!-- @ingroup subtheme -->
 # Sass Starterkit
 
 Below are instructions on how to create a Bootstrap sub-theme using a Sass
@@ -11,7 +11,7 @@ preprocessor.
 - [Overrides](#overrides)
 
 ## Prerequisites
-- Read the @link getting_started Getting Started @endlink documentation topic.
+- Read the @link getting_started Getting Started @endlink and @link subtheme Sub-theming @endlink documentation topics.
 - You must understand the basic concept of using the [Sass] CSS pre-processor.
 - You must use a **[local Sass compiler](https://www.google.com/search?q=sass+compiler)**.
 - You must use the [Bootstrap Framework Source Files] ending in the `.scss`
@@ -50,7 +50,7 @@ name, using a different extension of course).
 
 #### See also:
 - @link templates Templates @endlink
-- @link theme_settings Theme Settings @endlink
+- @link subtheme_settings Theme Settings @endlink
 - @link registry Theme Registry @endlink
 
 [Bootstrap Framework]: http://getbootstrap.com

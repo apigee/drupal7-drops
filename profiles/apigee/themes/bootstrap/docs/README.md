@@ -24,7 +24,8 @@ a base theme like this.
 - @link subtheme_settings Theme Settings @endlink
 - @link subtheme_helper_functions Helper Functions @endlink
 - @link subtheme_cdn CDN Starterkit @endlink
-- @link subtheme_less LESS Starterkit @endlink
+- @link subtheme_less Less Starterkit @endlink
+- @link subtheme_sass Sass Starterkit @endlink
 
 #### @link registry Theme Registry @endlink
 - @link theme_preprocess Preprocess Functions (.vars.php) @endlink

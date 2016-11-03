@@ -22,8 +22,10 @@ topic will focus on the two primarily and most common ways.
 
 - @link subtheme_cdn CDN Starterkit @endlink - uses the "out-of-the-box"
   CSS and JavaScript files served by the [jsDelivr CDN].
-- @link subtheme_less LESS Starterkit @endlink - uses the [Bootstrap Framework]
-  [LESS] source files and a local [LESS] preprocessor.
+- @link subtheme_less Less Starterkit @endlink - uses the [Bootstrap Framework]
+  source files and a local [Less] preprocessor.
+- @link subtheme_sass Sass Starterkit @endlink - uses the [Bootstrap Framework]
+  source files and a local [Sass] preprocessor.
 
 #### Create a New Sub-theme {#create}
 
@@ -56,4 +58,5 @@ for additional documentation pertaining to the chosen Starterkit.
 [Drupal Bootstrap]: https://www.drupal.org/project/bootstrap
 [Bootstrap Framework]: http://getbootstrap.com
 [jsDelivr CDN]: http://www.jsdelivr.com
-[LESS]: http://lesscss.org
+[Less]: http://lesscss.org
+[Sass]: http://sass-lang.com

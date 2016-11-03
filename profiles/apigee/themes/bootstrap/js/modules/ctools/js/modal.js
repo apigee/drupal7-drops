@@ -39,7 +39,8 @@
       modalOptions: {
         opacity: 0.55,
         background: '#fff'
-      }
+      },
+      modalClass: 'default'
     };
 
     var settings = {};
@@ -99,8 +100,8 @@
     resize();
 
     $('.modal-title', Drupal.CTools.Modal.modal).html(Drupal.CTools.Modal.currentSettings.loadingText);
-    Drupal.CTools.Modal.modalContent(Drupal.CTools.Modal.modal, settings.modalOptions, settings.animation, settings.animationSpeed);
-    $('#modalContent .modal-body').html(Drupal.theme(settings.throbberTheme));
+    Drupal.CTools.Modal.modalContent(Drupal.CTools.Modal.modal, settings.modalOptions, settings.animation, settings.animationSpeed, settings.modalClass);
+    $('#modalContent .modal-body').html(Drupal.theme(settings.throbberTheme)).addClass('ctools-modal-loading');
   };
 
   /**

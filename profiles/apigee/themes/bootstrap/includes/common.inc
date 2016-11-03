@@ -576,6 +576,50 @@ function _bootstrap_file_scan_directory($dir, $mask, array $options = array()) {
 }
 
 /**
+ * Filters HTML to prevent cross-site-scripting (XSS) vulnerabilities.
+ *
+ * Very similar to core's filter_xss(). It does, however, include the addition
+ * of the "span", "div" and "i" elements which are commonly used in Bootstrap.
+ *
+ * @param string $string
+ *   The string with raw HTML in it. It will be stripped of everything that can
+ *   cause an XSS attack.
+ * @param array $allowed_tags
+ *   An array of allowed tags.
+ *
+ * @return string
+ *   An XSS safe version of $string, or an empty string if $string is not
+ *   valid UTF-8.
+ *
+ * @see filter_xss()
+ */
+function _bootstrap_filter_xss($string, array $allowed_tags = NULL) {
+  if (is_null($allowed_tags)) {
+    $allowed_tags = array(
+      // Inline elements.
+      'a',
+      'cite',
+      'em',
+      'i',
+      'span',
+      'strong',
+
+      // Block elements.
+      'blockquote',
+      'code',
+      'div',
+      'ul',
+      'ol',
+      'li',
+      'dl',
+      'dt',
+      'dd',
+    );
+  }
+  return filter_xss($string, $allowed_tags);
+}
+
+/**
  * Returns a list of available Bootstrap Glyphicons.
  *
  * @param string $version
@@ -1058,6 +1102,7 @@ function _bootstrap_colorize_text($string, $default = '') {
         t('Filter')             => 'primary',
         t('Submit')             => 'primary',
         t('Search')             => 'primary',
+        t('Log in')             => 'primary',
 
         // Success class.
         t('Add')                => 'success',
@@ -1156,6 +1201,7 @@ function _bootstrap_iconize_text($string, $default = '') {
         t('Delete')     => 'trash',
         t('Remove')     => 'trash',
         t('Upload')     => 'upload',
+        t('Log In')     => 'log-in',
       ),
     );
 

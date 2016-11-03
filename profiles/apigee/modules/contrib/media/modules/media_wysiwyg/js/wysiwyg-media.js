@@ -113,7 +113,7 @@ InsertMedia.prototype = {
     var element = Drupal.media.filter.create_element(formatted_media.html, {
           fid: this.mediaFile.fid,
           view_mode: formatted_media.type,
-          attributes: formatted_media.options,
+          attributes: this.mediaFile.attributes,
           fields: formatted_media.options
         });
     // Get the markup and register it for the macro / placeholder handling.

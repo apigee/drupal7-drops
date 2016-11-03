@@ -115,7 +115,26 @@ function media_wysiwyg_pre_render_text_format($element) {
   $element['#attached']['library'][] = array('media', 'media_browser_settings');
 
   // Add wysiwyg-specific settings.
-  $settings = array('wysiwyg_allowed_attributes' => variable_get('media_wysiwyg_wysiwyg_allowed_attributes', _media_wysiwyg_wysiwyg_allowed_attributes_default()));
+  $settings = array(
+    'wysiwyg_allowed_attributes' => variable_get('media_wysiwyg_wysiwyg_allowed_attributes', _media_wysiwyg_wysiwyg_allowed_attributes_default()),
+    'img_alt_field' => 'field_file_image_alt_text',
+    'img_title_field' => 'field_file_image_title_text',
+  );
+
+  // The file_entity module lets you specify a string, possibly with tokens, for
+  // the alt and title attributes of images. We need the actual field names instead.
+  // If the variable only contains a token of the format [file:field_file_image_alt_text]
+  // then it's possible to extract it.
+  $alt_token = variable_get('file_entity_alt', '[file:field_file_image_alt_text]');
+  $title_token = variable_get('file_entity_title', '[file:field_file_image_title_text]');
+  $matches = array();
+  if (preg_match('/^\[file:(field_[[:alnum:]_-]+)\]$/', trim($alt_token), $matches)) {
+    $settings['img_alt_field'] = $matches[1];
+  }
+  if (preg_match('/^\[file:(field_[[:alnum:]_-]+)\]$/', trim($title_token), $matches)) {
+    $settings['img_title_field'] = $matches[1];
+  }
+
   $element['#attached']['js'][] = array(
     'data' => array(
       'media' => $settings,
@@ -288,10 +307,18 @@ function _media_wysiwyg_wysiwyg_allowed_attributes_default() {
  *
  * Optional custom settings can override how the file is displayed.
  */
-function media_wysiwyg_get_file_without_label($file, $view_mode, $settings = array()) {
+function media_wysiwyg_get_file_without_label($file, $view_mode, $settings = array(), $langcode = NULL) {
   $file->override = $settings;
 
-  $element = file_view_file($file, $view_mode);
+  $element = file_view_file($file, $view_mode, $langcode);
+
+  // Field Translation Support.
+  if (field_has_translation_handler('file')) {
+    if ($field_items = field_get_items('file', $file, 'field_file_image_alt_text', $langcode)) {
+      $value = field_view_value('file', $file, 'field_file_image_alt_text', $field_items[0], array(), $langcode);
+      $element['#alt'] = isset($value['#markup']) ? $value['#markup'] : '';
+    }
+  }
 
   // The formatter invoked by file_view_file() can use $file->override to
   // customize the returned render array to match the requested settings. To

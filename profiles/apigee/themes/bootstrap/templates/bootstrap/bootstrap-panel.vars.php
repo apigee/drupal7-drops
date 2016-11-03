@@ -86,4 +86,10 @@ function bootstrap_preprocess_bootstrap_panel(&$variables) {
  */
 function bootstrap_process_bootstrap_panel(&$variables) {
   $variables['attributes'] = drupal_attributes($variables['attributes']);
+  if (!empty($variables['title'])) {
+    $variables['title'] = _bootstrap_filter_xss(render($variables['title']));
+  }
+  if (!empty($variables['description'])) {
+    $variables['description'] = _bootstrap_filter_xss(render($variables['description']));
+  }
 }

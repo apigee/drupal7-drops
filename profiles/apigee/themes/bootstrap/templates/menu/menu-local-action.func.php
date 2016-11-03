@@ -22,21 +22,15 @@
  */
 function bootstrap_menu_local_action($variables) {
   $link = $variables['element']['#link'];
-
+  $title = $link['title'];
+  $icon = _bootstrap_iconize_text($title);
+  $href = !empty($link['href']) ? $link['href'] : FALSE;
   $options = isset($link['localized_options']) ? $link['localized_options'] : array();
 
-  // If the title is not HTML, sanitize it.
-  if (empty($options['html'])) {
-    $link['title'] = check_plain($link['title']);
-  }
-
-  $icon = _bootstrap_iconize_text($link['title']);
-
   // Format the action link.
-  $output = '';
-  if (isset($link['href'])) {
+  if ($href) {
     // Turn link into a mini-button and colorize based on title.
-    if ($class = _bootstrap_colorize_text($link['title'])) {
+    if ($class = _bootstrap_colorize_text($title)) {
       if (!isset($options['attributes']['class'])) {
         $options['attributes']['class'] = array();
       }
@@ -53,11 +47,13 @@ function bootstrap_menu_local_action($variables) {
     }
     // Force HTML so we can render any icon that may have been added.
     $options['html'] = !empty($options['html']) || !empty($icon) ? TRUE : FALSE;
-    $output .= l($icon . $link['title'], $link['href'], $options);
-  }
-  else {
-    $output .= $icon . $link['title'];
   }
 
-  return $output;
+  // Filter the title if the "html" is set, otherwise l() will automatically
+  // sanitize using check_plain(), so no need to call that here.
+  if (!empty($options['html'])) {
+    $title = _bootstrap_filter_xss($title);
+  }
+
+  return $href ? l($icon . $title, $href, $options) : $icon . $title;
 }

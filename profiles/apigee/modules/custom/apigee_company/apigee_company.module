@@ -1231,7 +1231,12 @@ function apigee_company_update_user_roles() {
     }
   }
   $account = user_load($user->uid);
-  user_save($account, array('roles' => $new_roles));
+  $edit = array(
+    'roles' => $new_roles,
+    // Prevent unnecessary saving to Edge.
+    'already_in_kms' => TRUE,
+  );
+  user_save($account, $edit);
 }
 
 /**

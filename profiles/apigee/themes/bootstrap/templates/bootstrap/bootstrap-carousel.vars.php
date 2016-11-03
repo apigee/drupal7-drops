@@ -64,5 +64,14 @@ function bootstrap_process_bootstrap_carousel(&$variables) {
       'description' => NULL,
       'url' => NULL,
     );
+
+    if (!empty($variables['items'][$delta]['title'])) {
+      $variables['items'][$delta]['title'] = _bootstrap_filter_xss(render($item['title']));
+    }
+
+    if (!empty($variables['items'][$delta]['description'])) {
+      $variables['items'][$delta]['description'] = _bootstrap_filter_xss(render($item['description']));
+    }
+
   }
 }

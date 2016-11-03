@@ -1162,10 +1162,10 @@ function media_file_displays_alter(&$displays, $file, $view_mode) {
 
   // Load alt and title text from fields.
   if (!empty($alt)) {
-    $file->alt = token_replace($alt, array('file' => $file), $replace_options);
+    $file->alt = decode_entities(token_replace($alt, array('file' => $file), $replace_options));
   }
   if (!empty($title)) {
-    $file->title = token_replace($title, array('file' => $file), $replace_options);
+    $file->title = decode_entities(token_replace($title, array('file' => $file), $replace_options));
   }
 }
 

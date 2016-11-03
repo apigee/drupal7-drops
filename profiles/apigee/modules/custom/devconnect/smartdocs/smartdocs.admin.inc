@@ -254,6 +254,7 @@ function smartdocs_settings($form, $form_state) {
   // Make sure the array is flattened before system_settings_form_submit() is
   // called.
   array_unshift($form['#submit'], 'smartdocs_settings_flatten_array');
+  array_unshift($form['#submit'], 'smartdocs_settings_empty_proxy_url');
   // Additional submit handler to be invoked *after* calling
   // system_settings_form_submit().
   $form['#submit'][] = 'smartdocs_settings_submit';
@@ -305,6 +306,24 @@ function smartdocs_settings_flatten_array($form, &$form_state) {
       }
       $form_state['values'][$key] = $values;
     }
+  }
+}
+
+/**
+ * Early submit handler for smartdocs_settings().
+ *
+ * Makes sure that if smartdocs_proxy_url is empty, the variable is deleted
+ * from the database, causing default-value fallbacks to come into play.
+ *
+ * @param array $form
+ *   Descriptor of the form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
+ */
+function smartdocs_settings_empty_proxy_url($form, &$form_state) {
+  if (empty($form_state['values']['smartdocs_proxy_url'])) {
+    unset($form_state['values']['smartdocs_proxy_url']);
+    variable_del('smartdocs_proxy_url');
   }
 }
 
@@ -3221,17 +3240,16 @@ function smartdocs_method_delete_submit($form, &$form_state) {
 
   $nid = $form_state['values']['nid'];
   if ($nid) {
+    module_invoke_all('smartdocs_method_node_preaction', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid, $action);
     switch ($action) {
       case 'unpublish':
       case 'keep':
-        module_invoke_all('smartdocs_method_node_preaction', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid, $action);
         db_delete('smartdata')->condition('nid', $nid)->execute();
         if ($action == 'unpublish') {
           $node = node_load($nid);
           $node->status = 0;
           node_save($node);
         }
-        module_invoke_all('smartdocs_method_node_postaction', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid, $action);
         break;
 
       case 'delete':
@@ -3241,6 +3259,7 @@ function smartdocs_method_delete_submit($form, &$form_state) {
         module_invoke_all('smartdocs_method_node_postdelete', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid);
         break;
     }
+    module_invoke_all('smartdocs_method_node_postaction', $method, $nid, $model_uuid, $revision_uuid, $resource_uuid, $action);
   }
   try {
     module_invoke_all('smartdocs_method_predelete', $method, $model_uuid, $revision_uuid, $resource_uuid);

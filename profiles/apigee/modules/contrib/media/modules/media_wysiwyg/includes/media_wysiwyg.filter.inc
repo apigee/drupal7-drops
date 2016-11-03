@@ -12,9 +12,19 @@ define('MEDIA_WYSIWYG_TOKEN_REGEX', '/\[\[.*?\]\]/s');
  *
  * @TODO check for security probably pass text through filter_xss
  */
-function media_wysiwyg_filter($text) {
-  $text = preg_replace_callback(MEDIA_WYSIWYG_TOKEN_REGEX, 'media_wysiwyg_token_to_markup', $text);
-  return $text;
+function media_wysiwyg_filter($text, $filter = NULL, $format = NULL, $langcode = NULL, $cache = NULL, $cache_id = NULL) {
+  $replacements = array();
+  $patterns = array();
+  $rendered_text = $text;
+  $count = 1;
+  preg_match_all(MEDIA_WYSIWYG_TOKEN_REGEX, $text, $matches);
+  if (!empty($matches[0])) {
+    foreach ($matches[0] as $match) {
+      $replacement = media_wysiwyg_token_to_markup(array($match), FALSE, $langcode);
+      $rendered_text = str_replace($match, $replacement, $rendered_text, $count);
+    }
+  }
+  return $rendered_text;
 }
 
 /**
@@ -55,7 +65,7 @@ function media_wysiwyg_parse_css_declarations($declarations) {
  * @see media_wysiwyg_get_file_without_label()
  * @see hook_media_wysiwyg_token_to_markup_alter()
  */
-function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE) {
+function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NULL) {
   static $recursion_stop;
   $settings = array();
   $match = str_replace("[[", "", $match);
@@ -156,6 +166,11 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE) {
           }
         }
       }
+      foreach (array('title', 'alt') as $field_type) {
+        if (isset($settings['attributes'][$field_type])) {
+          $settings['attributes'][$field_type] = decode_entities($settings['attributes'][$field_type]);
+        }
+      }
     }
   }
   catch (Exception $e) {
@@ -180,7 +195,7 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE) {
     // that an inline macro can be generated when the WYSIWYG is detached.
     // The WYSIWYG plugin is expecting this information in the
     // Drupal.settings.mediaDataMap variable.
-    $element = media_wysiwyg_get_file_without_label($file, $tag_info['view_mode'], $settings);
+    $element = media_wysiwyg_get_file_without_label($file, $tag_info['view_mode'], $settings, $langcode);
     $data = array(
       'type' => 'media',
       'fid'  => $file->fid,
@@ -199,7 +214,7 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE) {
     if (variable_get('media_wysiwyg_default_render', 'file_entity') == 'file_entity') {
       $element['content'] = file_view($file, $tag_info['view_mode']);
     }
-    $element['content']['file'] = media_wysiwyg_get_file_without_label($file, $tag_info['view_mode'], $settings);
+    $element['content']['file'] = media_wysiwyg_get_file_without_label($file, $tag_info['view_mode'], $settings, $langcode);
     // Overwrite or set the file #alt attribute if it has been set in this
     // instance.
     if (!empty($element['content']['file']['#attributes']['alt'])) {
@@ -212,9 +227,9 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE) {
     }
     // For sites using the legacy field_attach rendering method, attach fields.
     if (variable_get('media_wysiwyg_default_render', 'file_entity') == 'field_attach') {
-      field_attach_prepare_view('file', array($file->fid => $file), $tag_info['view_mode']);
-      entity_prepare_view('file', array($file->fid => $file));
-      $element['content'] += field_attach_view('file', $file, $tag_info['view_mode']);
+      field_attach_prepare_view('file', array($file->fid => $file), $tag_info['view_mode'], $langcode);
+      entity_prepare_view('file', array($file->fid => $file), $langcode);
+      $element['content'] += field_attach_view('file', $file, $tag_info['view_mode'], $langcode);
     }
     if (count(element_children($element['content'])) > 1) {
       // Add surrounding divs to group them together.
@@ -234,7 +249,7 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE) {
       $element['#pre_render'][] = 'media_wysiwyg_pre_render_cached_filter';
     }
   }
-  drupal_alter('media_wysiwyg_token_to_markup', $element, $tag_info, $settings);
+  drupal_alter('media_wysiwyg_token_to_markup', $element, $tag_info, $settings, $langcode);
   $output = drupal_render($element);
   unset($recursion_stop[$file->fid]);
   return $output;
@@ -261,7 +276,7 @@ function media_wysiwyg_filter_field_parser($tag_info) {
 
         // The value should be set at the deepest level.
         // Fields that use rich-text markup will be urlencoded.
-        $ref = urldecode($field_value);
+        $ref = decode_entities($field_value);
       }
     }
   }

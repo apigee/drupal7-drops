@@ -80,7 +80,7 @@ function bootstrap_form_element(&$variables) {
   }
 
   // Check for errors and set correct error class.
-  if ((isset($element['#parents']) && form_get_error($element)) || (!empty($element['#required']) && bootstrap_setting('forms_required_has_error'))) {
+  if ((isset($element['#parents']) && form_get_error($element) !== NULL) || (!empty($element['#required']) && bootstrap_setting('forms_required_has_error'))) {
     $wrapper_attributes['class'][] = 'has-error';
   }
 
@@ -156,7 +156,7 @@ function bootstrap_form_element(&$variables) {
       '#attributes' => array(
         'class' => array('help-block'),
       ),
-      '#weight' => isset($element['#description_display']) && $element['#description_display'] === 'before' ? 0 : 2,
+      '#weight' => isset($element['#description_display']) && $element['#description_display'] === 'before' ? 0 : 20,
       0 => array('#markup' => filter_xss_admin($element['#description'])),
     );
   }

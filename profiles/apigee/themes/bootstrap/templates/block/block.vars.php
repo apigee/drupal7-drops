@@ -36,4 +36,5 @@ function bootstrap_process_block(&$variables) {
   if (!isset($variables['title'])) {
     $variables['title'] = $variables['block']->subject;
   }
+  $variables['title'] = _bootstrap_filter_xss($variables['title']);
 }

@@ -14,7 +14,7 @@ function bootstrap_webform_element(&$variables) {
   $element = &$variables['element'];
 
   // Inline title.
-  if ($element['#title_display'] === 'inline') {
+  if (isset($element['#title_display']) && $element['#title_display'] === 'inline') {
     $element['#title_display'] = 'before';
     $element['#wrapper_attributes']['class'][] = 'form-inline';
   }
@@ -29,7 +29,6 @@ function bootstrap_webform_element(&$variables) {
     $element['#input_group'] = TRUE;
   }
 
-  // Render with bootstrap_form_element().
-  bootstrap_include('bootstrap', 'templates/system/form-element.func.php');
-  return bootstrap_form_element($variables);
+  // Render as a normal "form_element" theme hook.
+  return theme('form_element', $variables);
 }
