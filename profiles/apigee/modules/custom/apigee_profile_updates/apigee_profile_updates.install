@@ -63,9 +63,7 @@ function apigee_profile_updates_install() {
 /**
  * Implements hook_requirements().
  *
- * Ensures we are using a given minimum PHP version. If the PHP is too old,
- * emit a requirements error. Also ensures that the openssl extension is
- * loaded.
+ * Ensures that the openssl extension is loaded.
  */
 function apigee_profile_updates_requirements() {
   $requirements = array();
@@ -242,7 +240,6 @@ function apigee_profile_updates_update_7104() {
 function apigee_profile_updates_update_7105() {
   module_enable(array('media_ckeditor'));
 }
-
 
 /**
  * Configure CKEditor to use correct path for media plugin.

@@ -19,14 +19,20 @@ module, allowing files to be embedded within a textarea using the media browser.
 REQUIREMENTS
 ------------
 
-Media CKEditor has one dependency and needs three libraries.
+Media CKEditor has two dependencies.
 
 Contributed modules
  * CKEditor - The latest development release.
+ * Media - 7.x-2.x - The Media WYSIWYG submodule.
 
-Libraries
+Additionally, the CKEditor library used by the CKEditor module must meet certain
+criteria and two plugins must be available.
+
+CKEditor Library
  * CKEditor - Version 4.3 or later.
    http://ckeditor.com/download
+
+CKEditor Library Plugins
  * CKEditor Line Utilities plugin - Compatible with the installed version of CKEditor.
    http://ckeditor.com/addon/lineutils
  * CKEditor Widget plugin - Compatible with the installed version of CKEditor.

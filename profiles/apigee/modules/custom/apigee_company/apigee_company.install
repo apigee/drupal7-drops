@@ -4,6 +4,8 @@
  * Intall tasks for the apigee company module.
  */
 
+use Apigee\ManagementAPI\Organization;
+
 /**
  * Implements hook_install().
  */
@@ -26,17 +28,28 @@ function apigee_company_install() {
       ))
       ->execute();
   // View company users permission for all monetization or company roles.
-  $roles = array();
   if(module_exists('devconnect_monetization')){
-    $roles[] = user_role_load_by_name(MONETIZATION_ADMIN_ROLE_NAME);
-    $roles[] = user_role_load_by_name(MONETIZATION_FINANCE_ADMIN_ROLE_NAME);
-    $roles[] = user_role_load_by_name(MONETIZATION_DEVELOPER_ROLE_NAME);
+    drupal_load('module', 'devconnect_monetization');
+    $role_names = array(
+      MONETIZATION_ADMIN_ROLE_NAME,
+      MONETIZATION_FINANCE_ADMIN_ROLE_NAME,
+      MONETIZATION_DEVELOPER_ROLE_NAME,
+    );
   }
   else {
-    $roles[] = user_role_load_by_name(APIGEE_COMPANY_ADMIN_ROLE_NAME);
-    $roles[] = user_role_load_by_name(APIGEE_COMPANY_DEVELOPER_ROLE_NAME);
+    drupal_load('module', 'apigee_company');
+    $role_names = array(
+      APIGEE_COMPANY_ADMIN_ROLE_NAME,
+      APIGEE_COMPANY_DEVELOPER_ROLE_NAME,
+    );
   }
-  foreach ($roles as $role) {
+  foreach ($role_names as $role_name) {
+    $role = user_role_load_by_name($role_name);
+    if (!$role) {
+      $role = new stdClass();
+      $role->name = $role_name;
+      user_role_save($role);
+    }
     db_merge('role_permission')
       ->key(array(
         'rid' => $role->rid,
@@ -48,6 +61,58 @@ function apigee_company_install() {
       ->execute();
   }
 }
+
+/**
+ * Implements hook_requirements().
+ *
+ * Verify that mint is enabled for the customer organization.
+ */
+function apigee_company_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+
+  switch ($phase) {
+    case 'install':
+    case 'runtime':
+      // Raise warning if Monetization features are not available in the Edge
+      // backend org.
+      drupal_load('module', 'devconnect');
+      devconnect_init();
+
+      try {
+        $client = devconnect_default_org_config();
+        $organization = new Organization($client);
+        $organization->load(NULL);
+        $is_mint_enabled = $organization->getProperty('features.isMonetizationEnabled');
+        if ($is_mint_enabled === TRUE || $is_mint_enabled === 'true') {
+          $requirements['apigee_company_requirements'] = array(
+            'title' => $t('Edge Monetization features'),
+            'severity' => REQUIREMENT_OK,
+            'value' => $t('Enabled'),
+          );
+        }
+        else {
+          $requirements['apigee_company_requirements'] = array(
+            'title' => $t('Edge Monetization features'),
+            'description' => $t('Monetization features are not available in your Edge organization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
+            'severity' => REQUIREMENT_ERROR,
+            'value' => $t('Invalid configuration'),
+          );
+        }
+      }
+      catch (Exception $e) {
+        $requirements['apigee_company_requirements'] = array(
+          'title' => $t('Edge Monetization features'),
+          'description' => $t('Monetization features are not available in your Edge organization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
+          'severity' => REQUIREMENT_ERROR,
+          'value' => $t('Invalid configuration'),
+        );
+      }
+      break;
+  }
+  return $requirements;
+}
+
 
 /**
  * Update function to set the view company users permission for all monetization or company roles

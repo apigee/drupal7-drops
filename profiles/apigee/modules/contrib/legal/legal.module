@@ -77,6 +77,17 @@ function legal_menu() {
     'file'             => 'legal.admin.inc',
   );
 
+  $items['admin/config/people/legal/configuration'] = array(
+    'title'            => 'Legal Configuration',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('legal_configuration'),
+    'access arguments' => array('administer Terms and Conditions'),
+    'description'      => 'Legal configuration options.',
+    'weight'           => 0,
+    'type'             => MENU_LOCAL_TASK,
+    'file'             => 'legal.admin.inc',
+  );
+
   $items['legal'] = array(
     'title'            => 'Terms and Conditions',
     'page callback'    => 'legal_page',
@@ -396,6 +407,8 @@ function legal_user_login(&$edit, $account) {
     return;
   }
 
+  $accept_every_login = variable_get('accept_every_login', '0');
+
   // Get last accepted version for this account
   $legal_account = legal_get_accept($user->uid);
 
@@ -419,7 +432,14 @@ function legal_user_login(&$edit, $account) {
     $accepted = legal_version_check($user->uid, $conditions['version'], $conditions['revision'], $legal_account);
 
     if ($accepted) {
-      return;
+
+      if ($accept_every_login == 0) {
+        return;
+      }
+
+      if ($accept_every_login == 1 && isset($_SESSION['legal']['legal_login']) && $_SESSION['legal']['legal_login'] == 1) {
+        return;
+      }
     }
   }
 
@@ -542,6 +562,8 @@ function legal_user_update(&$edit, $account, $category) {
 function legal_login($form, $constructor, $uid, $id_hash = NULL) {
   global $language;
 
+  $accept_every_login = variable_get('accept_every_login', '0');
+
   // get last accepted version for this account
   $legal_account = legal_get_accept($uid);
 
@@ -561,7 +583,14 @@ function legal_login($form, $constructor, $uid, $id_hash = NULL) {
     $accepted = legal_version_check($uid, $conditions['version'], $conditions['revision'], $legal_account);
 
     if ($accepted) {
-      return;
+
+      if ($accept_every_login == 0) {
+        return;
+      }
+
+      if ($accept_every_login == 1 && isset($_SESSION['legal']['legal_login']) && $_SESSION['legal']['legal_login'] == 1) {
+        return;
+      }
     }
   }
 
@@ -645,6 +674,10 @@ function legal_login_submit($form, &$form_state) {
     ->fields(array('login' => time()))
     ->condition('uid', $user->uid)
     ->execute();
+
+  if (variable_get('accept_every_login', '0') == '1') {
+    $_SESSION['legal']['legal_login'] = 1;
+  }
 
   // User has new permissions, so we clear their menu cache.
   cache_clear_all($user->uid, 'cache_menu', TRUE);

@@ -8,8 +8,12 @@
  * Implements hook_install().
  */
 function devconnect_admin_notify_install() {
-  //  Set the weight of the module lower so modules like logintobogie don't cause problems.
-  db_query("UPDATE {system} SET weight = 1002 WHERE name = 'devconnect_admin_notify'");
+  // Set the weight of the module lower so modules like logintoboggan don't
+  // cause problems.
+  db_update('system')
+    ->fields(array('weight' => 1002))
+    ->condition('name', 'devconnect_admin_notify')
+    ->execute();
 }
 
 /**

@@ -62,10 +62,11 @@ function gauth_login_gauth_google_response() {
       $client->setClientSecret($client_secret);
       $client->setRedirectUri(gauth_callback_url());
       $client->setDeveloperKey($api_key);
+      $client->setApprovalPrompt('force');
       $scopes = gauth_google_services_scopes();
       $client->addScope($scopes['oauth2']);
       $client->authenticate($_GET['code']);
-      $account['access_token'] = $client->getAccessToken();
+      $account['access_token'] = json_encode($client->getAccessToken());
 
       $client = new Google_Client();
       $client->setApplicationName("Google OAuth2");
@@ -73,6 +74,7 @@ function gauth_login_gauth_google_response() {
       $client->setClientSecret($client_secret);
       $client->setRedirectUri(gauth_callback_url());
       $client->setDeveloperKey($api_key);
+      $client->setApprovalPrompt('force');
       $client->setAccessToken($account['access_token']);
       $scopes = gauth_google_services_scopes();
       $client->addScope($scopes['oauth2']);
@@ -109,7 +111,7 @@ function gauth_login_gauth_google_response() {
         $token = drupal_hash_base64(drupal_random_bytes(55));
         $_SESSION['pass_reset_' . $user->uid] = $token;
         if (variable_get('gauth_login_prom_message', TRUE)) {
-          drupal_set_message(t("Click <a href=@url target=_blank>here</a> to set password", array('@url' => url('user/' . $user->uid . '/edit', array('query' => array('pass-reset-token' => $token))))), 'warning');
+          drupal_set_message(t("Click <a href='!url' target=_blank>here</a> to set password", array('!url' => url('user/' . $user->uid . '/edit', array('query' => array('pass-reset-token' => $token))))), 'warning');
         }
         $gauth_login = array(
           'google_id' => $info['id'],

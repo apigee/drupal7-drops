@@ -28,6 +28,25 @@ function media_wysiwyg_filter($text, $filter = NULL, $format = NULL, $langcode =
 }
 
 /**
+ * Filter callback to remove paragraph tags surrounding embedded media.
+ */
+function media_wysiwyg_filter_paragraph_fix($text) {
+  $html_dom = filter_dom_load($text);
+  foreach ($html_dom->getElementsByTagName('p') as $paragraph) {
+    if (preg_match(MEDIA_WYSIWYG_TOKEN_REGEX, $paragraph->nodeValue)) {
+      $sibling = $paragraph->firstChild;
+      do {
+        $next = $sibling->nextSibling;
+        $paragraph->parentNode->insertBefore($sibling, $paragraph);
+      } while ($sibling = $next);
+      $paragraph->parentNode->removeChild($paragraph);
+    }
+  }
+  $text = filter_dom_serialize($html_dom);
+  return $text;
+}
+
+/**
  * Parses the contents of a CSS declaration block.
  *
  * @param string $declarations
@@ -133,20 +152,19 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
       $tag_info['attributes']['class'] = explode(" ", $tag_info['attributes']['class']);
     }
 
-    // Grab the potentially overrided fields from the file.
+    // Grab the potentially overridden fields from the file.
     $fields = media_wysiwyg_filter_field_parser($tag_info);
     foreach ($fields as $key => $value) {
       $file->{$key} = $value;
     }
 
     $attributes = is_array($tag_info['attributes']) ? $tag_info['attributes'] : array();
-    $attribute_whitelist = variable_get('media_wysiwyg_wysiwyg_allowed_attributes', _media_wysiwyg_wysiwyg_allowed_attributes_default());
+    $attribute_whitelist = media_wysiwyg_allowed_attributes();
     $settings['attributes'] = array_intersect_key($attributes, array_flip($attribute_whitelist));
     $settings['fields'] = $fields;
 
     if (!empty($tag_info['attributes']) && is_array($tag_info['attributes'])) {
       $settings['attributes'] = array_intersect_key($tag_info['attributes'], array_flip($attribute_whitelist));
-      $settings['fields'] = $fields;
 
       // Many media formatters will want to apply width and height independently
       // of the style attribute or the corresponding HTML attributes, so pull
@@ -172,6 +190,12 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
         }
       }
     }
+    // Update file metadata from the potentially overridden tag info.
+    foreach (array('width', 'height') as $dimension) {
+      if (isset($settings['attributes'][$dimension])) {
+        $file->metadata[$dimension] = $settings['attributes'][$dimension];
+      }
+    }
   }
   catch (Exception $e) {
     watchdog('media', 'Unable to render media from %tag. Error: %error', array('%tag' => $tag, '%error' => $e->getMessage()));
@@ -182,7 +206,7 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
   // the rest of this function, so that if the file is themed as a link, the
   // desired text will be used (see, for example, theme_file_link()).
   // @todo: Try to find a less hacky way to do this.
-  if (isset($tag_info['link_text'])) {
+  if (isset($tag_info['link_text']) && variable_get('media_wysiwyg_use_link_text_for_filename', 1)) {
     // The link text will have characters such as "&" encoded for HTML, but the
     // filename itself needs the raw value when it is used to build the link,
     // in order to avoid double encoding.
@@ -191,11 +215,21 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
 
   if ($wysiwyg) {
     $settings['wysiwyg'] = $wysiwyg;
+
+    // Render file in WYSIWYG using appropriate view mode.
+    $view_mode = db_query('SELECT view_mode FROM {media_view_mode_wysiwyg} WHERE type = :type', array(
+      ':type' => $file->type,
+    ))
+      ->fetchField();
+    if (empty($view_mode)) {
+      $view_mode = $tag_info['view_mode'];
+    }
+
     // If sending markup to a WYSIWYG, we need to pass the file information so
     // that an inline macro can be generated when the WYSIWYG is detached.
     // The WYSIWYG plugin is expecting this information in the
     // Drupal.settings.mediaDataMap variable.
-    $element = media_wysiwyg_get_file_without_label($file, $tag_info['view_mode'], $settings, $langcode);
+    $element = media_wysiwyg_get_file_without_label($file, $view_mode, $settings, $langcode);
     $data = array(
       'type' => 'media',
       'fid'  => $file->fid,
@@ -233,13 +267,13 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
     }
     if (count(element_children($element['content'])) > 1) {
       // Add surrounding divs to group them together.
-      // We dont want divs when there are no additional fields to allow files
+      // We don't want divs when there are no additional fields to allow files
       // to display inline with text, without breaking p tags.
       $element['content']['#type'] = 'container';
       $element['content']['#attributes']['class'] = array(
         'media',
         'media-element-container',
-        'media-' . $element['content']['file']['#view_mode']
+        'media-' . $element['content']['file']['#view_mode'],
       );
     }
 
@@ -261,10 +295,39 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
 function media_wysiwyg_filter_field_parser($tag_info) {
   $fields = array();
   if (isset($tag_info['fields'])) {
+    // Field names that end in [format] are associated with long-text fields that may have HTML Entities.
+    // Those values will need to be URLDecoded as well as HTMLDecoded.
+    $url_encoded_fields = array();
+    foreach($tag_info['fields'] as $field_name => $field_value) {
+      if (preg_match('/\[format\]$/', $field_name) > 0){
+        $url_encoded_fields[] = preg_replace('/\[format\]$/', '[value]', $field_name);
+      }
+    }
+
     foreach($tag_info['fields'] as $field_name => $field_value) {
       if (strpos($field_name, 'field_') === 0) {
         $parsed_field = explode('[', str_replace(']', '', $field_name));
         $ref = &$fields;
+
+        // Certain types of fields, because of differences in markup, end up
+        // here with incomplete arrays. Make a best effort to support as many
+        // types of fields as possible.
+        // Single-value select lists show up here with only 2 array items.
+        if (count($parsed_field) == 2) {
+          $info = field_info_field($parsed_field[0]);
+          if ($info && !empty($info['columns'])) {
+            // Assume single-value.
+            $parsed_field[] = 0;
+            // Next tack on the column for this field.
+            $parsed_field[] = key($info['columns']);
+          }
+        }
+        // Multi-value select lists show up here with 3 array items.
+        elseif (count($parsed_field) == 3 && is_numeric($parsed_field[2])) {
+          $info = field_info_field($parsed_field[0]);
+          // They just need the value column.
+          $parsed_field[3] = key($info['columns']);
+        }
 
         // Each key of the field needs to be the child of the previous key.
         foreach ($parsed_field as $key) {
@@ -275,8 +338,14 @@ function media_wysiwyg_filter_field_parser($tag_info) {
         }
 
         // The value should be set at the deepest level.
-        // Fields that use rich-text markup will be urlencoded.
-        $ref = decode_entities($field_value);
+        if (in_array($field_name, $url_encoded_fields)){
+          // Fields that use rich-text markup will be urlencoded.
+          $ref = urldecode(decode_entities($field_value));
+        }
+        else {
+          // Only entities need to be decoded.
+          $ref = decode_entities($field_value);
+        }
       }
     }
   }
@@ -371,12 +440,23 @@ function media_wysiwyg_get_wysiwyg_allowed_view_modes($file) {
   }
 
   $view_modes = $enabled_view_modes[$file->type];
+  media_wysiwyg_wysiwyg_allowed_view_modes_restrict($view_modes, $file);
   drupal_alter('media_wysiwyg_allowed_view_modes', $view_modes, $file);
   // Invoke the deprecated/misspelled alter hook as well.
   drupal_alter('media_wysiwyg_wysiwyg_allowed_view_modes', $view_modes, $file);
   return $view_modes;
 }
-
+/**
+ * Do not show restricted view modes.
+ */
+function media_wysiwyg_wysiwyg_allowed_view_modes_restrict(&$view_modes, &$file) {
+  $restricted_view_modes = db_query('SELECT display FROM {media_restrict_wysiwyg} WHERE type = :type', array(':type' => $file->type))->fetchCol();
+  foreach ($restricted_view_modes as $restricted_view_mode) {
+    if (array_key_exists($restricted_view_mode, $view_modes)) {
+      unset($view_modes[$restricted_view_mode]);
+    }
+  }
+}
 /**
  * #pre_render callback: Modify the element if the render cache is filtered.
  */

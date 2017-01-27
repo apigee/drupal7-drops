@@ -1,7 +1,8 @@
 // Media query variables.
-@tablet:  ~"screen and (min-width: @{screen-sm-min})";
-@normal:  ~"screen and (min-width: @{screen-md-min})";
-@wide:    ~"screen and (min-width: @{screen-lg-min})";
+@tablet:              ~"screen and (min-width: @{screen-sm-min})";
+@normal:              ~"screen and (min-width: @{screen-md-min})";
+@wide:                ~"screen and (min-width: @{screen-lg-min})";
+@grid-breakpoint:     ~"screen and (min-width: @{grid-float-breakpoint})";
 
 // Drop shadows.
 .box-shadow(@shadow) {
@@ -171,7 +172,7 @@ body {
   margin-right: -15px;
   padding-left: 15px;
   padding-right: 15px;
-  @media @tablet {
+  @media @grid-breakpoint {
     margin-right: 0;
     padding-left: 0;
   }

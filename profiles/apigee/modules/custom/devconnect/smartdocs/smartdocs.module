@@ -4,7 +4,7 @@
  * Enables SmartDocs methods to be saved as nodes, and vice versa.
  */
 
-require_once __DIR__ . '/smartdocs.theme.inc';
+require_once drupal_get_path('module', 'smartdocs') . '/smartdocs.theme.inc';
 
 use Apigee\SmartDocs\Model;
 use Apigee\SmartDocs\Revision;

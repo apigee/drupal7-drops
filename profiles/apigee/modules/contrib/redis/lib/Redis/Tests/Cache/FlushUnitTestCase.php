@@ -7,6 +7,11 @@ abstract class Redis_Tests_Cache_FlushUnitTestCase extends Redis_Tests_AbstractU
      */
     static private $id = 1;
 
+    protected function createCacheInstance($name = null)
+    {
+        return new Redis_Cache($name);
+    }
+
     /**
      * Get cache backend
      *
@@ -21,7 +26,7 @@ abstract class Redis_Tests_Cache_FlushUnitTestCase extends Redis_Tests_AbstractU
             $name = 'cache' . (self::$id++);
         }
 
-        $backend = new Redis_Cache($name);
+        $backend = $this->createCacheInstance($name);
 
         $this->assert(true, "Redis client is " . ($backend->isSharded() ? '' : "NOT ") . " sharded");
         $this->assert(true, "Redis client is " . ($backend->allowTemporaryFlush() ? '' : "NOT ") . " allowed to flush temporary entries");

@@ -13,9 +13,22 @@
      */
     invoke: function (data, settings, instanceId) {
       if (data.format == 'html') {
+        // CKEDITOR module support doesn't set this setting
+        if (typeof settings['global'] === 'undefined') {
+          settings['global'] = {id: 'media_wysiwyg'};
+        }
+        // If the selection is (or contains) an element with the attribute of
+        // "data-media-element", assume the user wants to edit that thing.
+        var $alreadyInsertedMedia;
         if (jQuery(data.node).is('[data-media-element]')) {
+          $alreadyInsertedMedia = jQuery(data.node);
+        }
+        else {
+          $alreadyInsertedMedia = jQuery(data.node).find('[data-media-element]');
+        }
+        if ($alreadyInsertedMedia.length) {
           // Change the view mode for already-inserted media.
-          var mediaFile = Drupal.media.filter.extract_file_info(jQuery(data.node));
+          var mediaFile = Drupal.media.filter.extract_file_info($alreadyInsertedMedia);
           Drupal.media.popups.mediaStyleSelector(mediaFile, function (mediaFiles) {
             Drupal.settings.ckeditor.plugins['media'].insertMediaFile(mediaFile, mediaFiles, CKEDITOR.instances[instanceId]);
           }, settings['global']);
@@ -46,28 +59,32 @@
       var element = Drupal.media.filter.create_element(formattedMedia.html, {
         fid: mediaFile.fid,
         view_mode: formattedMedia.type,
-        attributes: formattedMedia.options
+        attributes: mediaFile.attributes,
+        fields: formattedMedia.options
       });
+
+      var hasWidgetSupport = typeof(CKEDITOR.plugins.registered.widget) != 'undefined';
 
       // Use own wrapper element to be able to properly deal with selections.
       // Check prepareDataForWysiwygMode() in plugin.js for details.
       var wysiwygHTML = Drupal.media.filter.getWysiwygHTML(element);
 
-      // Insert element. Use CKEDITOR.dom.element.createFromHtml to ensure our
-      // custom wrapper element is preserved.
       if (wysiwygHTML.indexOf("<!--MEDIA-WRAPPER-START-") !== -1) {
         ckeditorInstance.plugins.media.mediaLegacyWrappers = true;
         wysiwygHTML = wysiwygHTML.replace(/<!--MEDIA-WRAPPER-START-(\d+)-->(.*?)<!--MEDIA-WRAPPER-END-\d+-->/gi, '');
-      } else {
-        wysiwygHTML = '<mediawrapper data="">' + wysiwygHTML + '</mediawrapper>';
       }
 
+      // Insert element. Use CKEDITOR.dom.element.createFromHtml to ensure our
+      // custom wrapper element is preserved.
       var editorElement = CKEDITOR.dom.element.createFromHtml(wysiwygHTML);
       ckeditorInstance.insertElement(editorElement);
 
       // Initialize widget on our html if possible.
-      if (parseFloat(CKEDITOR.version) >= 4.3 && typeof(CKEDITOR.plugins.registered.widget) != 'undefined') {
+      if (parseFloat(CKEDITOR.version) >= 4.3 && hasWidgetSupport) {
         ckeditorInstance.widgets.initOn( editorElement, 'mediabox' );
+
+        // Also support the image2 plugin.
+        ckeditorInstance.widgets.initOn( editorElement, 'image' );
       }
     },
 

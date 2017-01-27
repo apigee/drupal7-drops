@@ -71,7 +71,7 @@ function bootstrap_status_messages($variables) {
       $output .= " </ul>\n";
     }
     else {
-      $output .= $messages[0];
+      $output .= _bootstrap_filter_xss($messages[0]);
     }
 
     $output .= "</div>\n";

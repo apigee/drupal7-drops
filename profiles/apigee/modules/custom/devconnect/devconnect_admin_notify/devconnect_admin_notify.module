@@ -126,7 +126,13 @@ function _devconnect_admin_notify_get_receiver_mails() {
     case 'Role':
       $roles = array_unique(variable_get('devconnect_admin_notify_roles', array()));
       if (!empty($roles)) {
-        $result = db_query("SELECT DISTINCT mail FROM {users} AS u INNER JOIN {users_roles} AS r ON u.uid = r.uid WHERE r.rid IN (:role) and u.status = '1' ", array(':role' => $roles));
+        $result = db_select('users', 'u');
+        $result->innerJoin('users_roles', 'r', 'u.uid = r.uid');
+        $result->fields('u', array('mail'))
+          ->condition('r.rid', $roles)
+          ->condition('u.status', 1)
+          ->distinct()
+          ->execute();
         $emails = array_merge($emails, $result->fetchCol());
       }
       break;

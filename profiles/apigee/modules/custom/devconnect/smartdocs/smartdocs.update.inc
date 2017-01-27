@@ -170,8 +170,8 @@ function _smartdocs_update_create_model_vocab() {
  * Creates and populates the smartdocs_verbs vocabulary.
  */
 function _smartdocs_update_create_verb_vocab() {
-
-  if (!taxonomy_vocabulary_machine_name_load('smartdocs_verbs')) {
+  $vocab = taxonomy_vocabulary_machine_name_load('smartdocs_verbs');
+  if (!$vocab) {
     $vocab = new stdClass();
     $vocab->machine_name = 'smartdocs_verbs';
     $vocab->name = 'SmartDocs verbs';
@@ -182,6 +182,7 @@ function _smartdocs_update_create_verb_vocab() {
     taxonomy_vocabulary_save($vocab);
   }
 
+  // Nota Bene: 'patch' is not supported.
   $allowed_verbs = array(
     'options',
     'get',
@@ -191,7 +192,6 @@ function _smartdocs_update_create_verb_vocab() {
     'delete',
     'trace',
     'connect',
-    //'patch',
   );
   foreach ($allowed_verbs as $verb) {
     $verb_upper = strtoupper($verb);
@@ -440,7 +440,7 @@ function _smartdocs_update_add_fields() {
     ),
   );
 
-  // Body content-type, cardinality 1
+  // Body content-type, cardinality 1.
   $fields[] = array(
     'field_name' => 'field_smart_method_mime_type',
     'type' => 'text',
@@ -488,7 +488,7 @@ function _smartdocs_update_add_fields() {
     ),
   );
 
-  // Body documentation, cardinality 1
+  // Body documentation, cardinality 1.
   $fields[] = array(
     'field_name' => 'field_smart_method_body_doc',
     'type' => 'text_long',
@@ -536,8 +536,7 @@ function _smartdocs_update_add_fields() {
     ),
   );
 
-
-  // Body sample, cardinality 1
+  // Body sample, cardinality 1.
   $fields[] = array(
     'field_name' => 'field_smart_method_sample',
     'type' => 'text_long',
@@ -1067,13 +1066,17 @@ function _smartdocs_update() {
   _smartdocs_update_create_tags_vocab();
   _smartdocs_update_create_content_type();
   _smartdocs_update_add_fields();
-  variable_set('pathauto_node_smart_method_pattern', '[node:field-smart-method-model:name]/apis/[node:field-smart-method-verb:name]/[node:field-smart-method-resource-path]');
+  variable_set(
+    'pathauto_node_smart_method_pattern',
+    '[node:field-smart-method-model:name]/apis/[node:field-smart-method-verb:name]/[node:field-smart-method-resource-path]'
+  );
 }
 
 /**
  * Lists methods/resources/revisions/models for which nodes have been rendered.
  *
  * @return array
+ *   List of information related to rendered nodes.
  */
 function _smartdocs_update_get_existing_nodes() {
   $query = db_select('smartdata', 's');
@@ -1102,16 +1105,16 @@ function _smartdocs_update_get_existing_nodes() {
  *   Node ID of the old content-type method node.
  * @param int $status
  *   Is the existing node published? Zero or one.
- * @param Apigee\SmartDocs\Model $model
+ * @param Model $model
  *   Model to which the to-be-rendered method belongs.
- * @param Apigee\SmartDocs\Revision $revision
+ * @param Revision $revision
  *   Revision to which the to-be-rendered method belongs.
- * @param Apigee\SmartDocs\Resource $resource
+ * @param Resource $resource
  *   Resource to which the to-be-rendered method belongs.
- * @param Apigee\SmartDocs\Method $method
+ * @param Method $method
  *   The method to be rendered into a new node.
  *
- * @return bool|stdClass
+ * @return bool|object
  *   Returns the newly-created node, or FALSE on failure.
  */
 function _smartdocs_update_process_node($existing_nid, $status, Model $model, Revision $revision, Resource $resource, Method $method) {
@@ -1136,9 +1139,7 @@ function _smartdocs_update_process_node($existing_nid, $status, Model $model, Re
  * Finds all nodes in legacy per-model content-types and re-renders them.
  *
  * If re-rendering all was successful, we then delete views and content-types
- * relating to old version. If it was unsuccessful, we throw an exception.
- *
- * @throws Exception
+ * relating to old version.
  */
 function _smartdocs_update_process_nodes() {
 
@@ -1162,7 +1163,7 @@ function _smartdocs_update_process_nodes() {
   // Fetch info from smartdata table.
   $node_info_list = _smartdocs_update_get_existing_nodes();
 
-  // Control how logging will happen. (Is update run from update.php or drush?)
+  // Control how logging will happen. Is update run from update.php or drush?
   $log_fn = (function_exists('drush_log') ? 'drush_log' : 'drupal_set_message');
   $t = (function_exists('dt') ? 'dt' : 't');
   $success_flag = ($t == 'dt' ? 'success' : 'info');
@@ -1274,7 +1275,6 @@ function _smartdocs_update_process_nodes() {
 
       // If a managed file, use file_delete().
       if (!empty($file_object)) {
-        $result = FALSE;
         try {
           $result = file_delete($file_object, TRUE);
           if ($result !== TRUE) {
@@ -1284,7 +1284,7 @@ function _smartdocs_update_process_nodes() {
             )), 'error');
             watchdog('smartdocs update', 'Failed deleting managed file %uri. Result was %result', array(
               '%uri' => $uri,
-              '%result' => result,
+              '%result' => $result,
             ), WATCHDOG_ERROR);
           }
         }
@@ -1293,11 +1293,11 @@ function _smartdocs_update_process_nodes() {
           // upgrade to break.
           $log_fn($t('Failed deleting managed file %uri. Result was %result', array(
             '%uri' => $uri,
-            '%result' => $e->getMessage()
+            '%result' => $e->getMessage(),
           )), 'error');
           watchdog('smartdocs update', 'Failed deleting managed file %uri. Result was %result', array(
             '%uri' => $uri,
-            '%result' => $e->getMessage()
+            '%result' => $e->getMessage(),
           ), WATCHDOG_ERROR);
         }
 
@@ -1329,13 +1329,21 @@ function _smartdocs_update_process_nodes() {
     $log_fn($t('No nodes were updated.'), $success_flag);
   }
   if (count($old_types)) {
-    $log_fn($t(':count content types were successfully migrated to the unified Smart Method type.', array(':count' => count($old_types))), $success_flag);
+    $log_fn(
+      $t(
+        ':count content types were successfully migrated to the unified Smart Method type.',
+        array(':count' => count($old_types))
+      ), $success_flag
+    );
   }
   else {
     $log_fn($t('No content types were migrated.'), $success_flag);
   }
   if ($failures) {
-    $log_fn($t('!fail failure(s) were encountered while updating SmartDocs nodes (there were !success successes).', array('!fail' => $failures, '!success' => $successes)));
+    $log_fn($t(
+      '!fail failure(s) were encountered while updating SmartDocs nodes (there were !success successes).',
+      array('!fail' => $failures, '!success' => $successes)
+    ));
   }
 }
 
@@ -1376,6 +1384,7 @@ function smartdocs_update_default_template() {
       $args = array('!time' => number_format(microtime(TRUE) - $start, 4));
       watchdog('smartdocs', 'Listed all models in !time seconds', $args, WATCHDOG_INFO);
     }
+    /** @var Model $model */
     foreach ($model_list as $model) {
       $template = new Template(devconnect_default_org_config(), $model->getUuid());
       $template->save(SMARTDOCS_TEMPLATE_NAME, 'method', $html, TRUE);
@@ -1390,11 +1399,18 @@ function smartdocs_update_default_template() {
 /**
  * Get the managed file from the database if it exists.
  *
- * @param $uri The URI for the file.
- * @return bool|mixed The file object or FALSE if it does not exist in the db.
+ * @param string $uri
+ *   The URI for the file.
+ *
+ * @return bool|object
+ *   The file object or FALSE if it does not exist in the db.
  */
 function _smartdocs_update_get_managed_file($uri) {
-  $fid = db_query('SELECT fid FROM {file_managed} WHERE uri = :uri', array(':uri' => $uri))->fetchField();
+  $fid = db_select('file_managed', 'f')
+    ->fields('f', array('fid'))
+    ->condition('uri', $uri)
+    ->execute()
+    ->fetchField();
   if (!empty($fid)) {
     $file_object = file_load($fid);
     return $file_object;

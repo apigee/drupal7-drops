@@ -32,9 +32,11 @@ function devconnect_init() {
     }
     require_once $lib_dir . '/vendor/autoload.php';
 
-    require_once __DIR__ . '/lib/Crypto.php';
-    require_once __DIR__ . '/lib/ErrorHandling.php';
-    require_once __DIR__ . '/lib/WatchdogLogger.php';
+    $dir = drupal_get_path('module', 'devconnect');
+
+    require_once $dir . '/lib/Crypto.php';
+    require_once $dir . '/lib/ErrorHandling.php';
+    require_once $dir . '/lib/WatchdogLogger.php';
 
     $already_booted = TRUE;
 
@@ -137,7 +139,6 @@ function devconnect_theme() {
  */
 function devconnect_default_org_config($requested_org = 'default') {
   $configs = &drupal_static(__FUNCTION__, array());
-
   if (!array_key_exists($requested_org, $configs)) {
     // Make sure autoloader is run.
     devconnect_init();
@@ -164,10 +165,15 @@ function devconnect_default_org_config($requested_org = 'default') {
     }
 
     $user_agent = 'DevConnect';
+    if (isset($settings['saml_enabled']) && $settings['saml_enabled'] && !empty($settings['saml'])) {
+      $user_agent .= ' (SAML)';
+    }
     drupal_alter('devconnect_user_agent', $user_agent);
 
+    module_load_include('php', 'devconnect', 'lib/EncryptedCredentialStorage');
     $options = array(
       'logger' => $logger,
+      'credential_storage' => new Drupal\devconnect\EncryptedCredentialStorage(),
       'user_mail' => $user_mail,
       'subscribers' => $subscribers,
       'log_subscriber_format' => $subscriber_log_format,
@@ -179,7 +185,18 @@ function devconnect_default_org_config($requested_org = 'default') {
     if (function_exists('devconnect_debug_register')) {
       $options['debug_callbacks'] = array('devconnect_debug_register');
     }
-    $configs[$requested_org] = new Apigee\Util\OrgConfig($settings['org'], $settings['endpoint'], $settings['user'], $settings['pass'], $options);
+    if (isset($settings['saml_enabled']) && $settings['saml_enabled'] && !empty($settings['saml'])) {
+      $options['saml'] = $settings['saml'];
+    }
+    try {
+      $configs[$requested_org] = new Apigee\Util\OrgConfig($settings['org'], $settings['endpoint'], $settings['user'], $settings['pass'], $options);
+    }
+    catch (\Apigee\Exceptions\SamlResponseException $e) {
+      watchdog_exception('devconnect', $e);
+      // Results in a misconfigured orgConfig. It will throw 401s on all
+      // subsequent calls.
+      $configs[$requested_org] = $e->orgConfig;
+    }
   }
   return $configs[$requested_org];
 }
@@ -265,19 +282,9 @@ function devconnect_get_crypt_key() {
 function &devconnect_get_org_settings($force_write = FALSE) {
   devconnect_init();
 
-  // Find the dir that the crypt key is stored in.
-  $default_private_dir = variable_get('file_private_path', 'sites/default/files/private');
-  $private_dir = variable_get('apigee_credential_dir', $default_private_dir);
-
   $key = devconnect_get_crypt_key();
   Crypto::setKey($key);
-
-  if (substr($private_dir, 0, 1) == '/') {
-    $config_file = $private_dir . '/.apigee';
-  }
-  else {
-    $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
-  }
+  $config_file = devconnect_get_config_file();
 
   // First, check to see if encrypted credentials are stored in private
   // filesystem. This is the current and preferred mechanism.
@@ -353,6 +360,8 @@ function &devconnect_get_org_settings($force_write = FALSE) {
       'log_threshold' => 4,
       'connection_timeout' => 30,
       'request_timeout' => 30,
+      'saml_enabled' => 0,
+      'saml' => array(),
     );
   }
   elseif (array_key_exists('pass', $custom_vars)) {
@@ -368,9 +377,7 @@ function &devconnect_get_org_settings($force_write = FALSE) {
 
   if ($got_results) {
     if (!file_exists($config_file) || $force_write) {
-      file_put_contents($config_file, Crypto::encrypt(serialize($custom_vars)));
-      // Let drush touch this file.
-      @chmod($config_file, 0666);
+      devconnect_write_config($custom_vars);
       variable_del('devconnect_org_settings');
     }
     if (isset($yaml_file) && file_exists(DRUPAL_ROOT . '/' . $yaml_file)) {
@@ -378,6 +385,39 @@ function &devconnect_get_org_settings($force_write = FALSE) {
     }
   }
   return $custom_vars;
+}
+
+/**
+ * Gets the filename which stores Edge credentials.
+ *
+ * @return string
+ *   Absolute filename of the Edge credential file.
+ */
+function devconnect_get_config_file() {
+  // Find the dir that the crypt key is stored in.
+  $default_private_dir = variable_get('file_private_path', 'sites/default/files/private');
+  $private_dir = variable_get('apigee_credential_dir', $default_private_dir);
+  if (substr($private_dir, 0, 1) == '/') {
+    $config_file = $private_dir . '/.apigee';
+  }
+  else {
+    $config_file = DRUPAL_ROOT . '/' . $private_dir . '/.apigee';
+  }
+  return $config_file;
+}
+
+/**
+ * Writes edge credentials to the config file.
+ *
+ * @param array $config_vars
+ *   Configuration options to be written to the config file.
+ */
+function devconnect_write_config(array $config_vars) {
+  $config_file = devconnect_get_config_file();
+  file_put_contents($config_file, Crypto::encrypt(serialize($config_vars)));
+  // Let drush touch this file.
+  @chmod($config_file, 0666);
+  drupal_static_reset('devconnect_default_org_config');
 }
 
 /**

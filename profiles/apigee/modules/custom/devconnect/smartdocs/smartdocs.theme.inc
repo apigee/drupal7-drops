@@ -241,11 +241,20 @@ function smartdocs_preprocess_node(&$vars) {
     if (empty($content_markup)) {
       // Cache miss (or no cache at all), so fetch from Modeling API.
       $model_id = $model_term->name;
-      $revision_num = $vars['field_smart_method_revision_num'][LANGUAGE_NONE][0]['value'];
-      $resource_uuid = $vars['field_smart_method_resource_uuid'][LANGUAGE_NONE][0]['value'];
-      $method_uuid = $vars['field_smart_method_uuid'][LANGUAGE_NONE][0]['value'];
-
-      $doc = new Apigee\SmartDocs\Doc(devconnect_default_org_config(), $model_id, $revision_num, $resource_uuid, $method_uuid);
+      // Set default values.
+      $revision_num = $resource_uuid = $uuid = NULL;
+      foreach (array('revision_num', 'resource_uuid', 'uuid') as $field_name) {
+        // Under some circumstances, there may be a LANGUAGE_NONE array level
+        // in the field definition; in other circumstances, there may not be.
+        $extended_field_name = 'field_smart_method_' . $field_name;
+        if (array_key_exists(LANGUAGE_NONE, $vars[$extended_field_name])) {
+          $$field_name = $vars[$extended_field_name][LANGUAGE_NONE][0]['value'];
+        }
+        else {
+          $$field_name = $vars[$extended_field_name][0]['value'];
+        }
+      }
+      $doc = new Apigee\SmartDocs\Doc(devconnect_default_org_config(), $model_id, $revision_num, $resource_uuid, $uuid);
 
       try {
         $content_markup = trim($doc->getHtml(SMARTDOCS_TEMPLATE_NAME));

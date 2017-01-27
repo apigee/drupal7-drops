@@ -122,7 +122,7 @@ projects[context_condition_theme][version] = "1.0"
 ; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.11"
+projects[ctools][version] = "1.12"
 
 ; Deprecated
 projects[date][type] = "module"
@@ -135,7 +135,7 @@ projects[devel][version] = "1.5"
 
 projects[diff][type] = "module"
 projects[diff][subdir] = "contrib"
-projects[diff][version] = "3.2"
+projects[diff][version] = "3.3"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
@@ -202,7 +202,7 @@ projects[ftools][version] = "1.6"
 ; Deprecated
 projects[gauth][type] = "module"
 projects[gauth][subdir] = "contrib"
-projects[gauth][version] = "1.7"
+projects[gauth][version] = "1.9"
 
 ; Deprecated
 projects[github_connect][type] = "module"
@@ -229,6 +229,8 @@ projects[gravatar][version] = "1.1"
 projects[highcharts][type] = "module"
 projects[highcharts][subdir] = "contrib"
 projects[highcharts][version] = "1.0-alpha6"
+; see https://www.drupal.org/node/2831850
+projects[highcharts][patch][2831850] = "https://www.drupal.org/files/issues/highcharts-2831850-1-use-cdn_0.patch"
 
 projects[http_client][type] = "module"
 projects[http_client][subdir] = "contrib"
@@ -250,7 +252,7 @@ projects[ldap][version] = "2.0-beta11"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
-projects[legal][version] = "1.5"
+projects[legal][version] = "1.6"
 
 ; Enabled during profile install.
 projects[libraries][type] = "module"
@@ -277,7 +279,7 @@ projects[mailsystem][version] = "2.34"
 
 projects[markdown][type] = "module"
 projects[markdown][subdir] = "contrib"
-projects[markdown][version] = "1.4"
+projects[markdown][version] = "1.5"
 
 projects[mediaelement][type] = "module"
 projects[mediaelement][subdir] = "contrib"
@@ -286,14 +288,14 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-beta5"
+projects[media][version] = "2.0-rc3"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
 projects[media_ckeditor][subdir] = "contrib"
-projects[media_ckeditor][version] = "2.0-alpha1"
+projects[media_ckeditor][version] = "2.0-alpha4"
 
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
@@ -307,7 +309,7 @@ projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.17"
+projects[metatag][version] = "1.20"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -339,7 +341,7 @@ projects[node_export][version] = "3.1"
 
 projects[oauth][type] = "module"
 projects[oauth][subdir] = "contrib"
-projects[oauth][version] = "3.2"
+projects[oauth][version] = "3.3"
 
 projects[oauthconnector][type] = "module"
 projects[oauthconnector][subdir] = "contrib"
@@ -365,7 +367,7 @@ projects[redirect][version] = "1.0-rc3"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-projects[redis][version] = "3.12"
+projects[redis][version] = "3.15"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
@@ -378,7 +380,7 @@ projects[rules][version] = "2.9"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.17"
+projects[services][version] = "3.18"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -391,7 +393,7 @@ projects[siteminder][version] = "2.x-dev"
 
 projects[smtp][type] = "module"
 projects[smtp][subdir] = "contrib"
-projects[smtp][version] = "1.4"
+projects[smtp][version] = "1.6"
 
 ; Required by Monetization
 projects[special_menu_items][type] = "module"
@@ -419,7 +421,7 @@ projects[taxonomy_access][version] = "1.0"
 ; Enabled on install.
 projects[token][type] = "module"
 projects[token][subdir] = "contrib"
-projects[token][version] = "1.6"
+projects[token][version] = "1.7"
 
 ; Deprecated
 projects[util][type] = "module"
@@ -462,7 +464,7 @@ projects[views_queue][version] = "1.x-dev"
 
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
-projects[views_slideshow][version] = "3.1"
+projects[views_slideshow][version] = "3.5"
 
 ; NOT enabled on install.
 projects[webform][type] = "module"
@@ -488,7 +490,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.8"
+projects[bootstrap][version] = "3.10"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
@@ -767,12 +769,6 @@ libraries[google-api-php-client][directory_name] = "google-api-php-client"
 libraries[google-api-php-client][download][type] = "file"
 libraries[google-api-php-client][download][url] = "https://github.com/google/google-api-php-client/archive/1.1.7.tar.gz"
 
-; Used by devconnect_developer_apps. Can we update to the 4.0.x branch?
-libraries[highcharts][destination] = "libraries"
-libraries[highcharts][directory_name] = "highcharts"
-libraries[highcharts][download][type] = "file"
-libraries[highcharts][download][url] = "http://code.highcharts.com/zips/Highcharts-3.0.10.zip"
-
 ; Used by views_slideshow
 libraries[jquery_cycle][destination] = "libraries"
 libraries[jquery_cycle][directory_name] = "jquery.cycle"
@@ -801,19 +797,19 @@ libraries[maskmoney][download][url] = "https://raw.githubusercontent.com/plentz/
 libraries[mediaelement][destination] = "libraries"
 libraries[mediaelement][directory_name] = "mediaelement"
 libraries[mediaelement][download][type] = "file"
-libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement/archive/2.22.1.tar.gz"
+libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaelement/archive/2.23.5.tar.gz"
 
 ; Used by devconnect
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.8.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.11.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"
 libraries[plupload][directory_name] = "plupload"
 libraries[plupload][download][type] = "file"
-libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/archive/v2.1.9.zip"
+libraries[plupload][download][url] = "https://github.com/moxiecode/plupload/archive/v2.2.1.zip"
 
 ; Used by services, devconnect, smartdocs
 libraries[spyc][destination] = "libraries"

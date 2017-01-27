@@ -5,13 +5,15 @@
  * API-interfacing functionality.
  */
 
-require_once(__DIR__ . '/controllers/DeveloperController.php');
-require_once(__DIR__ . '/entities/DeveloperEntity.php');
+$dir = drupal_get_path('module', 'devconnect_user');
 
-require_once(__DIR__ . '/devconnect_user.sync.inc');
-require_once(__DIR__ . '/devconnect_user.admin.inc');
-require_once(__DIR__ . '/devconnect_user.tokens.inc');
-require_once(__DIR__ . '/devconnect_user.user.inc');
+require_once($dir . '/controllers/DeveloperController.php');
+require_once($dir . '/entities/DeveloperEntity.php');
+
+require_once($dir . '/devconnect_user.sync.inc');
+require_once($dir . '/devconnect_user.admin.inc');
+require_once($dir . '/devconnect_user.tokens.inc');
+require_once($dir . '/devconnect_user.user.inc');
 
 /**
  * Implements hook_permission().
@@ -326,19 +328,18 @@ function _devconnect_user_scrub_attribute($field_value) {
  *   DeveloperID for user, or FALSE if not found.
  */
 function devconnect_user_get_developer_id($user) {
-  $developer_id = FALSE;
-  if (!array_key_exists('developer_id', $_SESSION)) {
-    $_SESSION['developer_id'] = NULL;
+  if (!empty($_SESSION['developer_id'])) {
+    // Key exists and its value is not empty.
+    return $_SESSION['developer_id'];
   }
-
-  if ($_SESSION['developer_id'] === NULL) {
-    $entity = entity_get_controller('developer')->loadIfExists($user->mail);
-    if (!empty($entity)) {
-      $developer_id = $entity->developerId;
-    }
+  // Make sure variable is initialized.
+  $_SESSION['developer_id'] = NULL;
+  $entity = entity_get_controller('developer')->loadIfExists($user->mail);
+  if (!empty($entity)) {
+    $_SESSION['developer_id'] = $entity->developerId;
+    return $entity->developerId;
   }
-  $_SESSION['developer_id'] = $developer_id;
-  return $developer_id;
+  return FALSE;
 }
 
 /**

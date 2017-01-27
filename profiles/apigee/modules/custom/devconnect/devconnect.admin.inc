@@ -5,6 +5,7 @@
  */
 
 use Apigee\Exceptions\ResponseException;
+use Apigee\Exceptions\SamlResponseException;
 use Apigee\Util\OrgConfig;
 use Apigee\ManagementAPI\Organization;
 
@@ -35,6 +36,12 @@ function devconnect_admin_form(array $form, array &$form_state) {
   else {
     $org_settings = $original_org_settings;
   }
+  if (!array_key_exists('saml_enabled', $org_settings)) {
+    $org_settings['saml_enabled'] = 0;
+  }
+  if (!array_key_exists('saml', $org_settings)) {
+      $org_settings['saml'] = array();
+  }
 
   $form['#attributes']['autocomplete'] = 'off';
 
@@ -54,18 +61,25 @@ function devconnect_admin_form(array $form, array &$form_state) {
     ),
   );
   $element =& $form['connection_config_container']['org_settings'][0];
-  if (DEVCONNECT_SHOW_CONFIG_FIELDS || empty($org_settings['org']) || isset($form_state['input']['org_settings'])) {
+  if (
+    DEVCONNECT_SHOW_CONFIG_FIELDS
+    || isset($form_state['input']['org_settings'])
+    || empty($org_settings['org'])
+    || empty($org_settings['endpoint'])
+    || empty($org_settings['user'])
+    || empty($org_settings['pass'])
+  ) {
     $element['org'] = array(
       '#type' => 'textfield',
-      '#title' => t('Management API Organization'),
+      '#title' => t('Management API organization'),
       '#required' => TRUE,
       '#default_value' => $org_settings['org'],
-      '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
+      '#description' => t('The v4 product organization name. Changing this value could make your site stop working.'),
       '#weight' => -6,
     );
     $element['endpoint'] = array(
       '#type' => 'textfield',
-      '#title' => t('Management API Endpoint URL'),
+      '#title' => t('Management API endpoint URL'),
       '#required' => TRUE,
       '#default_value' => $org_settings['endpoint'],
       '#description' => t('URL to which to make Edge REST calls.'),
@@ -74,7 +88,7 @@ function devconnect_admin_form(array $form, array &$form_state) {
 
     $element['user'] = array(
       '#type' => 'textfield',
-      '#title' => t('Endpoint Authenticated User'),
+      '#title' => t('Endpoint authenticated user'),
       '#required' => FALSE,
       '#default_value' => '',
       '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.  (Only enter it if you want to change the existing user.)'),
@@ -84,11 +98,61 @@ function devconnect_admin_form(array $form, array &$form_state) {
 
     $element['pass'] = array(
       '#type' => 'textfield',
-      '#title' => t('Authenticated User’s Password'),
+      '#title' => t('Authenticated user’s password'),
       '#required' => FALSE,
       '#default_value' => '',
       '#description' => t('Password used when authenticating with the endpoint. (Only enter it if you want to change the existing password.)'),
       '#weight' => -3,
+      '#post_render' => array('devconnect_password_post_render'),
+      '#attributes' => array('autocomplete' => 'off'),
+    );
+
+    $element['saml_enabled'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('This org is SAML-enabled'),
+      '#return_value' => 1,
+      '#default_value' => $org_settings['saml_enabled'],
+      '#id' => 'org-settings-0-saml-enabled',
+    );
+    $element['saml'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('SAML authentication settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#id' => 'edit-saml-container',
+      '#states' => array(
+        'invisible' => array(
+          '#org-settings-0-saml-enabled' => array('checked' => FALSE)
+        ),
+      ),
+      '#tree' => TRUE,
+    );
+    $endpoint = $key = $secret = NULL;
+    if (!empty($org_settings['saml'])) {
+      $endpoint = $org_settings['saml']['endpoint'];
+      $key = $org_settings['saml']['key'];
+      $secret = $org_settings['saml']['secret'];
+    }
+    $element['saml']['endpoint'] = array(
+      '#type' => 'textfield',
+      '#title' => t('SAML bearer-token authentication endpoint'),
+      '#required' => FALSE,
+      '#default_value' => $endpoint ?: 'https://login.apigee.com/oauth/token',
+      '#description' => t('URL to call when fetching a bearer token for SAML-enabled orgs.')
+    );
+    $element['saml']['key'] = array(
+      '#type' => 'textfield',
+      '#title' => t('API key'),
+      '#required' => FALSE,
+      '#default_value' => $key,
+      '#description' => t('Key used when fetching a bearer token.'),
+    );
+    $element['saml']['secret'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Consumer secret'),
+      '#required' => FALSE,
+      '#default_value' => $secret,
+      '#description' => t('Secret used when fetching a bearer token '),
       '#post_render' => array('devconnect_password_post_render'),
       '#attributes' => array('autocomplete' => 'off'),
     );
@@ -117,6 +181,26 @@ function devconnect_admin_form(array $form, array &$form_state) {
         '#title' => t('Authenticated User’s Password'),
         '#markup' => '<span style="color:red">' . t('No value') . '</span>',
       );
+    }
+    $saml_enabled = array_key_exists('saml_enabled', $org_settings) && $org_settings['saml_enabled'];
+    $element['saml_enabled'] = array(
+      '#type' => 'item',
+      '#title' => t('Is this org SAML-enabled?'),
+      '#markup' => $saml_enabled ? t('Yes') : t('No'),
+    );
+    if ($saml_enabled) {
+      $element['saml_endpoint'] = array(
+        '#type' => 'item',
+        '#title' => t('SAML bearer-token endpoint'),
+        '#markup' => $org_settings['saml']['endpoint'] ?: '<span style="color:red">' . t('No value') . '</span>',
+      );
+      if (empty($org_settings['saml']['key']) || empty($org_settings['saml']['secret'])) {
+        $element['saml_key_secret'] = array(
+          '#type' => 'item',
+          '#title' => t('SAML bearer-token key/secret pair'),
+          '#markup' => '<span style="color:red">' . t('No value') . '</span>',
+        );
+      }
     }
   }
 
@@ -184,7 +268,11 @@ function devconnect_admin_form(array $form, array &$form_state) {
     $status = '';
   }
   else {
-    $status = _devconnect_test_kms_connection($org_settings['org'], $org_settings['endpoint'], $org_settings['user'], $org_settings['pass'], $conn_timeout);
+    $saml_settings = $org_settings['saml'];
+    if (!$org_settings['saml_enabled']) {
+      $saml_settings = NULL;
+    }
+    $status = _devconnect_test_kms_connection($org_settings['org'], $org_settings['endpoint'], $org_settings['user'], $org_settings['pass'], $conn_timeout, $saml_settings);
   }
 
   if (DEVCONNECT_SHOW_CONFIG_FIELDS || empty($org_settings['org']) || isset($form_state['input']['org_settings'])) {
@@ -376,11 +464,14 @@ function devconnect_admin_form_submit(array $form, array &$form_state) {
     'connection_timeout' => 8,
     'request_timeout' => 8,
     'log_threshold' => 3,
+    'saml_enabled' => 0,
   );
   $new_config = array(
     'connection_timeout' => intval($form_state['values']['connection_timeout']),
     'request_timeout' => intval($form_state['values']['request_timeout']),
     'log_threshold' => intval($form_state['values']['log_threshold']),
+    'saml_enabled' => intval($form_state['values']['saml_enabled']),
+    'saml' => array(),
   );
 
   // Set default org settings.
@@ -391,12 +482,16 @@ function devconnect_admin_form_submit(array $form, array &$form_state) {
     // This should never happen!
     $default_org = array();
   }
-  foreach (array('org', 'endpoint', 'user', 'pass') as $field) {
+  $updateable_form = ($form['connection_config_container']['org_settings'][0]['org']['#type'] == 'textfield');
+  foreach (array('org', 'endpoint', 'user', 'pass', 'saml_enabled') as $field) {
     $hide_field_in_log = FALSE;
-    if ($form['connection_config_container']['org_settings'][0]['org']['#type'] == 'textfield') {
+    if ($updateable_form) {
       // Pull user/pass values from existing config if fields are empty.
       if (($field == 'user' || $field == 'pass') && empty($default_org[$field])) {
         $new_config[$field] = $existing_config[$field];
+      }
+      elseif ($field == 'saml_enabled') {
+        // Do nothing; keep this checkbox value as-is.
       }
       // Use value from $form_state only if non-blank.
       elseif (array_key_exists($field, $default_org) && !empty($default_org[$field])) {
@@ -419,6 +514,31 @@ function devconnect_admin_form_submit(array $form, array &$form_state) {
       $old_value = (empty($existing_config[$field]) ? '*empty*' : ($hide_field_in_log ? '*hidden*' : $existing_config[$field]));
       $new_value = (empty($new_config[$field]) ? '*empty*' : ($hide_field_in_log ? '*hidden*' : $new_config[$field]));
       $changes["Default Connection: $field"] = array($old_value, $new_value);
+    }
+  }
+  if (!array_key_exists('saml', $default_org)) {
+    $default_org['saml'] = array();
+  }
+  foreach (array('endpoint', 'key', 'secret') as $field) {
+    $hide_field_in_log = FALSE;
+    $found_key = FALSE;
+    if ($updateable_form) {
+      if (array_key_exists($field, $default_org['saml'])) {
+        $new_config['saml'][$field] = $default_org['saml'][$field];
+        $found_key = TRUE;
+      }
+      if ($field == 'key' || $field == 'secret') {
+        $hide_field_in_log = TRUE;
+      }
+    }
+    elseif (array_key_exists($field, $existing_config['saml'])) {
+      $new_config['saml'][$field] = $existing_config['saml'][$field];
+      $found_key = TRUE;
+    }
+    if ($found_key && $new_config['saml'][$field] != $existing_config[$field]) {
+      $old_value = (empty($existing_config['saml'][$field]) ? '*empty*' : ($hide_field_in_log ? '*hidden*' : $existing_config['saml'][$field]));
+      $new_value = (empty($new_config['saml'][$field]) ? '*empty*' : ($hide_field_in_log ? '*hidden*' : $new_config['saml'][$field]));
+      $changes["Default Connection: saml $field"] = array($old_value, $new_value);
     }
   }
 
@@ -529,12 +649,15 @@ function _devconnect_test_management_connection_ajax(array $form, array &$form_s
  * @param string $pass
  *   Password (unencrypted) that the user has supplied.
  * @param int $timeout
- *   Number of seconds until connection timeout, or zero for infinite.
+ *   Number of seconds until connection timeout, between 1 and 8.
+ * @param array $saml_options
+ *   SAML authentication options, if any. Allowed keys include endpoint, key,
+ *   and secret.
  *
  * @return string
  *   Success or failure message.
  */
-function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout = 4) {
+function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout = 4, array $saml_options = NULL) {
   if (!valid_url($endpoint)) {
     return '<span style="color:red">' . t('Invalid endpoint') . '</span>';
   }
@@ -543,6 +666,14 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
   // Zero timeout is infinite; big problem.
   if ($timeout < 1) {
     $timeout = 4;
+  }
+  $use_saml = is_array($saml_options)
+    && array_key_exists('endpoint', $saml_options)
+    && array_key_exists('key', $saml_options)
+    && array_key_exists('secret', $saml_options);
+
+  if ($use_saml && !valid_url($saml_options['endpoint'])) {
+    return '<span style="color:red">' . t('Invalid SAML endpoint') . '</span>';
   }
 
   $settings = devconnect_get_org_settings();
@@ -555,22 +686,51 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
   $http_options['follow_location'] = FALSE;
   $curl_options = array_key_exists('curl_options', $settings) ? $settings['curl_options'] : array();
 
-  $user_agent = 'DevConnect';
+  $user_agent = 'DevConnect' . ($use_saml ? ' (SAML)' : '');
   drupal_alter('devconnect_user_agent', $user_agent);
 
+  module_load_include('php', 'devconnect', 'lib/EncryptedCredentialStorage');
   $options = array(
     'http_options' => $http_options,
     'curl_options' => $curl_options,
     'user_agent' => $user_agent,
     'referer' => url($_GET['q'], array('absolute' => TRUE)),
+    'credential_storage' => new Drupal\devconnect\EncryptedCredentialStorage(),
   );
-
-  $config = new OrgConfig($org, $endpoint, $user, $pass, $options);
-  $org = new Organization($config);
+  if ($use_saml) {
+    $options['saml'] = $saml_options;
+  }
 
   try {
+    $config = new OrgConfig($org, $endpoint, $user, $pass, $options);
+    $org = new Organization($config);
     $org->load();
     return '<span style="color:green">' . t('Connection Successful') . '</span>';
+  }
+  catch (SamlResponseException $e) {
+    watchdog('devconnect', $e->__toString(), array(), WATCHDOG_WARNING);
+    $e_code = $e->getCode();
+    if ($e_code == 401) {
+      $message = t('SAML Endpoint responded with 401 Unauthorized. Check the user, password, SAML key and secret.');
+    }
+    elseif ($e_code == 0) {
+      $message = t('SAML authentication returned an invalid response.');
+    }
+    else {
+      $response_text = $e->getResponse();
+      if (!empty($response_text)) {
+        $message = t('SAML authentication unsuccessful. HTTP code: %error_code, server response: %server_response',
+          array(
+            '%error_code' => $e_code,
+            '%server_response' => $response_text,
+          )
+        );
+      }
+      else {
+        $message = t('SAML authentication unsuccessful. HTTP code: %error_code', array('%error_code' => $e_code));
+      }
+    }
+    return '<span style="color:red">' . $message . '</span>';
   }
   catch (ResponseException $e) {
     $e_code = $e->getCode();

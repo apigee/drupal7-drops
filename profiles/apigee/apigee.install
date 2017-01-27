@@ -4,6 +4,9 @@
  * Configures tasks specific to this profile.
  */
 
+// When FALSE, we omit importing Smartdocs sample models.
+define('APIGEE_INSTALL_SMARTDOCS_SAMPLES', TRUE);
+
 /**
  * Implements hook_install_tasks().
  */
@@ -12,29 +15,30 @@ function apigee_install_tasks(array &$install_state) {
     $install_state['batch_configure_complete'] = FALSE;
   }
   drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css', array('weight' => 9999));
-  return array(
-    'apigee_install_api_endpoint' => array(
-      'display_name' => t('Configure the Edge Endpoint'),
-      'type' => 'form',
-    ),
-    'apigee_smartdocs_import_model_content' => array(
+  $tasks['apigee_install_api_endpoint'] = array(
+    'display_name' => t('Configure the Edge Endpoint'),
+    'type' => 'form',
+  );
+  if (APIGEE_INSTALL_SMARTDOCS_SAMPLES) {
+    $tasks['apigee_smartdocs_import_model_content'] = array(
       'display_name' => t('Import sample SmartDocs content'),
       'type' => 'batch',
-    ),
-    'apigee_smartdocs_render_model_content' => array(
-      'display_name' => t('Render sample SmartDocs content'),
+    );
+    $tasks['apigee_smartdocs_render_model_content'] = array(
+      'display_name' => t('Import sample SmartDocs content'),
       'type' => 'batch',
-    ),
-    'apigee_install_create_admin_user' => array(
-      'display_name' => t('Create an admin user'),
-      'type' => 'form',
-    ),
-    'apigee_install_check_postrequisites' => array(
-      // display_name is unset here to prevent it from being displayed to the
-      // user.
-      'type' => 'function',
-    ),
+    );
+  }
+  $tasks['apigee_install_create_admin_user'] = array(
+    'display_name' => t('Create an admin user'),
+    'type' => 'form',
   );
+  $tasks['apigee_install_check_postrequisites'] = array(
+    // display_name is unset here to prevent it from being displayed to the
+    // user.
+    'type' => 'function',
+  );
+  return $tasks;
 }
 
 /**

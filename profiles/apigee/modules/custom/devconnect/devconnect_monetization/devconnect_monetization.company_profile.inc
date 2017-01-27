@@ -255,8 +255,8 @@ function devconnect_monetization_company_details_form($form, &$form_state, $deve
     '#value' => $dev->getAttribute('MINT_APPROX_TAX_RATE'),
   );
 
-  // Note that KMS does not return boolean values but it string representation
-  // That will break custom fields if they are checkboxes
+  // Note that Edge does not return boolean values but rather their string
+  // representation, which will break custom fields if they are checkboxes.
   $form['is_broker'] = array(
     '#type' => 'value',
     '#value' => $dev->getAttribute('MINT_IS_BROKER') == 'true' ? 1 : 0,
@@ -296,11 +296,6 @@ function devconnect_monetization_company_details_form($form, &$form_state, $deve
     '#markup' => l(t('Cancel'), 'users/' . $GLOBALS['user']->uid . '/monetization/company/edit'),
   );
 
-//  $form['#attached']['js'][] = array(
-//    'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/jquery.select-to-autocomplete.js',
-//    'type' => 'file',
-//  );
-
   $form['#validate'][] = 'devconnect_monetization_company_details_form_validate';
   $form['#submit'][] = 'devconnect_monetization_company_details_form_submit';
   return $form;
@@ -313,6 +308,7 @@ function devconnect_monetization_company_details_form_validate(&$form, &$form_st
 }
 
 function devconnect_monetization_company_details_form_submit(&$form, &$form_state) {
+  $form_state['values']['is_broker'] = $form_state['values']['is_broker'] ? 'true' : 'false';
   // Load the company if there is a company in context.
   $entity_type = $form_state['values']['entity_type'];
   if ($entity_type == 'apigee_company') {
@@ -329,13 +325,18 @@ function devconnect_monetization_company_details_form_submit_company(&$form, &$f
 
   // Load the company from Edge to populate w/new values.
   try {
-    $company_entities = entity_load('apigee_company', array($company_name));
-    $company_entity = reset($company_entities);
+    $company_entity = entity_load_single('apigee_company', $company_name);
   }
   catch (\Exception $e) {
     $message = (method_exists($e, '__toString') ? (string) $e : $e->getMessage());
     drupal_set_message(t('The website encountered an unexpected error: %message', array('message' => $message)), 'error');
     devconnect_default_org_config()->logger->critical($message);
+    return;
+  }
+  if ($company_entity === FALSE) {
+    drupal_set_message(t('An error occurred while saving company details.'), 'error');
+    devconnect_default_org_config()->logger->critical('Failed to load company ' . $company_name);
+    return;
   }
 
   // Update the company display name if changed.

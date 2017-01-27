@@ -53,7 +53,7 @@ function apigee_install_clear_caches_css(array &$context) {
   watchdog('apigee_install', 'Clearing CSS Cache', array(), WATCHDOG_INFO);
   drupal_clear_css_cache();
   $context['results'][] = 'cache_css';
-  $context['message'] = st('CSS Caches Cleared');
+  $context['message'] = st('CSS caches cleared');
 }
 
 /**
@@ -66,7 +66,7 @@ function apigee_install_clear_caches_js(array &$context) {
   watchdog('apigee_install', 'Clearing JS Cache', array(), WATCHDOG_INFO);
   drupal_clear_js_cache();
   $context['results'][] = 'cache_js';
-  $context['message'] = st('JS Caches Cleared');
+  $context['message'] = st('JS caches cleared');
 }
 
 /**
@@ -80,7 +80,7 @@ function apigee_install_clear_caches_theme(array &$context) {
   system_rebuild_theme_data();
   drupal_theme_rebuild();
   $context['results'][] = 'cache_theme';
-  $context['message'] = st('Theme Caches Cleared');
+  $context['message'] = st('Theme caches cleared');
 }
 
 /**
@@ -93,7 +93,7 @@ function apigee_install_clear_caches_entity(array &$context) {
   watchdog('apigee_install', 'Clearing Entity Cache', array(), WATCHDOG_INFO);
   entity_info_cache_clear();
   $context['results'][] = 'cache_entity';
-  $context['message'] = st('Entity Caches Cleared');
+  $context['message'] = st('Entity caches cleared');
 }
 
 /**
@@ -106,7 +106,7 @@ function apigee_install_clear_caches_nodes(array &$context) {
   watchdog('apigee_install', 'Rebuilding Node Types', array(), WATCHDOG_INFO);
   node_types_rebuild();
   $context['results'][] = 'cache_node';
-  $context['message'] = st('Node Caches Cleared');
+  $context['message'] = st('Node caches cleared');
 }
 
 /**
@@ -119,7 +119,7 @@ function apigee_install_clear_caches_menu(array &$context) {
   watchdog('apigee_install', 'Rebuilding Menu', array(), WATCHDOG_INFO);
   menu_rebuild();
   $context['results'][] = 'cache_menu';
-  $context['message'] = st('Menu Caches Cleared');
+  $context['message'] = st('Menu caches cleared');
 }
 
 /**
@@ -132,7 +132,7 @@ function apigee_install_clear_caches_actions(array &$context) {
   watchdog('apigee_install', 'Synchronizing Actions...', array(), WATCHDOG_INFO);
   actions_synchronize();
   $context['results'][] = 'cache_action';
-  $context['message'] = st('Action Caches Cleared');
+  $context['message'] = st('Action caches cleared');
 }
 
 /**
@@ -196,5 +196,5 @@ function apigee_install_bootstrap_status(array &$context) {
   _system_update_bootstrap_status();
   drupal_get_messages();
   $context['results'][] = 'bootstrap_status';
-  $context['message'] = st('Bootstrap Status Reset.');
+  $context['message'] = st('Bootstrap status reset.');
 }

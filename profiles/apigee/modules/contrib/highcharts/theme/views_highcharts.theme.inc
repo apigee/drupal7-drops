@@ -7,10 +7,7 @@
 function template_preprocess_views_highcharts(&$vars) {
   
   $options = $vars['options'];
-  module_load_include("module", "libraries", "libraries");
-  if ($path = libraries_get_path("highcharts")) {
-    drupal_add_js($path . '/js/highcharts.js');
-  }
+  drupal_add_js('//code.highcharts.com/2.2.0/highcharts.js');
   drupal_add_js(drupal_get_path('module', 'views_highcharts') . '/js/views_highcharts.js');
   module_load_include('inc', 'uuid', 'uuid');
   $chart_id = "views-highcharts-" . uuid_generate();

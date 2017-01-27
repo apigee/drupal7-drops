@@ -13,10 +13,18 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
   var mediaPluginDefinition = {
     icons: 'media',
     requires: ['button'],
-    // Check if this instance has widget support. All the default distributions
-    // of the editor have the widget plugin disabled by default.
-    hasWidgetSupport: typeof(CKEDITOR.plugins.registered.widget) != 'undefined',
+    // All the default distributions of the editor have the widget plugin
+    // disabled by default.
+    hasWidgetSupport: false,
     mediaLegacyWrappers: false,
+    onLoad: function() {
+      // Check if this instance has widget support.
+      mediaPluginDefinition.hasWidgetSupport = typeof(CKEDITOR.plugins.registered.widget) != 'undefined';
+      // Add dependency to widget plugin if possible.
+      if (parseFloat(CKEDITOR.version) >= 4.3 && mediaPluginDefinition.hasWidgetSupport) {
+        mediaPluginDefinition.requires.push('widget');
+      }
+    },
 
     // Wrap Drupal plugin in a proxy plugin.
     init: function(editor){
@@ -52,6 +60,31 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
         }
       });
 
+      // Add a Ckeditor context menu item for editing already-inserted media.
+      if (editor.contextMenu) {
+        editor.addCommand('mediaConfigure', {
+          exec: function (editor) {
+            editor.execCommand('media');
+          },
+        });
+
+        editor.addMenuGroup('mediaGroup');
+        editor.addMenuItem('mediaConfigureItem', {
+          label: Drupal.t('Media settings'),
+          icon: this.path + 'images/icon.gif',
+          command: 'mediaConfigure',
+          group: 'mediaGroup'
+        });
+
+        editor.contextMenu.addListener(function(element) {
+          if (element.getAttribute('data-media-element') ||
+              element.find('[data-media-element]').count()) {
+            return { mediaConfigureItem: CKEDITOR.TRISTATE_OFF };
+          };
+        });
+      }
+
+      // Add the toolbar button.
       editor.ui.addButton( 'Media',
       {
         label: 'Add media',
@@ -83,10 +116,14 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
         CKEDITOR.dtd.$object['mediawrapper'] = 1;
       }
       function prepareDataForWysiwygMode(data) {
-        data = Drupal.media.filter.replaceTokenWithPlaceholder(data);
+        if (typeof Drupal.media !== 'undefined') {
+          data = Drupal.media.filter.replaceTokenWithPlaceholder(data);
+        }
         // Legacy media wrapper.
         mediaPluginDefinition.mediaLegacyWrappers = (data.indexOf("<!--MEDIA-WRAPPER-START-") !== -1);
-        data = data.replace(/<!--MEDIA-WRAPPER-START-(\d+)-->(.*?)<!--MEDIA-WRAPPER-END-\d+-->/gi, '<mediawrapper data="$1">$2</mediawrapper>');
+        if (mediaPluginDefinition.mediaLegacyWrappers) {
+          data = data.replace(/<!--MEDIA-WRAPPER-START-(\d+)-->(.*?)<!--MEDIA-WRAPPER-END-\d+-->/gi, '<mediawrapper data="$1">$2</mediawrapper>');
+        }
         return data;
       }
       function prepareDataForSourceMode(data) {
@@ -95,8 +132,10 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
         if (mediaPluginDefinition.mediaLegacyWrappers) {
           replacement = '<!--MEDIA-WRAPPER-START-$1-->$2<!--MEDIA-WRAPPER-END-$1-->';
         }
-        data = data.replace(/<mediawrapper data="(.*)">(.*?)<\/mediawrapper>/gi, replacement);
-        data = Drupal.media.filter.replacePlaceholderWithToken(data);
+        data = data.replace(/<mediawrapper data="(.*?)">(.*?)<\/mediawrapper>/gi, replacement);
+        if (typeof Drupal.media !== 'undefined') {
+          data = Drupal.media.filter.replacePlaceholderWithToken(data);
+        }
         return data;
       }
 
@@ -106,21 +145,31 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
         editor.widgets.add( 'mediabox',
         {
           button: 'Create a mediabox',
-          template: '<mediawrapper></mediawrapper>',
           editables: {},
           allowedContent: '*',
           upcast: function( element ) {
-            if (element.name != 'mediawrapper') {
-              // Ensure media tokens are converted to media placeholdes.
-              element.setHtml(prepareDataForWysiwygMode(element.getHtml()));
+            // Ensure media tokens are converted to media placeholders.
+            html = Drupal.media.filter.replaceTokenWithPlaceholder(element.getHtml());
+            // Only replace html if it's different
+            if (html != element.getHtml()) {
+              element.setHtml(html);
             }
-            return element.name == 'mediawrapper';
+            return element.name == 'mediawrapper' || 'data-media-element' in element.attributes;
           },
 
           downcast: function( widgetElement ) {
-            var token = prepareDataForSourceMode(widgetElement.getOuterHtml());
-            return new CKEDITOR.htmlParser.text(token);
-            return element.name == 'mediawrapper';
+            var token = Drupal.media.filter.replacePlaceholderWithToken(widgetElement.getOuterHtml());
+            if (token) {
+              return new CKEDITOR.htmlParser.text(token);
+            }
+            return false;
+          },
+
+          init: function() {
+            // Add double-click functionality to the widget.
+            this.on('doubleclick', function(evt) {
+              editor.execCommand('media');
+            }, null, null, 5 );
           }
         });
       }
@@ -209,9 +258,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
       }
     }
   };
-  // Add dependency to widget plugin if possible.
-  if (parseFloat(CKEDITOR.version) >= 4.3 && mediaPluginDefinition.hasWidgetSupport) {
-    mediaPluginDefinition.requires.push('widget');
-  }
+
   CKEDITOR.plugins.add( 'media', mediaPluginDefinition);
 } )();

@@ -501,15 +501,11 @@ function apigee_responsive_advanced_forum_l(&$vars) {
 function apigee_responsive_developer_app_panes(&$vars) {
   $output = '<div class="tab-content app-details">';
   foreach ($vars['panes'] as $pane) {
-    $id = $pane['#id'];
-    switch ($id) {
-      case 'performance':
-        $output .= '<div class="tab-pane';
-        $output .= '" id="' . $id . '">';
-        $output .= drupal_render($pane);
-        break;
+    if ($pane['#id'] == 'performance') {
+      $output .= '<div class="tab-pane" id="performance" style="display:block">'
+        . drupal_render($pane)
+        . '</div>';
     }
-    $output .= '</div>';
   }
   $output .= '</div>';
   return $output;
@@ -686,6 +682,15 @@ function _apigee_responsive_search_form_submit($form, &$form_state) {
  */
 function apigee_responsive_app_status($app) {
   $pending = $revoked = FALSE;
+  switch ($app['entity']->status) {
+    case 'pending':
+      $pending = TRUE;
+      break;
+
+    case 'revoked':
+      $revoked = TRUE;
+      break;
+  }
   foreach ($app['credential']['apiProducts'] as $product) {
     switch ($product['status']) {
       case 'pending':

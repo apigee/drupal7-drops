@@ -15,7 +15,7 @@ function devconnect_drush_command() {
       'username' => dt('The Apigee username'),
     ),
     'options' => array(
-      'password' => 'Unencrypted password',
+      'password' => dt('Unencrypted password'),
     ),
     'aliases' => array('dc-setauth'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
@@ -90,6 +90,25 @@ function devconnect_drush_command() {
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
+  $items['devconnect-enable-saml'] = array(
+    'callback' => 'devconnect_drush_enable_saml',
+    'description' => dt('Enables and configures SAML auth for Edge connections.'),
+    'aliases' => array('dc-en-saml'),
+    'options' => array(
+      'endpoint' => dt('OAuth endpoint for fetching a bearer token'),
+      'key' => dt('API key for fetching a bearer token'),
+      'secret' => dt('Consumer secret for fetching a bearer token'),
+    ),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+  );
+
+  $items['devconnect-disable-saml'] = array(
+    'callback' => 'devconnect_drush_disable_saml',
+    'description' => dt('Diables SAML auth for Edge connections.'),
+    'aliases' => array('dc-dis-saml'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+  );
+
   $items['devconnect-test-conn'] = array(
     'callback' => 'devconnect_drush_test_connection',
     'description' => dt('Tests the configured Edge connection parameters.'),
@@ -101,6 +120,13 @@ function devconnect_drush_command() {
     'callback' => 'devconnect_drush_generate_smartdocs_sample',
     'description' => dt('Generates sample SmartDocs content.'),
     'aliases' => array('dc-smartdocs'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+  );
+
+  $items['devconnect-debug-dump'] = array(
+    'callback' => 'devconnect_drush_debug_dump',
+    'description' => dt('Dumps all devconnect configuration info'),
+    'aliases' => array('dc-dd'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );
 
@@ -241,6 +267,17 @@ function devconnect_drush_get_authentication() {
   else {
     drush_print(dt('Username is @username, password is @pass.', array('@username' => $user, '@pass' => $pass)));
   }
+}
+
+/**
+ * Drush command callback for devconnect-debug-dump
+ */
+function devconnect_drush_debug_dump() {
+  $config =& devconnect_get_org_settings();
+  if (!$config) {
+    return;
+  }
+  drush_print_r($config);
 }
 
 /**
@@ -432,7 +469,58 @@ function _devconnect_drush_save_config($config) {
   }
   catch (Exception $e) {
   }
+}
 
+/**
+ * Drush command callback for devconnect-enable-saml.
+ */
+function devconnect_drush_enable_saml() {
+  $config =& devconnect_get_org_settings();
+  if (!$config) {
+    return;
+  }
+  $endpoint = drush_get_option('endpoint', NULL);
+  if (empty($endpoint)) {
+    if (!empty($config['saml']['endpoint'])) {
+      $endpoint = $config['saml']['endpoint'];
+    }
+    else {
+      $endpoint = 'https://login.apigee.com/oauth/token';
+    }
+  }
+  $key = drush_get_option('key', NULL);
+  if (empty($key) && !empty($config['saml']['key'])) {
+    $key = $config['saml']['key'];
+  }
+  $secret = drush_get_option('secret', NULL);
+  if (empty($secret) && !empty($config['saml']['secret'])) {
+    $secret = $config['saml']['secret'];
+  }
+  if (empty($key) || empty($secret)) {
+    drush_set_error('Key and secret are required.');
+    return;
+  }
+  $config['saml_enabled'] = 1;
+  $config['saml'] = array(
+    'endpoint' => $endpoint,
+    'key' => $key,
+    'secret' => $secret,
+  );
+  _devconnect_drush_save_config($config);
+  drush_print(dt('SAML auth has been enabled.'));
+}
+
+/**
+ * Drush command callback for devconnect-disable-saml.
+ */
+function devconnect_drush_disable_saml() {
+  $config =& devconnect_get_org_settings();
+  if (!$config) {
+    return;
+  }
+  $config['saml_enabled'] = 0;
+  _devconnect_drush_save_config($config);
+  drush_print(dt('SAML auth has been disabled.'));
 }
 
 /**

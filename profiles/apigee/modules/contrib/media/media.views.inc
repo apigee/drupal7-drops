@@ -130,7 +130,7 @@ function template_preprocess_media_views_view_media_browser(&$vars) {
   // Run theming variables through a standard Views preprocess function.
   template_preprocess_views_view_unformatted($vars);
 
-  // Add media browser javascript and CSS.
+  // Add media browser JavaScript and CSS.
   drupal_add_js(drupal_get_path('module', 'media') . '/js/plugins/media.views.js');
 }
 

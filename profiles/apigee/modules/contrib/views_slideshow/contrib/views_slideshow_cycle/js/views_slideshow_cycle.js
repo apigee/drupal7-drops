@@ -120,6 +120,24 @@
             $('#views_slideshow_cycle_teaser_section_' + settings.vss_id).hover(mouseIn, mouseOut);
           }
         }
+        
+        // Play on hover.
+        if (settings.play_on_hover) {
+          var mouseIn = function() {
+            Drupal.viewsSlideshow.action({ "action": 'play', "slideshowID": settings.slideshowId, "force": true });
+          }
+
+          var mouseOut = function() {
+            Drupal.viewsSlideshow.action({ "action": 'pause', "slideshowID": settings.slideshowId });
+          }
+
+          if (jQuery.fn.hoverIntent) {
+            $('#views_slideshow_cycle_teaser_section_' + settings.vss_id).hoverIntent(mouseIn, mouseOut);
+          }
+          else {
+            $('#views_slideshow_cycle_teaser_section_' + settings.vss_id).hover(mouseIn, mouseOut);
+          }
+        }
 
         // Pause on clicking of the slide.
         if (settings.pause_on_click) {
@@ -151,7 +169,6 @@
               case "fastOnEvent":
               case "fit":
               case "fx":
-              case "height":
               case "manualTrump":
               case "metaAttr":
               case "next":
@@ -175,15 +192,32 @@
               case "startingSlide":
               case "sync":
               case "timeout":
-              case "width":
                 var optionValue = advancedOptions[option];
                 optionValue = Drupal.viewsSlideshowCycle.advancedOptionCleanup(optionValue);
                 settings.opts[option] = optionValue;
                 break;
 
+              // If width is set we need to disable resizing.
+              case "width":
+                var optionValue = advancedOptions["width"];
+                optionValue = Drupal.viewsSlideshowCycle.advancedOptionCleanup(optionValue);
+                settings.opts["width"] = optionValue;
+                settings.opts["containerResize"] = 0;
+                break;
+
+              // If height is set we need to set fixed_height to true.
+              case "height":
+                var optionValue = advancedOptions["height"];
+                optionValue = Drupal.viewsSlideshowCycle.advancedOptionCleanup(optionValue);
+                settings.opts["height"] = optionValue;
+                settings.fixed_height = 1;
+                break;
+
               // These process options that look like {top:50, bottom:20}
               case "animIn":
+              case "animInDelay":
               case "animOut":
+              case "animOutDelay":
               case "cssBefore":
               case "cssAfter":
               case "shuffle":
@@ -289,7 +323,10 @@
                 var timeoutFnValue = advancedOptions[option];
                 timeoutFnValue = Drupal.viewsSlideshowCycle.advancedOptionCleanup(timeoutFnValue);
                 settings.opts[option] = function(currSlideElement, nextSlideElement, options, forwardFlag) {
+                  // Set a sane return value unless function overrides it.
+                  var returnVal = settings.timeout;
                   eval(timeoutFnValue);
+                  return returnVal;
                 }
                 break;
 
@@ -348,7 +385,10 @@
   Drupal.viewsSlideshowCycle.advancedOptionCleanup = function(value) {
     value = $.trim(value);
     value = value.replace(/\n/g, '');
-    if (!isNaN(parseInt(value))) {
+    if (value.match(/^[\d.]+%$/)) {
+      // noop
+    }
+    else if (!isNaN(parseInt(value))) {
       value = parseInt(value);
     }
     else if (value.toLowerCase() == 'true') {
@@ -563,7 +603,7 @@
       // is larger than the allowed percent.
       // Otherwise check to see if the amount of px shown is larger than the
       // allotted amount.
-      if (amountVisible.indexOf('%')) {
+      if (typeof amountVisible === 'string' && amountVisible.indexOf('%')) {
         return (((verticalShowing/elemHeight)*100) >= parseInt(amountVisible));
       }
       else {
@@ -577,7 +617,7 @@
       // is larger than the allowed percent.
       // Otherwise check to see if the amount of px shown is larger than the
       // allotted amount.
-      if (amountVisible.indexOf('%')) {
+      if (typeof amountVisible === 'string' && amountVisible.indexOf('%')) {
         return (((horizontalShowing/elemWidth)*100) >= parseInt(amountVisible));
       }
       else {
@@ -591,7 +631,7 @@
       // is larger than the allowed percent.
       // Otherwise check to see if the amount of px shown is larger than the
       // allotted amount.
-      if (amountVisible.indexOf('%')) {
+      if (typeof amountVisible === 'string' && amountVisible.indexOf('%')) {
         return (((areaShowing/elemArea)*100) >= parseInt(amountVisible));
       }
       else {

@@ -54,7 +54,7 @@ Quick setup
 -----------
 
 Here is a simple yet working easy way to setup the module.
-This method will Drupal to use Redis for all caches and locks
+This method will allow Drupal to use Redis for all caches and locks
 and path alias cache replacement.
 
   $conf['redis_client_interface'] = 'PhpRedis'; // Can be "Predis".
@@ -77,6 +77,40 @@ settings for different bins; It's today very stable.
 Advanced configuration
 ======================
 
+Use the compressed cache
+------------------------
+
+Please note this is for now an experimental feature. As a personnal note
+from the module author, it should be safe to use.
+
+Use this cache class setting to enable compression. This will save usually
+about 80% RAM at the cost of some milliseconds server time.
+
+  $conf['cache_default_class'] = 'Redis_CacheCompressed';
+
+Additionnaly, you can alter the default size compression threshold, under which
+entries will not be compressed (size is in bytes, set 0 to always compress):
+
+  $conf['cache_compression_size_threshold'] = 100;
+
+You can also change the compression level, which an positive integer between
+1 and 9, 1 being the lowest but fastest compression ratio, 9 being the most
+aggressive compression but is a lot slower. From testing, setting it to the
+lower level (1) gives 80% memory usage decrease, which is more than enough.
+
+  $conf['cache_compression_ratio'] = 5;
+
+Please note that those settings are global and not on a cache bin basis, you can
+already control whenever the compression is to be used or not by selecting a
+different cache class on per cache bin basis.
+
+If you switch from the standard default backend (without compression) to the
+compressed cache backend, it will recover transparently uncompressed data and
+proceed normally without additional cache eviction, it safe to upgrade.
+Donwgrading from compressed data to uncompressed data won't work, but the
+cache backend will just give you cache hit miss and it will work seamlessly
+too without any danger for the site.
+
 Choose the Redis client library to use
 --------------------------------------
 
@@ -84,7 +118,7 @@ Add into your settings.php file:
 
   $conf['redis_client_interface']      = 'PhpRedis';
 
-You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
+You can replace 'PhpRedis' with 'Predis', depending on the library you chose.
 
 Note that this is optional but recommended. If you don't set this variable the
 module will proceed to class lookups and attempt to choose the best client

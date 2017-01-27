@@ -48,5 +48,8 @@ function devconnect_apiproduct_access_update_7400(&$sandbox) {
  * Convert any remaining legacy variables to lowercase.
  */
 function devconnect_apiproduct_access_update_7403() {
-  db_query("UPDATE {variable} SET name = LOWER(name) WHERE name LIKE 'apiproduct_role_%'")->execute();
+  db_update('variable')
+    ->expression('name', 'LOWER(name)')
+    ->condition('name', db_like('apiproduct_role_') . '%', 'LIKE')
+    ->execute();
 }

@@ -46,7 +46,6 @@
  * or "template" as these are detected and automatically added.
  *
  * @see bootstrap_theme_registry_alter()
- * @see bootstrap_hook_theme_complete()
  * @see bootstrap_theme()
  * @see hook_theme()
  */

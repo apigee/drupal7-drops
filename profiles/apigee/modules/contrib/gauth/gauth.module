@@ -106,9 +106,11 @@ function gauth_libraries_info() {
   }
   $file_path = 'src/Google/Client.php';
   $include_path = 'vendor/autoload.php';
+  $line_number = 42;
   if (!file_exists(DRUPAL_ROOT . '/' . $lib_path . '/vendor')) { // Composer install;
     $file_path = 'google/apiclient/src/Google/Client.php';
     $include_path = 'autoload.php';
+    $line_number = 40;
   }
   $libraries['google-api-php-client'] = array(
     'name' => 'Google OAuth2 Library',
@@ -117,7 +119,7 @@ function gauth_libraries_info() {
     'version arguments' => array(
       'file' => $file_path,
       'pattern' => '/LIBVER = "([0-9\.a-z\-]+)/',
-      'lines' => 40,
+      'lines' => $line_number,
     ),
     'files' => array(
       'php' => array(
@@ -175,6 +177,9 @@ function gauth_response_handler($account_id = NULL) {
       $client->setClientSecret($account['client_secret']);
       $client->setRedirectUri(gauth_callback_url());
       $client->setDeveloperKey($account['developer_key']);
+      if ($account['access_type'] == 'offline') {
+        $client->setApprovalPrompt('force');
+      }
       $scopes = gauth_google_services_scopes();
       $client->setAccessType($account['access_type']);
       foreach (explode(",", $account['services']) as $service) {
@@ -322,6 +327,7 @@ function gauth_google_services_scopes() {
     'doubleclicksearch' => 'https://www.googleapis.com/auth/doubleclicksearch',
     'drive' => array(
       'https://www.googleapis.com/auth/drive',
+      'https://www.googleapis.com/auth/drive.readonly',
       'https://www.googleapis.com/auth/drive.appdata',
       'https://www.googleapis.com/auth/drive.file',
       'https://www.googleapis.com/auth/drive.scripts',
@@ -813,6 +819,9 @@ function gauth_client_get($account_id = NULL, $by_name = TRUE) {
     $client->setAccessType($account['access_type']);
     $client->setClientSecret($account['client_secret']);
     $client->setDeveloperKey($account['developer_key']);
+    if ($account['access_type'] == 'offline') {
+      $client->setApprovalPrompt('force');
+    }
   }
   $client->setApplicationName("Google OAuth2");
   $client->setRedirectUri(gauth_callback_url());

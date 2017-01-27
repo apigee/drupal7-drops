@@ -9,6 +9,11 @@ files[] = lib/Redis/Tests/AbstractUnitTestCase.php
 files[] = lib/Redis/Tests/Admin/VariableTestCase.test
 files[] = lib/Redis/Tests/Cache/FixesUnitTestCase.php
 files[] = lib/Redis/Tests/Cache/FlushUnitTestCase.php
+files[] = lib/Redis/Tests/Cache/CompressedPhpRedisFixesUnitTestCase.test
+files[] = lib/Redis/Tests/Cache/CompressedPhpRedisFlushUnitTestCase.test
+files[] = lib/Redis/Tests/Cache/CompressedPhpRedisShardedFixesUnitTestCase.test
+files[] = lib/Redis/Tests/Cache/CompressedPhpRedisShardedFlushUnitTestCase.test
+files[] = lib/Redis/Tests/Cache/CompressedPhpRedisShardedWithPipelineFixesUnitTestCase.test
 files[] = lib/Redis/Tests/Cache/PhpRedisFixesUnitTestCase.test
 files[] = lib/Redis/Tests/Cache/PhpRedisFlushUnitTestCase.test
 files[] = lib/Redis/Tests/Cache/PhpRedisShardedFixesUnitTestCase.test
@@ -31,9 +36,9 @@ files[] = lib/Redis/Tests/Queue/QueueUnitTestCase.php
 files[] = lib/Redis/Tests/Queue/PhpRedisQueueUnitTestCase.test
 files[] = lib/Redis/Tests/Queue/PredisQueueUnitTestCase.test
 
-; Information added by Drupal.org packaging script on 2016-04-08
-version = "7.x-3.12"
+; Information added by Drupal.org packaging script on 2016-12-21
+version = "7.x-3.15"
 core = "7.x"
 project = "redis"
-datestamp = "1460130914"
+datestamp = "1482355391"
 

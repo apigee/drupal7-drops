@@ -8,9 +8,10 @@ use Drupal\devconnect\ErrorHandling;
 use Drupal\devconnect_developer_apps\ApiProductEntity;
 use Drupal\devconnect_developer_apps\DeveloperAppEntity;
 
-require_once __DIR__ . '/cache/ApiProductCache.php';
-require_once __DIR__ . '/entities/ApiProductEntity.php';
-require_once __DIR__ . '/entities/DeveloperAppEntity.php';
+$dir = drupal_get_path('module', 'devconnect_developer_apps');
+require_once $dir . '/cache/ApiProductCache.php';
+require_once $dir . '/entities/ApiProductEntity.php';
+require_once $dir . '/entities/DeveloperAppEntity.php';
 
 /**
  * Implements hook_init().
@@ -1117,7 +1118,7 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
     $message = t('The @label Name may only contain letters, numbers, underscores, dollars, percent, or hyphens.', array(
       '@label' => _devconnect_developer_apps_get_app_label(FALSE),
     ));
-    form_error($form['machine_name'], $message);
+    form_error($form['name']['machine'], $message);
     return;
   }
 
@@ -1136,7 +1137,7 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
       '@machine_name' => $machine_name,
       '@label' => _devconnect_developer_apps_get_app_label(FALSE),
     ));
-    form_error($form['machine_name'], $message);
+    form_error($form['name']['machine'], $message);
     devconnect_default_org_config()->logger->notice("App $machine_name already exists.");
   }
 }

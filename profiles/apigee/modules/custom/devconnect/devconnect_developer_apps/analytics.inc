@@ -187,10 +187,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
     // TODO: handle this differently?
     return '';
   }
-  module_load_include('module', 'libraries', 'libraries');
-  if ($path = libraries_get_path('highcharts')) {
-    drupal_add_js($path . '/js/highcharts.js');
-  }
+  drupal_add_js('//code.highcharts.com/3.0.10/highcharts.js');
 
   $chart_data = array(
     'chart' => array(

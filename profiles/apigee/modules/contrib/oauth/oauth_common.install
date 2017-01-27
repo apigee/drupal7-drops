@@ -305,6 +305,12 @@ function _oauth_common_token_schema() {
         'not null'    => TRUE,
         'default'     => 0,
       ),
+      'callback_url' => array(
+        'description' => 'Callback url.',
+        'type'        => 'varchar',
+        'length'      => 255,
+        'not null'    => TRUE,
+      ),
     ),
     'primary key' => array('tid'),
     'indexes' => array(
@@ -378,4 +384,17 @@ function _oauth_common_provider_token_schema() {
       ),
     ),
   );
+}
+
+/**
+ * Add callback_url field to {oauth_common_token} table.
+ */
+function oauth_common_update_7100() {
+  $spec = array(
+    'description' => 'Callback url.',
+    'type'        => 'varchar',
+    'length'      => 255,
+    'not null'    => TRUE,
+  );
+  db_add_field( 'oauth_common_token', 'callback_url', $spec);
 }

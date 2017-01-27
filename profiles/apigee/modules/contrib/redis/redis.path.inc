@@ -85,6 +85,10 @@ function drupal_lookup_path($action, $path = '', $path_language = NULL) {
     return $cache[$path_language][$action][$path];
   }
 
+  if (!empty($path)) {
+    $path = strtolower(trim($path));
+  }
+
   $ret = null;
   $hashLookup = redis_path_backend_get();
 
@@ -177,6 +181,8 @@ function drupal_lookup_path($action, $path = '', $path_language = NULL) {
         // Getting here with a value means we need to cache it
         if (empty($ret)) {
           $ret = false;
+        } else {
+          $ret = strtolower(trim($ret));
         }
         $hashLookup->saveAlias($ret, $path, $path_language);
       }
@@ -561,8 +567,8 @@ function drupal_valid_path($path, $dynamic_allowed = FALSE) {
   elseif ($dynamic_allowed && preg_match('/\/\%/', $path)) {
     // Path is dynamic (ie 'user/%'), so check directly against menu_router table.
     if ($item = db_query("SELECT * FROM {menu_router} where path = :path", array(':path' => $path))->fetchAssoc()) {
-      $item['link_path']  = $form_item['link_path'];
-      $item['link_title'] = $form_item['link_title'];
+      $item['link_path']  = $item['link_path'];
+      $item['link_title'] = $item['link_title'];
       $item['external']   = FALSE;
       $item['options'] = '';
       _menu_link_translate($item);

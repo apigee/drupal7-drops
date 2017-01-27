@@ -5,10 +5,6 @@
  * Settings form.
  */
 
-if (!defined('DEVCONNECT_ADMIN_NOTIFY_SUBJECT')) {
-  require_once __DIR__ . '/devconnect_admin_notify.module';
-}
-
 /**
  * Module settings page.
  */

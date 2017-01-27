@@ -4,9 +4,7 @@
  * Contains functions to configure Edge.
  */
 
-use Drupal\devconnect\Crypto;
-
-require_once DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php';
+use Apigee\Util\OrgConfig;
 
 /**
  * Form constructor for setting Apigee endpoint configuration vars.
@@ -47,6 +45,12 @@ function apigee_install_api_endpoint($form, &$form_state) {
   $form = array();
   $user = '';
   $password = '';
+  $saml_enabled = 0;
+  $saml = array();
+
+  // Don't require Edge fields ONLY if installing via drush with the
+  // --skip-edge-validation=1 option passed.
+  $edge_field_required = !function_exists('drush_get_option') || !drush_get_option('skip-edge-validation', FALSE);
 
   drupal_load('module', 'devconnect');
   $config = devconnect_get_org_settings();
@@ -55,6 +59,12 @@ function apigee_install_api_endpoint($form, &$form_state) {
     $endpoint = $config['endpoint'];
     $user = $config['user'];
     $password = $config['pass'];
+    if (array_key_exists('saml_enabled', $config)) {
+      $saml_enabled = $config['saml_enabled'];
+      if ($saml_enabled && array_key_exists('saml', $config)) {
+        $saml = $config['saml'];
+      }
+    }
   }
 
   $form['script'] = array(
@@ -74,7 +84,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
   $form['org'] = array(
     '#type' => 'textfield',
     '#title' => t('Management API Organization'),
-    '#required' => TRUE,
+    '#required' => $edge_field_required,
     '#default_value' => $org,
     '#description' => t('The v4 product organization name. Changing this value could make your site not work.'),
     '#attributes' => $attributes,
@@ -82,7 +92,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
   $form['endpoint'] = array(
     '#type' => 'textfield',
     '#title' => t('Management API Endpoint URL'),
-    '#required' => TRUE,
+    '#required' => $edge_field_required,
     '#default_value' => $endpoint,
     '#description' => t('URL to which to make Edge REST calls. For Apigee cloud, the value is <em>%url</em>. For on-prem installs you will need to change this value.', array('%url' => 'https://api.enterprise.apigee.com/v1')),
     '#attributes' => $attributes,
@@ -90,7 +100,7 @@ function apigee_install_api_endpoint($form, &$form_state) {
   $form['user'] = array(
     '#type' => 'textfield',
     '#title' => t('Endpoint Authenticated User'),
-    '#required' => TRUE,
+    '#required' => $edge_field_required,
     '#default_value' => $user,
     '#description' => t('User name used when authenticating with the endpoint. Generally this takes the form of an email address.'),
     '#attributes' => $attributes + array('placeholder' => 'username'),
@@ -98,11 +108,79 @@ function apigee_install_api_endpoint($form, &$form_state) {
   $form['pass'] = array(
     '#type' => 'textfield',
     '#title' => t('Authenticated User’s Password'),
-    '#required' => TRUE,
+    '#required' => $edge_field_required,
     '#default_value' => $password,
     '#description' => t('Password used when authenticating with the endpoint.'),
     '#attributes' => $attributes,
     '#post_render' => array('apigee_endpoint_password_post_render'),
+  );
+
+  if (function_exists('drush_get_option')) {
+    // Drush make has problems with checkboxes.
+    $form['saml_enabled'] = array(
+      '#type' => 'value',
+      '#value' => intval($saml_enabled),
+    );
+  }
+  else {
+    $form['saml_enabled'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('SAML enabled for this org?'),
+      '#return_value' => 1,
+      '#default_value' => intval($saml_enabled),
+      '#id' => 'org-settings-0-saml-enabled',
+    );
+  }
+
+  $form['saml'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('SAML authentication settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#id' => 'edit-saml-container',
+    '#states' => array(
+      'invisible' => array(
+        '#org-settings-0-saml-enabled' => array('checked' => FALSE)
+      ),
+    ),
+    '#tree' => TRUE,
+  );
+  $form['saml']['endpoint'] = array(
+    '#type' => 'textfield',
+    '#title' => t('SAML bearer-token authentication endpoint'),
+    '#default_value' => isset($saml['endpoint']) ? $saml['endpoint'] : 'https://login.apigee.com/oauth/token',
+    '#description' => t('URL to call when fetching a bearer token for SAML-enabled orgs.'),
+    '#states' => array(
+      'required' => array(
+        '#org-settings-0-saml-enabled' => array('checked' => TRUE)
+      )
+    ),
+  );
+  $form['saml']['key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API key'),
+    '#required' => FALSE,
+    '#default_value' => isset($saml['key']) ? $saml['key'] : '',
+    '#description' => t('Key used when fetching a bearer token.'),
+    '#states' => array(
+      'required' => array(
+        '#org-settings-0-saml-enabled' => array('checked' => TRUE)
+      )
+    ),
+  );
+  $form['saml']['secret'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Consumer secret'),
+    '#required' => FALSE,
+    '#default_value' => isset($saml['secret']) ? $saml['secret'] : '',
+    '#description' => t('Secret used when fetching a bearer token '),
+    '#post_render' => array('apigee_endpoint_password_post_render'),
+    '#attributes' => $attributes,
+    '#states' => array(
+      'required' => array(
+        '#org-settings-0-saml-enabled' => array('checked' => TRUE)
+      )
+    ),
   );
 
   $form['actions'] = array(
@@ -147,14 +225,29 @@ function apigee_install_api_endpoint_validate($form, &$form_state) {
   if (isset($form_state['triggering_element']) && $form_state['triggering_element']['#name'] == 'skip') {
     return;
   }
+  if (function_exists('drush_get_option') && drush_get_option('skip-edge-validation')) {
+    return;
+  }
   $org = trim($form_state['values']['org']);
   $endpoint = trim($form_state['values']['endpoint']);
   $user = trim($form_state['values']['user']);
   $pass = trim($form_state['values']['pass']);
+  if ($form_state['values']['saml_enabled'] && is_array($form_state['values']['saml'])) {
+    $saml = $form_state['values']['saml'];
+    // At profile-install time, force generation of a new token.
+    module_load_include('php', 'devconnect', 'lib/EncryptedCredentialStorage');
+    $storage = new Drupal\devconnect\EncryptedCredentialStorage();
+    $storage->clear();
+    watchdog('apigee', 'Cleared bearer token cache');
+  }
+  else {
+    $saml = array();
+  }
+
   drupal_load('module', 'devconnect');
   devconnect_init();
   module_load_include('inc', 'devconnect', 'devconnect.admin');
-  $return = _devconnect_test_kms_connection($org, $endpoint, $user, $pass);
+  $return = _devconnect_test_kms_connection($org, $endpoint, $user, $pass, 4, $saml);
   // Was connection successful?
   if (strpos($return, t('Connection Successful')) === FALSE) {
     form_set_error('form', $return);
@@ -211,26 +304,29 @@ function apigee_install_api_endpoint_submit($form, &$form_state) {
     $value = $form_state['values'][$key];
     $config[$key] = $value;
   }
+  if ($form_state['values']['saml_enabled']) {
+    $config['saml_enabled'] = 1;
+    $config['saml'] = $form_state['values']['saml'];
+  }
+  else {
+    $config['saml_enabled'] = 0;
+  }
   $config['connection_timeout'] = 30;
   $config['request_timeout'] = 30;
 
-  $private_dir = variable_get('apigee_credential_dir', NULL);
-  $key = devconnect_get_crypt_key();
-  Crypto::setKey($key);
-  file_put_contents(DRUPAL_ROOT . '/' . $private_dir . '/.apigee', Crypto::encrypt(serialize($config)));
+  devconnect_write_config($config);
 
-  // Reset the static cache.
-  drupal_static_reset('devconnect_default_org_config');
-
-  $org = new Apigee\ManagementAPI\Organization(devconnect_default_org_config());
-  try {
-    $org->load($config['org']);
-    $is_paging_enabled = ($org->getProperty('features.isCpsEnabled') === 'true');
-    variable_set('devconnect_paging_enabled', $is_paging_enabled);
+  // These might be unset or empty ONLY if installing via drush.
+  if (!empty($config['org']) && !empty($config['endpoint']) && !empty($config['user']) && !empty($config['pass'])) {
+    $org = new Apigee\ManagementAPI\Organization(devconnect_default_org_config());
+    try {
+      $org->load($config['org']);
+      $is_paging_enabled = ($org->getProperty('features.isCpsEnabled') === 'true');
+      variable_set('devconnect_paging_enabled', $is_paging_enabled);
+    }
+    catch (Exception $e) {
+    }
   }
-  catch (Exception $e) {
-  }
-
   $install_state['parameters']['edge_configured'] = TRUE;
   $install_state['completed_task'] = install_verify_completed_task();
 }

@@ -11,7 +11,7 @@
  *   Current state of installer.
  */
 function apigee_install_create_homepage(array &$context) {
-  watchdog('apigee_install', 'Generating Homepage', array(), WATCHDOG_INFO);
+  watchdog('apigee_install', 'Generating homepage', array(), WATCHDOG_INFO);
   $homepage = (object) array(
     'title' => 'home',
     'body' => array(),
@@ -48,7 +48,7 @@ function apigee_install_create_taxonomy_terms(array &$context) {
     taxonomy_term_save($term);
   }
   $context['results'][] = 'content_created';
-  $context['message'] = st('Example Taxonomy Terms Created!');
+  $context['message'] = st('Example taxonomy terms created');
 }
 
 /**
@@ -99,7 +99,7 @@ function apigee_install_create_tutorial_content(array &$context) {
     _apigee_install_generate_node('article', $body, $fields);
   }
   $context['results'][] = 'content_created';
-  $context['message'] = st('Tutorial Content Generated!');
+  $context['message'] = st('Tutorial content generated');
 }
 
 /**
@@ -122,7 +122,7 @@ function apigee_install_create_forum_content(array &$context) {
   }
   user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('create forum content', 'edit own forum content'));
   $context['results'][] = 'content_created';
-  $context['message'] = st('10 Example Forum Posts Created!');
+  $context['message'] = st('10 example forum posts created');
 }
 
 /**
@@ -140,105 +140,7 @@ function apigee_install_create_page_content(array &$context) {
     _apigee_install_generate_node('page', $body);
   }
   $context['results'][] = 'content_created';
-  $context['message'] = st('5 Example Pages Created!');
-}
-
-/**
- * Creates default audio content for the install.
- *
- * @param array $context
- *   Current state of installer.
- */
-function apigee_install_create_audio_content(array &$context) {
-  $fid = _apigee_content_types_get_fid('http://www.lullabot.com/sites/default/files/podcasts/drupalizeme_033.mp3', 'drupalizeme_033.mp3', 'audio/mpeg', 'audio');
-  $blog_tid = _apigee_get_blog_tid();
-  $t = get_t();
-  $node = (object) array(
-    'title' => $t('Drupalize.Me Podcast #33'),
-    'status' => 1,
-    'comment' => 2,
-    'promote' => 1,
-    'sticky' => 0,
-    'type' => 'blog_audio',
-    'language' => LANGUAGE_NONE,
-    'translate' => 0,
-    'field_content_tag' => array(LANGUAGE_NONE => array(array('tid' => $blog_tid))),
-    'body' => array(
-      LANGUAGE_NONE => array(
-        array(
-          'value' => '',
-          'summary' => '',
-          'format' => 'full_html',
-        ),
-      ),
-    ),
-    'field_audio' => array(
-      LANGUAGE_NONE => array(
-        array(
-          'fid' => $fid,
-          'display' => 1,
-        ),
-      ),
-    ),
-  );
-  node_save($node);
-  _apigee_content_types_set_file_usage($fid, $node->nid);
-  if (!module_exists('pathauto')) {
-    $path = array('source' => 'node/' . $node->nid, 'alias' => 'blog/drupalizeme-podcast-33');
-    path_save($path);
-  }
-  $context['results'][] = 'content_created';
-  $context['message'] = st('Audio Content Created!');
-}
-
-/**
- * Creates default video content for the install.
- *
- * @param array $context
- *   Current state of installer.
- */
-function apigee_install_create_video_content(array &$context) {
-  $fid = _apigee_content_types_get_fid('youtube://v/twWnGnQG_1s', 'twWnGnQG_1s', 'video/youtube', 'video');
-  $blog_tid = _apigee_get_blog_tid();
-  $t = get_t();
-  $node = (object) array(
-    'title' => $t('Your API Made Better'),
-    'status' => 1,
-    'comment' => 2,
-    'promote' => 1,
-    'sticky' => 0,
-    'type' => 'blog_video',
-    'language' => LANGUAGE_NONE,
-    'translate' => 0,
-    'body' => array(
-      LANGUAGE_NONE => array(
-        array(
-          'value' => '<p>' . $t('Marsh and Brian from Apigee help your API Program take it to the next level!') . '</p>',
-          'summary' => '',
-          'format' => 'full_html',
-        ),
-      ),
-    ),
-    'field_content_tag' => array(LANGUAGE_NONE => array(array('tid' => $blog_tid))),
-    'field_video' => array(
-      LANGUAGE_NONE => array(
-        array(
-          'fid' => $fid,
-          'display' => 1,
-          'description' => '',
-        ),
-      ),
-    ),
-  );
-  node_save($node);
-  _apigee_content_types_set_file_usage($fid, $node->nid);
-  // Now create path alias.
-  if (!module_exists('pathauto')) {
-    $path = array('source' => 'node/' . $node->nid, 'alias' => 'blog/your-api-sucks');
-    path_save($path);
-  }
-  $context['results'][] = 'content_created';
-  $context['message'] = st('Video Content Created!');
+  $context['message'] = st('5 example pages created!');
 }
 
 /**
@@ -252,7 +154,7 @@ function apigee_install_create_faq_content(array &$context) {
     _apigee_install_generate_node('faq');
   }
   $context['results'][] = 'content_created';
-  $context['message'] = st('FAQ Example Content Created!');
+  $context['message'] = st('FAQ example content created');
 }
 
 /**

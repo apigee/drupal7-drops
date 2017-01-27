@@ -65,6 +65,8 @@ function media_uninstall() {
   variable_del('media_zindex');
   variable_del('media_backgroundcolor');
   variable_del('media_opacity');
+  // bulk edit option
+  variable_del('media_bulk_upload_edit');
 }
 
 /**

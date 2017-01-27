@@ -26,7 +26,7 @@ function hook_smartdocs_model_update($model_uuid) {
  * @param stdClass $node
  *    The SmartDocs method node which is being rendered.
  */
-function hook_smartdocs_model_alter(&$content, stdClass $node) {
+function hook_smartdocs_method_alter(&$content, stdClass $node) {
   $content = str_replace('%node-title%', $node->title, $content);
 }
 

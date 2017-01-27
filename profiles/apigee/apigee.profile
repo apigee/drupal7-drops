@@ -4,11 +4,11 @@
  * Contains install steps for the Apigee profile.
  */
 
-require_once __DIR__ . '/apigee.caches.inc';
-require_once __DIR__ . '/apigee.configure.inc';
-require_once __DIR__ . '/apigee.content.inc';
-require_once __DIR__ . '/apigee.edge.inc';
-require_once __DIR__ . '/apigee.smartdocs.inc';
+require_once DRUPAL_ROOT . '/profiles/apigee/apigee.caches.inc';
+require_once DRUPAL_ROOT . '/profiles/apigee/apigee.configure.inc';
+require_once DRUPAL_ROOT . '/profiles/apigee/apigee.content.inc';
+require_once DRUPAL_ROOT . '/profiles/apigee/apigee.edge.inc';
+require_once DRUPAL_ROOT . '/profiles/apigee/apigee.smartdocs.inc';
 
 /**
  * Selects the Apigee Profile.
@@ -74,8 +74,7 @@ function apigee_install_configure_batch(&$install_state) {
     'operations' => array(
       // The following functions are in apigee.configure.inc.
       array('apigee_install_configure_variables', array()),
-      array('apigee_install_pantheon_push_solr', array()),
-      array('apigee_install_configure_solr', array()),
+      array('apigee_install_configure_search', array()),
       array('apigee_install_configure_users', array()),
       array('apigee_install_configure_themes', array()),
       array('apigee_install_content_types', array()),
@@ -93,15 +92,6 @@ function apigee_install_configure_batch(&$install_state) {
     ),
     'finished' => '_apigee_install_configure_task_finished',
   );
-
-  // If we are using Drush, we cannot create audio/video
-  // content using Media Youtube due to an error that is thrown:
-  // "PHP Fatal error: Call to a member function get_parameters()
-  // on a non-object".  See: https://www.drupal.org/node/2160505.
-  if (!function_exists('drush_get_option')) {
-    $batch['operations'][] = array('apigee_install_create_audio_content', array());
-    $batch['operations'][] = array('apigee_install_create_video_content', array());
-  }
 
   // The following functions are in apigee.caches.inc.
   $batch['operations'][] = array('apigee_install_clear_caches_flush', array());
@@ -176,7 +166,7 @@ function apigee_install_create_admin_user($form, &$form_state) {
   // 'drush site-install'.
   if (function_exists('drush_get_option')) {
     $admin_pass = drush_get_option('admin-pass', drush_generate_password());
-    watchdog('apigee_install', 'Drush detected, setting administrator password from the --admin-pass option.', WATCHDOG_INFO);
+    watchdog('apigee_install', 'Drush detected, setting administrator password from the --admin-pass option.', array(), WATCHDOG_INFO);
   }
   else {
     $admin_pass = NULL;

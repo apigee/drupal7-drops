@@ -6,9 +6,9 @@ files[] = legal.test
 
 
 
-; Information added by Drupal.org packaging script on 2014-02-15
-version = "7.x-1.5"
+; Information added by Drupal.org packaging script on 2017-01-21
+version = "7.x-1.6"
 core = "7.x"
 project = "legal"
-datestamp = "1392469706"
+datestamp = "1485019694"
 

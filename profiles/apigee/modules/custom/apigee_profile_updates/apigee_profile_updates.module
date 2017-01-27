@@ -5,212 +5,6 @@
  */
 
 /**
- * Returns a list of modules we ship, but which are deprecated.
- *
- * @return array
- */
-function _apigee_profile_updates_deprecated_modules() {
-  return array(
-    'bugherd',
-    'cck_phone',
-    'commerce_worldpay_bg',
-    'contentapi', 'contentapi_summary', 'contentapi_taxonomy_term', 'contentapi_taxonomy_vocab',
-    'date', 'date_all_day', 'date_api', 'date_context', 'date_migrate', 'date_migrate_example', 'date_popup',
-    'date_repeat', 'date_repeat_field', 'date_tools', 'date_views',
-    'ds', 'ds_devel', 'ds_extras', 'ds_format', 'ds_forms', 'ds_search', 'ds_ui',
-    'eck', 'eck_example', 'eck_entitycache', 'eck_services',
-    'fe_block', 'fe_date', 'fe_nodequeue', 'fe_profile', 'features_extra_test',
-    'ftools',
-    'gauth', 'gauth_login', 'gauth_user',
-    'github_connect',
-    'views_highcharts',
-    'i18n', 'i18n_block', 'i18n_field', 'i18n_forum', 'i18n_menu', 'i18n_node',
-    'i18n_path', 'i18n_redirect', 'i18n_select', 'i18n_string', 'i18n_sync', 'i18n_taxonomy',
-    'i18n_translation', 'i18n_user', 'i18n_variable', 'i18n_test',
-    'migrate', 'migrate_example', 'migrate_example_oracle', 'migrate_example_baseball', 'migrate_ui',
-    'node_export', 'node_export_dependency', 'node_export_features', 'node_export_feeds', 'node_export_relation',
-    'util', 'admin_page_fieldsets', 'admin_pages', 'block_tracker', 'comment_box', 'edit_link',
-    'flood_report', 'log_cleanup', 'logged_in', 'no_index', 'node_add_order', 'quick_list',
-    'related_blog', 'search_image_button', 'top_buttons', 'welcome_page',
-    'uuid_features',
-    'variable', 'variable_admin', 'variable_example', 'variable_realm', 'variable_store', 'variable_views',
-    'views_accordion',
-    'views_queue',
-    'views_slideshow', 'views_slideshow_cycle',
-  );
-}
-
-/**
- * Returns a curated list of deprecated modules.
- *
- * If we find a deprecated module under profiles/apigee, and a copy of that
- * module exists under sites/all/modules/contrib or /sites/all/modules, we
- * update the system table to point to that copy of the module, and it is
- * removed from the list.
- *
- * If we find a module which is marked as deprecated, but the system table
- * already points to somewhere other than profiles/apigee, it is removed from
- * the list as well.
- *
- * @param bool $enabled_only
- *   When TRUE, info is only returned for modules that are currently enabled.
- *
- * @return array
- */
-function _apigee_profile_updates_deprecated_module_info($enabled_only = FALSE) {
-  $modules = _apigee_profile_updates_deprecated_modules();
-  $deprecated_modules = array();
-
-  $result = db_select('system', 's')
-    ->fields('s', array('name', 'filename', 'status'))
-    ->condition('name', $modules)
-    ->execute();
-  while ($row = $result->fetchAssoc()) {
-    $name = $row['name'];
-    $filename = $row['filename'];
-    $prune = FALSE;
-    if ($enabled_only && !$row['status']) {
-      $prune = TRUE;
-    }
-
-    if (substr($filename, 0, 32) == 'profiles/apigee/modules/contrib/') {
-      $filename_fragment = substr($filename, 32);
-      $new_filename = NULL;
-      if (is_file(DRUPAL_ROOT . '/sites/all/modules/contrib/' . $filename_fragment)) {
-        $new_filename = 'sites/all/modules/contrib/' . $filename_fragment;
-      }
-      elseif (is_file(DRUPAL_ROOT . '/sites/all/modules/' . $filename_fragment)) {
-        $new_filename = 'sites/all/modules/' . $filename_fragment;
-      }
-      if (isset($new_filename)) {
-        db_update('system')->fields(array('filename' => $new_filename))->condition('name', $name)->execute();
-        $prune = TRUE;
-      }
-    }
-    else {
-      // Module is already in sites/all.
-      $prune = TRUE;
-    }
-    if (!$prune) {
-      $deprecated_modules[] = $name;
-    }
-  }
-
-  return $deprecated_modules;
-}
-
-/**
- * Alters the 'system_modules' form to mark deprecated modules as deprecated,
- * and disables their checkbox if it is not already checked.
- *
- * @param array $form
- * @param array $form_state
- */
-function apigee_profile_updates_form_system_modules_alter(array &$form, array &$form_state) {
-  if (array_key_exists('modules', $form)) {
-    $deprecated_modules = _apigee_profile_updates_deprecated_module_info();
-
-    foreach ($form['modules'] as $package_name => $package) {
-      if (is_array($package)) {
-        foreach ($package as $module_name => $module) {
-          if (substr($module_name, 0, 1) == '#') {
-            continue;
-          }
-          if (in_array($module_name, $deprecated_modules)) {
-            $form['modules'][$package_name][$module_name]['name']['#markup'] .= ' <em>' . t('(Deprecated)') . '</em>';
-            if (!$module['enable']['#default_value']) {
-              $form['modules'][$package_name][$module_name]['enable']['#disabled'] = TRUE;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-/**
- * Puts a warning message at the top of admin pages if deprecated modules
- * are enabled.
- *
- * @param array $vars
- */
-function apigee_profile_updates_preprocess_page(array &$vars) {
-  if (!path_is_admin($_GET['q']) || !user_access('administer modules')) {
-    return;
-  }
-  $modules = _apigee_profile_updates_deprecated_module_info(TRUE);
-
-  if (!empty($modules)) {
-    drupal_set_message(t('You have enabled one or more modules which are deprecated and will be removed from a future release of Apigee Dev Portal. <a href="@url"><em>[ Read more ]</em></a>', array('@url' => url('admin/reports/deprecated-modules'))), 'warning');
-  }
-}
-
-/**
- * Page callback to show table of enabled deprecated modules.
- *
- * @return array
- */
-function apigee_profile_updates_deprecated_module_report() {
-  $modules = _apigee_profile_updates_deprecated_module_info(TRUE);
-
-  if (empty($modules)) {
-    $output['message']['#markup'] = t('No deprecated modules are enabled.');
-    return $output;
-  }
-
-  $module_info = db_select('system', 's')
-    ->fields('s', array('name', 'info'))
-    ->condition('name', $modules)
-    ->orderBy('name')
-    ->execute()
-    ->fetchAllKeyed();
-
-  $rows = array();
-  foreach ($module_info as $name => $info) {
-    $info = unserialize($info);
-    $display_name = isset($info['name']) ? $info['name'] : $name;
-    $package = isset($info['package']) ? $info['package'] : t('(none)');
-    $description = isset($info['description']) ? $info['description'] : '';
-    $project = isset($info['project']) ? $info['project'] : '';
-
-    $rows[] = array(
-      empty($project) ? $display_name : l($display_name, 'https://drupal.org/project/' . $project),
-      $package,
-      $description,
-    );
-  }
-
-  $output['caption'] = array(
-    '#type' => 'markup',
-    '#markup' => t('The following enabled modules, whose code lives under <code>/profiles/apigee/modules/contrib</code>, will be removed from a future version of Dev Portal. You should either disable these modules or copy their code into <code>/sites/all/modules/contrib</code>.'),
-    '#prefix' => '<p>',
-    '#suffix' => '</p>',
-  );
-  $output['table'] = array(
-    '#theme' => 'table',
-    '#header' => array(t('Name'), t('Package'), t('Description')),
-    '#rows' => $rows,
-    '#empty' => t('There are currently no deprecated modules enabled.'),
-  );
-
-  return $output;
-}
-
-/**
- * Implements hook_menu().
- */
-function apigee_profile_updates_menu() {
-  $items = array();
-  $items['admin/reports/deprecated-modules'] = array(
-    'title' => 'Deprecated modules',
-    'description' => 'List of modules which are slated for removal from future releases of Apigee Dev Portal.',
-    'page callback' => 'apigee_profile_updates_deprecated_module_report',
-    'access arguments' => array('access site reports'),
-  );
-  return $items;
-}
-
-/**
  * Implements hook_admin_menu_output_alter().
  *
  * Moves the environment indicator to the left of user-switcher dropdown which
@@ -259,9 +53,11 @@ function apigee_profile_updates_form_alter(&$form, &$form_state, $form_id) {
  * @return string
  *   The current version of this release.
  */
-function apigee_profile_updates_get_build_version() {
+function apigee_profile_updates_get_build_version($user_agent = NULL) {
   static $build_version;
   if (!isset($build_version)) {
+    $extra = (strpos($user_agent, ' (SAML)') === FALSE ? '' : ' (SAML)');
+
     $build_info = FALSE;
     if (file_exists(DRUPAL_ROOT . '/buildInfo')) {
       $build_info = DRUPAL_ROOT . '/buildInfo';
@@ -275,17 +71,22 @@ function apigee_profile_updates_get_build_version() {
       $line = trim(fgets($fp));
       fclose($fp);
       if (preg_match('!([0-9.]{2,})$!', $line, $matches)) {
-        $build_version = 'DevPortal/' . $matches[1];
+        $build_version = 'DevPortal/' . $matches[1] . $extra;
       }
     }
     if (!$build_version) {
       $info = system_get_info('module', 'devconnect');
       if (!empty($info)) {
-        $build_version = 'devconnect/' . $info['version'];
+        $build_version = 'devconnect/' . $info['version'] . $extra;
       }
     }
     if (!$build_version) {
-      $build_version = 'Drupal/' . VERSION . ';PHP/' . PHP_VERSION;
+      if (empty($user_agent)) {
+        $build_version = 'Drupal/' . VERSION . ';PHP/' . PHP_VERSION;
+      }
+      else {
+        $build_version = $user_agent;
+      }
     }
   }
   return $build_version;
@@ -295,7 +96,7 @@ function apigee_profile_updates_get_build_version() {
  * Implements hook_devconnect_user_agent_alter().
  */
 function apigee_profile_updates_devconnect_user_agent_alter(&$user_agent) {
-  $user_agent = apigee_profile_updates_get_build_version();
+  $user_agent = apigee_profile_updates_get_build_version($user_agent);
 }
 
 /**

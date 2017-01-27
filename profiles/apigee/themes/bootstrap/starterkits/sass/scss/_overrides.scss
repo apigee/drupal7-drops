@@ -1,7 +1,8 @@
 // Media query variables.
-$tablet:  "screen and (min-width: 768px)";
-$normal:  "screen and (min-width: 992px)";
-$wide:    "screen and (min-width: 1200px)";
+$tablet:              "screen and (min-width: #{$screen-sm-min})";
+$normal:              "screen and (min-width: #{$screen-md-min})";
+$wide:                "screen and (min-width: #{$screen-lg-min})";
+$grid-breakpoint:     "screen and (min-width: #{$grid-float-breakpoint})";
 
 // Drop shadows.
 @mixin box-shadow($shadow) {
@@ -53,7 +54,7 @@ body {
   }
   // Add padding to body if various toolbar or navbars are fixed on top.
   &.navbar-is-fixed-top {
-    padding-top: 64px !important;
+    padding-top: 64px;
   }
   &.navbar-is-fixed-bottom {
     padding-bottom: 64px !important;
@@ -171,7 +172,7 @@ body {
   margin-right: -15px;
   padding-left: 15px;
   padding-right: 15px;
-  @media #{$tablet} {
+  @media #{$grid-breakpoint} {
     margin-right: 0;
     padding-left: 0;
   }

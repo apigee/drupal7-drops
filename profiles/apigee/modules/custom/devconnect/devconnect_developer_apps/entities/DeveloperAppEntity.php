@@ -91,6 +91,11 @@ class DeveloperAppEntity {
   public $consumerSecret = '';
   /**
    * @var array
+   * List of raw data for all credentials/keys, whether active or not.
+   */
+  public $credentials;
+  /**
+   * @var array
    * The purpose of this field is unknown at this time.
    */
   public $credentialScopes = array();

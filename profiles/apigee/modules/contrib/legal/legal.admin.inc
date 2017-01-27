@@ -2,14 +2,45 @@
 
 /**
  * @file
- * Administration functions for the Legal module.
+ * Administration UI for the Legal module.
  */
+
+/**
+ * Module configuration options form.
+ */
+function legal_configuration($form_state) {
+  $form = array();
+
+  $form['description'] = array(
+    '#markup' => '<p>' . t('Configuration options for display of Terms & Conditions.') . '</p>',
+  );
+
+  $form['accept_every_login'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Ask to accept T&Cs on every login'),
+    '#default_value' => variable_get('accept_every_login', '0'),
+  );
+
+  $form['save'] = array(
+    '#type'  => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+function legal_configuration_submit($form, &$form_state) {
+  $values = $form_state['values'];
+
+  variable_set('accept_every_login', $values['accept_every_login']);
+}
 
 /**
  * Module settings form.
  */
 function legal_administration($form_state) {
   $form       = array();
+
   $conditions = legal_get_conditions();
 
   if (module_exists('locale')) {
@@ -198,9 +229,10 @@ function theme_legal_administration($variables) {
 
   $form     = $variables['form'];
   $language = '';
+  $output = '';
 
   if (empty($form['current_id']['#value'])) {
-    $output = '<p><strong>' . t('Terms & Conditions will not be shown to users, as no T&C have been saved.') . '</strong></p>';
+    $output .= '<p><strong>' . t('Terms & Conditions will not be shown to users, as no T&C have been saved.') . '</strong></p>';
   }
   else {
     if (module_exists('locale')) {
@@ -209,7 +241,7 @@ function theme_legal_administration($variables) {
       $language  = check_plain($languages[$language]);
     }
 
-    $output = '<h4>' . t('Most Recent Version/Revision') . '</h4>';
+    $output .= '<h4>' . t('Most Recent Version/Revision') . '</h4>';
     $output .= '<p><strong>' . t('Version ID:') . '</strong> ' . $form['current_id']['#value'] . '<br />';
     if (!empty($language)) $output .= '<strong>' . t('Language:') . '</strong> ' . $language . '<br />';
     if (!empty($language)) $output .= '<strong>' . t('Revision:') . '</strong> ' . $form['revision_id']['#value'] . '<br />';

@@ -153,7 +153,7 @@ function gauth_user_services_edit_form($form, &$form_state, $id = NULL) {
     '#title' => t('Access Type'),
     '#description' => t('The Access Type of the account. Select offline if the site can perform actions even when the user is not online.'),
     '#options' => array('offline' => t('Offline'), 'online' => t('Online')),
-    '#default_value' => $account['access_type'],
+    '#default_value' => isset($account['access_type']) ? $account['access_type'] : '',
   );
   $form['submit'] = array(
     '#type' => 'submit',

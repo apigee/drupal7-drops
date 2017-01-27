@@ -1,15 +1,19 @@
 <?php
+/**
+ * @file
+ * The Apigee Checklist module.
+ *
+ * This module periodically calls an Apigee BaaS endpoint to log usage
+ * statistics for this Dev Portal instance.
+ */
 
-define('HEALTHCHECK_UNSET', '(NOT SET)');
+
+define('APIGEE_CHECKLIST_HEALTHCHECK_UNSET', '(NOT SET)');
 
 /**
  * Implements hook_cron().
  */
 function apigee_checklist_cron() {
-
-  //$_ENV['PANTHEON_SITE_NAME'] = 'localhost';
-  //$_ENV['PANTHEON_SERVICE_LEVEL'] = 'free';
-  //$_ENV['PANTHEON_ENVIRONMENT'] = 'dev';
 
   $messages = array();
   $env = _apigee_checklist_pantheon_environment();
@@ -43,9 +47,11 @@ function apigee_checklist_preprocess_page(&$vars) {
 
 /**
  * Returns the name of the environment (live, test, dev) on a Pantheon instance.
+ *
  * If we are not on Pantheon, returns FALSE.
  *
  * @return bool|string
+ *   Name of the Pantheon environment, or FALSE if we are not on Pantheon.
  */
 function _apigee_checklist_pantheon_environment() {
   if (!array_key_exists('PANTHEON_ENVIRONMENT', $_ENV)) {
@@ -61,6 +67,7 @@ function _apigee_checklist_pantheon_environment() {
  *        _ENV variable.
  *
  * @return string
+ *   Name of the Pantheon service level.
  */
 function _apigee_checklist_pantheon_service_level() {
   if (!array_key_exists('PANTHEON_SERVICE_LEVEL', $_ENV)) {
@@ -73,6 +80,7 @@ function _apigee_checklist_pantheon_service_level() {
  * Returns SMTP host if SMTP or SwiftMailer is configured, otherwise FALSE.
  *
  * @return bool|string
+ *   Name or IP of the SMTP host, or FALSE if none is configured.
  */
 function _apigee_checklist_smtp_host() {
   $host = FALSE;
@@ -86,17 +94,20 @@ function _apigee_checklist_smtp_host() {
 }
 
 /**
- * Gets the ancestor theme of the current default theme, drilling down until
- * either the theme name begins with "apigee_" or we get to the end of the list
- * of base themes.
+ * Gets the ancestor theme of the current default theme.
+ *
+ * We drill down until either the theme name begins with "apigee_" or we get
+ * to the end of the list of base themes.
  *
  * @return string
+ *   Name of the base theme.
  */
 function _apigee_checklist_get_base_theme($current_theme) {
   $themes = list_themes();
 
   if (!array_key_exists($current_theme, $themes)) {
-    return $current_theme; // should never happen
+    // Should never happen!
+    return $current_theme;
   }
   if (substr($current_theme, 0, 7) != 'apigee_') {
     $my_theme = $themes[$current_theme];
@@ -119,8 +130,7 @@ function _apigee_checklist_get_base_theme($current_theme) {
 }
 
 /**
- * If we are on a Pantheon host, posts statistics about the site to a Usergrid
- * URI for logging and analytics.
+ * If we are on a Pantheon host, posts statistics to a Usergrid URI.
  */
 function apigee_checklist_heartbeat($skip_time_check = FALSE) {
   if (!array_key_exists('PANTHEON_SITE_NAME', $_ENV)) {
@@ -131,7 +141,7 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
   }
 
   if (!$skip_time_check) {
-    // Only run once per day
+    // Only run once per day.
     $last_run = variable_get('apigee_checklist_last_run', 0);
     // 82800 seconds is 23 hours, so we have an hour of wiggle room.
     if (time() - $last_run < 82800) {
@@ -158,16 +168,16 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
   else {
     $org_name = $org_user = '';
   }
-  $smtp_host = (string)_apigee_checklist_smtp_host();
+  $smtp_host = (string) _apigee_checklist_smtp_host();
 
   $query = db_select('users', 'u');
   $query->addExpression('MAX(access)');
   $last_access = $query->execute()->fetchField();
   $name = $_ENV['PANTHEON_SITE_NAME'] . '.' . $_ENV['PANTHEON_ENVIRONMENT'];
 
-  $apigee_modules = new stdClass;
-  $contrib_modules = new stdClass;
-  $site_modules = new stdClass;
+  $apigee_modules = new stdClass();
+  $contrib_modules = new stdClass();
+  $site_modules = new stdClass();
   $result = db_select('system', 's')
     ->fields('s', array('name', 'filename', 'info'))
     ->condition('type', 'module')
@@ -180,7 +190,7 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
       $version = $info['version'];
     }
     else {
-      $version = HEALTHCHECK_UNSET;
+      $version = APIGEE_CHECKLIST_HEALTHCHECK_UNSET;
     }
     if (substr($row->filename, 0, 30) == 'profiles/apigee/modules/custom') {
       $apigee_modules->$module_name = $version;
@@ -194,13 +204,31 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
   }
 
   $service_level = _apigee_checklist_pantheon_service_level();
-  $current_theme = variable_get('theme_default', HEALTHCHECK_UNSET);
+  $current_theme = variable_get('theme_default', APIGEE_CHECKLIST_HEALTHCHECK_UNSET);
 
-  $blocked_users = db_query('SELECT COUNT(*) FROM {users} WHERE status = 0 AND uid > 1')->fetchField();
-  $active_users = db_query('SELECT COUNT(*) FROM {users} WHERE status = 1 AND uid > 1')->fetchField();
+  $blocked_users = db_select('users', 'u')
+    ->condition('status', 0)
+    ->condition('uid', 1, '>')
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+  $active_users = db_select('users', 'u')
+    ->condition('status', 1)
+    ->condition('uid', 1, '>')
+    ->countQuery()
+    ->execute()
+    ->fetchField();
 
-  $unpublished_nodes = db_query('SELECT COUNT(*) FROM {node} WHERE status = 0')->fetchField();
-  $published_nodes = db_query('SELECT COUNT(*) FROM {node} WHERE status = 1')->fetchField();
+  $unpublished_nodes = db_select('node', 'n')
+    ->condition('status', 0)
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+  $published_nodes = db_select('node', 'n')
+    ->condition('status', 1)
+    ->countQuery()
+    ->execute()
+    ->fetchField();
 
   if (version_compare(VERSION, '7.32', '>=')) {
     $sa_core_2014_005_patched = TRUE;
@@ -211,13 +239,13 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
 
   $checklist = array(
     'name' => $name,
-    'release' => (empty($release_ver) ? HEALTHCHECK_UNSET : $release_ver),
-    'org' => (empty($org_name) ? HEALTHCHECK_UNSET : $org_name),
-    'org_user' => (empty($org_user) ? HEALTHCHECK_UNSET : $org_user),
-    'smtp_host' => (empty($smtp_host) ? HEALTHCHECK_UNSET : $smtp_host),
+    'release' => (empty($release_ver) ? APIGEE_CHECKLIST_HEALTHCHECK_UNSET : $release_ver),
+    'org' => (empty($org_name) ? APIGEE_CHECKLIST_HEALTHCHECK_UNSET : $org_name),
+    'org_user' => (empty($org_user) ? APIGEE_CHECKLIST_HEALTHCHECK_UNSET : $org_user),
+    'smtp_host' => (empty($smtp_host) ? APIGEE_CHECKLIST_HEALTHCHECK_UNSET : $smtp_host),
     'theme' => $current_theme,
     'base_theme' => _apigee_checklist_get_base_theme($current_theme),
-    'last_access' => ($last_access ? gmdate('r', $last_access) : HEALTHCHECK_UNSET),
+    'last_access' => ($last_access ? gmdate('r', $last_access) : APIGEE_CHECKLIST_HEALTHCHECK_UNSET),
     'blocked_users' => $blocked_users,
     'unblocked_users' => $active_users,
     'unpublished_nodes' => $unpublished_nodes,
@@ -236,7 +264,7 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
   $options = array(
     'headers' => array(
       'Content-Type' => 'application/json; charset=utf-8',
-      'Accept' => 'application/json; charset=utf-8'
+      'Accept' => 'application/json; charset=utf-8',
     ),
     'method' => 'PUT',
     'data' => json_encode($checklist),

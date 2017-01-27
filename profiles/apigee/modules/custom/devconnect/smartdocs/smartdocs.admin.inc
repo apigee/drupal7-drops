@@ -4,6 +4,9 @@
  * Supplies administrative functions for SmartDocs.
  */
 
+// Uploaded templates > 160k will generate a warning.
+define('SMARTDOCS_TEMPLATE_SIZE_THRESHOLD', 163840);
+
 use Apigee\Exceptions\ResponseException;
 use Apigee\SmartDocs\Method;
 use Apigee\SmartDocs\Model;
@@ -158,7 +161,14 @@ function smartdocs_settings($form, $form_state) {
   $form['settings']['smartdocs_custom_template_file'] = array(
     '#title' => t("Upload customized method template"),
     '#type' => 'managed_file',
-    '#description' => t('Upload a .hbr method template file. This template will be instead of the default model template when creating new models.'),
+    '#description' => t(<<<EOF
+Upload a .hbr method template file.
+This template will be used instead of the default model template when creating new models.
+It is recommended to keep template sizes under 160k bytes.
+Embedding base64-encoded images is not allowed;
+instead, consider referencing such images from external URLs.
+EOF
+    ),
     '#upload_location' => 'public://smartdocs_templates',
     '#upload_validators' => array(
       'file_validate_extensions' => array('hbr'),
@@ -258,6 +268,9 @@ function smartdocs_settings($form, $form_state) {
   // Additional submit handler to be invoked *after* calling
   // system_settings_form_submit().
   $form['#submit'][] = 'smartdocs_settings_submit';
+
+  $form['#validate'][] = 'smartdocs_settings_template_validate';
+
   return $form;
 }
 
@@ -325,6 +338,52 @@ function smartdocs_settings_empty_proxy_url($form, &$form_state) {
     unset($form_state['values']['smartdocs_proxy_url']);
     variable_del('smartdocs_proxy_url');
   }
+}
+
+/**
+ * Validator for smartdocs_settings form.
+ *
+ * Ensures that a custom template (if any exist) conforms to the prescribed
+ * limitations, namely that it does not contain embedded base64-encoded images.
+ * Also issues a warning if an uploaded template is excessively large.
+ *
+ * @param array $form
+ *   Descriptor of the form being validated.
+ * @param array $form_state
+ *   State of the form being validated.
+ */
+function smartdocs_settings_template_validate(array $form, array &$form_state) {
+  if (!empty($form_state['values']['smartdocs_custom_template_file'])) {
+    $file = file_load($form_state['values']['smartdocs_custom_template_file']);
+    if (!$file) {
+      return;
+    }
+    if (file_exists($file->uri) && _smartdocs_template_contains_base64(file_get_contents($file->uri))) {
+      form_error(
+        $form['settings']['smartdocs_custom_template_file'],
+        t('Uploaded templates cannot contain base64-encoded images.')
+      );
+    }
+    elseif ($file->filesize > SMARTDOCS_TEMPLATE_SIZE_THRESHOLD) {
+      drupal_set_message(
+        t('The template you have uploaded is very large, and may cause performance issues when rendering.'),
+        'warning'
+      );
+    }
+  }
+}
+
+/**
+ * Check to see if an uploaded template contains base64-encoded images.
+ *
+ * @param string $contents
+ *   Contents of the template.
+ *
+ * @return bool
+ *   True if the template contains base64-encoded images; false otherwise.
+ */
+function _smartdocs_template_contains_base64($contents) {
+  return (bool) preg_match('!data:image/[^;]{1,10};base64,!', $contents);
 }
 
 /**
@@ -413,7 +472,19 @@ function smartdocs_model_list() {
   );
 
   $model = new Model(devconnect_default_org_config());
-  $models = $model->listModels();
+  try {
+    $models = $model->listModels();
+  }
+  catch (ResponseException $e) {
+    $source = ($e->getCode() < 200 ? 'CURL' : 'Edge');
+    return t(
+      'Unable to fetch list of models; !source responded with a status of @status.',
+      array(
+        '@status' => $e->getCode(),
+        '!source' => $source,
+      )
+    );
+  }
 
   $table_rows = array();
   /** @var Model $model */
@@ -980,8 +1051,9 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
     $args = array(
       '!model' => $model->getUuid(),
       '!time' => number_format(microtime(TRUE) - $start, 4),
+      '!function' => __FUNCTION__,
     );
-    watchdog('smartdocs', __FUNCTION__ . ': Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
+    watchdog('smartdocs', '!function: Loaded model !model in !time seconds.', $args, WATCHDOG_INFO);
   }
 
   $content_type = NULL;
@@ -1368,8 +1440,9 @@ function smartdocs_model_export(array $form, array &$form_state, array $model_ar
         '!model' => $model,
         '!revision' => $revision->getRevisionNumber(),
         '!time' => number_format(microtime(TRUE) - $start, 4),
+        '!function' => __FUNCTION__,
       );
-      watchdog('smartdocs', __FUNCTION__ . ': Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
+      watchdog('smartdocs', '!function: Loaded revision !revision of model !model in !time seconds.', $args, WATCHDOG_INFO);
     }
     drupal_set_title('Export Revision #' . $revision->getRevisionNumber());
     $revision_array = $revision->toArray();
@@ -1550,6 +1623,13 @@ function smartdocs_model_settings(array $form, array &$form_state, array $model_
     '#title' => t('Method Template'),
     '#rows' => 10,
     '#default_value' => $template,
+    '#description' => t(<<<EOF
+This template will be used for the ‘@model’ model, overriding any other default template.
+It is recommended to keep template sizes under 160k bytes.
+Embedding base64-encoded images is not allowed;
+instead, consider referencing such images from external URLs.
+EOF
+      , array('@model' => $model_array['displayName'])),
   );
 
   $form['action'] = array(
@@ -1572,7 +1652,30 @@ function smartdocs_model_settings(array $form, array &$form_state, array $model_
       ),
     ),
   );
+
+  $form['#validate'][] = 'smartdocs_method_settings_validate';
   return $form;
+}
+
+/**
+ * Validator for smartdocs_model_settings form.
+ *
+ * @param array $form
+ *   Descriptor of the form being validated.
+ * @param array $form_state
+ *   State of the form being validated.
+ */
+function smartdocs_method_settings_validate(array $form, array &$form_state) {
+  $contents = $form_state['values']['method_template'];
+  if (_smartdocs_template_contains_base64($contents)) {
+    form_error($form['method_template'], t('Uploaded templates cannot contain base64-encoded images.'));
+  }
+  elseif (strlen($contents) > SMARTDOCS_TEMPLATE_SIZE_THRESHOLD) {
+    drupal_set_message(
+      t('The template you have uploaded is very large, and may cause performance issues when rendering.'),
+      'warning'
+    );
+  }
 }
 
 /**
@@ -1837,15 +1940,14 @@ function smartdocs_model_template_auth($form, &$form_state, array $model_array) 
       );
     }
     elseif ($scheme instanceof BasicScheme) {
-
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['type_display'] = array(
-          '#type' => 'markup',
-          '#markup' => '<div class="templateauth-type"><span>Type:</span> Basic </div>',
-        );
-        $form['auth_schemes']['template_auth_schemes'][$scheme_name]['noconfig'] = array(
-          '#type' => 'markup',
-          '#markup' => '<div class="form-item">No configuration options.</div>',
-        );
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['type_display'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div class="templateauth-type"><span>' . t('Type:') . '</span> ' . t('Basic') . ' </div>',
+      );
+      $form['auth_schemes']['template_auth_schemes'][$scheme_name]['noconfig'] = array(
+        '#type' => 'markup',
+        '#markup' => '<div class="form-item">' . t('No configuration options.') . '</div>',
+      );
     }
     $form['auth_schemes']['template_auth_schemes'][$scheme_name]['is_update'] = array(
       '#type' => 'value',

@@ -89,4 +89,60 @@ abstract class Redis_Tests_Path_PathUnitTestCase extends Redis_Tests_AbstractUni
         $alias = $backend->lookupAlias('node/4', 'fr');
         $this->assertIdentical('node-4', $alias);
     }
+
+    /**
+     * Tests https://www.drupal.org/node/2728831
+     */
+    public function testSomeEdgeCaseFalseNegative()
+    {
+        $backend = $this->getBackend();
+
+        $backend->deleteLanguage('fr');
+        $backend->deleteLanguage('und');
+        $backend->saveAlias('node/123', 'node-123');
+
+        // Language lookup should return the language neutral value if no value
+        $source = $backend->lookupSource('node-123', 'fr');
+        $this->assertIdentical($source, 'node/123');
+        $source = $backend->lookupAlias('node/123', 'fr');
+        $this->assertIdentical($source, 'node-123');
+
+        // Now, let's consider we have an item we don't know if it exists or
+        // not, per definition we should not return a strict FALSE but a NULL
+        // value instead to tell "we don't know anything about this". In a
+        // very specific use-case, if the language neutral value is a strict
+        // "not exists" value, it should still return NULL instead of FALSE
+        // if another language was asked for.
+
+        // Store "value null" for the language neutral entry
+        $backend->saveAlias('node/456', Redis_Path_HashLookupInterface::VALUE_NULL);
+        $source = $backend->lookupAlias('node/456');
+        $this->assertIdentical(false, $source);
+
+        $source = $backend->lookupAlias('node/456', 'fr');
+        $this->assertIdentical(null, $source);
+    }
+
+    /**
+     * Tests that lookup is case insensitive
+     */
+    public function testCaseInsensitivePathLookup()
+    {
+        $backend = $this->getBackend();
+
+        $backend->saveAlias('node/1', 'Node-1-FR', 'fr');
+        $source = $backend->lookupSource('NODE-1-fr', 'fr');
+        $this->assertIdentical('node/1', $source);
+        $source = $backend->lookupSource('node-1-FR', 'fr');
+        $this->assertIdentical('node/1', $source);
+        $alias = $backend->lookupAlias('node/1', 'fr');
+        $this->assertIdentical('node-1-fr', strtolower($alias));
+
+        // Delete and ensure it does not exist anymore.
+        $backend->deleteAlias('node/1', 'node-1-FR', 'fr');
+        $source = $backend->lookupSource('Node-1-FR', 'fr');
+        $this->assertIdentical(null, $source);
+        $alias = $backend->lookupAlias('node/1', 'fr');
+        $this->assertIdentical(null, $source);
+    }
 }

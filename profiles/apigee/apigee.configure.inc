@@ -35,30 +35,35 @@ function apigee_install_configure_variables(array &$context) {
   }
 
   // Detect private dir if it is configured already.
-  $configured_private_dir = $conf['file_private_path'];
+  $abs_private_dir = $configured_private_dir = $conf['file_private_path'];
+  if (isset($abs_private_dir) && substr($abs_private_dir, 0, 1) != '/') {
+    $abs_private_dir = DRUPAL_ROOT . '/' . $abs_private_dir;
+  }
   // Make sure private dir exists and is writable.
-  if (!empty($configured_private_dir)) {
-    if (!is_dir(DRUPAL_ROOT . '/' . $configured_private_dir) || !is_writable(DRUPAL_ROOT . '/' . $configured_private_dir)) {
-      unset($configured_private_dir);
+  if (!empty($abs_private_dir)) {
+    if (!is_dir($abs_private_dir) || !is_writable($abs_private_dir)) {
+      unset($configured_private_dir, $abs_private_dir);
     }
   }
   // Do we need to guess where to store?
-  if (!isset($configured_private_dir)) {
+  if (!isset($abs_private_dir)) {
     foreach (array('sites/default/files/private', 'sites/default/private') as $private_dir) {
       if (is_dir(DRUPAL_ROOT . '/' . $private_dir) && is_writable(DRUPAL_ROOT . '/' . $private_dir)) {
         $configured_private_dir = $private_dir;
+        $abs_private_dir = DRUPAL_ROOT . '/' . $private_dir;
         break;
       }
     }
   }
   if (!isset($configured_private_dir)) {
     $configured_private_dir = $conf['file_public_path'] . '/private';
-    if (!file_exists(DRUPAL_ROOT . '/' . $configured_private_dir)) {
-      mkdir($configured_private_dir);
+    $abs_private_dir = DRUPAL_ROOT . '/' . $configured_private_dir;
+    if (!file_exists($abs_private_dir)) {
+      mkdir($abs_private_dir);
     }
   }
   variable_set('apigee_credential_dir', $configured_private_dir);
-  $key_file = $configured_private_dir . '/.apigee.key';
+  $key_file = $abs_private_dir . '/.apigee.key';
   if (!file_exists($key_file) || filesize($key_file) < 32) {
     $crypt_key = drupal_random_bytes(32);
     file_put_contents($key_file, $crypt_key);
@@ -104,56 +109,25 @@ function apigee_install_configure_variables(array &$context) {
 }
 
 /**
- * Pushes apachesolr XML to Pantheon server.
+ * Search config batch item.
  *
  * @param array $context
  *   Current state of installer.
  */
-function apigee_install_pantheon_push_solr(array &$context) {
-  if (defined('PANTHEON_ENVIRONMENT') && module_exists('pantheon_apachesolr')) {
-    watchdog('apigee_install', 'Pushing Solr', array(), WATCHDOG_INFO);
-    module_load_include('module', 'pantheon_apachesolr');
-    pantheon_apachesolr_post_schema_exec('profiles/apigee/modules/contrib/apachesolr/solr-conf/solr-3.x/schema.xml');
-    $context['results'][] = 'solr_push';
-    $context['message'] = st('Solr config pushed to pantheon solr server.');
-  }
-  else {
-    watchdog('apigee_install', 'Solr not enabled.', array(), WATCHDOG_NOTICE);
-    $context['results'][] = 'solr_push';
-    $context['message'] = st('Solr is not enabled, no need to push to Solr server.');
-  }
-}
-
-/**
- * Solr config batch item.
- *
- * @param array $context
- *   Current state of installer.
- */
-function apigee_install_configure_solr(array &$context) {
-  watchdog('apigee_install', 'Configuring Solr', array(), WATCHDOG_INFO);
-  $search_default_module = 'apachesolr_search';
-  if (module_exists('apachesolr')) {
-    $search_active_modules = array(
-      'apachesolr_search' => 'apachesolr_search',
-      'user' => 'user',
-      'node' => 0,
-    );
-  }
-  else {
-    $search_active_modules = array(
-      'apachesolr_search' => 0,
-      'user' => 'user',
-      'node' => 'node',
-    );
-    $search_default_module = 'node';
-  }
+function apigee_install_configure_search(array &$context) {
+  watchdog('apigee_install', 'Configuring search', array(), WATCHDOG_INFO);
+  $search_active_modules = array(
+    'apachesolr_search' => 0,
+    'user' => 'user',
+    'node' => 'node',
+  );
+  $search_default_module = 'node';
   user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('search content'));
   user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('search content'));
   variable_set('search_active_modules', $search_active_modules);
   variable_set('search_default_module', $search_default_module);
-  $context['results'][] = 'solr_push';
-  $context['message'] = st('Search Configured.');
+  $context['results'][] = 'search_config';
+  $context['message'] = st('Search configured.');
 }
 
 /**
@@ -203,7 +177,7 @@ function apigee_install_configure_users(array &$context) {
     drupal_set_message(t('Unable to create admin user.'));
   }
   $context['results'][] = 'admin_user';
-  $context['message'] = st('Admin User Created.');
+  $context['message'] = st('Admin user created.');
 }
 
 /**
@@ -291,7 +265,7 @@ function apigee_install_enable_blog_content_types(array &$context) {
   // Needs to be done here not in the .info file.
   module_enable(array('devconnect_blog_content_types'));
   $context['results'][] = 'blog_content_types';
-  $context['message'] = st('Enabling DevConnect Blog Content Types!');
+  $context['message'] = st('Blog content types enabled.');
 }
 
 /**
@@ -309,7 +283,7 @@ function apigee_install_rebuild_permissions(array &$context) {
     watchdog_exception('apigee_install', $e, 'Error rebuilding node access: %message', array('%message' => $e->getMessage()), WATCHDOG_ERROR);
   }
   $context['results'][] = 'content_permissions';
-  $context['message'] = st('Content Permissions Rebuilt');
+  $context['message'] = st('Content permissions rebuilt.');
 }
 
 /**
@@ -696,7 +670,7 @@ br,span,em,strong,cite,code,blockquote,ul,ol,li,dl,dt,dd',
   db_insert('ckeditor_input_format')->fields(array('name' => 'filtered', 'format' => 'filtered_html'))->execute();
   db_insert('ckeditor_input_format')->fields(array('name' => 'full', 'format' => 'full_html'))->execute();
   $context['results'][] = 'ckeditor_settings';
-  $context['message'] = st('CKEditor Settings Built');
+  $context['message'] = st('CKEditor settings built.');
 }
 
 /**
@@ -737,6 +711,6 @@ function apigee_install_create_environmental_indicators(array &$context) {
       ),
     );
     ctools_export_crud_save('environment_indicator_environment', $environment_test);
-    $context['message'] = st('Created environmental indicators');
+    $context['message'] = st('Created environment indicators');
   }
 }
