@@ -282,6 +282,13 @@
         });
         classes.push('file-' + info.view_mode.replace(/_/g, '-'));
       }
+      // Check for alignment info, after removing any existing alignment class.
+      element.removeClass (function (index, css) {
+        return (css.match (/\bmedia-wysiwyg-align-\S+/g) || []).join(' ');
+      });
+      if (info.fields && info.fields.alignment) {
+        classes.push('media-wysiwyg-align-' + info.fields.alignment);
+      }
       element.addClass(classes.join(' '));
 
       // Apply link_text if present.
@@ -355,6 +362,12 @@
             }
           }
         }
+        else {
+          return false;
+        }
+      }
+      else {
+        return false;
       }
 
       return Drupal.media.filter.syncAttributesToFields(file_info);

@@ -10,22 +10,22 @@
 /**
  * Generates the drop down for switching companies.
  *
- * @global object $user
- *
  * @return string
  *   HTML for the drop down
  */
 function apigee_company_context_switcher() {
-  global $user;
-
   // Do not show switcher if user is not logged in.
   if (!user_is_logged_in()) {
+    return '';
+  }
+  // Do not show switcher if configuration says it's to be hidden.
+  if (variable_get('apigee_company_disable_switcher', 0)) {
     return '';
   }
 
   $user_company = array(
     'name' => NULL,
-    'display_name' => format_username($user),
+    'display_name' => format_username($GLOBALS['user']),
     'url' => 'api_company/company/switch/',
   );
 
@@ -92,7 +92,7 @@ function apigee_company_switch($company_id) {
 
 
 /**
- * Returns the list of company for the given user email.
+ * Returns the list of companies for the given user email.
  *
  * If no user email is given then returns the list of companies
  * for the current user.

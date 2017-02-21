@@ -12,12 +12,17 @@
  */
 function apigee_install_configure_variables(array &$context) {
   watchdog('apigee_install', 'Config Vars', array(), WATCHDOG_INFO);
+  $conf = (array_key_exists('conf', $GLOBALS) ? $GLOBALS['conf'] : array());
   if (array_key_exists('PRESSFLOW_SETTINGS', $_SERVER)) {
     $pressflow = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
-    $conf = $pressflow['conf'];
+    if (is_array($pressflow) && array_key_exists('conf', $pressflow)) {
+      // Prefer PRESSFLOW_SETTINGS over anything configured in settings.php.
+      $conf = array_merge($conf, $pressflow['conf']);
+    }
   }
   else {
-    $conf = array(
+    // Fill in any defaults that weren't defined in settings.php.
+    $conf += array(
       'file_public_path' => 'sites/default/files',
       'file_private_path' => 'sites/default/private',
       'file_temporary_path' => 'sites/default/tmp',
@@ -35,8 +40,13 @@ function apigee_install_configure_variables(array &$context) {
   }
 
   // Detect private dir if it is configured already.
-  $abs_private_dir = $configured_private_dir = $conf['file_private_path'];
-  if (isset($abs_private_dir) && substr($abs_private_dir, 0, 1) != '/') {
+  if (array_key_exists('apigee_credential_dir', $conf)) {
+    $abs_private_dir = $configured_private_dir = $conf['apigee_credential_dir'];
+  }
+  else {
+    $abs_private_dir = $configured_private_dir = $conf['file_private_path'];
+  }
+  if (!empty($abs_private_dir) && substr($abs_private_dir, 0, 1) != '/') {
     $abs_private_dir = DRUPAL_ROOT . '/' . $abs_private_dir;
   }
   // Make sure private dir exists and is writable.
@@ -103,6 +113,8 @@ function apigee_install_configure_variables(array &$context) {
   variable_set('logintoboggan_immediate_login_on_register', 0);
   // Set immediate login to false by default.
   variable_set('logintoboggan_override_destination_parameter', 0);
+  // Prevent cross-frame-scripting attacks.
+  variable_set('x_frame_options', 'DENY');
 
   $context['results'][] = 'variables';
   $context['message'] = st('Default variables set.');

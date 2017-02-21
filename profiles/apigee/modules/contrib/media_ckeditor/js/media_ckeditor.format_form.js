@@ -25,4 +25,17 @@ Drupal.media.formatForm.getEditorContent = function(fieldKey) {
   }
 };
 
+/**
+ * This overrides the function of the same name from media/modules/media_wysiwyg/js/media_wysiwyg.format_form.js
+ * It provides an implementation of that function that escapes user input from
+ * overridden fields on the format form.
+ */
+Drupal.media.formatForm.escapeFieldInput = function(input) {
+  // We escape the input here, in a similar manner to what CKEditor's widget
+  // system does. This helps to make the "tagmap" accurate when the content is
+  // edited again in the future, and so CKEditor will recognize the token as a
+  // widget that needs to be upcast.
+  return $('<div>').text(input).html();
+}
+
 })(jQuery);

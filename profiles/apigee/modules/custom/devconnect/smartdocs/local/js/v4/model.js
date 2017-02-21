@@ -1284,8 +1284,9 @@ Apigee.APIModel.Editor = function() {
             }
         }
         // Request line fine details contruction.
-        var hostName = targetUrl.split("//")[1].split("/")[0];
-        var requestContainerString = "<strong>"+data.requestVerb+" "+ targetUrl.split(hostName)[1] + " HTTP/"+httpVersion+"</strong>";
+        var hostName = targetUrl.split('//')[1].split('/')[0].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        var urlPortion = targetUrl.split(hostName)[1].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        var requestContainerString = '<strong>' + data.requestVerb + ' ' + urlPortion + ' HTTP/' + httpVersion + '</strong>';
         // Request headers construction.
         requestContainerString += "<dl>";
         for (var i=0; i<data.requestHeaders.length; i++) {
@@ -2260,4 +2261,4 @@ Apigee.APIModel.SwaggerModelProperty = function(name, obj) {
         return result;
     };
 };
-Apigee.APIModel.sampleModels = {};    
+Apigee.APIModel.sampleModels = {};

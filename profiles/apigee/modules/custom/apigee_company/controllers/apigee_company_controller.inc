@@ -12,10 +12,12 @@ use Apigee\Exceptions\ResponseException;
  */
 class ApigeeCompanyController implements DrupalEntityControllerInterface, EntityAPIControllerInterface {
 
+  const CACHE_LIFETIME_IN_MINUTES = 60;
+
   /**
    * The last exception thrown, if any.
    *
-   * @var \Exception
+   * @var Apigee\Exceptions\ResponseException
    */
   protected static $lastException;
 
@@ -72,6 +74,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
 
     try {
       $company->save($is_update);
+      $this->addToCache($company);
     }
     catch (ResponseException $e) {
       self::$lastException = $e;
@@ -91,27 +94,39 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
       $config = self::getConfig();
       $company = new Company($config);
       foreach ($ids as $id) {
-        $company->load($id);
+        try {
+          $array = cache_get('apigee_company_' . $id);
+          if (is_array($array)) {
+            $entity = new ApigeeCompanyEntity($array);
+          }
+          else {
+            $company->load($id);
+            $entity = $this->addToCache($company);
+          }
 
-        $array = $company->toArray();
-        $entity = new ApigeeCompanyEntity($array);
-        $entity->developers = $company->listDevelopers();
-        $entities[$company->getName()] = $entity;
+          $entities[$id] = $entity;
+        }
+        catch (ResponseException $e) {
+          self::$lastException = $e;
+          // Exception has been logged; take no further action.
+        }
       }
     }
-    elseif (empty($conditions)) {
+    else {
       // Load all companies for this org.
       $config = self::getConfig();
       $company = new Company($config);
-      $companies = $company->listCompaniesDetail();
-      foreach ($companies as $company) {
-        $array = $company->toArray();
-        $entity = new ApigeeCompanyEntity($array);
-        $entity->developers = $company->listDevelopers();
-        $entities[$company->getName()] = $entity;
+      try {
+        $companies = $company->listCompaniesDetail();
+        foreach ($companies as $company) {
+          $entities[$company->getName()] = $this->addToCache($company);
+        }
+      }
+      catch (ResponseException $e) {
+        self::$lastException = $e;
+        // Exception has been logged; take no further action.
       }
     }
-    // TODO: What if $ids is empty, but $conditions isn't?
     return $entities;
   }
 
@@ -135,6 +150,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
 
     try {
       $company->updateDeveloper($developer_email, $developer_role, $company_name);
+      $this->addToCache($company);
     }
     catch (ResponseException $e) {
       self::$lastException = $e;
@@ -160,6 +176,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
 
     try {
       $company->removeDeveloper($developer_email, $company_name);
+      $this->addToCache($company);
     }
     catch (ResponseException $e) {
       self::$lastException = $e;
@@ -176,7 +193,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
    * @param string $company_name
    *   The machine name of the company from which to fetch the developer roles.
    *
-   * @return array
+   * @return array|bool
    *   An array of developer roles, returns false in case of failure.
    */
   public function getDeveloperRoles($developer_email, $company_name) {
@@ -196,7 +213,11 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
    * {@inheritdoc}
    */
   public function resetCache(array $ids = NULL) {
-
+    if (is_array($ids)) {
+      foreach ($ids as $id) {
+        cache_clear_all('apigee_company_' . $id);
+      }
+    }
   }
 
   /**
@@ -244,11 +265,26 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
   /**
    * Returns the last exception returned from Edge.
    *
-   * @return Apigee\Exceptions\ResponseException
+   * @return Apigee\Exceptions\ResponseException|null
    *   The last exception that occured.
    */
   public static function getLastException() {
     return self::$lastException;
   }
 
+  /**
+   * Rebuilds the cache record for a Company.
+   *
+   * @param Company $company
+   *   The company whose cache entry is to be refreshed.
+   *
+   * @return ApigeeCompanyEntity
+   *   The corresponding entity that was written to cache.
+   */
+  private function addToCache(Company $company) {
+    $entity = new ApigeeCompanyEntity($company->toArray());
+    $entity->developers = $company->listDevelopers();
+    cache_set('apigee_company_' . $entity->name, $entity->toArray(), time() + (self::CACHE_LIFETIME_IN_MINUTES * 60));
+    return $entity;
+  }
 }

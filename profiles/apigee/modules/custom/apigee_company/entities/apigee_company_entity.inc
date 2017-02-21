@@ -75,4 +75,19 @@ class ApigeeCompanyEntity {
     return $this->attributes[$name];
   }
 
+  /**
+   * Persist an Apigee Company entity's values as an array.
+   *
+   * @return array
+   *   The values of this entity's internal properties.
+   */
+  public function toArray() {
+    return array(
+      'name' => $this->name,
+      'displayName' => $this->displayName,
+      'status' => $this->status,
+      'developers' => $this->developers,
+    );
+  }
+
 }

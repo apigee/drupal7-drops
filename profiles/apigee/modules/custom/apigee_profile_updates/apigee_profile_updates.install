@@ -270,3 +270,11 @@ function apigee_profile_updates_update_7106() {
 function apigee_profile_updates_update_7107() {
   _apigee_profile_updates_set_weight();
 }
+
+/**
+ * Set X-Frame-Options header to DENY.
+ */
+function apigee_profile_updates_update_7108() {
+  variable_set('x_frame_options', 'DENY');
+  drupal_theme_rebuild();
+}

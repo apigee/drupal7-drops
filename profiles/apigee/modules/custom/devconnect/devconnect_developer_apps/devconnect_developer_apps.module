@@ -2028,7 +2028,7 @@ function devconnect_developer_apps_get_api_products($show_private = FALSE, $name
       $api_product->approvalType = $row->approval_type;
       $api_product->description = $row->description;
       $api_product->isPublic = $row->is_public;
-      $api_product->name = $row->name;
+      $api_product->name = trim($row->name);
       $api_product->displayName = $row->display_name;
       $api_product->orgName = $row->org_name;
       if (property_exists($row, 'environments')) {

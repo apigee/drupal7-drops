@@ -79,6 +79,8 @@
  *
  * @ingroup themeable
  */
+
+$can_register = (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) != USER_REGISTER_ADMINISTRATORS_ONLY);
 ?>
 <header id="navbar" role="banner" class="<?php print $navbar_classes; ?>">
   <div class="container">
@@ -103,7 +105,7 @@
           <?php if (!empty($primary_nav)): print render($primary_nav); endif; ?>
           <ul class="menu nav navbar-nav pull-right account-menu">
             <?php if (user_is_anonymous()): ?>
-              <li class="<?php echo (($current_path == 'user/register') ? 'active' : ''); ?>"><?php echo l(t('Register'), 'user/register'); ?></li>
+              <?php if ($can_register): ?><li class="<?php echo (($current_path == 'user/register') ? 'active' : ''); ?>"><?php echo l(t('Register'), 'user/register'); ?></li><?php endif; ?>
               <li class="<?php echo (($current_path == 'user/login') ? 'active' : ''); ?>"><?php echo l(t('Login'), 'user/login'); ?></li>
             <?php else: ?>
               <li class="first expanded dropdown">

@@ -123,6 +123,38 @@ function apigee_company_menu_alter(array &$items) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter() for devconnect_admin_form().
+ */
+function apigee_company_form_devconnect_admin_form_alter(array &$form) {
+  $form['apigee_company_config_container'] = array(
+    '#title' => t('Company configuration'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['apigee_company_config_container']['apigee_company_disable_switcher'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => intval(variable_get('apigee_company_disable_switcher', 0)),
+    '#return_value' => 1,
+    '#title' => t('Disable company switcher'),
+    '#description' => t('Check this to remove the company switcher dropdown from all pages on the portal.'),
+  );
+  $form['#submit'][] = 'apigee_company_devconnect_admin_form_submit';
+}
+
+/**
+ * Additional submit handler for devconnect_admin_form().
+ *
+ * @param array $form
+ *   Descriptor of the form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
+ */
+function apigee_company_devconnect_admin_form_submit(array $form, array &$form_state) {
+  variable_set('apigee_company_disable_switcher', intval($form_state['values']['apigee_company_disable_switcher']));
+}
+
+/**
  * Implements hook_block_info().
  */
 function apigee_company_block_info() {
@@ -348,7 +380,7 @@ function apigee_company_entity_info_alter(array &$entity_info) {
  *
  * @see apigee_company_company_form()
  */
-function apigee_company_company_form_wrapper($company = NULL) {
+function apigee_company_company_form_wrapper(ApigeeCompanyEntity $company = NULL) {
   if (!isset($company)) {
     $company = entity_get_controller('apigee_company')->create(array());
   }
@@ -383,7 +415,7 @@ function apigee_company_company_new() {
  * @return array
  *   The newly-created form.
  */
-function apigee_company_company_form(array $form, array &$form_state, $company) {
+function apigee_company_company_form(array $form, array &$form_state, ApigeeCompanyEntity $company) {
 
   $form['company_display_name'] = array(
     '#type' => 'textfield',
@@ -475,7 +507,7 @@ function apigee_company_company_machine_name_exists($value) {
  * @param string $action
  *   The Action to be performed on the invitation.
  */
-function apigee_company_update_request($invitation, $action) {
+function apigee_company_update_request(ApigeeCompanyInvitationEntity $invitation, $action) {
   global $user;
 
   switch ($action) {
@@ -1101,7 +1133,7 @@ function apigee_company_invitation_load($id = NULL) {
  * @return array
  *   The newly-created form.
  */
-function apigee_company_cancel_invitation(array $form, array &$form_state, $invitation) {
+function apigee_company_cancel_invitation(array $form, array &$form_state, ApigeeCompanyInvitationEntity $invitation) {
 
   $path = 'api_company/company/developers';
   drupal_add_css(drupal_get_path('module', 'apigee_company') . '/css/apigee_company.css', 'file');

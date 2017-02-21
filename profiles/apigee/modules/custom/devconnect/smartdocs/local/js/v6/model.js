@@ -1323,15 +1323,16 @@ Apigee.APIModel.Methods = function() {
           rawCode = rawCode.replace(/\n(\s*)},\n{/g, "\n$1},\n$1{");
           responseContainerElement.append("<pre><code class='language-javascript' id='some-code123'>"+rawCode+"</code></pre>");
         } else { // Handle non JSON response content (treat as markup language)
-          rawCode =rawCode.replace(/>/g,"&gt;").replace(/</g,"&lt;");
+          rawCode =rawCode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
           responseContainerElement.append("<pre class='language-markup'><code class='language-markup' id='some-code'>"+rawCode+"</code></pre>");
 
         }
       }
     }
-    // Request line fine details construction.
-    var hostName = targetUrl.split("//")[1].split("/")[0];
-    var requestContainerString = "<strong>"+data.requestVerb+" "+ targetUrl.split(hostName)[1] + " HTTP/"+httpVersion+"</strong>";
+    // Request line fine details construction. Sanitize to prevent XSS attacks.
+    var hostName = targetUrl.split('//')[1].split('/')[0].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    var urlPortion = targetUrl.split(hostName)[1].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    var requestContainerString = '<strong>' + data.requestVerb + ' ' + urlPortion + ' HTTP/' + httpVersion + '</strong>';
     // Request headers construction.
     requestContainerString += "<dl>";
     for (var i=0; i<data.requestHeaders.length; i++) {

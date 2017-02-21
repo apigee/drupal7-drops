@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Installation file for the devconnect_admin_notify module.
+ * Main module file for the devconnect_admin_notify module.
  */
 
 if (!defined('DEVCONNECT_ADMIN_NOTIFY_SUBJECT')) {
@@ -15,7 +15,7 @@ if (!defined('DEVCONNECT_ADMIN_NOTIFY_BODY')) {
 /**
  * Implements hook_help().
  */
-function devconnect_admin_notify_help($path, $arg) {
+function devconnect_admin_notify_help($path) {
   if ($path == 'admin/help#devconnect_admin_notify') {
     return '<p>' .
       t('This module provides a way for an administrator to get' .
@@ -23,6 +23,7 @@ function devconnect_admin_notify_help($path, $arg) {
         'It assumes that the Drupal mailer is configured.') .
       '</p>';
   }
+  return '';
 }
 
 /**
@@ -43,25 +44,31 @@ function devconnect_admin_notify_menu() {
 /**
  * Implements hook_user_insert().
  */
-function devconnect_admin_notify_user_insert(&$edit, &$account, $category = NULL) {
+function devconnect_admin_notify_user_insert(array &$edit, stdClass &$account) {
   if ($account->status) {
-    devconnect_admin_notify_setup_email($edit, $account);
+    devconnect_admin_notify_setup_email($account);
   }
 }
 
 /**
  * Implements hook_user_update().
  */
-function devconnect_admin_notify_user_update(&$edit, &$account, $category = NULL) {
+function devconnect_admin_notify_user_update(array &$edit, stdClass &$account) {
   if (variable_get('devconnect_admin_notify_alert', 'create') == 'update') {
-    devconnect_admin_notify_setup_email($edit, $account, 'update');
+    devconnect_admin_notify_setup_email($account, 'update');
   }
 }
 
 /**
- * Generates the mail format.
+ * Formats and sends the notification email.
+ *
+ * @param stdClass $account
+ *   The user account which was created or updated.
+ * @param string $action
+ *   Indicates whether the user is being created ('insert') or modified
+ *   ('update').
  */
-function devconnect_admin_notify_setup_email(&$edit, &$account, $action = 'insert') {
+function devconnect_admin_notify_setup_email(stdClass &$account, $action = 'insert') {
   // Notify administrator of new user only if this is not first user and
   // if visitors can create accounts without administrator's approval.
   // In case when accounts must be created with administrator's approval
@@ -120,19 +127,21 @@ function _devconnect_admin_notify_get_receiver_mails() {
     case 'Custom':
       $emails = explode(',', variable_get('devconnect_admin_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
       break;
+
     case 'Both':
       $emails = explode(',', variable_get('devconnect_admin_notify_mailto', variable_get('site_mail', ini_get('sendmail_from'))));
     // There is no break here for a reason.
+
     case 'Role':
       $roles = array_unique(variable_get('devconnect_admin_notify_roles', array()));
       if (!empty($roles)) {
-        $result = db_select('users', 'u');
-        $result->innerJoin('users_roles', 'r', 'u.uid = r.uid');
-        $result->fields('u', array('mail'))
+        $query = db_select('users', 'u');
+        $query->innerJoin('users_roles', 'r', 'u.uid = r.uid');
+        $query->fields('u', array('mail'))
           ->condition('r.rid', $roles)
           ->condition('u.status', 1)
-          ->distinct()
-          ->execute();
+          ->distinct();
+        $result = $query->execute();
         $emails = array_merge($emails, $result->fetchCol());
       }
       break;
@@ -150,8 +159,12 @@ function _devconnect_admin_notify_get_receiver_mails() {
  * Generates the token values used in the mail.
  *
  * @param stdClass $uaccount
+ *   The user account used for token generation.
  * @param string $action
+ *   Whether the user account is newly created ('created') or updated
+ *   ('updated').
  * @return array
+ *   An associative array of token names and values.
  */
 function _devconnect_admin_notify_get_variables($uaccount, $action) {
   global $base_url;
@@ -172,7 +185,9 @@ function _devconnect_admin_notify_get_variables($uaccount, $action) {
 
 /**
  * Implements hook_mail_alter().
- * Alters notification mail triggered to admin when user registration is in manual process
+ *
+ * Alters notification mail triggered to admin when user registration is in
+ * manual process.
  */
 function devconnect_admin_notify_mail_alter(&$message) {
   if ($message['id'] == 'user_register_pending_approval_admin') {

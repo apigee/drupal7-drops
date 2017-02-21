@@ -144,7 +144,7 @@ projects[ds][version] = "2.14"
 ; Deprecated.
 projects[eck][type] = "module"
 projects[eck][subdir] = "contrib"
-projects[eck][version] = "2.0-rc8"
+projects[eck][version] = "2.0-rc9"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
@@ -239,7 +239,7 @@ projects[http_client][version] = "2.4"
 ; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
-projects[i18n][version] = "1.14"
+projects[i18n][version] = "1.15"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
@@ -288,14 +288,14 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-rc3"
+projects[media][version] = "2.0-rc5"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
 projects[media_ckeditor][subdir] = "contrib"
-projects[media_ckeditor][version] = "2.0-alpha4"
+projects[media_ckeditor][version] = "2.0-rc3"
 
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
@@ -309,7 +309,7 @@ projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.20"
+projects[metatag][version] = "1.21"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -341,7 +341,7 @@ projects[node_export][version] = "3.1"
 
 projects[oauth][type] = "module"
 projects[oauth][subdir] = "contrib"
-projects[oauth][version] = "3.3"
+projects[oauth][version] = "3.4"
 
 projects[oauthconnector][type] = "module"
 projects[oauthconnector][subdir] = "contrib"
@@ -436,7 +436,7 @@ projects[uuid][version] = "1.0-beta2"
 ; Deprecated
 projects[uuid_features][type] = "module"
 projects[uuid_features][subdir] = "contrib"
-projects[uuid_features][version] = "1.0-alpha4"
+projects[uuid_features][version] = "1.0-rc1"
 
 ; Deprecated
 projects[variable][type] = "module"

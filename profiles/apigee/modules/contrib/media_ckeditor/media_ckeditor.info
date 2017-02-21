@@ -15,9 +15,9 @@ test_dependencies[] = ckeditor
 test_dependencies[] = views
 test_dependencies[] = ctools
 
-; Information added by Drupal.org packaging script on 2016-12-09
-version = "7.x-2.0-alpha4"
+; Information added by Drupal.org packaging script on 2017-01-15
+version = "7.x-2.0-rc3"
 core = "7.x"
 project = "media_ckeditor"
-datestamp = "1481300314"
+datestamp = "1484494686"
 

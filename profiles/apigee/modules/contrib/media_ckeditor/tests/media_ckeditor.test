@@ -5,7 +5,6 @@
  * Tests for media_ckeditor.module.
  */
 
-
 /**
  * Defines base class for media test cases.
  */
@@ -31,22 +30,22 @@ abstract class MediaCkeditorTestHelper extends DrupalWebTestCase {
   }
 
   /**
-    * Generates markup to be inserted for a file.
-    *
-    * This is a PHP version of InsertMedia.insert() from js/wysiwyg-media.js.
-    *
-    * @param int $fid
-    *   Drupal file id
-    * @param int $count
-    *   Quantity of markup to insert
-    * @param array $attributes
-    *   Extra attributes to insert.
-    * @param array $fields
-    *   Extra field values to insert.
-    *
-    * @return string
-    *   Filter markup.
-    */
+   * Generates markup to be inserted for a file.
+   *
+   * This is a PHP version of InsertMedia.insert() from js/wysiwyg-media.js.
+   *
+   * @param int $fid
+   *   Drupal file id.
+   * @param int $count
+   *   Quantity of markup to insert.
+   * @param array $attributes
+   *   Extra attributes to insert.
+   * @param array $fields
+   *   Extra field values to insert.
+   *
+   * @return string
+   *   Filter markup.
+   */
   protected function generateJsonTokenMarkup($fid, $count = 1, array $attributes = array(), array $fields = array()) {
     $markup = '';
     // Merge default atttributes.
@@ -76,18 +75,17 @@ abstract class MediaCkeditorTestHelper extends DrupalWebTestCase {
   /**
    * Utility function to create a test node.
    *
-    * @param array $fields
-    *   Extra field values to insert.
+   * @param array $fields
+   *   Extra field values to insert.
    *
    * @return int
    *   Returns the node id
    */
   protected function createNode(array $fields = array()) {
     $markup = 'test';
-//    if (! empty($fid)) {
-//      $markup = $this->generateJsonTokenMarkup($fid, 1, $attributes, $fields);
-//    }
-
+    // If (! empty($fid)) {
+    // $markup = $this->generateJsonTokenMarkup($fid, 1, $attributes, $fields);
+    // }
     // Create an article node with file markup in the body field.
     $edit = array(
       'title' => $this->randomName(8),
@@ -108,6 +106,10 @@ abstract class MediaCkeditorTestHelper extends DrupalWebTestCase {
  * Defines base class for media_ckeditor_view_mode test cases.
  */
 class MediaCkeditorViewModeTestHelper extends MediaCkeditorTestHelper {
+
+  /**
+   * Get information function.
+   */
   public static function getInfo() {
     return array(
       'name' => 'Media Ckeditor ViewMode test',
@@ -116,7 +118,10 @@ class MediaCkeditorViewModeTestHelper extends MediaCkeditorTestHelper {
     );
   }
 
-  function setUp() {
+  /**
+   * Set up function.
+   */
+  public function setUp() {
     parent::setUp();
 
     /* Reset the permissions cache prior to calling drupalCreateUser
@@ -132,7 +137,7 @@ class MediaCkeditorViewModeTestHelper extends MediaCkeditorTestHelper {
       'create article content',
       'edit own article content',
       'edit any article content',
-      'administer nodes'
+      'administer nodes',
     ));
     $this->drupalLogin($web_user);
 
@@ -150,4 +155,5 @@ class MediaCkeditorViewModeTestHelper extends MediaCkeditorTestHelper {
     $node = node_load($nid);
     $this->assertEqual(empty($node), TRUE, t('Node has been deleted.'));
   }
+
 }

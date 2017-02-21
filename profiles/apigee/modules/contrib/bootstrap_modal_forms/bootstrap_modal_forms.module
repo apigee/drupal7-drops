@@ -197,6 +197,13 @@ function _is_bootstrap_modal_request() {
  */
 function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form = NULL, $open_onload = FALSE) {
   //If the current_path is the same as the $url passed in we do not process the bootstrap modal form
+  global $theme_info;
+  $theme = $theme_info->name;
+  $base_theme = isset($theme_info->base_theme) ? $theme_info->base_theme : '';
+  if ($theme != 'bootstrap' && $base_theme != 'bootstrap') {
+    return NULL;
+  }
+
   if ($url == current_path()) {
     return NULL;
   }

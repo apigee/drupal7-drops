@@ -56,6 +56,9 @@ function media_wysiwyg_schema() {
  */
 function media_wysiwyg_install() {
   media_wysiwyg_update_7204();
+
+  // Start off with the alignment feature enabled.
+  variable_set('media_wysiwyg_alignment', TRUE);
 }
 
 /**
@@ -72,6 +75,7 @@ function media_wysiwyg_uninstall() {
   variable_del('media_wysiwyg_wysiwyg_browser_plugins');
   variable_del('media_wysiwyg_wysiwyg_override_field_types');
   variable_del('media_wysiwyg_use_link_text_for_filename');
+  variable_del('media_wysiwyg_alignment');
 }
 
 /**
@@ -223,3 +227,13 @@ function media_wysiwyg_update_7205() {
 
   module_invoke_all('modules_uninstalled', array($module));
 }
+
+/**
+ * Notify upgraders that there's optional media alignment functionality that needs to be enabled.
+ */
+function media_wysiwyg_update_7206() {
+  $message = t('If you would like to be able to align your embedded media (left, right, or center), go to /admin/config/media/browser and check "Provide alignment option when embedding media", and save the settings.');
+  drupal_set_message($message,'warning',TRUE);
+}
+
+

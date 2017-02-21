@@ -42,6 +42,48 @@ function apigee_profile_updates_form_alter(&$form, &$form_state, $form_id) {
       '#weight' => 100,
     );
   }
+  elseif ($form_id == 'user_admin_settings') {
+    // Check to see if the active theme is apigee_responsive or one of its
+    // subthemes.
+    $theme_name = variable_get('theme_default');
+    $is_apigee_responsive = FALSE;
+    while (TRUE) {
+      if ($theme_name == 'apigee_responsive') {
+        $is_apigee_responsive = TRUE;
+        break;
+      }
+      $theme = system_get_info('theme', $theme_name);
+      if (empty($theme['base theme'])) {
+        break;
+      }
+      $theme_name = $theme['base theme'];
+    }
+    // If we are using apigee_responsive or a subtheme thereof, invoke an extra
+    // submit handler.
+    if ($is_apigee_responsive) {
+      $form_state['storage']['previous_user_register'] = $form['registration_cancellation']['user_register']['#default_value'];
+      $form['#submit'][] = 'apigee_profile_updates_user_admin_settings_submit';
+    }
+  }
+}
+
+/**
+ * Extra submit handler for user_admin_settings form.
+ *
+ * If the user_register value changed, purge all cached pages, because we
+ * want the "Register" link to immediately disappear/reappear as appropriate.
+ * Note that because the user-agent may have cached certain pages, a browser
+ * hard-refresh may be necessary to complete this process.
+ *
+ * @param array $form
+ *   Descriptor of the form being submitted.
+ * @param array $form_state
+ *   State of the form being submitted.
+ */
+function apigee_profile_updates_user_admin_settings_submit($form, &$form_state) {
+  if ($form_state['values']['user_register'] != $form_state['storage']['previous_user_register']) {
+    cache_clear_all('*', 'cache_page', TRUE);
+  }
 }
 
 /**

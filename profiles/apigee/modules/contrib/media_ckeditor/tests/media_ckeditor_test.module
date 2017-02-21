@@ -50,4 +50,3 @@ function media_ckeditor_test_menu() {
 
   return $items;
 }
-

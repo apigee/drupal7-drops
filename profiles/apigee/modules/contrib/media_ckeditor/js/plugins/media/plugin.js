@@ -153,6 +153,20 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
             // Only replace html if it's different
             if (html != element.getHtml()) {
               element.setHtml(html);
+              // CKEditor's setHtml() method automatically fixes the HTML that
+              // it receives, which means that if it gets an <li> without a
+              // <ul> or <ol> parent, it adds a <ul>. These extra <ul> tags just
+              // keep piling up every time this function runs. So check here to
+              // see if we may need to fix this.
+              if (element.children && element.children[0]) {
+                // We identify this by looking for a <ul> inside a <ul> or <ol>.
+                if (('ul' === element.name && 'ul' === element.children[0].name) ||
+                    ('ol' === element.name && 'ul' === element.children[0].name)) {
+                  // If this did happen, fix it by promoting the grandchildren
+                  // (ie, actual list items) to children.
+                  element.children = element.children[0].children;
+                }
+              }
             }
             return element.name == 'mediawrapper' || 'data-media-element' in element.attributes;
           },

@@ -54,7 +54,7 @@ function media_ckeditor_form_media_wysiwyg_format_form_alter(&$form, $form_state
  * Implements hook_media_browser_params_alter().
  */
 function media_ckeditor_media_browser_params_alter(&$stored_params) {
-  // We add this custom param when the media dialog is invoked in library.js
+  // We add this custom param when the media dialog is invoked in library.js.
   if (isset($stored_params['id']) && $stored_params['id'] == 'media_wysiwyg') {
     // Set the default browser params from settings form if not already set.
     if (empty($stored_params['enabledPlugins'])) {
@@ -64,8 +64,12 @@ function media_ckeditor_media_browser_params_alter(&$stored_params) {
       $stored_params['file_directory'] = variable_get('media_wysiwyg_wysiwyg_upload_directory', '');
     }
     if (empty($stored_params['types'])) {
-      $stored_params['types'] = variable_get('media_wysiwyg_wysiwyg_allowed_types', array('audio', 'image', 'video', 'document'));
+      $stored_params['types'] = variable_get('media_wysiwyg_wysiwyg_allowed_types', array(
+        'audio',
+        'image',
+        'video',
+        'document'
+      ));
     }
   }
 }
-
