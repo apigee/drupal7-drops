@@ -348,7 +348,7 @@ function media_wysiwyg_filter_field_parser($tag_info) {
           }
         }
         // Multi-value select lists show up here with 3 array items.
-        elseif (count($parsed_field) == 3 && is_numeric($parsed_field[2])) {
+        elseif (count($parsed_field) == 3 && (empty($parsed_field[2]) || is_numeric($parsed_field[2]))) {
           $info = field_info_field($parsed_field[0]);
           // They just need the value column.
           $parsed_field[3] = key($info['columns']);

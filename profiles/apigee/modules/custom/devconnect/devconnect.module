@@ -248,9 +248,9 @@ function devconnect_get_debug_data() {
  * Get crypt key.
  */
 function devconnect_get_crypt_key() {
-  $private_dir = variable_get('apigee_credential_dir', 'sites/default/files/private');
-  if (is_file(DRUPAL_ROOT . '/' . $private_dir . '/.apigee.key')) {
-    $key = file_get_contents(DRUPAL_ROOT . '/' . $private_dir . '/.apigee.key');
+  $key_file = devconnect_get_config_file() . '.key';
+  if (is_file($key_file)) {
+    $key = file_get_contents($key_file);
   }
   if (empty($key)) {
     $key = variable_get('apigee_crypt_key', NULL);

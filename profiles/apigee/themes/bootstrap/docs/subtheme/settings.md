@@ -145,11 +145,11 @@ base theme:
 | Setting                                          | Default value {.col-xs-4} |
 | ------------------------------------------------ | ------------------------- |
 | bootstrap_cdn_provider         | `'jsdelivr'`                                                       |
-| bootstrap_cdn_custom_css       | `'https://cdn.jsdelivr.net/bootstrap/3.3.5/css/bootstrap.css'`     |
-| bootstrap_cdn_custom_css_min   | `'https://cdn.jsdelivr.net/bootstrap/3.3.5/css/bootstrap.min.css'` |
-| bootstrap_cdn_custom_js        | `'https://cdn.jsdelivr.net/bootstrap/3.3.5/js/bootstrap.js'`       |
-| bootstrap_cdn_custom_js_min    | `'https://cdn.jsdelivr.net/bootstrap/3.3.5/js/bootstrap.min.js'`   |
-| bootstrap_cdn_jsdelivr_version | `'3.3.5'`                                                          |
+| bootstrap_cdn_custom_css       | `'https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.css'`     |
+| bootstrap_cdn_custom_css_min   | `'https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.min.css'` |
+| bootstrap_cdn_custom_js        | `'https://cdn.jsdelivr.net/bootstrap/3.3.7/js/bootstrap.js'`       |
+| bootstrap_cdn_custom_js_min    | `'https://cdn.jsdelivr.net/bootstrap/3.3.7/js/bootstrap.min.js'`   |
+| bootstrap_cdn_jsdelivr_version | `'3.3.7'`                                                          |
 | bootstrap_cdn_jsdelivr_theme   | `'bootstrap'`                                                      |
 {.table.table-striped}
 

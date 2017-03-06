@@ -12,3 +12,4 @@ files[] = controllers/DeveloperAppController.php
 dependencies[] = devconnect
 dependencies[] = devconnect_user
 dependencies[] = entity
+dependencies[] = libraries

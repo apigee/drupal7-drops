@@ -46,6 +46,14 @@ function views_slideshow_cycle_drush_command() {
     ),
     'aliases' => array('dl-pause'),
   );
+  $items['views-slideshow-cycle-easing'] = array(
+    'description' => dt('Download and install the jQuery.easing library.'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
+    'arguments' => array(
+      'path' => dt('Optional. The path to install the jQuery.easing library in. If omitted Drush will use the default location.'),
+    ),
+    'aliases' => array('dl-easing'),
+  );
   $items['views-slideshow-cycle-lib'] = array(
     'description' => dt('Download and install the jQuery Cycle, jQuery hoverIntent and JSON2 libraries.'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
@@ -67,6 +75,9 @@ function views_slideshow_cycle_drush_help($section) {
 
     case 'drush:views-slideshow-cycle-pause':
       return dt('Download and install the jQuery pause library from https://raw.githubusercontent.com/tobia/Pause/master/jquery.pause.js, default location is libraries/jquery.pause.');
+
+    case 'drush:views-slideshow-cycle-easing':
+      return dt('Download and install the jQuery pause library from http://gsgd.co.uk/sandbox/jquery/easing/jquery.easing.1.3.js, default location is libraries/jquery.easing.');
 
     case 'drush:views-slideshow-cycle-json2':
       return dt('Download and install the JSON2 library from https://github.com/douglascrockford/JSON-js/, default location is libraries/json2.');
@@ -129,6 +140,19 @@ function drush_views_slideshow_cycle_pause() {
 }
 
 /**
+ * Command to download the jQuery.pause library.
+ */
+function drush_views_slideshow_cycle_easing() {
+  _drush_views_slideshow_cycle_install_library(
+    'jQuery easing',
+    'libraries/jquery.easing',
+    'jquery.easing.1.3.js',
+    'http://gsgd.co.uk/sandbox/jquery/easing/jquery.easing.1.3.js',
+    func_get_args()
+  );
+}
+
+/**
  * Command to download all libraries.
  */
 function drush_views_slideshow_cycle_lib() {
@@ -136,6 +160,7 @@ function drush_views_slideshow_cycle_lib() {
   drush_views_slideshow_cycle_json2();
   drush_views_slideshow_cycle_hoverintent();
   drush_views_slideshow_cycle_pause();
+  drush_views_slideshow_cycle_easing();
 }
 
 /**

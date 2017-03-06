@@ -67,7 +67,7 @@ projects[bugherd][version] = "1.0-beta4"
 
 projects[captcha][type] = "module"
 projects[captcha][subdir] = "contrib"
-projects[captcha][version] = "1.3"
+projects[captcha][version] = "1.4"
 
 ; Deprecated
 projects[cck_phone][type] = "module"
@@ -248,7 +248,7 @@ projects[jquery_update][version] = "3.0-alpha3"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
-projects[ldap][version] = "2.0-beta11"
+projects[ldap][version] = "2.0-beta12"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
@@ -288,7 +288,7 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-rc5"
+projects[media][version] = "2.0-rc12"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
@@ -446,7 +446,7 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.14"
+projects[views][version] = "3.15"
 
 ; Deprecated
 projects[views_accordion][type] = "module"
@@ -455,7 +455,7 @@ projects[views_accordion][version] = "1.1"
 
 projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
-projects[views_bulk_operations][version] = "3.3"
+projects[views_bulk_operations][version] = "3.4"
 
 ; Deprecated
 projects[views_queue][type] = "module"
@@ -464,7 +464,7 @@ projects[views_queue][version] = "1.x-dev"
 
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
-projects[views_slideshow][version] = "3.5"
+projects[views_slideshow][version] = "3.7"
 
 ; NOT enabled on install.
 projects[webform][type] = "module"
@@ -490,7 +490,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.10"
+projects[bootstrap][version] = "3.12"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"

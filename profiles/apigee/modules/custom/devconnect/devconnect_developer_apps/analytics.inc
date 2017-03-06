@@ -187,7 +187,15 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
     // TODO: handle this differently?
     return '';
   }
-  drupal_add_js('//code.highcharts.com/3.0.10/highcharts.js');
+  if (variable_get('devconnect_highcharts_use_cdn', 'cdn') == 'cdn') {
+    $highcharts_base_url = '//code.highcharts.com/3.0.10';
+    $type = 'external';
+  }
+  else {
+    $highcharts_base_url = url(libraries_get_path('highcharts'));
+    $type = 'file';
+  }
+  drupal_add_js($highcharts_base_url . '/highcharts.js', array('type' => $type, 'group' => JS_LIBRARY));
 
   $chart_data = array(
     'chart' => array(

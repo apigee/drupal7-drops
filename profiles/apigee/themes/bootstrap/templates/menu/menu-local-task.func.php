@@ -25,7 +25,11 @@ function bootstrap_menu_local_task($variables) {
   $link = $variables['element']['#link'];
 
   $options = isset($link['localized_options']) ? $link['localized_options'] : array();
-  $title = $link['title'];
+
+  // Filter the title if the "html" is not set, otherwise l() will automatically
+  // sanitize using check_plain(), so no need to call that here.
+  $title = empty($options['html']) ? filter_xss_admin($link['title']) : $link['title'];
+
   $href = $link['href'];
   $attributes = array();
 
@@ -37,12 +41,6 @@ function bootstrap_menu_local_task($variables) {
       '!local-task-title' => $title,
       '!active' => '<span class="element-invisible">' . t('(active tab)') . '</span>',
     ));
-  }
-
-  // Filter the title if the "html" is set, otherwise l() will automatically
-  // sanitize using check_plain(), so no need to call that here.
-  if (!empty($options['html'])) {
-    $title = _bootstrap_filter_xss($title);
   }
 
   return '<li' . drupal_attributes($attributes) . '>' . l($title, $href, $options) . "</li>\n";

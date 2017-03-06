@@ -1,0 +1,6 @@
+<?php
+function apigee_testing_install() {
+  variable_set('theme_default', 'stark');
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('access content'));
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('access content'));
+}

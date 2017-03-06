@@ -5,8 +5,6 @@ package = Dev Portal - Core
 php = 5.3
 version = 7.x-4.31
 
-files[] = tests/DeveloperEntityTestCase.test
-
 dependencies[] = devconnect
 dependencies[] = features
 dependencies[] = link

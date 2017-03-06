@@ -15,5 +15,5 @@
  */
 function bootstrap_process_progress_bar(&$variables) {
   $variables['percent'] = check_plain($variables['percent']);
-  $variables['message'] = _bootstrap_filter_xss($variables['message']);
+  $variables['message'] = filter_xss_admin($variables['message']);
 }

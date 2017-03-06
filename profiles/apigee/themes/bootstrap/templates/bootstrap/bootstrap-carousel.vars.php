@@ -66,11 +66,11 @@ function bootstrap_process_bootstrap_carousel(&$variables) {
     );
 
     if (!empty($variables['items'][$delta]['title'])) {
-      $variables['items'][$delta]['title'] = _bootstrap_filter_xss(render($item['title']));
+      $variables['items'][$delta]['title'] = is_scalar($item['title']) ? filter_xss_admin($item['title']) : render($item['title']);
     }
 
     if (!empty($variables['items'][$delta]['description'])) {
-      $variables['items'][$delta]['description'] = _bootstrap_filter_xss(render($item['description']));
+      $variables['items'][$delta]['description'] = is_scalar($item['description']) ? filter_xss_admin($item['description']) : render($item['description']);
     }
 
   }

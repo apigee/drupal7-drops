@@ -553,7 +553,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   /**
    * Returns the last exception returned from Edge.
    *
-   * @return Apigee\Exceptions\ResponseException
+   * @return \Exception
    */
   public static function getLastException() {
     return self::$lastException;

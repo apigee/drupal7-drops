@@ -272,9 +272,15 @@ function apigee_profile_updates_update_7107() {
 }
 
 /**
- * Set X-Frame-Options header to DENY.
+ * Rebuild theme registry to allow hiding registration link when appropriate.
  */
 function apigee_profile_updates_update_7108() {
-  variable_set('x_frame_options', 'DENY');
   drupal_theme_rebuild();
+}
+
+/**
+ * Remove X-Frame-Options header variable. If you need to configure this value, consider installing Security Kit.
+ */
+function apigee_profile_updates_update_7109() {
+  variable_del('x_frame_options');
 }

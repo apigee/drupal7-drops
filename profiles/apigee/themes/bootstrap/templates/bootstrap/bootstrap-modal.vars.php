@@ -24,8 +24,6 @@ function bootstrap_preprocess_bootstrap_modal(&$variables) {
   $variables['attributes']['tabindex'] = -1;
   $variables['attributes']['role'] = 'dialog';
   $variables['attributes']['aria-hidden'] = 'true';
-
-  $variables['heading'] = $variables['html_heading'] ? $variables['heading'] : check_plain($variables['heading']);
   $variables['dialog_attributes']['class'][] = 'modal-dialog';
 
   if (!empty($variables['size'])) {
@@ -45,7 +43,11 @@ function bootstrap_preprocess_bootstrap_modal(&$variables) {
 function bootstrap_process_bootstrap_modal(&$variables) {
   $variables['attributes'] = drupal_attributes($variables['attributes']);
   $variables['dialog_attributes'] = drupal_attributes($variables['dialog_attributes']);
-  $variables['heading'] = _bootstrap_filter_xss(render($variables['heading']));
+
+  $html = !empty($variables['html_heading']);
+  $heading = $html && is_scalar($variables['heading']) ? filter_xss_admin($variables['heading']) : render($variables['heading']);
+  $variables['heading'] = $html ? $heading : check_plain($heading);
+
   $variables['body'] = render($variables['body']);
   $variables['footer'] = render($variables['footer']);
 }

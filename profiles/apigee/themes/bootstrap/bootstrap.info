@@ -124,11 +124,11 @@ settings[bootstrap_tooltip_container] = 'body'
 ; Advanced
 ; --------------
 settings[bootstrap_cdn_provider] = 'jsdelivr'
-settings[bootstrap_cdn_custom_css] = 'https://cdn.jsdelivr.net/bootstrap/3.3.5/css/bootstrap.css'
-settings[bootstrap_cdn_custom_css_min] = 'https://cdn.jsdelivr.net/bootstrap/3.3.5/css/bootstrap.min.css'
-settings[bootstrap_cdn_custom_js] = 'https://cdn.jsdelivr.net/bootstrap/3.3.5/js/bootstrap.js'
-settings[bootstrap_cdn_custom_js_min] = 'https://cdn.jsdelivr.net/bootstrap/3.3.5/js/bootstrap.min.js'
-settings[bootstrap_cdn_jsdelivr_version] = '3.3.5'
+settings[bootstrap_cdn_custom_css] = 'https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.css'
+settings[bootstrap_cdn_custom_css_min] = 'https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.min.css'
+settings[bootstrap_cdn_custom_js] = 'https://cdn.jsdelivr.net/bootstrap/3.3.7/js/bootstrap.js'
+settings[bootstrap_cdn_custom_js_min] = 'https://cdn.jsdelivr.net/bootstrap/3.3.7/js/bootstrap.min.js'
+settings[bootstrap_cdn_jsdelivr_version] = '3.3.7'
 settings[bootstrap_cdn_jsdelivr_theme] = 'bootstrap'
 
 ; Global
@@ -208,9 +208,9 @@ multipliers[screen-md-max][] = 2x
 multipliers[screen-lg-min][] = 1.5x
 multipliers[screen-lg-min][] = 2x
 
-; Information added by Drupal.org packaging script on 2016-11-29
-version = "7.x-3.10"
+; Information added by Drupal.org packaging script on 2017-02-27
+version = "7.x-3.12"
 core = "7.x"
 project = "bootstrap"
-datestamp = "1480458193"
+datestamp = "1488215888"
 

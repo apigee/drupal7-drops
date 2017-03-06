@@ -222,6 +222,30 @@ function devconnect_developer_apps_config(array $form, array &$form_state) {
     '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_show_analytics', 1, $form_state),
   );
 
+  $local_description = t('Serve local copies of Highcharts assets');
+  if (!file_exists(libraries_get_path('highcharts') . '/highcharts.js')) {
+    $local_description .= '<div class="description">' . t('To select this option, you should download a copy of the <a href="@hcurl">Highcharts JavaScript library</a> and place it in <strong>@libdir</strong>, such that the file <strong>@libdir/highcharts.js</strong> exists.', array(
+      '@hcurl' => 'http://code.highcharts.com/highcharts.js',
+      '@libdir' => base_path() . 'sites/all/libraries/highcharts',
+    )) . '</div>';
+  }
+
+  $form['analytics']['devconnect_highcharts_use_cdn'] = array(
+    '#type' => 'radios',
+    '#title' => t('Highcharts CDN'),
+    '#options' => array(
+      'cdn' => t('Use official Highcharts CDN'),
+      'local' => $local_description,
+    ),
+    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_highcharts_use_cdn', 'cdn', $form_state),
+    '#description' => t('If Drupal is serving to a private network, you should choose “Serve local copies” here.'),
+    '#states' => array(
+      'invisible' => array(
+        '#edit-devconnect-show-analytics' => array('checked' => FALSE)
+      ),
+    ),
+  );
+
   // Analytics environments.
   $options = $environments = array();
   try {
@@ -263,6 +287,11 @@ function devconnect_developer_apps_config(array $form, array &$form_state) {
     '#title' => t('Environment to query for analytics data'),
     '#default_value' => variable_get('devconnect_analytics_environment', $default_env),
     '#options' => $options,
+    '#states' => array(
+      'invisible' => array(
+        '#edit-devconnect-show-analytics' => array('checked' => FALSE)
+      ),
+    ),
   );
 
   $form['actions'] = array(
@@ -305,6 +334,30 @@ function _devconnect_developer_apps_render_apiproducts(array $form, array &$form
 function _devconnect_developer_apps_number_postrender($content, array $element) {
   return str_replace('type="text"', 'type="number" style="width:7em !important" min="-1"', $content);
 };
+
+/**
+ * Form validator for the config form.
+ *
+ * Makes sure that Highcharts CDN settings are valid.
+ *
+ * @param array $form
+ *   The form being validated.
+ * @param array $form_state
+ *   State of the form being validated.
+ */
+function devconnect_developer_apps_config_validate(array $form, array &$form_state) {
+  if ($form_state['values']['devconnect_show_analytics'] == 1) {
+    if ($form_state['values']['devconnect_highcharts_use_cdn'] != 'cdn') {
+      if (!file_exists(libraries_get_path('highcharts') . '/highcharts.js')) {
+        $err_msg = t('To serve local Highcharts assets, you must download a copy of the <a href="@hcurl">Highcharts JavaScript library</a> and place it in <code>@libdir</code>, such that the file <code>@libdir/highcharts.js</code> exists.', array(
+          '@hcurl' => 'http://code.highcharts.com/highcharts.js',
+          '@libdir' => base_path() . 'sites/all/libraries/highcharts',
+        ));
+        form_set_error('devconnect_highcharts_use_cdn', $err_msg);
+      }
+    }
+  }
+}
 
 /**
  * Submit handler for the admin configuration form.

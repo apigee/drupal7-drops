@@ -22,10 +22,15 @@
  */
 function bootstrap_menu_local_action($variables) {
   $link = $variables['element']['#link'];
-  $title = $link['title'];
+
+  $options = isset($link['localized_options']) ? $link['localized_options'] : array();
+
+  // Filter the title if the "html" is set, otherwise l() will automatically
+  // sanitize using check_plain(), so no need to call that here.
+  $title = empty($options['html']) ? filter_xss_admin($link['title']) : $link['title'];
+
   $icon = _bootstrap_iconize_text($title);
   $href = !empty($link['href']) ? $link['href'] : FALSE;
-  $options = isset($link['localized_options']) ? $link['localized_options'] : array();
 
   // Format the action link.
   if ($href) {
@@ -47,12 +52,6 @@ function bootstrap_menu_local_action($variables) {
     }
     // Force HTML so we can render any icon that may have been added.
     $options['html'] = !empty($options['html']) || !empty($icon) ? TRUE : FALSE;
-  }
-
-  // Filter the title if the "html" is set, otherwise l() will automatically
-  // sanitize using check_plain(), so no need to call that here.
-  if (!empty($options['html'])) {
-    $title = _bootstrap_filter_xss($title);
   }
 
   return $href ? l($icon . $title, $href, $options) : $icon . $title;

@@ -1,0 +1,141 @@
+<?php
+
+require_once __DIR__ . '/DevconnectTestCase.php';
+
+use Apigee\Exceptions\ResponseException;
+
+class DeveloperAppEntityTestCase extends DevconnectTestCase {
+
+  /**
+   * @var Drupal\devconnect_developer_apps\DeveloperAppEntity
+   */
+  private $app_entity;
+
+  /**
+   * @var string
+   */
+  private $app_id;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return [
+      'name' => t('Devconnect Developer App Entity'),
+      'description' => t('Tests the developer_app entity’s methods.'),
+      'group' => t('Devconnect'),
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function tearDown() {
+    if (isset($this->app_id)) {
+      try {
+        entity_delete('developer_app', $this->app_id);
+      }
+      catch (Exception $e) {
+        $this->verbose('Exception while deleting developer app: ' . $e->getMessage());
+      }
+    }
+    parent::tearDown();
+  }
+
+  /**
+   * Tests creation and deletion of Developer App entities.
+   */
+  public function testAppLifeCycle() {
+
+    $this->app_id = NULL;
+
+    $config = devconnect_default_org_config();
+    $org = new Apigee\ManagementAPI\Organization($config);
+    try {
+      $org->load('testorama');
+    } catch (Exception $e) {
+      $this->fail('Cannot access Edge');
+      return;
+    }
+
+    $api_product_list = array_keys(entity_load('api_product', FALSE, [], TRUE));
+    shuffle($api_product_list);
+    switch (count($api_product_list)) {
+      case 0:
+        $this->fail('No API products available.');
+        return;
+      default:
+        $api_product = $api_product_list[0];
+        break;
+    }
+
+    $edit = [
+      'accessType' => 'read',
+      'callbackUrl' => 'http://' . $this->randomName(),
+      'name' => $this->randomName(),
+      'developer' => $this->user->mail,
+      'apiProducts' => [$api_product],
+      'attributes' => ['foo' => $this->randomName()],
+    ];
+    $this->app_entity = entity_create('developer_app', $edit);
+
+    try {
+      $save_type = entity_save('developer_app', $this->app_entity);
+      if ($save_type === FALSE) {
+        $e = DeveloperAppController::getLastException();
+        throw $e;
+      }
+      if (!$this->assertEqual($save_type, SAVED_NEW, 'App should be saved as new rather than update')) {
+        return;
+      }
+    }
+    catch (ResponseException $e) {
+      $this->fail('ResponseException while creating app: ' . $e->getResponse() . "\n" . $e->getUri());
+      return;
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while creating app: ' . $e->getMessage());
+      return;
+    }
+    $this->app_id = DeveloperAppController::getLastAppId();
+    $this->assert(!empty($this->app_id), 'appId should be non-empty.');
+
+    $entities = entity_load('developer_app', FALSE, [], TRUE);
+    if (empty($entities)) {
+      $this->fail('Failed to list apps.');
+      return;
+    }
+    $this->pass('Listed ' . count($entities) . ' apps.');
+
+    $entities = entity_load('developer_app', [$this->app_id], [], TRUE);
+    if (empty($entities)) {
+      $this->fail('Failed to reload app.');
+      return;
+    }
+    $this->app_entity = reset($entities);
+    $this->app_id = $this->app_entity->appId;
+
+    $key = $this->app_entity->consumerKey;
+    $secret = $this->app_entity->consumerSecret;
+
+    if (count($api_product_list) > 1) {
+      $this->app_entity->apiProducts = [$api_product_list[1]];
+      entity_save('developer_app', $this->app_entity);
+
+      $entities = entity_load('developer_app', [$this->app_id], [], TRUE);
+      $this->app_entity = reset($entities);
+      $this->assertEqual($key, $this->app_entity->consumerKey, 'Consumer Key should be unchanged.');
+      $this->assertEqual($secret, $this->app_entity->consumerSecret, 'Consumer Secret should be unchanged.');
+    }
+
+    entity_delete('developer_app', $this->app_id);
+    $entities = entity_load('developer_app', [$this->app_id], [], TRUE);
+    if (!empty($entities)) {
+      $this->fail('Failed to delete app.');
+      return;
+    }
+    $this->app_id = NULL;
+    $this->pass('App deleted.');
+  }
+
+}

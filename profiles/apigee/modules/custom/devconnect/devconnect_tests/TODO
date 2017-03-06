@@ -1,0 +1,19 @@
+Developers:
+  - Test user registration UI to make sure developers are created at registration time
+  - Test admin UI to make sure developers are created when an admin creates a user
+  - Test saving of developer attributes via UI when attributes have been configured
+
+API Products:
+  - Test fetching of API Products from cache
+  - Test fetching of API Products from Edge
+
+Developer Apps:
+  - Test saving of app with multiple/none/default API Products
+  - Test saving of app when callback URI is/isn't required
+  - Test credential lifetime
+
+Developer App Attributes:
+  - Test saving of app attributes when custom attributes have been configured
+
+Limit API Product by Role
+  - Test to make sure API products are unavailable to excluded roles

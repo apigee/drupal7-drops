@@ -1,0 +1,121 @@
+<?php
+/**
+ * @file
+ * Tests functionality of the Developer entity.
+ */
+
+use Drupal\devconnect_user\DeveloperEntity;
+use Apigee\Exceptions\ResponseException;
+
+class DeveloperEntityTestCase extends DrupalWebTestCase {
+
+  /** @var  Drupal\devconnect_user\DeveloperEntity */
+  private $developer;
+
+  public static function getInfo() {
+    return [
+      'name' => t('Devconnect Developer Entity'),
+      'description' => t('Tests the developer entity’s methods.'),
+      'group' => t('Devconnect'),
+    ];
+  }
+
+  public function setUp() {
+    // Save this value from the old system.
+    $credential_dir = variable_get('apigee_credential_dir');
+    $this->profile = 'apigee_testing';
+    parent::setUp();
+    // Persist our cached value in the new database.
+    variable_set('apigee_credential_dir', $credential_dir);
+    // Force devconnect_default_org_config() to throw away its caches, because
+    // devconnect_cron() may have injected bogus values.
+    drupal_static_reset('devconnect_default_org_config');
+  }
+
+  protected function tearDown() {
+    if ($this->developer instanceof DeveloperEntity) {
+      entity_delete('developer', $this->developer->email);
+    }
+    $this->developer = NULL;
+    parent::tearDown();
+  }
+
+  public function testDeveloperLifecycle() {
+    $edit = [
+      'name' => $this->randomName(),
+      'mail' => 'simpletest-' . $this->randomName() . '@example.com',
+      'pass' => user_password(),
+      'status' => 1,
+      'roles' => [],
+    ];
+    $edit['field_first_name'][LANGUAGE_NONE][0]['value'] = $this->randomName();
+    $edit['field_last_name'][LANGUAGE_NONE][0]['value'] = $this->randomName();
+
+    $account = drupal_anonymous_user();
+    // If account->mail is unset, devconnect_user won't persist it to Edge.
+    $account->mail = $edit['mail'];
+    $user = user_save($account, $edit);
+
+    if (is_object($user) && $user->uid > 0) {
+      $this->pass('User created.');
+    }
+    else {
+      $this->fail('User not created.');
+      return;
+    }
+
+    $developers = entity_load('developer', [$user->mail], [], TRUE);
+    if (empty($developers)) {
+      $this->fail('No developer fetched with mail ' . $user->mail);
+      return;
+    }
+    $this->developer = reset($developers);
+    $this->pass('Developer loaded.');
+
+    $property_value = $this->randomName();
+    $this->developer->attributes['foo'] = $property_value;
+    $save_type = entity_save('developer', $this->developer);
+    if ($save_type === FALSE) {
+      $e = DeveloperController::getLastException();
+      $this->fail('Failed to save developer [code=' . $e->getCode() . ', message=' . $e->getMessage() . ']');
+      return;
+    }
+    if ($save_type != SAVED_UPDATED) {
+      $this->fail('Expected SAVED_UPDATED; received SAVED_NEW.');
+    }
+
+    $developers = entity_load('developer', [$user->mail], [], TRUE);
+    if (empty($developers)) {
+      $this->fail('No developer re-fetched with mail ' . $user->mail);
+      return;
+    }
+    $this->pass('Developer reloaded.');
+    $this->developer = reset($developers);
+    $this->assert($this->developer->attributes['foo'] == $property_value, 'Verify changed attribute was saved.');
+
+    $list = entity_load('developer');
+    if (count($list) > 0) {
+      $this->pass('Listed ' . count($list) . ' developers.');
+    }
+    else {
+      $this->fail('Developer list empty.');
+    }
+
+    try {
+      entity_delete('developer', $this->developer->email);
+    }
+    catch (Exception $e) {
+      $this->fail('Exception while deleting developer: ' . $e->getMessage());
+      return;
+    }
+
+    $developer = entity_load('developer', [$user->mail], [], TRUE);
+    $this->developer = NULL;
+    if (empty($developer)) {
+      $this->pass('Developer deleted.');
+    }
+    else {
+      $this->fail('Developer not deleted.');
+    }
+  }
+}

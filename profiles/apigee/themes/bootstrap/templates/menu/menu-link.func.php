@@ -22,9 +22,17 @@ function bootstrap_menu_link(array $variables) {
   $element = $variables['element'];
   $sub_menu = '';
 
-  $title = $element['#title'];
-  $href = $element['#href'];
   $options = !empty($element['#localized_options']) ? $element['#localized_options'] : array();
+
+  // Check plain title if "html" is not set, otherwise, filter for XSS attacks.
+  $title = empty($options['html']) ? check_plain($element['#title']) : filter_xss_admin($element['#title']);
+
+  // Ensure "html" is now enabled so l() doesn't double encode. This is now
+  // safe to do since both check_plain() and filter_xss_admin() encode HTML
+  // entities. See: https://www.drupal.org/node/2854978
+  $options['html'] = TRUE;
+
+  $href = $element['#href'];
   $attributes = !empty($element['#attributes']) ? $element['#attributes'] : array();
 
   if ($element['#below']) {
@@ -42,20 +50,12 @@ function bootstrap_menu_link(array $variables) {
       $title .= ' <span class="caret"></span>';
       $attributes['class'][] = 'dropdown';
 
-      $options['html'] = TRUE;
-
       // Set dropdown trigger element to # to prevent inadvertant page loading
       // when a submenu link is clicked.
       $options['attributes']['data-target'] = '#';
       $options['attributes']['class'][] = 'dropdown-toggle';
       $options['attributes']['data-toggle'] = 'dropdown';
     }
-  }
-
-  // Filter the title if the "html" is set, otherwise l() will automatically
-  // sanitize using check_plain(), so no need to call that here.
-  if (!empty($options['html'])) {
-    $title = _bootstrap_filter_xss($title);
   }
 
   return '<li' . drupal_attributes($attributes) . '>' . l($title, $href, $options) . $sub_menu . "</li>\n";
@@ -90,15 +90,14 @@ function bootstrap_menu_link__book_toc(array $variables) {
     $attributes['class'][] = 'active';
   }
 
-  // Filter the title if the "html" is set, otherwise l() will automatically
-  // sanitize using check_plain(), so no need to call that here.
-  if (!empty($options['html'])) {
-    $title = _bootstrap_filter_xss($title);
-  }
-
   // Convert to a link.
   if ($link) {
     $title = l($title, $href, $options);
+  }
+  // Otherwise, filter the title if "html" is not set, otherwise l() will automatically
+  // sanitize using check_plain(), so no need to call that here.
+  elseif (empty($options['html'])) {
+    $title = filter_xss_admin($title);
   }
 
   return '<li' . drupal_attributes($attributes) . '>' . $title . $sub_menu . "</li>\n";

@@ -1,0 +1,15 @@
+name = "apigee_testing"
+description = "Profile for running devconnect tests"
+hidden = TRUE
+core = "7.x"
+dependencies[] = devconnect
+dependencies[] = devconnect_developer_apps
+dependencies[] = devconnect_user
+dependencies[] = entity
+dependencies[] = features
+dependencies[] = field
+dependencies[] = link
+dependencies[] = list
+dependencies[] = me
+dependencies[] = options
+dependencies[] = token

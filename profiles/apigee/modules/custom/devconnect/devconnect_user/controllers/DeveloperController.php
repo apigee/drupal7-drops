@@ -24,6 +24,11 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
   private $emailCache;
 
   /**
+   * @var \Exception
+   */
+  protected static $lastException;
+
+  /**
    * {@inheritdoc}
    */
   public function __construct($entity_type) {
@@ -95,6 +100,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
           }
         }
         catch (ResponseException $e) {
+          self::$lastException = $e;
         }
       }
       else {
@@ -113,6 +119,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
               }
             }
             catch (Exception $e) {
+              self::$lastException = $e;
             }
           }
           else {
@@ -219,8 +226,10 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
           }
         }
         catch (ResponseException $e) {
+          self::$lastException = $e;
         }
         catch (ParameterException $e) {
+          self::$lastException = $e;
         }
       }
       // If there are multiple orgs, and we've deleted all we're meant to
@@ -288,6 +297,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       }
       catch (ResponseException $e) {
         $overall_success = FALSE;
+        self::$lastException = $e;
       }
 
     }
@@ -355,9 +365,6 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       $entity->orgNames = array('default');
     }
     foreach ($entity->orgNames as $org) {
-      if (module_exists('devconnect_multiorg')) {
-        $org = devconnect_multiorg_find_requested_org($org);
-      }
       $config = devconnect_default_org_config($org);
       try {
         $dev = new Developer($config);
@@ -370,6 +377,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       }
       catch (Exception $e) {
         watchdog('devconnect_user', 'Error updating the developer email: %response_message', array('%response_message' => $e->getMessage()), WATCHDOG_ERROR);
+        self::$lastException = $e;
       }
     }
     return $saved;
@@ -393,6 +401,7 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
         $emails += $dev->listDevelopers();
       }
       catch (Exception $e) {
+        self::$lastException = $e;
       }
     }
     sort($emails);
@@ -415,6 +424,15 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
     // subclasses can implement custom functionality without having to
     // copy/paste larger chunks of code.
     return array('default');
+  }
+
+  /**
+   * Returns the last exception returned from Edge.
+   *
+   * @return \Exception
+   */
+  public static function getLastException() {
+    return self::$lastException;
   }
 
 }

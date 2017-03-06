@@ -192,28 +192,49 @@ function _is_bootstrap_modal_request() {
  *    of the page. (Expects a Drupal renderable array.) If you choose to pass
  *    in html with the bootstrap wrapper that will work too.
  * @param bool $open_onload
- *    If you want to bootstrap window to be open by default
+ *    If you want the bootstrap window to be open by default
  * @return null|array
  */
 function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form = NULL, $open_onload = FALSE) {
-  //If the current_path is the same as the $url passed in we do not process the bootstrap modal form
-  global $theme_info;
-  $theme = $theme_info->name;
-  $base_theme = isset($theme_info->base_theme) ? $theme_info->base_theme : '';
-  if ($theme != 'bootstrap' && $base_theme != 'bootstrap') {
-    return NULL;
-  }
-
+  // If the current_path is the same as the $url passed in, we do not process
+  // the bootstrap modal form.
   if ($url == current_path()) {
     return NULL;
   }
+
+  // Make a copy of the current theme's info.
+  $theme_info = (array)$GLOBALS['theme_info'];
+  // Keep iterating up the theme-inheritance tree.
+  while (TRUE) {
+    // If the theme itself is bootstrap, break out of the loop.
+    if ($theme_info['name'] == 'bootstrap') {
+      break;
+    }
+    // If we find a theme with no base theme, we're at the top of the tree
+    // with no match, so we can exit now.
+    if (empty($theme_info['base_theme'])) {
+      return NULL;
+    }
+    // If the theme's parent is bootstrap, break out of the loop.
+    elseif ($theme_info['base_theme'] == 'bootstrap') {
+      break;
+    }
+    // Traverse one level further up the inheritance treem.
+    $theme_info = system_get_info('theme', $theme_info['base_theme']);
+    // system_get_info() returns 'base theme' with space instead of underscore.
+    if (isset($theme_info['base theme'])) {
+      $theme_info['base_theme'] = $theme_info['base theme'];
+      unset($theme_info['base theme']);
+    }
+  }
+
   $info = & drupal_static(__FUNCTION__, array());
-  if ($identifier != NULL) {
+  if (isset($identifier)) {
 
     $modal_style = '';
-    if ($form == NULL && $url != NULL) {
+    if (!isset($form) && isset($url)) {
       $close_and_reload_page = drupal_get_path('module', 'bootstrap_modal_forms') . '/modals/closeAndReloadPage.html';
-      //If form is NULL we will just load the url in an iframe
+      // If form is NULL we will just load the url in an iframe.
       $form = array(
         '#type' => 'html_tag',
         '#tag' => 'iframe',
@@ -249,10 +270,10 @@ function bootstrap_modal_forms_add_form($identifier = NULL, $url = NULL, $form =
       );
     }
     else {
-      if ($url != NULL) {
+      if (isset($url)) {
         $info[$identifier]['url'] = $url;
       }
-      if ($form_html != NULL) {
+      if (isset($form_html)) {
         $info[$identifier]['form_html'] = $form_html;
       }
       if ($open_onload) {

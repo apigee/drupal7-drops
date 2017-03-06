@@ -35,7 +35,7 @@ function bootstrap_preprocess_bootstrap_dropdown(&$variables) {
     if (is_string($element['#toggle'])) {
       $element['#toggle'] = array(
         '#theme' => 'link__bootstrap_dropdown__toggle',
-        '#text' => _bootstrap_filter_xss($element['#toggle']),
+        '#text' => filter_xss_admin($element['#toggle']),
         '#path' => '#',
         '#options' => array(
           'attributes' => array(),

@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * Implements hook_registry_files_alter().
+ */
+function devconnect_tests_registry_files_alter(array &$files, array $modules) {
+  // Remove any stray tests from older versions of devconnect modules.
+  foreach ($files as $key => $file) {
+    if (
+      ($file['module'] == 'devconnect_user' || $file['module'] == 'devconnect_developer_apps')
+      && substr($key, -5) == '.test'
+    ) {
+      unset($files[$key]);
+    }
+  }
+
+  // Add all test files for the devconnect_tests module.
+  $tests = file_scan_directory(drupal_get_path('module', 'devconnect_tests') . '/tests', '!\.test$!');
+  foreach ($tests as $test) {
+    $files[$test->uri] = array(
+      'module' => 'devconnect_tests',
+      'weight' => 0,
+    );
+  }
+}

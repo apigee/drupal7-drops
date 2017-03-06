@@ -31,9 +31,13 @@ Drupal.behaviors.autocomplete = {
  * and closes the suggestions popup when doing so.
  */
 Drupal.autocompleteSubmit = function () {
-  return $('.form-autocomplete > .dropdown').each(function () {
+  $('.form-autocomplete > .dropdown').each(function () {
     this.owner.hidePopup();
-  }).length == 0;
+  });
+
+  // Always return true to make it possible to submit even when there was an
+  // autocomplete suggestion list open.
+    return true;
 };
 
 /**

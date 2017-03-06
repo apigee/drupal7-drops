@@ -1,0 +1,12 @@
+name = Devconnect Unit Tests
+description = Provides unit testing for Devconnect modules
+package = Dev Portal - Core
+core = 7.x
+php = 5.4
+dependencies[] = simpletest
+dependencies[] = devconnect
+dependencies[] = devconnect_user
+dependencies[] = devconnect_developer_apps
+hidden = TRUE
+
+; Actual tests are registered by hook_registry_files_alter().

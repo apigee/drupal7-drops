@@ -1,0 +1,122 @@
+<?php
+
+use Apigee\ManagementAPI\DeveloperApp;
+use Apigee\Exceptions\ResponseException;
+
+require_once __DIR__ . '/DevconnectTestCase.php';
+
+class DevconnectDeveloperAppsTestCase extends DevconnectTestCase {
+
+  /**
+   * @var Apigee\ManagementAPI\DeveloperApp
+   *
+   * This direct invocation of Edge validates that the Drupal entity wrappers
+   * are doing their job correctly.
+   */
+  private $dc_app;
+
+  /**
+   * @var string
+   *
+   * The name of the app being created/destroyed.
+   */
+  private $appName;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+	return [
+	  'name' => t('Devconnect Developer Apps UI'),
+	  'description' => t('Tests the devconnect_developer_apps module’s UI response to create and destroy an app.'),
+	  'group' => t('Devconnect'),
+	];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp();
+    $this->dc_app = new DeveloperApp(devconnect_default_org_config(), $this->user->mail);
+  }
+
+  /**
+   * Creates an app via the Drupal form, and verifies that key/secret exist
+   * and that the app is associated with the correct API Product. Then the
+   * app is deleted via the delete form.
+   */
+  public function testAppLifecycle() {
+
+    $this->verbose('Roles: <pre>' . print_r(user_role_permissions($this->user->roles), TRUE) . '</pre>');
+
+    $this->appName = $this->randomName(16);
+    $edit = [
+      'human' => $this->appName,
+      'machine' => $this->appName,
+    ];
+
+    $api_product_keys = array_keys(entity_load('api_product'));
+    switch (count($api_product_keys)) {
+      case 0:
+        $this->fail('No API Products are available.');
+        // No API products available.
+        return;
+      case 1:
+        // There is only one API product, so pick it.
+        $edit['api_product[]'] = ['prod-' . $api_product_keys[0]];
+        break;
+      default:
+        // Pick one at random.
+        $edit['api_product[]'] = ['prod-' . $api_product_keys[mt_rand(0, count($api_product_keys) - 1)]];
+        break;
+    }
+
+    // TODO: handle any required custom attributes in the following form.
+
+    $this->drupalPost('user/' . $this->user->uid . '/apps/add', $edit, t('Create App'), [], [], 'devconnect-developer-apps-edit-form');
+
+    // By now, the app should have been created.  Now we will try to fetch it.
+    // If the form submit was successful, it should have redirected to user/<uid>/apps.
+    // This page should contain a link to the newly-created app's detail page.
+    $success = $this->assertLink($this->appName);
+    if (!$success) {
+      return;
+    }
+
+    $this->dc_app->load($this->appName);
+    // Make sure consumerKey and consumerSecret are populated.
+    // These only get generated when an API Product is present (I think).
+    if (!$this->dc_app->hasCredentialInfo()) {
+      $this->fail('App has no credentials.');
+      return;
+    }
+
+    $apiproducts = $this->dc_app->getCredentialApiProducts();
+    if (strlen($this->dc_app->getConsumerKey()) < 32) {
+      $this->fail('App has missing or malformed consumer key.');
+    }
+    elseif (strlen($this->dc_app->getConsumerSecret()) < 16) {
+      $this->fail('App has missing or malformed consumer secret.');
+    }
+    elseif (count($apiproducts) != 1 || 'prod-' . $apiproducts[0]['apiproduct'] != $edit['api_product[]'][0]) {
+      $this->fail('API Product was not correctly set.');
+    }
+
+    $this->drupalPost('user/' . $this->user->uid . '/apps/' . $this->dc_app->getAppId() . '/delete', [], t('Delete App'), [], [], 'devconnect_developer_application_delete');
+    // Make sure that the user/<uid>/apps page contains no link to the just-deleted app.
+    $this->assertNoLink($this->appName);
+
+    // Now query it on the 4G side as well.
+    try {
+      $this->dc_app->load($this->appName);
+      $this->fail('App ' . $this->appName . ' has not been deleted from 4G. Expecting HTTP code of 404; received 200.');
+    }
+    catch (ResponseException $e) {
+      if ($e->getCode() != 404) {
+        $this->fail('App ' . $this->appName . ' has not been deleted from 4G. Expecting HTTP code of 404; received ' . $e->getCode() . '.');
+      }
+    }
+    $this->appName = NULL;
+  }
+}

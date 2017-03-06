@@ -592,6 +592,10 @@ function _bootstrap_file_scan_directory($dir, $mask, array $options = array()) {
  *   valid UTF-8.
  *
  * @see filter_xss()
+ * @see filter_xss_admin()
+ *
+ * @deprecated Use filter_xss() or filter_xss_admin() instead.
+ * Will be removed in a future release.
  */
 function _bootstrap_filter_xss($string, array $allowed_tags = NULL) {
   if (is_null($allowed_tags)) {
@@ -913,6 +917,8 @@ function _bootstrap_glyphicons($version = NULL) {
       'glyphicon-xbt' => 'xbt',
     ));
     $versions['3.3.5'] = $versions['3.3.4'];
+    $versions['3.3.6'] = $versions['3.3.5'];
+    $versions['3.3.7'] = $versions['3.3.6'];
   }
 
   // Return a specific versions icon set.
@@ -1100,9 +1106,10 @@ function _bootstrap_colorize_text($string, $default = '') {
         // Primary class.
         t('Confirm')            => 'primary',
         t('Filter')             => 'primary',
+        t('Log in')             => 'primary',
         t('Submit')             => 'primary',
         t('Search')             => 'primary',
-        t('Log in')             => 'primary',
+        t('Upload')             => 'primary',
 
         // Success class.
         t('Add')                => 'success',
