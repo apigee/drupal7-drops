@@ -37,6 +37,8 @@ function views_slideshow_simple_pager_theme($existing, $type, $theme, $path) {
 
 /**
  * Template preprocess function for Views Slideshow simple pager.
+ *
+ * @ingroup vss_theme
  */
 function template_preprocess_views_slideshow_simple_pager(&$vars) {
   // Call the fields pager preprocess function.

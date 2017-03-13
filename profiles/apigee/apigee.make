@@ -243,7 +243,7 @@ projects[i18n][version] = "1.15"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
-projects[jquery_update][version] = "3.0-alpha3"
+projects[jquery_update][version] = "3.0-alpha4"
 
 ; Required for OPDK
 projects[ldap][type] = "module"
@@ -380,7 +380,7 @@ projects[rules][version] = "2.9"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.18"
+projects[services][version] = "3.19"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -464,7 +464,7 @@ projects[views_queue][version] = "1.x-dev"
 
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
-projects[views_slideshow][version] = "3.7"
+projects[views_slideshow][version] = "3.8"
 
 ; NOT enabled on install.
 projects[webform][type] = "module"
