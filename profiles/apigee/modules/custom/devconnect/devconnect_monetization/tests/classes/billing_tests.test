@@ -1,10 +1,6 @@
 <?php
 
-use Apigee\ManagementAPI\Developer;
-
-class MonetizationBillingTestCases
-  // Extends DrupalWebTestCase {
-  extends BaseMintTest {
+class MonetizationBillingTestCases extends BaseMintTest {
 
   public static function getInfo() {
     return array(
@@ -31,9 +27,14 @@ class MonetizationBillingTestCases
     $this->drupalGet($test_url);
     $this->assertLink(t('Add Money to Account'), 0, t('Verify top up balance link'), $group);
 
+    $account_opts = $this->xpath('//select[@name="account"]');
+    $account_opt = end($this->getAllOptions($account_opts[0]));
+    $year_opts = $this->xpath('//select[@name="year"]');
+    $year_opt = end($this->getAllOptions($year_opts[0]));
+
     $edit = array(
-      'account' => (string) end($this->getAllOptions($this->xpath('//select[@name="account"]')[0]))['value'],
-      'year'    => (string) end($this->getAllOptions($this->xpath('//select[@name="year"]'   )[0]))['value'],
+      'account' => (string) $account_opt['value'],
+      'year'    => (string) $year_opt['value'],
       'month' => -1,
     );
     $this->additionalCurlOptions[CURLOPT_RETURNTRANSFER] = TRUE;
@@ -42,7 +43,8 @@ class MonetizationBillingTestCases
       if ($command->command == 'insert' && $command->method == 'replaceWith') {
         $month_options = simplexml_load_string($command->data);
         $this->assertTrue(count($month_options) >  1, t('Verify month options were returnd'), $group);
-        $edit['month'] = (string) end($month_options)['value'];
+        $month_option = end($month_options);
+        $edit['month'] = (string) $month_option['value'];
         break;
       }
     }
@@ -50,45 +52,8 @@ class MonetizationBillingTestCases
     //$this->assertResponse(200, t('Search of document was performed'), $group);
   }
 
-  public function testReceivedBills() {
-    return;
-    $test_url = 'users/me/monetization/billing/billing-document';
-    $group = t('Received Bills');
+  // Function testReceivedBills() used to live here. See git history for more.
 
-    $this->drupalGet($test_url);
-    $select = $this->xpath('//select[@name="billing_month"]')[0];
-    $option = end($this->getAllOptions($select));
-    $edit = array(
-      'billing_month' => (string) $option['value'],
-      'search-billing-doc' => '',
-    );
+  // Function testDeveloperReport() used to live here. See git history for more.
 
-    $this->drupalPost($test_url, $edit, NULL);
-    $this->assertOptionSelected('edit-billing-month', $edit['billing_month'], t('Verify billing report preferences have been saved.'), $group);
-
-    $edit['search-billing-doc'] = $this->randomName();
-    $this->drupalPost($test_url, $edit, t('Go'));
-    $this->assertText("BillingDocument with id [{$edit['search-billing-doc']}] does not exist", t('Verify search of document has been perfomed'), $group);
-  }
-
-  public function testDeveloperReport() {
-    return;
-    $test_url = 'users/me/monetization/billing/developer-reports';
-    $group = t('Developer Reports');
-
-    $this->drupalGet($test_url);
-    $edit = array(
-      'start_date' => (string) $this->xpath('//input[@name="start_date"][1]/@value')[0]['value'],
-      'end_date' =>  (string) $this->xpath('//input[@name="end_date"][1]/@value')[0]['value'],
-      'reporting_level' => (string) $this->xpath('//input[@name="reporting_level"]')[0]['value'],
-    );
-
-    $this->drupalPost($test_url, $edit, t('Download Report (CSV)'));
-    $this->assertText(t('There is no data within this date range. Please try another date range.'), t('No report found success.'), $group);
-
-    $edit['reporting_level'] = (string) $this->xpath('//input[@name="reporting_level"]')[1]['value'];
-    $this->drupalPost($test_url, $edit, t('Download Report (CSV)'));
-    $this->assertText(t('There is no data within this date range. Please try another date range.'), t('No report found success.'), $group);
-    $this->assertFieldChecked((string) $this->xpath('//input[@name="reporting_level"]')[1]['id'], t('Verify developer preferences have been saved.'), $group);
-  }
 }

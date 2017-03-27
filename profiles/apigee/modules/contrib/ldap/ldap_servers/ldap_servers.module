@@ -320,11 +320,14 @@ function ldap_servers_theme() {
       if (!isset($attributes[$ldap_server->mail_attr])) {
         $attributes[$ldap_server->mail_attr] = ldap_servers_set_attribute_map();
       }
-      if (!isset($attributes[$ldap_server->picture_attr])) {
+      if ($ldap_server->picture_attr && !isset($attributes[$ldap_server->picture_attr])) {
         $attributes[$ldap_server->picture_attr] = ldap_servers_set_attribute_map();
       }
       if ($ldap_server->unique_persistent_attr && !isset($attributes[$ldap_server->unique_persistent_attr])) {
         $attributes[$ldap_server->unique_persistent_attr] = ldap_servers_set_attribute_map();
+      }
+      if ($ldap_server->groupUserMembershipsAttr && !isset($attributes[$ldap_server->groupUserMembershipsAttr])) {
+        $attributes[$ldap_server->groupUserMembershipsAttr] = ldap_servers_set_attribute_map();
       }
       if ($ldap_server->user_dn_expression) {
         ldap_servers_token_extract_attributes($attributes, $ldap_server->user_dn_expression, TRUE);

@@ -180,14 +180,18 @@ function hook_devconnect_developer_apps_prerender($op, $arg1 = NULL, $arg2 = NUL
 /**
  * Alter the list of available API Products.
  *
- * @param array $api_products
- *   An Array of ApiProductEntity objects keyed by API Product "name" attribute.
+ * @param Drupal\devconnect_developer_apps\ApiProductEntity[] $public_api_products
+ *   An array of viewable ApiProductEntities keyed by name.
  * @param stdClass $account
- *   The developer account.
+ *   The user account associated with the app for which these products are
+ *   displayed.
+ * @param Drupal\devconnect_developer_apps\ApiProductEntity[] $private_api_products
+ *   An array of non-public ApiProductEntities keyed by name, if any.
  */
-function hook_apiproduct_list_alter(array &$api_products, $account = NULL) {
-  if (empty($account) || $account->uid == 1) {
-    unset($api_products['worlds_greatest_api']);
+function hook_apiproduct_list_alter(array &$public_api_products, $account = NULL, $private_api_products = array()) {
+  // Give user 1 access to all private API Products.
+  if ($account->uid == 1) {
+    $public_api_products = array_merge($public_api_products, $private_api_products);
   }
 }
 

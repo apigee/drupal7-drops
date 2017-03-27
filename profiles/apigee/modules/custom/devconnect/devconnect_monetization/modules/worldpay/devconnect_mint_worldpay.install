@@ -1,5 +1,37 @@
 <?php
 
-function devconnect_mint_worldpay_requirements($phase) {
+use Drupal\devconnect\Crypto;
 
+/**
+ * Encrypt Worldpay MAC secret if it was not yet encrypted.
+ */
+function devconnect_mint_worldpay_update_7425() {
+  // Load Rules module so we can fetch rules_config entities.
+  drupal_load('module', 'rules');
+  // Load and configure Crypto class.
+  drupal_load('module', 'devconnect');
+  devconnect_init();
+
+  $rules = entity_load('rules_config');
+  /** @var Rule $rule */
+  foreach ($rules as $rule) {
+    $actions = $rule->actions();
+    foreach ($actions as $action) {
+      if ($action instanceof RulesAction && $action->getElementName() == 'commerce_payment_enable_devconnect_mint_worldpay') {
+        $secret = $action->settings['payment_method']['settings']['devconnect_mint_worldpay_mac_secret'];
+        if (!empty($secret)) {
+          try {
+            Crypto::decrypt($secret);
+            // If we succeeded in decrypting, obviously we don't need to
+            // encrypt.
+          }
+          catch (Exception $e) {
+            // Decryption failed, which means we need to encrypt.
+            $action->settings['payment_method']['settings']['devconnect_mint_worldpay_mac_secret'] = Crypto::encrypt($secret);
+            $action->save();
+          }
+        }
+      }
+    }
+  }
 }

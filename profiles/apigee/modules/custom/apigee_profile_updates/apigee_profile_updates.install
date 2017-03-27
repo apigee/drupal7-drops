@@ -284,3 +284,10 @@ function apigee_profile_updates_update_7108() {
 function apigee_profile_updates_update_7109() {
   variable_del('x_frame_options');
 }
+
+/**
+ * Rebuild menu registry to fix possible whitescreens with Me module.
+ */
+function apigee_profile_updates_update_7110() {
+  menu_rebuild();
+}

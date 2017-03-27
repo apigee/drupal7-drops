@@ -659,6 +659,14 @@ function ldap_authentication_test_credentials($auth_conf, $sso_login, $authname,
         */
       $credentials_pass = (boolean)($ldap_user);
     }
+    elseif ($ldap_server->bind_method == LDAP_SERVERS_BIND_METHOD_USER) {
+       /**
+        * With user bind method, the only way we can reach this part of the
+        * code is when the pw has already been checked and $ldap_user could be
+        * loaded, so we're good to go.
+        */
+      $credentials_pass = true;
+    }
     else {
       $credentials_pass = ($ldap_server->bind($ldap_user['dn'], $password, FALSE) == LDAP_SUCCESS);
     }

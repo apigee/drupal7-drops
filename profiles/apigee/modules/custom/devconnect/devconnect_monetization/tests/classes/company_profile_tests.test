@@ -4,6 +4,7 @@ use Apigee\ManagementAPI\Developer;
 class CompanySettingsTestCases extends BaseMintTest {
 
   private $tmp_developer;
+  private $tmp_developer2;
 
   public static function getInfo() {
     return array(
@@ -31,14 +32,13 @@ class CompanySettingsTestCases extends BaseMintTest {
       'country' => 'US',
       'city' => 'TestCity' . $this->randomName(10),
       'state_province' => 'CA',
-      'city' => 'SJCA',
       'zip_code' => 12345,
     );
 
     $this->drupalPost($test_url, $edit, t('Save Changes'));
     $expected_message = t('Your Company Profile Info has been saved.');
     $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
-    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has new value'), $group);
+    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has new value'));
   }
 
   public function testEditCompanyInfo() {
@@ -51,18 +51,17 @@ class CompanySettingsTestCases extends BaseMintTest {
       'country' => 'US',
       'city' => 'TestCity' . $this->randomName(10),
       'state_province' => 'CA',
-      'city' => 'SJCA',
       'zip_code' => 12345,
     );
 
     $this->drupalPost($test_url, $edit, t('Save Changes'));
     $expected_message = t('Your Company Profile Info has been saved.');
     $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
-    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has new value'), $group);
+    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has new value'));
     $edit['legal_company_name'] = 'TestCompanyEdit ' . $this->randomName(16);
     $this->drupalPost($test_url, $edit, t('Save Changes'));
     $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
-    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has been changed'), $group);
+    $this->assertFieldByName('legal_company_name', $edit['legal_company_name'], t('Verify company field name has been changed'));
   }
 
   public function testSaveBankDetail() {
@@ -89,7 +88,7 @@ class CompanySettingsTestCases extends BaseMintTest {
     $this->drupalPost($test_url, $edit, t('Save Changes'));
     $expected_message = t('Your Bank Details have been saved.');
     $this->assertText($expected_message, t('Verify status message: <strong>@message</strong>.', array('@message' => $expected_message)), $group);
-    $this->assertFieldByName('name', $edit['name'], t('Verify bank´s name has new value.'), $group);
+    $this->assertFieldByName('name', $edit['name'], t('Verify bank´s name has new value.'));
   }
 
   public function testEditBankDetail() {
@@ -154,13 +153,17 @@ class CompanySettingsTestCases extends BaseMintTest {
     $this->assertText(t('Operation completed successfully.'), t('Add developer roles to developer.'), $group);
     $checkboxes = $this->xpath('//form[@id="devconnect-monetization-roles-form"]//input[@type="checkbox"][not(@disabled)]');
     foreach ($checkboxes as $checkbox) {
-      $this->assertFieldChecked((string) $checkbox['id'], t('Verify developer role has actually been assinged.'), $group);
+      $this->assertFieldChecked((string) $checkbox['id'], t('Verify developer role has actually been assigned.'));
     }
     $this->drupalLogout();
 
     $this->drupalLogin($this->tmp_developer2);
     $this->drupalPost($test_url, $edit, t('Add User'));
-    $this->assertText(t('You can not add this developer since it is already assigned.'), t('Cannot add a developer when developer is already assinged to another company.'), $group);
+    $this->assertText(t('You can not add this developer since it is already assigned.'), t('Cannot add a developer when developer is already 
+    
+    
+    
+    ged to another company.'), $group);
     $this->drupalLogout();
 
     $this->drupalLogin($this->privileged_user);

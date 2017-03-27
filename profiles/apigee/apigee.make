@@ -248,7 +248,7 @@ projects[jquery_update][version] = "3.0-alpha4"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
-projects[ldap][version] = "2.0-beta12"
+projects[ldap][version] = "2.0"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
@@ -803,7 +803,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.11.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.12.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"

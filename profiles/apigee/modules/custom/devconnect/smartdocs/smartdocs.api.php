@@ -483,6 +483,16 @@ function hook_smartdocs_template_auth_scheme_postdelete($scheme_name, $model_uui
 }
 
 /**
+ * Allows a module to alter security scheme definition before it is saved to
+ * Modeling API.
+ *
+ * @param array $payload
+ *   Security scheme definition.
+ */
+function hook_smartdocs_model_security_scheme_alter(array &$payload) {
+}
+
+/**
  * Allows a module to take some action before a revision's security scheme is
  * saved to the Modeling API.
  *

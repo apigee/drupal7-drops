@@ -913,7 +913,7 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
       'type' => $parameter['type'],
       'options' => (is_array($parameter['options']) ? json_encode($parameter['options']) : ''),
       'default_value' => $parameter['defaultValue'],
-      'body_schema' => (in_array($parameter['data_type'], $non_object_types) ? NULL : $parameter['schema']),
+      'body_schema' => (in_array($parameter['dataType'], $non_object_types) ? NULL : $parameter['schema']),
     );
   }
   $node->field_smart_method_params[LANGUAGE_NONE] = $params;
@@ -961,7 +961,7 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
       'type' => $parameter['type'],
       'options' => (is_array($parameter['options']) ? json_encode($parameter['options']) : ''),
       'default_value' => $parameter['defaultValue'],
-      'body_schema' => (in_array($parameter['data_type'], $non_object_types) ? NULL : $parameter['schema']),
+      'body_schema' => (in_array($parameter['dataType'], $non_object_types) ? NULL : $parameter['schema']),
     );
   }
   $node->field_smart_method_body_params[LANGUAGE_NONE] = $params;
@@ -983,9 +983,17 @@ function smartdocs_render_node($model, $revision, $resource, $method, $publish, 
   foreach ($response_errors as $error) {
     // Make sure code is never null.
     $error_code = empty($error['code']) ? 1 : $error['code'];
-    $error_description = $error['description'];
-    // Change all non integer values to 200 so we don't get a PDO Exception.
-    $error_http_code = is_int($error['httpStatusCode']) ? $error['httpStatusCode'] : 200;
+    $error_description = array_key_exists('description', $error) ? $error['description'] : '';
+    // Ensure HTTP status codes are integers so we don't get a PDO Exception.
+    // If existing status code is a non-numeric string, default to 200.
+    $error_http_code = 200;
+    if (array_key_exists('httpStatusCode', $error)) {
+      $code = intval($error['httpStatusCode']);
+      // Make sure status code is within legal range. If not, fall back to 200.
+      if ($code >= 200 && $code < 600) {
+        $error_http_code = $code;
+      }
+    }
 
     $errors[] = array(
       'code' => $error_code,

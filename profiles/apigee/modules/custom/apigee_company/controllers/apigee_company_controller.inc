@@ -149,6 +149,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     $company = new Company($config);
 
     try {
+      $company->load($company_name);
       $company->updateDeveloper($developer_email, $developer_role, $company_name);
       $this->addToCache($company);
     }
@@ -175,6 +176,7 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
     $company = new Company($config);
 
     try {
+      $company->load($company_name);
       $company->removeDeveloper($developer_email, $company_name);
       $this->addToCache($company);
     }

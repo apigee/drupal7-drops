@@ -1764,7 +1764,6 @@ function _devconnect_monetization_default_field_group_info() {
   $group = new stdClass();
   $group->identifier = 'group_devconnect_monetization|user|user|form';
   $group->group_name = 'group_devconnect_monetization';
-  $group->id = 'group_devconnect_monetization';
   $group->weight = 0;
   $group->entity_type = 'user';
   $group->bundle = 'user';

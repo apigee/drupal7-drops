@@ -9,6 +9,7 @@
 
 
 define('APIGEE_CHECKLIST_HEALTHCHECK_UNSET', '(NOT SET)');
+define('APIGEE_CHECKLIST_BAAS_ENDPOINT', 'https://baas-devportal.apigee.net/apigee-devportal/healthcheck/sites');
 
 /**
  * Implements hook_cron().
@@ -270,7 +271,7 @@ function apigee_checklist_heartbeat($skip_time_check = FALSE) {
     'data' => json_encode($checklist),
   );
 
-  $response = drupal_http_request('https://api.usergrid.com/devportal/healthcheck/sites/' . $name, $options);
+  $response = drupal_http_request(APIGEE_CHECKLIST_BAAS_ENDPOINT . '/' . $name, $options);
   $success = (floor($response->code / 100) == 2);
   if ($success) {
     variable_set('apigee_checklist_last_run', time());

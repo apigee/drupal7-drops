@@ -10,6 +10,8 @@ require_once DRUPAL_ROOT . '/profiles/apigee/apigee.content.inc';
 require_once DRUPAL_ROOT . '/profiles/apigee/apigee.edge.inc';
 require_once DRUPAL_ROOT . '/profiles/apigee/apigee.smartdocs.inc';
 
+define('OFAC_SDN_ENDPOINT', 'https://baas-devportal.apigee.net/apigee-devportal/ofac-sdn-validation/individuals');
+
 /**
  * Selects the Apigee Profile.
  *
@@ -305,9 +307,7 @@ function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) 
     return FALSE;
   }
 
-  $endpoint = 'https://api.usergrid.com/devportalbuild/ofac-sdn-validation/individuals';
-
-  $url = $endpoint . "?ql=" . urlencode("firstName='" . $first_name . "' AND lastName='" . $last_name . "'");
+  $url = OFAC_SDN_ENDPOINT . "?ql=" . urlencode("firstName='" . $first_name . "' AND lastName='" . $last_name . "'");
   $ch = curl_init();
 
   curl_setopt($ch, CURLOPT_URL, $url);

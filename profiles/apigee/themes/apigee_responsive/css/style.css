@@ -1051,7 +1051,7 @@ Analytics styles
     .view-recent-blog-posts .views-field-created span,
     .view-recent-blog-posts .views-field-created-1 span,
     .view-blog-tag .views-field-created-1 span,
-    .view-blog-tag .views-field-created span, {
+    .view-blog-tag .views-field-created span {
         width:90%;
         font-size: 14px;
         padding:5px;
@@ -1651,4 +1651,8 @@ input#edit-registered-for-tax-vat-0[type="radio"], input#edit-registered-for-tax
 
 #admin-menu, #admin-menu .dropdown  {
     z-index: 1031;
+}
+
+.modal {
+    outline: none;
 }

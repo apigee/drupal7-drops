@@ -3,10 +3,8 @@ description = Provides connection between Apigee's monetization services and Wor
 core = 7.x
 package = Dev Portal - Mint
 php = 5.3
-version = 7.x-4.24
+version = 7.x-4.25
 
 dependencies[] = devconnect_mint_payment
 dependencies[] = commerce
 dependencies[] = commerce_payment
-
-configure = admin/config/devconnect

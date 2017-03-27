@@ -9,6 +9,7 @@ use Apigee\ManagementAPI\CompanyApp;
 use Apigee\Exceptions\ResponseException;
 use Apigee\Exceptions\ParameterException;
 use Apigee\ManagementAPI\Company;
+use Drupal\devconnect_developer_apps\DeveloperAppEntity;
 
 /**
  * Entity controller class for developer_app entity.
@@ -19,32 +20,20 @@ use Apigee\ManagementAPI\Company;
 class ApigeeCompanyAppController extends DeveloperAppController {
 
   /**
-   * Implements DrupalEntityControllerInterface::__construct().
-   *
-   * @param string $entity_type
-   *   The type of entity.
-   */
-  public function __construct($entity_type) {
-    $this->appCache = array();
-    if (!class_exists('CompanyApp')) {
-      module_load_include('module', 'libraries');
-      module_load_include('module', 'devconnect');
-      devconnect_init();
-    }
-  }
-
-  /**
    * Implements EntityAPIControllerInterface::save().
    *
-   * @param object $entity
+   * @param DeveloperAppEntity $entity
    *   The entity object to be saved.
+   *
+   * @return int|bool
+   *   Returns one of the following: FALSE, SAVED_UPDATED, SAVED_NEW.
    */
   public function save($entity) {
 
     $company_in_context = apigee_company_get_current_context_company();
 
     // If company is null, do the normal saving of developer apps.
-    if ($company_in_context == NULL) {
+    if (!isset($company_in_context)) {
       // We cannot do entity_get_controller() here, because we want the
       // original, non-altered developer_app controller in this case.
       $developer_app_controller = new DeveloperAppController('developer_app');
@@ -54,24 +43,23 @@ class ApigeeCompanyAppController extends DeveloperAppController {
 
     $config = self::getConfig($entity);
     $company_in_context = apigee_company_get_current_context_company();
-    $entity->companyName = $company_in_context->name;
     // Make a copy so we can remove irrelevant members.
-    $entity = (array) $entity;
+    $entity_copy = (array) $entity;
     $company = new Company($config);
 
     try {
-      $company->load($entity['companyName']);
+      $company->load($company_in_context->name);
     }
     catch (ResponseException $e) {
-      $company->setName($entity['companyName']);
-      $company->setDisplayName($entity['companyName']);
+      $company->setName($company_in_context->name);
+      $company->setDisplayName($company_in_context->name);
       $company->save();
-      $company->load($entity['companyName']);
+      $company->load($company_in_context->name);
     }
 
-    $is_update = !empty($entity['appId']);
+    $is_update = !empty($entity_copy['appId']);
     $dev_app = new CompanyApp($config, $company);
-    $dev_app->fromArray($entity);
+    $dev_app->fromArray($entity_copy);
     try {
       $dev_app->save($is_update);
     }
@@ -82,7 +70,7 @@ class ApigeeCompanyAppController extends DeveloperAppController {
 
     $dev_app_array = $dev_app->toArray();
     // Copy incoming UID to outgoing UID.
-    $dev_app_array['uid'] = $entity['uid'];
+    $dev_app_array['uid'] = $entity_copy['uid'];
     $last_app = new ApigeeCompanyAppEntity($dev_app_array);
     self::$lastApp = $last_app;
 
@@ -122,10 +110,11 @@ class ApigeeCompanyAppController extends DeveloperAppController {
    * {@inheritdoc}
    */
   public function load($ids = array(), $conditions = array()) {
+    /** @var ApigeeCompanyEntity $company_in_context */
     $company_in_context = apigee_company_get_current_context_company();
 
     // If company is null, do the normal loading of developer apps.
-    if ($company_in_context == NULL) {
+    if (!isset($company_in_context)) {
       $developer_app_controller = new DeveloperAppController('developer_app');
       $result = $developer_app_controller->load($ids, $conditions);
       return $result;
@@ -136,7 +125,6 @@ class ApigeeCompanyAppController extends DeveloperAppController {
 
     $app_list = array();
 
-    $list = array();
     foreach ($orgs as $org) {
       $config = devconnect_default_org_config($org);
       if ($disable_logging) {
@@ -144,13 +132,8 @@ class ApigeeCompanyAppController extends DeveloperAppController {
         $config->subscribers = array();
       }
 
-      if (array_key_exists('mail', $conditions)) {
-        // Replace the mail condition with the company name to
-        // load company apps instead of developer apps.
-        $identifier = $company_in_context->name;
-      }
-      elseif (array_key_exists('developerId', $conditions)) {
-        // Replace the developer ID condition with the company name to
+      if (array_key_exists('mail', $conditions) || array_key_exists('developerId', $conditions)) {
+        // Replace the mail or developerId condition with the company name to
         // load company apps instead of developer apps.
         $identifier = $company_in_context->name;
       }
@@ -161,11 +144,17 @@ class ApigeeCompanyAppController extends DeveloperAppController {
       $company_app_api = new CompanyApp($config, $company_in_context->name);
 
       if (isset($identifier) && empty($ids)) {
-        // Fetch all apps in the org.
+        if (variable_get('devconnect_paging_enabled', FALSE) && method_exists($company_app_api, 'usePaging')) {
+          $company_app_api->usePaging();
+        }
         try {
-          $apps = $company_app_api->getListDetail();
-          if ($apps != NULL) {
-            $app_list = $apps;
+          if (array_key_exists('name', $conditions)) {
+            $company_app_api->load($conditions['name']);
+            $app_list += array($company_app_api);
+          }
+          else {
+            // Fetch all apps in the org.
+            $app_list += $company_app_api->getListDetail();
           }
         }
         catch (ResponseException $e) {
@@ -175,7 +164,6 @@ class ApigeeCompanyAppController extends DeveloperAppController {
       else {
         // We have a list of appIds. Fetch them now.
         foreach ($ids as $id) {
-
           try {
             // $dev_app->loadByAppId($id, TRUE) takes care of loading the
             // developer or the company app based on the developerId in the
@@ -194,12 +182,14 @@ class ApigeeCompanyAppController extends DeveloperAppController {
     }
 
     $app_entities = array();
-    $include_debug_data = (count($list) == 1);
+    $include_debug_data = (count($app_list) == 1);
 
     foreach ($app_list as $app) {
       $array = $app->toArray($include_debug_data);
       $array['orgName'] = $app->getConfig()->orgName;
-      $app_entities[$app->getAppId()] = new ApigeeCompanyAppEntity($array);
+      $app_entity = new ApigeeCompanyAppEntity($array);
+      $app_entity->checkStatusChange();
+      $app_entities[$app->getAppId()] = $app_entity;
     }
     return $app_entities;
   }
