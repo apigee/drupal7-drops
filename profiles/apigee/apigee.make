@@ -288,7 +288,7 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.0-rc12"
+projects[media][version] = "2.3"
 ; see https://www.drupal.org/node/2232703
 projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
 
@@ -821,5 +821,5 @@ libraries[spyc][download][url] = "https://raw.githubusercontent.com/mustangostan
 libraries[syntaxhighlighter][destination] = "libraries"
 libraries[syntaxhighlighter][directory_name] = "syntaxhighlighter"
 libraries[syntaxhighlighter][download][type] = "file"
-libraries[syntaxhighlighter][download][url] = "http://alexgorbatchev.com/SyntaxHighlighter/download/download.php?sh_current"
+libraries[syntaxhighlighter][download][url] = "https://github.com/syntaxhighlighter/syntaxhighlighter/archive/v3.0.90.tar.gz"
 
