@@ -59,6 +59,8 @@ function bootstrap_form_element(&$variables) {
   $element = &$variables['element'];
   $name = !empty($element['#name']) ? $element['#name'] : FALSE;
   $type = !empty($element['#type']) ? $element['#type'] : FALSE;
+  $wrapper = isset($element['#form_element_wrapper']) ? !!$element['#form_element_wrapper'] : TRUE;
+  $form_group = isset($element['#form_group']) ? !!$element['#form_group'] : $wrapper && $type && $type !== 'hidden';
   $checkbox = $type && $type === 'checkbox';
   $radio = $type && $type === 'radio';
 
@@ -104,21 +106,25 @@ function bootstrap_form_element(&$variables) {
   if ($checkbox || $radio) {
     $wrapper_attributes['class'][] = drupal_html_class($type);
   }
-  elseif ($type && $type !== 'hidden') {
+  elseif ($form_group) {
     $wrapper_attributes['class'][] = 'form-group';
   }
 
   // Create a render array for the form element.
   $build = array(
-    '#theme_wrappers' => array('container__form_element'),
+    '#form_group' => $form_group,
     '#attributes' => $wrapper_attributes,
   );
 
-  // Render the label for the form element.
-  $build['label'] = array(
-    '#markup' => theme('form_element_label', $variables),
-    '#weight' => $element['#title_display'] === 'before' ? 0 : 2,
-  );
+  if ($wrapper) {
+    $build['#theme_wrappers'] = array('container__form_element');
+
+    // Render the label for the form element.
+    $build['label'] = array(
+      '#markup' => theme('form_element_label', $variables),
+      '#weight' => $element['#title_display'] === 'before' ? 0 : 2,
+    );
+  }
 
   // Checkboxes and radios render the input element inside the label. If the
   // element is neither of those, then the input element must be rendered here.

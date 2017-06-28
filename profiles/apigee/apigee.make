@@ -77,7 +77,7 @@ projects[cck_phone][version] = "1.x-dev"
 ; Enabled during profile install.
 projects[ckeditor][type] = "module"
 projects[ckeditor][subdir] = "contrib"
-projects[ckeditor][version] = "1.17"
+projects[ckeditor][version] = "1.18"
 
 projects[ckeditor_link][type] = "module"
 projects[ckeditor_link][subdir] = "contrib"
@@ -187,7 +187,7 @@ projects[field_group][version] = "1.5"
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.0-beta3"
+projects[file_entity][version] = "2.2"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -243,7 +243,7 @@ projects[i18n][version] = "1.15"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
-projects[jquery_update][version] = "3.0-alpha4"
+projects[jquery_update][version] = "3.0-alpha5"
 
 ; Required for OPDK
 projects[ldap][type] = "module"
@@ -288,19 +288,17 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.3"
-; see https://www.drupal.org/node/2232703
-projects[media][patch][2232703] = "https://www.drupal.org/files/issues/media-views-2232703-5.patch"
+projects[media][version] = "2.8"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
 projects[media_ckeditor][subdir] = "contrib"
-projects[media_ckeditor][version] = "2.0-rc3"
+projects[media_ckeditor][version] = "2.1"
 
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
-projects[media_youtube][version] = "3.0"
+projects[media_youtube][version] = "3.4"
 
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
@@ -328,7 +326,7 @@ projects[mimemail][version] = "1.0-beta4"
 ; Enabled on install.
 projects[module_filter][type] = "module"
 projects[module_filter][subdir] = "contrib"
-projects[module_filter][version] = "2.0"
+projects[module_filter][version] = "2.1"
 
 projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
@@ -431,7 +429,7 @@ projects[util][version] = "1.0"
 ; Enabled on install.
 projects[uuid][type] = "module"
 projects[uuid][subdir] = "contrib"
-projects[uuid][version] = "1.0-beta2"
+projects[uuid][version] = "1.0"
 
 ; Deprecated
 projects[uuid_features][type] = "module"
@@ -446,7 +444,7 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.15"
+projects[views][version] = "3.16"
 
 ; Deprecated
 projects[views_accordion][type] = "module"
@@ -490,7 +488,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.12"
+projects[bootstrap][version] = "3.14"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
@@ -819,7 +817,7 @@ libraries[spyc][download][url] = "https://raw.githubusercontent.com/mustangostan
 
 ; Used by syntaxhighlighter
 libraries[syntaxhighlighter][destination] = "libraries"
-libraries[syntaxhighlighter][directory_name] = "syntaxhighlighter"
+libraries[syntaxhighlighter][directory_name] = "syntaxhighlighter-2.x"
 libraries[syntaxhighlighter][download][type] = "file"
-libraries[syntaxhighlighter][download][url] = "https://github.com/syntaxhighlighter/syntaxhighlighter/archive/v3.0.90.tar.gz"
+libraries[syntaxhighlighter][download][url] = "https://github.com/syntaxhighlighter/syntaxhighlighter/archive/2.1.364.tar.gz"
 

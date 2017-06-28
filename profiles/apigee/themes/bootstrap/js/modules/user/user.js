@@ -27,7 +27,7 @@
       $input: this.$wrapper.find('input.password-confirm')
     };
     this.confirm.$wrapper = this.confirm.$input.parent().addClass('col-sm-6 col-md-4 has-feedback').appendTo(self.$row);
-    this.confirm.$icon = $('<span class="glyphicon form-control-feedback"></span>');
+    this.confirm.$icon = $('<span class="glyphicon form-control-feedback"></span>').appendTo(this.confirm.$wrapper);
 
     // Bind events.
     this.password.$input.on('keyup focus blur', function () {

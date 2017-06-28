@@ -76,39 +76,81 @@ var Drupal = Drupal || {};
    */
   Drupal.behaviors.bootstrapPopovers = {
     attach: function (context, settings) {
-      if (settings.bootstrap && settings.bootstrap.popoverEnabled) {
-        var $currentPopover = $();
-        if (settings.bootstrap.popoverOptions.triggerAutoclose) {
-          $(document).on('click', function (e) {
-            if ($currentPopover.length && !$(e.target).is('[data-toggle=popover]') && $(e.target).parents('.popover.in').length === 0) {
-              $currentPopover.popover('hide');
-              $currentPopover = $();
-            }
-          });
-        }
-        var elements = $(context).find('[data-toggle=popover]').toArray();
-        for (var i = 0; i < elements.length; i++) {
-          var $element = $(elements[i]);
-          var options = $.extend({}, settings.bootstrap.popoverOptions, $element.data());
-          if (!options.content) {
-            options.content = function () {
-              var target = $(this).data('target');
-              return target && $(target) && $(target).length && $(target).clone().removeClass('element-invisible').wrap('<div/>').parent()[$(this).data('bs.popover').options.html ? 'html' : 'text']() || '';
-            }
-          }
-          $element.popover(options).on('click', function (e) {
-            e.preventDefault();
-          });
-          if (settings.bootstrap.popoverOptions.triggerAutoclose) {
-            $element.on('show.bs.popover', function () {
-              if ($currentPopover.length) {
+      if (!settings.bootstrap || !settings.bootstrap.popoverEnabled) {
+        return;
+      }
+
+      // Popover autoclose.
+      if (settings.bootstrap.popoverOptions.triggerAutoclose) {
+        var $currentPopover = null;
+        $(document)
+          .on('show.bs.popover', '[data-toggle=popover]', function () {
+            var $trigger = $(this);
+            var popover = $trigger.data('bs.popover');
+
+            // Only keep track of clicked triggers that we're manually handling.
+            if (popover.options.originalTrigger === 'click') {
+              if ($currentPopover && !$currentPopover.is($trigger)) {
                 $currentPopover.popover('hide');
               }
-              $currentPopover = $(this);
-            });
-          }
+              $currentPopover = $trigger;
+            }
+          })
+          .on('click', function (e) {
+            var $target = $(e.target);
+            var popover = $target.is('[data-toggle=popover]') && $target.data('bs.popover');
+            if ($currentPopover && !$target.is('[data-toggle=popover]') && !$target.closest('.popover.in')[0]) {
+              $currentPopover.popover('hide');
+              $currentPopover = null;
+            }
+          })
+        ;
+      }
+
+      var elements = $(context).find('[data-toggle=popover]').toArray();
+      for (var i = 0; i < elements.length; i++) {
+        var $element = $(elements[i]);
+        var options = $.extend({}, $.fn.popover.Constructor.DEFAULTS, settings.bootstrap.popoverOptions, $element.data());
+
+        // Store the original trigger.
+        options.originalTrigger = options.trigger;
+
+        // If the trigger is "click", then we'll handle it manually here.
+        if (options.trigger === 'click') {
+          options.trigger = 'manual';
+        }
+
+        // Retrieve content from a target element.
+        var $target = $(options.target || $element.is('a[href^="#"]') && $element.attr('href')).clone();
+        if (!options.content && $target[0]) {
+          $target.removeClass('element-invisible hidden').removeAttr('aria-hidden');
+          options.content = $target.wrap('<div/>').parent()[options.html ? 'html' : 'text']() || '';
+        }
+
+        // Initialize the popover.
+        $element.popover(options);
+
+        // Handle clicks manually.
+        if (options.originalTrigger === 'click') {
+          // To ensure the element is bound multiple times, remove any
+          // previously set event handler before adding another one.
+          $element
+            .off('click.drupal.bootstrap.popover')
+            .on('click.drupal.bootstrap.popover', function (e) {
+              $(this).popover('toggle');
+              e.preventDefault();
+              e.stopPropagation();
+            })
+          ;
         }
       }
+    },
+    detach: function (context) {
+      // Destroy all popovers.
+      $(context).find('[data-toggle="popover"]')
+        .off('click.drupal.bootstrap.popover')
+        .popover('destroy')
+      ;
     }
   };
 

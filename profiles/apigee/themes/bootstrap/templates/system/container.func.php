@@ -40,7 +40,9 @@ function bootstrap_container($variables) {
     $element['#attributes']['class'][] = 'form-wrapper';
 
     // Add Bootstrap "form-group" class.
-    $element['#attributes']['class'][] = 'form-group';
+    if (!isset($element['#form_group']) || !!$element['#form_group']) {
+      $element['#attributes']['class'][] = 'form-group';
+    }
   }
 
   return '<div' . drupal_attributes($element['#attributes']) . '>' . $element['#children'] . '</div>';

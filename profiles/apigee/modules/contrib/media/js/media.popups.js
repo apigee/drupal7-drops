@@ -128,7 +128,7 @@ Drupal.media.popups.mediaBrowser.mediaBrowserOnLoad = function (e) {
   var options = e.data;
 
   // Ensure that the iFrame is defined.
-  if (this.contentWindow.Drupal.media == undefined) {
+  if (this.contentWindow.Drupal.media.browser == undefined) {
     return;
   }
 

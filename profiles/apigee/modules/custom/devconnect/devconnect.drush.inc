@@ -104,7 +104,7 @@ function devconnect_drush_command() {
 
   $items['devconnect-disable-saml'] = array(
     'callback' => 'devconnect_drush_disable_saml',
-    'description' => dt('Diables SAML auth for Edge connections.'),
+    'description' => dt('Disables SAML auth for Edge connections.'),
     'aliases' => array('dc-dis-saml'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
   );

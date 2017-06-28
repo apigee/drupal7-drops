@@ -18,7 +18,9 @@ function bootstrap_preprocess_html(&$variables) {
   // @see https://www.drupal.org/node/1077566
   // @see https://www.drupal.org/node/1164926
 
-  // HTML element attributes.
+  // Create a dedicated attributes array for the HTML element.
+  // By default, core does not provide a way to target the HTML element.
+  // The only arrays currently available technically belong to the BODY element.
   $variables['html_attributes_array'] = array(
     'lang' => $variables['language']->language,
     'dir' => $variables['language']->dir,
@@ -36,11 +38,15 @@ function bootstrap_preprocess_html(&$variables) {
     $variables['rdf_namespaces'] = drupal_attributes($rdf);
   }
 
-  // BODY element attributes.
-  $variables['body_attributes_array'] = array(
-    'class' => &$variables['classes_array'],
-  );
-  $variables['body_attributes_array'] += $variables['attributes_array'];
+  // Create a dedicated attributes array for the BODY element.
+  if (!isset($variables['body_attributes_array'])) {
+    $variables['body_attributes_array'] = array();
+  }
+
+  // Ensure there is at least a class array.
+  if (!isset($variables['body_attributes_array']['class'])) {
+    $variables['body_attributes_array']['class'] = array();
+  }
 
   // Navbar position.
   switch (bootstrap_setting('navbar_position')) {
@@ -63,11 +69,35 @@ function bootstrap_preprocess_html(&$variables) {
  *
  * See template for list of available variables.
  *
+ * **WARNING**: It is not recommended that this function be copied to a
+ * sub-theme. There is rarely any need to process the same variables twice.
+ *
+ * If you need to add something to the "html_attributes_array" or
+ * "body_attributes_array" arrays, you should do so in a hook_preprocess_html()
+ * function since process functions will always run after all preprocess
+ * functions have been executed.
+ *
+ * If there is a need to implement a hook_process_html() function in your
+ * sub-theme (to process your own custom variables), ensure that it doesn't
+ * add this base theme's logic and risk introducing breakage and performance
+ * issues.
+ *
  * @see html.tpl.php
  *
  * @ingroup theme_process
  */
 function bootstrap_process_html(&$variables) {
+  // Merge in (not reference!) core's ambiguous and separate "attribute" and
+  // "class" arrays. These arrays are meant for the BODY element, but it must
+  // be done at the process level in case sub-themes wish to add classes to
+  // core's non-standard arrays (which are for the BODY element only).
+  // @see https://www.drupal.org/node/2868426
+  $variables['body_attributes_array'] = drupal_array_merge_deep($variables['body_attributes_array'], $variables['attributes_array']);
+
+  // Use this project's class helper (to eliminate any duplicate classes).
+  _bootstrap_add_class($variables['classes_array'], $variables, 'body_attributes_array');
+
+  // Finally, convert the arrays into proper attribute strings.
   $variables['html_attributes'] = drupal_attributes($variables['html_attributes_array']);
   $variables['body_attributes'] = drupal_attributes($variables['body_attributes_array']);
 }

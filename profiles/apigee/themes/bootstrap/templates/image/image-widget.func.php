@@ -30,13 +30,8 @@ function bootstrap_image_widget($variables) {
   }
 
   $output .= '<div class="image-widget-data">';
-  if ($element['fid']['#value'] != 0) {
+  if (!empty($element['fid']['#value'])) {
     $element['filename']['#markup'] = '<div class="form-group">' . $element['filename']['#markup'] . ' <span class="file-size badge">' . format_size($element['#file']->filesize) . '</span></div>';
-  }
-  else {
-    $element['upload']['#prefix'] = '<div class="input-group">';
-    $element['upload_button']['#prefix'] = '<span class="input-group-btn">';
-    $element['upload_button']['#suffix'] = '</span></div>';
   }
 
   $output .= drupal_render_children($element);
