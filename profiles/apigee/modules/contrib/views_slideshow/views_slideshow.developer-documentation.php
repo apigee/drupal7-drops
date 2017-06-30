@@ -1,6 +1,11 @@
 <?php
 
-/** @mainpage Views Slideshow API & Developer Documentation
+/**
+ * @file Provides API homepage for Views Slideshow.
+ */
+
+/**
+ * @mainpage Views Slideshow API & Developer Documentation
  * Welcome to the Views Slideshow developer's documentation.
  *
  * Newcomers to Drupal development should read the conceptual information
@@ -10,9 +15,12 @@
  * @link https://api.drupal.org/api/examples/7.x-1.x Example modules @endlink
  * may also be helpful.
  *
- * For any support or questions see the
- * @link https://drupal.org/project/views_slideshow module page @endlink
+ * For tutorials and examples for acheiving specific tasks, also see the
+ * @link https://drupal.org/docs/7/modules/views-slideshow/developer-tutorials Developer Guide @endlink.
  *
+ * For any comments, support or questions see the
+ * @link https://drupal.org/project/views_slideshow module page @endlink.
+ * Also, feel free to comment here if it is specific to one function/file.
  *
  * - Primary components of Views Slideshow
  *   - @link vss_hooks Views Slideshow Hooks @endlink

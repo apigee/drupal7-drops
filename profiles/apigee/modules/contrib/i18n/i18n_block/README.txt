@@ -13,43 +13,56 @@ CONTENTS OF THIS FILE
 INTRODUCTION
 ------------
 
-The Block languages module, part of the Internationalization (https://www.drupal.org/project/i18n) package, allows the user to configure for which languages each block is visible.
+The Block languages module, part of the Internationalization
+(https://www.drupal.org/project/i18n) package, allows the user to configure
+for which languages each block is visible.
 
-* For a full description of the module, visit https://www.drupal.org/node/1279698
+* For a full description of the module,
+  visit https://www.drupal.org/node/1279698.
 
-* To submit bug reports and feature suggestions, or to track changes visit https://www.drupal.org/project/issues/i18n
+* To submit bug reports and feature suggestions, or to track changes visit
+  https://www.drupal.org/project/issues/i18n.
 
 
 REQUIREMENTS
 ------------
 
-This module requires the following modules:
+This module requires the following module:
 
-Internationalization - https://www.drupal.org/project/i18n
+* Internationalization - https://www.drupal.org/project/i18n
 
 
 RECOMMENDED MODULES
 -------------------
 
-*  Internationalization Views - https://www.drupal.org/project/i18nviews
-*  Language Icons - https://www.drupal.org/project/languageicons
-*  Translation Overview - https://www.drupal.org/project/translation_overview
-*  Localization Client - https://www.drupal.org/project/l10n_client
-* Internationalization contributions - https://www.drupal.org/project/i18n_contrib
+* Internationalization Views - https://www.drupal.org/project/i18nviews
+* Language Icons - https://www.drupal.org/project/languageicons
+* Translation Overview - https://www.drupal.org/project/translation_overview
+* Localization Client - https://www.drupal.org/project/l10n_client
+* Internationalization contributions -
+  https://www.drupal.org/project/i18n_contrib
 
 
 INSTALLATION
 ------------
 
-* This is a submodule of the Internationalization module. Install the Internationalization module as you would normally install a contributed Drupal module. Visit https://www.drupal.org/docs/7/extending-drupal-7/installing-contributed-modules-find-import-enable-configure-drupal-7 for further information.
+This is a submodule of the Internationalization module. Install the
+Internationalization module as you would normally install a contributed Drupal
+module. Visit https://www.drupal.org/node/895232 for further information.
 
 
 CONFIGURATION
 -------------
 
-The settings for visibility per language are provided under Visibility Settings via the Languages tab when configuring a block.
+The settings for visibility per language are provided under Visibility
+Settings via the Languages tab when configuring a block.
 
-The Languages tab also provides a setting for whether the block is translatable. For custom blocks, the block title and the block content will be translatable. For blocks defined by modules, only the block title will be translatable. If "Make this block translatable" is selected, a Translate tab will appear for that block. This tab provides a UI for adding translations of the block in each available language.
+The Languages tab also provides a setting for whether the block is translatable.
+For custom blocks, the block title and the block content will be translatable.
+For blocks defined by modules, only the block title will be translatable. If
+"Make this block translatable" is selected, a Translate tab will appear for that
+block. This tab provides a UI for adding translations of the block in each
+available language.
 
 
 TROUBLESHOOTING
@@ -57,11 +70,16 @@ TROUBLESHOOTING
 
 Conflicts with Context
 
-The Block languages module conflicts with the Context module, which alters how blocks are rendered. This issue can be tracked in the Internationalization issue queue: http://drupal.org/node/1343044
+The Block languages module conflicts with the Context module, which alters how
+blocks are rendered. This issue can be tracked in the Internationalization
+issue queue: http://drupal.org/node/1343044
 
 String Errors
 
-The user must allow your used string format to be translated on admin/config/regional/i18n/strings or you are going to have a error message like "The string blocks:block:1:body for textgroup blocks is not allowed for translation because of its text format."
+The user must allow your used string format to be translated on
+admin/config/regional/i18n/strings or you are going to have an error message
+like "The string blocks:block:1:body for textgroup blocks is not allowed for
+translation because of its text format."
 
 
 MAINTAINERS

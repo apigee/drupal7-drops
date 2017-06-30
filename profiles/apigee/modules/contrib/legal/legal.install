@@ -64,3 +64,10 @@ function legal_uninstall() {
 function legal_update_last_removed() {
   return 6003;
 }
+
+/**
+ * Clear the menu cache.
+ */
+function legal_update_7100() {
+  menu_rebuild();
+}

@@ -158,7 +158,6 @@ class LdapServerAdmin extends LdapServer {
 
     }
 
-  //  debug("values sent to save op=$op, ctools=". (int)module_exists('ctools')); debug($values);
     if ($result) {
       $this->inDatabase = TRUE;
     }

@@ -12,45 +12,52 @@ CONTENTS OF THIS FILE
 INTRODUCTION
 ------------
 
-The User mail translation module, part of the Internationalization (https://www.drupal.org/project/i18n) package, translates emails sent from the User module.
+The User mail translation module, part of the Internationalization
+(https://www.drupal.org/project/i18n) package, translates emails sent from the
+User module.
 
 * For a full description of the module, visit this page:
-https://www.drupal.org/node/133977
+  https://www.drupal.org/node/133977.
 
 * To submit bug reports and feature suggestions, or to track changes:
-https://www.drupal.org/project/issues/i18n
+  https://www.drupal.org/project/issues/i18n.
 
 
 REQUIREMENTS
 ------------
 
-This module requires the following modules:
+This module requires the following module:
 
-Internationalization (https://www.drupal.org/project/i18n)
+* Internationalization - https://www.drupal.org/project/i18n
 
 
 RECOMMENDED MODULES
 -------------------
 
-* Internationalization Views (https://www.drupal.org/project/i18nviews)
-* Language Icons (https://www.drupal.org/project/languageicons)
-* Translation Overview (https://www.drupal.org/project/translation_overview)
-* Localization Client (https://www.drupal.org/project/l10n_client)
-* Internationalization contributions (https://www.drupal.org/project/i18n_contrib)
+* Internationalization Views - https://www.drupal.org/project/i18nviews
+* Language Icons - https://www.drupal.org/project/languageicons
+* Translation Overview - https://www.drupal.org/project/translation_overview
+* Localization Client - https://www.drupal.org/project/l10n_client
+* Internationalization contributions -
+  https://www.drupal.org/project/i18n_contrib
 
 
 INSTALLATION
 ------------
 
-* This is a submodule of the Internationalization module. Install the Internationalization module as you would normally install a contributed Drupal module. Visit https://www.drupal.org/docs/7/extending-drupal-7/installing-contributed-modules-find-import-enable-configure-drupal-7 for further information.
+This is a submodule of the Internationalization module. Install the
+Internationalization module as you would normally install a contributed Drupal
+module. Visit https://www.drupal.org/node/895232 for further information.
 
 
 CONFIGURATION
 -------------
 
 To configure email translations
-1. Navigate to Administration > Configuration > Regional and language > Multilingual settings and select the variables tab.
-2. Select the "User emails" tab. Select the variables you would like translated and Save configuration.
+1. Navigate to Administration > Configuration > Regional and language >
+   Multilingual settings and select the variables tab.
+2. Select the "User emails" tab. Select the variables to be translated. Save
+   configuration.
 
 
 MAINTAINERS

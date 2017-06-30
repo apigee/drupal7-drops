@@ -127,7 +127,7 @@ projects[ctools][version] = "1.12"
 ; Deprecated
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
-projects[date][version] = "2.9"
+projects[date][version] = "2.10"
 
 projects[devel][type] = "module"
 projects[devel][subdir] = "contrib"
@@ -148,7 +148,7 @@ projects[eck][version] = "2.0-rc9"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
-projects[entityreference][version] = "1.2"
+projects[entityreference][version] = "1.4"
 ; see https://www.drupal.org/node/2170193
 projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
 
@@ -239,7 +239,7 @@ projects[http_client][version] = "2.4"
 ; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
-projects[i18n][version] = "1.15"
+projects[i18n][version] = "1.18"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
@@ -248,11 +248,11 @@ projects[jquery_update][version] = "3.0-alpha5"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
-projects[ldap][version] = "2.0"
+projects[ldap][version] = "2.2"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
-projects[legal][version] = "1.6"
+projects[legal][version] = "1.7"
 
 ; Enabled during profile install.
 projects[libraries][type] = "module"
@@ -321,7 +321,7 @@ projects[migrate][version] = "2.8"
 
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
-projects[mimemail][version] = "1.0-beta4"
+projects[mimemail][version] = "1.0"
 
 ; Enabled on install.
 projects[module_filter][type] = "module"
@@ -374,11 +374,11 @@ projects[remote_stream_wrapper][version] = "1.0-rc1"
 
 projects[rules][type] = "module"
 projects[rules][subdir] = "contrib"
-projects[rules][version] = "2.9"
+projects[rules][version] = "2.10"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.19"
+projects[services][version] = "3.20"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -391,7 +391,7 @@ projects[siteminder][version] = "2.x-dev"
 
 projects[smtp][type] = "module"
 projects[smtp][subdir] = "contrib"
-projects[smtp][version] = "1.6"
+projects[smtp][version] = "1.7"
 
 ; Required by Monetization
 projects[special_menu_items][type] = "module"
@@ -462,12 +462,12 @@ projects[views_queue][version] = "1.x-dev"
 
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
-projects[views_slideshow][version] = "3.8"
+projects[views_slideshow][version] = "3.9"
 
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.14"
+projects[webform][version] = "4.15"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"

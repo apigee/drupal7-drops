@@ -527,7 +527,6 @@ EOT;
           $row_descriptor = t("server %sid row mapping to ldap attribute %ldap_attr", $tokens);
           $tokens['!row_descriptor'] = $row_descriptor;
           $ldap_attribute_maps_in_token = array();
-         // debug('calling ldap_servers_token_extract_attributes from validate, mapping='); debug($mapping['ldap_attr']);
           ldap_servers_token_extract_attributes($ldap_attribute_maps_in_token, $mapping['ldap_attr']);
 
           if ($mapping['direction'] == LDAP_USER_PROV_DIRECTION_TO_DRUPAL_USER) {
