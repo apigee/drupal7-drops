@@ -133,7 +133,7 @@ function smartdocs_settings($form, $form_state) {
 
   // Do not collapse advanced settings if an advanced setting is set.
   if (
-    variable_get('smartdocs_custom_template_file', FALSE)
+    (user_access('administer smartdocs templates') && variable_get('smartdocs_custom_template_file', FALSE))
     || variable_get('smartdocs_local_asset_version', 6) != 6
     || variable_get('smartdocs_use_prism', 1) != 1
     || variable_get('smartdocs_proxy_url', FALSE)
@@ -158,24 +158,28 @@ function smartdocs_settings($form, $form_state) {
     '#suffix' => '</div>',
   );
 
-  $form['settings']['smartdocs_custom_template_file'] = array(
-    '#title' => t("Upload customized method template"),
-    '#type' => 'managed_file',
-    '#description' => t(<<<EOF
+  if (user_access('administer smartdocs templates')) {
+    $form['settings']['smartdocs_custom_template_file'] = array(
+      '#title' => t("Upload customized method template"),
+      '#type' => 'managed_file',
+      '#description' => t(<<<EOF
 Upload a .hbr method template file.
 This template will be used instead of the default model template when creating new models.
 It is recommended to keep template sizes under 160k bytes.
 Embedding base64-encoded images is not allowed;
 instead, consider referencing such images from external URLs.
 EOF
-    ),
-    '#upload_location' => 'public://smartdocs_templates',
-    '#upload_validators' => array(
-      'file_validate_extensions' => array('hbr'),
-    ),
-    '#default_value' => variable_get('smartdocs_custom_template_file', 0),
-    '#suffix' => '<br/>',
-  );
+      ),
+      '#upload_location' => 'public://smartdocs_templates',
+      '#upload_validators' => array(
+        'file_validate_extensions' => array('hbr'),
+      ),
+      '#default_value' => variable_get('smartdocs_custom_template_file', 0),
+      '#suffix' => '<br/>',
+    );
+
+    $form['#validate'][] = 'smartdocs_settings_template_validate';
+  }
 
   // Add javascript to the form to warn user when uploading template to click
   // save on page.
@@ -267,9 +271,9 @@ EOF
   array_unshift($form['#submit'], 'smartdocs_settings_empty_proxy_url');
   // Additional submit handler to be invoked *after* calling
   // system_settings_form_submit().
-  $form['#submit'][] = 'smartdocs_settings_submit';
-
-  $form['#validate'][] = 'smartdocs_settings_template_validate';
+  if (user_access('administer smartdocs templates')) {
+    $form['#submit'][] = 'smartdocs_settings_submit';
+  }
 
   return $form;
 }
@@ -752,7 +756,10 @@ function smartdocs_model_exist($name) {
     }
   }
   catch (ResponseException $e) {
-    return FALSE;
+    watchdog_exception('smartdocs', $e, 'Edge connection to check model name uniqueness failed: !message', array('!message' => $e->__toString()));
+    drupal_set_message(t('Failed to connect to Edge backend to ensure that your model name is unique.'), 'error');
+    // Must return true here because we cannot ensure model-name uniqueness.
+    return TRUE;
   }
   /** @var Model $model */
   foreach ($models as $model) {
@@ -1019,6 +1026,28 @@ function smartdocs_import_model_validate($form, &$form_state) {
     // Validate file is not null.
     if (empty($_FILES['files']['name']['file'])) {
       form_set_error('file', t('You must select a file to upload.'));
+    }
+    // If file was uploaded and claims to be OpenAPI, make sure it has a
+    // top-level 'swagger' member.
+    elseif (
+      substr($form_state['values']['type'], 0, 8) == 'swagger_'
+      && !empty($_FILES['files']['tmp_name']['file'])
+      && file_exists($_FILES['files']['tmp_name']['file'])
+    ) {
+      $contents = file_get_contents($_FILES['files']['tmp_name']['file']);
+
+      // Is this a YAML file?
+      if (substr($form_state['values']['type'], -4) == 'yaml') {
+        $is_openapi = (strpos($contents, 'swagger:') !== FALSE);
+      }
+      else {
+        // Nope, must be JSON.
+        $openapi = @json_decode($contents, TRUE);
+        $is_openapi = is_array($openapi) && array_key_exists('swagger', $openapi);
+      }
+      if (!$is_openapi) {
+        form_set_error('file', t('Your uploaded file does not appear to be a valid OpenAPI document.'));
+      }
     }
   }
   else {
@@ -1561,10 +1590,13 @@ function smartdocs_model_settings_page(array $model_array) {
   $breadcrumb[] = l(t('!model', array('!model' => $model_array['displayName'])), 'admin/content/smartdocs/models/' . $model_array['id']);
   drupal_set_breadcrumb($breadcrumb);
 
-  $settings_form = drupal_get_form('smartdocs_model_settings', $model_array);
-  $template_auth_form = drupal_get_form('smartdocs_model_template_auth', $model_array);
+  $output = '';
+  if (user_access('administer smartdocs templates')) {
+    $output .= drupal_render(drupal_get_form('smartdocs_model_settings', $model_array));
+  }
+  $output .= drupal_render(drupal_get_form('smartdocs_model_template_auth', $model_array));
 
-  return drupal_render($settings_form) . drupal_render($template_auth_form);
+  return $output;
 }
 
 /**
@@ -2195,7 +2227,7 @@ function smartdocs_revision_list(array $model_array) {
     foreach ($operations as $key => $op) {
       $links[$key . '-' . $revision->getUuid()] = array(
         'title' => $op,
-        'href' => 'admin/smartdocs/models/' . $model_array['id'] . '/revisions/' . $revision->getRevisionNumber() . $key,
+        'href' => 'admin/content/smartdocs/models/' . $model_array['id'] . '/revisions/' . $revision->getRevisionNumber() . $key,
         'attributes' => array(
           'title' => $op,
           'class' => array(

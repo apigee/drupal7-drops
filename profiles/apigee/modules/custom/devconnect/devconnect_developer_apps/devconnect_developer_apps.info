@@ -2,7 +2,7 @@ name = DevConnect developer apps
 description = CRUD apps with REST interface to Apigee 4
 package = "Dev Portal - Core"
 core = 7.x
-version = "7.x-4.39"
+version = "7.x-4.40"
 php = 5.3
 
 ; Cache and entity classes cannot be listed here because they are namespaced.

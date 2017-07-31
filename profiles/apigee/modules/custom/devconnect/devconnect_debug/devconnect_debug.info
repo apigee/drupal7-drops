@@ -1,10 +1,9 @@
 name = DevConnect Debug
-description = Allows debug logging of all Edge calls
+description = Displays debug logging of all Apigee Edge MGMT calls on the screen for development debugging.
 core = 7.x
 package = Dev Portal - Extensions
 php = 5.3
 version = 7.x-4.26
-hidden = TRUE
 
 dependencies[] = devconnect
 dependencies[] = devel

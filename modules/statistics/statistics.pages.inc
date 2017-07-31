@@ -13,7 +13,7 @@
  *   not found, this will deliver a page not found error via drupal_not_found().
  */
 function statistics_node_tracker() {
-  if ($node = node_load(arg(1))) {
+  if ($node = menu_get_object('node', 1)) {
 
     $header = array(
         array('data' => t('Time'), 'field' => 'a.timestamp', 'sort' => 'desc'),
@@ -65,7 +65,7 @@ function statistics_node_tracker() {
  *   not found, this will deliver a page not found error via drupal_not_found().
  */
 function statistics_user_tracker() {
-  if ($account = user_load(arg(1))) {
+  if ($account = menu_get_object('user', 1)) {
 
     $header = array(
         array('data' => t('Timestamp'), 'field' => 'timestamp', 'sort' => 'desc'),

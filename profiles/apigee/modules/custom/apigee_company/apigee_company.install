@@ -84,29 +84,22 @@ function apigee_company_requirements($phase) {
         $organization = new Organization($client);
         $organization->load(NULL);
         $is_mint_enabled = $organization->getProperty('features.isMonetizationEnabled');
-        if ($is_mint_enabled === TRUE || $is_mint_enabled === 'true') {
+        if (!($is_mint_enabled == TRUE || $is_mint_enabled === 'true')) {
           $requirements['apigee_company_requirements'] = array(
-            'title' => $t('Edge Monetization features'),
-            'severity' => REQUIREMENT_OK,
-            'value' => $t('Enabled'),
-          );
-        }
-        else {
-          $requirements['apigee_company_requirements'] = array(
-            'title' => $t('Edge Monetization features'),
-            'description' => $t('Monetization features are not available in your Edge organization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
-            'severity' => REQUIREMENT_ERROR,
-            'value' => $t('Invalid configuration'),
+            'title' => $t('Apigee Company Module requirements'),
+            'description' => $t('Apigee Company module is not supported out of box for Edge organizations without monetization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
+            'severity' => REQUIREMENT_WARNING,
+            'value' => $t('Not Supported without Monetization'),
           );
         }
       }
       catch (Exception $e) {
-        $requirements['apigee_company_requirements'] = array(
-          'title' => $t('Edge Monetization features'),
-          'description' => $t('Monetization features are not available in your Edge organization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
-          'severity' => REQUIREMENT_ERROR,
-          'value' => $t('Invalid configuration'),
-        );
+          $requirements['apigee_company_requirements'] = array(
+              'title' => $t('Apigee Company Module requirements'),
+              'description' => $t('Apigee Company module is not supported out of box for Edge organizations without monetization. Please contact <a href="@url">Apigee support</a>.', array('@url' => url('http://community.apigee.com/content/apigee-customer-support', array('absolute' => TRUE)))),
+              'severity' => REQUIREMENT_WARNING,
+              'value' => $t('Not Supported without Monetization'),
+          );
       }
       break;
   }

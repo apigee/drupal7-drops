@@ -38,3 +38,10 @@ function me_install() {
   ->condition('name', 'me')
   ->execute();
 }
+
+/**
+ * Rebuild menu registry.
+ */
+function me_update_7001() {
+  menu_rebuild();
+}

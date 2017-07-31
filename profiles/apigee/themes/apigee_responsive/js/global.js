@@ -18,12 +18,13 @@
             $('.apigee-modal-link-delete a').click(function() {
                 var hrefLocation = $(this).attr('href');
                 var identifier = $(this).attr('data-target');
+                var loadingText = Drupal.t('Loading...');
 
                 // Open the empty modal.
                 $(identifier).modal();
                 if (($(identifier + ' .modal-body #devconnect_developer_application_delete').length == 0)) {
                     $(identifier + ' .modal-body').html('<p class="load-indicator" style="display:none;">' +
-                        '<span class="label label-success" style="padding:5px;">Loading...</span></p>');
+                        '<span class="label label-success" style="padding:5px;">' + loadingText + '</span></p>');
                     apigeePulsateForever(identifier + ' .modal-body .load-indicator');
                 }
 
@@ -55,14 +56,17 @@
                         }
                         if (Drupal.settings.devconnect_developer_apps.selectlist == 'true'){
                             var selectItem = identifier + ' .selectlist-item';
-                            $(identifier + ' select#api_product').attr('title', 'Select an API Product');
+                            var selectProductText = Drupal.t('Select an API Product');
+                            var removeText = Drupal.t('Remove');
+
+                            $(identifier + ' select#api_product').attr('title', selectProductText);
 
                             var sl = $(identifier + ' select#api_product').selectList({
                                 instance: true,
                                 clickRemove: false,
                                 onAdd: function (select, value, text) {
                                     $(selectItem + ':last').append('<span style="margin-top:5px;" ' +
-                                        'class="btn btn-primary pull-right remove-product">Remove</span>');
+                                        'class="btn btn-primary pull-right remove-product">' + removeText + '</span>');
                                 }
                             });
 
@@ -71,7 +75,7 @@
                             });
 
                             $(selectItem).append('<span style="margin-top:5px;" ' +
-                                'class="btn btn-primary pull-right remove-product">Remove</span>');
+                                'class="btn btn-primary pull-right remove-product">' + removeText + '</span>');
                         }
                     });
                 }

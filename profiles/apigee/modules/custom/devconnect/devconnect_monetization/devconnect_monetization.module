@@ -32,7 +32,6 @@ define('NORTH_AMERICAN_DATE_FORMAT', 'm/d/Y');
 
 use Apigee\Mint\DataStructures\RatePlanDetail;
 use Apigee\Mint\Developer;
-use Apigee\Mint\Limit;
 use Apigee\Mint\ManagementAPIOrganization;
 use Apigee\Mint\MonetizationPackage;
 use Apigee\Mint\Organization;
@@ -762,90 +761,6 @@ function _devconnect_monetization_old_themes(&$items) {
 }
 
 /**
- * Build the proper text to be displayed as limit.
- *
- * @param \Apigee\Mint\Limit $product_limit
- * @param string $pricing_type
- * @return string
- */
-function _devconnect_monetization_build_limit_text(Limit $product_limit, $pricing_type = '') {
-  static $sub_orgs;
-  $limit_text = $product_limit->getQuotaLimit();
-  if ($product_limit->getQuotaType() == QuotaType::SPEND_LIMIT && strlen($pricing_type) > 0) {
-    $limit_text .= ' (' . strtolower($pricing_type) . ') ';
-  }
-  switch ($product_limit->getQuotaType()) {
-    case QuotaType::CREDIT_LIMIT:
-      $limit_text .= ' ' . t('credit limit') . ' ';
-      break;
-    case QuotaType::SPEND_LIMIT:
-      $limit_text .= ' ' . t('spend limit') . ' ';
-      break;
-    case QuotaType::FEE_EXPOSURE:
-      $limit_text .= ' ' . t('total charge') . ' ';
-      break;
-    case QuotaType::TRANSACTIONS:
-      $limit_text .= ' ' . t('transactions') . ' ';
-      break;
-    case QuotaType::BALANCE:
-      $limit_text .= ' ' . t('balance') . ' ';
-      break;
-  }
-  if (in_array($product_limit->getApplication(), array('ANY', 'ALL'))) {
-    $limit_text .= $product_limit->getApplication() == 'ANY' ? ' ' . t('per application') : ' ' . t('all applications');
-  }
-  else {
-    if ($product_limit->getApplication() != NULL) {
-      // TODO: try pulling from cache first
-      $app = entity_load_single('developer_app', $product_limit->getApplication());
-      if ($app) {
-        $limit_text .= ' ' . t('for @name', array('@name' => $app->name));
-      }
-    }
-  }
-  if ($product_limit->getDeveloperCategory() == 'ANY') {
-    $limit_text .= ' ' . t('per developer category');
-  }
-  if (!in_array($product_limit->getDurationType(), array('ANY', 'ALL'))) {
-    $limit_text .= ' ' . t('per') . ' ' . strtolower($product_limit->getDurationType());
-  }
-  if ($product_limit->getMonetizationPackage() == 'ANY') {
-    $limit_text .= ' ' . t('per monetization package');
-  }
-  if ($product_limit->getProduct() == 'ANY') {
-    $limit_text .= ' ' . t('per product');
-  }
-  if ($product_limit->getSubOrganization() == 'ANY') {
-    $limit_text .= ' ' . t('per sub organization');
-  }
-  else {
-    if ($product_limit->getSubOrganization() != 'ALL' && strlen($product_limit->getSubOrganization())) {
-      if (!isset($sub_orgs)) {
-        $config = devconnect_default_org_config();
-        $org = new Organization($config);
-        $sub_orgs = $org->getOrganizationFamily($config->orgName);
-      }
-      $limit_text .= ' ' . t(' for ') . ' ' . $sub_orgs[$product_limit->getSubOrganization()]->getDescription();
-    }
-  }
-  if ($product_limit->getUserId() == 'ANY') {
-    $limit_text .= ' ' . t('per user');
-  }
-  if ($product_limit->getQuotaType() == QuotaType::SPEND_LIMIT) {
-    $limit_text = $product_limit->getCurrency() . ' ' . $limit_text;
-  }
-  else {
-    if ($product_limit->getQuotaType() == QuotaType::FEE_EXPOSURE) {
-      $limit_text = $product_limit->getCurrency() . ' ' . $limit_text;
-    }
-  }
-  if ($product_limit->getQuotaPeriodType() == QuotaPeriodType::ROLLING) {
-    $limit_text .= ' ' . t('(rolling month)');
-  }
-  return $limit_text;
-}
-
-/**
  * Sorts rate plan rates
  *
  * @param $rate_plan_rates
@@ -1513,7 +1428,8 @@ function devconnect_monetization_clear_api_cache() {
       $last_run = variable_get('devconnect_monetization_clear_cache_last_run', NULL);
       // Test again in case that other request had cleared cache right before
       if ($last_run == NULL || ($now - $last_run > $run_every)) {
-        $cache_manager = CacheFactory::getCacheManager(NULL);
+        $cache_manager_class = CacheFactory::getCacheManager(NULL);
+        $cache_manager = new $cache_manager_class();
         $cache_manager->clear(NULL, TRUE);
         variable_set('devconnect_monetization_clear_cache_last_run', time());
       }

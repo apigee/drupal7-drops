@@ -284,9 +284,14 @@ function smartdocs_menu() {
 function smartdocs_permission() {
   return array(
     'administer smartdocs content' => array(
-      'title' => t('Administer SmartDocs Content'),
+      'title' => t('Administer SmartDocs content'),
       'description' => t('Perform administration tasks for the SmartDocs module.'),
     ),
+    'administer smartdocs templates' => array(
+      'title' => t('Administer SmartDocs templates'),
+      'description' => t('View or alter the templates used by SmartDocs.'),
+      'restrict access' => TRUE,
+    )
   );
 }
 
@@ -1766,46 +1771,52 @@ function smartdocs_create_model_view($model) {
     'group' => 1,
     'expose' => array('operator' => FALSE),
   );
-  $view->display['frontpage']->display_options['title'] = $model_display_name . ' APIs';
-  $view->display['frontpage']->display_options['display_description'] = 'This block may be placed on the site home page. It lists the 5 most recently-updated published methods in the model.';
+  if (array_key_exists('frontpage', $view->display)) {
+    $view->display['frontpage']->display_options['title'] = $model_display_name . ' APIs';
+    $view->display['frontpage']->display_options['display_description'] = 'This block may be placed on the site home page. It lists the 5 most recently-updated published methods in the model.';
+  }
 
   // Turn the modelindex display into a page.
-  $display =& $view->display['modelindex'];
-  $display->display_plugin = 'page';
-  $display->display_options['display_description'] = str_replace('This block ', 'This display ', $display->display_options['display_description']);
-  $display->display_options['path'] = 'taxonomy/term/' . $term->tid;
-  $display->display_options['defaults']['title'] = FALSE;
-  $display->display_options['title'] = $model_display_name;
-  if (!empty($model_description)) {
-    $display->display_options['defaults']['header'] = FALSE;
-    $display->display_options['header'] = array(
-      'model_description' => array(
-        'id' => 'model_description',
-        'table' => 'views',
-        'field' => 'area',
-        'empty' => TRUE,
-        'content' => $model_description,
-        'format' => 'plain_text',
-      ),
-    );
-  }
-  if (array_key_exists('model_tid', $display->display_options['arguments'])) {
-    unset($display->display_options['arguments']['model_tid']);
-    if (empty($display->display_options['arguments'])) {
-      unset($display->display_options['defaults']['arguments']);
-      unset($display->display_options['arguments']);
+  if (array_key_exists('modelindex', $view->display)) {
+    $display =& $view->display['modelindex'];
+    $display->display_plugin = 'page';
+    $display->display_options['display_description'] = str_replace('This block ', 'This display ', $display->display_options['display_description']);
+    $display->display_options['path'] = 'taxonomy/term/' . $term->tid;
+    $display->display_options['defaults']['title'] = FALSE;
+    $display->display_options['title'] = $model_display_name;
+    if (!empty($model_description)) {
+      $display->display_options['defaults']['header'] = FALSE;
+      $display->display_options['header'] = array(
+        'model_description' => array(
+          'id' => 'model_description',
+          'table' => 'views',
+          'field' => 'area',
+          'empty' => TRUE,
+          'content' => $model_description,
+          'format' => 'plain_text',
+        ),
+      );
+    }
+    if (array_key_exists('model_tid', $display->display_options['arguments'])) {
+      unset($display->display_options['arguments']['model_tid']);
+      if (empty($display->display_options['arguments'])) {
+        unset($display->display_options['defaults']['arguments']);
+        unset($display->display_options['arguments']);
+      }
     }
   }
 
-  $display =& $view->display['methodtoc'];
-  if (array_key_exists('model_tid', $display->display_options['arguments'])) {
-    unset($display->display_options['arguments']['model_tid']);
-    if (empty($display->display_options['arguments'])) {
-      unset($display->display_options['defaults']['arguments']);
-      unset($display->display_options['arguments']);
+  if (array_key_exists('methodtoc', $view->display)) {
+    $display =& $view->display['methodtoc'];
+    if (array_key_exists('model_tid', $display->display_options['arguments'])) {
+      unset($display->display_options['arguments']['model_tid']);
+      if (empty($display->display_options['arguments'])) {
+        unset($display->display_options['defaults']['arguments']);
+        unset($display->display_options['arguments']);
+      }
     }
+    $display->display_options['display_description'] = 'This block may optionally be placed in a sidebar to provide a table of contents for methods in the ' . check_plain($model_display_name) . ' model.';
   }
-  $display->display_options['display_description'] = 'This block may optionally be placed in a sidebar to provide a table of contents for methods in the ' . check_plain($model_display_name) . ' model.';
 
   views_save_view($view);
   drupal_flush_all_caches();

@@ -438,12 +438,20 @@ function devconnect_monetization_company_details_form_submit_developer(&$form, &
     if (isset($form_state['values']['address_id']) && !is_null($form_state['values']['address_id'])) {
       $address['id'] = $form_state['values']['address_id'];
     }
+
+    // Ensure that truthiness of 'is_broker' resolves to an integer.
+    $is_broker = (
+      $form_state['values']['is_broker'] === TRUE
+      || $form_state['values']['is_broker'] === 1
+      || $form_state['values']['is_broker'] == 'true'
+    ) ? 1 : 0;
+
     $account->field_mint_developer_address[LANGUAGE_NONE][0]['value'] = json_encode($address, JSON_FORCE_OBJECT);
     $account->field_mint_developer_type[LANGUAGE_NONE][0]['value'] = $form_state['values']['developer_type'];
     $account->field_mint_billing_type[LANGUAGE_NONE][0]['value'] = $form_state['values']['billing_type'];
     $account->field_mint_company_id[LANGUAGE_NONE][0]['value'] = $form_state['values']['company_id'];
     $account->field_mint_approx_tax_rate[LANGUAGE_NONE][0]['value'] = $form_state['values']['approx_tax_rate'];
-    $account->field_mint_is_broker[LANGUAGE_NONE][0]['value'] = $form_state['values']['is_broker'];
+    $account->field_mint_is_broker[LANGUAGE_NONE][0]['value'] = $is_broker;
     $account->field_mint_has_self_billing[LANGUAGE_NONE][0]['value'] = $form_state['values']['has_self_billing'];
     $account->field_mint_billing_profile[LANGUAGE_NONE][0]['value'] = $form_state['values']['billing_profile'];
     $account->field_mint_supported_currency[LANGUAGE_NONE][0]['value'] = $form_state['values']['supported_currency'];

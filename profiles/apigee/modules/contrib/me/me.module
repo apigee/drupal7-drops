@@ -316,9 +316,12 @@ function me_menu_alter(&$callbacks) {
         }
 
         $parts = explode('/', $new_path, MENU_MAX_PARTS);
-        //if (isset($data['page arguments'])) $data['page arguments'] = array_merge(array($parts, $data['page callback']), $data['page arguments']);
-        if (isset($data['page arguments'])) $data['page arguments'] = array_merge($data['page arguments'], array($data['page callback'], $parts));
-        else $data['page arguments'] = array($parts, $data['page callback']);
+        if (isset($data['page arguments'])) {
+          $data['page arguments'] = array_merge($data['page arguments'], array($data['page callback'], $parts));
+        }
+        else {
+          $data['page arguments'] = array($data['page callback'], $parts);
+        }
         $data['page callback'] = 'me_handler';
       }
 

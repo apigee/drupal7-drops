@@ -496,6 +496,7 @@ function devconnect_developer_apps_theme() {
       'application_count' => 0,
       'applications' => '',
       'user' => NULL,
+      'developer_status' => TRUE,
     ),
     'path' => $template_path,
   );
@@ -540,6 +541,7 @@ function devconnect_developer_apps_theme() {
  */
 function devconnect_developer_apps_getlist(stdClass $user) {
   module_invoke_all('devconnect_developer_apps_prerender', 'list', $user);
+  $status = devconnect_user_developer_is_active($user);
 
   $module_path = drupal_get_path('module', 'devconnect_developer_apps');
   drupal_add_css("$module_path/devconnect_developer_apps.css");
@@ -556,6 +558,7 @@ function devconnect_developer_apps_getlist(stdClass $user) {
       'application_count' => 0,
       'applications' => array(),
       'user' => $user,
+      'developer_status' => $status,
     );
   }
   else {
@@ -614,6 +617,7 @@ function devconnect_developer_apps_getlist(stdClass $user) {
       'application_count' => count($rows),
       'applications' => $rows,
       'user' => $user,
+      'developer_status' => $status,
     );
   }
   // Invoke hook_devconnect_developer_app_list_alter() on this parm list.
@@ -1210,8 +1214,9 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
 
   $action_taken = (!is_object($entity) || empty($entity->appId) ? 'Created' : 'Updated');
 
+  $api_products = array();
+
   if (isset($values['api_product'])) {
-    $api_products = array();
     if (is_array($values['api_product'])) {
       foreach ($values['api_product'] as $key => $value) {
         if ($value) {
@@ -1222,18 +1227,40 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
     elseif (!empty($values['api_product'])) {
       $api_products[] = str_replace('prod-', '', $values['api_product']);
     }
-  }
-  else {
-    $api_products = NULL;
-  }
+  } 
+
   $entity->apiProductCache = $values['preexisting_api_products'];
   $entity->callbackUrl = (isset($values['callback_url']) ? $values['callback_url'] : '');
   $entity->name = $values['machine_name'];
   $entity->consumerKey = $values['client_key'];
   $entity->developer = $user->mail;
+
+  // If the system settings have "API Product handling" setting set to
+  // "Associate all apps with one or more Default API Products", we also need
+  // to make sure an Edge MGMT admin did not add any products to the app, and
+  // if so, readd those back in when saving the app.
+  if (variable_get('devconnect_api_product_handling', '') == 'default_api_product') {
+    if (isset($values['preexisting_api_products'])) {
+
+      // Loop through and make sure all products are added
+      foreach ($values['preexisting_api_products'] as $apiProduct) {
+        $apiProductName = $apiProduct['apiproduct'];
+
+        if (!in_array($apiProductName, $api_products)) {
+          // Existing API Product does not exist in our apiproducts list, add it
+          $api_products[] = $apiProductName;
+        }
+      }
+
+    }
+
+  }
+
+  // Set API Products
   if (isset($api_products)) {
     $entity->apiProducts = $api_products;
   }
+
   $entity->uid = $user->uid;
   $entity->orgName = isset($values['orgName']) ? $values['orgName'] : 'default';
 
@@ -1629,7 +1656,7 @@ function _devconnect_developer_apps_detail(DeveloperAppEntity $entity, stdClass 
 
   $cred = array('apiproducts' => array());
   foreach ($entity->credentialApiProducts as $api_product) {
-    $product_entities = devconnect_developer_apps_get_api_products(FALSE, $api_product['apiproduct'], $entity->orgName);
+    $product_entities = devconnect_developer_apps_get_api_products(FALSE, array($api_product['apiproduct']), $entity->orgName);
     if (!empty($product_entities)) {
       $product_entity = reset($product_entities);
       $cred['apiproducts'][] = array(
@@ -2090,7 +2117,7 @@ function devconnect_developer_apps_apigee_responsive_links_alter(&$links) {
   $second_arg = (module_exists('me') ? 'me' : $GLOBALS['user']->uid);
   $link = array(
     'classes' => array('glyphicon', 'glyphicon-pencil'),
-    'text' => 'My ' . _devconnect_developer_apps_get_app_label(TRUE),
+    'text' => t('My ' . _devconnect_developer_apps_get_app_label(TRUE)),
     'url' => 'user/' . $second_arg . '/apps',
   );
   array_unshift($links, $link);

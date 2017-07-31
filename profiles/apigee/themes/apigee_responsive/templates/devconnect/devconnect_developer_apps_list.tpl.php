@@ -16,6 +16,7 @@
  *  - noproducts (TRUE if there are no API Products for this app, else FALSE)
  *  - id (unique JS identifier used in generating modals & links to modals)
  * $user - fully-populated user object (stdClass)
+ * $developer_status - TRUE if developer is active, FALSE if inactive.
  * $show_status - bool indicating whether APIProduct status should be shown.
  * $show_analytics - bool indicating whether analytics link should be shown.
  * $singular - label for an app. Usually App or API. First letter is uppercase.
@@ -31,6 +32,11 @@
 $i = 0;
 
 ?>
+<?php if (!$developer_status): ?>
+  <div class="row alert alert-warning">
+    <?php print t('Your developer status is marked as inactive. Even though the credentials below may appear active, you will not be able to use them until an administrator has activated your account.'); ?>
+  </div>
+<?php endif; ?>
 <?php if ($add_app): ?>
   <div class="row">
     <div class="col-sm-12">
@@ -60,7 +66,7 @@ $i = 0;
         <div class="panel-heading">
           <h4 class="panel-title">
             <div class="truncate">
-              <?php if ((bool) $app['new_status']) : ?><span class="badge">new</span>&nbsp;&nbsp;<?php endif; ?>
+              <?php if ((bool) $app['new_status']) : ?><span class="badge"><?php echo t("new"); ?></span>&nbsp;&nbsp;<?php endif; ?>
               <a data-toggle="collapse" data-parent="#my-apps-accordion" href="#my-apps-collapse<?php print $i; ?>"><strong><?php print check_plain($app['app_name']); ?></strong></a>
             </div>
             <div class="status-label">

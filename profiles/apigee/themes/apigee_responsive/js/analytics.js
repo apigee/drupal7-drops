@@ -2,6 +2,8 @@
     Drupal.behaviors.apigee_responsive_analytics = {
         attach: function (context, settings) {
             var apps = Drupal.settings.apigee_responsive_analytics_data;
+            var timeText = Drupal.t('Time (UTC)');
+
             $.each(apps, function(index, value) {
                 var wrapper = Object.keys(value)[0];
                 console.log(value[wrapper].analytics_data.series);
@@ -13,7 +15,7 @@
                     xAxis: {
                         categories: value[wrapper].analytics_data.categories,
                         title: {
-                            text: 'Time (UTC)',
+                            text: timeText,
                             margin: 0
                         }
                     },

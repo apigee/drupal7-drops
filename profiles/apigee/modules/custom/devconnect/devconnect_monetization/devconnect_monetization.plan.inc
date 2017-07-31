@@ -10,7 +10,6 @@ use Apigee\Mint\Developer;
 use Apigee\Mint\DeveloperRatePlan;
 use Apigee\Mint\Exceptions\MintApiException;
 use Apigee\Mint\Exceptions\InsufficientFundsException;
-use Apigee\Mint\Limit;
 use Apigee\Mint\MonetizationPackage;
 use Apigee\Mint\Organization;
 use Apigee\Mint\RatePlan;
@@ -86,14 +85,6 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
     '#children' => theme(
       'devconnect_monetization_rate_plan_form_product',
       $products_names
-    ),
-  );
-
-  $form['limits'] = array(
-    '#type'     => 'container',
-    '#children' => theme(
-      'devconnect_monetization_rate_plan_form_limits',
-      devconnect_monetization_get_developer_limits($developer, $package, $config)
     ),
   );
 
@@ -685,7 +676,7 @@ function devconnect_monetization_overlap_plan_confirm_form($form, &$form_state) 
 function theme_devconnect_monetization_conflicting_products($products) {
     $items = $products['items'];
 
-    $output .= "<br/><div class='row'><div class='col-sm-6 col-sm-offset-3'><table class='table'><thead><tr><th>Already Purchased Plan</th><th>Has Product</th></tr></thead>";
+    $output = "<br/><div class='row'><div class='col-sm-6 col-sm-offset-3'><table class='table'><thead><tr><th>Already Purchased Plan</th><th>Has Product</th></tr></thead>";
     $output .= "<tbody>";
 
     foreach ($items as $item){
@@ -798,80 +789,6 @@ function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_
     drupal_set_message(t('The website encountered an unexpected error. Please try again later.'), 'error');
     $config->logger->critical($e);
   }
-}
-
-/**
- * Get developer limits per package and per product.
- *
- * Excludes limits with developer specified as ALL
- * Excludes product limits that do not have a corresponding product in the
- * package.
- * Excludes limits with quotaType = QuotaType::BALANCE or
- * quotaType = QuotaType::CREDIT
- */
-function devconnect_monetization_get_developer_limits(Apigee\Mint\Developer $developer, Apigee\Mint\MonetizationPackage $package, Apigee\Util\OrgConfig $config) {
-
-  $limit = new Limit($config);
-
-  // Load the company name for developer email if there is a company in context.
-  $company = apigee_company_get_current_context_company();
-  if (!empty($company)) {
-    $email = $company->name;
-  }
-  else {
-    $email = $developer->getEmail();
-  }
-  $limits = $limit->getDeveloperLimits($email, $package->getId(), TRUE);
-
-  $dev_limits = array();
-  // Loop through developer limits and exclude those where developer is ALL and
-  // haltExecution is true.
-  foreach ($limits as $limit_item) {
-    if ($limit_item->getDeveloper() != 'ALL' && in_array($limit_item->getUserId(), array('ANY', 'ALL'))
-      && $limit_item->getHaltExecution() == TRUE
-    ) {
-      $dev_limits[] = $limit_item;
-    }
-  }
-
-  // Get the products that monetization package includes.
-  $included_products = array();
-  foreach ($package->getProducts() as $product) {
-    $included_products[$product->getId()] = $product->getDisplayName();
-  }
-
-  $product_limits = array();
-  $package_limits = array();
-  foreach ($dev_limits as $limit) {
-    // Exclude limits with QuotaType equals to either Balance or CreditLimit.
-    if ($limit->getQuotaType() != QuotaType::BALANCE && $limit->getQuotaType() != QuotaType::CREDIT_LIMIT) {
-      // Is limit a product level limit?
-      if ($limit->isPublished() && array_key_exists($limit->getProduct(), $included_products)) {
-        $product_limits[$included_products[$limit->getProduct()]][] = _devconnect_monetization_build_limit_text($limit, NULL);
-      }
-      // Else it may be a package level limit. If limit is implicit (quotaTyte
-      // is either Balance or CreditLimt) then it is excluded. Values of this
-      // limits are concatenated in $package_limits for later display.
-      else {
-        if ($limit->isPublished() && $limit->getProduct() == 'ALL') {
-          $limit_text = _devconnect_monetization_build_limit_text($limit);
-          if (isset($limit_text)) {
-            $package_limits[] = $limit_text;
-            unset($limit_text);
-          }
-        }
-      }
-    }
-  }
-
-  // Sort the limits by product name ASC.
-  ksort($product_limits);
-  $developer_limits = array(
-    'has_limits'      => !empty($package_limits) || !empty($product_limits),
-    'package_limits'  => $package_limits,
-    'products_limits' => $product_limits,
-  );
-  return $developer_limits;
 }
 
 /**

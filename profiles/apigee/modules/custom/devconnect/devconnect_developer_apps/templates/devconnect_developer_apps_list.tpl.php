@@ -23,9 +23,13 @@
  * $plural - label for more than one app. First letter uppercase.
  * $plural_downcase - label for more than one app, downcased as above.
  */
-
-print $add_app;
 ?>
+<?php if (!$developer_status): ?>
+  <div class="alert alert-warning">
+    <?php print t('Your developer status is marked as inactive. Even though the credentials for the apps listed below may appear active, you will not be able to use them until an administrator has activated your account.'); ?>
+  </div>
+<?php endif; ?>
+<?php print $add_app; ?>
 
 <form class="form-stacked">
 

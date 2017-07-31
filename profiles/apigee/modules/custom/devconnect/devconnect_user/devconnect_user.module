@@ -566,6 +566,40 @@ function devconnect_user_is_developer($account = NULL) {
 }
 
 /**
+ * Determines if the developer in question is active.
+ *
+ * @param stdClass|null $account
+ *   The user object to check for, or NULL to check current logged-in user.
+ *
+ * @return bool
+ *   True if developer is active, False if inactive.
+ */
+function devconnect_user_developer_is_active($account = NULL) {
+  if (!isset($account)) {
+    if (user_is_anonymous()) {
+      return FALSE;
+    }
+    $account = $GLOBALS['user'];
+  }
+  $key = 'user:devconnect:active:' . $account->mail;
+  $return_val = FALSE;
+  $obj = cache_get($key);
+  if (empty($obj)) {
+    $developers = entity_load('developer', FALSE, array('mail' => $account->mail));
+    if (!empty($developers)) {
+      /** @var Drupal\devconnect_user\DeveloperEntity $developer */
+      $developer = reset($developers);
+      $return_val = $developer->status == 'active';
+    }
+    cache_set($key, $return_val, 'cache', CACHE_TEMPORARY);
+  }
+  else {
+    $return_val = (bool)$obj->data;
+  }
+  return $return_val;
+}
+
+/**
  * Implements hook_query_TAG_alter() for devconnect_user_sync().
  *
  * Disallows user sync for the superuser.

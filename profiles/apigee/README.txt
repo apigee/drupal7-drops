@@ -1,4 +1,15 @@
-CONTENTS OF THIS FILE
+
+## For OPDK Releases:
+
+To release do the following:
+
+1. Merge last OPDK branch into master
+
+2. Create a new branch with the format: OPDK_1709
+
+
+
+## CONTENTS OF THIS FILE
 ---------------------
 
  * About Apigee Developer Portal install profile

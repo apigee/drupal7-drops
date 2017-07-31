@@ -79,8 +79,12 @@ function devconnect_developer_apps_keys_pane($variables) {
   $pane['details'] = array('#weight' => 2);
   if (isset($variables['credentials'][0])) {
     $pane['#credential_status'] = $variables['overallStatus'];
+    $key_classes = array('key', 'key-status-' . $variables['overallStatus']);
+    if (!devconnect_user_developer_is_active($variables['account'])) {
+      $key_classes[] = 'developer-disabled';
+    }
     $pane['details']['consumer_key'] = array(
-      '#prefix' => '<div class="key key-status-' . $variables['overallStatus'] . '">',
+      '#prefix' => '<div class="' . implode(' ', $key_classes) . '">',
       '#suffix' => '</div>',
       'label' => array(
         '#type' => 'markup',
@@ -97,7 +101,7 @@ function devconnect_developer_apps_keys_pane($variables) {
       '#weight' => 0
     );
     $pane['details']['consumer_secret'] = array(
-      '#prefix' => '<div class="key key-status-' . $variables['overallStatus'] . '">',
+      '#prefix' => '<div class="' . implode(' ', $key_classes) . '">',
       '#suffix' => '</div>',
       'label' => array(
         '#type' => 'markup',

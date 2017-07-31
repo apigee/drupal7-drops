@@ -82,7 +82,7 @@ function devconnect_admin_notify_setup_email(stdClass &$account, $action = 'inse
     if (empty($emails)) {
       return;
     }
-    $to = implode(', ', $emails);
+    $to = implode(',', $emails);
     drupal_mail(
       'devconnect_admin_notify',
       'user-register-notify-admin',

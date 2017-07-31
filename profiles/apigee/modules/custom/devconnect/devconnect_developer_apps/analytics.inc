@@ -104,7 +104,7 @@ function devconnect_developer_apps_analytics_form() {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => 'Submit',
+    '#value' => t('Submit'),
   );
 
   return $form;
@@ -210,7 +210,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
     'xAxis' => array(
       'categories' => array(), // Filled in below
       'title' => array(
-        'text' => 'Time (UTC)',
+        'text' => t('Time (UTC)'),
         'margin' => 0
       )
     ),
@@ -245,7 +245,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
   );
 
   if (substr($metric_name, -5) == '_time') {
-    $chart_data['yAxis']['title']['text'] = 'Milliseconds';
+    $chart_data['yAxis']['title']['text'] = t('Milliseconds');
   }
 
   // Step across X-axis labels if there are too many.
@@ -550,14 +550,14 @@ function _devconnect_developer_apps_analytics_to_xml($params, $data) {
 
 
 function _devconnect_developer_apps_analytics_to_csv($params, $data) {
-  $csv = 'Metric,' . $params['metric']['display_name'] . "\n"
-    . 'Start,' . date('Y-m-d H:i:s', $params['start']) . " " . $params['timezone'] . "\n"
-    . 'End,' . date('Y-m-d H:i:s', $params['end']) . " " . $params['timezone'] . "\n"
-    . 'Time Unit,' . $params['unit'] . "\n"
+  $csv = t('Metric') . ',' . $params['metric']['display_name'] . "\n"
+    . t('Start') . ',' . date('Y-m-d H:i:s', $params['start']) . " " . $params['timezone'] . "\n"
+    . t('End') . ',' . date('Y-m-d H:i:s', $params['end']) . " " . $params['timezone'] . "\n"
+    . t('Time Unit') . ',' . $params['unit'] . "\n"
     . "\n\n";
 
   foreach ($data as $env => $series) {
-    $csv .= 'Environment,' . $env . "\n\n";
+    $csv .= t('Environment') . ',' . $env . "\n\n";
     foreach ($series as $time => $point) {
       $csv .= date('Y-m-d H:i:s', $time) . ',' . $point . "\n";
     }

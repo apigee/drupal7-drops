@@ -19,7 +19,15 @@ define('CANCEL_RESPONSE_URL', 'devconnect/mint/payment/wp/cancel');
  */
 function devconnect_mint_worldpay_menu() {
   $items = array();
-  // The page WorldPay redirects the user on successfull transaction event.
+  // Convenience redirector to actual Worldpay config screen.
+  $items['admin/config/devconnect_monetization/mint-worldpay'] = array(
+    'title' => 'Recurring payment via Worldpay',
+    'page callback' => 'devconnect_mint_worldpay_settings_redirect',
+    'access arguments' => array('administer payment methods'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  // The page WorldPay redirects the user on successful transaction event.
   $items[SUCCESS_RESPONSE_URL] = array(
     'title' => 'Worldpay success response page',
     'page callback' => 'devconnect_mint_worldpay_success',
@@ -50,11 +58,37 @@ function devconnect_mint_worldpay_menu() {
   return $items;
 }
 
+/**
+ * Menu callback to redirect to the WorldPay settings form.
+ *
+ * If we can find the actual payment-method rules action, we redirect to its
+ * details-edit page. Otherwise we redirect to the Worldpay payment-method admin
+ * page if it exists; if that doesn't exist, we fall back to the payment-methods
+ * general admin page.
+ */
+function devconnect_mint_worldpay_settings_redirect() {
+  $rules = entity_load('rules_config');
+  foreach ($rules as $rule) {
+    if ($rule instanceof RulesReactionRule && $rule->name == 'commerce_payment_devconnect_mint_worldpay') {
+      $actions = $rule->actions();
+      $action = reset($actions);
+      if ($action instanceof RulesAction) {
+        // Found Rule and found Action. Redirect to Action edit page.
+        drupal_goto('admin/commerce/config/payment-methods/manage/' . $rule->name . '/edit/' . $action->elementId());
+      }
+      // Found Rule, no Action. Redirect to Rule config page.
+      drupal_goto('admin/commerce/config/payment-methods/manage/' . $rule->id);
+    }
+  }
+  // Found neither Rule nor Action. Redirect to payment-method admin page.
+  drupal_goto('admin/commerce/config/payment-methods');
+}
+
 function devconnect_mint_worldpay_settings_form($settings = NULL) {
 
   $settings = (array) $settings + array(
     'devconnect_mint_worldpay_provider_id' => 'worldpay',
-    'devconnect_mint_worldpay_mac_secret' => 'Live2013',
+    'devconnect_mint_worldpay_mac_secret' => 'Apigee1234567890!@#$%^&*()',
     'devconnect_mint_worldpay_signature_fields' => 'orderKey+paymentAmount+paymentCurrency+paymentStatus+[mac secret]',
   );
   try {

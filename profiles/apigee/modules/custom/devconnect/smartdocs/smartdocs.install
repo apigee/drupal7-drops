@@ -190,11 +190,13 @@ function smartdocs_uninstall() {
     }
   }
 
-  drupal_load('module', 'devconnect_developer_apps');
-  $api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
-  foreach ($api_products as $api_product) {
-    variable_del($api_product->name . '_docs');
-    variable_del('smartdocs_' . $api_product->name . '_docs');
+  if (module_exists('devconnect_developer_apps')) {
+    drupal_load('module', 'devconnect_developer_apps');
+    $api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+    foreach ($api_products as $api_product) {
+      variable_del($api_product->name . '_docs');
+      variable_del('smartdocs_' . $api_product->name . '_docs');
+    }
   }
   variable_del('smartdocs_path_gen_type');
   variable_del('smartdocs_publish_on_render');
@@ -448,14 +450,16 @@ function smartdocs_update_7502() {
     }
   }
 
-  drupal_load('module', 'devconnect_developer_apps');
-  $products = entity_load('api_product', FALSE, array('show_private' => TRUE));
-  foreach ($products as $product) {
-    $value = variable_get($product->name . '_docs', NULL);
-    if (isset($value)) {
-      variable_set('smartdocs_' . $product->name . '_docs', $value);
+  if (module_exists('devconnect_developer_apps')) {
+    drupal_load('module', 'devconnect_developer_apps');
+    $products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+    foreach ($products as $product) {
+      $value = variable_get($product->name . '_docs', NULL);
+      if (isset($value)) {
+        variable_set('smartdocs_' . $product->name . '_docs', $value);
+      }
+      variable_del($product->name . '_docs');
     }
-    variable_del($product->name . '_docs');
   }
 
   // Make sure latest templates are pushed to Modeling API if default
@@ -602,4 +606,14 @@ function smartdocs_update_7508() {
     ->condition('router_path', 'apis')
     ->execute();
   variable_set('menu_rebuild_needed', TRUE);
+}
+
+/**
+ * Assign "administer smartdocs templates" permission to appropriate roles.
+ */
+function smartdocs_update_7509() {
+  $roles = user_roles(TRUE, 'administer smartdocs content');
+  foreach ($roles as $rid => $role) {
+    user_role_grant_permissions($rid, array('administer smartdocs templates'));
+  }
 }

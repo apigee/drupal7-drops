@@ -147,6 +147,8 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
       $email = $array['email'];
       $array['uid'] = (isset($this->emailCache[$email]) ? $this->emailCache[$email] : NULL);
       $return[$email] = new DeveloperEntity($array);
+      // Temporarily cache the status of this dev.
+      cache_set('user:devconnect:active:' . $email, $dev->getStatus() == 'active', 'cache', CACHE_TEMPORARY);
     }
     // Correct for first/last name.
     // TODO: verify that this is really necessary.
