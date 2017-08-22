@@ -185,7 +185,7 @@ function devconnect_monetization_payment_commerce_checkout_complete($order) {
                 $developer_rate_plan->setId($dev_plan_id);
                 $developer_rate_plan->setStartDate($start_date->format('Y-m-d H:i:s'));
                 $developer_rate_plan->save('create');
-                CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
+                CacheFactory::getCacheManager()->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
                 $order->data['purchase']['complete'] = TRUE;
                 module_invoke_all('devconnect_monetization_plan_purchased', $developer_rate_plan);
               }

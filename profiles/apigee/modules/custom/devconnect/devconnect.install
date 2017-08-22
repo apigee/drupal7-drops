@@ -62,11 +62,11 @@ function devconnect_requirements($phase) {
 
   if ($phase == 'runtime' && $sdk_ok) {
 
-    $requirements['mgmt-api-php-sdk'] = array(
+    $requirements['mgmt-api-php-sdk'] = [
       'severity' => REQUIREMENT_OK,
       'value' => $t('Edge SDK library is installed correctly.'),
       'title' => 'Edge SDK',
-    );
+    ];
 
     drupal_load('module', 'devconnect');
     // Make sure all autoloaders are registered.
@@ -77,37 +77,47 @@ function devconnect_requirements($phase) {
     $endpoint = $config['endpoint'];
     $user = $config['user'];
     $pass = $config['pass'];
+    $connection_timeout = $config['connection_timeout'];
 
-    if ($pass && module_load_include('inc', 'devconnect', 'devconnect.admin') && _devconnect_test_kms_connection($org, $endpoint, $user, $pass)) {
-      $requirements['devconnect_connection'] = array(
-        'severity' => REQUIREMENT_OK,
-        'title' => 'Dev Portal Connection',
-        'value' => $t('Dev Portal is connected to the management server.'),
-      );
+    $saml_options = NULL;
+    if (array_key_exists('saml_enabled', $config) && $config['saml_enabled'] == TRUE) {
+      $saml_options = $config['saml'];
     }
-    else {
-      $requirements['devconnect_connection'] = array(
+
+    if ($pass && module_load_include('inc', 'devconnect', 'devconnect.admin')) {
+
+      $test_response =  _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $connection_timeout, $saml_options);
+      if (strpos($test_response, t('Connection Successful')) !== false) {
+        $requirements['devconnect_connection'] = [
+          'severity' => REQUIREMENT_OK,
+          'title' => 'Dev Portal Connection',
+          'value' => $t('Dev Portal is connected to the management server.'),
+        ];
+      }
+      else {
+        $requirements['devconnect_connection'] = [
+          'severity' => REQUIREMENT_ERROR,
+          'title' => 'Dev Portal Connection',
+          'value' => $t('Dev Portal is not connected to the management server. ') . $test_response,
+          'description' => $t('To configure these settings, please go to the !url.', ['!url' => l($t('Dev Portal configuration page'), 'admin/config/devconnect')]),
+        ];
+      }
+    }
+
+    $spyc_dir = libraries_get_path('spyc');
+    if (!$spyc_dir || !file_exists($spyc_dir . '/Spyc.php')) {
+      $requirements['devconnect_spyc'] = [
         'severity' => REQUIREMENT_ERROR,
-        'title' => 'Dev Portal Connection',
-        'value' => $t('Dev Portal is not connected to the management server.'),
-        'description' => $t('To configure these settings, please go to the !url.' , array('!url' => l($t('Dev Portal configuration page'), 'admin/config/devconnect'))),
-      );
+        'title' => 'Spyc',
+        'value' => $t('The Spyc library cannot be found.'),
+        'description' => $t('Please <a href="@url">download Spyc.php</a> and place it in <code>@dir</code>.', [
+          '@url' => 'https://raw.github.com/mustangostang/spyc/master/Spyc.php',
+          '@dir' => '/sites/all/libraries/spyc',
+        ]),
+      ];
     }
-  }
 
-  $spyc_dir = libraries_get_path('spyc');
-  if (!$spyc_dir || !file_exists($spyc_dir . '/Spyc.php')) {
-    $requirements['devconnect_spyc'] = array(
-      'severity' => REQUIREMENT_ERROR,
-      'title' => 'Spyc',
-      'value' => $t('The Spyc library cannot be found.'),
-      'description' => $t('Please <a href="@url">download Spyc.php</a> and place it in <code>@dir</code>.', array(
-        '@url' => 'https://raw.github.com/mustangostang/spyc/master/Spyc.php',
-        '@dir' => '/sites/all/libraries/spyc',
-      )),
-    );
   }
-
   return $requirements;
 }
 

@@ -342,6 +342,10 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
         'media-element-container',
         'media-' . $element['content']['file']['#view_mode'],
       );
+      if (variable_get('media_wysiwyg_remove_media_class', FALSE)) {
+        $classes = $element['content']['#attributes']['class'];
+        $element['content']['#attributes']['class'] = array_diff($classes, array('media'));
+      }
     }
 
     // Conditionally add a pre-render if the media filter output is be cached.
@@ -451,7 +455,7 @@ function _media_wysiwyg_generate_tagMap($text) {
   // between function calls. Since media_process_form is multiple times
   // with same form, this function is also called multiple times.
   static $tagmap = array();
-  preg_match_all("/\[\[.*?\]\]/s", $text, $matches, PREG_SET_ORDER);
+  preg_match_all("/\[\[(?!nid:).*?\]\]/s", $text, $matches, PREG_SET_ORDER);
   foreach ($matches as $match) {
     // We see if tagContent is already in $tagMap, if not we add it
     // to $tagmap.  If we return an empty array, we break embeddings of the same

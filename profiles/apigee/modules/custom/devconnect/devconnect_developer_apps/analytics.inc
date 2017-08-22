@@ -25,7 +25,6 @@ function _devconnect_developer_apps_analytics_metrics() {
     'total_response_time' => t('Throughput'),
     'max_response_time' => t('Max Response Time'),
     'min_response_time' => t('Min Response Time'),
-    'end_point_response_time' => t('Endpoint Response Time'),
     'message_count' => t('Message Count'),
     'error_count' => t('Error Count'),
   );

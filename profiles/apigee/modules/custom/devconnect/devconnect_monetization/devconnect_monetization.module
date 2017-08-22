@@ -30,6 +30,7 @@ define('DEVCONNECT_MONETIZATION_APP_FORM_PRODUCT_DISPLAY_ALLOWED', 1);
 define('EU_DATE_FORMAT', 'd-m-Y');
 define('NORTH_AMERICAN_DATE_FORMAT', 'm/d/Y');
 
+use Apigee\Mint\DataStructures\Address;
 use Apigee\Mint\DataStructures\RatePlanDetail;
 use Apigee\Mint\Developer;
 use Apigee\Mint\ManagementAPIOrganization;
@@ -38,13 +39,12 @@ use Apigee\Mint\Organization;
 use Apigee\Mint\RatePlan;
 use Apigee\Mint\TermAndCondition;
 use Apigee\Mint\Types\BillingType;
+use Apigee\Mint\Types\Country;
 use Apigee\Mint\Types\DeveloperType;
 use Apigee\Mint\Types\MeteringType;
 use Apigee\Mint\Types\QuotaPeriodType;
 use Apigee\Mint\Types\QuotaType;
 use Apigee\Util\CacheFactory;
-use Apigee\Mint\DataStructures\Address;
-use Apigee\Mint\Types\Country;
 
 module_load_include('php', 'devconnect_monetization', 'MintCacheManager');
 
@@ -1428,8 +1428,7 @@ function devconnect_monetization_clear_api_cache() {
       $last_run = variable_get('devconnect_monetization_clear_cache_last_run', NULL);
       // Test again in case that other request had cleared cache right before
       if ($last_run == NULL || ($now - $last_run > $run_every)) {
-        $cache_manager_class = CacheFactory::getCacheManager(NULL);
-        $cache_manager = new $cache_manager_class();
+        $cache_manager = CacheFactory::getCacheManager();
         $cache_manager->clear(NULL, TRUE);
         variable_set('devconnect_monetization_clear_cache_last_run', time());
       }

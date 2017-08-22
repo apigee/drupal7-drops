@@ -148,7 +148,7 @@ projects[eck][version] = "2.0-rc9"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
-projects[entityreference][version] = "1.4"
+projects[entityreference][version] = "1.5"
 ; see https://www.drupal.org/node/2170193
 projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues/entityreference-2170193-3-plugin-paths.patch"
 
@@ -187,7 +187,7 @@ projects[field_group][version] = "1.5"
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.2"
+projects[file_entity][version] = "2.4"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -288,17 +288,17 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.8"
+projects[media][version] = "2.10"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
 projects[media_ckeditor][subdir] = "contrib"
-projects[media_ckeditor][version] = "2.1"
+projects[media_ckeditor][version] = "2.5"
 
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
-projects[media_youtube][version] = "3.4"
+projects[media_youtube][version] = "3.5"
 
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
@@ -307,7 +307,7 @@ projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.21"
+projects[metatag][version] = "1.22"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -384,7 +384,7 @@ projects[services][version] = "3.20"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
-projects[services_views][version] = "1.1"
+projects[services_views][version] = "1.2"
 
 ; Required for OPDK
 projects[siteminder][type] = "module"
@@ -446,7 +446,7 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.16"
+projects[views][version] = "3.17"
 
 ; Deprecated
 projects[views_accordion][type] = "module"
@@ -803,7 +803,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.14.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.16.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"

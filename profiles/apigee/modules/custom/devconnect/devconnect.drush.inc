@@ -192,7 +192,7 @@ function devconnect_drush_set_authentication() {
   $old_pass = $config['pass'];
   $changes = array();
   if ($username != $old_user) {
-    $changes[] = "user changed from “$old_user” to “$username”";
+    $changes[] = "user changed from '$old_user' to '$username'";
     $config['user'] = $username;
   }
   if ($old_pass != $password) {
@@ -216,39 +216,57 @@ function devconnect_drush_set_authentication() {
  * Drush command callback for devconnect-test-conn
  */
 function devconnect_drush_test_connection() {
-  $config =& devconnect_get_org_settings();
-  if (!$config) {
-    return;
-  }
+  // Required to run _devconnect_test_kms_connection()
+  module_load_include('inc', 'devconnect', 'devconnect.admin');
+
+  // Make sure all autoloaders are registered.
+  devconnect_init();
+
+  $config = &devconnect_get_org_settings();
+  $org = $config['org'];
+  $endpoint = $config['endpoint'];
   $user = $config['user'];
   $pass = $config['pass'];
+  $connection_timeout = $config['connection_timeout'];
+
   if (empty($user) || $user == 'fixme' || empty($pass) || $pass == 'secret') {
     drush_print(dt('Username/password have not yet been set.'));
     return;
   }
-  $org = $config['org'];
   if (empty($org) || $org == 'fixme') {
     drush_print(dt('Org name has not yet been set.'));
     return;
   }
-  $endpoint = $config['endpoint'];
 
-  $ch = curl_init();
-  curl_setopt($ch, CURLOPT_URL, "$endpoint/o/$org");
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
-  curl_setopt($ch, CURLOPT_TIMEOUT, 4);
-  curl_setopt($ch, CURLOPT_USERPWD, "$user:$pass");
-  curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
+  $saml_options = NULL;
+  if (array_key_exists('saml_enabled', $config) && $config['saml_enabled'] == TRUE) {
+    $saml_options = $config['saml'];
 
-  curl_exec($ch);
-  $response_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  if ($response_code == 200) {
+
+    if (array_key_exists('endpoint', $saml_options)) {
+      if (empty($saml_options['endpoint'])) {
+        drush_print(dt('SAML is enabled, but endpoint has not been set.'));
+        return;
+      }
+      if (empty($saml_options['key'])) {
+        drush_print(dt('SAML is enabled, but key has not been set.'));
+        return;
+      }
+      if (empty($saml_options['secret'])) {
+        drush_print(dt('SAML is enabled, but secret has not been set.'));
+        return;
+      }
+    }
+  }
+
+  $test_response =  _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $connection_timeout, $saml_options);
+  if (strpos($test_response, t('Connection Successful')) !== false) {
     drush_print(dt('Connection to the endpoint succeeded.'));
   }
   else {
-    drush_print(dt('Connection to the endpoint failed.'));
+    drush_print(dt('Connection to the endpoint failed. ' . $test_response));
   }
+
 }
 
 /**
@@ -443,7 +461,7 @@ function _devconnect_drush_save_config($config) {
   if(substr($private_dir,0,1) != '/') {
     $private_dir = DRUPAL_ROOT . '/' . $private_dir;
   }
- 
+
   if (!is_dir($private_dir)) {
     drush_log(dt('Your filesystem is misconfigured. Please set the ‘@var’ variable to a directory that is writable.', array('@var' =>'apigee_credential_dir')), 'error');
     return;

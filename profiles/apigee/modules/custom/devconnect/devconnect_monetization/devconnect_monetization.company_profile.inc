@@ -1121,7 +1121,7 @@ function devconnect_monetization_accept_tnc_form_submit($form, &$form_state) {
     $dev_tnc->setAction('ACCEPTED');
     $tnc = new TermAndCondition($config);
     $tnc->acceptTermsAndConditions($dev_tnc, $developer_id, $tnc_id);
-    CacheFactory::getCacheManager(NULL)->clear('developer_accepted_tncs:' . $developer_id);
+    CacheFactory::getCacheManager()->clear('developer_accepted_tncs:' . $developer_id);
     module_invoke_all('devconnect_monetization_developer_accepted_tncs', $tnc);
     drupal_set_message(t('You have accepted terms and conditions successfully.'));
     if (isset($_SESSION['return_here'])) {

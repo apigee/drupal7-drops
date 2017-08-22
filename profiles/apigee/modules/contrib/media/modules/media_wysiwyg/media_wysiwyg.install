@@ -77,6 +77,7 @@ function media_wysiwyg_uninstall() {
   variable_del('media_wysiwyg_use_link_text_for_filename');
   variable_del('media_wysiwyg_alignment');
   variable_del('media_wysiwyg_external_link');
+  variable_del('media_wysiwyg_remove_media_class');
 }
 
 /**
@@ -248,6 +249,6 @@ function media_wysiwyg_update_7206() {
  * Notify upgraders that there's optional media linking functionality that needs to be enabled.
  */
 function media_wysiwyg_update_7207() {
-  $message = t('If you would like to be able to link images to a page got o /admin/config/media/browser and check "Provide the ability to link media to pages", and save the settings.');
+  $message = t('If you would like to be able to link images to a page, go to /admin/config/media/browser, check "Provide the ability to link media to pages", and save the settings.');
   drupal_set_message($message, 'warning', TRUE);
 }

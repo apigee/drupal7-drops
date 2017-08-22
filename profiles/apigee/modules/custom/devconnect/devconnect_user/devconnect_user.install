@@ -1,6 +1,18 @@
 <?php
 
 /**
+ * Implements hook_schema().
+ */
+function devconnect_user_schema() {
+  $schema = array();
+
+  $schema['cache_devconnect_developer_is_active'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_devconnect_developer_is_active']['description'] = 'Cached result of devconnect_user_developer_is_active() function.';
+
+  return $schema;
+}
+
+/**
  * Clean up unused variables.
  */
 function devconnect_user_update_7429() {
@@ -18,5 +30,15 @@ function devconnect_user_update_7430() {
     if (db_table_exists($table)) {
       db_drop_table($table);
     }
+  }
+}
+
+/**
+ * Create new cache table.
+ */
+function devconnect_user_update_7431(&$sandbox) {
+  if (!db_table_exists('cache_devconnect_developer_is_active')) {
+    $schema = drupal_get_schema_unprocessed('devconnect_user', 'cache_devconnect_developer_is_active');
+    db_create_table('cache_devconnect_developer_is_active', $schema);
   }
 }

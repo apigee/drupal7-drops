@@ -91,6 +91,13 @@ function devconnect_user_entity_info() {
 }
 
 /**
+ * Implements hook_flush_caches().
+ */
+function devconnect_user_flush_caches() {
+  return array('cache_devconnect_developer_is_active');
+}
+
+/**
  * Implements hook_form_alter().
  */
 function devconnect_user_form_alter(&$form, &$form_state, $form_id) {
@@ -566,37 +573,50 @@ function devconnect_user_is_developer($account = NULL) {
 }
 
 /**
- * Determines if the developer in question is active.
+ * Determines if a developer is active.
  *
- * @param stdClass|null $account
+ * @param \stdClass|null $account
  *   The user object to check for, or NULL to check current logged-in user.
+ * @param bool $reset
+ *   Ignore previously cached result.
  *
  * @return bool
- *   True if developer is active, False if inactive.
+ *   TRUE if developer is active, FALSE if inactive.
  */
-function devconnect_user_developer_is_active($account = NULL) {
+function devconnect_user_developer_is_active(stdClass $account = NULL, $reset = FALSE) {
   if (!isset($account)) {
     if (user_is_anonymous()) {
       return FALSE;
     }
     $account = $GLOBALS['user'];
   }
-  $key = 'user:devconnect:active:' . $account->mail;
-  $return_val = FALSE;
-  $obj = cache_get($key);
-  if (empty($obj)) {
-    $developers = entity_load('developer', FALSE, array('mail' => $account->mail));
-    if (!empty($developers)) {
+
+  $static = &drupal_static(__FUNCTION__);
+  if (!isset($static)) {
+    $static = array();
+  }
+  // Check static cache first.
+  if (!$reset && array_key_exists($account->mail, $static)) {
+    return $static[$account->mail];
+  }
+
+  // Check the cache table.
+  $is_active = FALSE;
+  $cached_obj = cache_get($account->mail, 'cache_devconnect_developer_is_active');
+  if ($reset || empty($cached_obj)) {
+    $developer = entity_load_single('developer', $account->mail);
+    if (!empty($developer)) {
       /** @var Drupal\devconnect_user\DeveloperEntity $developer */
-      $developer = reset($developers);
-      $return_val = $developer->status == 'active';
+      $is_active = $developer->status == 'active';
     }
-    cache_set($key, $return_val, 'cache', CACHE_TEMPORARY);
+    cache_set($account->mail, $is_active, 'cache_devconnect_developer_is_active', CACHE_TEMPORARY);
+    $static[$account->mail] = $is_active;
   }
   else {
-    $return_val = (bool)$obj->data;
+    $is_active = $cached_obj->data;
+    $static[$account->mail] = $is_active;
   }
-  return $return_val;
+  return $is_active;
 }
 
 /**

@@ -408,7 +408,7 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
         }
       }
 
-      CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_or_company_id);
+      CacheFactory::getCacheManager()->clear('developer_accepted_rateplan:' . $developer_or_company_id);
       module_invoke_all('devconnect_monetization_plan_purchased', $developer_rate_plan);
 
       $modules = module_implements('redirect_after_purchase_plan');
@@ -542,7 +542,7 @@ function devconnect_monetization_purchase_plan_form_submit(&$form, &$form_state)
     try {
       $developer_rate_plan->save('update');
       drupal_set_message(t('Plan is scheduled to end at the end of @date, and any refunds will be triggered at that point', array('@date' => $form_state['values']['start_date'])), 'status');
-      CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_or_company_id, FALSE);
+      CacheFactory::getCacheManager()->clear('developer_accepted_rateplan:' . $developer_or_company_id, FALSE);
       module_invoke_all('devconnect_monetization_plan_ended', $developer_rate_plan);
     }
     catch (\Apigee\Exceptions\ResponseException $re) {
@@ -726,7 +726,7 @@ function devconnect_monetization_overlap_plan_confirm_form_submit($form, &$form_
       '@plan' => $rate_plan->getDisplayName(),
     );
     drupal_set_message(t('@package, @plan has been purchased.', $vars), 'status');
-    CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_or_company_id, FALSE);
+    CacheFactory::getCacheManager()->clear('developer_accepted_rateplan:' . $developer_or_company_id, FALSE);
     module_invoke_all('devconnect_monetization_plan_purchased', $developer_rate_plan);
 
     $modules = module_implements('redirect_after_override_plan');
@@ -1256,7 +1256,7 @@ function devconnect_monetization_remove_plan_from_user($package, $dev_rate_plan_
         if ($start_date > $today) {
           $dev_rate_plan->delete($dev_rate_plan_id);
           drupal_set_message(t('Your plan has been removed.'), 'status');
-          CacheFactory::getCacheManager(NULL)->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
+          CacheFactory::getCacheManager()->clear('developer_accepted_rateplan:' . $developer_id, FALSE);
           module_invoke_all('devconnect_monetization_plan_removed', $dev_rate_plan);
           drupal_goto('users/' . $GLOBALS['user']->uid . '/monetization/packages/purchased');
         }
