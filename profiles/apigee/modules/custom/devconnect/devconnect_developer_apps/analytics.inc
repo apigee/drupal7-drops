@@ -287,7 +287,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
   foreach ($data as $env => $time_points) {
     $chart_data['series'][] = array(
       'name' => $env,
-      'data' => array_values($time_points)
+      'data' => array_values($time_points),
     );
   }
 
@@ -315,7 +315,7 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name, $
   $dca = _devconnect_developer_apps_analytics_api_client();
 
   $metrics = _devconnect_developer_apps_analytics_metrics();
-  $units = array('second', 'minute', 'hour', 'day', 'week', 'month','year');
+  $units = array('second', 'minute', 'hour', 'day', 'week', 'month', 'year');
 
   if (isset($_GET['metric']) && isset($metrics[$_GET['metric']])) {
     $metric = $_GET['metric'];
@@ -444,11 +444,21 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name, $
   // Pass the $info to drupal_alter to be modified by other modules.
   drupal_alter('devconnect_developer_app_analytics_datapoints_params', $info);
 
+  $developer_or_company_id = devconnect_user_get_developer_id($user);
+  // If the analytics are for a company app, we need to filter by company instead
+  // of developer
+  if (module_exists('apigee_company')) {
+    $company = apigee_company_get_current_context_company();
+    // If a user is in the company context then load the plans purchased by the company.
+    if (!empty($company)) {
+      $developer_or_company_id = $company->name;
+    }
+  }
+
   try {
-    $developer_id = devconnect_user_get_developer_id($user);
     // We pass the altered version of the parameters to the call to get the
     // analytics data.
-    $datapoints = $dca->getByAppName($developer_id, $app_name, $info['metric'], $info['start'], $info['end'], $info['unit'], $info['metric'], $info['order']);
+    $datapoints = $dca->getByAppName($developer_or_company_id, $app_name, $info['metric'], $info['start'], $info['end'], $info['unit'], $info['metric'], $info['order']);
   } catch (Apigee\Exceptions\ParameterException $e) {
     watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
     return FALSE;

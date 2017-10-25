@@ -1240,11 +1240,20 @@ function devconnect_monetization_insufficient_top_up_form_output($form) {
 function devconnect_monetization_remove_plan_from_user($package, $dev_rate_plan_id) {
   $config = devconnect_default_org_config();
   $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-
   $dev_rate_plan_id = rawurldecode($dev_rate_plan_id);
+
+  // If a user is in the company context then load the plans purchased by the company.
+  $company = apigee_company_get_current_context_company();
+  if (!empty($company)) {
+    $developer_or_company_id = $company->name;
+  }
+  else {
+    $developer_or_company_id = _devconnect_monetization_get_developer_id(TRUE);
+  }
+
   try {
 
-    $dev_rate_plan = new DeveloperRatePlan($developer_id, $config);
+    $dev_rate_plan = new DeveloperRatePlan($developer_or_company_id, $config);
     $dev_rate_plans = $dev_rate_plan->getList();
 
     /** @var Apigee\Mint\DeveloperRatePlan $dev_rate_plan */

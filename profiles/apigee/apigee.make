@@ -67,7 +67,7 @@ projects[bugherd][version] = "1.0-beta4"
 
 projects[captcha][type] = "module"
 projects[captcha][subdir] = "contrib"
-projects[captcha][version] = "1.4"
+projects[captcha][version] = "1.5"
 
 ; Deprecated
 projects[cck_phone][type] = "module"
@@ -490,7 +490,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.14"
+projects[bootstrap][version] = "3.15"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
@@ -803,7 +803,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.16.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.17.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"

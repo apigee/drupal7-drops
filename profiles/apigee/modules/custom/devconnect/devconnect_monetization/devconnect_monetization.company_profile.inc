@@ -121,7 +121,9 @@ function devconnect_monetization_company_details_form($form, &$form_state, $deve
   }
 
   if (!isset($address)) {
-    $address = new Address(array('country' => 'US', 'isPrimary' => TRUE));
+    // Use the default country from the Drupal Locale settings.
+    $default_country = variable_get('site_default_country', '');
+    $address = new Address(array('country' => $default_country, 'isPrimary' => TRUE));
   }
 
   $form['billing_address'] = array(

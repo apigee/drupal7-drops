@@ -30,7 +30,7 @@ regions[frontpage_panel_right] = Frontpage Panel Right
 
 ; Settings
 ; --------------
-settings[bootstrap_navbar_position] = 'fixed-top'
+settings[bootstrap_navbar_position] = 'static-top'
 settings[bootstrap_navbar_inverse] = 1
 settings[bootstrap_tooltip_placement] = 'top'
 settings[bootstrap_region_well-sidebar_second] = 'well'

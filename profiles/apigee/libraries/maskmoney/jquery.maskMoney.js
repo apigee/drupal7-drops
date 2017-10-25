@@ -6,9 +6,23 @@
         $.browser.webkit = /webkit/.test(navigator.userAgent.toLowerCase());
         $.browser.opera = /opera/.test(navigator.userAgent.toLowerCase());
         $.browser.msie = /msie/.test(navigator.userAgent.toLowerCase());
+        $.browser.device = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
     }
 
-    var methods = {
+    var defaultOptions = {
+                prefix: "",
+                suffix: "",
+                affixesStay: true,
+                thousands: ",",
+                decimal: ".",
+                precision: 2,
+                allowZero: false,
+                allowNegative: false,
+                doubleClickSelection: true,
+                allowEmpty: false,
+                bringCaretAtEndOnFocus: true
+            },
+		methods = {
         destroy: function () {
             $(this).unbind(".maskMoney");
 
@@ -56,19 +70,19 @@
             });
         },
 
+		unmaskedWithOptions: function () {
+            return this.map(function () {
+                var value = ($(this).val() || "0"),
+					settings = $(this).data("settings") || defaultOptions,
+					regExp = new RegExp((settings.thousandsForUnmasked || settings.thousands), "g");
+                value = value.replace(regExp, "");
+                return parseFloat(value);
+            });
+        },
+
         init: function (parameters) {
-            parameters = $.extend({
-                prefix: "",
-                suffix: "",
-                affixesStay: true,
-                thousands: ",",
-                decimal: ".",
-                precision: 2,
-                allowZero: false,
-                allowNegative: false,
-                doubleClickSelection: true,
-                allowEmpty: false
-            }, parameters);
+			// the default options should not be shared with others
+            parameters = $.extend($.extend({}, defaultOptions), parameters);
 
             return this.each(function () {
                 var $input = $(this), settings,
@@ -175,7 +189,7 @@
                     newLen = $input.val().length;
                     // If the we're using the reverse option,
                     // do not put the cursor at the end of
-                    // the input. The reverse option allows 
+                    // the input. The reverse option allows
                     // the user to input text from left to right.
                     if (!settings.reverse) {
                         startPos = startPos - (originalLen - newLen);
@@ -188,8 +202,22 @@
                     if (settings.allowEmpty && value === "") {
                         return;
                     }
-                    if (settings.precision > 0 && value.indexOf(settings.decimal) < 0) {
-                        value += settings.decimal + new Array(settings.precision + 1).join(0);
+                    var isNumber = !isNaN(value);
+					var decimalPointIndex = isNumber? value.indexOf("."): value.indexOf(settings.decimal);
+                    if (settings.precision > 0) {
+						if(decimalPointIndex < 0){
+							value += settings.decimal + new Array(settings.precision + 1).join(0);
+						}
+						else {
+							// If the following decimal part dosen't have enough length against the precision, it needs to be filled with zeros.
+							var integerPart = value.slice(0, decimalPointIndex),
+								decimalPart = value.slice(decimalPointIndex + 1);
+							value = integerPart + settings.decimal + decimalPart +
+									new Array((settings.precision + 1) - decimalPart.length).join(0);
+						}
+                    } else if (decimalPointIndex > 0) {
+                        // if the precision is 0, discard the decimal part
+                        value = value.slice(0, decimalPointIndex);
                     }
                     $input.val(maskValue(value, settings));
                 }
@@ -212,6 +240,12 @@
                         e.preventDefault();
                     } else { // old internet explorer
                         e.returnValue = false;
+                    }
+                }
+
+                function fixMobile() {
+                    if ($.browser.device) {
+                        $input.attr("type", "tel");
                     }
                 }
 
@@ -365,7 +399,7 @@
 
                     if (!!settings.selectAllOnFocus) {
                         input.select();
-                    } else if (input.createTextRange) {
+                    } else if (input.createTextRange && settings.bringCaretAtEndOnFocus) {
                         textRange = input.createTextRange();
                         textRange.collapse(false); // set the cursor at the end of the input
                         textRange.select();
@@ -417,11 +451,11 @@
                     var input = $input.get(0),
                         length;
                     if (!!settings.selectAllOnFocus) {
-                        // selectAllOnFocus will be handled by 
+                        // selectAllOnFocus will be handled by
                         // the focus event. The focus event is
                         // also fired when the input is clicked.
                         return;
-                    } else if (input.setSelectionRange) {
+                    } else if (input.setSelectionRange && settings.bringCaretAtEndOnFocus) {
                         length = $input.val().length;
                         input.setSelectionRange(length, length);
                     } else {
@@ -433,7 +467,7 @@
                     var input = $input.get(0),
                         start,
                         length;
-                    if (input.setSelectionRange) {
+                    if (input.setSelectionRange && settings.bringCaretAtEndOnFocus) {
                         length = $input.val().length;
                         start = settings.doubleClickSelection ? 0 : length;
                         input.setSelectionRange(start, length);
@@ -442,6 +476,7 @@
                     }
                 }
 
+                fixMobile();
                 $input.unbind(".maskMoney");
                 $input.bind("keypress.maskMoney", keypressEvent);
                 $input.bind("keydown.maskMoney", keydownEvent);
@@ -492,6 +527,13 @@
         newValue = buildIntegerPart(integerPart, negative, settings);
 
         if (settings.precision > 0) {
+            if(!isNaN(value) && value.indexOf(".")){
+                var precision = value.substr(value.indexOf(".") + 1);
+                onlyNumbers += new Array((settings.precision + 1) - precision.length).join(0);
+                integerPart = onlyNumbers.slice(0, onlyNumbers.length - settings.precision);
+                newValue = buildIntegerPart(integerPart, negative, settings);
+            }
+
             decimalPart = onlyNumbers.slice(onlyNumbers.length - settings.precision);
             leadingZeros = new Array((settings.precision + 1) - decimalPart.length).join(0);
             newValue += settings.decimal + leadingZeros + decimalPart;

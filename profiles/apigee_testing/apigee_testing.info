@@ -13,3 +13,4 @@ dependencies[] = list
 dependencies[] = me
 dependencies[] = options
 dependencies[] = token
+dependencies[] = taxonomy

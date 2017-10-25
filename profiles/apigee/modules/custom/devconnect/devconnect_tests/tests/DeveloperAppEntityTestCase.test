@@ -52,7 +52,7 @@ class DeveloperAppEntityTestCase extends DevconnectTestCase {
     $config = devconnect_default_org_config();
     $org = new Apigee\ManagementAPI\Organization($config);
     try {
-      $org->load('testorama');
+      $org->load('apiportal');
     } catch (Exception $e) {
       $this->fail('Cannot access Edge');
       return;
