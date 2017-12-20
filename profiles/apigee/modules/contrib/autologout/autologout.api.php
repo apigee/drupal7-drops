@@ -51,3 +51,10 @@ function hook_autologout_refresh_only() {
  function hook_auto_logout_session_reset($user) {
    $myOtherIframeApplication->resetSession($user->uid);
  }
+
+/**
+ * Let other modules modify the timeout value.
+ */
+function hook_autologout_timeout_alter(&$timeout) {
+  $timeout = 1800;
+}

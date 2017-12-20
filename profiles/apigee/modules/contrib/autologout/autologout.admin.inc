@@ -77,7 +77,7 @@ function autologout_settings() {
     '#type' => 'checkbox',
     '#title' => t('Use alternate logout method'),
     '#default_value' => variable_get('autologout_use_alt_logout_method', FALSE),
-    '#description' => t('Normally when auto logout is triggered, it is done via an AJAX service call. Sites that use an SSO provider, such as CAS, are likely to see this request fail with the error "Origin is not allowed by Access-Control-Allow-Origin". The alternate appraoch is to have the auto logout trigger a page redirect to initiate the logout process instead.'),
+    '#description' => t('Normally when auto logout is triggered, it is done via an AJAX service call. Sites that use an SSO provider, such as CAS, are likely to see this request fail with the error "Origin is not allowed by Access-Control-Allow-Origin". The alternate approach is to have the auto logout trigger a page redirect to initiate the logout process instead.'),
   ); 
 
   $form['autologout_message']  = array(
@@ -85,7 +85,9 @@ function autologout_settings() {
     '#title' => t('Message to display in the logout dialog'),
     '#default_value' => variable_get('autologout_message', 'Your session is about to expire. Do you want to reset it?'),
     '#size' => 40,
-    '#description' => t('This message must be plain text as it might appear in a JavaScript confirm dialog.'),
+    '#description' => t('This message must be plain text as it might appear in a JavaScript confirm dialog.')
+      . ' ' . t('This text will passed through <a href="!url">filter_xss</a>.',
+        array('!url' => "https://api.drupal.org/api/drupal/includes%21common.inc/function/filter_xss/7.x")),
   );
 
   $form['autologout_inactivity_message']  = array(
@@ -93,7 +95,9 @@ function autologout_settings() {
     '#title' => t('Message to display to the user after they are logged out.'),
     '#default_value' => variable_get('autologout_inactivity_message', 'You have been logged out due to inactivity.'),
     '#size' => 40,
-    '#description' => t('This message is displayed after the user was logged out due to inactivity. You can leave this blank to show no message to the user.'),
+    '#description' => t('This message is displayed after the user was logged out due to inactivity. You can leave this blank to show no message to the user.')
+      . ' ' . t('This text will passed through <a href="!url">filter_xss</a>.',
+        array('!url' => "https://api.drupal.org/api/drupal/includes%21common.inc/function/filter_xss/7.x")),
   );
 
   $form['autologout_use_watchdog'] = array(
@@ -153,7 +157,6 @@ function autologout_settings() {
  */
 function autologout_settings_validate($form, &$form_state) {
   $max_timeout = $form_state['values']['autologout_max_timeout'];
-  $role_timeout = _autologout_get_role_timeout();
 
   // Validate timeouts for each role.
   foreach (user_roles(TRUE) as $key => $role) {

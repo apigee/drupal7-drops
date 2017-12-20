@@ -590,3 +590,197 @@ class AutologoutAjaxTestCase extends DrupalWebTestCase {
     $this->assertEqual($result[1]->command, 'alert', t('When logged out, autologout_ajax_set_last returns the normal Drupal ajax alert.'));
   }
 }
+
+/**
+ * Tests the autologout's features.
+ */
+class AutoLogoutByRoleTestCase extends DrupalWebTestCase {
+
+  /**
+   * User with admin rights.
+   */
+  protected $user;
+
+  /**
+   * A role for the user.
+   */
+  protected $role;
+
+  /**
+   * getInfo() returns properties that are displayed in the test selection form.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Autologout Tests by role',
+      'description' => 'Ensure that the auto logout module functions as expected for a normal (non admin) user with a role',
+      'group' => 'Autologout',
+    );
+  }
+
+  /**
+   * setUp() performs any pre-requisite tasks that need to happen.
+   */
+  public function setUp() {
+    // Enable any modules required for the test.
+    parent::setUp('autologout');
+
+    // Create and log in our privileged user.
+    $this->user = $this->drupalCreateUser(array(
+      'access content',
+    ));
+
+    $this->role = (object) array(
+      'name' => 'test user role',
+    );
+
+    user_role_save($this->role);
+
+    $this->user->roles[$this->role->rid] = $this->role->name;
+    user_save($this->user);
+
+    $this->drupalLogin($this->user);
+
+    // Set the timeout period to 5 seconds.
+    variable_set('autologout_padding', 5);
+  }
+
+  /**
+   * Check the role timeout has precedence over the basic timeout.
+   */
+  public function testAutologoutTimeoutByRoleWhenRoleTimeoutIsLessThanStandard() {
+
+    // Standard logout time is 60 seconds.
+    variable_set("autologout_timeout", '60');
+
+    // Enable role based logouts.
+    variable_set("autologout_role_logout", '1');
+
+    // Role logout time is set to 10 seconds.
+    variable_set("autologout_role_{$this->role->rid}", '1');
+    variable_set("autologout_role_{$this->role->rid}_timeout", '10');
+
+    $user_timeout = _autologout_get_user_timeout($this->user->uid);
+    $roles = _autologout_get_role_timeout();
+
+    $this->assertEqual($user_timeout, 10, "The users timeout {$user_timeout} is equal to their role timeout of 10");
+
+    // Check that the user can access the page after login.
+    $this->drupalGet('/');
+    $this->assertText(t('Log out'), t('User is still logged in.'));
+
+    // Wait for timeout period to elapse.
+    sleep(16);
+
+    // Check we are now logged out.
+    $this->drupalGet('/');
+    $this->assertNoText(t('Log out'), t('User is no longer logged in.'));
+    $this->assertText(t('You have been logged out due to inactivity.'), t('User sees inactivity message.'));
+  }
+
+  /**
+   * Check the role timeout has precedence over the basic timeout.
+   */
+  public function testAutoLogoutTimeoutByRoleWhenRoleTimeoutIsGreaterThanStandard() {
+    // Standard logout time is 10 seconds.
+    variable_set("autologout_timeout", '10');
+
+    // Enable role based logouts.
+    variable_set("autologout_role_logout", '1');
+
+    // Role logout time is set to 15 seconds.
+    variable_set("autologout_role_{$this->role->rid}", '1');
+    variable_set("autologout_role_{$this->role->rid}_timeout", '15');
+
+    $user_timeout = _autologout_get_user_timeout($this->user->uid);
+    $this->assertEqual($user_timeout, 15, "The users timeout {$user_timeout} is equal to their role timeout of 15");
+
+    // Check that the user can access the page after initial login.
+    $this->drupalGet('/');
+    $this->assertText(t('Log out'), t('User is still logged in.'));
+
+    // Wait for the standard timeout period to elapse.
+    sleep(16);
+
+    // Check that the user is still logged in.
+    $this->drupalGet('/');
+    $this->assertText(t('Log out'), t('User is still logged in.'));
+
+    // Wait for the role timeout period to elapse.
+    sleep(21);
+
+    // Check we are now logged out.
+    $this->drupalGet('/');
+    $this->assertNoText(t('Log out'), t('User is no longer logged in.'));
+    $this->assertText(t('You have been logged out due to inactivity.'), t('User sees inactivity message.'));
+  }
+
+  /**
+   * Check the role timeout prescendence works when multiple roles have timeouts.
+   */
+  public function testAutoLogoutTimeoutByRoleWhenAuthenticatedRoleHasATimeoutAuthenticatedIsLargerThanRole() {
+    // Standard logout time is 60 seconds.
+    variable_set("autologout_timeout", '60');
+
+    // Enable role based logouts.
+    variable_set("autologout_role_logout", '1');
+
+    // Role logout time is set to 10 seconds.
+    variable_set("autologout_role_{$this->role->rid}", '1');
+    variable_set("autologout_role_{$this->role->rid}_timeout", '10');
+
+    // Authenticated role has its own logout at 20 seconds.
+    $authenticated_role = user_role_load_by_name('authenticated user');
+    variable_set("autologout_role_{$authenticated_role->rid}", '1');
+    variable_set("autologout_role_{$authenticated_role->rid}_timeout", '20');
+
+    $user_timeout = _autologout_get_user_timeout($this->user->uid);
+    $this->assertEqual($user_timeout, 10, "The users timeout {$user_timeout} is equal to their role timeout of 10");
+
+    // Check that the user can access the page after initial login.
+    $this->drupalGet('/');
+    $this->assertText(t('Log out'), t('User is still logged in.'));
+
+    // Wait for the role timeout period to elapse.
+    sleep(16);
+
+    // Check we are now logged out.
+    $this->drupalGet('/');
+    $this->assertNoText(t('Log out'), t('User is no longer logged in.'));
+    $this->assertText(t('You have been logged out due to inactivity.'), t('User sees inactivity message.'));
+  }
+
+  /**
+   * Check the role timeout prescendence works when multiple roles have timeouts.
+   */
+  public function testAutoLogoutTimeoutByRoleWhenAuthenticatedRoleHasATimeoutAuthenticatedIsSmallerThanRole() {
+    // Standard logout time is 60 seconds.
+    variable_set("autologout_timeout", '60');
+
+    // Enable role based logouts.
+    variable_set("autologout_role_logout", '1');
+
+    // Role logout time is set to 20 seconds.
+    variable_set("autologout_role_{$this->role->rid}", '1');
+    variable_set("autologout_role_{$this->role->rid}_timeout", '20');
+
+    // Authenticated role has its own logout at 10 seconds.
+    $authenticated_role = user_role_load_by_name('authenticated user');
+    variable_set("autologout_role_{$authenticated_role->rid}", '1');
+    variable_set("autologout_role_{$authenticated_role->rid}_timeout", '10');
+
+    $user_timeout = _autologout_get_user_timeout($this->user->uid);
+    $this->assertEqual($user_timeout, 10, "The users timeout {$user_timeout} is equal to the authenticated timeout of 10");
+
+    // Check that the user can access the page after initial login.
+    $this->drupalGet('/');
+    $this->assertText(t('Log out'), t('User is still logged in.'));
+
+    // Wait for the authenticated timeout period to elapse.
+    sleep(16);
+
+    // Check we are now logged out.
+    $this->drupalGet('/');
+    $this->assertNoText(t('Log out'), t('User is no longer logged in.'));
+    $this->assertText(t('You have been logged out due to inactivity.'), t('User sees inactivity message.'));
+  }
+}

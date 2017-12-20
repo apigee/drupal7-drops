@@ -251,6 +251,8 @@ function theme_autologout_block($variables) {
  * @param int $max_timeout
  *   (optional) A maximum timeout. If not set the current system
  *   default maximum is used.
+ *
+ * @return bool
  */
 function autologout_timeout_validate($timeout, $max_timeout = NULL) {
   $validate = FALSE;
@@ -280,7 +282,6 @@ function autologout_form_user_profile_form_alter(&$form, $form_state) {
     return;
   }
 
-  $user_timeout = _autologout_get_user_timeout();
   global $user;
   $current_uid = $user->uid;
   $userid = $form_state['user']->uid;
@@ -313,7 +314,7 @@ function _autologout_user_uid_timeout_validate($element, &$form_state) {
   $max_timeout = variable_get('autologout_max_timeout', 172800);
   $timeout = $element['#value'];
 
-  // Set error if it has a value that isnt strictly a number between 60 and max.
+  // Set error if it has a value that isn't strictly a number between 60 and max.
   if ($timeout != "" && ($timeout < 60 || $timeout > $max_timeout || !is_numeric($timeout))) {
     form_error($element, t('The timeout must be an integer greater than 60, and less then %max.', array('%max' => $max_timeout)));
   }
@@ -333,7 +334,7 @@ function autologout_user_profile_submit(&$form, &$form_state) {
   }
 
   // Access is reused here as a security measure. Not only will the element not
-  // display but wont sumbit without access.
+  // display but wont submit without access.
   if ($access) {
     $userid = $form_state['user'] -> uid;
     $val = trim($form_state['values']['autologout_user_' . $userid]);
@@ -383,7 +384,7 @@ function autologout_init() {
   $settings = array(
     'timeout' => $refresh_only ? ($timeout * 500) : ($timeout * 1000),
     'timeout_padding' => $timeout_padding * 1000,
-    'message' => $msg,
+    'message' => filter_xss($msg),
     'redirect_url' => url($redirect_url, array('query' => $redirect_query)),
     'title' => t('@name Alert', array('@name' => variable_get('site_name', 'Drupal'))),
     'refresh_only' => $refresh_only,
@@ -519,8 +520,14 @@ function autologout_ahah_set_last() {
 /**
  * AJAX callback that performs the actual logout and redirects the user.
  */
-function autologout_ahah_logout() {
+function autologout_ahah_logout($type = 'ajax') {
   _autologout_logout();
+
+  if ($type !== 'ajax') {
+    $redirect_url = variable_get('autologout_redirect_url', 'user/login');
+    drupal_goto($redirect_url);
+  }
+
   drupal_exit();
 }
 
@@ -583,6 +590,7 @@ function _autologout_get_user_timeout($uid = NULL) {
 
   if (is_numeric($user_timeout = variable_get('autologout_user_' . $user->uid, FALSE))) {
     // User timeout takes precedence.
+    drupal_alter('autologout_timeout', $user_timeout);
     return $user_timeout;
   }
 
@@ -601,12 +609,16 @@ function _autologout_get_user_timeout($uid = NULL) {
     // Assign the lowest timeout value to be session timeout value.
     if (!empty($output)) {
       // If one of the user's roles has a unique timeout, use this.
-      return min($output);
+      $timeout = min($output);
+      drupal_alter('autologout_timeout', $timeout);
+      return $timeout;
     }
   }
 
   // If no user or role override exists, return the default timeout.
-  return variable_get('autologout_timeout', 1800);
+  $timeout = variable_get('autologout_timeout', 1800);
+  drupal_alter('autologout_timeout', $timeout);
+  return $timeout;
 }
 
 /**
@@ -649,7 +661,7 @@ function _autologout_inactivity_message() {
   $message = variable_get('autologout_inactivity_message', 'You have been logged out due to inactivity.');
   drupal_alter('autologout_message', $message);
   if (!empty($message)) {
-    drupal_set_message($message);
+    drupal_set_message(filter_xss($message));
   }
 }
 
@@ -706,7 +718,6 @@ function autologout_user_login(&$edit, $account) {
     return;
   }
 
-  $now = time();
   $timeout_padding = variable_get('autologout_padding', 10);
   $timestamp = time() - ($timeout + $timeout_padding);
 

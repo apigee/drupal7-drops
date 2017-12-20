@@ -146,9 +146,9 @@ function devconnect_drush_help($section) {
     case 'drush:devconnect-get-auth':
       return dt('This command displays the username and password which Dev Portal uses to communicate with the Edge backend.');
     case 'drush:devconnect-set-org':
-      return dt('This command displays the configured Edge organization.');
-    case 'drush:devconnect-get-org':
       return dt('This command sets the Edge organization name.');
+    case 'drush:devconnect-get-org':
+      return dt('This command displays the configured Edge organization name.');
     case 'drush:devconnect-set-endpoint':
       return dt('This command sets the Edge endpoint URL.');
     case 'drush:devconnect-get-endpoint':

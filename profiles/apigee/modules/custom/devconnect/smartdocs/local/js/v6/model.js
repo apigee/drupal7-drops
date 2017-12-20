@@ -664,7 +664,7 @@ Apigee.APIModel.Methods = function() {
             if (emailString.length > 12) {
               emailString = emailString.substring(0,12) +"..."; // Trim the email string.
             }
-            jQuery("#inputEmail").val(emailString);
+            jQuery("#inputEmail").val(userEmail);
             jQuery("#inputPassword").val(jQuery.base64Decode(basicAuthCredentials.split("@@@")[2].split(" ")[1]).split(":")[1]);
             basicAuth = basicAuthCredentials.split("@@@")[2]; // Store to local variable, for further reference.
             if (sessionStorage.selectedAuthScheme) {
