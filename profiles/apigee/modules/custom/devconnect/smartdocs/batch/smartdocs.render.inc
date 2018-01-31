@@ -81,16 +81,7 @@ function smartdocs_render($model, $revision, array $selected, array $options, $r
                   'path' => $resource['path'],
                 ),
                 array(
-                  'description' => $method['description'],
                   'id' => $method['id'],
-                  'displayName' => empty($method['displayName']) ? $method['name'] : $method['displayName'],
-                  'name' => $method['name'],
-                  'parameters' => $method['parameters'],
-                  'path' => $method['path'],
-                  'response' => $method['response'],
-                  'security' => $method['security'],
-                  'tags' => $method['tags'],
-                  'verb' => $method['verb'],
                 ),
                 $publish,
               ),
@@ -178,8 +169,8 @@ function smartdocs_render_nodes(array $model_array, array $revision_array, array
     $start = microtime(TRUE);
     // Reload method in order to pick up tags.
     $method = new Method(devconnect_default_org_config(), $model_array['id'], $revision_array['id'], $resource_array['id']);
-    Method::fromArray($method, $method_array);
-    $method->load();
+    $method->load($method_array['id']);
+    $method_array = $method->toArray(TRUE);
     $method_array['tags'] = $method->getTags();
     $method_array['body'] = $method->getBody();
     if (variable_get('smartdocs_log_transaction_time', 0)) {

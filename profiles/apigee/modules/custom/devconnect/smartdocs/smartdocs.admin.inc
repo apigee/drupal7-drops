@@ -2832,6 +2832,8 @@ function smartdocs_revision_detail_submit($form, &$form_state) {
 
       module_load_include('inc', 'smartdocs', 'batch/smartdocs.render');
       batch_set(smartdocs_render($model_array, $revision_array, $selected, $options, FALSE));
+      // Start batch process manually so FAPI will not include form state, which may be very large.
+      batch_process(drupal_get_destination());
       break;
 
     case 'publish_nodes':

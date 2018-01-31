@@ -381,6 +381,16 @@ function devconnect_monetization_company_details_form_submit_company(&$form, &$f
   );
   $company_attributes['MINT_DEVELOPER_ADDRESS'] = json_encode($address);
 
+
+  // Add custom attributes back in.
+  $original_keys = array_keys($company_entity->attributes);
+  $new_keys = array_keys($company_attributes);
+
+  $custom_attributes = array_diff($original_keys, $new_keys);
+  foreach ($custom_attributes as $key) {
+    $company_attributes[$key] = $company_entity->attributes[$key];
+  }
+
   $company_entity->attributes = $company_attributes;
 
   // Create the company entity.

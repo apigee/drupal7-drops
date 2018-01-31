@@ -76,7 +76,6 @@ dependencies[] = rdf
 dependencies[] = redirect
 dependencies[] = search
 dependencies[] = smartdocs
-dependencies[] = sumo
 dependencies[] = system
 dependencies[] = taxonomy
 dependencies[] = text
@@ -89,6 +88,6 @@ dependencies[] = views_ui
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20171220.1318
-version = "17.12.20.00"
+; Added by build script on 20180131.1541
+version = "18.01.31.00"
     

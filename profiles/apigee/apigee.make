@@ -160,7 +160,7 @@ projects[entity][version] = "1.8"
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
 projects[environment_indicator][subdir] = "contrib"
-projects[environment_indicator][version] = "2.8"
+projects[environment_indicator][version] = "2.9"
 
 ; Enabled during profile install.
 projects[faq][type] = "module"
@@ -312,7 +312,7 @@ projects[metatag][version] = "1.22"
 ; Enabled during profile install.
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
-projects[me][version] = "1.3"
+projects[me][version] = "1.4"
 
 ; Deprecated
 projects[migrate][type] = "module"
@@ -402,6 +402,7 @@ projects[strongarm][type] = "module"
 projects[strongarm][subdir] = "contrib"
 projects[strongarm][version] = "2.0"
 
+; Deprecated
 projects[sumo][type] = "module"
 projects[sumo][subdir] = "contrib"
 projects[sumo][download][type] = "git"

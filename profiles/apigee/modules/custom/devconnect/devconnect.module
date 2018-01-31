@@ -449,16 +449,3 @@ function devconnect_devconnect_monitor_event_info() {
     ),
   );
 }
-
-/**
- * Implements hook_sumo_site_id_alter().
- *
- * Appends org name to the end of the X-Sumo-Name header value when logging
- * to Sumo Logic.
- */
-function devconnect_sumo_site_id_alter(&$site_id) {
-  $config = devconnect_default_org_config();
-  if (!empty($config->orgName)) {
-    $site_id .= '.' . $config->orgName;
-  }
-}
