@@ -155,7 +155,7 @@ projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues
 ; Enabled during profile install.
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
-projects[entity][version] = "1.8"
+projects[entity][version] = "1.9"
 
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
