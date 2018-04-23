@@ -482,7 +482,7 @@ function devconnect_mint_worldpay_transaction_process($order, array $payment_met
 
   $transaction->remote_id = $data['orderKey'];
 
-  $transaction->amount = commerce_currency_decimal_to_amount($data['paymentAmount'], strtoupper($data['paymentCurrency']));
+  $transaction->amount = $data['paymentAmount'];
 
   $transaction->currency_code = $data['paymentCurrency'];
   $transaction->payload[REQUEST_TIME] = $data;

@@ -1,0 +1,118 @@
+<?php
+/**
+ * @file
+ * Find permission common to selected roles.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function find_perm_menu() {
+  $items = array();
+
+  $items['admin/people/permissions/find'] = array(
+    'title' => 'Find permission',
+    'description' => 'Find permission common to selected roles.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('find_perm_form'),
+    'access arguments' => array('administer permissions'),
+    'type' => MENU_LOCAL_TASK,
+    );
+
+  return $items;
+}
+
+/**
+ * Module settings form.
+ */
+function find_perm_form($form, &$form_state) {
+  $form['#attached']['css'] = array(
+    drupal_get_path('module', 'find_perm') . '/find_perm.css',
+  );
+
+  if (isset($form['#perms'])) {
+    $perms = $form['#perms'];
+  }
+  else {
+    $perms = module_invoke_all('permission');
+    $form['#perms'] = $perms;
+  }
+
+  $roles = user_roles();
+  asort($roles);
+  $form['#roles'] = $roles;
+  $admin = variable_get('user_admin_role', 0);
+
+  $form['roles'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $roles,
+    '#title' => t('Roles'),
+    '#default_value' => array($admin => $admin),
+    );
+  $form['roles']['#description'] = t('Select the roles for which you seek a common permission.')
+    . ' '
+    . t('Note, since the "@admin" role typically has all permissions, we cannot determine exclusive permissions without it.',
+      array('@admin' => $roles[$admin]))
+    ;
+
+  if (isset($form_state['storage']['common'])) {
+    $list = '<div class="common-permissions">'
+      . theme('item_list', array(
+        'items' => $form_state['storage']['common'],
+        'title' => t('Permissions in common'),
+        ))
+      . '<div class="description">'
+      . t('Items appearing <span class="exclusive">like this</span> are exclusive to the selected roles.')
+      . '</div></div>';
+    $form['common'] = array(
+      '#type' => 'markup',
+      '#markup' => $list,
+      );
+  }
+
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array('#type' => 'submit', '#value' => t('Find common permissions'));
+
+  return $form;
+}
+
+/**
+ * Module settings form submission handler.
+ */
+function find_perm_form_submit($form, &$form_state) {
+  $roles = $form['#roles'];
+  $perms = $form['#perms'];
+
+  $selected = array_filter($form_state['values']['roles']);
+  $which = array_intersect_key($roles, $selected);
+
+  $perm_query = "SELECT permission FROM {role_permission} WHERE rid = :rid ";
+  $common = array_keys($perms);
+
+  foreach ($selected as $rid) {
+    $permission = db_query($perm_query, array(':rid' => $rid))->fetchCol();
+    $common = array_intersect($common, $permission);
+  }
+
+  $query = "SELECT DISTINCT permission FROM {role_permission} "
+    . "WHERE rid NOT IN (:rids) AND permission IN (:perms) ";
+  $others = db_query($query, array(
+    ':rids' => $selected,
+    ':perms' => $common,
+    ))->fetchCol();
+
+  $exclusive = array_diff($common, $others);
+
+  $common_titles = $common;
+  foreach ($common as $rid => $name) {
+    $common_titles[$rid] = array(
+      'data' => strip_tags($perms[$name]['title']),
+      'class' => array((in_array($name, $exclusive) ? 'exclusive' : 'not-exclusive')),
+      );
+  }
+
+  $form_state['storage']['common'] = $common_titles;
+
+
+  $form_state['rebuild'] = TRUE;
+}

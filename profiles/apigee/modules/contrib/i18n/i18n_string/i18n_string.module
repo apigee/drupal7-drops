@@ -620,10 +620,17 @@ function i18n_string_translate_access($string_format, $account = NULL) {
  *   Message if the user cannot translate that string.
  */
 function i18n_string_translate_check_string($i18nstring, $account = NULL) {
-  if (!user_access('translate interface', $account) || !user_access('translate user-defined strings', $account)) {
+  // Check block translation permissions.
+  if ($i18nstring->textgroup == 'blocks') {
+    if (!user_access('translate interface', $account) && !user_access('translate blocks', $account)) {
+      return t('This is a user-defined string within a block. You are not allowed to translate blocks.');
+    }
+  }
+  elseif (!user_access('translate interface', $account) || !user_access('translate user-defined strings', $account)) {
     return t('This is a user-defined string. You are not allowed to translate these strings.');
   }
-  elseif (!empty($i18nstring->format)) {
+
+  if (!empty($i18nstring->format)) {
     if (!i18n_string_allowed_format($i18nstring->format)) {
       $format = filter_format_load($i18nstring->format);
       return t('This string uses the %name text format. Strings with this format are not allowed for translation.', array('%name' => $format->name));

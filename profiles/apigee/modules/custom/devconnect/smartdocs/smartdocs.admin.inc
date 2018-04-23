@@ -679,7 +679,7 @@ function smartdocs_add_model_submit(array $form, array &$form_state) {
         variable_del('smartdocs_custom_template_file');
       }
       else {
-        $path = file_create_url($file->uri);
+        $path = drupal_realpath($file->uri);
       }
 
       // Get custom template content if path is valid.
@@ -763,7 +763,7 @@ function smartdocs_model_exist($name) {
   }
   /** @var Model $model */
   foreach ($models as $model) {
-    if ($model->getName() == $name) {
+    if (strtolower($model->getName()) == strtolower($name)) {
       return TRUE;
     }
   }
@@ -1778,7 +1778,7 @@ function smartdocs_model_settings_submit($form, &$form_state) {
     if (!empty($custom_template_file)) {
       $file = file_load($custom_template_file);
       if ($file !== FALSE) {
-        $custom_path = file_create_url($file->uri);
+        $custom_path = drupal_realpath($file->uri);
         if (file_exists($custom_path) && is_readable($custom_path) && filesize($custom_path) > 0) {
           $path = $custom_path;
         }

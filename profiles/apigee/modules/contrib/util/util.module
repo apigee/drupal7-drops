@@ -67,11 +67,8 @@ function util_page() {
 
   // For now output empty page, this is purely to reserve space for future development
   // and to allow contribs to form_alter onto this page.
-  $form['util'] = array(
-    '#value' => theme('advanced_help_topic', 'util', 'util') . t('The Utility module is a grouping of commonly-needed utilities that are simple to code, everyone wants, but nobody actually codes them.'),
-    );
 
-  $form['clear'] = array(
+  $form['util_clear'] = array(
     '#value' => '<p>Clicking the "Save" button will rebuild the menus.</p>',
     '#prefix' => '<div class="clear-block">',
     '#suffix' => '</div>',

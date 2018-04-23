@@ -529,6 +529,9 @@ function devconnect_user_menu_local_tasks_alter(&$data, $router_item, $root_path
           foreach ($menu_item['output'] as $j => $sub_item) {
             switch ($sub_item['#link']['path']) {
               case 'user/%/view':
+                $data['tabs'][$i]['output'][$j]['#link']['title'] = 'View User Profile';
+                break;
+
               case 'user/%/openid':
                 unset($data['tabs'][$i]['output'][$j]);
                 $data['tabs'][$i]['count']--;

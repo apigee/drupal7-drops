@@ -1234,6 +1234,11 @@ function i18n_taxonomy_field_uuid_presave($entity_type, $entity, $field, $instan
  * Implements hook_entity_info_alter().
  */
 function i18n_taxonomy_entity_info_alter(&$entity_info) {
+  if (isset($entity_info['taxonomy_vocabulary'])) {
+    // Add altered vocabulary schema fields.
+    $entity_info['taxonomy_vocabulary']['schema_fields_sql']['base table'][] = 'i18n_mode';
+    $entity_info['taxonomy_vocabulary']['schema_fields_sql']['base table'][] = 'language';
+  }
   if (isset($entity_info['taxonomy_term'])) {
     // Core doesn't provide a label callback for taxonomy terms. By setting one
     // we can use it to return the correct localized term name.

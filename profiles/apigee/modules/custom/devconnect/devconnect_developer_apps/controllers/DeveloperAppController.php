@@ -294,14 +294,14 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         if (array_key_exists('name', $conditions)) {
           try {
             $dev_app->load($conditions['name']);
-            $list += array($dev_app);
+            $list = array_merge($list, array($dev_app));
           } catch (ResponseException $e) {
             self::$lastException = $e;
           }
         }
         else {
           try {
-            $list += $dev_app->getListDetail();
+            $list = array_merge($list, $dev_app->getListDetail());
           }
           catch (ResponseException $e) {
             self::$lastException = $e;
@@ -316,7 +316,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
           $dev_app->usePaging();
         }
         try {
-          $list += $dev_app->listAllApps();
+          $list = array_merge($list, $dev_app->listAllApps());
           if (!$minimalLoad) {
             $this->addListToCache($list, $ids);
           }
@@ -350,7 +350,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
             }
           }
         }
-        $list += array_values($sub_list);
+        $list = array_merge($list, array_values($sub_list));
       }
     }
     if (!$minimalLoad) {

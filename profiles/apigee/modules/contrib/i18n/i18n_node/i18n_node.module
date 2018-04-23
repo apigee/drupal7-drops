@@ -273,7 +273,9 @@ function i18n_node_node_view($node) {
  * Handles links for extended languages. Sets current interface language.
  */
 function i18n_node_node_view_alter(&$build) {
-  $node = $build['#node'];
+  if (isset($build['#node'])) {
+    $node = $build['#node'];
+  }
   // Hide node translation links.
   if (variable_get('i18n_hide_translation_links', 0)) {
     if (isset($build['links']['translation'])) {

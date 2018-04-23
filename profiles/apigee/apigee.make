@@ -41,7 +41,7 @@ projects[advanced_forum][version] = "2.6"
 
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
-projects[apachesolr][version] = "1.8"
+projects[apachesolr][version] = "1.9"
 
 projects[autologout][type] = "module"
 projects[autologout][subdir] = "contrib"
@@ -85,7 +85,7 @@ projects[ckeditor_link][version] = "2.4"
 
 projects[commerce][type] = "module"
 projects[commerce][subdir] = "contrib"
-projects[commerce][version] = "1.13"
+projects[commerce][version] = "1.14"
 
 projects[commerce_custom_line_items][type] = "module"
 projects[commerce_custom_line_items][subdir] = "contrib"
@@ -122,7 +122,7 @@ projects[context_condition_theme][version] = "1.0"
 ; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.12"
+projects[ctools][version] = "1.13"
 
 ; Deprecated
 projects[date][type] = "module"
@@ -139,7 +139,7 @@ projects[diff][version] = "3.3"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
-projects[ds][version] = "2.14"
+projects[ds][version] = "2.15"
 
 ; Deprecated.
 projects[eck][type] = "module"
@@ -182,12 +182,12 @@ projects[features_extra][version] = "1.0"
 ; Enabled during profile install.
 projects[field_group][type] = "module"
 projects[field_group][subdir] = "contrib"
-projects[field_group][version] = "1.5"
+projects[field_group][version] = "1.6"
 
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.4"
+projects[file_entity][version] = "2.16"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -219,7 +219,7 @@ projects[github_connect][patch][2292767] = "https://www.drupal.org/files/issues/
 
 projects[google_analytics][type] = "module"
 projects[google_analytics][subdir] = "contrib"
-projects[google_analytics][version] = "2.3"
+projects[google_analytics][version] = "2.4"
 
 projects[gravatar][type] = "module"
 projects[gravatar][subdir] = "contrib"
@@ -239,7 +239,7 @@ projects[http_client][version] = "2.4"
 ; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
-projects[i18n][version] = "1.18"
+projects[i18n][version] = "1.22"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
@@ -248,11 +248,11 @@ projects[jquery_update][version] = "3.0-alpha5"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
-projects[ldap][version] = "2.2"
+projects[ldap][version] = "2.3"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
-projects[legal][version] = "1.7"
+projects[legal][version] = "1.10"
 
 ; Enabled during profile install.
 projects[libraries][type] = "module"
@@ -288,7 +288,7 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.10"
+projects[media][version] = "2.16"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
@@ -298,7 +298,7 @@ projects[media_ckeditor][version] = "2.5"
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
-projects[media_youtube][version] = "3.5"
+projects[media_youtube][version] = "3.7"
 
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
@@ -317,7 +317,7 @@ projects[me][version] = "1.4"
 ; Deprecated
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"
-projects[migrate][version] = "2.8"
+projects[migrate][version] = "2.9"
 
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
@@ -365,7 +365,7 @@ projects[redirect][version] = "1.0-rc3"
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-projects[redis][version] = "3.15"
+projects[redis][version] = "3.17"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
@@ -382,7 +382,7 @@ projects[services][version] = "3.20"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
-projects[services_views][version] = "1.2"
+projects[services_views][version] = "1.3"
 
 ; Required for OPDK
 projects[siteminder][type] = "module"
@@ -425,7 +425,7 @@ projects[token][version] = "1.7"
 ; Deprecated
 projects[util][type] = "module"
 projects[util][subdir] = "contrib"
-projects[util][version] = "1.0"
+projects[util][version] = "1.1"
 
 ; Enabled on install.
 projects[uuid][type] = "module"
@@ -445,7 +445,7 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.17"
+projects[views][version] = "3.18"
 
 ; Deprecated
 projects[views_accordion][type] = "module"
@@ -468,12 +468,12 @@ projects[views_slideshow][version] = "3.9"
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.15"
+projects[webform][version] = "4.16"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
 projects[wysiwyg_filter][subdir] = "contrib"
-projects[wysiwyg_filter][version] = "1.6-rc3"
+projects[wysiwyg_filter][version] = "1.6-rc9"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
@@ -821,4 +821,3 @@ libraries[syntaxhighlighter][destination] = "libraries"
 libraries[syntaxhighlighter][directory_name] = "syntaxhighlighter-2.x"
 libraries[syntaxhighlighter][download][type] = "file"
 libraries[syntaxhighlighter][download][url] = "https://github.com/syntaxhighlighter/syntaxhighlighter/archive/2.1.364.tar.gz"
-

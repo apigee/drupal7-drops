@@ -1,0 +1,12 @@
+name = Find Perm
+description = Find permission common to selected roles.
+core = 7.x
+dependencies[] = util
+package = Util
+
+; Information added by Drupal.org packaging script on 2018-01-29
+version = "7.x-1.1"
+core = "7.x"
+project = "util"
+datestamp = "1517243592"
+

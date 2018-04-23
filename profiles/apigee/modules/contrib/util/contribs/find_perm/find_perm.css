@@ -1,0 +1,30 @@
+/**
+ * @file
+ * CSS for find_perm.
+ */
+
+#find-perm-form .form-item .form-item {
+  padding: 3px 0 0 0;
+}
+
+#find-perm-form .common-permissions,
+#find-perm-form .form-item-roles {
+  float: left;
+  width: 49.5%;
+}
+
+#find-perm-form .common-permissions .exclusive {
+  font-weight: bold;
+}
+
+#find-perm-form #edit-actions {
+  clear: both;
+}
+
+#find-perm-form .description {
+  color: #000000;
+}
+
+#find-perm-form .common-permissions .description {
+  margin-top: 1.5em;
+}

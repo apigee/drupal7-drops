@@ -5,7 +5,7 @@
  * Functions related to the WYSIWYG editor and the media input filter.
  */
 
-define('MEDIA_WYSIWYG_TOKEN_REGEX', '/\[\[.+?"type":"media".+?\]\]/s');
+define('MEDIA_WYSIWYG_TOKEN_REGEX', '/\[\[\{.*?"type":"media".+?\}\]\]/s');
 
 /**
  * Filter callback for media markup filter.
@@ -238,6 +238,11 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
             $settings[$dimension] = $settings['attributes'][$dimension];
           }
         }
+        // If the element is floated via WYSIWYG editor functionality, delegate
+        // that information to the outer element.
+        if (!empty($css_properties['float'])) {
+          $settings['float'] = $css_properties['float'];
+        }
       }
       foreach (array('title', 'alt') as $field_type) {
         if (isset($settings['attributes'][$field_type])) {
@@ -306,7 +311,12 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
     drupal_add_js(array('mediaDataMap' => array($file->fid => $data)), 'setting');
     $element['#attributes']['data-fid'] = $file->fid;
     $element['#attributes']['data-media-element'] = '1';
-    $element['#attributes']['class'][] = 'media-element';
+    if (is_array($element['#attributes']['class'])) {
+      $element['#attributes']['class'][] = 'media-element';
+    }
+    else {
+      $element['#attributes']['class'] .= 'media-element';
+    }
   }
   else {
     // Display the field elements.
@@ -331,6 +341,11 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
       field_attach_prepare_view('file', array($file->fid => $file), $tag_info['view_mode'], $langcode);
       entity_prepare_view('file', array($file->fid => $file), $langcode);
       $element['content'] += field_attach_view('file', $file, $tag_info['view_mode'], $langcode);
+
+      // Add any float information via an extra class
+      if (!empty($settings['float'])) {
+        $element['content']['file']['#attributes']['class'][] = drupal_html_class('media-float-' . $settings['float']);
+      }
     }
     if (count(element_children($element['content'])) > 1) {
       // Add surrounding divs to group them together.
@@ -342,6 +357,10 @@ function media_wysiwyg_token_to_markup($match, $wysiwyg = FALSE, $langcode = NUL
         'media-element-container',
         'media-' . $element['content']['file']['#view_mode'],
       );
+      // Add the float information to the outer element.
+      if (!empty($settings['float'])) {
+        $element['content']['#attributes']['class'][] = drupal_html_class('media-float-' . $settings['float']);
+      }
       if (variable_get('media_wysiwyg_remove_media_class', FALSE)) {
         $classes = $element['content']['#attributes']['class'];
         $element['content']['#attributes']['class'] = array_diff($classes, array('media'));
