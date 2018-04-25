@@ -288,7 +288,7 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.16"
+projects[media][version] = "2.19"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
