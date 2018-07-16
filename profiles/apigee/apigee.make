@@ -430,7 +430,7 @@ projects[util][version] = "1.1"
 ; Enabled on install.
 projects[uuid][type] = "module"
 projects[uuid][subdir] = "contrib"
-projects[uuid][version] = "1.0"
+projects[uuid][version] = "1.1"
 
 ; Deprecated
 projects[uuid_features][type] = "module"
