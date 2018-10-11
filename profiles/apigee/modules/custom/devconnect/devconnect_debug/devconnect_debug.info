@@ -3,7 +3,7 @@ description = Displays debug logging of all Apigee Edge MGMT calls on the screen
 core = 7.x
 package = Dev Portal - Extensions
 php = 5.3
-version = 7.x-4.26
+version = 7.x-4.27
 
 dependencies[] = devconnect
 dependencies[] = devel

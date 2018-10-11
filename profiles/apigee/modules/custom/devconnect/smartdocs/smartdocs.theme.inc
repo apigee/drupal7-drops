@@ -52,7 +52,7 @@ function _smartdocs_preprocess_node_page(&$vars) {
   $vars['dna'] = TRUE;
 
   // If appropriate, set edit revision tab(s).
-  if (array_key_exists('#primary', $vars['tabs']) && user_access('administer smartdocs content')) {
+  if (array_key_exists('#primary', $vars['tabs']) && is_array($vars['tabs']['#primary']) && user_access('administer smartdocs content')) {
     $vars['tabs']['#primary'][] = array(
       '#theme' => 'menu_local_task',
       '#active' => FALSE,

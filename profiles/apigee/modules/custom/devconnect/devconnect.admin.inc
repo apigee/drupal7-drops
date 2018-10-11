@@ -676,8 +676,10 @@ function _devconnect_test_kms_connection($org, $endpoint, $user, $pass, $timeout
   $pass = trim($pass);
 
   // Trim whitespace from oAuth fields
-  foreach($saml_options as $saml_setting_key => $saml_setting_value) {
-    $saml_options[$saml_setting_key] = trim($saml_setting_value);
+  if (is_array($saml_options)) {
+    foreach($saml_options as $saml_setting_key => $saml_setting_value) {
+      $saml_options[$saml_setting_key] = trim($saml_setting_value);
+    }
   }
 
   if (!valid_url($endpoint)) {

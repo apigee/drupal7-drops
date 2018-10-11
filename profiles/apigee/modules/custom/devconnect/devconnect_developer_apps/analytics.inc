@@ -444,21 +444,23 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name, $
   // Pass the $info to drupal_alter to be modified by other modules.
   drupal_alter('devconnect_developer_app_analytics_datapoints_params', $info);
 
-  $developer_or_company_id = devconnect_user_get_developer_id($user);
+  $developer_email_or_company = $user->mail;
   // If the analytics are for a company app, we need to filter by company instead
   // of developer
+  $is_company = FALSE;
   if (module_exists('apigee_company')) {
     $company = apigee_company_get_current_context_company();
     // If a user is in the company context then load the plans purchased by the company.
     if (!empty($company)) {
-      $developer_or_company_id = $company->name;
+      $developer_email_or_company = $company->name;
+      $is_company = TRUE;
     }
   }
 
   try {
     // We pass the altered version of the parameters to the call to get the
     // analytics data.
-    $datapoints = $dca->getByAppName($developer_or_company_id, $app_name, $info['metric'], $info['start'], $info['end'], $info['unit'], $info['metric'], $info['order']);
+    $datapoints = $dca->getByAppName($developer_email_or_company, $app_name, $info['metric'], $info['start'], $info['end'], $info['unit'], $info['metric'], $info['order'], $is_company);
   } catch (Apigee\Exceptions\ParameterException $e) {
     watchdog('devconnect_developer_apps', $e->getMessage(), array(), WATCHDOG_ERROR);
     return FALSE;

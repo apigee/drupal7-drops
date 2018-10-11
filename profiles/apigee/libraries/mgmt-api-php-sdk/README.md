@@ -1,3 +1,7 @@
+# The 2.x version has moved
+The newer 2.x version of this library has been released and is now available as [Apigee Edge Client Library for PHP](https://github.com/apigee/apigee-client-php/releases).
+This library is now in maintenance mode and is only accepting major bug fixes.
+
 # How to use the Apigee Edge PHP SDK
 
 The Apigee Edge Management PHP SDK makes it easy to write PHP modules that use

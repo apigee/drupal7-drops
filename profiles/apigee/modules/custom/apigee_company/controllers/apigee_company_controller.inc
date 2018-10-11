@@ -4,6 +4,7 @@
  * The controller class for the Apigee Company Entity.
  */
 
+use Apigee\Exceptions\ParameterException;
 use Apigee\ManagementAPI\Company;
 use Apigee\Exceptions\ResponseException;
 
@@ -12,7 +13,9 @@ use Apigee\Exceptions\ResponseException;
  */
 class ApigeeCompanyController implements DrupalEntityControllerInterface, EntityAPIControllerInterface {
 
-  const CACHE_LIFETIME_IN_MINUTES = 60;
+  const CACHE_BIN = 'cache_apigee_company';
+
+  private $isCompanyCacheEnabled = 1;
 
   /**
    * The last exception thrown, if any.
@@ -36,6 +39,8 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
    * {@inheritdoc}
    */
   public function __construct($entity_type) {
+    // Is company data cached?
+    $this->isCompanyCacheEnabled = variable_get('apigee_company_is_company_cache_enabled', 1);
   }
 
   /**
@@ -92,14 +97,26 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
 
     if (!empty($ids)) {
       $config = self::getConfig();
-      $company = new Company($config);
       foreach ($ids as $id) {
+        // Create a new company object because $company->load does not
+        // clear out attributes when loading the response from the API
+        // call for subsequent calls to $company->load.
+        $company = new Company($config);
+
         try {
-          $array = cache_get('apigee_company_' . $id);
-          if (is_array($array)) {
-            $entity = new ApigeeCompanyEntity($array);
+          $cached = FALSE;
+
+          // If the company data is cached, look there first.
+          if ($this->isCompanyCacheEnabled) {
+            $cached = cache_get($id, self::CACHE_BIN);
+          }
+
+          if (!empty($cached->data)) {
+            // If cache data exists, use it instead of API call.
+            $entity = new ApigeeCompanyEntity($cached->data);
           }
           else {
+            // Cache data not available, make API call.
             $company->load($id);
             $entity = $this->addToCache($company);
           }
@@ -217,8 +234,11 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
   public function resetCache(array $ids = NULL) {
     if (is_array($ids)) {
       foreach ($ids as $id) {
-        cache_clear_all('apigee_company_' . $id);
+        cache_clear_all($id, self::CACHE_BIN);
       }
+    }
+    else {
+      cache_clear_all('*', self::CACHE_BIN, TRUE);
     }
   }
 
@@ -275,18 +295,33 @@ class ApigeeCompanyController implements DrupalEntityControllerInterface, Entity
   }
 
   /**
-   * Rebuilds the cache record for a Company.
+   * Adds company data to cache.
    *
-   * @param Company $company
-   *   The company whose cache entry is to be refreshed.
+   * This function only adds data to cache if the caching admin setting
+   * is turned on.
    *
-   * @return ApigeeCompanyEntity
+   * @param \Apigee\ManagementAPI\Company $company
+   *   Company data to add to cache.
+   *
+   * @return \ApigeeCompanyEntity
    *   The corresponding entity that was written to cache.
    */
   private function addToCache(Company $company) {
     $entity = new ApigeeCompanyEntity($company->toArray());
-    $entity->developers = $company->listDevelopers();
-    cache_set('apigee_company_' . $entity->name, $entity->toArray(), time() + (self::CACHE_LIFETIME_IN_MINUTES * 60));
+
+    try {
+      $entity->developers = $company->listDevelopers();
+      if ($this->isCompanyCacheEnabled) {
+        cache_set($entity->name, $entity, self::CACHE_BIN, CACHE_TEMPORARY);
+      }
+    }
+    catch (ParameterException $e) {
+      // If listDevelopers() fails, log and display error.  The cache_set() is
+      // also skipped so we don't cache invalid data.
+      watchdog_exception('apigee_company', $e);
+      drupal_set_message(t('Developers for company %company could not be loaded.', array("%company" => $company->getName())), 'warning');
+    }
     return $entity;
   }
+
 }

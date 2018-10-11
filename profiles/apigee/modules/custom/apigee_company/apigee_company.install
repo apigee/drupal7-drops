@@ -7,6 +7,16 @@
 use Apigee\ManagementAPI\Organization;
 
 /**
+ * Implements hook_schema().
+ */
+function apigee_company_schema() {
+  // Add a cache table for Apigee companies.
+  $schema['cache_apigee_company'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_apigee_company']['description'] = 'Cache table for Apigee company information.';
+  return $schema;
+}
+
+/**
  * Implements hook_install().
  */
 function apigee_company_install() {
@@ -106,10 +116,27 @@ function apigee_company_requirements($phase) {
   return $requirements;
 }
 
+/**
+ * Implements hook_uninstall().
+ */
+function apigee_company_uninstall() {
+  variable_del('apigee_company_is_company_cache_enabled');
+}
 
 /**
- * Update function to set the view company users permission for all monetization or company roles
+ * Set the view company users permission for all monetization or company roles.
  */
-function apigee_company_update_7000(){
+function apigee_company_update_7000() {
   apigee_company_install();
+}
+
+/**
+ * Add cache table for apigee_company entities.
+ */
+function apigee_company_update_7100() {
+  if (!db_table_exists('cache_apigee_company')) {
+    $schema['cache_apigee_company'] = drupal_get_schema_unprocessed('system', 'cache');
+    $schema['cache_apigee_company']['description'] = 'Cache table for Apigee company information.';
+    db_create_table('cache_apigee_company', $schema['cache_apigee_company']);
+  }
 }

@@ -1,0 +1,8 @@
+
+Apigee Company 7.x-1.1, 2018-August
+------------------------------
+* Added caching to the company entity.  As an admin go to Configuration -> Apigee company to modify cache settings.
+
+Apigee Company 7.x-1.0
+------------------------------
+Initial release of module.

@@ -1,19 +1,45 @@
 <?php
 
+/**
+ * @file
+ * Add debug output to page for Apigee REST calls.
+ */
+
+/**
+ * Implements hook_boot().
+ */
 function devconnect_debug_boot() {
   if ($_GET['q'] != 'batch') {
     register_shutdown_function('devconnect_debug_dump');
   }
 }
 
+/**
+ * Print out debug info.
+ */
 function devconnect_debug_dump() {
   _devconnect_debug_process();
 }
 
+/**
+ * Registered debug function with Apigee PHP SDK.
+ *
+ * This function is called when Apigee REST API calls are made.
+ *
+ * @param array $debug
+ *    The debug info from the Guzzle client.
+ */
 function devconnect_debug_register(array $debug) {
   _devconnect_debug_process($debug);
 }
 
+/**
+ * Process the debug info from Guzzle.
+ *
+ * @param bool $debug
+ *    The debug info from Guzzle.  If this parameter is
+ *    left blank, print out the debug info via kpr().
+ */
 function _devconnect_debug_process($debug = FALSE) {
   static $debug_items = array();
   if (is_array($debug)) {
@@ -22,8 +48,75 @@ function _devconnect_debug_process($debug = FALSE) {
   }
   if (user_access('access devel information') && !empty($debug_items)) {
     print '<h3>Edge Calls</h3>';
-    kpr($debug_items);
-    // ensure that this gets bumped ABOVE the fixed-position footer
+    $rest_calls = [];
+    $total_time = 0;
+    foreach ($debug_items as $debug_call) {
+      $rest_call = [];
+      $request_headers = $debug_call['opts']['request_headers'];
+
+      // Get the API Verb and path to display from the request headers
+      // to display as summary of API call.
+      $re = '/[^\s]+\s[^\s]+/';
+      preg_match($re, $request_headers, $matches);
+      $api_summary = $matches[0];
+
+      // Add request headers.
+      if (array_key_exists('request_headers', $debug_call['opts'])) {
+        $rest_call['Request Headers'] = $debug_call['opts']['request_headers'];
+      }
+      // Add request body.
+      if (array_key_exists('request_body', $debug_call['opts'])) {
+        $is_json = json_decode($debug_call['opts']['request_body']);
+
+        // If this is a JSON string, format it nicely.
+        if($is_json) {
+          $rest_call['Request Body'] = json_encode($is_json, JSON_PRETTY_PRINT);
+        } else {
+          $rest_call['Request Body'] = $debug_call['opts']['request_body'];
+        }
+      }
+
+      // Add response status.
+      $response_status = [];
+      if (array_key_exists('code', $debug_call)) {
+        $response_status[] =  $debug_call['code'];
+      }
+
+      if (array_key_exists('code_status', $debug_call)) {
+        $response_status[] =  $debug_call['code_status'];
+      }
+
+      $rest_call['Status'] = implode(' ', $response_status);
+
+      // Set response headers.
+      if (array_key_exists('response_headers', $debug_call['opts'])) {
+        $rest_call['Response Headers'] = $debug_call['opts']['response_headers'];
+      }
+
+      // Set response body raw.
+      if (array_key_exists('raw', $debug_call)) {
+        $rest_call['Response Body'] = $debug_call['raw'];
+      }
+
+      // Set exception.
+      if (array_key_exists('exception', $debug_call) && $debug_call['exception'] != NULL) {
+        $rest_call['Exception'] = $debug_call['exception'];
+      }
+
+      // Set time elapsed.
+      if (array_key_exists('time_elapsed', $debug_call)) {
+        $rest_call['Time Elapsed'] = $debug_call['time_elapsed'];
+
+        // Add to total time for API calls
+        $total_time += $debug_call['time_elapsed'];
+      }
+
+      // Add this debug info to list of debug calls.
+      $rest_calls[$api_summary] = $rest_call;
+    }
+    kpr($rest_calls);
+    print '<strong>Total Time:</strong> ' . $total_time . 's';
+    // Ensure that this gets bumped ABOVE the fixed-position footer.
     print '<br><br><br><br><br>';
   }
 }

@@ -41,6 +41,15 @@ function apigee_company_menu() {
   // @todo Modify the copies for the title
   $items = array();
 
+  $items['admin/config/apigee_company'] = array(
+    'title' => 'Apigee company',
+    'description' => 'Control behavior of the Apigee company module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('apigee_company_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'apigee_company.admin.inc',
+  );
+
   $items['api_company/companies/list'] = array(
     'title' => 'Manage Companies',
     'description' => 'Manage companies.',
@@ -284,7 +293,10 @@ function apigee_company_company_developers() {
 
   if (user_access('manage company users')) {
     $output .= apigee_company_company_pending_developer_invitations();
-    $output .= '<div class="apigee-invite-developer-form-wrapper">' . drupal_render(drupal_get_form('apigee_company_invite_user_form', $company_name)) . '</div>';
+    $output .= '<div class="apigee-invite-developer-form-wrapper">';
+    $form_array = drupal_get_form('apigee_company_invite_user_form', $company_name);
+    $output .= drupal_render($form_array);
+    $output .= '</div>';
   }
 
   return $output;
@@ -1305,4 +1317,11 @@ function apigee_company_preprocess_devconnect_developer_apps_list(&$vars) {
   ));
 
   drupal_set_title($title);
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function apigee_company_flush_caches() {
+  return array('cache_apigee_company');
 }
