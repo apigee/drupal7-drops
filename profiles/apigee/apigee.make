@@ -321,7 +321,7 @@ projects[migrate][version] = "2.9"
 
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
-projects[mimemail][version] = "1.0"
+projects[mimemail][version] = "1.1"
 
 ; Enabled on install.
 projects[module_filter][type] = "module"
