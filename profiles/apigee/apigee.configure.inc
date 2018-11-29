@@ -113,9 +113,6 @@ function apigee_install_configure_variables(array &$context) {
   variable_set('logintoboggan_immediate_login_on_register', 0);
   // Set immediate login to false by default.
   variable_set('logintoboggan_override_destination_parameter', 0);
-  // Prevent cross-frame-scripting attacks.
-  variable_set('x_frame_options', 'DENY');
-
   $context['results'][] = 'variables';
   $context['message'] = st('Default variables set.');
 }

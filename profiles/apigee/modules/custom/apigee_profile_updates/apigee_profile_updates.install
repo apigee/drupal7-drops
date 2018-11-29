@@ -291,3 +291,13 @@ function apigee_profile_updates_update_7109() {
 function apigee_profile_updates_update_7110() {
   menu_rebuild();
 }
+
+/**
+ * Set X-Frame-Options header variable to default value of 'SAMEORIGIN'.
+ *
+ * To override this behavior, change the 'x_frame_options' Drupal variable via
+ * any standard method or by using Security Kit module.
+ */
+function apigee_profile_updates_update_7111() {
+  variable_del('x_frame_options');
+}

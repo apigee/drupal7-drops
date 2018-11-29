@@ -489,7 +489,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.15"
+projects[bootstrap][version] = "3.22"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"
