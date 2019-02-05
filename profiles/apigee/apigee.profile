@@ -330,7 +330,7 @@ function apigee_install_create_admin_user_is_sdn_match($first_name, $last_name) 
   // The system could not check the SDN list, let Dev Portal team know.
   $my_module = 'sdn_check_error';
   $my_mail_token = 'apigee_profile';
-  $from = variable_get('system_mail', 'noreply@apigee.com');
+  $from = variable_get('system_mail', 'noreply@example.com');
 
   $http_response_string = '';
   if (is_array($response)) {

@@ -91,7 +91,7 @@ function apigee_install_configure_variables(array &$context) {
   variable_set('preprocess_js', 0);
   variable_set('clean_url', TRUE);
   variable_set('site_name', 'New Apigee Site');
-  variable_set('site_mail', 'noreply@apigee.com');
+  variable_set('site_mail', 'noreply@example.com');
   // Designed by Apigee in California.
   variable_set('date_default_timezone', 'America/Los_Angeles');
   variable_set('site_default_country', 'US');
@@ -171,7 +171,7 @@ function apigee_install_configure_users(array &$context) {
     'uid' => 1,
     'name' => 'admin',
     'pass' => user_password(15),
-    'mail' => 'noreply@apigee.com',
+    'mail' => 'noreply@example.com',
     'field_first_name' => array(LANGUAGE_NONE => array(array('value' => 'drupal'))),
     'field_last_name' => array(LANGUAGE_NONE => array(array('value' => 'admin'))),
     'status' => 1,
