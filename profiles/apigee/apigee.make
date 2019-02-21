@@ -266,7 +266,7 @@ projects[linkchecker][version] = "1.3"
 ; Enabled during profile install.
 projects[link][type] = "module"
 projects[link][subdir] = "contrib"
-projects[link][version] = "1.4"
+projects[link][version] = "1.6"
 
 ; Enabled during profile install.
 projects[logintoboggan][type] = "module"
