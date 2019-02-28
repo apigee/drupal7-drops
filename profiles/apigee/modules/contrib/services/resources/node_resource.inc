@@ -428,7 +428,6 @@ function _node_resource_update($nid, $node) {
   $form_state = array();
   $form_state['values'] = $node;
   $form_state['values']['op'] = variable_get('services_node_save_button_' . $node_type . '_resource_update', t('Save'));
-  $form_state['node'] = $old_node;
   $form_state['programmed_bypass_access_check'] = FALSE;
 
   // Contributed modules may check the triggering element in the form state.
@@ -464,7 +463,7 @@ function _node_resource_delete($nid) {
 }
 
 /**
- * Return an array of optionally paged nids baed on a set of criteria.
+ * Return an array of optionally paged nids based on a set of criteria.
  *
  * An example request might look like
  *

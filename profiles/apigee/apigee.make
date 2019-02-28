@@ -112,7 +112,7 @@ projects[content_access][version] = "1.2-beta2"
 ; Enabled during profile install.
 projects[context][type] = "module"
 projects[context][subdir] = "contrib"
-projects[context][version] = "3.7"
+projects[context][version] = "3.10"
 
 ; Enabled during profile install.
 projects[context_condition_theme][type] = "module"
@@ -378,7 +378,7 @@ projects[rules][version] = "2.11"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.20"
+projects[services][version] = "3.23"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
