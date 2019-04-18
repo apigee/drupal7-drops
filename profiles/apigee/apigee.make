@@ -57,7 +57,7 @@ projects[bootstrap_modal_forms][type] = "module"
 projects[bootstrap_modal_forms][subdir] = "contrib"
 projects[bootstrap_modal_forms][download][branch] = "7.x-1.x"
 projects[bootstrap_modal_forms][download][type] = "git"
-projects[bootstrap_modal_forms][download][url] = "http://git.drupal.org/sandbox/bhasselbeck/2167991.git"
+projects[bootstrap_modal_forms][download][url] = "https://git.drupalcode.org/sandbox/bhasselbeck-2167991.git"
 projects[bootstrap_modal_forms][directory_name] = "bootstrap_modal_forms"
 
 ; Deprecated
@@ -326,7 +326,7 @@ projects[mimemail][version] = "1.1"
 ; Enabled on install.
 projects[module_filter][type] = "module"
 projects[module_filter][subdir] = "contrib"
-projects[module_filter][version] = "2.1"
+projects[module_filter][version] = "2.2"
 
 projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
@@ -378,7 +378,7 @@ projects[rules][version] = "2.11"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.23"
+projects[services][version] = "3.24"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -406,7 +406,7 @@ projects[strongarm][version] = "2.0"
 projects[sumo][type] = "module"
 projects[sumo][subdir] = "contrib"
 projects[sumo][download][type] = "git"
-projects[sumo][download][url] = "http://git.drupal.org/sandbox/daniel_j/2390985.git"
+projects[sumo][download][url] = "https://git.drupalcode.org/sandbox/daniel_j-2390985.git"
 projects[sumo][directory_name] = "sumo"
 
 projects[syntaxhighlighter][type] = "module"
