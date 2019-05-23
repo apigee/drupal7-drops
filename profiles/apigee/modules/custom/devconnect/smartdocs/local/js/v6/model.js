@@ -273,7 +273,7 @@ Apigee.APIModel.Common = function() {
    * @param {string} errorMessage A error message string.
    */
   this.showError = function(errorMessage) {
-    jQuery("[data-role='error_container']").html(errorMessage).show();
+    jQuery("[data-role='error_container']").text(errorMessage).show();
     jQuery("body").scrollTop(0); // Scroll to page's top position.
   };
 

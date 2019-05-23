@@ -166,8 +166,11 @@ setAccessTokenAndLocation = function(errorCode, errorMessage, accessToken, acces
  * Event handler to handle the Oauth token message
  */
 function oAuthAccessTokenAndLocationListener(e) {
-  var obj = e.data;
-  setAccessTokenAndLocation(obj.ERRORCODE, obj.ERRORMESSAGE, obj.ACCESSTOKEN, obj.ACCESSTOKENTYPE, obj.ACCESSTOKENPARAMNAME, obj.PROXYURL);
+    var origin_url = new URL(e.origin);
+    if (origin_url.host == document.domain) {
+        var obj = e.data;
+        setAccessTokenAndLocation(obj.ERRORCODE, obj.ERRORMESSAGE, obj.ACCESSTOKEN, obj.ACCESSTOKENTYPE, obj.ACCESSTOKENPARAMNAME, obj.PROXYURL);
+    }
 }
 //Add a listener to listen for the oauth token message
 window.addEventListener('message', oAuthAccessTokenAndLocationListener, false);
