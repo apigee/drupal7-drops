@@ -145,9 +145,9 @@ $handler->display->display_options['style_options']['tid'] = 'argument.tid';
 $handler->display->display_options['empty']['text']['id'] = 'text';
 $handler->display->display_options['empty']['text']['table'] = 'views';
 $handler->display->display_options['empty']['text']['field'] = 'area';
-$handler->display->display_options['empty']['text']['empty'] = FALSE;
+$handler->display->display_options['empty']['text']['empty'] = TRUE;
 $handler->display->display_options['empty']['text']['content'] = 'No posts in this forum.';
-$handler->display->display_options['empty']['text']['format'] = 'filtered_html';
+$handler->display->display_options['empty']['text']['format'] = 'plain_text';
 /* Relationship: Content: Author */
 $handler->display->display_options['relationships']['uid']['id'] = 'uid';
 $handler->display->display_options['relationships']['uid']['table'] = 'node';

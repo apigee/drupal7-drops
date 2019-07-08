@@ -37,7 +37,7 @@ projects[adminimal_admin_menu][version] = "1.7"
 ; Enabled during profile install.
 projects[advanced_forum][type] = "module"
 projects[advanced_forum][subdir] = "contrib"
-projects[advanced_forum][version] = "2.6"
+projects[advanced_forum][version] = "2.8"
 
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
@@ -430,7 +430,7 @@ projects[util][version] = "1.1"
 ; Enabled on install.
 projects[uuid][type] = "module"
 projects[uuid][subdir] = "contrib"
-projects[uuid][version] = "1.1"
+projects[uuid][version] = "1.3"
 
 ; Deprecated
 projects[uuid_features][type] = "module"
@@ -489,7 +489,7 @@ projects[adminimal_theme][version] = "1.24"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
-projects[bootstrap][version] = "3.22"
+projects[bootstrap][version] = "3.25"
 
 ; Deprecated in favor of Adminimal.
 projects[rubik][type] = "theme"

@@ -83,9 +83,9 @@ function _template_preprocess_advanced_forum_topic_list_view(&$variables) {
     if ($forum && !in_array($row->topic_actual_forum, $forum)) {
       $term = taxonomy_term_load($row->topic_actual_forum);
       $variables['shadow'][$count] = theme('advanced_forum_shadow_topic', array(
-        'title' => $row->node_title,
+        'title' => check_plain($row->node_title),
         'nid' => $row->nid,
-        'new_forum' => empty($term->name) ? "" : $term->name,
+        'new_forum' => empty($term->name) ? "" : check_plain($term->name),
           ));
     }
     else {

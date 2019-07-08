@@ -304,9 +304,10 @@ function advanced_forum_process_forum($forum) {
   $forum->link = url("forum/$forum->tid");
 
   // Sanitise the name and description so they can be safely printed.
-  // We don't do this for subforum names because that is sent through l()
-  // in the theme function which runs it through check_plain().
-  $forum->name = empty($forum->parents[0]) ? check_plain($forum->name) : $forum->name;
+  // We don't do check_plain() for subforum names because those should go
+  // through l() in the advanced_forum_subforum_list theme function and l()
+  // includes check_plain().
+  $forum->name = empty($forum->parents[0]) ? check_plain($forum->name) : filter_xss_admin($forum->name);
   $forum->description = !empty($forum->description) ? filter_xss_admin($forum->description) : '';
 
   // Initialize these variables to avoid notices later since not all forums
