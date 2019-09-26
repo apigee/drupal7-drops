@@ -36,7 +36,7 @@ function devconnect_status_edge_report() {
   $output .= '<tr class="' . $pw_strength['class'] . '">'
     . '<th scope="row">' . t('Password strength') . '</th>'
     . '<td><strong>' . ucfirst(t($pw_strength['indicator_text'])) . '</strong>';
-  if (count($pw_strength['messages']) > 0) {
+  if (!empty($pw_strength['messages'])) {
     $output .= '<ul><li>' . join('</li><li>', $pw_strength['messages']) . '</li></ul>';
   }
   $output .= '</td></tr>' . PHP_EOL;
@@ -105,11 +105,11 @@ function devconnect_status_edge_report() {
       $class = 'red';
       $time_message = NULL;
     }
-    elseif (count($products) == 0) {
+    elseif (empty($products)) {
       $message = t('No API Products are configured.');
       $class = 'red';
     }
-    elseif (count($public) == 0) {
+    elseif (empty($public)) {
       $message = t('There are @count API Products configured, but all are marked as private.', array('@count' => $private));
       $class = 'red';
     }

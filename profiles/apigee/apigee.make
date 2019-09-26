@@ -1,9 +1,3 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;     DO NOT DIRECTLY EDIT THIS FILE.    ;;;
-;;;      Edit apigee.make.json instead     ;;;
-;;; and then run scripts/make_makefile.php ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 core = 7.x
 api = 2
 
@@ -17,12 +11,12 @@ projects[acl][version] = "1.1"
 ; Required by Monetization
 projects[addressfield][type] = "module"
 projects[addressfield][subdir] = "contrib"
-projects[addressfield][version] = "1.2"
+projects[addressfield][version] = "1.3"
 
 ; Enabled during profile install.
 projects[admin_menu][type] = "module"
 projects[admin_menu][subdir] = "contrib"
-projects[admin_menu][version] = "3.0-rc5"
+projects[admin_menu][version] = "3.0-rc6"
 
 ; Enabled during profile install.
 projects[admin_views][type] = "module"
@@ -86,6 +80,10 @@ projects[ckeditor_link][version] = "2.4"
 projects[commerce][type] = "module"
 projects[commerce][subdir] = "contrib"
 projects[commerce][version] = "1.14"
+; see https://www.drupal.org/node/3035138
+projects[commerce][patch][3035138] = "https://www.drupal.org/files/issues/2019-02-22/php72-warning-commerce-currency-amount-to-decimal-3035138-3.patch"
+; see https://www.drupal.org/node/3021095
+projects[commerce][patch][3021095] = "https://www.drupal.org/files/issues/2018-12-17/line-item-argumentcounterror-3021095-3.patch"
 
 projects[commerce_custom_line_items][type] = "module"
 projects[commerce_custom_line_items][subdir] = "contrib"
@@ -122,7 +120,7 @@ projects[context_condition_theme][version] = "1.0"
 ; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.13"
+projects[ctools][version] = "1.15"
 
 ; Deprecated
 projects[date][type] = "module"
@@ -172,7 +170,7 @@ projects[faq][patch][2646470] = "https://www.drupal.org/files/issues/faq-2646470
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.10"
+projects[features][version] = "2.11"
 
 ; Deprecated
 projects[features_extra][type] = "module"
@@ -183,11 +181,13 @@ projects[features_extra][version] = "1.0"
 projects[field_group][type] = "module"
 projects[field_group][subdir] = "contrib"
 projects[field_group][version] = "1.6"
+; see https://www.drupal.org/node/3016503
+projects[field_group][patch][3016503] = "https://www.drupal.org/files/issues/2018-11-28/field_group-func_get_args-3016503-2.patch"
 
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.16"
+projects[file_entity][version] = "2.25"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -248,7 +248,7 @@ projects[jquery_update][version] = "3.0-alpha5"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
-projects[ldap][version] = "2.3"
+projects[ldap][version] = "2.5"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
@@ -257,7 +257,7 @@ projects[legal][version] = "1.10"
 ; Enabled during profile install.
 projects[libraries][type] = "module"
 projects[libraries][subdir] = "contrib"
-projects[libraries][version] = "2.3"
+projects[libraries][version] = "2.5"
 
 projects[linkchecker][type] = "module"
 projects[linkchecker][subdir] = "contrib"
@@ -288,7 +288,7 @@ projects[mediaelement][version] = "1.2"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.19"
+projects[media][version] = "2.21"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
@@ -313,6 +313,10 @@ projects[metatag][version] = "1.22"
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
 projects[me][version] = "1.4"
+; see https://www.drupal.org/node/3007916
+projects[me][patch][3007916] = "https://www.drupal.org/files/issues/2018-11-03/deprecated_each3007916-1.patch"
+; see https://www.drupal.org/node/1221902
+projects[me][patch][1221902] = "https://www.drupal.org/files/me_noreferencemapd7.patch"
 
 ; Deprecated
 projects[migrate][type] = "module"
@@ -349,6 +353,8 @@ projects[oauthconnector][version] = "1.0-beta2"
 projects[pathauto][type] = "module"
 projects[pathauto][subdir] = "contrib"
 projects[pathauto][version] = "1.3"
+; see https://www.drupal.org/node/1580466
+projects[pathauto][patch][1580466] = "https://www.drupal.org/files/issues/illegalstringoffset-1580466-15.patch"
 
 projects[readonlymode][type] = "module"
 projects[readonlymode][subdir] = "contrib"
@@ -361,7 +367,9 @@ projects[recaptcha][version] = "2.2"
 ; Enabled on install.
 projects[redirect][type] = "module"
 projects[redirect][subdir] = "contrib"
-projects[redirect][version] = "1.0-rc3"
+projects[redirect][download][type] = "git"
+projects[redirect][download][revision] = 7f9531d08c4a3ffb18685fa894d3034299a572c0
+projects[redirect][download][branch] = 7.x-1.x
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
@@ -374,7 +382,7 @@ projects[remote_stream_wrapper][version] = "1.0-rc1"
 
 projects[rules][type] = "module"
 projects[rules][subdir] = "contrib"
-projects[rules][version] = "2.11"
+projects[rules][version] = "2.12"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
@@ -391,12 +399,16 @@ projects[siteminder][version] = "2.x-dev"
 
 projects[smtp][type] = "module"
 projects[smtp][subdir] = "contrib"
-projects[smtp][version] = "1.7"
+projects[smtp][download][type] = "git"
+projects[smtp][download][revision] = 47f4114b1e6d357708b6ffcade01241a11c41ef1
+projects[smtp][download][branch] = 7.x-1.x
 
 ; Required by Monetization
 projects[special_menu_items][type] = "module"
 projects[special_menu_items][subdir] = "contrib"
 projects[special_menu_items][version] = "2.0"
+; see https://www.drupal.org/node/3024643
+projects[special_menu_items][patch][3024643] = "https://www.drupal.org/files/issues/2019-01-08/initialize-variables-array-3024643-2.patch"
 
 projects[strongarm][type] = "module"
 projects[strongarm][subdir] = "contrib"
@@ -445,7 +457,7 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.21"
+projects[views][version] = "3.22"
 
 ; Deprecated
 projects[views_accordion][type] = "module"
@@ -454,7 +466,7 @@ projects[views_accordion][version] = "1.1"
 
 projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
-projects[views_bulk_operations][version] = "3.4"
+projects[views_bulk_operations][version] = "3.5"
 
 ; Deprecated
 projects[views_queue][type] = "module"
@@ -485,7 +497,7 @@ projects[xautoload][version] = "5.7"
 
 ; Enabled during profile install for admin screens.
 projects[adminimal_theme][type] = "theme"
-projects[adminimal_theme][version] = "1.24"
+projects[adminimal_theme][version] = "1.25"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"
@@ -802,7 +814,7 @@ libraries[mediaelement][download][url] = "https://github.com/johndyer/mediaeleme
 libraries[mgmt-api-php-sdk][destination] = "libraries"
 libraries[mgmt-api-php-sdk][directory_name] = "mgmt-api-php-sdk"
 libraries[mgmt-api-php-sdk][download][type] = "file"
-libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.20.tar.gz"
+libraries[mgmt-api-php-sdk][download][url] = "https://github.com/apigee/edge-php-sdk/archive/1.1.22.tar.gz"
 
 ; Used by media, file_entity
 libraries[plupload][destination] = "libraries"
@@ -821,3 +833,4 @@ libraries[syntaxhighlighter][destination] = "libraries"
 libraries[syntaxhighlighter][directory_name] = "syntaxhighlighter-2.x"
 libraries[syntaxhighlighter][download][type] = "file"
 libraries[syntaxhighlighter][download][url] = "https://github.com/syntaxhighlighter/syntaxhighlighter/archive/2.1.364.tar.gz"
+

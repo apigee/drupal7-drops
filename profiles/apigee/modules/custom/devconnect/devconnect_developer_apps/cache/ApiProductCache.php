@@ -94,7 +94,7 @@ class ApiProductCache implements \DrupalCacheInterface {
         $products[$cid] = $product;
       }
     }
-    if (count($products) == 0) {
+    if (empty($products)) {
       return FALSE;
     }
 

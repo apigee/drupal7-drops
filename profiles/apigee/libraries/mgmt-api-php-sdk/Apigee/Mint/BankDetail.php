@@ -140,7 +140,7 @@ class BankDetail extends Base\BaseObject
             }
         }
 
-        if (isset($data['address']) && is_array($data['address']) && count($data['address']) > 0) {
+        if (isset($data['address']) && is_array($data['address']) && !empty($data['address'])) {
             $this->address = new DataStructures\Address($data['address']);
         }
     }
@@ -152,16 +152,22 @@ class BankDetail extends Base\BaseObject
         } else {
             $baseUrl = '/mint/organizations/' . rawurlencode($this->config->orgName) . '/bank-details/' . $this->id;
             $this->setBaseUrl($baseUrl);
-            $this->put(null, $this->__toString());
-            $this->restoreBaseUrl();
+            try {
+              $this->put(null, $this->__toString());
+            } finally {
+              $this->restoreBaseUrl();
+            }
         }
     }
 
     public function delete()
     {
         $this->setBaseUrl('/mint/organizations/' . rawurlencode($this->config->orgName) . '/bank-details/' . $this->id);
-        $this->httpDelete();
-        $this->restoreBaseUrl();
+        try {
+          $this->httpDelete();
+        } finally {
+          $this->restoreBaseUrl();
+        }
     }
 
     public function __toString()

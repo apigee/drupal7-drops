@@ -61,13 +61,19 @@ function adminimal_form_system_theme_settings_alter(&$form, &$form_state) {
     '#default_value' => theme_get_setting('adminimal_theme_skin'),
     '#options' => array(
       'default' => t('Adminimal Default'),
-      //'dark' => t('Dark'),
+      'dark' => t('Adminimal Dark (BETA)'),
       //'flat' => t('Flat'),
-      'material' => t('Material (BETA version)'),
+      'material' => t('Material (BETA)'),
       'alternative' => t('Alternative'),
     ),
     '#description' => t('Select desired skin style. Note that this feature is in beta stage and there might be some issues.'),
     '#required' => FALSE,
+  );
+
+  $form['adminimal_custom']['use_bootstrap_grids'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use Bootstrap Grids'),
+    '#default_value' => theme_get_setting('use_bootstrap_grids'),
   );
 
   $form['adminimal_custom']['style_checkboxes'] = array(

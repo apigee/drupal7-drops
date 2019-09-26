@@ -553,7 +553,7 @@ function devconnect_developer_apps_getlist(stdClass $user) {
 
   $app_entities = entity_load('developer_app', FALSE, array('mail' => $user->mail));
 
-  if (count($app_entities) == 0) {
+  if (empty($app_entities)) {
     $parameters = array(
       'application_count' => 0,
       'applications' => array(),
@@ -680,7 +680,7 @@ function devconnect_developer_apps_edit_form(array $form, array &$form_state, st
   $entity = $app_name = NULL;
   if (isset($app_id)) {
     $entities = entity_load('developer_app', array($app_id), array('mail' => $account->mail));
-    if (count($entities) == 0) {
+    if (empty($entities)) {
       drupal_not_found();
       exit;
     }
@@ -841,7 +841,7 @@ function devconnect_developer_apps_edit_form(array $form, array &$form_state, st
         $uses_options = TRUE;
         if ($type != 'checkboxes' && !isset($default_value) && $required) {
           $option_keys = array_keys($attribute['options']);
-          $default_value = (count($option_keys) ? $option_keys[0] : NULL);
+          $default_value = (!empty($option_keys) ? $option_keys[0] : NULL);
         }
       }
       if ($type == 'checkboxes') {
@@ -924,7 +924,7 @@ function devconnect_developer_apps_edit_form(array $form, array &$form_state, st
         }
         $preexisting_api_products[] = $api_product;
       }
-      if (count($preexisting_api_products) > 0) {
+      if (!empty($preexisting_api_products)) {
         sort($preexisting_api_products);
       }
     }
@@ -1227,7 +1227,7 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
     elseif (!empty($values['api_product'])) {
       $api_products[] = str_replace('prod-', '', $values['api_product']);
     }
-  } 
+  }
 
   $entity->apiProductCache = $values['preexisting_api_products'];
   $entity->callbackUrl = (isset($values['callback_url']) ? $values['callback_url'] : '');
@@ -1441,6 +1441,13 @@ function devconnect_developer_apps_delete_form(array $form, array &$form_state, 
   }
   $entity = reset($entities);
 
+  if (array_key_exists('DisplayName', $entity->attributes) && !empty($entity->attributes['DisplayName'])) {
+    $display_name = $entity->attributes['DisplayName'];
+  }
+  else {
+    $display_name = $entity->name;
+  }
+
   drupal_set_title(t('Are you sure?'));
 
   $form = array(
@@ -1453,7 +1460,7 @@ function devconnect_developer_apps_delete_form(array $form, array &$form_state, 
     '#markup' => t(
       'Deleting the ‘@name’ @label will also delete all of its data. This action cannot be undone.<br><br>',
       array(
-        '@name' => $entity->name,
+        '@name' => $display_name,
         '@label' => _devconnect_developer_apps_get_app_label(FALSE)
       )
     ),

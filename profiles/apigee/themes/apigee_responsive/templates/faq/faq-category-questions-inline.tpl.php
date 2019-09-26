@@ -110,7 +110,7 @@ else {
 <div class="<?php print $container_class; ?>">
 
   <!-- include subcategories -->
-  <?php if (count($subcat_body_list)): ?>
+  <?php if (!empty($subcat_body_list)): ?>
     <?php foreach ($subcat_body_list as $i => $subcat_html): ?>
       <div class="faq-category-indent"><?php print $subcat_html; ?></div>
     <?php endforeach; ?>
@@ -118,7 +118,7 @@ else {
 
   <!-- list questions (in title link) and answers (in body) -->
   <div>
-    <?php if (count($nodes)): ?>
+    <?php if (!empty($nodes)): ?>
       <?php foreach ($nodes as $i => $node): ?>
         <div class="faq-question">
           <?php if (!empty($question_label)): ?>

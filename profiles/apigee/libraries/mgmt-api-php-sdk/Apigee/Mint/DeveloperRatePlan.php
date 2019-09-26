@@ -139,7 +139,7 @@ class DeveloperRatePlan extends Base\BaseObject
             $this->initValues();
         }
 
-        if (isset($data['ratePlan']) && is_array($data['ratePlan']) && count($data['ratePlan']) > 0) {
+        if (isset($data['ratePlan']) && is_array($data['ratePlan']) && !empty($data['ratePlan'])) {
             if (isset($data['ratePlan']['monetizationPackage']['id'])) {
                 $m_package_id = $data['ratePlan']['monetizationPackage']['id'];
                 $this->ratePlan = new RatePlan($m_package_id, $this->config);
@@ -180,8 +180,11 @@ class DeveloperRatePlan extends Base\BaseObject
                 'suppressWarning' => true
             );
             $this->setBaseUrl($url);
-            $this->post(null, $obj);
-            $this->restoreBaseUrl();
+            try {
+              $this->post(null, $obj);
+            } finally {
+              $this->restoreBaseUrl();
+            }
         } catch (ResponseException $re) {
             if (MintApiException::isMintExceptionCode($re)) {
                 throw new MintApiException($re);
@@ -205,15 +208,20 @@ class DeveloperRatePlan extends Base\BaseObject
         );
         try {
             $this->setBaseUrl($url);
-            if ($save_method == 'create') {
+            try {
+              if ($save_method == 'create') {
                 $this->post(null, $obj);
-            } elseif ($save_method == 'update') {
+              }
+              elseif ($save_method == 'update') {
                 $obj['id'] = $this->id;
                 $this->put($this->getId(), $obj);
-            } else {
+              }
+              else {
                 throw new ParameterException('Unsupported save method argument: ' . $save_method);
+              }
+            } finally {
+              $this->restoreBaseUrl();
             }
-            $this->restoreBaseUrl();
         } catch (ResponseException $re) {
             $e = MintApiException::factory($re);
             throw $e;
@@ -229,8 +237,11 @@ class DeveloperRatePlan extends Base\BaseObject
             . '/developer-rateplans/'
             . rawurlencode($this->id);
         $this->setBaseUrl($baseUrl);
-        $this->httpDelete(null);
-        $this->restoreBaseUrl();
+        try {
+          $this->httpDelete(null);
+        } finally {
+          $this->restoreBaseUrl();
+        }
     }
 
     /**

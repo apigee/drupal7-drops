@@ -70,7 +70,7 @@ function commerce_line_item_entity_property_info() {
     'label' => t('Date created'),
     'description' => t('The date the line item was created.'),
     'type' => 'date',
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer line items',
     'schema field' => 'created',
   );

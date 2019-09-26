@@ -249,14 +249,14 @@ function apigee_responsive_preprocess_block(&$vars) {
 /**
  * Formats a status label for the developer apps list.
  */
-function _apigee_responsive_status_label_callback($status, $pull_right = FALSE) {
+function _apigee_responsive_status_label_callback($status, $pull_right = FALSE, $isAllProdApproved = TRUE) {
   if ($status == 'Revoked') {
     return '<span class="label label-danger' . ($pull_right ? ' pull-right' : '') . '">' . t('Revoked') . '</span>';
   }
   elseif ($status == 'Pending') {
     return '<span class="label label-default' . ($pull_right ? ' pull-right' : '') . '">' . t('Pending') . '</span>';
   }
-  return '<span class="label label-success' . ($pull_right ? ' pull-right' : '') . '">' . t('Approved') . '</span>';
+  return  '<span class="label ' . ($isAllProdApproved ? ' label-success' : ' label-warning') . ($pull_right ? ' pull-right' : '') . '">' . t('Approved') . '</span>';
 }
 
 /**
@@ -691,17 +691,6 @@ function apigee_responsive_app_status($app) {
       $revoked = TRUE;
       break;
   }
-  foreach ($app['credential']['apiProducts'] as $product) {
-    switch ($product['status']) {
-      case 'pending':
-        $pending = TRUE;
-        break;
-
-      case 'revoked':
-        $revoked = TRUE;
-        break;
-    }
-  }
   if ($revoked) {
     return 'Revoked';
   }
@@ -827,4 +816,33 @@ function apigee_responsive_apigee_company_switcher(array $variables) {
   $output .= '</ul>';
   $output .= '</div>';
   return $output;
+}
+
+/** Get product status */
+function apigee_responsive_product_status($product){
+    switch ($product['status']) {
+        case 'pending':
+            return 'Pending';
+
+        case 'revoked':
+            return 'Revoked';
+    }
+    return 'Approved';
+}
+
+/** See if all products in an app are approved, if not then return a FALSE bool */
+function apigee_responsive_app_product_approved($app){
+    $isAllProdApproved = TRUE;
+    foreach ($app['credential']['apiProducts'] as $product) {
+        switch ($product['status']) {
+            case 'pending':
+                $isAllProdApproved = FALSE;
+                return $isAllProdApproved;
+
+            case 'revoked':
+                $isAllProdApproved= FALSE;
+                return $isAllProdApproved;
+        }
+    }
+    return $isAllProdApproved;
 }

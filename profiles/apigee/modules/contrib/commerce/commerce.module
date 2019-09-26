@@ -789,7 +789,7 @@ function commerce_currency_amount_to_decimal($amount, $currency_code) {
     $divisors[$currency_code] = pow(10, $currency['decimals']);
   }
 
-  return $amount / $divisors[$currency_code];
+  return ((float) $amount) / $divisors[$currency_code];
 }
 
 /**

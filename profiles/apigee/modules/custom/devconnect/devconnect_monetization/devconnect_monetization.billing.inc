@@ -94,7 +94,7 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
   $variables = array(
     'access_prepaid_reports' => $access_prepaid_reports,
     'balances' => $balances,
-    'has_balances' => count($balances) > 0,
+    'has_balances' => !empty($balances),
     'top_up_form' => $top_up_form,
     'top_up_balance_perm' => $top_up_balance_perm,
     'currencies' => $currencies,
@@ -105,69 +105,6 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
   );
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/global.js', 'file');
   return theme('devconnect_monetization_billing_prepaid_balance', $variables);
-}
-
-/**
- * Page callback for:
- *   users/%devconnect_monetization_developer/monetization/billing/billing-document
- *
- * @param \Apigee\Mint\Developer $developer
- * @return string
- */
-function devconnect_monetization_billing_documents(\Apigee\Mint\Developer $developer) {
-  $billing_documents_form = drupal_get_form('devconnect_monetization_billing_document_form', $developer);
-  $billing_docs_collection = isset($billing_documents_form['#billing_docs']) ? $billing_documents_form['#billing_docs'] : array();
-  unset($billing_documents_form['#billing_docs']);
-  $docs = array();
-  /** @var Apigee\Mint\BillingDocument $doc */
-  foreach ($billing_docs_collection as &$doc) {
-    switch ($doc->getType()) {
-      case BillingDocumentType::REV_STMT:
-        $type = 'Revenue Share Statement';
-        break;
-
-      case BillingDocumentType::GPA:
-        $type = 'GPA';
-        break;
-
-      case BillingDocumentType::NPA:
-        $type = 'NPA';
-        break;
-
-      case BillingDocumentType::SELF_INVOICE:
-        $type = 'Self Invoice';
-        break;
-
-      case BillingDocumentType::INVOICE:
-        $type = 'Invoice';
-        break;
-
-      case BillingDocumentType::NETTING_STMT:
-        $type = 'Netting Statement';
-        break;
-      default: // should never get here!
-        $type = NULL;
-        break;
-    }
-    $products = array();
-    /** @var Apigee\Mint\Product $product */
-    foreach ($doc->getProducts() as $product) {
-      $products[] = $product->getDisplayName();
-    }
-    $docs[] = array(
-      'type' => $type,
-      'ref' => $doc->getDocumentNumber(),
-      'prods' => implode(', ', $products),
-      'rec_date' => $doc->getBillingDocDate(),
-      'id' => $doc->getId(),
-    );
-  }
-
-  $variables = array(
-    'billing_documents_form' => drupal_render($billing_documents_form),
-    'billing_documents' => $docs,
-  );
-  return theme('devconnect_monetization_billing_docs', $variables);
 }
 
 function devconnect_monetization_top_up_balance_form($form, $form_state) {
@@ -495,7 +432,7 @@ function devconnect_monetization_developer_report_form($form, $form_state, \Apig
     }
   }
 
-  if ($show_local_currency_option || count($currency_options) == 0 || $count_default > 1) {
+  if ($show_local_currency_option || empty($currency_options) || $count_default > 1) {
     $currency_options = array('LOCAL' => t('Local Currency')) + $currency_options;
   }
 
@@ -612,7 +549,7 @@ function devconnect_monetization_developer_report_validate($form, &$form_state) 
     $form_state['values']['end_date_parsed'] = $end_date;
   }
 
-  if (count(form_get_errors() > 0)) {
+  if (!empty(form_get_errors())) {
     drupal_add_js('jQuery("div.reports.tabbable a[href=\'#tab2\']").tab("show");', 'inline');
   }
 }
@@ -701,176 +638,6 @@ function devconnect_monetization_developer_report_submit(&$form, &$form_state) {
       drupal_set_message(t('There was an error trying to download your report. Please try again, if the problem persists please contact your administrator.'), 'error');
     }
   }
-}
-
-/**
- * Form builder called by menu callback devconnect_monetization_billing_documents
- *
- * @param $form
- * @param $form_state
- * @param \Apigee\Mint\Developer $developer
- * @return array
- */
-function devconnect_monetization_billing_document_form($form, &$form_state, \Apigee\Mint\Developer $developer) {
-
-  $billing_document = new BillingDocument(devconnect_default_org_config());
-  $billing_months = $billing_document->listBillingMonths();
-
-  $months = array();
-  /** @var Apigee\Mint\DataStructures\BillingMonth $billing_month */
-  foreach ($billing_months as $billing_month) {
-    // Build the key as float made out of Y as interger part and month as decimal part pad with 0 e.g. January 2013 = 2013.01
-    // This way we can sort them descending
-    $months[(float) $billing_month->getYear() . '.' . str_pad($billing_month->getMonth(), 2, '0', STR_PAD_LEFT)] = $billing_month;
-  }
-
-  // Sort billing months by descending order
-  krsort($months);
-
-  $opts = array();
-  foreach ($months as $billing_month) {
-    $opts[$billing_month->getMonthEnum() . '-' . $billing_month->getYear()] = ucfirst(strtolower($billing_month->getMonthEnum())) . ' ' . $billing_month->getYear() . ' - ' . $billing_month->getStatus();
-  }
-
-  $form = array();
-
-  $form['billing_month'] = array(
-    '#title' => t('Billing Month'),
-    '#type' => 'select',
-    '#options' => $opts,
-  );
-
-
-  $form['search-billing-doc'] = array(
-    '#type' => 'textfield',
-    '#title_display' => 'invisible',
-    '#attributes' => array(
-      'class' => array('input-large', 'search-query'),
-      'placeholder' => t('Search Billing Documents'),
-    ),
-  );
-
-  $form['search'] = array(
-    '#type' => 'submit',
-    '#value' => t('Go'),
-    '#attributes' => array(
-      'class' => array('btn'),
-    ),
-  );
-
-  $form['list'] = array(
-    '#type' => 'submit',
-    '#value' => 'list',
-    '#attributes' => array('style' => 'display:none;'),
-  );
-
-  $form += array(
-    '#attributes' => array(
-      'class' => array('form-search', 'form-horizontal'),
-    ),
-    '#attached' => array(
-      'js' => array(
-        array(
-          'data' => drupal_get_path('module', 'devconnect_monetization') . '/js/received-bills-form.js',
-          'type' => 'file',
-        ),
-      ),
-    ),
-  );
-
-  if (isset($form_state['data'])) {
-    $form['#billing_docs'] = $form_state['data'];
-    $form['#submited'] = TRUE;
-  }
-  else {
-    if (count($opts) > 0) {
-      list($default_billing_month) = array_keys($opts);
-      list($month, $year) = explode('-', $default_billing_month);
-
-      $developer_or_company_id = $developer->getEmail();
-      // If there is a company in the context then fetch the billing
-      // documents for the company instead of the developer. So we replace the
-      // developer email with the company machine name.
-      $company = apigee_company_get_current_context_company();
-      if(!empty($company)){
-        $developer_or_company_id = $company->name;
-      }
-
-      $form['#billing_docs'] = $billing_document->getBillingDocuments($developer_or_company_id, strtoupper($month), $year, TRUE);
-      $form['#submited'] = FALSE;
-    }
-  }
-
-  $form['#submit'][] = 'devconnect_monetization_billing_document_form_submit';
-  return $form;
-}
-
-function devconnect_monetization_billing_document_form_submit(&$form, &$form_state) {
-
-  try {
-    if (!user_access('download mint billing documents')) {
-      drupal_access_denied();
-    }
-    $developer_id = _devconnect_monetization_get_developer_id(TRUE);
-
-    $developer_or_company_id = $developer_id;
-    // If there is a company in the context then search the document for the
-    // company instead of the developer. So we replace the developer email with
-    // the company machine name.
-    $company = apigee_company_get_current_context_company();
-    if (!empty($company)) {
-      $developer_or_company_id = $company->name;
-    }
-
-    list($month, $year) = explode('-', $form_state['values']['billing_month']);
-    $billing_document = new BillingDocument(devconnect_default_org_config());
-    if (strlen($form_state['values']['search-billing-doc'])) {
-      try {
-        $billing_docs = $billing_document->searchBillingDoc($form_state['values']['search-billing-doc'], $developer_or_company_id);
-      }
-      catch (MintApiException $re) {
-        drupal_set_message(t("Error: %error", array('%error' => $re->getMintMessage(TRUE, TRUE))), 'warning');
-        return;
-      }
-    }
-    else {
-      $billing_docs = $billing_document->getBillingDocuments($developer_or_company_id, strtoupper($month), $year, TRUE);
-    }
-
-    $form_state['rebuild'] = TRUE;
-    $form_state['data'] = $billing_docs;
-  } catch (Exception $e) {
-    drupal_set_message(t('Could not retrieve billing documents. Please try again later'), 'error');
-  }
-}
-
-/**
- * Page callback for:
- *   users/%devconnect_monetization_developer/monetization/billing/billing-document/%
- *
- * @param $doc_id
- * @param \Apigee\Mint\Developer $developer
- * @return string
- */
-function devconnect_monetization_billing_get_billing_document($doc_id, \Apigee\Mint\Developer $developer) {
-  try {
-    $doc_id = rawurldecode($doc_id);
-    $doc = new BillingDocument(devconnect_default_org_config());
-    $doc->load($doc_id);
-    $report = $doc->getFile();
-
-    drupal_add_http_header('Content-Disposition', 'filename="Billing_Document-' . $doc->getDocumentNumber() . '_' . time() . '.html');
-    drupal_add_http_header('Content-Type', 'application/octet-stream');
-    drupal_add_http_header('Content-Length', $report['length']);
-    drupal_add_http_header('Connection', 'close');
-    echo $report['content'];
-    drupal_exit();
-  } catch (Exception $e) {
-    drupal_set_message(t('Error while trying to serve your Billing Document. Please try again later.'), 'error');
-    $message = (method_exists($e, '__toString') ? (string)$e : $e->getMessage());
-    devconnect_default_org_config()->logger->error($message);
-  }
-  return "";
 }
 
 /**

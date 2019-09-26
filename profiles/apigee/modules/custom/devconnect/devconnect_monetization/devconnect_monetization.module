@@ -109,16 +109,6 @@ function devconnect_monetization_menu() {
     'file path' => drupal_get_path('module', 'devconnect_monetization'),
   );
 
-  $items['users/%devconnect_monetization_developer/monetization/billing/billing-document'] = array(
-    'title' => 'Received Bills',
-    'page callback' => 'devconnect_monetization_billing_documents',
-    'page arguments' => array(1),
-    'access arguments' => array('download mint billing documents'),
-    'file' => 'devconnect_monetization.billing.inc',
-    'file path' => drupal_get_path('module', 'devconnect_monetization'),
-    'type' => MENU_LOCAL_TASK,
-  );
-
   $items['users/%devconnect_monetization_developer/monetization/billing/developer-reports'] = array(
     'title' => 'Reports',
     'page callback' => 'drupal_get_form',
@@ -138,16 +128,6 @@ function devconnect_monetization_menu() {
     'file' => 'devconnect_monetization.billing.inc',
     'file path' => drupal_get_path('module', 'devconnect_monetization'),
     'type' => MENU_CALLBACK,
-  );
-
-  $items['users/%devconnect_monetization_developer/monetization/billing/billing-document/%'] = array(
-    'title' => 'Get Billing Document',
-    'page callback' => 'devconnect_monetization_billing_get_billing_document',
-    'page arguments' => array(5, 1),
-    'access arguments' => array('download mint billing documents'),
-    'type' => MENU_CALLBACK,
-    'file' => 'devconnect_monetization.billing.inc',
-    'file path' => drupal_get_path('module', 'devconnect_monetization'),
   );
 
   // Package callbacks
@@ -627,11 +607,6 @@ function devconnect_monetization_theme($existing, $type, $theme, $path) {
     'path' => $template_path,
   );
 
-  $items['devconnect_monetization_billing_docs'] = array(
-    'template' => 'devconnect-monetization-billing-docs',
-    'arguments' => array('docs' => array(), 'billing_documents_form' => ''),
-    'path' => $template_path,
-  );
   $items['devconnect_monetization_billing_prepaid_balance'] = array(
     'template' => 'devconnect-monetization-billing-prepaid-balance',
     'arguments' => array(
@@ -1458,7 +1433,7 @@ function devconnect_monetization_translated_menu_link_alter(&$item, $map) {
   static $mlid;
   if (!isset($mlid)) {
     $mlids = array_keys(variable_get('devconnect_monetization-menu-links', array()));
-    if (count($mlids)) {
+    if (!empty($mlids)) {
       $mlid = $mlids[0];
     }
   }
@@ -1619,7 +1594,7 @@ function devconnect_monetization_form_apigee_company_company_form_alter(&$form, 
 
 
   $devs = entity_load('developer', array('mail' => $developer->getEmail()));
-  if (count($devs)) {
+  if (!empty($devs)) {
     $dev = reset($devs);
   }
   else {

@@ -173,7 +173,7 @@ class Developer extends Base\BaseObject
             }
         }
         $this->id = $data['id'];
-        if (isset($data['address']) && is_array($data['address']) && count($data['address']) > 0) {
+        if (isset($data['address']) && is_array($data['address']) && !empty($data['address'])) {
             foreach ($data['address'] as $addr_item) {
                 $this->addresses[] = new DataStructures\Address($addr_item);
             }
@@ -418,43 +418,25 @@ class Developer extends Base\BaseObject
 
     public function getRevenueReport($report)
     {
-        $url = '/mint/organizations/'
-            . rawurlencode($this->config->orgName)
-            . '/developers/'
-            . rawurlencode($this->email)
-            . '/revenue-reports';
+        $url = rawurlencode($this->email) . '/revenue-reports';
         $content_type = 'application/json; charset=utf-8';
         $accept_type = 'application/octet-stream; charset=utf-8';
 
-        $this->setBaseUrl($url);
-        $this->post(null, $report, $content_type, $accept_type);
-        $this->restoreBaseUrl();
+        $this->post($url, $report, $content_type, $accept_type);
         $response = $this->responseText;
         return $response;
     }
 
     public function saveReportDefinition($report_def)
     {
-        $url = '/mint/organizations/'
-            . rawurlencode($this->config->orgName)
-            . '/developers/'
-            . rawurlencode($this->email)
-            . '/report-definitions';
-        $this->setBaseUrl($url);
-        $this->post(null, $report_def);
-        $this->restoreBaseUrl();
+        $url = rawurlencode($this->email) . '/report-definitions';
+        $this->post($url, $report_def);
     }
 
     public function getReportDefinitions()
     {
-        $url = '/mint/organizations/'
-            . rawurlencode($this->config->orgName)
-            . '/developers/'
-            . rawurlencode($this->email)
-            . '/report-definitions';
-        $this->setBaseUrl($url);
-        $this->get();
-        $this->restoreBaseUrl();
+        $url = rawurlencode($this->email) . '/report-definitions';
+        $this->get($url);
         $data = $this->responseObj;
         $revenue_reports = array();
         foreach ($data['reportDefinition'] as $report) {

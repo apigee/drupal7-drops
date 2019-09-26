@@ -104,7 +104,7 @@ function devconnect_user_attributes_form($form, &$form_state) {
     '#suffix' => '</p>',
   );
 
-  if (count($fields) == 0) {
+  if (empty($fields)) {
     $form['notice'] = array(
       '#type' => 'markup',
       '#markup' => t('There are no configured user attributes that can be persisted to the Edge Management server. To create custom attributes, you must first <a href="@url">add custom fields to the Drupal user entity</a>. The First Name and Last Name fields are already primary properties of Edge’s developer object and are therefore not persisted as custom attributes.', array('@url' => url('admin/config/people/accounts/fields'))),

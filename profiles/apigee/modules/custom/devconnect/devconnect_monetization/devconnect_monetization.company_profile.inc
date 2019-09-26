@@ -58,7 +58,7 @@ function devconnect_monetization_company_details_form($form, &$form_state, $deve
   if (($developer instanceof \Apigee\Mint\Developer)) {
     $entity_type = 'developer';
     $devs = entity_load('developer', array('mail' => $developer->getEmail()));
-    if (count($devs)) {
+    if (!empty($devs)) {
       $dev = reset($devs);
     }
     else {
@@ -705,7 +705,7 @@ function devconnect_monetization_roles_form($form, $form_state, \Apigee\Mint\Dev
 
   $child_ids = isset($child_developers['user']) && is_array($child_developers['user']) ? array_keys($child_developers['user']) : array();
 
-  $users = count($child_ids) > 0 ? entity_load('user', $child_ids) : array();
+  $users = !empty($child_ids) ? entity_load('user', $child_ids) : array();
 
   $admin_uid = $developer->getEmail() == $GLOBALS['user']->mail ? $GLOBALS['user']->uid : user_load_by_mail($developer->getEmail())->uid;
   $users = entity_load('user', array($admin_uid)) + $users;

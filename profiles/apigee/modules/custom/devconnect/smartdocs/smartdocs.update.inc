@@ -1328,7 +1328,7 @@ function _smartdocs_update_process_nodes() {
   else {
     $log_fn($t('No nodes were updated.'), $success_flag);
   }
-  if (count($old_types)) {
+  if (!empty($old_types)) {
     $log_fn(
       $t(
         ':count content types were successfully migrated to the unified Smart Method type.',

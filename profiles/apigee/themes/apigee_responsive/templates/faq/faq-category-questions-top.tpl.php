@@ -116,7 +116,7 @@ else {
 <div class="<?php print $container_class; ?>">
 
 <?php // include subcategories ?>
-<?php if (count($subcat_body_list)): ?>
+<?php if (!empty($subcat_body_list)): ?>
   <?php foreach ($subcat_body_list as $i => $subcat_html): ?>
     <div class="faq-category-indent"><?php print $subcat_html; ?></div>
   <?php endforeach; ?>
@@ -153,7 +153,7 @@ else {
   <div class="faq-category-group">
     <div>
 
-      <?php if (count($nodes)): ?>
+      <?php if (!empty($nodes)): ?>
         <?php foreach ($nodes as $i => $node): ?>
 
           <div class="faq-question"><?php // Strong question label here? ?>

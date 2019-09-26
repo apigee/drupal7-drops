@@ -61,6 +61,7 @@ $i = 0;
   <?php // more than one application ?>
   <?php foreach ($applications as $app): ?>
     <?php $status = apigee_responsive_app_status($app); ?>
+    <?php $isAllProdApproved = apigee_responsive_app_product_approved($app); ?>
     <div class="panel-group" id="my-apps-accordion">
       <div class="panel panel-default">
         <div class="panel-heading">
@@ -70,7 +71,7 @@ $i = 0;
               <a data-toggle="collapse" data-parent="#my-apps-accordion" href="#my-apps-collapse<?php print $i; ?>"><strong><?php print check_plain($app['app_name']); ?></strong></a>
             </div>
             <div class="status-label">
-                <?php print _apigee_responsive_status_label_callback($status, TRUE); ?>
+                <?php print _apigee_responsive_status_label_callback($status, TRUE, $isAllProdApproved); ?>
                 <?php
                     $expiry = $app['credential']['expires'];
                     $hasExpiration = isset($app['credential']['expires']) && ($expiry != -1);
@@ -156,30 +157,21 @@ $i = 0;
                           <td class="key"><strong><?php print t('Consumer Key'); ?></strong></td>
                           <td>
                             <span<?php print ($status == 'Revoked' || $status == 'Pending' ? ' class="striked"' : ''); ?>><?php print $app['credential']['consumerKey']; ?></span>
-        <?php if ($status == 'Pending'): ?>
+        <?php if (! $isAllProdApproved): ?>
                             <hr>
-                            <?php print t('Some products associated with this application are in <span class="label label-default">pending</span> status.'); ?>
-                            <hr>
-                            <ul style="margin:0;padding:0;">
-                              <?php foreach ($app['credential']['apiProducts'] as $product): ?>
-                                <?php if ($product['status'] == 'pending'): ?>
-                                  <li style="margin:0;padding:0;list-style-type:none;"><?php print $product['displayName']; ?></li>
-                                <?php endif; ?>
-                              <?php endforeach; ?>
-                            </ul>
-        <?php endif; // status Pending ?>
-        <?php if ($status == 'Revoked'): ?>
-                            <hr>
-                            <?php print t('Some products associated with this application are in <span class="label label-default">revoked</span> status.'); ?>
+                            <?php print t('Some products associated with this application are in  <span class="label label-danger">Revoked</span> or <span class="label label-default">Pending</span> status.'); ?>
                             <hr>
                             <ul style="margin:0;padding:0;">
                               <?php foreach ($app['credential']['apiProducts'] as $product): ?>
                                 <?php if ($product['status'] == 'revoked'): ?>
-                                  <li style="margin:0;padding:0;list-style-type:none;"><?php print $product['displayName']; ?></li>
+                                    <li style="margin:0;padding:0;list-style-type:none;"><span class="label label-danger">Revoked</span>&nbsp<?php print $product['displayName']; ?></li>
+                                <?php endif; ?>
+                                <?php if ($product['status'] == 'pending'): ?>
+                                    <li style="margin:0;padding:0;list-style-type:none;"><span class="label label-default">Pending</span>&nbsp<?php print $product['displayName']; ?></li>
                                 <?php endif; ?>
                               <?php endforeach; ?>
                             </ul>
-        <?php endif; // status Revoked ?>
+        <?php endif; //$isAllProdApproved ?>
                           </td>
                         </tr>
                         <tr>
@@ -223,6 +215,7 @@ $i = 0;
               <div id="profile<?php print $i; ?>" class="tab-pane fade">
                 <hr>
         <?php foreach ($app['credential']['apiProducts'] as $product): ?>
+            <?php $product_status = apigee_responsive_product_status($product); ?>
                 <div class="panel panel-default">
                   <div class="panel-heading"><?php print t('API Product:'); ?> <strong><?php print check_plain($product['displayName']); ?></strong></div>
                   <div class="table-responsive">
@@ -230,7 +223,7 @@ $i = 0;
                       <tbody>
                         <tr>
                           <td class="key"><strong><?php print t('Status'); ?></strong></td>
-                          <td><?php print _apigee_responsive_status_label_callback($status); ?></td>
+                          <td><?php print _apigee_responsive_status_label_callback($product_status); ?></td>
                         </tr>
                       </tbody>
                     </table>

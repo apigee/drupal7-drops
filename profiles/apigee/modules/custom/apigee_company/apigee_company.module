@@ -638,6 +638,21 @@ function apigee_company_invite_user_form_submit(array $form, array &$form_state)
   global $user;
 
   $developer_id = $form_state['values']['developer_email'];
+
+  // Extract email with correct letter case from User object.
+  $invited_user = user_load_by_mail($developer_id);
+
+  // If email does not exist in system, then set error message.
+  if(!$invited_user) {
+      drupal_set_message(t('Developer with email address %id does not exist as a user on this site. %id needs to register on this site before they can be invited to a company.', array(
+          '%id' => $developer_id,
+      )),'error');
+      return FALSE;
+  }
+  else {
+      $developer_id = $invited_user->mail;
+  }
+
   $company_id = $form_state['values']['company_id'];
 
   $values = array(

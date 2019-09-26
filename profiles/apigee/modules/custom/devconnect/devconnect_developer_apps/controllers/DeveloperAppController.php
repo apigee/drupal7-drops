@@ -64,42 +64,46 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
    * @param array $ids
    */
   public function delete($ids) {
-    $id_count = count($ids);
-    $deleted_count = 0;
-    foreach (self::getOrgs() as $org) {
-      $config = devconnect_default_org_config($org);
-      foreach ($ids as $id) {
-        // If entity is in our cache, we can make one fewer server roundtrips.
-        if (array_key_exists($id, $this->appCache)) {
-          $dev_app = $this->appCache[$id];
-          unset ($this->appCache[$id]);
-        }
-        else {
-          // Not in cache. Fetch, then delete.
-          $dev_app = new DeveloperApp($config, '');
-          try {
-            $dev_app->loadByAppId($id, TRUE);
-          } catch (ResponseException $e) {
-            $dev_app = NULL;
-            self::$lastException = $e;
-          } catch (ParameterException $e) {
-            $dev_app = NULL;
-            self::$lastException = $e;
+    if (is_array($ids)) {
+      $id_count = count($ids);
+      $deleted_count = 0;
+      foreach (self::getOrgs() as $org) {
+        $config = devconnect_default_org_config($org);
+        foreach ($ids as $id) {
+          // If entity is in our cache, we can make one fewer server roundtrips.
+          if (array_key_exists($id, $this->appCache)) {
+            $dev_app = $this->appCache[$id];
+            unset ($this->appCache[$id]);
           }
-        }
-        if (isset($dev_app)) {
-          try {
-            $entity = new DeveloperAppEntity($dev_app->toArray());
-            $entity->orgName = $config->orgName;
-            $dev_app->delete();
-            $deleted_count++;
+          else {
+            // Not in cache. Fetch, then delete.
+            $dev_app = new DeveloperApp($config, '');
+            try {
+              $dev_app->loadByAppId($id, TRUE);
+            }
+            catch (ResponseException $e) {
+              $dev_app = NULL;
+              self::$lastException = $e;
+            }
+            catch (ParameterException $e) {
+              $dev_app = NULL;
+              self::$lastException = $e;
+            }
           }
-          catch (ResponseException $e) {
-            self::$lastException = $e;
+          if (isset($dev_app)) {
+            try {
+              $entity = new DeveloperAppEntity($dev_app->toArray());
+              $entity->orgName = $config->orgName;
+              $dev_app->delete();
+              $deleted_count++;
+            }
+            catch (ResponseException $e) {
+              self::$lastException = $e;
+            }
           }
-        }
-        if ($id_count == $deleted_count) {
-          break;
+          if ($id_count == $deleted_count) {
+            break;
+          }
         }
       }
     }

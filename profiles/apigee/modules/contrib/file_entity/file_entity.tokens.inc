@@ -110,6 +110,9 @@ function file_entity_token_info() {
       if ($field['type'] == 'file') {
         $field_info = _token_field_info($field_name);
         foreach (array_keys($field['bundles']) as $entity_type) {
+          if ($entity_type == 'taxonomy_term') {
+            $entity_type = 'term';
+          }
           $info['tokens'][$entity_type][$field_name] = array(
             'name' => $field_info['label'],
             'description' => $field_info['description'],
@@ -155,6 +158,9 @@ function file_entity_tokens($type, $tokens, array $data = array(), array $option
 
         // Get basic information
         $entity_type = $data['entity_type'];
+        if ($entity_type == 'taxonomy_term') {
+          $entity_type = 'term';
+        }
         $langcode = isset($options['language']) ? $options['language']->language : NULL;
         $entity = clone $data['entity'];
 
@@ -278,7 +284,7 @@ function file_entity_tokens($type, $tokens, array $data = array(), array $option
  * Either a single value, the first of the array, or an array of values.
  */
 function _file_entity_tokens_get_property($files, $property, $array_handler = 'first') {
-
+  $value = NULL;
   // If we only need the first variable
   $return_first = ($array_handler == 'first' || empty($array_handler) || $array_handler == 'value:0');
 
@@ -296,7 +302,11 @@ function _file_entity_tokens_get_property($files, $property, $array_handler = 'f
 
     // If values are: image, height, width, https-image
     elseif (!empty($info[$file['fid']])) {
-      $value = $info[$file['fid']][$property] ?: NULL;
+      if (isset($info[$file['fid']][$property])) {
+        $value = $info[$file['fid']][$property];
+      } else {
+        $value = NULL;
+      }
     }
     // If values are files types
     else {
@@ -323,7 +333,11 @@ function _file_entity_tokens_get_property($files, $property, $array_handler = 'f
         $info[$file['fid']]['https-image'] = str_replace('http://', 'https://', $info[$file['fid']]['image']);
       }
 
-      $value = $info[$file['fid']][$property] ?: NULL;
+      if (isset($info[$file['fid']][$property])) {
+        $value = $info[$file['fid']][$property];
+      } else {
+        $value = NULL;
+      }
     }
 
     if ($return_first) {

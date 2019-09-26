@@ -182,7 +182,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
   $metric_fullname = $my_data['params']['metric']['display_name'];
   $metric_name = $my_data['params']['metric']['name'];
 
-  if (count($datapoints) == 0 || !isset($datapoints[$app_name])) {
+  if (empty($datapoints) || !isset($datapoints[$app_name])) {
     // TODO: handle this differently?
     return '';
   }
@@ -249,7 +249,7 @@ function devconnect_developer_apps_analytics_performance($user, $app_id, $app_na
 
   // Step across X-axis labels if there are too many.
   $step = 1;
-  if (count($time_points) > DEVCONNECT_ANALYTICS_MAX_XAXIS_LINES) {
+  if (is_array($time_points) && (count($time_points) > DEVCONNECT_ANALYTICS_MAX_XAXIS_LINES)) {
     $step = ceil(count($time_points) / DEVCONNECT_ANALYTICS_MAX_XAXIS_LINES);
     $chart_data['xAxis']['labels'] = array('step' => $step);
   }

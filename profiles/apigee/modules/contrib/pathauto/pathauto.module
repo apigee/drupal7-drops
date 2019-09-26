@@ -293,11 +293,21 @@ function pathauto_field_attach_form($entity_type, $entity, &$form, &$form_state,
       }
       else {
         $path = drupal_get_path_alias($uri['path'], $langcode);
-        $entity->path['pathauto'] = ($path != $uri['path'] && $path == $pathauto_alias);
+        if (isset($entity->path)) {
+          $entity->path = array(
+            $entity->path,
+            'pathauto' => ($path != $uri['path'] && $path == $pathauto_alias),
+          );
+        }
+        else {
+          $entity->path = array(
+            'pathauto' => ($path != $uri['path'] && $path == $pathauto_alias),
+          );
+        }
       }
     }
     else {
-      $entity->path['pathauto'] = TRUE;
+      $entity->path = array('pathauto' => TRUE);
     }
   }
 

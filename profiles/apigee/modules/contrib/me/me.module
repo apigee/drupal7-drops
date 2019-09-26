@@ -69,7 +69,7 @@ function _me_check_path(&$link) {
 
     // Go over each of the path parts and if one is equal to the me alias, make sure it is a wildcard,
     // and if so, switch it back out.
-    while (list($key, $val) = each($path_parts)) {
+    foreach ($path_parts as $key => $val) {
       if (_me_is_alias($val) && $wild_parts[$key] == '%') {
         $path_parts[$key] = $GLOBALS['user']->uid;
       }
@@ -181,7 +181,7 @@ function me_handler($parts, $callback) {
     // if so, replace it out with the user id so we can redirect correctly.
     // If no changes are required, then call the required function.
 
-    while (list($key, $val) = each($parts)) {
+    foreach ($parts as $key => $val) {
       if (0 === strpos($val, '%me') && _me_is_alias($menu_parts[$key])) {
         $redirect = TRUE;
         $menu_parts[$key] = $GLOBALS['user']->uid;
@@ -261,7 +261,7 @@ function me_menu_alter(&$callbacks) {
       // the me handler work correctly.
       $new_parts = array();
 
-      while (list($key, $val) = each($parts)) {
+      foreach ($parts as $key => $val) {
         if (array_key_exists($val, $handlers)) {
           $val = $handlers[$val];
         }
@@ -335,7 +335,7 @@ function me_menu_alter(&$callbacks) {
 /**
  * Helper function to set up arguments in meun _load callbacks.
  */
-function _me_load_arguments($uid, &$map = NULL, $index = NULL, $map_index = FALSE, $args = array(), $function = 'user_load', $reset = FALSE) {
+function _me_load_arguments($uid, $map = NULL, $index = NULL, $map_index = FALSE, $args = array(), $function = 'user_load', $reset = FALSE) {
 
   global $user;
   static $cache = array();
@@ -348,7 +348,7 @@ function _me_load_arguments($uid, &$map = NULL, $index = NULL, $map_index = FALS
 
   if (!is_null($map) && FALSE !== $map_index) {
     $insert = array(
-      &$map,
+      $map,
     );
     array_splice($args, $map_index, 0, $insert);
     $map[$index] = _me_check_arg($uid);
@@ -377,14 +377,14 @@ function _me_load_arguments($uid, &$map = NULL, $index = NULL, $map_index = FALS
 /**
  * Menu load callback in place of user_load().
  */
-function me_load($uid, &$map = NULL, $index = NULL, $map_index = FALSE) {
+function me_load($uid, $map = NULL, $index = NULL, $map_index = FALSE) {
  return _me_load_arguments($uid, $map, $index, $map_index);
 }
 
 /**
  * Menu load callback in place of user_uid_optional_load().
  */
-function me_uid_optional_load($uid, &$map = NULL, $index = NULL, $map_index = FALSE) {
+function me_uid_optional_load($uid, $map = NULL, $index = NULL, $map_index = FALSE) {
   if (!isset($uid)) {
     if (!$GLOBALS['user']->uid) {
       return;
@@ -398,7 +398,7 @@ function me_uid_optional_load($uid, &$map = NULL, $index = NULL, $map_index = FA
 /**
  * Menu load callback in place of user_category_load().
  */
-function me_category_load($uid, &$map = NULL, $index = NULL, $map_index = FALSE) {
+function me_category_load($uid, $map = NULL, $index = NULL, $map_index = FALSE) {
   $args = func_get_args();
   return _me_load_arguments($uid, $map, $index, $map_index, $args, 'user_category_load');
 }

@@ -612,6 +612,7 @@ function file_entity_list_types_page() {
     switch ($type->ctools_type) {
       // Configuration is in code.
       case 'Default':
+      case t('Default'):
         if (!empty($type->disabled)) {
           $row[] = l(t('enable'), $admin_path . '/enable');
         }
@@ -622,6 +623,7 @@ function file_entity_list_types_page() {
 
       // Configuration is in DB.
       case 'Normal':
+      case t('Normal'):
         if (!empty($type->disabled)) {
           $status = l(t('enable'), $admin_path . '/enable');
         }
@@ -633,6 +635,7 @@ function file_entity_list_types_page() {
 
       // Configuration is in code, but overridden in DB.
       case 'Overridden':
+      case t('Overridden'):
         if (!empty($type->disabled)) {
           $row[] = l(t('enable'), $admin_path . '/enable');
         }
@@ -1169,6 +1172,13 @@ function file_entity_settings_form($form, &$form_state) {
     '#title' => t('Keep original file name'),
     '#default_value' => variable_get('file_entity_file_replace_options_keep_original_filename', FALSE),
     '#description' => t('Rename the newly uploaded file to the name of the original file. This action cannot be undone.'),
+  );
+
+  $form['file_entity_protect_repeated_render'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Protect against repeat rendering'),
+    '#default_value' => variable_get('file_entity_protect_repeated_render', TRUE),
+    '#description' => t('Avoid rendering the same entity more than 20 times. This can be a sign of an image entity getting caught in a recursive render, but it can also be triggered when the same image is rendered more than 20 times, e.g. in an long content list or data feed.'),
   );
 
   return system_settings_form($form);

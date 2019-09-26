@@ -167,7 +167,8 @@ setAccessTokenAndLocation = function(errorCode, errorMessage, accessToken, acces
  */
 function oAuthAccessTokenAndLocationListener(e) {
     var origin_url = new URL(e.origin);
-    if (origin_url.host == document.domain) {
+    var auth_url = new URL(Apigee.APIModel.authUrl);
+    if (origin_url.host == document.domain || origin_url.host == auth_url.host) {
         var obj = e.data;
         setAccessTokenAndLocation(obj.ERRORCODE, obj.ERRORMESSAGE, obj.ACCESSTOKEN, obj.ACCESSTOKENTYPE, obj.ACCESSTOKENPARAMNAME, obj.PROXYURL);
     }

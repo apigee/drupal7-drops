@@ -60,7 +60,7 @@ function smartdocs_render($model, $revision, array $selected, array $options, $r
     $operations[] = array('smartdocs_template', array($this_model));
   }
   $publish = (bool) $options['publish'];
-  if (count($resources) > 0) {
+  if (!empty($resources)) {
     foreach ($selected as $select) {
       if ($select == '0') {
         continue;
@@ -207,12 +207,32 @@ function smartdocs_render_nodes(array $model_array, array $revision_array, array
 
   if (!$exists) {
     drupal_load('module', 'smartdocs');
-    smartdocs_render_node($model_array, $revision_array, $resource_array, $method_array, $publish, $context);
+    $exists = smartdocs_render_node($model_array, $revision_array, $resource_array, $method_array, $publish, $context)->nid;
     $context['message'] = t('Node: :title created', array(':title' => $method_array['displayName']));
   }
   else {
     $context['message'] = t('Node: :title already created', array(':title' => $method_array['displayName']));
   }
+
+  // As we set status to 0 in smartdocs_revision_detail_submit(), now we need to set the status to 1 for all nodes
+  // in this method and adjust the tables accordingly.
+  db_update('node')
+      ->fields(array('status' => 1))
+      ->condition('nid', $exists, '=')
+      ->execute();
+  // Find the revision ID for this node to set node_revision status to 1.
+  // If this is the first revision created for model, below two queries
+  // should have no impact on the database.
+  $vids = db_select('field_revision_field_smart_method_revision_num')
+      ->fields(NULL, array('revision_id'))
+      ->condition('entity_id', $exists, '=')
+      ->execute()
+      ->fetchCol();
+  db_update('node_revision')
+      ->fields(array('status' => 1))
+      ->condition('nid', $exists, '=')
+      ->condition('vid', $vids, 'IN')
+      ->execute();
 }
 
 /**

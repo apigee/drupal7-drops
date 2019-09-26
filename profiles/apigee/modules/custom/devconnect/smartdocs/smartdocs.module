@@ -1187,7 +1187,7 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
       return;
     }
     $term = taxonomy_get_term_by_name($model, 'smartdocs_models');
-    if ($term && count($term)) {
+    if ($term && !empty($term)) {
       $term = reset($term);
     }
     else {
@@ -1278,7 +1278,7 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
   }
   // If no security schemes were defined for the revision, hide this whole
   // thing.
-  if (count($options) == 0) {
+  if (empty($options)) {
     $form['field_smart_method_security']['#access'] = FALSE;
   }
 
@@ -1331,7 +1331,7 @@ function smartdocs_form_smart_method_node_form_alter(array &$form, array &$form_
     catch (Exception $e) {
     }
   }
-  if (isset($resource_obj) && count($resource_obj->getParameters()) > 0) {
+  if (isset($resource_obj) && !empty($resource_obj->getParameters())) {
     $edit_resource_url = url('admin/content/smartdocs/models/' . $model . '/resource/edit/' . $revision . '/' . $resource);
     if (!array_key_exists('#suffix', $form['field_smart_method_params'][LANGUAGE_NONE])) {
       $form['field_smart_method_params'][LANGUAGE_NONE]['#suffix'] = '';

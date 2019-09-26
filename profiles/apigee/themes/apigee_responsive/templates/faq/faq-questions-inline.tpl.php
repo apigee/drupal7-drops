@@ -24,7 +24,7 @@
 ?>
 <a id="faq-top"></a>
 <div>
-  <?php if (count($nodes)): ?>
+  <?php if (!empty($nodes)): ?>
     <?php foreach ($nodes as $node): ?>
       <?php // Cycle through the $nodes array so that we now have a $node variable to work with. ?>
       <br />

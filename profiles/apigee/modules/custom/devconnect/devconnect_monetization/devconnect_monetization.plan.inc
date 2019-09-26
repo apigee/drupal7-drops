@@ -141,7 +141,7 @@ function devconnect_monetization_purchase_plan_form($form, &$form_state) {
         $sub_org_strings[] = $sub_org->getOrganization()->getDescription();
       }
     }
-    $form['package']['#product_list_title'][] = $product->getDisplayName() . (count($sub_org_strings) ? ' (' . implode(', ', $sub_org_strings) . ')' : '');
+    $form['package']['#product_list_title'][] = $product->getDisplayName() . (!empty($sub_org_strings) ? ' (' . implode(', ', $sub_org_strings) . ')' : '');
   }
 
   $form['action'] = array(

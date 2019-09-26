@@ -214,30 +214,32 @@ class DeveloperController implements DrupalEntityControllerInterface, EntityAPIC
    * {@inheritdoc}
    */
   public function delete($ids) {
-    $id_count = count($ids);
-    $deleted_count = 0;
-    foreach (self::getOrgs() as $org) {
-      $config = devconnect_default_org_config($org);
-      foreach ($ids as $id) {
-        $dev = new Developer($config);
-        try {
-          $dev->delete($id);
-          $deleted_count++;
-          if (array_key_exists($id, $this->devCache)) {
-            unset($this->devCache[$id]);
+    if (is_array($ids)) {
+      $id_count = count($ids);
+      $deleted_count = 0;
+      foreach (self::getOrgs() as $org) {
+        $config = devconnect_default_org_config($org);
+        foreach ($ids as $id) {
+          $dev = new Developer($config);
+          try {
+            $dev->delete($id);
+            $deleted_count++;
+            if (array_key_exists($id, $this->devCache)) {
+              unset($this->devCache[$id]);
+            }
+          }
+          catch (ResponseException $e) {
+            self::$lastException = $e;
+          }
+          catch (ParameterException $e) {
+            self::$lastException = $e;
           }
         }
-        catch (ResponseException $e) {
-          self::$lastException = $e;
+        // If there are multiple orgs, and we've deleted all we're meant to
+        // delete, no sense continuing to the next org.
+        if ($id_count == $deleted_count) {
+          break;
         }
-        catch (ParameterException $e) {
-          self::$lastException = $e;
-        }
-      }
-      // If there are multiple orgs, and we've deleted all we're meant to
-      // delete, no sense continuing to the next org.
-      if ($id_count == $deleted_count) {
-        break;
       }
     }
   }

@@ -122,14 +122,19 @@ class ctools_export_ui {
     switch ($op) {
       case 'import':
         return user_access('use ctools import');
+
       case 'revert':
         return ($item->export_type & EXPORT_IN_DATABASE) && ($item->export_type & EXPORT_IN_CODE);
+
       case 'delete':
         return ($item->export_type & EXPORT_IN_DATABASE) && !($item->export_type & EXPORT_IN_CODE);
+
       case 'disable':
         return empty($item->disabled);
+
       case 'enable':
         return !empty($item->disabled);
+
       default:
         return TRUE;
     }
@@ -154,7 +159,7 @@ class ctools_export_ui {
       if (!$js) {
         drupal_goto($_GET['q']);
       }
-      // clear everything but form id, form build id and form token:
+      // Clear everything but form id, form build id and form token.
       $keys = array_keys($input);
       foreach ($keys as $id) {
         if (!in_array($id, array('form_id', 'form_build_id', 'form_token'))) {
@@ -639,6 +644,7 @@ class ctools_export_ui {
   }
 
   public function add_page($js, $input, $step = NULL) {
+    $args = func_get_args();
     drupal_set_title($this->get_page_title('add'), PASS_THROUGH);
 
     // If a step not set, they are trying to create a new item. If a step
@@ -661,7 +667,7 @@ class ctools_export_ui {
       'no_redirect' => TRUE,
       'step' => $step,
       // Store these in case additional args are needed.
-      'function args' => func_get_args(),
+      'function args' => $args,
     );
 
     $output = $this->edit_execute_form($form_state);
@@ -676,6 +682,7 @@ class ctools_export_ui {
    * Main entry point to edit an item.
    */
   public function edit_page($js, $input, $item, $step = NULL) {
+    $args = func_get_args();
     drupal_set_title($this->get_page_title('edit', $item), PASS_THROUGH);
 
     // Check to see if there is a cached item to get if we're using the wizard.
@@ -697,7 +704,7 @@ class ctools_export_ui {
       'no_redirect' => TRUE,
       'step' => $step,
       // Store these in case additional args are needed.
-      'function args' => func_get_args(),
+      'function args' => $args,
     );
 
     $output = $this->edit_execute_form($form_state);
@@ -712,6 +719,7 @@ class ctools_export_ui {
    * Main entry point to clone an item.
    */
   public function clone_page($js, $input, $original, $step = NULL) {
+    $args = func_get_args();
     drupal_set_title($this->get_page_title('clone', $original), PASS_THROUGH);
 
     // If a step not set, they are trying to create a new clone. If a step
@@ -751,7 +759,7 @@ class ctools_export_ui {
       'no_redirect' => TRUE,
       'step' => $step,
       // Store these in case additional args are needed.
-      'function args' => func_get_args(),
+      'function args' => $args,
     );
 
     $output = $this->edit_execute_form($form_state);
@@ -901,7 +909,7 @@ class ctools_export_ui {
     if (!empty($form_state['complete'])) {
       $this->edit_save_form($form_state);
     }
-    else if ($output && !empty($form_state['item']->export_ui_item_is_cached)) {
+    elseif ($output && !empty($form_state['item']->export_ui_item_is_cached)) {
       // @todo this should be in the plugin strings
       drupal_set_message(t('You have unsaved changes. These changes will not be made permanent until you click <em>Save</em>.'), 'warning');
     }
@@ -1232,6 +1240,7 @@ class ctools_export_ui {
    * Page callback to import information for an exportable item.
    */
   public function import_page($js, $input, $step = NULL) {
+    $args = func_get_args();
     drupal_set_title($this->get_page_title('import'), PASS_THROUGH);
     // Import is basically a multi step wizard form, so let's go ahead and
     // use CTools' wizard.inc for it.
@@ -1256,7 +1265,7 @@ class ctools_export_ui {
       'no_redirect' => TRUE,
       'step' => $step,
       // Store these in case additional args are needed.
-      'function args' => func_get_args(),
+      'function args' => $args,
     );
 
     // import always uses the wizard.

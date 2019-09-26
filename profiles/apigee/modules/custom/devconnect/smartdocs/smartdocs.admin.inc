@@ -49,6 +49,14 @@ function smartdocs_settings($form, $form_state) {
     '#description' => t("Select this option if you would like the warning message shown, if SSL is not enabled."),
   );
 
+  $form['smartdocs_only_show_methods_from_published_revision'] = array(
+      '#title' => t("Only show methods from published revision"),
+      '#type' => 'checkbox',
+      '#default_value' => variable_get('smartdocs_only_show_methods_from_published_revision', 0),
+      '#description' => t("Enable if you would like only methods from published revision displayed on the documentation page."),
+
+  );
+
   // Don't bother with API Product correlation if devconnect_developer_apps is
   // not enabled; otherwise we'll encounter failure when trying to load
   // api_product entities.
@@ -1249,7 +1257,7 @@ function smartdocs_import_model_submit(array $form, array &$form_state) {
         }
       }
 
-      if (count($resource_enums) > 0 || count($method_enums) > 0) {
+      if (!empty($resource_enums) || !empty($method_enums)) {
         // Reload the model to make sure we get the latest revision number.
         $model->load();
         $revision_id = $model->getLatestRevisionNumber();
@@ -2747,7 +2755,7 @@ function smartdocs_revision_detail(array $form, array &$form_state, array $model
           ),
         );
       }
-      if (count($resource['methods']) > 0) {
+      if (!empty($resource['methods'])) {
         $header_copy = $header;
         if (!$has_tax) {
           unset($header_copy['tax']);
@@ -2832,6 +2840,45 @@ function smartdocs_revision_detail_submit($form, &$form_state) {
 
       module_load_include('inc', 'smartdocs', 'batch/smartdocs.render');
       batch_set(smartdocs_render($model_array, $revision_array, $selected, $options, FALSE));
+
+      // Checking if there is anything nodes from this model created in the database
+      $nodeFromModel = db_select('smartdata')
+        -> fields(NULL, array('nid'))
+        -> condition('model', $model_array['name'], '=')
+        -> execute()
+        -> fetchCol();
+      if(variable_get('smartdocs_only_show_methods_from_published_revision') == 1){
+        // If there are nodes in the database, the model has been initialized and the queries to change status
+        // of nodes can be executed, first set all nodes to unpublished and when render the nodes in this revision
+        // will be published again
+        if(!empty($nodeFromModel)){
+          // Change all the nodes from this model to unpublished
+          // nodes from latest revision will be reset to published after render
+            db_update('node')
+              ->fields(array('status' => 0))
+              ->condition('nid', $nodeFromModel, 'IN')
+              ->execute();
+            db_update('node_revision')
+              ->fields(array('status' => 0))
+              ->condition('nid', $nodeFromModel, 'IN')
+              ->execute();
+        }
+      }
+      else {
+        if(!empty($nodeFromModel)){
+          // Change all the nodes from this model to published
+          // because only show methods from latest revision is disabled
+            db_update('node')
+              ->fields(array('status' => 1))
+              ->condition('nid', $nodeFromModel, 'IN')
+              ->execute();
+            db_update('node_revision')
+              ->fields(array('status' => 0))
+              ->condition('nid', $nodeFromModel, 'IN')
+              ->execute();
+        }
+      }
+
       // Start batch process manually so FAPI will not include form state, which may be very large.
       batch_process(drupal_get_destination());
       break;
@@ -2972,7 +3019,7 @@ function smartdocs_resource_edit(array $form, array &$form_state, array $model, 
   $form['parameters'] = array(
     '#type' => 'textarea',
     '#title' => t('Parameters'),
-    '#default_value' => isset($resource) && count($resource['parameters']) > 0 ? smartdocs_format_json($resource['parameters']) : NULL,
+    '#default_value' => isset($resource) && !empty($resource['parameters']) ? smartdocs_format_json($resource['parameters']) : NULL,
   );
 
   $example = <<<EOM
@@ -3106,7 +3153,7 @@ function smartdocs_resource_delete(array $form, array &$form_state, array $model
     $method_uuids[] = $method['id'];
   }
   $description = NULL;
-  if (count($method_uuids) > 0) {
+  if (!empty($method_uuids)) {
     $query = db_select('smartdata', 's');
     $query->innerJoin('node', 'n', 's.nid = n.nid');
     $query->fields('n', array('nid'));
@@ -3117,7 +3164,7 @@ function smartdocs_resource_delete(array $form, array &$form_state, array $model
       ->condition('s.method', $method_uuids);
     $method_nids = $query->execute()->fetchAllKeyed();
     $method_uuids = array_flip($method_nids);
-    if (count($method_nids) == 0) {
+    if (empty($method_nids)) {
       $description = t('This resource contains %methods methods.', array('%methods' => count($method_uuids)));
     }
     else {
