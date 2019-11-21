@@ -21,7 +21,7 @@ projects[admin_menu][version] = "3.0-rc6"
 ; Enabled during profile install.
 projects[admin_views][type] = "module"
 projects[admin_views][subdir] = "contrib"
-projects[admin_views][version] = "1.6"
+projects[admin_views][version] = "1.7"
 
 ; Enabled during profile install.
 projects[adminimal_admin_menu][type] = "module"
