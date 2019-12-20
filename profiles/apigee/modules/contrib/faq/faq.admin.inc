@@ -36,13 +36,15 @@ function faq_general_settings_form($form) {
     '#default_value' => variable_get('faq_title', 'Frequently Asked Questions'),
   );
 
-  $form['body_filter']['faq_description'] = array(
-    '#type' => 'textarea',
+  $faq_description_default = array('value' => '', 'format' => filter_fallback_format());
+  $faq_description = variable_get('faq_description', $faq_description_default);
+  $form['faq_description'] = array(
+    '#type' => 'text_format',
     '#title' => t('FAQ Description'),
-    '#default_value' => variable_get('faq_description', ''),
+    '#default_value' => $faq_description['value'],
     '#description' => t('Your FAQ description.  This will be placed at the top of the page, above the questions and can serve as an introductory text.'),
     '#rows' => 5,
-    '#format' => variable_get('faq_description_format', NULL),
+    '#format' => $faq_description['format'],
   );
 
   $form['faq_custom_breadcrumbs'] = array(
@@ -61,7 +63,7 @@ function faq_general_settings_form($form) {
     '#type' => 'textfield',
     '#title' => t('FAQ Path'),
     '#description' => t('This option sets the path to the faq page. DO NOT append with a \'/\''),
-    '#default_value' => variable_get('faq_path', 'faq-page'),
+    '#default_value' => _faq_path(),
   );
 
   return system_settings_form($form);

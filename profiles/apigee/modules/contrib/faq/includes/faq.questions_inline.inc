@@ -74,7 +74,7 @@ function template_preprocess_faq_category_questions_inline(&$variables) {
   $this_page = $_GET['q'];
   $get_child_terms = 0;
   // Check if we're on a faq page.
-  if (arg(0) == 'faq-page') {
+  if (arg(0) == _faq_path()) {
     // Check if we're on a categorized faq page.
     if (is_numeric(arg(1))) {
       $get_child_terms = arg(1);
@@ -107,7 +107,7 @@ function template_preprocess_faq_category_questions_inline(&$variables) {
 
   // Get taxonomy image.
   $variables['term_image'] = '';
-  if (module_exists('taxonomy_image')) {
+  if (module_exists('taxonomy_image') && function_exists('taxonomy_image_display')) {
     $variables['term_image'] = taxonomy_image_display($term->tid, array('class' => 'faq-tax-image'));
   }
 
@@ -141,7 +141,7 @@ function template_preprocess_faq_category_questions_inline(&$variables) {
 
   // Configure sub-category bodies (theme recursively).
   $variables['subcat_body_list'] = array();
-  if (($get_child_terms && $category_display == 'categories_inline') || ((($show_term_page_children && $this_page != 'faq-page') || $hide_child_terms) && $category_display == 'hide_qa')) {
+  if (($get_child_terms && $category_display == 'categories_inline') || ((($show_term_page_children && $this_page != _faq_path()) || $hide_child_terms) && $category_display == 'hide_qa')) {
     $variables['subcat_body_list'] = faq_get_child_categories_faqs($term, 'faq_category_questions_inline', $default_weight, $default_sorting, $category_display, $variables['class'], $parent_term);
   }
 

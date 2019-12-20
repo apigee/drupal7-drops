@@ -112,7 +112,7 @@ function faq_uninstall() {
   // General settings.
   variable_del('faq_title');
   variable_del('faq_description');
-  variable_del('faq_description_format');
+  variable_del('faq_path');
   // Questions page.
   variable_del('faq_display');
   variable_del('faq_question_listing');
@@ -127,6 +127,7 @@ function faq_uninstall() {
   variable_del('faq_back_to_top');
   variable_del('faq_disable_node_links');
   variable_del('faq_default_sorting');
+  variable_del('faq_question_long_form');
   // Categories page.
   variable_del('faq_use_categories');
   variable_del('faq_category_display');
@@ -404,6 +405,22 @@ function faq_update_7002(&$sandbox) {
   $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
 
   return t('Custom field added, @count questions converted into fields.', array('@count' => $sandbox['max'] + 1));
+}
+
+/**
+ * Convert faq page description to array.
+ */
+function faq_update_7003(&$sandbox) {
+  $description = variable_get('faq_description', '');
+  $format = variable_get('faq_description_format', filter_fallback_format());
+  $faq_description = array(
+    'value' => $description,
+    'format' => $format,
+  );
+  variable_set('faq_description', $faq_description);
+  variable_del('faq_description_format');
+
+  return t('Converted faq page description to array.');
 }
 
 /**

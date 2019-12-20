@@ -163,9 +163,7 @@ projects[environment_indicator][version] = "2.9"
 ; Enabled during profile install.
 projects[faq][type] = "module"
 projects[faq][subdir] = "contrib"
-projects[faq][version] = "1.1"
-; see https://www.drupal.org/node/2646470
-projects[faq][patch][2646470] = "https://www.drupal.org/files/issues/faq-2646470-php-warning.patch"
+projects[faq][version] = "1.2"
 
 ; Enabled during profile install.
 projects[features][type] = "module"
@@ -480,7 +478,7 @@ projects[views_slideshow][version] = "3.9"
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.16"
+projects[webform][version] = "4.21"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"

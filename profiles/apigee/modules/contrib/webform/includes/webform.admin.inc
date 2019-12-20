@@ -20,7 +20,7 @@ function webform_admin_settings() {
   );
 
   // Add each component to the form:
-  $form['components'] = array('#tree' => TRUE);
+  $form['components'] += array('#tree' => TRUE);
   $component_types = webform_components(TRUE);
   foreach ($component_types as $key => $component) {
     $form['components'][$key] = array(
@@ -64,7 +64,7 @@ function webform_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Use Reply-To header'),
     '#default_value' => webform_variable_get('webform_email_replyto'),
-    '#description' => t('Sends all e-mail from the domain of the default address above and sets the "Reply-To" header to the actual sender. Helps prevent e-mail from being flagged as spam.'),
+    '#description' => t('If the default from name and address are set above, send all e-mail from the default address set the "Reply-To" header to the actual sender. This helps prevent e-mail from being flagged as spam.'),
   );
 
   $form['email']['webform_email_html_capable'] = array(
@@ -255,6 +255,13 @@ function webform_admin_settings() {
     '#description' => t('When mapping emails addresses to a select component, limit the choice to components with less than the amount of options indicated. This is to avoid flooding the email settings form.'),
   );
 
+  $form['advanced']['webform_fieldset_wrap'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use fieldsets for grouped components'),
+    '#default_value' => webform_variable_get('webform_fieldset_wrap'),
+    '#description' => t('Components containing multiple fields, such as checkboxes and radio buttons, will be wrapped in fieldsets. This improves the accessibility of webforms and helps them conform to web standards, but may require updates to the CSS of the active theme.'),
+  );
+
   $form = system_settings_form($form);
   $form['#theme'] = 'webform_admin_settings';
   array_unshift($form['#submit'], 'webform_admin_settings_submit');
@@ -312,7 +319,8 @@ function theme_webform_admin_settings($variables) {
  * Menu callback for admin/content/webform. Displays all webforms on the site.
  */
 function webform_admin_content() {
-  // Determine whether views or hard-coded tables should be used for the webforms table.
+  // Determine whether views or hard-coded tables should be used for the
+  // webforms table.
   if (!webform_variable_get('webform_table')) {
     $view = views_get_view('webform_webforms');
     return $view->preview('default');
