@@ -71,7 +71,7 @@ projects[cck_phone][version] = "1.x-dev"
 ; Enabled during profile install.
 projects[ckeditor][type] = "module"
 projects[ckeditor][subdir] = "contrib"
-projects[ckeditor][version] = "1.18"
+projects[ckeditor][version] = "1.19"
 
 projects[ckeditor_link][type] = "module"
 projects[ckeditor_link][subdir] = "contrib"
