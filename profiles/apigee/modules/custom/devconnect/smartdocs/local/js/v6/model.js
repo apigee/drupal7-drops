@@ -1318,6 +1318,10 @@ Apigee.APIModel.Methods = function() {
         if (forJSON) { // Handle JSON response content.
           var rawasjson = self.parseAndReturn(rawCode);
           rawCode = JSON.stringify(rawasjson, null, 2);
+
+          // Sanitize before outputting data
+          rawCode = escapeHtml(rawCode);
+
           rawCode = rawCode.replace("[{", "[\n  {");
           rawCode = rawCode.replace(/,\n[\n ]*$/, "");
           rawCode = rawCode.replace(/\n(\s*)},\n{/g, "\n$1},\n$1{");
@@ -2329,6 +2333,27 @@ Apigee.APIModel.SwaggerModelProperty = function(name, obj) {
     return result;
   };
 };
+
+// Used by escapeHtml()
+// Source: https://github.com/janl/mustache.js/blob/master/mustache.js#L67
+var entityMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+
+// Functon to sanitize output from REST server response.
+// Source: https://github.com/janl/mustache.js/blob/master/mustache.js#L55
+function escapeHtml (string) {
+  return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap (s) {
+    return entityMap[s];
+  });
+}
 
 
 Apigee.APIModel.sampleModels = {};
