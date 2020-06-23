@@ -756,6 +756,28 @@ function i18n_taxonomy_form_taxonomy_form_term_alter(&$form, &$form_state) {
   // Add language field or not depending on taxonomy mode.
   switch (i18n_taxonomy_vocabulary_mode($vocabulary->vid)) {
     case I18N_MODE_TRANSLATE:
+      // Set $form_state['storage'] default as empty array because we will add
+      // the translation and target from $_GET. So we still have it when the
+      // page partially reloads with ajax.
+      if(!isset($form_state['storage'])) {
+        $form_state['storage'] = array();
+      }
+      // get translation from $_GET or $form_state['storage']
+      $translation = null;
+      if(isset($_GET['translation'])) {
+        $translation = $_GET['translation'];
+        $form_state['storage']['translation'] = $translation;
+      } else if(isset($form_state['storage']) && isset($form_state['storage']['translation'])){
+        $translation = $form_state['storage']['translation'];
+      }
+      // get target from $_GET or $form_state['storage']
+      $target = null;
+      if(isset($_GET['target'])) {
+        $target = $_GET['target'];
+        $form_state['storage']['target'] = $target;
+      } else if(isset($form_state['storage']) && isset($form_state['storage']['target'])){
+        $target = $form_state['storage']['target'];
+      }
       $form['language'] = array(
         '#description' => t('This term belongs to a multilingual vocabulary. You can set a language for it.'),
       ) + i18n_element_language_select($term);
@@ -763,7 +785,7 @@ function i18n_taxonomy_form_taxonomy_form_term_alter(&$form, &$form_state) {
       // If the term to be added will be a translation of a source term,
       // set the default value of the option list to the target language and
       // create a form element for storing the translation set of the source term.
-      if (empty($term->tid) && isset($_GET['translation']) && isset($_GET['target']) && ($source_term = taxonomy_term_load($_GET['translation'])) && ($target_language = i18n_language_object($_GET['target']))) {
+      if (empty($term->tid) && isset($translation) && isset($target) && ($source_term = taxonomy_term_load($translation)) && ($target_language = i18n_language_object($target))) {
         // Set context language to target language.
         i18n_language_context($target_language);
 
@@ -1005,7 +1027,7 @@ function i18n_taxonomy_translate_terms($taxonomy, $langcode, $fullterms = TRUE) 
       }
       elseif ($term->language && $term->language != $langcode) {
         $translation_set = i18n_translation_set_load($term->i18n_tsid);
-        $translations = $translation_set->get_translations();
+        $translations = ($translation_set) ? $translation_set->get_translations() : NULL;
 
         if ($translations && !empty($translations[$langcode])) {
           $newterm = $translations[$langcode];

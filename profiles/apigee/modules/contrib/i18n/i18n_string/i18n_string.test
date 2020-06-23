@@ -65,7 +65,7 @@ class i18nStringTestCase extends Drupali18nTestCase {
     $this->drupalPost('admin/config/regional/translate/translate', $search, t('Filter'));
     $this->clickLink(t('edit'));
     // Just add a random translation.
-    $translation = $this->randomString();
+    $translation = $this->randomName();
     $edit = array();
     foreach ($this->getOtherLanguages() as $language) {
       $langcode = $language->language;

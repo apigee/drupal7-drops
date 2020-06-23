@@ -237,7 +237,7 @@ projects[http_client][version] = "2.4"
 ; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
-projects[i18n][version] = "1.22"
+projects[i18n][version] = "1.27"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
@@ -384,7 +384,7 @@ projects[rules][version] = "2.12"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.24"
+projects[services][version] = "3.27"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"

@@ -117,7 +117,7 @@ class RESTServer {
   protected function resolveControllerApplyVersion($resource, $resource_name) {
     $apply_version_method = '';
     $controller = $this->resolveController($resource, $apply_version_method);
-    services_request_apply_version($controller, array('method' => $apply_version_method, 'resource' => $resource_name));
+    services_request_apply_version($controller, array('method' => $apply_version_method, 'resource' => $resource['key']));
 
     return $controller;
   }
@@ -257,7 +257,7 @@ class RESTServer {
    *  Returns the formatted resource uri
    */
   public function uri_formatter($path) {
-    return url($this->context->getEndpointPath() . '/' . join($path, '/'), array(
+    return url($this->context->getEndpointPath() . '/' . join('/', $path), array(
       'absolute' => TRUE,
     ));
   }
@@ -682,6 +682,9 @@ class RESTServer {
         break;
       case 200:
         $error_header_status_message = $this->formatHttpHeaderStatusMessage('200', $error_message);
+	break;
+      case 201:
+        $error_header_status_message = $this->formatHttpHeaderStatusMessage('201', $error_message);
         break;
       default:
         if ($error_code >= 400 && $error_code < 600) {
