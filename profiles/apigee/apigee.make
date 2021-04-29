@@ -788,7 +788,7 @@ libraries[jquery_cycle][download][url] = "http://www.malsup.com/jquery/cycle/rel
 libraries[jquery_selectlist][destination] = "libraries"
 libraries[jquery_selectlist][directory_name] = "jquery.selectlist"
 libraries[jquery_selectlist][download][type] = "file"
-libraries[jquery_selectlist][download][url] = "http://odyniec.net/projects/selectlist/jquery.selectlist-0.6.1.zip"
+libraries[jquery_selectlist][download][url] = "https://github.com/odyniec/selectlist/archive/refs/tags/v0.6.1.zip"
 
 ; Used by devconnect_developer_apps
 libraries[datetimepicker][destination] = "libraries"
