@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2021, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 CKEDITOR.plugins.setLang( 'a11yhelp', 'sq', {
@@ -12,27 +12,28 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'sq', {
 		items: [
 			{
 			name: 'Shiriti i Redaktuesit',
-			legend: 'Press ${toolbarFocus} to navigate to the toolbar. Move to the next and previous toolbar group with TAB and SHIFT-TAB. Move to the next and previous toolbar button with RIGHT ARROW or LEFT ARROW. Press SPACE or ENTER to activate the toolbar button.' // MISSING
+			legend: 'Shtyp ${toolbarFocus} për të shfletuar kokështrirjen. Kalo tek grupi paraprak ose pasues i shiritit përmes kombinacionit TAB dhe SHIFT+TAB, në tastierë. Kalo tek pulla paraprake ose pasuese e kokështrirjes përmes SHIGJETË DJATHTAS ose SHIGJETËS MAJTAS, në tastierë. Shtyp HAPËSIRË ose ENTER Move to the next and previous toolbar button with RIGHT ARROW për të aktivizuar pullën e kokështrirjes.'
 		},
 
 			{
 			name: 'Dialogu i Redaktuesit',
-			legend: 'Inside a dialog, press TAB to navigate to next dialog field, press SHIFT + TAB to move to previous field, press ENTER to submit dialog, press ESC to cancel dialog. For dialogs that have multiple tab pages, press ALT + F10 to navigate to tab-list. Then move to next tab with TAB OR RIGTH ARROW. Move to previous tab with SHIFT + TAB or LEFT ARROW. Press SPACE or ENTER to select the tab page.' // MISSING
+			legend:
+				'Në brendi të dialogut, shtyp TAB për të kaluar tek elementi tjetër i dialogut, shtyp SHIFT+TAB për të kaluar tek elementi paraprak i dialogut, shtyp ENTER për të shtuar dialogun, shtyp ESC për të anuluar dialogun.  Kur një dialog ka më shumë fletë, lista e fletëve mund të hapet përmes ALT+F10 ose përmes TAB si pjesë e radhitjes së fletëve të dialogut. Me listën e fokusuar të fletëve,kalo tek fleta paraprake dhe pasuese përmes SHIGJETËS MAJSA ose DJATHTAS.' 
 		},
 
 			{
-			name: 'Editor Context Menu', // MISSING
-			legend: 'Press ${contextMenu} or APPLICATION KEY to open context-menu. Then move to next menu option with TAB or DOWN ARROW. Move to previous option with SHIFT+TAB or UP ARROW. Press SPACE or ENTER to select the menu option. Open sub-menu of current option with SPACE or ENTER or RIGHT ARROW. Go back to parent menu item with ESC or LEFT ARROW. Close context menu with ESC.' // MISSING
+			name: 'Menyja Kontestuese e Redaktorit',
+			legend: 'Shtyp ${contextMenu} ose APPLICATION KEY për të hapur menynë kontekstuale. Pastaj kalo tek mundësia tjetër e menysë përmes TAB ose SHIGJETËS POSHTË. Kalo tek mundësia paraprake përmes SHIFT+TAB ose SHIGJETA SIPËR. Shtyp SPACE ose ENTER për të përzgjedhur mundësinë e menysë. Hape nënmenynë e mundësisë aktuale përmes tastës HAPËSIRË ose ENTER ose SHIGJETËS DJATHTAS. Kalo prapa tek artikulli i menysë prind përmes ESC ose SHIGJETËS MAJTAS. Mbylle menynë kontekstuale përmes ESC.'
 		},
 
 			{
-			name: 'Editor List Box', // MISSING
-			legend: 'Inside a list-box, move to next list item with TAB OR DOWN ARROW. Move to previous list item with SHIFT + TAB or UP ARROW. Press SPACE or ENTER to select the list option. Press ESC to close the list-box.' // MISSING
+			name: 'Kutiza e Listës së Redaktuesit',
+			legend: 'Brenda kutisë së listës, kalo tek artikulli pasues i listës përmes TAB ose SHIGJETËS POSHTË. Kalo tek artikulli paraprak i listës përmes SHIFT+TAB ose SHIGJETËS SIPËR. Shtyp tastën HAPËSIRË ose ENTER për të përzgjedhur mundësitë e listës. Shtyp ESC për të mbyllur kutinë e listës.'
 		},
 
 			{
-			name: 'Editor Element Path Bar', // MISSING
-			legend: 'Press ${elementsPathFocus} to navigate to the elements path bar. Move to next element button with TAB or RIGHT ARROW. Move to previous button with  SHIFT+TAB or LEFT ARROW. Press SPACE or ENTER to select the element in editor.' // MISSING
+			name: 'Shiriti i Rrugës së Elementeve të Redaktorit',
+			legend: 'Shtyp ${elementsPathFocus} për të lëvizur tek shiriti i elementeve. Kalo tek pulla pasuese e elementit përmes TAB ose SHIGJETËS DJATHTAS. Kalo tek pulla paraprake përmes SHIFT+TAB ose SHIGJETËS MAJTAS. Shtyp tastën HAPËSIRË ose ENTER për të përzgjedhur elementin tek redaktuesi.'
 		}
 		]
 	},
@@ -64,84 +65,81 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'sq', {
 			legend: 'Shtyp ${link}'
 		},
 			{
-			name: ' Toolbar Collapse command', // MISSING
+			name: 'Komanda e Mbjedhjes së Kokështrirjes',
 			legend: 'Shtyp ${toolbarCollapse}'
 		},
 			{
-			name: ' Access previous focus space command', // MISSING
-			legend: 'Press ${accessPreviousSpace} to access the closest unreachable focus space before the caret, for example: two adjacent HR elements. Repeat the key combination to reach distant focus spaces.' // MISSING
+			name: 'Qasu komandës paraprake të hapësirës së fokusimit',
+			legend: 'Shtyp ${accessPreviousSpace} për t\'iu qasur hapësirës më të afërt të paarritshme të fokusimit para simbolit ^, për shembull: dy elemente të afërt  HR. Përsërit kombinacionin e tasteve për të arritur hapësirë të largët fokusimi.'
 		},
 			{
-			name: ' Access next focus space command', // MISSING
-			legend: 'Press ${accessNextSpace} to access the closest unreachable focus space after the caret, for example: two adjacent HR elements. Repeat the key combination to reach distant focus spaces.' // MISSING
+			name: 'Qasu komandës pasuese të hapësirës së fokusimit',
+			legend: 'Shtyp ${accessNextSpace} për t\'iu qasur hapësirës më të afërt të paarritshme të fokusimit pas shenjës ^, për shembull: dy elemente të afërt HR. Përsërit kombinacionin e tasteve për të arritur hapësirën e largët të fokusimit.'
 		},
 			{
 			name: 'Ndihmë Qasjeje',
 			legend: 'Shtyp ${a11yHelp}'
+		},
+			{
+			name: 'Hidhe si tekst të thjeshtë',
+			legend: 'Shtyp ${pastetext}',
+			legendEdge: 'Shtyp ${pastetext}, pasuar nga ${paste}'
 		}
 		]
 	}
 	],
-	backspace: 'Backspace', // MISSING
-	tab: 'Tab', // MISSING
-	enter: 'Enter', // MISSING
-	shift: 'Shift', // MISSING
-	ctrl: 'Ctrl', // MISSING
-	alt: 'Alt', // MISSING
-	pause: 'Pause', // MISSING
-	capslock: 'Caps Lock', // MISSING
-	escape: 'Escape', // MISSING
-	pageUp: 'Page Up', // MISSING
-	pageDown: 'Page Down', // MISSING
-	end: 'End', // MISSING
-	home: 'Home', // MISSING
-	leftArrow: 'Left Arrow', // MISSING
-	upArrow: 'Up Arrow', // MISSING
-	rightArrow: 'Right Arrow', // MISSING
-	downArrow: 'Down Arrow', // MISSING
-	insert: 'Insert', // MISSING
-	'delete': 'Delete', // MISSING
-	leftWindowKey: 'Left Windows key', // MISSING
-	rightWindowKey: 'Right Windows key', // MISSING
-	selectKey: 'Select key', // MISSING
-	numpad0: 'Numpad 0', // MISSING
-	numpad1: 'Numpad 1', // MISSING
-	numpad2: 'Numpad 2', // MISSING
-	numpad3: 'Numpad 3', // MISSING
-	numpad4: 'Numpad 4', // MISSING
-	numpad5: 'Numpad 5', // MISSING
-	numpad6: 'Numpad 6', // MISSING
-	numpad7: 'Numpad 7', // MISSING
-	numpad8: 'Numpad 8', // MISSING
-	numpad9: 'Numpad 9', // MISSING
-	multiply: 'Multiply', // MISSING
-	add: 'Add', // MISSING
-	subtract: 'Subtract', // MISSING
-	decimalPoint: 'Decimal Point', // MISSING
-	divide: 'Divide', // MISSING
-	f1: 'F1', // MISSING
-	f2: 'F2', // MISSING
-	f3: 'F3', // MISSING
-	f4: 'F4', // MISSING
-	f5: 'F5', // MISSING
-	f6: 'F6', // MISSING
-	f7: 'F7', // MISSING
-	f8: 'F8', // MISSING
-	f9: 'F9', // MISSING
-	f10: 'F10', // MISSING
-	f11: 'F11', // MISSING
-	f12: 'F12', // MISSING
-	numLock: 'Num Lock', // MISSING
-	scrollLock: 'Scroll Lock', // MISSING
-	semiColon: 'Semicolon', // MISSING
-	equalSign: 'Equal Sign', // MISSING
-	comma: 'Comma', // MISSING
-	dash: 'Dash', // MISSING
-	period: 'Period', // MISSING
-	forwardSlash: 'Forward Slash', // MISSING
-	graveAccent: 'Grave Accent', // MISSING
-	openBracket: 'Open Bracket', // MISSING
-	backSlash: 'Backslash', // MISSING
-	closeBracket: 'Close Bracket', // MISSING
-	singleQuote: 'Single Quote' // MISSING
+	tab: 'Tab',
+	pause: 'Pause',
+	capslock: 'Caps Lock',
+	escape: 'Escape',
+	pageUp: 'Faqja sipër',
+	pageDown: 'Faqja poshtë',
+	leftArrow: 'Shigjeta majtas',
+	upArrow: 'Shigjeta sipër',
+	rightArrow: 'Shigjeta djathtas',
+	downArrow: 'Shigjeta poshtë',
+	insert: 'Insert',
+	leftWindowKey: 'Pulla Majtas e Windows-it',
+	rightWindowKey: 'Pulla Djathtas e Windows-it',
+	selectKey: 'Pulla Përzgjedhëse',
+	numpad0: 'Numpad 0',
+	numpad1: 'Numpad 1',
+	numpad2: 'Numpad 2',
+	numpad3: 'Numpad 3',
+	numpad4: 'Numpad 4',
+	numpad5: 'Numpad 5',
+	numpad6: 'Numpad 6',
+	numpad7: 'Numpad 7',
+	numpad8: 'Numpad 8',
+	numpad9: 'Numpad 9',
+	multiply: 'Shumëzo',
+	add: 'Shto',
+	subtract: 'Zbrit',
+	decimalPoint: 'Pika Decimale',
+	divide: 'Pjesëto',
+	f1: 'F1',
+	f2: 'F2',
+	f3: 'F3',
+	f4: 'F4',
+	f5: 'F5',
+	f6: 'F6',
+	f7: 'F7',
+	f8: 'F8',
+	f9: 'F9',
+	f10: 'F10',
+	f11: 'F11',
+	f12: 'F12',
+	numLock: 'Num Lock',
+	scrollLock: 'Scroll Lock',
+	semiColon: 'Pikëpresje',
+	equalSign: 'Shenja e Barazimit',
+	comma: 'Presje',
+	dash: 'minus',
+	period: 'Pikë',
+	forwardSlash: 'Vija e pjerrët përpara',
+	graveAccent: 'Shenja e theksit',
+	openBracket: 'Hape kllapën',
+	backSlash: 'Vija e pjerrët prapa',
+	closeBracket: 'Mbylle kllapën',
+	singleQuote: 'Thonjëz e vetme'
 } );

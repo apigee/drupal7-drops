@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2021, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 CKEDITOR.plugins.setLang( 'a11yhelp', 'zh-cn', {
@@ -12,12 +12,13 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'zh-cn', {
 		items: [
 			{
 			name: '编辑器工具栏',
-			legend: '按 ${toolbarFocus} 导航到工具栏，使用 TAB 键和 SHIFT+TAB 组合键移动到上一个和下一个工具栏组。使用左右箭头键移动到上一个和下一个工具栏按钮。按空格键或回车键以选中工具栏按钮。'
+			legend: '按 ${toolbarFocus} 切换到工具栏，使用 TAB 键和 SHIFT+TAB 组合键移动到上一个和下一个工具栏组。使用左右箭头键移动到上一个或下一个工具栏按钮。按空格键或回车键以选中工具栏按钮。'
 		},
 
 			{
 			name: '编辑器对话框',
-			legend: '在对话框内，TAB 键移动到下一个字段，SHIFT + TAB 组合键移动到上一个字段，ENTER 键提交对话框，ESC 键取消对话框。对于有多选项卡的对话框，用ALT + F10来移到选项卡列表。然后用 TAB 键或者向右箭头来移动到下一个选项卡；SHIFT + TAB 组合键或者向左箭头移动到上一个选项卡。用 SPACE 键或者 ENTER 键选择选项卡。'
+			legend:
+				'在对话框内，按 TAB 键移动到下一个字段，按 SHIFT + TAB 组合键移动到上一个字段，按 ENTER 键提交对话框，按 ESC 键取消对话框。对于有多选项卡的对话框，可以按 ALT + F10 直接切换到或者按 TAB 键逐步移到选项卡列表，当焦点移到选项卡列表时可以用左右箭头键来移动到前后的选项卡。' 
 		},
 
 			{
@@ -27,7 +28,7 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'zh-cn', {
 
 			{
 			name: '编辑器列表框',
-			legend: '在列表框中，移到下一列表项用 TAB 键或者下箭头键。移到上一列表项用SHIFT + TAB 组合键或者上箭头键，用 SPACE 键或者 ENTER 键选择列表项。用 ESC 键收起列表框。'
+			legend: '在列表框中，移到下一列表项用 TAB 键或者下箭头键。移到上一列表项用SHIFT+TAB 组合键或者上箭头键，用 SPACE 键或者 ENTER 键选择列表项。用 ESC 键收起列表框。'
 		},
 
 			{
@@ -78,70 +79,67 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'zh-cn', {
 			{
 			name: '辅助功能帮助',
 			legend: '按 ${a11yHelp}'
+		},
+			{
+			name: '粘贴为纯文本',
+			legend: '按 ${pastetext}',
+			legendEdge: '按 ${pastetext}，然后再按 ${paste}'
 		}
 		]
 	}
 	],
-	backspace: 'Backspace', // MISSING
-	tab: 'Tab', // MISSING
-	enter: 'Enter', // MISSING
-	shift: 'Shift', // MISSING
-	ctrl: 'Ctrl', // MISSING
-	alt: 'Alt', // MISSING
-	pause: 'Pause', // MISSING
-	capslock: 'Caps Lock', // MISSING
-	escape: 'Escape', // MISSING
-	pageUp: 'Page Up', // MISSING
-	pageDown: 'Page Down', // MISSING
-	end: 'End', // MISSING
-	home: 'Home', // MISSING
-	leftArrow: 'Left Arrow', // MISSING
-	upArrow: 'Up Arrow', // MISSING
-	rightArrow: 'Right Arrow', // MISSING
-	downArrow: 'Down Arrow', // MISSING
-	insert: 'Insert', // MISSING
-	'delete': 'Delete', // MISSING
-	leftWindowKey: 'Left Windows key', // MISSING
-	rightWindowKey: 'Right Windows key', // MISSING
-	selectKey: 'Select key', // MISSING
-	numpad0: 'Numpad 0', // MISSING
-	numpad1: 'Numpad 1', // MISSING
-	numpad2: 'Numpad 2', // MISSING
-	numpad3: 'Numpad 3', // MISSING
-	numpad4: 'Numpad 4', // MISSING
-	numpad5: 'Numpad 5', // MISSING
-	numpad6: 'Numpad 6', // MISSING
-	numpad7: 'Numpad 7', // MISSING
-	numpad8: 'Numpad 8', // MISSING
-	numpad9: 'Numpad 9', // MISSING
-	multiply: 'Multiply', // MISSING
-	add: 'Add', // MISSING
-	subtract: 'Subtract', // MISSING
-	decimalPoint: 'Decimal Point', // MISSING
-	divide: 'Divide', // MISSING
-	f1: 'F1', // MISSING
-	f2: 'F2', // MISSING
-	f3: 'F3', // MISSING
-	f4: 'F4', // MISSING
-	f5: 'F5', // MISSING
-	f6: 'F6', // MISSING
-	f7: 'F7', // MISSING
-	f8: 'F8', // MISSING
-	f9: 'F9', // MISSING
-	f10: 'F10', // MISSING
-	f11: 'F11', // MISSING
-	f12: 'F12', // MISSING
-	numLock: 'Num Lock', // MISSING
-	scrollLock: 'Scroll Lock', // MISSING
-	semiColon: 'Semicolon', // MISSING
-	equalSign: 'Equal Sign', // MISSING
-	comma: 'Comma', // MISSING
-	dash: 'Dash', // MISSING
-	period: 'Period', // MISSING
-	forwardSlash: 'Forward Slash', // MISSING
-	graveAccent: 'Grave Accent', // MISSING
-	openBracket: 'Open Bracket', // MISSING
-	backSlash: 'Backslash', // MISSING
-	closeBracket: 'Close Bracket', // MISSING
-	singleQuote: 'Single Quote' // MISSING
+	tab: 'Tab 键',
+	pause: '暂停键',
+	capslock: '大写锁定键',
+	escape: 'Esc 键',
+	pageUp: '上翻页键',
+	pageDown: '下翻页键',
+	leftArrow: '向左箭头键',
+	upArrow: '向上箭头键',
+	rightArrow: '向右箭头键',
+	downArrow: '向下箭头键',
+	insert: '插入键',
+	leftWindowKey: '左 WIN 键',
+	rightWindowKey: '右 WIN 键',
+	selectKey: '选择键',
+	numpad0: '小键盘 0 键',
+	numpad1: '小键盘 1 键',
+	numpad2: '小键盘 2 键',
+	numpad3: '小键盘 3 键',
+	numpad4: '小键盘 4 键',
+	numpad5: '小键盘 5 键',
+	numpad6: '小键盘 6 键',
+	numpad7: '小键盘 7 键',
+	numpad8: '小键盘 8 键',
+	numpad9: '小键盘 9 键',
+	multiply: '星号键',
+	add: '加号键',
+	subtract: '减号键',
+	decimalPoint: '小数点键',
+	divide: '除号键',
+	f1: 'F1 键',
+	f2: 'F2 键',
+	f3: 'F3 键',
+	f4: 'F4 键',
+	f5: 'F5 键',
+	f6: 'F6 键',
+	f7: 'F7 键',
+	f8: 'F8 键',
+	f9: 'F9 键',
+	f10: 'F10 键',
+	f11: 'F11 键',
+	f12: 'F12 键',
+	numLock: '数字锁定键',
+	scrollLock: '滚动锁定键',
+	semiColon: '分号键',
+	equalSign: '等号键',
+	comma: '逗号键',
+	dash: '短划线键',
+	period: '句号键',
+	forwardSlash: '斜杠键',
+	graveAccent: '重音符键',
+	openBracket: '左中括号键',
+	backSlash: '反斜杠键',
+	closeBracket: '右中括号键',
+	singleQuote: '单引号键'
 } );

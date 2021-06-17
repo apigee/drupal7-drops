@@ -1,6 +1,6 @@
 /**
- * @license Copyright (c) 2003-2012, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+ * @license Copyright (c) 2003-2021, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 ( function() {
@@ -35,9 +35,14 @@
 		}
 	} );
 
-	function create( editor, spaceName, targetId ) {
-		var target = CKEDITOR.document.getById( targetId ),
-			innerHtml, space;
+	function create( editor, spaceName, target ) {
+		var innerHtml, space;
+
+		if ( typeof target == 'string' ) {
+			target = CKEDITOR.document.getById( target );
+		} else {
+			target = new CKEDITOR.dom.element( target );
+		}
 
 		if ( target ) {
 			// Have other plugins filling the space.
@@ -103,24 +108,40 @@
 
 /**
  * Makes it possible to place some of the editor UI blocks, like the toolbar
- * and the elements path, into any element in the page.
+ * and the elements path, in any element on the page.
  *
- * The elements used to hold the UI blocks can be shared among several editor
- * instances. In that case, only the blocks of the active editor instance will
- * display.
+ * The elements used to store the UI blocks can be shared among several editor
+ * instances. In that case only the blocks relevant to the active editor instance
+ * will be displayed.
  *
- *		// Place the toolbar inside the element with ID "someElementId" and the
- *		// elements path into the element with ID "anotherId".
+ * Read more in the {@glink features/sharedspace documentation}
+ * and see the {@glink examples/sharedspace example}.
+ *
+ *		// Place the toolbar inside the element with an ID of "someElementId" and the
+ *		// elements path into the element with an  ID of "anotherId".
  *		config.sharedSpaces = {
  *			top: 'someElementId',
  *			bottom: 'anotherId'
  *		};
  *
- *		// Place the toolbar inside the element with ID "someElementId". The
+ *		// Place the toolbar inside the element with an ID of "someElementId". The
  *		// elements path will remain attached to the editor UI.
  *		config.sharedSpaces = {
  *			top: 'someElementId'
  *		};
+ *
+ *		// (Since 4.5.0)
+ *		// Place the toolbar inside a DOM element passed by a reference. The
+ *		// elements path will remain attached to the editor UI.
+ *		var htmlElement = document.getElementById( 'someElementId' );
+ *		config.sharedSpaces = {
+ *			top: htmlElement
+ *		};
+ *
+ * **Note:** The [Maximize](https://ckeditor.com/cke4/addon/maximize) and [Editor Resize](https://ckeditor.com/cke4/addon/resize)
+ * features are not supported in the shared space environment and should be disabled in this context.
+ *
+ *		config.removePlugins = 'maximize,resize';
  *
  * @cfg {Object} [sharedSpaces]
  * @member CKEDITOR.config

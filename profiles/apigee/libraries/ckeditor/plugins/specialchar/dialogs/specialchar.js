@@ -1,75 +1,80 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2021, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 	// Simulate "this" of a dialog for non-dialog events.
 	// @type {CKEDITOR.dialog}
 	var dialog,
-		lang = editor.lang.specialchar;
+		lang = editor.lang.specialchar,
+		focusedNode,
+		onChoice,
+		onClick,
+		onBlur,
+		onFocus,
+		onKeydown;
 
-	var onChoice = function( evt ) {
-			var target, value;
-			if ( evt.data )
-				target = evt.data.getTarget();
-			else
-				target = new CKEDITOR.dom.element( evt );
 
-			if ( target.getName() == 'a' && ( value = target.getChild( 0 ).getHtml() ) ) {
-				target.removeClass( "cke_light_background" );
-				dialog.hide();
+	onChoice = function( evt ) {
+		var target, value;
+		if ( evt.data )
+			target = evt.data.getTarget();
+		else
+			target = new CKEDITOR.dom.element( evt );
 
-				// We must use "insertText" here to keep text styled.
-				var span = editor.document.createElement( 'span' );
-				span.setHtml( value );
-				editor.insertText( span.getText() );
-			}
-		};
+		if ( target.getName() == 'a' && ( value = target.getChild( 0 ).getHtml() ) ) {
+			target.removeClass( 'cke_light_background' );
+			dialog.hide();
 
-	var onClick = CKEDITOR.tools.addFunction( onChoice );
+			// We must use "insertText" here to keep text styled.
+			var span = editor.document.createElement( 'span' );
+			span.setHtml( value );
+			editor.insertText( span.getText() );
+		}
+	};
 
-	var focusedNode;
+	onClick = CKEDITOR.tools.addFunction( onChoice );
 
-	var onFocus = function( evt, target ) {
-			var value;
-			target = target || evt.data.getTarget();
+	onFocus = function( evt, target ) {
+		var value;
+		target = target || evt.data.getTarget();
 
-			if ( target.getName() == 'span' )
-				target = target.getParent();
+		if ( target.getName() == 'span' )
+			target = target.getParent();
 
-			if ( target.getName() == 'a' && ( value = target.getChild( 0 ).getHtml() ) ) {
-				// Trigger blur manually if there is focused node.
-				if ( focusedNode )
-					onBlur( null, focusedNode );
+		if ( target.getName() == 'a' && ( value = target.getChild( 0 ).getHtml() ) ) {
+			// Trigger blur manually if there is focused node.
+			if ( focusedNode )
+				onBlur( null, focusedNode );
 
-				var htmlPreview = dialog.getContentElement( 'info', 'htmlPreview' ).getElement();
+			var htmlPreview = dialog.getContentElement( 'info', 'htmlPreview' ).getElement();
 
-				dialog.getContentElement( 'info', 'charPreview' ).getElement().setHtml( value );
-				htmlPreview.setHtml( CKEDITOR.tools.htmlEncode( value ) );
-				target.getParent().addClass( "cke_light_background" );
+			dialog.getContentElement( 'info', 'charPreview' ).getElement().setHtml( value );
+			htmlPreview.setHtml( CKEDITOR.tools.htmlEncode( value ) );
+			target.getParent().addClass( 'cke_light_background' );
 
-				// Memorize focused node.
-				focusedNode = target;
-			}
-		};
+			// Memorize focused node.
+			focusedNode = target;
+		}
+	};
 
-	var onBlur = function( evt, target ) {
-			target = target || evt.data.getTarget();
+	onBlur = function( evt, target ) {
+		target = target || evt.data.getTarget();
 
-			if ( target.getName() == 'span' )
-				target = target.getParent();
+		if ( target.getName() == 'span' )
+			target = target.getParent();
 
-			if ( target.getName() == 'a' ) {
-				dialog.getContentElement( 'info', 'charPreview' ).getElement().setHtml( '&nbsp;' );
-				dialog.getContentElement( 'info', 'htmlPreview' ).getElement().setHtml( '&nbsp;' );
-				target.getParent().removeClass( "cke_light_background" );
+		if ( target.getName() == 'a' ) {
+			dialog.getContentElement( 'info', 'charPreview' ).getElement().setHtml( '&nbsp;' );
+			dialog.getContentElement( 'info', 'htmlPreview' ).getElement().setHtml( '&nbsp;' );
+			target.getParent().removeClass( 'cke_light_background' );
 
-				focusedNode = undefined;
-			}
-		};
+			focusedNode = undefined;
+		}
+	};
 
-	var onKeydown = CKEDITOR.tools.addFunction( function( ev ) {
+	onKeydown = CKEDITOR.tools.addFunction( function( ev ) {
 		ev = new CKEDITOR.dom.event( ev );
 
 		// Get an Anchor element.
@@ -120,8 +125,9 @@ CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 						onBlur( null, element );
 						onFocus( null, nodeToMove );
 						ev.preventDefault( true );
-					} else
+					} else {
 						onBlur( null, element );
+					}
 				}
 				// relative is TR
 				else if ( ( relative = element.getParent().getParent().getNext() ) ) {
@@ -131,8 +137,9 @@ CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 						onBlur( null, element );
 						onFocus( null, nodeToMove );
 						ev.preventDefault( true );
-					} else
+					} else {
 						onBlur( null, element );
+					}
 				}
 				break;
 
@@ -153,8 +160,9 @@ CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 					onBlur( null, element );
 					onFocus( null, nodeToMove );
 					ev.preventDefault( true );
-				} else
+				} else {
 					onBlur( null, element );
+				}
 				break;
 			default:
 				// Do not stop not handled events.
@@ -170,7 +178,6 @@ CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 		charColumns: 17,
 		onLoad: function() {
 			var columns = this.definition.charColumns,
-				extraChars = editor.config.extraSpecialChars,
 				chars = editor.config.specialChars;
 
 			var charsTableLabel = CKEDITOR.tools.getNextId() + '_specialchar_table_label';
@@ -212,11 +219,10 @@ CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 							'</span>' +
 							'<span class="cke_voice_label" id="' + charLabelId + '">' +
 							charDesc +
-							'</span></a>' );
-					} else
-						html.push( '<td class="cke_dark_background">&nbsp;' );
+							'</span></a></td>'
+						);
+					}
 
-					html.push( '</td>' );
 				}
 				html.push( '</tr>' );
 			}
@@ -225,20 +231,17 @@ CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 
 			this.getContentElement( 'info', 'charContainer' ).getElement().setHtml( html.join( '' ) );
 		},
-		contents: [
-			{
+		contents: [ {
 			id: 'info',
 			label: editor.lang.common.generalTab,
 			title: editor.lang.common.generalTab,
 			padding: 0,
 			align: 'top',
-			elements: [
-				{
+			elements: [ {
 				type: 'hbox',
 				align: 'top',
 				widths: [ '320px', '90px' ],
-				children: [
-					{
+				children: [ {
 					type: 'html',
 					id: 'charContainer',
 					html: '',
@@ -262,41 +265,36 @@ CKEDITOR.dialog.add( 'specialchar', function( editor ) {
 						dialog = event.sender;
 					}
 				},
-					{
+				{
 					type: 'hbox',
 					align: 'top',
 					widths: [ '100%' ],
-					children: [
-						{
+					children: [ {
 						type: 'vbox',
 						align: 'top',
 						children: [
 							{
-							type: 'html',
-							html: '<div></div>'
-						},
+								type: 'html',
+								html: '<div></div>'
+							},
 							{
-							type: 'html',
-							id: 'charPreview',
-							className: 'cke_dark_background',
-							style: 'border:1px solid #eeeeee;font-size:28px;height:40px;width:70px;padding-top:9px;font-family:\'Microsoft Sans Serif\',Arial,Helvetica,Verdana;text-align:center;',
-							html: '<div>&nbsp;</div>'
-						},
+								type: 'html',
+								id: 'charPreview',
+								className: 'cke_dark_background',
+								style: 'border:1px solid #eeeeee;font-size:28px;height:40px;width:70px;padding-top:9px;font-family:\'Microsoft Sans Serif\',Arial,Helvetica,Verdana;text-align:center;',
+								html: '<div>&nbsp;</div>'
+							},
 							{
-							type: 'html',
-							id: 'htmlPreview',
-							className: 'cke_dark_background',
-							style: 'border:1px solid #eeeeee;font-size:14px;height:20px;width:70px;padding-top:2px;font-family:\'Microsoft Sans Serif\',Arial,Helvetica,Verdana;text-align:center;',
-							html: '<div>&nbsp;</div>'
-						}
+								type: 'html',
+								id: 'htmlPreview',
+								className: 'cke_dark_background',
+								style: 'border:1px solid #eeeeee;font-size:14px;height:20px;width:70px;padding-top:2px;font-family:\'Microsoft Sans Serif\',Arial,Helvetica,Verdana;text-align:center;',
+								html: '<div>&nbsp;</div>'
+							}
 						]
-					}
-					]
-				}
-				]
-			}
-			]
-		}
-		]
+					} ]
+				} ]
+			} ]
+		} ]
 	};
 } );

@@ -22,8 +22,8 @@ files[] = includes/faq.questions_top.inc
 files[] = views/faq.views.inc
 configure = admin/config/content/faq
 
-; Information added by Drupal.org packaging script on 2019-11-25
-version = "7.x-1.2"
+; Information added by Drupal.org packaging script on 2021-06-01
+version = "7.x-1.3"
 core = "7.x"
 project = "faq"
-datestamp = "1574706185"
+datestamp = "1622567207"

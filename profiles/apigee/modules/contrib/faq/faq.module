@@ -355,7 +355,7 @@ function faq_view($node, $view_mode) {
   }
 
   // Only show the detailed question if there is something to show.
-  if ($detailed_question && !empty($detailed_question['value'])) {
+  if ($detailed_question && !empty($detailed_question['safe_value'])) {
     $show_question = FALSE;
     if ($view_mode == 'full') {
       // The detailed question is always shown on the full node.
@@ -1231,9 +1231,9 @@ function faq_view_question(&$data, $node, $path = NULL, $anchor = NULL) {
   }
 
   if (variable_get('faq_display', 'questions_top') != 'hide_answer'
-        && !empty($detailed_question['value'])
+        && !empty($detailed_question['safe_value'])
         && variable_get('faq_question_length', 'short') == 'both') {
-    $question .= '<div class="faq-detailed-question">' . $detailed_question['value'] . '</div>';
+    $question .= '<div class="faq-detailed-question">' . $detailed_question['safe_value'] . '</div>';
   }
   $data['question'] = $question;
 }
@@ -1825,7 +1825,7 @@ function theme_field_detailed_question($variables) {
   }
 
   // Render the items.
-  $output .= '<div class="faq-detailed-question">' . $variables['value'] . '</div>';
+  $output .= '<div class="faq-detailed-question">' . $variables['safe_value'] . '</div>';
 
   // Render the top-level DIV.
   if (isset($variables['classes']) && isset($variables['attributes'])) {

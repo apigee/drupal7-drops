@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2021, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 CKEDITOR.plugins.add( 'menubutton', {
@@ -45,7 +45,7 @@ CKEDITOR.plugins.add( 'menubutton', {
 				_.on = 1;
 
 				// This timeout is needed to give time for the panel get focus
-				// when JAWS is running. (#9842)
+				// when JAWS is running. (https://dev.ckeditor.com/ticket/9842)
 				setTimeout( function() {
 					menu.show( CKEDITOR.document.getById( _.id ), 4 );
 				}, 0 );
@@ -68,12 +68,11 @@ CKEDITOR.plugins.add( 'menubutton', {
 			 */
 			$: function( definition ) {
 				// We don't want the panel definition in this object.
-				var panelDefinition = definition.panel;
 				delete definition.panel;
 
 				this.base( definition );
 
-				this.hasArrow = true;
+				this.hasArrow = 'menu';
 
 				this.click = clickFn;
 			},

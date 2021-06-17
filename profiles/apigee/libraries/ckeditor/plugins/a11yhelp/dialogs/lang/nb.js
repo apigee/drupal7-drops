@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2021, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 CKEDITOR.plugins.setLang( 'a11yhelp', 'nb', {
@@ -12,12 +12,13 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'nb', {
 		items: [
 			{
 			name: 'Verktøylinje for editor',
-			legend: 'Trykk ${toolbarFocus} for å navigere til verktøylinjen. Flytt til neste og forrige verktøylinjegruppe med TAB og SHIFT-TAB. Flytt til neste og forrige verktøylinjeknapp med HØYRE PILTAST og VENSTRE PILTAST. Trykk MELLOMROM eller ENTER for å aktivere verktøylinjeknappen.'
+			legend: 'Trykk ${toolbarFocus} for å navigere til verktøylinjen. Flytt til neste og forrige verktøylinjegruppe med TAB og SHIFT+TAB. Flytt til neste og forrige verktøylinjeknapp med HØYRE PILTAST og VENSTRE PILTAST. Trykk MELLOMROM eller ENTER for å aktivere verktøylinjeknappen.'
 		},
 
 			{
 			name: 'Dialog for editor',
-			legend: 'Mens du er i en dialog, trykk TAB for å navigere til neste dialogfelt, press SHIFT + TAB for å flytte til forrige felt, trykk ENTER for å akseptere dialogen, trykk ESC for å avbryte dialogen. For dialoger med flere faner, trykk ALT + F10 for å navigere til listen over faner. Gå til neste fane med TAB eller HØYRE PILTAST. Gå til forrige fane med SHIFT + TAB eller VENSTRE PILTAST. Trykk MELLOMROM eller ENTER for å velge fanen.'
+			legend:
+				'Mens du er i en dialog, trykk TAB for å navigere til neste dialogelement, trykk SHIFT+TAB for å flytte til forrige dialogelement, trykk ENTER for å akseptere dialogen, trykk ESC for å avbryte dialogen. Når en dialog har flere faner, kan fanelisten nås med enten ALT+F10 eller med TAB. Når fanelisten er fokusert, går man til neste og forrige fane med henholdsvis HØYRE og VENSTRE PILTAST.' 
 		},
 
 			{
@@ -27,7 +28,7 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'nb', {
 
 			{
 			name: 'Listeboks for editor',
-			legend: 'I en listeboks, gå til neste alternativ i listen med TAB eller PILTAST NED. Gå til forrige alternativ i listen med SHIFT + TAB eller PILTAST OPP. Trykk MELLOMROM eller ENTER for å velge alternativet i listen. Trykk ESC for å lukke listeboksen.'
+			legend: 'I en listeboks, gå til neste alternativ i listen med TAB eller PILTAST NED. Gå til forrige alternativ i listen med SHIFT+TAB eller PILTAST OPP. Trykk MELLOMROM eller ENTER for å velge alternativet i listen. Trykk ESC for å lukke listeboksen.'
 		},
 
 			{
@@ -78,70 +79,67 @@ CKEDITOR.plugins.setLang( 'a11yhelp', 'nb', {
 			{
 			name: 'Hjelp for tilgjengelighet',
 			legend: 'Trykk ${a11yHelp}'
+		},
+			{
+			name: 'Lim inn som ren tekst',
+			legend: 'Trykk ${pastetext}',
+			legendEdge: 'Trykk ${pastetext}, etterfulgt av ${past}'
 		}
 		]
 	}
 	],
-	backspace: 'Backspace', // MISSING
-	tab: 'Tab', // MISSING
-	enter: 'Enter', // MISSING
-	shift: 'Shift', // MISSING
-	ctrl: 'Ctrl', // MISSING
-	alt: 'Alt', // MISSING
-	pause: 'Pause', // MISSING
-	capslock: 'Caps Lock', // MISSING
-	escape: 'Escape', // MISSING
-	pageUp: 'Page Up', // MISSING
-	pageDown: 'Page Down', // MISSING
-	end: 'End', // MISSING
-	home: 'Home', // MISSING
-	leftArrow: 'Left Arrow', // MISSING
-	upArrow: 'Up Arrow', // MISSING
-	rightArrow: 'Right Arrow', // MISSING
-	downArrow: 'Down Arrow', // MISSING
-	insert: 'Insert', // MISSING
-	'delete': 'Delete', // MISSING
-	leftWindowKey: 'Left Windows key', // MISSING
-	rightWindowKey: 'Right Windows key', // MISSING
-	selectKey: 'Select key', // MISSING
-	numpad0: 'Numpad 0', // MISSING
-	numpad1: 'Numpad 1', // MISSING
-	numpad2: 'Numpad 2', // MISSING
-	numpad3: 'Numpad 3', // MISSING
-	numpad4: 'Numpad 4', // MISSING
-	numpad5: 'Numpad 5', // MISSING
-	numpad6: 'Numpad 6', // MISSING
-	numpad7: 'Numpad 7', // MISSING
-	numpad8: 'Numpad 8', // MISSING
-	numpad9: 'Numpad 9', // MISSING
-	multiply: 'Multiply', // MISSING
-	add: 'Add', // MISSING
-	subtract: 'Subtract', // MISSING
-	decimalPoint: 'Decimal Point', // MISSING
-	divide: 'Divide', // MISSING
-	f1: 'F1', // MISSING
-	f2: 'F2', // MISSING
-	f3: 'F3', // MISSING
-	f4: 'F4', // MISSING
-	f5: 'F5', // MISSING
-	f6: 'F6', // MISSING
-	f7: 'F7', // MISSING
-	f8: 'F8', // MISSING
-	f9: 'F9', // MISSING
-	f10: 'F10', // MISSING
-	f11: 'F11', // MISSING
-	f12: 'F12', // MISSING
-	numLock: 'Num Lock', // MISSING
-	scrollLock: 'Scroll Lock', // MISSING
-	semiColon: 'Semicolon', // MISSING
-	equalSign: 'Equal Sign', // MISSING
-	comma: 'Comma', // MISSING
-	dash: 'Dash', // MISSING
-	period: 'Period', // MISSING
-	forwardSlash: 'Forward Slash', // MISSING
-	graveAccent: 'Grave Accent', // MISSING
-	openBracket: 'Open Bracket', // MISSING
-	backSlash: 'Backslash', // MISSING
-	closeBracket: 'Close Bracket', // MISSING
-	singleQuote: 'Single Quote' // MISSING
+	tab: 'Tabulator',
+	pause: 'Pause',
+	capslock: 'Caps Lock',
+	escape: 'Escape',
+	pageUp: 'Page Up',
+	pageDown: 'Page Down',
+	leftArrow: 'Venstre piltast',
+	upArrow: 'Opp-piltast',
+	rightArrow: 'Høyre piltast',
+	downArrow: 'Ned-piltast',
+	insert: 'Insert',
+	leftWindowKey: 'Venstre Windows-tast',
+	rightWindowKey: 'Høyre Windows-tast',
+	selectKey: 'Velg nøkkel',
+	numpad0: 'Numerisk tastatur 0',
+	numpad1: 'Numerisk tastatur 1',
+	numpad2: 'Numerisk tastatur 2',
+	numpad3: 'Numerisk tastatur 3',
+	numpad4: 'Numerisk tastatur 4',
+	numpad5: 'Numerisk tastatur 5',
+	numpad6: 'Numerisk tastatur 6',
+	numpad7: 'Numerisk tastatur 7',
+	numpad8: 'Numerisk tastatur 8',
+	numpad9: 'Numerisk tastatur 9',
+	multiply: 'Multipliser',
+	add: 'Legg til',
+	subtract: 'Trekk fra',
+	decimalPoint: 'Desimaltegn',
+	divide: 'Divider',
+	f1: 'F1',
+	f2: 'F2',
+	f3: 'F3',
+	f4: 'F4',
+	f5: 'F5',
+	f6: 'F6',
+	f7: 'F7',
+	f8: 'F8',
+	f9: 'F9',
+	f10: 'F10',
+	f11: 'F11',
+	f12: 'F12',
+	numLock: 'Num Lock',
+	scrollLock: 'Scroll Lock',
+	semiColon: 'Semikolon',
+	equalSign: 'Likhetstegn',
+	comma: 'Komma',
+	dash: 'Bindestrek',
+	period: 'Punktum',
+	forwardSlash: 'Forover skråstrek',
+	graveAccent: 'Grav aksent',
+	openBracket: 'Åpne parentes',
+	backSlash: 'Bakover skråstrek',
+	closeBracket: 'Lukk parentes',
+	singleQuote: 'Enkelt sitattegn'
 } );
