@@ -139,7 +139,7 @@ abstract class ProviderBase {
    * @return mixed
    *   The cached value if it's set or the value supplied to $default if not.
    */
-  protected function cacheGet($key, $default = NULL, callable $builder = NULL) {
+  protected function cacheGet($key, $default = NULL, $builder = NULL) {
     $cid = $this->getCacheId();
     $cache = cache_get($cid);
     $data = $cache && isset($cache->data) && is_array($cache->data) ? $cache->data : array();
@@ -147,7 +147,7 @@ abstract class ProviderBase {
     $value = drupal_array_get_nested_value($data, $parts, $key_exists);
 
     // Build the cache.
-    if (!$key_exists && $builder) {
+    if (!$key_exists && is_callable($builder)) {
       $value = $builder($default);
       if (!isset($value)) {
         $value = $default;
@@ -301,11 +301,14 @@ abstract class ProviderBase {
 
     try {
       $response = drupal_http_request($uri, $options);
-      if ($response->code == 200) {
+      if (!empty($response->error)) {
+        throw new \Exception("$uri: {$response->error}", $response->code);
+      }
+      if ($response->code >= 200 && $response->code < 400) {
         $json = drupal_json_decode($response->data) ?: array();
       }
       else {
-        throw new \Exception($response->error);
+        throw new \Exception("$uri: Invalid response", $response->code);
       }
     }
     catch (\Exception $e) {

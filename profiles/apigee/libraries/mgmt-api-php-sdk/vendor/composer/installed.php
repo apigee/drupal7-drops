@@ -1,22 +1,22 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-21.06.17.00',
-        'version' => '21.06.17.00-dev',
+        'pretty_version' => 'dev-21.07.27.00',
+        'version' => '21.07.27.00-dev',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'd057a93d41cf766c1004c8212bef378b9b825326',
+        'reference' => '9dda4a4fe67ce1f28523e12bde3c166dad764a4e',
         'name' => 'apigee/edge',
         'dev' => false,
     ),
     'versions' => array(
         'apigee/edge' => array(
-            'pretty_version' => 'dev-21.06.17.00',
-            'version' => '21.06.17.00-dev',
+            'pretty_version' => 'dev-21.07.27.00',
+            'version' => '21.07.27.00-dev',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'd057a93d41cf766c1004c8212bef378b9b825326',
+            'reference' => '9dda4a4fe67ce1f28523e12bde3c166dad764a4e',
             'dev_requirement' => false,
         ),
         'guzzle/batch' => array(

@@ -87,15 +87,26 @@ class JsDelivr extends ProviderBase {
     if (!isset($this->themes[$version])) {
       $instance = $this;
       $this->themes[$version] = $this->cacheGet('themes.' . static::escapeDelimiter($version), array(), function ($themes) use ($version, $instance) {
-        foreach (array('bootstrap', 'bootswatch') as $package) {
-          $mappedVersion = $instance->mapVersion($version, $package);
-          $files = $instance->requestApiV1($package, $mappedVersion);
-          $themes = $instance->parseThemes($files, $package, $mappedVersion, $themes);
-        }
-        return $themes;
+        return $instance->getCdnThemePhp53Callback($themes, $version);
       });
     }
     return $this->themes[$version];
+  }
+
+  /**
+   * Callback to get around PHP 5.3's limitation of automatic binding of $this.
+   *
+   * @see https://www.drupal.org/project/bootstrap/issues/3054809
+   *
+   * {@inheritdoc}
+   */
+  public function getCdnThemePhp53Callback($themes, $version) {
+    foreach (array('bootstrap', 'bootswatch') as $package) {
+      $mappedVersion = $this->mapVersion($version, $package);
+      $files = $this->requestApiV1($package, $mappedVersion);
+      $themes = $this->parseThemes($files, $package, $mappedVersion, $themes);
+    }
+    return $themes;
   }
 
   /**
@@ -105,18 +116,29 @@ class JsDelivr extends ProviderBase {
     if (!isset($this->versions[$package])) {
       $instance = $this;
       $this->versions[$package] = $this->cacheGet("versions.$package", array(), function ($versions) use ($package, $instance) {
-        $json = $instance->requestApiV1($package) + array('versions' => array());
-        foreach ($json['versions'] as $version) {
-          // Skip irrelevant versions.
-          if (!preg_match('/^' . substr(BOOTSTRAP_VERSION, 0, 1) . '\.\d+\.\d+$/', $version)) {
-            continue;
-          }
-          $versions[$version] = $version;
-        }
-        return $versions;
+        return $instance->getCdnVersionsPhp53Callback($versions, $package);
       });
     }
     return $this->versions[$package];
+  }
+
+  /**
+   * Callback to get around PHP 5.3's limitation of automatic binding of $this.
+   *
+   * @see https://www.drupal.org/project/bootstrap/issues/3054809
+   *
+   * {@inheritdoc}
+   */
+  public function getCdnVersionsPhp53Callback($versions, $package) {
+    $json = $this->requestApiV1($package) + array('versions' => array());
+    foreach ($json['versions'] as $version) {
+      // Skip irrelevant versions.
+      if (!preg_match('/^' . substr(BOOTSTRAP_VERSION, 0, 1) . '\.\d+\.\d+$/', $version)) {
+        continue;
+      }
+      $versions[$version] = $version;
+    }
+    return $versions;
   }
 
   /**
@@ -288,14 +310,11 @@ class JsDelivr extends ProviderBase {
 
     // If bootstrap JSON could not be returned, provide defaults.
     if (!$json && $package === 'bootstrap') {
-      $version = BOOTSTRAP_VERSION;
       return array(
-        'css' => array(static::BASE_CDN_URL . "/$package@$version/dist/css/bootstrap.css"),
-        'js' => array(static::BASE_CDN_URL . "/$package@$version/dist/js/bootstrap.js"),
-        'min' => array(
-          'css' => array(static::BASE_CDN_URL . "/$package@$version/dist/css/bootstrap.min.css"),
-          'js' => array(static::BASE_CDN_URL . "/$package@$version/dist/js/bootstrap.min.js"),
-        ),
+        '/dist/css/bootstrap.css',
+        '/dist/js/bootstrap.js',
+        '/dist/css/bootstrap.min.css',
+        '/dist/js/bootstrap.min.js',
       );
     }
 
