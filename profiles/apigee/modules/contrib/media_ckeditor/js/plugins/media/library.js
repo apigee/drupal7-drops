@@ -63,6 +63,11 @@
         }
         else {
           $alreadyInsertedMedia = jQuery(data.node).find('[data-media-element]');
+          // For some reason, in MS Edge, data.node is a descendant of what
+          // we are looking for, so we should also look "upwards" for media.
+          if (!$alreadyInsertedMedia.length) {
+            $alreadyInsertedMedia = jQuery(data.node).closest('[data-media-element]');
+          }
         }
         // First check to see if we are using an Insert button.
         if (typeof Drupal.ckeditorInstance.mediaInsert !== 'undefined') {
@@ -178,12 +183,43 @@
       ckeditorInstance.insertElement(editorElement);
 
       // Initialize widget on our html if possible.
-      if (parseFloat(CKEDITOR.version) >= 4.3 && hasWidgetSupport) {
+      if (Drupal.settings.ckeditor.plugins['media'].compareVersions(CKEDITOR.version, '4.3') >= 0 && hasWidgetSupport) {
         ckeditorInstance.widgets.initOn( editorElement, 'mediabox' );
 
         // Also support the image2 plugin.
         ckeditorInstance.widgets.initOn( editorElement, 'image' );
       }
+    },
+
+    /**
+     * Compare versions of CKEditor to determine if one version
+     * is less than, greater than, or equal to another.
+     *
+     * @param a
+     *   A first instance of CKEditor.
+     * @param b
+     *   A second instance of CKEditor.
+     * @return
+     *   A number less than, greater than, or equal to zero.
+     *   - If a < b, a number less than zero is returned.
+     *   - If a > b, a number greater than zero is return.
+     *   - If a = b, the value of 0 is returned.
+     */
+    compareVersions: function (a, b) {
+      var i, diff;
+      var regExStrip0 = /(\.0+)+$/;
+      var segmentsA = a.replace(regExStrip0, '').split('.');
+      var segmentsB = b.replace(regExStrip0, '').split('.');
+      var l = Math.min(segmentsA.length, segmentsB.length);
+
+      for (i = 0; i < l; i++) {
+        diff = parseInt(segmentsA[i], 10) - parseInt(segmentsB[i], 10);
+        if (diff) {
+          return diff;
+        }
+      }
+
+      return segmentsA.length - segmentsB.length;
     },
 
     /**

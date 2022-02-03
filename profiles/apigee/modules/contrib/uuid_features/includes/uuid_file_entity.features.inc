@@ -152,6 +152,7 @@ function uuid_file_entity_features_rebuild($module) {
   $rebuild_cache = &drupal_static(__FUNCTION__, array());
   if (!isset($rebuild_cache[$module])) {
     $rebuild_cache[$module] = TRUE;
+    module_load_include('inc', 'features', 'features.export');
     $files = features_get_default('uuid_file_entity', $module);
     if (!empty($files)) {
 

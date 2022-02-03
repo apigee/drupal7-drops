@@ -5,9 +5,8 @@ package = Access control
 
 files[] = tests/acl.test
 
-; Information added by Drupal.org packaging script on 2015-08-26
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2019-09-14
+version = "7.x-1.2"
 core = "7.x"
 project = "acl"
-datestamp = "1440633240"
-
+datestamp = "1568440086"

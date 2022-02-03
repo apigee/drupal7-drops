@@ -371,7 +371,7 @@ function commerce_tax_field_widget_form_alter(&$element, &$form_state, $context)
     $options = array();
 
     foreach (commerce_tax_rates() as $name => $tax_rate) {
-      if (in_array($tax_rate['type'], array_keys($inclusive_types))) {
+      if (array_key_exists($tax_rate['type'], $inclusive_types)) {
         $options[$inclusive_types[$tax_rate['type']]][$name] = t('Including !title', array('!title' => $tax_rate['title']));
       }
     }
@@ -602,7 +602,7 @@ function commerce_tax_total_amount($components, $included, $currency_code) {
   // Loop over each component passed in...
   foreach ($components as $component) {
     // Looking for components that match one of the defined tax price components.
-    if (in_array($component['name'], array_keys($component_types))) {
+    if (array_key_exists($component['name'], $component_types)) {
       // If the component matches the requested "included" value...
       if ((!$included && empty($component['included'])) ||
         $included && !empty($component['included'])) {
@@ -631,7 +631,7 @@ function commerce_tax_components($components) {
   // Loop over each component passed in...
   foreach ($components as $component) {
     // Looking for components that match one of the defined tax price components.
-    if (in_array($component['name'], array_keys($component_types))) {
+    if (array_key_exists($component['name'], $component_types)) {
       // Add the component to the tax components array.
       $tax_components[] = $component;
     }

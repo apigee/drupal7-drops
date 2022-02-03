@@ -114,8 +114,8 @@ function file_entity_token_info() {
             $entity_type = 'term';
           }
           $info['tokens'][$entity_type][$field_name] = array(
-            'name' => $field_info['label'],
-            'description' => $field_info['description'],
+            'name' => ($field_info) ? $field_info['label'] : '',
+            'description' => ($field_info) ? $field_info['description'] : '',
             'type' => 'file_field',
             'module' => 'file_entity',
           );
@@ -169,7 +169,7 @@ function file_entity_tokens($type, $tokens, array $data = array(), array $option
           unset($entity->_field_view_prepared);
           $field_output = field_view_field($entity_type, $entity, $field_name, 'token', $langcode);
           $field_output['#token_options'] = $options;
-          $field_output['#prerender'][] = 'token_pre_render_field_token';
+          $field_output['#pre_render'][] = 'token_pre_render_field_token';
           $replacements[$original] = drupal_render($field_output);
         }
         else {
@@ -185,7 +185,9 @@ function file_entity_tokens($type, $tokens, array $data = array(), array $option
             }
           }
           else {
-            $replacements[$original] = $return;
+            if (!is_null($return)) {
+              $replacements[$original] = $return;
+            }
           }
         }
 
@@ -317,8 +319,8 @@ function _file_entity_tokens_get_property($files, $property, $array_handler = 'f
       }
 
       // If file type is video
-      elseif ($file['type'] == 'video') {
-        list($provider, $filename) = explode('://v/', $file['uri']);
+      elseif ($file['type'] == 'video' && strpos($file['uri'], '://v')) {
+        list($provider, $filename) = preg_split('!://v.*/!', $file['uri']);
         $imageuri = "public://file_entity-$provider/$filename.jpg";
       }
 

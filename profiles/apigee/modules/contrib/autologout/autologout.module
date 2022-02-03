@@ -372,15 +372,19 @@ function autologout_init() {
 
   $now = time();
   $timeout = _autologout_get_user_timeout();
-  $timeout_padding = variable_get('autologout_padding', 10);
-  $redirect_url = variable_get('autologout_redirect_url', 'user/login');
-  $redirect_query = drupal_get_destination() + array('autologout_timeout' => 1);
+  $timeout_padding = variable_get('autologout_padding', 20);
+  $autologout_redirect_url = variable_get('autologout_redirect_url', 'user/login');
+  $redirect_url = empty($autologout_redirect_url) ? current_path() : $autologout_redirect_url;
+  $redirect_query = autologout_get_current_path_as_destination() + array('autologout_timeout' => 1);
   $no_dialog = variable_get('autologout_no_dialog', FALSE);
   $use_alt_logout_method = variable_get('autologout_use_alt_logout_method', FALSE);
   drupal_add_library('system', 'ui.dialog');
 
+  // Provide a hook to allow the redirect URL and query to be customised
+  drupal_alter('autologout_redirect_url', $redirect_url, $redirect_query);
+
   // Get all settings JS will need for dialog.
-  $msg = t(variable_get('autologout_message', 'Your session is about to expire. Do you want to reset it?'));
+  $msg = t(variable_get('autologout_message', 'We are about to log you out for inactivity. If we do, you will lose any unsaved work. Do you need more time?'));
   $settings = array(
     'timeout' => $refresh_only ? ($timeout * 500) : ($timeout * 1000),
     'timeout_padding' => $timeout_padding * 1000,
@@ -429,6 +433,26 @@ function autologout_init() {
 }
 
 /**
+ * Builds a destination query parameter for the current page.
+ *
+ * This is identical to drupal_get_destination(), except that we always encode
+ * any existing destination query-string parameter, rather than honour it as an
+ * override.
+ *
+ * This causes the user to be returned to the exact same URL they were on when
+ * they were auto-logged-off (with destination parameter untouched), rather than
+ * being directed straight to their destination.
+ */
+function autologout_get_current_path_as_destination() {
+  $path = current_path();
+  $query = drupal_http_build_query(drupal_get_query_parameters());
+  if ($query != '') {
+    $path .= '?' . $query;
+  }
+  return array('destination' => $path);
+}
+
+/**
  * Implements hook_autologout_prevent().
  */
 function autologout_autologout_prevent() {
@@ -455,6 +479,18 @@ function autologout_autologout_prevent() {
   if (!empty($user->data['remember_me'])) {
     return TRUE;
   }
+  // If user IP address is in the whitelist.
+  if (variable_get('autologout_whitelisted_ip_addresses', FALSE)) {
+    $ip_address_whitelist = array_map(
+      'trim',
+      explode("\n", trim(variable_get('autologout_whitelisted_ip_addresses', array())))
+    );
+
+    if (($ip_address_whitelist) && in_array(ip_address(), $ip_address_whitelist)) {
+      return TRUE;
+    }
+  }
+
 }
 
 /**
@@ -628,7 +664,7 @@ function _autologout_logout() {
   global $user;
 
   if (variable_get('autologout_use_watchdog', FALSE)) {
-    watchdog('user', 'Session automatically closed for %name by autologout.', array('%name' => $user->name));
+    watchdog('Autologout', 'Session automatically closed for %name by autologout.', array('%name' => $user->name));
   }
 
   // Destroy the current session.
@@ -661,7 +697,7 @@ function _autologout_inactivity_message() {
   $message = variable_get('autologout_inactivity_message', 'You have been logged out due to inactivity.');
   drupal_alter('autologout_message', $message);
   if (!empty($message)) {
-    drupal_set_message(filter_xss($message));
+    drupal_set_message(filter_xss(t($message)), 'status', FALSE);
   }
 }
 

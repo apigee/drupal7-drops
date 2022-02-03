@@ -43,6 +43,10 @@ CKEditor Library Plugins
 INSTALLATION
 ------------
 
+***Very NEW***
+  A module (sub module/feature) is provided with media_ckeditor , enable it and it will configure text format and working ckeditor defaults.
+  Refer to the section below for dependency installation and troubleshooting, you will need the ckeditor library 4.14.0 installed (minimum recommended).
+***Very NEW***
 ***NEW***
   For a quicker and easier setup, follow this recipe
   https://www.drupal.org/node/2843391

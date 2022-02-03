@@ -965,6 +965,6 @@ if (!function_exists('entity_load_single_by_uuid')) {
    */
   function entity_load_single_by_uuid($entity_type, $uuid) {
     $entity_id = current(entity_get_id_by_uuid($entity_type, array($uuid)));
-    return entity_load_single($entity_type, $entity_id);
+    return ($entity_id) ? entity_load_single($entity_type, $entity_id) : FALSE;
   }
 }

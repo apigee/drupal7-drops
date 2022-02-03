@@ -8,12 +8,10 @@ dependencies[] = metatag:metatag
 files[] = metatag_favicons.mask-icon.class.inc
 
 ; Tests.
-files[] = tests/metatag_favicons.test
-files[] = tests/metatag_favicons.tags.test
+files[] = tests/MetatagFaviconsTagsTest.test
 
-; Information added by Drupal.org packaging script on 2017-07-03
-version = "7.x-1.22"
+; Information added by Drupal.org packaging script on 2021-07-12
+version = "7.x-1.28"
 core = "7.x"
 project = "metatag"
-datestamp = "1499110746"
-
+datestamp = "1626115939"

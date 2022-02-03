@@ -294,11 +294,22 @@ function commerce_checkout_line_item_views_form_submit($form, &$form_state) {
  * order edit forms to simulate checkout completion.
  */
 function commerce_checkout_form_commerce_order_settings_form_alter(&$form, &$form_state) {
-  $form['commerce_order_simulate_checkout_link'] = array(
+  $form['checkout'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Checkout completion'),
+    '#weight' => 20,
+  );
+  $form['checkout']['commerce_checkout_permit_multiple_completions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Permit checkout completion logic to be invoked multiple times per order.'),
+    '#description' => t('Consider disabling this if you experience unintentional invocations of checkout completion, e.g. as a result of an off-site payment notification.'),
+    '#default_value' => variable_get('commerce_checkout_permit_multiple_completions', TRUE),
+  );
+  $form['checkout']['commerce_order_simulate_checkout_link'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable the local action link on order edit forms to simulate checkout completion.'),
+    '#description' => t('The form to simulate checkout completion will not permit submission if an order already performed checkout completion at a time when multiple invocations were disabled.<br />This means the simulation form may still work for orders placed <em>prior</em> to when you disabled the setting above.'),
     '#default_value' => variable_get('commerce_order_simulate_checkout_link', TRUE),
-    '#weight' => 20,
   );
 }
 
@@ -737,16 +748,17 @@ function commerce_checkout_pane_callback($checkout_pane, $callback) {
  */
 function commerce_checkout_access($order, $account = NULL) {
   global $user;
+  $access = TRUE;
 
   // Default to the current user as the account whose access we're checking.
   if (empty($account)) {
     $account = clone($user);
   }
 
-  // First, if this order doesn't belong to the account return FALSE.
+  // First, deny access if this order doesn't belong to the account.
   if ($account->uid) {
     if ($account->uid != $order->uid) {
-      return FALSE;
+      $access = FALSE;
     }
   }
   else {
@@ -757,16 +769,20 @@ function commerce_checkout_access($order, $account = NULL) {
       $completed_order_ids = commerce_cart_order_session_order_ids(TRUE);
       if (empty($completed_order_ids) ||
         !in_array($order->order_id, $completed_order_ids)) {
-        // And then return FALSE if the anonymous user's session doesn't specify
+        // And then deny access if the anonymous user's session doesn't specify
         // this order ID.
         if (empty($cart_order_ids) || !in_array($order->order_id, $cart_order_ids)) {
-          return FALSE;
+          $access = FALSE;
         }
       }
     }
   }
 
-  return TRUE;
+  // Allow other modules to alter the access value, such as to grant access on
+  // return from third party services where redirects temporarily drop cookies.
+  drupal_alter('commerce_checkout_access', $access, $order, $account);
+
+  return $access;
 }
 
 /**
@@ -784,6 +800,10 @@ function commerce_checkout_access($order, $account = NULL) {
 function commerce_checkout_page_access($checkout_page, $order) {
   // Load the order status object for the current order.
   $order_status = commerce_order_status_load($order->status);
+
+  if ($order_status === FALSE) {
+    return FALSE;
+  }
 
   // If the order is not in a checkout status, return FALSE for any page but the
   // completion page unless the order is still a shopping cart.
@@ -905,6 +925,10 @@ function commerce_checkout_commerce_order_state_info_alter(&$order_states) {
 function commerce_checkout_order_uri($order) {
   $order_status = commerce_order_status_load($order->status);
 
+  if ($order_status === FALSE) {
+    return NULL;
+  }
+
   if ($order_status['state'] == 'checkout') {
     $page_id = '/' . $order_status['checkout_page'];
   }
@@ -956,18 +980,50 @@ function commerce_checkout_order_can_checkout($order) {
 }
 
 /**
+ * Determines if an order should be permitted to be completed multiple times.
+ */
+function commerce_checkout_permit_multiple_completions() {
+  return variable_get('commerce_checkout_permit_multiple_completions', TRUE);
+}
+
+/**
  * Completes the checkout process for the given order.
  */
 function commerce_checkout_complete($order) {
-  // An order could complete the checkout process more than once for a variety
-  // of reasons, including administrators making changes. We want to keep the
-  // timestamp from when the order was originally placed, so we don't update it
-  // if it is already set.
+  $save_order = FALSE;
+
+  // Keep the timestamp from when the order was originally placed,
+  // so we don't update it if it is already set.
   if (empty($order->placed)) {
     $order->placed = REQUEST_TIME;
+    $save_order = TRUE;
   }
 
-  rules_invoke_all('commerce_checkout_complete', $order);
+  // An order could complete the checkout process more than once for a variety
+  // of reasons, including administrator action. Before Commerce 1.16 we only
+  // supported permitting the checkout completion logic to invoke any number of
+  // times, but this caused problems with off-site payment gateways where the
+  // logic could be invoked multiple times unintentionally.
+
+  // As of Commerce 1.16, there is now an order setting that determines the
+  // appropriate behavior. If instructed, here we check to make sure the event
+  // hasn't been invoked for this order already.
+  if (commerce_checkout_permit_multiple_completions()) {
+    rules_invoke_all('commerce_checkout_complete', $order);
+  }
+  else {
+    if (empty($order->data['commerce_checkout_complete_invoked'])) {
+      rules_invoke_all('commerce_checkout_complete', $order);
+
+      // Update the order's data array to indicate when completion occured.
+      $order->data['commerce_checkout_complete_invoked'] = REQUEST_TIME;
+      $save_order = TRUE;
+    }
+  }
+
+  if ($save_order) {
+    commerce_order_save($order);
+  }
 }
 
 /**

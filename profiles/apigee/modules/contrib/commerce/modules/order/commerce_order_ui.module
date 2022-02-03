@@ -133,7 +133,7 @@ function commerce_order_admin_order_view_access($order) {
  */
 function commerce_order_customer_order_view_access($order) {
   // If the order is in a shopping cart order status...
-  if (in_array($order->status, array_keys(commerce_order_statuses(array('cart' => TRUE))))) {
+  if (array_key_exists($order->status, commerce_order_statuses(array('cart' => TRUE)))) {
     // Do not allow the customer to see the page.
     return FALSE;
   }
@@ -232,8 +232,9 @@ function commerce_order_ui_order_uri($order) {
     return $uri;
   }
 
-  // Only return a value if the user has permission to view the order.
-  if (commerce_order_access('view', $order)) {
+  // Only return a value if the user has permission to view the order at its
+  // admin URI.
+  if (commerce_order_admin_order_view_access($order)) {
     return array(
       'path' => 'admin/commerce/orders/' . $order->order_id,
     );

@@ -25,7 +25,7 @@ function commerce_payment_entity_property_info() {
     'type' => 'integer',
     'description' => t("The unique ID of the user who created the transaction."),
     'setter callback' => 'entity_property_verbatim_set',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'clear' => array('user'),
     'schema field' => 'uid',
   );
@@ -35,7 +35,7 @@ function commerce_payment_entity_property_info() {
     'description' => t("The user who created the transaction."),
     'getter callback' => 'commerce_payment_transaction_get_properties',
     'setter callback' => 'commerce_payment_transaction_set_properties',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'required' => TRUE,
     'computed' => TRUE,
     'clear' => array('uid'),
@@ -45,7 +45,7 @@ function commerce_payment_entity_property_info() {
     'type' => 'integer',
     'description' => t("The unique ID of the order the transaction belongs to."),
     'setter callback' => 'entity_property_verbatim_set',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'clear' => array('order'),
     'schema field' => 'order_id',
   );
@@ -55,7 +55,7 @@ function commerce_payment_entity_property_info() {
     'description' => t("The order the transaction belongs to."),
     'getter callback' => 'commerce_payment_transaction_get_properties',
     'setter callback' => 'commerce_payment_transaction_set_properties',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'required' => TRUE,
     'computed' => TRUE,
     'clear' => array('order_id'),
@@ -65,7 +65,7 @@ function commerce_payment_entity_property_info() {
     'description' => t('The payment method of the transaction.'),
     'type' => 'token',
     'setter callback' => 'entity_property_verbatim_set',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'options list' => 'commerce_payment_method_options_list',
     'required' => TRUE,
     'schema field' => 'payment_method',
@@ -75,7 +75,7 @@ function commerce_payment_entity_property_info() {
     'description' => t('The date the payment was created.'),
     'type' => 'date',
     'setter callback' => 'entity_property_verbatim_set',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'schema field' => 'created',
   );
   $properties['changed'] = array(
@@ -83,7 +83,7 @@ function commerce_payment_entity_property_info() {
     'description' => t('The date the payment was last updated.'),
     'type' => 'date',
     'setter callback' => 'entity_property_verbatim_set',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'schema field' => 'changed',
   );
   $properties['remote_id'] = array(
@@ -116,7 +116,7 @@ function commerce_payment_entity_property_info() {
     'description' => t('Status of the payment transaction.'),
     'type' => 'text',
     'setter callback' => 'entity_property_verbatim_set',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'options list' => 'commerce_payment_transaction_status_options_list',
     'schema field' => 'status',
   );
@@ -125,7 +125,7 @@ function commerce_payment_entity_property_info() {
     'description' => t('Remote status of the payment transaction.'),
     'type' => 'text',
     'setter callback' => 'entity_property_verbatim_set',
-    'setter permission' => 'administer payment transactions',
+    'setter permission' => 'administer payments',
     'schema field' => 'remote_status',
   );
 

@@ -1,0 +1,38 @@
+# How to run PHPStan
+#   1. $ cd your_Drupal_7_root
+#   2. $ composer require phpstan/phpstan drush/drush:^8.0 --dev
+#   3. $ cd sites/all/modules/nagios
+#   4. $ ../../../../vendor/bin/phpstan analyze --level 4 .
+parameters:
+  autoload_files:
+    - %rootDir%/../../../includes/bootstrap.inc
+    - %rootDir%/../../../includes/cache.inc
+    - %rootDir%/../../../includes/common.inc
+    - %rootDir%/../../../includes/database/database.inc
+    - %rootDir%/../../../includes/entity.inc
+    - %rootDir%/../../../includes/install.inc
+    - %rootDir%/../../../includes/menu.inc
+    - %rootDir%/../../../includes/module.inc
+    - %rootDir%/../../../includes/database/select.inc
+    - %rootDir%/../../../includes/theme.inc
+    - %rootDir%/../../../includes/unicode.inc
+    - %rootDir%/../../../modules/system/system.module
+    - %rootDir%/../../../modules/update/update.compare.inc
+    - %rootDir%/../../../modules/update/update.install
+    - %rootDir%/../../../modules/update/update.module
+    - %rootDir%/../../../modules/user/user.module
+    - %rootDir%/../../../vendor/drush/drush/includes/command.inc
+    - %rootDir%/../../../vendor/drush/drush/includes/context.inc
+    - %rootDir%/../../../vendor/drush/drush/includes/drush.inc
+    - %rootDir%/../../../vendor/drush/drush/includes/output.inc
+    - tests/phpstan-bootstrap.php
+    - nagios.drush.inc
+    - nagios.install
+    - nagios.module
+  fileExtensions:
+    - php
+    - module
+    - inc
+    - install
+  excludes_analyse:
+    - *.api.php

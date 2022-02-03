@@ -31,7 +31,7 @@ function mimemail_rfc_headers($headers) {
     if (drupal_strlen($value) > 60) {
       // If there's a semicolon, use that to separate.
       if (count($array = preg_split('/;\s*/', $value)) > 1) {
-        $value = trim(join(";$crlf ", $array));
+        $value = trim(implode(";$crlf ", $array));
       }
       else {
         $value = wordwrap($value, 50, "$crlf ", FALSE);
@@ -160,7 +160,8 @@ function _mimemail_replace_files($matches) {
  *   (optional) The content disposition. Defaults to inline.
  *
  * @return
- *   The Content-ID and/or an array of the files on success or the URL on failure.
+ *   The Content-ID and/or an array of the files on success or the URL on
+ *   failure.
  */
 function _mimemail_file($url = NULL, $content = NULL, $name = '', $type = '', $disposition = 'inline') {
   static $files = array();
@@ -249,16 +250,20 @@ function _mimemail_file($url = NULL, $content = NULL, $name = '', $type = '', $d
  *   - name: A string containing the name of the attachment.
  *   - content: A string containing textual content.
  *   - file: A string containing file content.
- *   - Content-Type: A string containing the content type of either file or content. Mandatory
- *     for content, optional for file. If not present, it will be derived from file the file if
- *     mime_content_type is available. If not, application/octet-stream is used.
- *   - Content-Disposition: (optional) A string containing the disposition. Defaults to inline.
- *   - Content-Transfer-Encoding: (optional) Base64 is assumed for files, 8bit for other content.
- *   - Content-ID: (optional) for in-mail references to attachements.
- *   Name is mandatory, one of content and file is required, they are mutually exclusive.
+ *   - Content-Type: A string containing the content type of either file or
+ *     content. Mandatory for content, optional for file. If not present, it
+ *     will be derived from file the file if mime_content_type is available. If
+ *     not, application/octet-stream is used.
+ *   - Content-Disposition: (optional) A string containing the disposition.
+ *     Defaults to inline.
+ *   - Content-Transfer-Encoding: (optional) Base64 is assumed for files, 8bit
+ *     for other content.
+ *   - Content-ID: (optional) for in-mail references to attachments.
+ *   Name is mandatory, one of content and file is required, they are mutually
+ *   exclusive.
  * @param string $content_type
- *   (optional) A string containing the content-type for the combined message. Defaults to
- *   multipart/mixed.
+ *   (optional) A string containing the content-type for the combined message.
+ *   Defaults to multipart/mixed.
  *
  * @return array
  *   An associative array containing the following elements:
@@ -311,9 +316,8 @@ function mimemail_multipart_body($parts, $content_type = 'multipart/mixed; chars
         $part_headers['Content-Type'] .= '; name="' . $part['name'] . '"';
         $part_headers['Content-Disposition'] .= '; filename="' . $part['name'] . '"';
       }
-
-    // Mail content references in a filename.
     }
+    // Mail content references in a filename.
     else {
       if (!isset($part['Content-Transfer-Encoding'])) {
         $part_headers['Content-Transfer-Encoding'] = 'base64';
@@ -354,12 +358,17 @@ function _mimemail_expand_links($matches) {
 /**
  * Generate a multipart message body with a text alternative for some HTML text.
  *
+ * The first mime part is a multipart/alternative containing mime-encoded
+ * sub-parts for HTML and plaintext. Each subsequent part is the required image
+ * or attachment.
+ *
  * @param string $body
  *   The HTML message body.
  * @param string $subject
  *   The message subject.
- * @param boolean $plain
- *   (optional) Whether the recipient prefers plaintext-only messages. Defaults to FALSE.
+ * @param bool $plain
+ *   (optional) Whether the recipient prefers plaintext-only messages. Defaults
+ *   to FALSE.
  * @param string $plaintext
  *   (optional) The plaintext message body.
  * @param array $attachments
@@ -369,9 +378,6 @@ function _mimemail_expand_links($matches) {
  *   An associative array containing the following elements:
  *   - body: A string containing the MIME-encoded multipart body of a mail.
  *   - headers: An array that includes some headers for the mail to be sent.
- *
- * The first mime part is a multipart/alternative containing mime-encoded sub-parts for
- * HTML and plaintext. Each subsequent part is the required image or attachment.
  */
 function mimemail_html_body($body, $subject, $plain = FALSE, $plaintext = NULL, $attachments = array()) {
   if (empty($plaintext)) {
@@ -391,11 +397,11 @@ function mimemail_html_body($body, $subject, $plain = FALSE, $plaintext = NULL, 
         'headers' => array('Content-Type' => 'text/plain; charset=utf-8'),
       );
     }
-    // Plain mail with attachement.
+    // Plain mail with attachment.
     else {
       $content_type = 'multipart/mixed';
       $parts = array(array(
-      'content' => $plaintext,
+        'content' => $plaintext,
         'Content-Type' => 'text/plain; charset=utf-8',
       ));
     }
@@ -442,8 +448,8 @@ function mimemail_html_body($body, $subject, $plain = FALSE, $plaintext = NULL, 
  *
  * @param string $url
  *   The file path.
- * @param boolean $to_embed
- *   (optional) Wheter the URL is used to embed the file. Defaults to NULL.
+ * @param bool $to_embed
+ *   (optional) Whether the URL is used to embed the file. Defaults to NULL.
  *
  * @return string
  *   A processed URL.
@@ -530,7 +536,7 @@ function _mimemail_url($url, $to_embed = NULL) {
  *
  * @param mixed $address
  *   A user object, a text email address or an array containing name, mail.
- * @param boolean $simplify
+ * @param bool $simplify
  *   Determines if the address needs to be simplified. Defaults to FALSE.
  *
  * @return string

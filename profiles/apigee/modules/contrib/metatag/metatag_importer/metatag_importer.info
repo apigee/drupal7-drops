@@ -3,15 +3,16 @@ description = Import data from other modules into Metatag.
 core = 7.x
 package = SEO
 
+configure = admin/config/search/metatags/importer
+
 ; Need Metatag.
 dependencies[] = metatag:metatag
 
 ; Tests.
-files[] = tests/metatag_importer.test
+files[] = tests/MetatagImporterTest.test
 
-; Information added by Drupal.org packaging script on 2017-07-03
-version = "7.x-1.22"
+; Information added by Drupal.org packaging script on 2021-07-12
+version = "7.x-1.28"
 core = "7.x"
 project = "metatag"
-datestamp = "1499110746"
-
+datestamp = "1626115939"

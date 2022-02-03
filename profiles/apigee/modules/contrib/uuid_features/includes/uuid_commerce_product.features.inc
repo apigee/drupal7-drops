@@ -9,11 +9,18 @@
  */
 function uuid_commerce_product_features_export_options() {
   $options = array();
+  $enabled_types = array();
 
   // Check what content types are enabled for uuid features export.
-  $enabled_types = variable_get('uuid_features_entity_commerce_product', FALSE);
+  $types = commerce_product_types();
+
+  foreach ($types as $type => $info) {
+    if (variable_get('uuid_features_entity_commerce_product_' . $type, FALSE)) {
+      $enabled_types[] = $type;
+    }
+  }
+
   if (!empty($enabled_types)) {
-    $types = commerce_product_types();
     $query = db_select('commerce_product', 'cp');
     $query->fields('cp', array('product_id', 'title', 'type', 'uuid'))
       ->condition('type', $enabled_types)

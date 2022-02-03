@@ -45,7 +45,7 @@ function mimemail_uninstall() {
     'mimemail_format',
     'mimemail_simple_address',
     'mimemail_linkonly',
-    'mimemail_preserve_class'
+    'mimemail_preserve_class',
   );
   foreach ($variables as $variable) {
     variable_del($variable);
@@ -68,7 +68,7 @@ function mimemail_requirements($phase) {
     '!mimemail' => url('http://drupal.org/project/mimemail'),
     '%mimemail' => 'Mime Mail',
   );
-  if ( module_enable(array('mailsystem'))
+  if (module_enable(array('mailsystem'))
     && module_load_include('module', 'mailsystem')
   ) {
     drupal_set_message(

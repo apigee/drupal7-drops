@@ -21,7 +21,7 @@ Mime Mail 7.x-1.0, 2017-05-14
 - #2146513 by torotil, Anybody: Scan theme for other *css* file types
 - #2678818 by hoebekewim, das-peter: Mime Mail Compress has a deprecated constructor
 - #2553815 by nitrocad, anthonys: Imported font generates empty attachment
-- #2562181 by rrfegade: Remove unused varibles
+- #2562181 by rrfegade: Remove unused variables
 - #2562177 by rrfegade: Spelling errors
 
 Mime Mail 7.x-1.0-beta4, 2015-08-02
@@ -138,7 +138,7 @@ Mime Mail 6.x-1.0, 2011-11-19
 - #1181170 by sgabe, Cyberwolf, ibes | windm: Add permission to set user specific settings.
 - #1309248 by sgabe, gmania: Generate not existing ImageCache images before embedding.
 - #1304134 by sdague: Add preference to link images.
-- #1275080 by gmania: Remove the depricated Errors-To header.
+- #1275080 by gmania: Remove the deprecated Errors-To header.
 
 Mime Mail 6.x-1.0-beta2, 2011-06-22
 ----------------------
@@ -160,7 +160,7 @@ Mime Mail 6.x-1.0-beta1, 2011-06-04
 - #1114536 by rjbrown99: Pass recipient to the template.
 - #971272 by sgabe: Allow to specify sender's name for Rules action messages.
 - #1167576 by Pol: Accept plaintext and text parameters for system messages.
-- #338460 by hopla: Doens't look for mail.css in Zen sub-themes.
+- #338460 by hopla: Doesn't look for mail.css in Zen sub-themes.
 - #261028 by sgabe, gnosis, mfb, mrfelton, LUTi: SMTP Return-Path Setting.
 - #1175378 by sgabe, samalone: Include module CSS files in email.
 
@@ -193,7 +193,7 @@ Mime Mail 6.x-1.0-alpha7, 2011-01-31
 
 Mime Mail 6.x-1.0-alpha6, 2010-09-13
 ----------------------
-- #629038 by Robbert: Attachments dont respect ‘list’ setting
+- #629038 by Robbert: Attachments don't respect ‘list’ setting
 - #882960 by sgabe, glynster: CSS Mail Style Sheet Overrides
 - #319229 by javierreartes, tobiasb, sgabe, crifi: Set $attachments in drupal_wrap_mail()
 - #903536 by sgabe: Use variable_del() to remove smtp_library()

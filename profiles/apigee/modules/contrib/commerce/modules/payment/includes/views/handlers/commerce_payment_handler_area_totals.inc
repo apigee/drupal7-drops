@@ -63,8 +63,8 @@ class commerce_payment_handler_area_totals extends views_handler_area {
 
   function render($empty = FALSE) {
     // Load an order object for the View if a single order argument is present.
-    if (in_array('order_id', array_keys($this->view->argument)) &&
-      !in_array('order_id_1', array_keys($this->view->argument)) &&
+    if (array_key_exists('order_id', $this->view->argument) &&
+      !array_key_exists('order_id_1', $this->view->argument) &&
       !empty($this->view->args[$this->view->argument['order_id']->position])) {
 
       // Load the specified order.

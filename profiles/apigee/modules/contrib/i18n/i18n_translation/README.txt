@@ -12,7 +12,7 @@ an Entity thus leveraging all the power of the Entity API.
 
 It also provides some basic storage for translation sets and a generator of new translation set id.
 However, each module is responsible for storing which objects belong to which translation set for which
-it needs to verride some methods of the base i18n_translation_set class.
+it needs to override some methods of the base i18n_translation_set class.
 
 - load_translations()
 - save_translations()

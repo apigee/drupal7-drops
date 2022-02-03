@@ -119,7 +119,10 @@ function uuid_field_collection_features_revert($module) {
  */
 function uuid_field_collection_features_rebuild($module) {
   // Make sure all referenced entities exist.
-  taxonomy_features_rebuild($module);
+  if (module_exists('taxonomy')) {
+    // This module may not be installed.
+    taxonomy_features_rebuild($module);
+  }
   field_features_rebuild($module);
   uuid_node_features_rebuild($module);
   cache_clear_all();
@@ -129,7 +132,7 @@ function uuid_field_collection_features_rebuild($module) {
     $entity_type = 'field_collection_item';
     foreach ($field_collections as $field_collection_item) {
       try {
-        $fields = field_info_instances('field_collection_item', $field_collection_item['field_name']);
+        $fields = field_info_instances('field_collection_item', $field_collection_item['bundle']);
         foreach ($fields as $field_name => $field_instance_config) {
           $field_config = field_info_field($field_name);
           if (isset($field_collection_item[$field_name])) {

@@ -192,3 +192,43 @@ function hook_commerce_order_delete($order) {
   commerce_cart_order_session_delete($order->order_id);
   commerce_cart_order_session_delete($order->order_id, TRUE);
 }
+
+/**
+ * Lets modules prevent the deletion of a particular order.
+ *
+ * Before an order can be deleted, other modules are given the chance to say
+ * whether or not the action should be allowed. Modules implementing this hook
+ * can check for reference data or any other reason to prevent an order from
+ * being deleted and return FALSE to prevent the action.
+ *
+ * This is an API level hook, so implementations should not display any messages
+ * to the user (although logging to the watchdog is fine).
+ *
+ * @param $order
+ *   The order to be deleted.
+ *
+ * @return bool
+ *   TRUE or FALSE indicating whether or not the given order can be deleted.
+ */
+function hook_commerce_order_can_delete($order) {
+  // Use EntityFieldQuery to look for payment transactions referencing this
+  // order, and do not allow the delete to occur if one or more exist.
+  $query = new EntityFieldQuery();
+
+  $query
+    ->entityCondition('entity_type', 'commerce_payment_transaction', '=')
+    ->propertyCondition('order_id', $order->order_id, '=')
+    ->count();
+
+  return $query->execute() == 0;
+}
+
+/**
+ * Respond to order revision deletion.
+ *
+ * @param $order
+ *   The order revision (order object) that is being deleted.
+ */
+function hook_commerce_order_revision_delete($order) {
+  // No example.
+}

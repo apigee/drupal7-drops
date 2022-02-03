@@ -9,12 +9,11 @@ dependencies[] = metatag:metatag
 dependencies[] = context:context
 
 ; Tests.
-files[] = tests/metatag_context.test
-files[] = tests/metatag_context.i18n.test
+files[] = tests/MetatagContextTest.test
+files[] = tests/MetatagContextWithI18nTest.test
 
-; Information added by Drupal.org packaging script on 2017-07-03
-version = "7.x-1.22"
+; Information added by Drupal.org packaging script on 2021-07-12
+version = "7.x-1.28"
 core = "7.x"
 project = "metatag"
-datestamp = "1499110746"
-
+datestamp = "1626115939"

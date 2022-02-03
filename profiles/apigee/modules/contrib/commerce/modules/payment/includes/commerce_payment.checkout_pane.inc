@@ -281,7 +281,7 @@ function commerce_payment_pane_checkout_form_submit($form, &$form_state, $checko
         rules_invoke_all('commerce_payment_order_paid_in_full', $order, commerce_payment_transaction_new('', $order->order_id));
 
         // Update the order's data array to indicate this just happened.
-        $order->data['commerce_payment_order_paid_in_full_invoked'] = TRUE;
+        $order->data['commerce_payment_order_paid_in_full_invoked'] = REQUEST_TIME;
       }
     }
   }

@@ -6,11 +6,12 @@ dependencies[] = block
 files[] = block_class.test
 test_dependencies[] = context
 test_dependencies[] = features (2.x)
-test_dependencies[] = features_extra
+test_dependencies[] = features_extra:fe_block
+test_dependencies[] = menu_block
+test_dependencies[] = views
 
-; Information added by Drupal.org packaging script on 2015-12-18
-version = "7.x-2.3"
+; Information added by Drupal.org packaging script on 2018-07-27
+version = "7.x-2.4"
 core = "7.x"
 project = "block_class"
-datestamp = "1450415951"
-
+datestamp = "1532735885"

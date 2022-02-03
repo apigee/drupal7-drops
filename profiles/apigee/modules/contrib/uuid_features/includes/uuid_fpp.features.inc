@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Features hooks for the uuid_fpp features component.
@@ -93,7 +94,6 @@ function uuid_fpp_features_export_render($module, $data) {
     // Do not export ids.
     unset($export->vid);
     unset($export->fpid);
-    unset($export->vuuid);
     unset($export->current_vid);
     unset($export->changed);
     unset($export->uid);
@@ -176,7 +176,7 @@ function _uuid_fpp_features_dependencies($uuids) {
 
   $entity_info = array();
   $bundles = array();
-  foreach (entity_uuid_load('fieldable_panels_pane', $uuids) as $entity) {
+  foreach (entity_uuid_load('fieldable_panels_pane', $uuids, array(), TRUE) as $entity) {
     list(, , $bundle) = entity_extract_ids('fieldable_panels_pane', $entity);
     $bundles[$bundle] = $bundle;
   }
@@ -257,6 +257,7 @@ function _uuid_fpp_features_dependencies($uuids) {
  * If the PHP version is < 5.3.0 we need to create array_replace_recursive().
  */
 if (!function_exists('array_replace_recursive')) {
+
   /**
    * Replaces elements from passed arrays into the first array recursively.
    *
@@ -267,8 +268,8 @@ if (!function_exists('array_replace_recursive')) {
    * @param array $array1
    *   The array from which elements will be extracted.
    *
-   * @return array|NULL
-   *   An array, or NULL if an error occurs.
+   * @return array|null
+   *   An array, or null if an error occurs.
    */
   function array_replace_recursive(array $array, array $array1) {
     // Get array arguments.
@@ -297,4 +298,5 @@ if (!function_exists('array_replace_recursive')) {
     // Return the joined array.
     return $original;
   }
+
 }

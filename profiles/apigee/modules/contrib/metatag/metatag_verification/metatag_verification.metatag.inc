@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Metatag integration for the Metatag: Verification module.
@@ -38,6 +39,12 @@ function metatag_verification_metatag_info() {
     'weight' => ++$weight,
   ) + $defaults;
 
+  $info['tags']['facebook-domain-verification'] = array(
+    'label' => t('Facebook'),
+    'description' => t('A string provided by <a href="@facebook">Facebook</a>, full details are available from the <a href="@verify_url">Facebook online help</a>.', array('@facebook' => 'https://facebook.com/', '@verify_url' => 'https://developers.facebook.com/docs/sharing/domain-verification/verifying-your-domain/#meta-tags')),
+    'weight' => ++$weight,
+  ) + $defaults;
+
   $info['tags']['google-site-verification'] = array(
     'label' => t('Google'),
     'description' => t('A string provided by <a href="@google">Google</a>, full details are available from the <a href="@verify_url">Google online help</a>.', array('@google' => 'https://www.google.com/', '@verify_url' => 'https://support.google.com/webmasters/answer/35179?hl=en')),
@@ -56,9 +63,21 @@ function metatag_verification_metatag_info() {
     'weight' => ++$weight,
   ) + $defaults;
 
+  $info['tags']['pocket-site-verification'] = array(
+    'label' => t('Pocket'),
+    'description' => t('A string provided by <a href="@pocket">Pocket</a>, full details are available from the <a href="@verify_url">Pocket online help</a>.', array('@pocket' => 'https://getpocket.com/', '@verify_url' => 'https://support.google.com/webmasters/answer/9008080')),
+    'weight' => ++$weight,
+  ) + $defaults;
+
   $info['tags']['yandex-verification'] = array(
     'label' => t('Yandex'),
     'description' => t('A string provided by <a href="@yandex">Yandex</a>, full details are available from the <a href="@verify_url">Yandex online help</a>.', array('@yandex' => 'http://www.yandex.com/', '@verify_url' => 'http://api.yandex.com/webmaster/doc/dg/reference/hosts-type.xml')),
+    'weight' => ++$weight,
+  ) + $defaults;
+
+  $info['tags']['zoom-domain-verification'] = array(
+    'label' => t('Zoom'),
+    'description' => t('A string provided by <a href="@zoom">Zoom</a>, full details are available from the <a href="@help">Zoom online help</a>.', array('@zoom' => 'https://zoom.us/', '@help' => 'https://support.zoom.us/hc/en-us/articles/203395207-What-is-Managed-Domain')),
     'weight' => ++$weight,
   ) + $defaults;
 

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Primary hook implementations for the Metatag: OpenGraph module.
+ */
+
+/**
  * Implements hook_preprocess_html().
  */
 function metatag_opengraph_preprocess_html(&$variables) {
@@ -9,21 +14,10 @@ function metatag_opengraph_preprocess_html(&$variables) {
     return;
   }
 
-  // @TODO Would it be worth dynamically identifying whether these should be
+  // @todo Would it be worth dynamically identifying whether these should be
   // added, or just output them all?
-
   // Need an extra namespace for the 'og' tags.
   $variables['rdf_namespaces'] .= "\n  xmlns:og=\"http://ogp.me/ns#\"";
-  // Need an extra namespace for the "article" tags.
-  $variables['rdf_namespaces'] .= "\n  xmlns:article=\"http://ogp.me/ns/article#\"";
-  // Need an extra namespace for the "book" tags.
-  $variables['rdf_namespaces'] .= "\n  xmlns:book=\"http://ogp.me/ns/book#\"";
-  // Need an extra namespace for the "profile" tags.
-  $variables['rdf_namespaces'] .= "\n  xmlns:profile=\"http://ogp.me/ns/profile#\"";
-  // Need an extra namespace for the "video" tags.
-  $variables['rdf_namespaces'] .= "\n  xmlns:video=\"http://ogp.me/ns/video#\"";
-  // And for product tags.
-  $variables['rdf_namespaces'] .= "\n  xmlns:product=\"http://ogp.me/ns/product#\"";
 }
 
 /**
@@ -32,11 +26,6 @@ function metatag_opengraph_preprocess_html(&$variables) {
 function metatag_opengraph_rdf_namespaces() {
   return array(
     'og' => 'http://ogp.me/ns#',
-    'article' => 'http://ogp.me/ns/article#',
-    'book' => 'http://ogp.me/ns/book#',
-    'profile' => 'http://ogp.me/ns/profile#',
-    'video' => 'http://ogp.me/ns/video#',
-    'product' => 'http://ogp.me/ns/product#',
   );
 }
 
@@ -83,4 +72,4 @@ og:audio:type
 
 og:upc
 og:isbn
-*/
+ */

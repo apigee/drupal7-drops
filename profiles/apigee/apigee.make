@@ -6,7 +6,7 @@ api = 2
 ; Soft dependency of content_access
 projects[acl][type] = "module"
 projects[acl][subdir] = "contrib"
-projects[acl][version] = "1.1"
+projects[acl][version] = "1.2"
 
 ; Required by Monetization
 projects[addressfield][type] = "module"
@@ -21,12 +21,12 @@ projects[admin_menu][version] = "3.0-rc6"
 ; Enabled during profile install.
 projects[admin_views][type] = "module"
 projects[admin_views][subdir] = "contrib"
-projects[admin_views][version] = "1.7"
+projects[admin_views][version] = "1.8"
 
 ; Enabled during profile install.
 projects[adminimal_admin_menu][type] = "module"
 projects[adminimal_admin_menu][subdir] = "contrib"
-projects[adminimal_admin_menu][version] = "1.7"
+projects[adminimal_admin_menu][version] = "1.9"
 
 ; Enabled during profile install.
 projects[advanced_forum][type] = "module"
@@ -35,16 +35,16 @@ projects[advanced_forum][version] = "2.8"
 
 projects[apachesolr][type] = "module"
 projects[apachesolr][subdir] = "contrib"
-projects[apachesolr][version] = "1.9"
+projects[apachesolr][version] = "1.12"
 
 projects[autologout][type] = "module"
 projects[autologout][subdir] = "contrib"
-projects[autologout][version] = "4.5"
+projects[autologout][version] = "4.6"
 
 ; Enabled during profile install; required by devconnect_blog
 projects[block_class][type] = "module"
 projects[block_class][subdir] = "contrib"
-projects[block_class][version] = "2.3"
+projects[block_class][version] = "2.4"
 
 ; Enabled during profile install.
 projects[bootstrap_modal_forms][type] = "module"
@@ -61,7 +61,7 @@ projects[bugherd][version] = "1.0-beta4"
 
 projects[captcha][type] = "module"
 projects[captcha][subdir] = "contrib"
-projects[captcha][version] = "1.5"
+projects[captcha][version] = "1.7"
 
 ; Deprecated
 projects[cck_phone][type] = "module"
@@ -71,7 +71,7 @@ projects[cck_phone][version] = "1.x-dev"
 ; Enabled during profile install.
 projects[ckeditor][type] = "module"
 projects[ckeditor][subdir] = "contrib"
-projects[ckeditor][version] = "1.19"
+projects[ckeditor][version] = "1.22"
 
 projects[ckeditor_link][type] = "module"
 projects[ckeditor_link][subdir] = "contrib"
@@ -79,9 +79,7 @@ projects[ckeditor_link][version] = "2.4"
 
 projects[commerce][type] = "module"
 projects[commerce][subdir] = "contrib"
-projects[commerce][version] = "1.14"
-; see https://www.drupal.org/node/3035138
-projects[commerce][patch][3035138] = "https://www.drupal.org/files/issues/2019-02-22/php72-warning-commerce-currency-amount-to-decimal-3035138-3.patch"
+projects[commerce][version] = "1.16"
 ; see https://www.drupal.org/node/3021095
 projects[commerce][patch][3021095] = "https://www.drupal.org/files/issues/2018-12-17/line-item-argumentcounterror-3021095-3.patch"
 
@@ -105,7 +103,7 @@ projects[contentapi][version] = "1.0-alpha3"
 
 projects[content_access][type] = "module"
 projects[content_access][subdir] = "contrib"
-projects[content_access][version] = "1.2-beta2"
+projects[content_access][version] = "1.2-beta3"
 
 ; Enabled during profile install.
 projects[context][type] = "module"
@@ -120,29 +118,29 @@ projects[context_condition_theme][version] = "1.0"
 ; Enabled during profile install.
 projects[ctools][type] = "module"
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.15"
+projects[ctools][version] = "1.20"
 
 ; Deprecated
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
-projects[date][version] = "2.10"
+projects[date][version] = "2.12"
 
 projects[devel][type] = "module"
 projects[devel][subdir] = "contrib"
-projects[devel][version] = "1.5"
+projects[devel][version] = "1.7"
 
 projects[diff][type] = "module"
 projects[diff][subdir] = "contrib"
-projects[diff][version] = "3.3"
+projects[diff][version] = "3.4"
 
 projects[ds][type] = "module"
 projects[ds][subdir] = "contrib"
-projects[ds][version] = "2.15"
+projects[ds][version] = "2.16"
 
 ; Deprecated.
 projects[eck][type] = "module"
 projects[eck][subdir] = "contrib"
-projects[eck][version] = "2.0-rc9"
+projects[eck][version] = "2.0-rc10"
 
 projects[entityreference][type] = "module"
 projects[entityreference][subdir] = "contrib"
@@ -153,7 +151,7 @@ projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues
 ; Enabled during profile install.
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
-projects[entity][version] = "1.9"
+projects[entity][version] = "1.10"
 
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
@@ -168,7 +166,7 @@ projects[faq][version] = "1.3"
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.11"
+projects[features][version] = "2.13"
 
 ; Deprecated
 projects[features_extra][type] = "module"
@@ -185,7 +183,7 @@ projects[field_group][patch][3016503] = "https://www.drupal.org/files/issues/201
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.25"
+projects[file_entity][version] = "2.35"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -217,7 +215,7 @@ projects[github_connect][patch][2292767] = "https://www.drupal.org/files/issues/
 
 projects[google_analytics][type] = "module"
 projects[google_analytics][subdir] = "contrib"
-projects[google_analytics][version] = "2.4"
+projects[google_analytics][version] = "2.6"
 
 projects[gravatar][type] = "module"
 projects[gravatar][subdir] = "contrib"
@@ -237,7 +235,7 @@ projects[http_client][version] = "2.4"
 ; Deprecated
 projects[i18n][type] = "module"
 projects[i18n][subdir] = "contrib"
-projects[i18n][version] = "1.27"
+projects[i18n][version] = "1.31"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
@@ -246,11 +244,11 @@ projects[jquery_update][version] = "3.0-alpha5"
 ; Required for OPDK
 projects[ldap][type] = "module"
 projects[ldap][subdir] = "contrib"
-projects[ldap][version] = "2.5"
+projects[ldap][version] = "2.6"
 
 projects[legal][type] = "module"
 projects[legal][subdir] = "contrib"
-projects[legal][version] = "1.10"
+projects[legal][version] = "1.11"
 
 ; Enabled during profile install.
 projects[libraries][type] = "module"
@@ -259,12 +257,12 @@ projects[libraries][version] = "2.5"
 
 projects[linkchecker][type] = "module"
 projects[linkchecker][subdir] = "contrib"
-projects[linkchecker][version] = "1.3"
+projects[linkchecker][version] = "1.4"
 
 ; Enabled during profile install.
 projects[link][type] = "module"
 projects[link][subdir] = "contrib"
-projects[link][version] = "1.6"
+projects[link][version] = "1.9"
 
 ; Enabled during profile install.
 projects[logintoboggan][type] = "module"
@@ -273,57 +271,55 @@ projects[logintoboggan][version] = "1.5"
 
 projects[mailsystem][type] = "module"
 projects[mailsystem][subdir] = "contrib"
-projects[mailsystem][version] = "2.34"
+projects[mailsystem][version] = "2.35"
 
 projects[markdown][type] = "module"
 projects[markdown][subdir] = "contrib"
-projects[markdown][version] = "1.5"
+projects[markdown][version] = "1.6"
 
 projects[mediaelement][type] = "module"
 projects[mediaelement][subdir] = "contrib"
-projects[mediaelement][version] = "1.2"
+projects[mediaelement][version] = "1.3"
 
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.21"
+projects[media][version] = "2.27"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
 projects[media_ckeditor][subdir] = "contrib"
-projects[media_ckeditor][version] = "2.5"
+projects[media_ckeditor][version] = "2.14"
 
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
-projects[media_youtube][version] = "3.7"
+projects[media_youtube][version] = "3.10"
 
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
 projects[menu_attributes][subdir] = "contrib"
-projects[menu_attributes][version] = "1.0"
+projects[menu_attributes][version] = "1.1"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.22"
+projects[metatag][version] = "1.28"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
 projects[me][subdir] = "contrib"
-projects[me][version] = "1.4"
-; see https://www.drupal.org/node/3007916
-projects[me][patch][3007916] = "https://www.drupal.org/files/issues/2018-11-03/deprecated_each3007916-1.patch"
+projects[me][version] = "1.5"
 ; see https://www.drupal.org/node/1221902
 projects[me][patch][1221902] = "https://www.drupal.org/files/me_noreferencemapd7.patch"
 
 ; Deprecated
 projects[migrate][type] = "module"
 projects[migrate][subdir] = "contrib"
-projects[migrate][version] = "2.9"
+projects[migrate][version] = "2.11"
 
 projects[mimemail][type] = "module"
 projects[mimemail][subdir] = "contrib"
-projects[mimemail][version] = "1.1"
+projects[mimemail][version] = "1.2"
 
 ; Enabled on install.
 projects[module_filter][type] = "module"
@@ -332,7 +328,7 @@ projects[module_filter][version] = "2.2"
 
 projects[nagios][type] = "module"
 projects[nagios][subdir] = "contrib"
-projects[nagios][version] = "1.3"
+projects[nagios][version] = "1.9"
 
 ; Deprecated
 projects[node_export][type] = "module"
@@ -360,7 +356,7 @@ projects[readonlymode][version] = "1.2"
 
 projects[recaptcha][type] = "module"
 projects[recaptcha][subdir] = "contrib"
-projects[recaptcha][version] = "2.2"
+projects[recaptcha][version] = "2.3"
 
 ; Enabled on install.
 projects[redirect][type] = "module"
@@ -371,16 +367,16 @@ projects[redirect][download][branch] = 7.x-1.x
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-projects[redis][version] = "3.17"
+projects[redis][version] = "3.18"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
 projects[remote_stream_wrapper][subdir] = "contrib"
-projects[remote_stream_wrapper][version] = "1.0-rc1"
+projects[remote_stream_wrapper][version] = "1.0"
 
 projects[rules][type] = "module"
 projects[rules][subdir] = "contrib"
-projects[rules][version] = "2.12"
+projects[rules][version] = "2.13"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
@@ -388,7 +384,7 @@ projects[services][version] = "3.27"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
-projects[services_views][version] = "1.3"
+projects[services_views][version] = "1.4"
 
 ; Required for OPDK
 projects[siteminder][type] = "module"
@@ -430,7 +426,7 @@ projects[taxonomy_access][version] = "1.0"
 ; Enabled on install.
 projects[token][type] = "module"
 projects[token][subdir] = "contrib"
-projects[token][version] = "1.7"
+projects[token][version] = "1.9"
 
 ; Deprecated
 projects[util][type] = "module"
@@ -445,7 +441,7 @@ projects[uuid][version] = "1.3"
 ; Deprecated
 projects[uuid_features][type] = "module"
 projects[uuid_features][subdir] = "contrib"
-projects[uuid_features][version] = "1.0-rc1"
+projects[uuid_features][version] = "1.0-rc2"
 
 ; Deprecated
 projects[variable][type] = "module"
@@ -455,16 +451,16 @@ projects[variable][version] = "2.5"
 ; Enabled on install.
 projects[views][type] = "module"
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.22"
+projects[views][version] = "3.25"
 
 ; Deprecated
 projects[views_accordion][type] = "module"
 projects[views_accordion][subdir] = "contrib"
-projects[views_accordion][version] = "1.1"
+projects[views_accordion][version] = "1.6"
 
 projects[views_bulk_operations][type] = "module"
 projects[views_bulk_operations][subdir] = "contrib"
-projects[views_bulk_operations][version] = "3.5"
+projects[views_bulk_operations][version] = "3.6"
 
 ; Deprecated
 projects[views_queue][type] = "module"
@@ -473,12 +469,12 @@ projects[views_queue][version] = "1.x-dev"
 
 projects[views_slideshow][type] = "module"
 projects[views_slideshow][subdir] = "contrib"
-projects[views_slideshow][version] = "3.9"
+projects[views_slideshow][version] = "3.10"
 
 ; NOT enabled on install.
 projects[webform][type] = "module"
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.21"
+projects[webform][version] = "4.24"
 
 ; Enabled during profile install. Prevents XSS in full HTML.
 projects[wysiwyg_filter][type] = "module"
@@ -487,7 +483,7 @@ projects[wysiwyg_filter][version] = "1.6-rc9"
 
 projects[xautoload][type] = "module"
 projects[xautoload][subdir] = "contrib"
-projects[xautoload][version] = "5.7"
+projects[xautoload][version] = "5.8"
 
 
 
@@ -515,237 +511,237 @@ projects[tao][version] = "3.1"
 libraries[ckeditor][destination] = "libraries"
 libraries[ckeditor][directory_name] = "ckeditor"
 libraries[ckeditor][download][type] = "file"
-libraries[ckeditor][download][url] = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.16.1/ckeditor_4.16.1_full.zip"
+libraries[ckeditor][download][url] = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.17.1/ckeditor_4.17.1_full.zip"
 
 libraries[about][destination] = "libraries"
 libraries[about][directory_name] = "ckeditor/plugins/about"
 libraries[about][download][type] = "file"
-libraries[about][download][url] = "http://download.ckeditor.com/about/releases/about_4.16.1.zip"
+libraries[about][download][url] = "http://download.ckeditor.com/about/releases/about_4.17.1.zip"
 
 libraries[a11yhelp][destination] = "libraries"
 libraries[a11yhelp][directory_name] = "ckeditor/plugins/a11yhelp"
 libraries[a11yhelp][download][type] = "file"
-libraries[a11yhelp][download][url] = "http://download.ckeditor.com/a11yhelp/releases/a11yhelp_4.16.1.zip"
+libraries[a11yhelp][download][url] = "http://download.ckeditor.com/a11yhelp/releases/a11yhelp_4.17.1.zip"
 
 libraries[basicstyles][destination] = "libraries"
 libraries[basicstyles][directory_name] = "ckeditor/plugins/basicstyles"
 libraries[basicstyles][download][type] = "file"
-libraries[basicstyles][download][url] = "http://download.ckeditor.com/basicstyles/releases/basicstyles_4.16.1.zip"
+libraries[basicstyles][download][url] = "http://download.ckeditor.com/basicstyles/releases/basicstyles_4.17.1.zip"
 
 libraries[blockquote][destination] = "libraries"
 libraries[blockquote][directory_name] = "ckeditor/plugins/blockquote"
 libraries[blockquote][download][type] = "file"
-libraries[blockquote][download][url] = "http://download.ckeditor.com/blockquote/releases/blockquote_4.16.1.zip"
+libraries[blockquote][download][url] = "http://download.ckeditor.com/blockquote/releases/blockquote_4.17.1.zip"
 
 libraries[button][destination] = "libraries"
 libraries[button][directory_name] = "ckeditor/plugins/button"
 libraries[button][download][type] = "file"
-libraries[button][download][url] = "http://download.ckeditor.com/button/releases/button_4.16.1.zip"
+libraries[button][download][url] = "http://download.ckeditor.com/button/releases/button_4.17.1.zip"
 
 libraries[clipboard][destination] = "libraries"
 libraries[clipboard][directory_name] = "ckeditor/plugins/clipboard"
 libraries[clipboard][download][type] = "file"
-libraries[clipboard][download][url] = "http://download.ckeditor.com/clipboard/releases/clipboard_4.16.1.zip"
+libraries[clipboard][download][url] = "http://download.ckeditor.com/clipboard/releases/clipboard_4.17.1.zip"
 
 libraries[contextmenu][destination] = "libraries"
 libraries[contextmenu][directory_name] = "ckeditor/plugins/contextmenu"
 libraries[contextmenu][download][type] = "file"
-libraries[contextmenu][download][url] = "http://download.ckeditor.com/contextmenu/releases/contextmenu_4.16.1.zip"
+libraries[contextmenu][download][url] = "http://download.ckeditor.com/contextmenu/releases/contextmenu_4.17.1.zip"
 
 libraries[dialog][destination] = "libraries"
 libraries[dialog][directory_name] = "ckeditor/plugins/dialog"
 libraries[dialog][download][type] = "file"
-libraries[dialog][download][url] = "http://download.ckeditor.com/dialog/releases/dialog_4.16.1.zip"
+libraries[dialog][download][url] = "http://download.ckeditor.com/dialog/releases/dialog_4.17.1.zip"
 
 libraries[dialogui][destination] = "libraries"
 libraries[dialogui][directory_name] = "ckeditor/plugins/dialogui"
 libraries[dialogui][download][type] = "file"
-libraries[dialogui][download][url] = "http://download.ckeditor.com/dialogui/releases/dialogui_4.16.1.zip"
+libraries[dialogui][download][url] = "http://download.ckeditor.com/dialogui/releases/dialogui_4.17.1.zip"
 
 libraries[elementspath][destination] = "libraries"
 libraries[elementspath][directory_name] = "ckeditor/plugins/elementspath"
 libraries[elementspath][download][type] = "file"
-libraries[elementspath][download][url] = "http://download.ckeditor.com/elementspath/releases/elementspath_4.16.1.zip"
+libraries[elementspath][download][url] = "http://download.ckeditor.com/elementspath/releases/elementspath_4.17.1.zip"
 
 libraries[enterkey][destination] = "libraries"
 libraries[enterkey][directory_name] = "ckeditor/plugins/enterkey"
 libraries[enterkey][download][type] = "file"
-libraries[enterkey][download][url] = "http://download.ckeditor.com/enterkey/releases/enterkey_4.16.1.zip"
+libraries[enterkey][download][url] = "http://download.ckeditor.com/enterkey/releases/enterkey_4.17.1.zip"
 
 libraries[entities][destination] = "libraries"
 libraries[entities][directory_name] = "ckeditor/plugins/entities"
 libraries[entities][download][type] = "file"
-libraries[entities][download][url] = "http://download.ckeditor.com/entities/releases/entities_4.16.1.zip"
+libraries[entities][download][url] = "http://download.ckeditor.com/entities/releases/entities_4.17.1.zip"
 
 libraries[fakeobjects][destination] = "libraries"
 libraries[fakeobjects][directory_name] = "ckeditor/plugins/fakeobjects"
 libraries[fakeobjects][download][type] = "file"
-libraries[fakeobjects][download][url] = "http://download.ckeditor.com/fakeobjects/releases/fakeobjects_4.16.1.zip"
+libraries[fakeobjects][download][url] = "http://download.ckeditor.com/fakeobjects/releases/fakeobjects_4.17.1.zip"
 
 libraries[filebrowser][destination] = "libraries"
 libraries[filebrowser][directory_name] = "ckeditor/plugins/filebrowser"
 libraries[filebrowser][download][type] = "file"
-libraries[filebrowser][download][url] = "http://download.ckeditor.com/filebrowser/releases/filebrowser_4.16.1.zip"
+libraries[filebrowser][download][url] = "http://download.ckeditor.com/filebrowser/releases/filebrowser_4.17.1.zip"
 
 libraries[floatingspace][destination] = "libraries"
 libraries[floatingspace][directory_name] = "ckeditor/plugins/floatingspace"
 libraries[floatingspace][download][type] = "file"
-libraries[floatingspace][download][url] = "http://download.ckeditor.com/floatingspace/releases/floatingspace_4.16.1.zip"
+libraries[floatingspace][download][url] = "http://download.ckeditor.com/floatingspace/releases/floatingspace_4.17.1.zip"
 
 libraries[floatpanel][destination] = "libraries"
 libraries[floatpanel][directory_name] = "ckeditor/plugins/floatpanel"
 libraries[floatpanel][download][type] = "file"
-libraries[floatpanel][download][url] = "http://download.ckeditor.com/floatpanel/releases/floatpanel_4.16.1.zip"
+libraries[floatpanel][download][url] = "http://download.ckeditor.com/floatpanel/releases/floatpanel_4.17.1.zip"
 
 libraries[horizontalrule][destination] = "libraries"
 libraries[horizontalrule][directory_name] = "ckeditor/plugins/horizontalrule"
 libraries[horizontalrule][download][type] = "file"
-libraries[horizontalrule][download][url] = "http://download.ckeditor.com/horizontalrule/releases/horizontalrule_4.16.1.zip"
+libraries[horizontalrule][download][url] = "http://download.ckeditor.com/horizontalrule/releases/horizontalrule_4.17.1.zip"
 
 libraries[htmlwriter][destination] = "libraries"
 libraries[htmlwriter][directory_name] = "ckeditor/plugins/htmlwriter"
 libraries[htmlwriter][download][type] = "file"
-libraries[htmlwriter][download][url] = "http://download.ckeditor.com/htmlwriter/releases/htmlwriter_4.16.1.zip"
+libraries[htmlwriter][download][url] = "http://download.ckeditor.com/htmlwriter/releases/htmlwriter_4.17.1.zip"
 
 libraries[iframe][destination] = "libraries"
 libraries[iframe][directory_name] = "ckeditor/plugins/iframe"
 libraries[iframe][download][type] = "file"
-libraries[iframe][download][url] = "http://download.ckeditor.com/iframe/releases/iframe_4.16.1.zip"
+libraries[iframe][download][url] = "http://download.ckeditor.com/iframe/releases/iframe_4.17.1.zip"
 
 libraries[image][destination] = "libraries"
 libraries[image][directory_name] = "ckeditor/plugins/image"
 libraries[image][download][type] = "file"
-libraries[image][download][url] = "http://download.ckeditor.com/image/releases/image_4.16.1.zip"
+libraries[image][download][url] = "http://download.ckeditor.com/image/releases/image_4.17.1.zip"
 
 libraries[indent][destination] = "libraries"
 libraries[indent][directory_name] = "ckeditor/plugins/indent"
 libraries[indent][download][type] = "file"
-libraries[indent][download][url] = "http://download.ckeditor.com/indent/releases/indent_4.16.1.zip"
+libraries[indent][download][url] = "http://download.ckeditor.com/indent/releases/indent_4.17.1.zip"
 
 libraries[indentlist][destination] = "libraries"
 libraries[indentlist][directory_name] = "ckeditor/plugins/indentlist"
 libraries[indentlist][download][type] = "file"
-libraries[indentlist][download][url] = "http://download.ckeditor.com/indentlist/releases/indentlist_4.16.1.zip"
+libraries[indentlist][download][url] = "http://download.ckeditor.com/indentlist/releases/indentlist_4.17.1.zip"
 
 libraries[justify][destination] = "libraries"
 libraries[justify][directory_name] = "ckeditor/plugins/justify"
 libraries[justify][download][type] = "file"
-libraries[justify][download][url] = "http://download.ckeditor.com/justify/releases/justify_4.16.1.zip"
+libraries[justify][download][url] = "http://download.ckeditor.com/justify/releases/justify_4.17.1.zip"
 
 libraries[list][destination] = "libraries"
 libraries[list][directory_name] = "ckeditor/plugins/list"
 libraries[list][download][type] = "file"
-libraries[list][download][url] = "http://download.ckeditor.com/list/releases/list_4.16.1.zip"
+libraries[list][download][url] = "http://download.ckeditor.com/list/releases/list_4.17.1.zip"
 
 libraries[lineutils][destination] = "libraries"
 libraries[lineutils][directory_name] = "ckeditor/plugins/lineutils"
 libraries[lineutils][download][type] = "file"
-libraries[lineutils][download][url] = "http://download.ckeditor.com/lineutils/releases/lineutils_4.16.1.zip"
+libraries[lineutils][download][url] = "http://download.ckeditor.com/lineutils/releases/lineutils_4.17.1.zip"
 
 libraries[magicline][destination] = "libraries"
 libraries[magicline][directory_name] = "ckeditor/plugins/magicline"
 libraries[magicline][download][type] = "file"
-libraries[magicline][download][url] = "http://download.ckeditor.com/magicline/releases/magicline_4.16.1.zip"
+libraries[magicline][download][url] = "http://download.ckeditor.com/magicline/releases/magicline_4.17.1.zip"
 
 libraries[menu][destination] = "libraries"
 libraries[menu][directory_name] = "ckeditor/plugins/menu"
 libraries[menu][download][type] = "file"
-libraries[menu][download][url] = "http://download.ckeditor.com/menu/releases/menu_4.16.1.zip"
+libraries[menu][download][url] = "http://download.ckeditor.com/menu/releases/menu_4.17.1.zip"
 
 libraries[menubutton][destination] = "libraries"
 libraries[menubutton][directory_name] = "ckeditor/plugins/menubutton"
 libraries[menubutton][download][type] = "file"
-libraries[menubutton][download][url] = "http://download.ckeditor.com/menubutton/releases/menubutton_4.16.1.zip"
+libraries[menubutton][download][url] = "http://download.ckeditor.com/menubutton/releases/menubutton_4.17.1.zip"
 
 libraries[panel][destination] = "libraries"
 libraries[panel][directory_name] = "ckeditor/plugins/panel"
 libraries[panel][download][type] = "file"
-libraries[panel][download][url] = "http://download.ckeditor.com/panel/releases/panel_4.16.1.zip"
+libraries[panel][download][url] = "http://download.ckeditor.com/panel/releases/panel_4.17.1.zip"
 
 libraries[pastefromword][destination] = "libraries"
 libraries[pastefromword][directory_name] = "ckeditor/plugins/pastefromword"
 libraries[pastefromword][download][type] = "file"
-libraries[pastefromword][download][url] = "http://download.ckeditor.com/pastefromword/releases/pastefromword_4.16.1.zip"
+libraries[pastefromword][download][url] = "http://download.ckeditor.com/pastefromword/releases/pastefromword_4.17.1.zip"
 
 libraries[pastetext][destination] = "libraries"
 libraries[pastetext][directory_name] = "ckeditor/plugins/pastetext"
 libraries[pastetext][download][type] = "file"
-libraries[pastetext][download][url] = "http://download.ckeditor.com/pastetext/releases/pastetext_4.16.1.zip"
+libraries[pastetext][download][url] = "http://download.ckeditor.com/pastetext/releases/pastetext_4.17.1.zip"
 
 libraries[popup][destination] = "libraries"
 libraries[popup][directory_name] = "ckeditor/plugins/popup"
 libraries[popup][download][type] = "file"
-libraries[popup][download][url] = "http://download.ckeditor.com/popup/releases/popup_4.16.1.zip"
+libraries[popup][download][url] = "http://download.ckeditor.com/popup/releases/popup_4.17.1.zip"
 
 libraries[removeformat][destination] = "libraries"
 libraries[removeformat][directory_name] = "ckeditor/plugins/removeformat"
 libraries[removeformat][download][type] = "file"
-libraries[removeformat][download][url] = "http://download.ckeditor.com/removeformat/releases/removeformat_4.16.1.zip"
+libraries[removeformat][download][url] = "http://download.ckeditor.com/removeformat/releases/removeformat_4.17.1.zip"
 
 libraries[richcombo][destination] = "libraries"
 libraries[richcombo][directory_name] = "ckeditor/plugins/richcombo"
 libraries[richcombo][download][type] = "file"
-libraries[richcombo][download][url] = "http://download.ckeditor.com/richcombo/releases/richcombo_4.16.1.zip"
+libraries[richcombo][download][url] = "http://download.ckeditor.com/richcombo/releases/richcombo_4.17.1.zip"
 
 libraries[scayt][destination] = "libraries"
 libraries[scayt][directory_name] = "ckeditor/plugins/scayt"
 libraries[scayt][download][type] = "file"
-libraries[scayt][download][url] = "http://download.ckeditor.com/scayt/releases/scayt_4.16.1.zip"
+libraries[scayt][download][url] = "http://download.ckeditor.com/scayt/releases/scayt_4.17.1.zip"
 
 libraries[sharedspace][destination] = "libraries"
 libraries[sharedspace][directory_name] = "ckeditor/plugins/sharedspace"
 libraries[sharedspace][download][type] = "file"
-libraries[sharedspace][download][url] = "http://download.ckeditor.com/sharedspace/releases/sharedspace_4.16.1.zip"
+libraries[sharedspace][download][url] = "http://download.ckeditor.com/sharedspace/releases/sharedspace_4.17.1.zip"
 
 libraries[showblocks][destination] = "libraries"
 libraries[showblocks][directory_name] = "ckeditor/plugins/showblocks"
 libraries[showblocks][download][type] = "file"
-libraries[showblocks][download][url] = "http://download.ckeditor.com/showblocks/releases/showblocks_4.16.1.zip"
+libraries[showblocks][download][url] = "http://download.ckeditor.com/showblocks/releases/showblocks_4.17.1.zip"
 
 libraries[showborders][destination] = "libraries"
 libraries[showborders][directory_name] = "ckeditor/plugins/showborders"
 libraries[showborders][download][type] = "file"
-libraries[showborders][download][url] = "http://download.ckeditor.com/showborders/releases/showborders_4.16.1.zip"
+libraries[showborders][download][url] = "http://download.ckeditor.com/showborders/releases/showborders_4.17.1.zip"
 
 libraries[sourcearea][destination] = "libraries"
 libraries[sourcearea][directory_name] = "ckeditor/plugins/sourcearea"
 libraries[sourcearea][download][type] = "file"
-libraries[sourcearea][download][url] = "http://download.ckeditor.com/sourcearea/releases/sourcearea_4.16.1.zip"
+libraries[sourcearea][download][url] = "http://download.ckeditor.com/sourcearea/releases/sourcearea_4.17.1.zip"
 
 libraries[sourcedialog][destination] = "libraries"
 libraries[sourcedialog][directory_name] = "ckeditor/plugins/sourcedialog"
 libraries[sourcedialog][download][type] = "file"
-libraries[sourcedialog][download][url] = "http://download.ckeditor.com/sourcedialog/releases/sourcedialog_4.16.1.zip"
+libraries[sourcedialog][download][url] = "http://download.ckeditor.com/sourcedialog/releases/sourcedialog_4.17.1.zip"
 
 libraries[specialchar][destination] = "libraries"
 libraries[specialchar][directory_name] = "ckeditor/plugins/specialchar"
 libraries[specialchar][download][type] = "file"
-libraries[specialchar][download][url] = "http://download.ckeditor.com/specialchar/releases/specialchar_4.16.1.zip"
+libraries[specialchar][download][url] = "http://download.ckeditor.com/specialchar/releases/specialchar_4.17.1.zip"
 
 libraries[stylescombo][destination] = "libraries"
 libraries[stylescombo][directory_name] = "ckeditor/plugins/stylescombo"
 libraries[stylescombo][download][type] = "file"
-libraries[stylescombo][download][url] = "http://download.ckeditor.com/stylescombo/releases/stylescombo_4.16.1.zip"
+libraries[stylescombo][download][url] = "http://download.ckeditor.com/stylescombo/releases/stylescombo_4.17.1.zip"
 
 libraries[tab][destination] = "libraries"
 libraries[tab][directory_name] = "ckeditor/plugins/tab"
 libraries[tab][download][type] = "file"
-libraries[tab][download][url] = "http://download.ckeditor.com/tab/releases/tab_4.16.1.zip"
+libraries[tab][download][url] = "http://download.ckeditor.com/tab/releases/tab_4.17.1.zip"
 
 libraries[table][destination] = "libraries"
 libraries[table][directory_name] = "ckeditor/plugins/table"
 libraries[table][download][type] = "file"
-libraries[table][download][url] = "http://download.ckeditor.com/table/releases/table_4.16.1.zip"
+libraries[table][download][url] = "http://download.ckeditor.com/table/releases/table_4.17.1.zip"
 
 libraries[tableresize][destination] = "libraries"
 libraries[tableresize][directory_name] = "ckeditor/plugins/tableresize"
 libraries[tableresize][download][type] = "file"
-libraries[tableresize][download][url] = "http://download.ckeditor.com/tableresize/releases/tableresize_4.16.1.zip"
+libraries[tableresize][download][url] = "http://download.ckeditor.com/tableresize/releases/tableresize_4.17.1.zip"
 
 libraries[tabletools][destination] = "libraries"
 libraries[tabletools][directory_name] = "ckeditor/plugins/tabletools"
 libraries[tabletools][download][type] = "file"
-libraries[tabletools][download][url] = "http://download.ckeditor.com/tabletools/releases/tabletools_4.16.1.zip"
+libraries[tabletools][download][url] = "http://download.ckeditor.com/tabletools/releases/tabletools_4.17.1.zip"
 
 libraries[toolbarswitch][destination] = "libraries"
 libraries[toolbarswitch][directory_name] = "ckeditor/plugins/toolbarswitch"
@@ -755,17 +751,17 @@ libraries[toolbarswitch][download][url] = "http://download.ckeditor.com/toolbars
 libraries[undo][destination] = "libraries"
 libraries[undo][directory_name] = "ckeditor/plugins/undo"
 libraries[undo][download][type] = "file"
-libraries[undo][download][url] = "http://download.ckeditor.com/undo/releases/undo_4.16.1.zip"
+libraries[undo][download][url] = "http://download.ckeditor.com/undo/releases/undo_4.17.1.zip"
 
 libraries[widget][destination] = "libraries"
 libraries[widget][directory_name] = "ckeditor/plugins/widget"
 libraries[widget][download][type] = "file"
-libraries[widget][download][url] = "http://download.ckeditor.com/widget/releases/widget_4.16.1.zip"
+libraries[widget][download][url] = "http://download.ckeditor.com/widget/releases/widget_4.17.1.zip"
 
 libraries[wysiwygarea][destination] = "libraries"
 libraries[wysiwygarea][directory_name] = "ckeditor/plugins/wysiwygarea"
 libraries[wysiwygarea][download][type] = "file"
-libraries[wysiwygarea][download][url] = "http://download.ckeditor.com/wysiwygarea/releases/wysiwygarea_4.16.1.zip"
+libraries[wysiwygarea][download][url] = "http://download.ckeditor.com/wysiwygarea/releases/wysiwygarea_4.17.1.zip"
 
 libraries[insertpre][destination] = "libraries"
 libraries[insertpre][directory_name] = "ckeditor/plugins/insertpre"

@@ -446,6 +446,8 @@ class CommerceCustomerUITest extends CommerceBaseTestCase {
 
     $address_info = $this->generateAddressInformation();
 
+    // Add a billing information profile to the order.
+    $this->drupalPostAJAX(NULL, array(), array('op' => t('Add billing information')));
     $billing_country = $this->xpath("//select[starts-with(@name, 'commerce_customer_billing')]");
     $this->drupalPostAJAX(NULL, array((string) $billing_country[0]['name'] => variable_get('site_default_country', 'US')), (string) $billing_country[0]['name']);
 

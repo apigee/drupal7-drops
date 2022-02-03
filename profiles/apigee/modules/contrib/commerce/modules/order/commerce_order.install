@@ -93,6 +93,12 @@ function commerce_order_schema() {
     ),
     'indexes' => array(
       'uid' => array('uid'),
+      'status' => array('status'),
+      'order_id_uid_status' => array('order_id', 'uid', 'status'),
+      'created' => array('created'),
+      'changed' => array('changed'),
+      'order_id_status_type' => array('order_id', 'status', 'type'),
+      'type' => array('type'),
     ),
     'foreign keys' => array(
       'current_revision' => array(
@@ -145,6 +151,12 @@ function commerce_order_schema() {
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE,
+      ),
+      'placed' => array(
+        'description' => 'The Unix timestamp when the order was placed e.g. when checkout was completed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'log' => array(
         'description' => 'The log entry explaining the changes in this version.',
@@ -504,4 +516,77 @@ function commerce_order_update_7110() {
 
     return t('Schema for the commerce_order table has been updated. A drush command (commerce-order-update-placed-timestamp) is available to update the placed timestamp for existing orders.');
   }
+}
+
+/**
+ * Add additional indexes to {commerce_order} around status.
+ */
+function commerce_order_update_7111() {
+  if (!db_index_exists('commerce_order', 'status')) {
+    db_add_index('commerce_order', 'status', array('status'));
+  }
+
+  if (!db_index_exists('commerce_order', 'order_id_uid_status')) {
+    db_add_index('commerce_order', 'order_id_uid_status', array('order_id', 'uid', 'status'));
+  }
+
+  return t('Database indexes added to commerce_order for status.');
+}
+
+/**
+ * Add the placed timestamp to {commerce_order_revision}.
+ *
+ * Sites with a large number of order revisions should consider manually adding
+ * this column to avoid performance issues. Before applying pending updates,
+ * set the 'skip_order_update_7112' setting to TRUE to skip this update, e.g.
+ * by adding $conf['skip_order_update_7112'] = TRUE; to settings.php.
+ */
+function commerce_order_update_7112() {
+  if (!variable_get('skip_order_update_7112', FALSE) &&
+    !db_field_exists('commerce_order_revision', 'placed')) {
+
+    db_add_field('commerce_order_revision', 'placed', array(
+      'description' => 'The Unix timestamp when the order was placed e.g. when checkout was completed.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+
+    return t('Schema for the commerce_order_revision table has been updated.');
+  }
+}
+
+/**
+ * Add indexes to the commerce_order table to improve performance.
+ *
+ * Sites with a large number of orders should consider manually adding these
+ * indexes to better accommodate the lengthy database operation. Before
+ * applying pending updates, set the 'skip_order_update_7113' setting to TRUE
+ * to skip this update, e.g. by adding $conf['skip_order_update_7113'] = TRUE;
+ * to settings.php.
+ */
+function commerce_order_update_7113() {
+  if (!variable_get('skip_order_update_7113', FALSE)) {
+    if (!db_index_exists('commerce_order', 'created')) {
+      db_add_index('commerce_order', 'created', array('created'));
+    }
+    if (!db_index_exists('commerce_order', 'changed')) {
+      db_add_index('commerce_order', 'changed', array('changed'));
+    }
+    if (!db_index_exists('commerce_order', 'order_id_status_type')) {
+      db_add_index('commerce_order', 'order_id_status_type', array('order_id', 'status', 'type'));
+    }
+    if (!db_index_exists('commerce_order', 'type')) {
+      db_add_index('commerce_order', 'type', array('type'));
+    }
+
+    return t('Database indexes added to the commerce_order table.');
+  }
+}
+
+/**
+ * Add an extra field to orders that renders the order e-mail address.
+ */
+function commerce_order_update_7114() {
+  return t('To display the e-mail address on orders, you must adjust and resave your order field display settings. The e-mail address will appear to be visible already due to a limitation of the field UI, but it will not truly be visible on rendered orders until you resave the display settings.');
 }

@@ -13,10 +13,23 @@ function mimemail_example_menu() {
     'title' => 'Mime Mail Example',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mimemail_example_form'),
-    'access arguments' => array('access content'),
+    'access arguments' => array('send example email'),
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function mimemail_example_permission() {
+  return array(
+    'send example email' => array(
+      'title' => t('Send example email'),
+      'description' => t('Use the example email form to send arbitrary email with attachments.'),
+      'restrict access' => TRUE,
+    ),
+  );
 }
 
 /**

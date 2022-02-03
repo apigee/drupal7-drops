@@ -104,13 +104,12 @@ function hook_commerce_cart_order_convert($order_wrapper, $account) {
  * Allows modules to perform processing on a shopping cart order prior to the
  * logic in commerce_cart_order_refresh() taking place.
  *
- * @param $order_wrapper
- *   The entity metadata wrapper for the order about to be refreshed.
+ * @param $order
+ *   The order about to be refreshed.
  *
  * @see commerce_cart_order_refresh()
- * @see entity_metadata_wrapper()
  */
-function hook_commerce_cart_order_pre_refresh($order_wrapper) {
+function hook_commerce_cart_order_pre_refresh($order) {
   // No example.
 }
 
@@ -274,4 +273,21 @@ function hook_commerce_cart_product_add($order, $product, $quantity, $line_item)
  */
 function hook_commerce_cart_product_remove($order, $product, $quantity, $line_item) {
   // No example.
+}
+
+/**
+ * Allow modules to skip/allow the automatic cart refresh when a given cart
+ * order is being loaded.
+ *
+ * @param $order
+ *   The cart order object
+ *
+ * @return bool
+ *   Boolean indicating whether or not the cart order can be refreshed.
+ */
+function hook_commerce_cart_order_can_refresh($order) {
+  // Skip refresh when the current path is "foo".
+  if (current_path() === 'foo') {
+    return FALSE;
+  }
 }

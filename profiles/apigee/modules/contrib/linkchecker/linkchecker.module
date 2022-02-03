@@ -631,7 +631,7 @@ function _linkchecker_status_handling(&$response, $link) {
     && preg_match('/=|\/|,/', $response->uri['fragment']) == FALSE
     && !in_array($response->uri['fragment'], array('#top'))
     && in_array($response->headers['content-type'], array('text/html', 'application/xhtml+xml', 'application/xml'))
-    && !preg_match('/(\s[^>]*(name|id)(\s+)?=(\s+)?["\'])(' . preg_quote($response->uri['fragment'], '/') . ')(["\'][^>]*>)/i', $response->data)
+    && !preg_match('/(\s[^>]*(name|id)(\s+)?=(\s+)?["\'])(' . preg_quote(urldecode($response->uri['fragment']), '/') . ')(["\'][^>]*>)/i', $response->data)
     ) {
     // Override status code 200 with status code 404 so it can be handled with
     // default status code 404 logic and custom error text.
@@ -1934,7 +1934,7 @@ function _linkchecker_extract_links($text = '', $content_path = NULL) {
   }
 
   // Finds all audio links in the content.
-  if (variable_get('linkchecker_extract_from_audio', 1) == 1) {
+  if (variable_get('linkchecker_extract_from_audio', 0) == 1) {
     $audios = $html_dom->getElementsByTagName('audio');
     foreach ($audios as $audio) {
       $urls[] = $audio->getAttribute('src');
@@ -2188,7 +2188,7 @@ function _linkchecker_link_replace(&$text, $old_link_fqdn = '', $new_link_fqdn =
       }
 
       // Finds all audio links in the content.
-      if (variable_get('linkchecker_extract_from_audio', 1) == 1) {
+      if (variable_get('linkchecker_extract_from_audio', 0) == 1) {
         $audios = $html_dom->getElementsByTagName('audio');
         foreach ($audios as $audio) {
           if (in_array($audio->getAttribute('src'), $old_links)) {
@@ -2443,7 +2443,7 @@ function _linkchecker_link_check_status_filter($url) {
 
   // Is url in domain blacklist?
   $urls = variable_get('linkchecker_disable_link_check_for_urls', LINKCHECKER_RESERVED_DOCUMENTATION_DOMAINS);
-  if (!empty($urls) && preg_match('/' . implode('|', array_map(create_function('$links', 'return preg_quote($links, \'/\');'), preg_split('/(\r\n?|\n)/', $urls))) . '/', $url)) {
+  if (!empty($urls) && preg_match('/' . implode('|', array_map(function ($links) { return preg_quote($links, '/'); }, preg_split('/(\r\n?|\n)/', $urls))) . '/', $url)) {
     $status = FALSE;
   }
 

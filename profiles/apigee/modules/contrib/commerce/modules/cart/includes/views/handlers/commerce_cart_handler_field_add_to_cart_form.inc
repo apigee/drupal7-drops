@@ -8,6 +8,7 @@ class commerce_cart_handler_field_add_to_cart_form extends views_handler_field_e
   function option_definition() {
     $options = parent::option_definition();
 
+    $options['button_text'] = array('button_text' => t('Add to cart'));
     $options['show_quantity'] = array('default' => FALSE);
     $options['default_quantity'] = array('default' => 1);
     $options['combine'] = array('default' => TRUE);
@@ -22,6 +23,13 @@ class commerce_cart_handler_field_add_to_cart_form extends views_handler_field_e
    */
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
+
+    $form['button_text'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Button text'),
+      '#default_value' => $this->options['button_text'] ? filter_xss($this->options['button_text'], array()) : t('Add to cart'),
+      '#description' => t('Text to use in the Add to cart button. Default: %default', array('%default' => 'Add to cart')),
+    );
 
     $form['show_quantity'] = array(
       '#type' => 'checkbox',
@@ -87,6 +95,7 @@ class commerce_cart_handler_field_add_to_cart_form extends views_handler_field_e
 
       // Build the line item we'll pass to the Add to Cart form.
       $line_item = commerce_product_line_item_new($product, $default_quantity, 0, array(), $this->options['line_item_type']);
+      $line_item->data['context']['button_text'] = filter_xss($this->options['button_text'], array());
       $line_item->data['context']['product_ids'] = $product_ids;
       $line_item->data['context']['add_to_cart_combine'] = $this->options['combine'];
 

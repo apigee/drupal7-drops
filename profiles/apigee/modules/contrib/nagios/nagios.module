@@ -4,29 +4,30 @@
 // Copyright 2009 Khalid Baheyeldin http://2bits.com
 
 // Defines to be used by this modules and others that use its hook_nagios()
-define('NAGIOS_STATUS_OK',       variable_get('nagios_status_ok_value', 0));
-define('NAGIOS_STATUS_WARNING',  variable_get('nagios_status_warning_value', 1));
+define('NAGIOS_STATUS_OK', variable_get('nagios_status_ok_value', 0));
+define('NAGIOS_STATUS_WARNING', variable_get('nagios_status_warning_value', 1));
 define('NAGIOS_STATUS_CRITICAL', variable_get('nagios_status_critical_value', 2));
-define('NAGIOS_STATUS_UNKNOWN',  variable_get('nagios_status_unknown_value', 3));
+define('NAGIOS_STATUS_UNKNOWN', variable_get('nagios_status_unknown_value', 3));
 
 /**
  * Mapping of defines to text strings that Nagios understands
  */
 function nagios_status() {
-  return array(
+  return [
     NAGIOS_STATUS_OK => 'OK',
     NAGIOS_STATUS_UNKNOWN => 'UNKNOWN',
     NAGIOS_STATUS_WARNING => 'WARNING',
     NAGIOS_STATUS_CRITICAL => 'CRITICAL',
-  );
+  ];
 }
 
 /**
  * Functions to be performed by the base nagios module.
  */
 function nagios_functions() {
-  return array(
+  $functions = [
     'requirements' => t('Checking of hook_requirements. This includes the following: module updates, database schema, files directory writability, update.php protected, Lots of other good stuff ...'),
+    'watchdog' => t('Check recent watchdog entries'),
     'cron' => t('Check whether cron has been running regularly'),
     'session_anon' => t('Check the number of anonymous sessions for nagios performance data'),
     'session_auth' => t('Check the number of authenticated sessions for nagios performance data'),
@@ -34,151 +35,211 @@ function nagios_functions() {
     'users' => t('Check the number of users for nagios performance data'),
     'modules' => t('Check the number of modules for nagios performance data'),
     'themes' => t('Check the number of themes for nagios performance data'),
-  );
+  ];
+  if (module_exists('elysia_cron')) {
+    $functions['elysia_cron'] = t('Check whether elysia cron has been running regularly');
+  }
+  return $functions;
 }
 
 /**
  * Implements hook_menu().
  */
 function nagios_menu() {
-  $items = array();
-  $items['admin/config/system/nagios'] = array(
+  $items = [];
+  $items['admin/config/system/nagios'] = [
     'type' => MENU_NORMAL_ITEM,
-    'title' => 'Nagios monitoring',
-    'description' => 'Settings for Nagios monitoring',
+    'title' => 'Nagios Monitoring',
+    'description' => 'Settings for Nagios Monitoring',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('nagios_settings'),
-    'access arguments' => array('administer site configuration'),
-  );
+    'page arguments' => ['nagios_settings'],
+    'access arguments' => ['administer site configuration'],
+  ];
 
-  $path = variable_get('nagios_page_path', 'nagios');
+  $path = variable_get('nagios_page_path', 'nagios-status');
   $callback = variable_get('nagios_page_callback', 'nagios_status_page');
-  $items[$path] = array(
+  $items[$path] = [
     'type' => MENU_SUGGESTED_ITEM,
     'title' => 'Nagios status page',
     'page callback' => $callback,
     'access callback' => 'variable_get',
-    'access arguments' => array('nagios_enable_status_page', FALSE),
-  );
+    'access arguments' => ['nagios_enable_status_page', FALSE],
+  ];
   return $items;
+}
+
+/**
+ * Implements hook_menu_site_status_alter().
+ *
+ * Make the status page available when Drupal is in
+ * maintenance mode.
+ */
+function nagios_menu_site_status_alter(&$menu_site_status, $path) {
+  if ($menu_site_status == MENU_SITE_OFFLINE && $path == variable_get('nagios_page_path', 'nagios-status')) {
+    $menu_site_status = MENU_SITE_ONLINE;
+  }
 }
 
 /**
  * Implements hook_permission().
  */
 function nagios_permission() {
-  $permission['administer nagios ignore'] = array(
+  $permission['administer nagios ignore'] = [
     'title' => t('Administer nagios ignore'),
     'description' => t('Select modules to be ignored by nagios.'),
-  );
+  ];
   return $permission;
+}
+
+/**
+ * Update the information under which operating system user PHP is currently
+ * running. This helps to detect permission problems when CLI and web users
+ * differ.
+ */
+function _nagios_update_os_user() {
+  $os_user = variable_get('nagios_os_user', []);
+  if (function_exists('posix_getpwuid')) {
+    $current_user = posix_getpwuid(posix_geteuid())['name'];
+  }
+  else {
+    $current_user = exec('whoami');
+  }
+  if (isset($os_user[PHP_SAPI]) && $os_user[PHP_SAPI] == $current_user) {
+    // Already up-to-date
+    return $os_user;
+  }
+  $os_user[PHP_SAPI] = $current_user;
+  variable_set('nagios_os_user', $os_user);
+  return $os_user;
 }
 
 /**
  * Callback for the settings page
  */
-function nagios_settings($form, &$form_state) {
+function nagios_settings($form) {
   $group = 'modules';
 
-  $form['nagios_ua'] = array(
+  _nagios_update_os_user();
+
+  $form['nagios_ua'] = [
     '#type' => 'textfield',
     '#title' => t('Unique ID'),
     '#default_value' => variable_get('nagios_ua', ''),
     '#description' => t('Restrict sending information to requests identified by this Unique ID. You should change this to some unique string for your organization, and configure Nagios accordingly. This makes Nagios data less accessible to curious users. See the README.txt for more details.'),
-  );
+  ];
 
-  $form['nagios_show_outdated_names'] = array(
+  $form['nagios_show_outdated_names'] = [
     '#type' => 'checkbox',
     '#title' => t('Show outdated module/theme name?'),
     '#default_value' => variable_get('nagios_show_outdated_names', TRUE),
-  );
+  ];
 
-  $form['nagios_status_page'] = array(
-    '#type'        => 'fieldset',
+  $form['nagios_status_page'] = [
+    '#type' => 'fieldset',
     '#collapsible' => TRUE,
-    '#collapsed'   => FALSE,
-    '#title'       => t('Status page settings'),
+    '#collapsed' => FALSE,
+    '#title' => t('Status page settings'),
     '#description' => t('Control the availability and location of the HTTP status page. NOTE: you must clear the menu cache for changes to these settings to register.'),
-  );
-  $form['nagios_status_page']['nagios_enable_status_page'] = array(
+  ];
+  $form['nagios_status_page']['nagios_enable_status_page'] = [
     '#type' => 'checkbox',
     '#title' => t('Enable status page?'),
     '#default_value' => variable_get('nagios_enable_status_page', FALSE),
-  );
-  $form['nagios_status_page']['nagios_page_path'] = array(
+  ];
+  $form['nagios_status_page']['nagios_page_path'] = [
     '#type' => 'textfield',
-    '#title' =>   t('Nagios page path'),
+    '#title' => t('Nagios page path'),
     '#description' => t('Enter the path for the Nagios HTTP status page. It must be a valid Drupal path.'),
     '#default_value' => variable_get('nagios_page_path', 'nagios'),
-  );
-  $form['nagios_status_page']['nagios_page_callback'] = array(
+  ];
+  $form['nagios_status_page']['nagios_page_callback'] = [
     '#type' => 'textfield',
-    '#title' =>   t('Nagios page callback'),
+    '#title' => t('Nagios page callback'),
     '#description' => t('Enter the name of the callback function to be used by the Nagios status page. Take care and be sure this function exists before clearing the menu cache!'),
     '#default_value' => variable_get('nagios_page_callback', 'nagios_status_page'),
-  );
-  $form['nagios_status_page']['nagios_enable_status_page_get'] = array(
+  ];
+  $form['nagios_status_page']['nagios_enable_status_page_get'] = [
     '#type' => 'checkbox',
     '#title' => t('Enable Unique ID checking via URL on status page?'),
     '#default_value' => variable_get('nagios_enable_status_page_get', FALSE),
     '#description' => t('If enabled the $_GET variable "unique_id" is used for checking the correct Unique ID instead of "User Agent" ($_SERVER[\'HTTP_USER_AGENT\']). This alternative checking is only working if the URL is containing the value like "/nagios?unique_id=*****". This feature is useful to avoid webserver stats with the Unique ID as "User Agent" and helpful for human testing.'),
-  );
+  ];
 
-  $form['nagios_error_levels'] = array(
-    '#type'        => 'fieldset',
+  $form['nagios_error_levels'] = [
+    '#type' => 'fieldset',
     '#collapsible' => TRUE,
-    '#collapsed'   => FALSE,
-    '#title'       => t('Error levels'),
+    '#collapsed' => FALSE,
+    '#title' => t('Error levels'),
     '#description' => t('Set the values to be used for error levels when reporting to Nagios.'),
-  );
-  $form['nagios_error_levels']['nagios_status_ok_value'] = array(
-    '#type'        => 'textfield',
-    '#title'       => t('Status OK'),
+  ];
+  $form['nagios_error_levels']['nagios_status_ok_value'] = [
+    '#type' => 'textfield',
+    '#title' => t('Status OK'),
     '#description' => t('The value to send to Nagios for a Status OK message.'),
     '#default_value' => variable_get('nagios_status_ok_value', 0),
-  );
-  $form['nagios_error_levels']['nagios_status_warning_value'] = array(
-    '#type'        => 'textfield',
-    '#title'       => t('Warning'),
+  ];
+  $form['nagios_error_levels']['nagios_status_warning_value'] = [
+    '#type' => 'textfield',
+    '#title' => t('Warning'),
     '#description' => t('The value to send to Nagios for a Warning message.'),
     '#default_value' => variable_get('nagios_status_warning_value', 1),
-  );
-  $form['nagios_error_levels']['nagios_status_critical_value'] = array(
-    '#type'        => 'textfield',
-    '#title'       => t('Critical'),
+  ];
+  $form['nagios_error_levels']['nagios_status_critical_value'] = [
+    '#type' => 'textfield',
+    '#title' => t('Critical'),
     '#description' => t('The value to send to Nagios for a Critical message.'),
     '#default_value' => variable_get('nagios_status_critical_value', 2),
-  );
-  $form['nagios_error_levels']['nagios_status_unknown_value'] = array(
-    '#type'        => 'textfield',
-    '#title'       => t('Unknown'),
+  ];
+  $form['nagios_error_levels']['nagios_status_unknown_value'] = [
+    '#type' => 'textfield',
+    '#title' => t('Unknown'),
     '#description' => t('The value to send to Nagios for an Unknown message.'),
     '#default_value' => variable_get('nagios_status_unknown_value', 3),
-  );
+  ];
 
-  $form[$group] = array(
+  $form[$group] = [
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#title' => t('Modules'),
     '#description' => t('Select the modules that should report their data into Nagios.'),
-  );
+  ];
 
   foreach (nagios_invoke_all('nagios_info') as $module => $data) {
-    $form[$group]['nagios_enable_' . $module] = array(
+    $form[$group]['nagios_enable_' . $module] = [
       '#type' => 'checkbox',
       '#title' => $data['name'] . ' (' . $module . ')',
       '#default_value' => variable_get('nagios_enable_' . $module, TRUE),
-    );
+    ];
   }
 
+  $form['watchdog'] = [
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => t('Watchdog Settings'),
+    '#description' => t('Controls how watchdog messages are retrieved and displayed when watchdog checking is set.'),
+  ];
+  $form['watchdog']['limit_watchdog_display'] = [
+    '#type' => 'checkbox',
+    '#title' => 'Limit watchdog display',
+    '#default_value' => variable_get('limit_watchdog_display', FALSE),
+    '#description' => t('Limit watchdog messages to only those that are new since the last check.'),
+  ];
+  $form['watchdog']['limit_watchdog_results'] = [
+    '#type' => 'textfield',
+    '#title' => 'Limit watchdog logs',
+    '#default_value' => variable_get('limit_watchdog_results', 50),
+    '#description' => t('Limit the number of watchdog logs that are checked. E.G. 50 will only check the newest 50 logs.'),
+  ];
+
   foreach (nagios_invoke_all('nagios_settings') as $module => $module_settings) {
-    $form[$module] = array(
+    $form[$module] = [
       '#type' => 'fieldset',
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
       '#title' => $module,
-    );
+    ];
 
     foreach ($module_settings as $element => $data) {
       $form[$module][$element] = $data;
@@ -194,6 +255,8 @@ function nagios_settings($form, &$form_state) {
 function nagios_status_page() {
   // Make sure this page is not cached.
   drupal_page_is_cacheable(FALSE);
+
+  _nagios_update_os_user();
 
   $args = func_get_args();
   // Module to run checks for.
@@ -217,11 +280,11 @@ function nagios_status_page() {
     }
   }
 
-  if (user_access('administer site configuration') || ($request_code == $ua)) {
+  if ($request_code == $ua || user_access('administer site configuration')) {
     // Authorized so calling other modules
     if ($module) {
       // A specific module has been requested.
-      $nagios_data = array();
+      $nagios_data = [];
       $nagios_data[$module] = module_invoke($module, 'nagios', $id);
     }
     else {
@@ -230,15 +293,15 @@ function nagios_status_page() {
   }
   else {
     // This is not an authorized unique id or uer, so just return this default status.
-    $nagios_data = array(
-      'nagios' =>  array(
-        'DRUPAL' => array(
+    $nagios_data = [
+      'nagios' => [
+        'DRUPAL' => [
           'status' => NAGIOS_STATUS_UNKNOWN,
-          'type'   => 'state',
-          'text'   => t('Unauthorized'),
-        ),
-      ),
-    );
+          'type' => 'state',
+          'text' => t('Unauthorized'),
+        ],
+      ],
+    ];
   }
 
   // Find the highest level to be the overall status
@@ -256,8 +319,8 @@ function nagios_status_page() {
   // Identifier that we check on the other side
   $output = "\n" . 'nagios=' . $codes[$severity] . ', ';
 
-  $output_state = array();
-  $output_perf  = array();
+  $output_state = [];
+  $output_perf = [];
 
   foreach ($nagios_data as $module_name => $module_data) {
     foreach ($module_data as $key => $value) {
@@ -276,40 +339,49 @@ function nagios_status_page() {
           }
 
           if (
-            variable_get('nagios_show_outdated_names', TRUE) &&
             $key == 'ADMIN' &&
-            $value['text'] == 'Module and theme update status'
-            ) {
-            $tmp_projects = update_calculate_project_data(update_get_projects());
-            $nagios_ignored_modules = variable_get('nagios_ignored_modules', array());
-            $outdated_count = 0;
-            foreach ($tmp_projects as $projkey => $projval) {
-              if (!isset($nagios_ignored_modules[$projkey])) {
-                if ($projval['status'] < UPDATE_CURRENT && $projval['status'] >= UPDATE_NOT_SECURE) {
-                  switch ($projval['status']) {
-                    case UPDATE_NOT_SECURE:
-                      $tmp_projstatus = t('NOT SECURE');
-                      break;
-                    case UPDATE_REVOKED:
-                      $tmp_projstatus = t('REVOKED');
-                      break;
-                    case UPDATE_NOT_SUPPORTED:
-                      $tmp_projstatus = t('NOT SUPPORTED');
-                      break;
-                    case UPDATE_NOT_CURRENT:
-                      $tmp_projstatus = t('NOT CURRENT');
-                      break;
-                    default:
-                      $tmp_projstatus = $projval['status'];
+            $value['text'] == 'Module and theme update status' &&
+            variable_get('nagios_show_outdated_names', TRUE)
+          ) {
+            // Need to ensure the Update module was installed before continuing.
+            if (db_table_exists('cache_update')) {
+              $tmp_projects = update_calculate_project_data(_nagios_update_get_projects());
+              $nagios_ignored_modules = variable_get('nagios_ignored_modules', []);
+              $nagios_ignored_themes = variable_get('nagios_ignored_themes', []);
+              $nagios_ignored_projects = $nagios_ignored_modules + $nagios_ignored_themes;
+              $outdated_count = 0;
+              $tmp_modules = '';
+              foreach ($tmp_projects as $project_key => $project_val) {
+                if (!isset($nagios_ignored_projects[$project_key])) {
+                  if ($project_val['status'] < UPDATE_CURRENT && $project_val['status'] >= UPDATE_NOT_SECURE) {
+                    switch ($project_val['status']) {
+                      case UPDATE_NOT_SECURE:
+                        $tmp_project_status = t('NOT SECURE');
+                        break;
+                      case UPDATE_REVOKED:
+                        $tmp_project_status = t('REVOKED');
+                        break;
+                      case UPDATE_NOT_SUPPORTED:
+                        $tmp_project_status = t('NOT SUPPORTED');
+                        break;
+                      case UPDATE_NOT_CURRENT:
+                        $tmp_project_status = t('NOT CURRENT');
+                        break;
+                      default:
+                        $tmp_project_status = $project_val['status'];
+                    }
+                    $tmp_modules .= ' ' . $project_key . ':' . $tmp_project_status;
+                    $outdated_count++;
                   }
-                  $tmp_modules .= ' ' . $projkey . ':' . $tmp_projstatus;
-                  $outdated_count++;
                 }
               }
+              if ($outdated_count > 0) {
+                $tmp_modules = trim($tmp_modules);
+                $tmp_state .= " ($tmp_modules)";
+              }
             }
-            if ($outdated_count > 0) {
-              $tmp_modules = trim($tmp_modules);
-              $tmp_state .= " ($tmp_modules)";
+            else {
+              watchdog('nagios', t('The core update module was never installed so we cannot use update check features.'));
             }
           }
 
@@ -317,20 +389,20 @@ function nagios_status_page() {
           break;
 
         case 'perf':
-          $output_perf[]  = $key . '=' . $value['text'];
+          $output_perf[] = $key . '=' . $value['text'];
           break;
       }
     }
   }
 
-  $output .= implode(', ', $output_state) . ' | ' . implode(';', $output_perf) . "\n";
+  $output .= implode(', ', $output_state) . ' | ' . implode('; ', $output_perf) . "\n";
 
   // Output the status page directly with no theming for speed.
   // If people want a themed status page they can write their own and alter the callback in admin.
   echo $output;
 
   // Exit early so we do not cache the data, nor do we wrap the result in a theme
-  exit();
+  drupal_exit();
 }
 
 /**
@@ -338,16 +410,17 @@ function nagios_status_page() {
  */
 function nagios_invoke_all($hook = 'nagios') {
   // This is a custom invoke function that returns a keyed array
-  $return = array();
-  $args = func_get_args();
+  $return = [];
   foreach (module_implements($hook) as $module) {
     // if we're running the checks, see if the checks for that module
     // are enabled, otherwise just continue
     if ($hook == 'nagios' && !variable_get('nagios_enable_' . $module, 0)) {
       continue;
     }
+
+    /** @var callable $function */
     $function = $module . '_' . $hook;
-    $result = call_user_func_array($function, $args);
+    $result = $function();
     $return[$module] = $result;
   }
 
@@ -358,10 +431,10 @@ function nagios_invoke_all($hook = 'nagios') {
  * Implements hook_nagios_info().
  */
 function nagios_nagios_info() {
-  return array(
-    'name' => 'Nagios monitoring',
+  return [
+    'name' => 'Nagios Monitoring',
     'id' => 'NAGIOS',
-  );
+  ];
 }
 
 /**
@@ -370,41 +443,50 @@ function nagios_nagios_info() {
 function nagios_nagios_settings() {
   foreach (nagios_functions() as $function => $description) {
     $var = 'nagios_func_' . $function;
-    $form[$var] = array(
+    $form[$var] = [
       '#type' => 'checkbox',
       '#title' => $function,
       '#default_value' => variable_get($var, TRUE),
       '#description' => $description,
-    );
+    ];
   }
 
   $group = 'thresholds';
-  $form[$group] = array(
+  $form[$group] = [
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#title' => t('Thresholds'),
     '#description' => t('Thresholds for reporting critical alerts to Nagios.'),
-  );
+  ];
 
-  $form[$group]['nagios_cron_duration'] = array(
+  $form[$group]['nagios_cron_duration'] = [
     '#type' => 'textfield',
     '#title' => t('Cron duration'),
     '#default_value' => variable_get('nagios_cron_duration', 60),
     '#description' => t('Issue a critical alert when cron has not been running for this duration (in minutes). Default is 60 minutes.'),
-  );
+  ];
 
-  $form[$group]['nagios_min_report_severity'] = array(
+  if (module_exists('elysia_cron')) {
+    $form[$group]['nagios_elysia_cron_duration'] = [
+      '#type' => 'textfield',
+      '#title' => t('Elysia cron duration'),
+      '#default_value' => variable_get('nagios_elysia_cron_duration', 60),
+      '#description' => t('Issue a critical alert when elysia cron has not been running for this duration (in minutes). Default is 60 minutes.'),
+    ];
+  }
+
+  $states_without_ok = array_diff_key(nagios_status(), [NAGIOS_STATUS_OK => 'OK']);
+  $form[$group]['nagios_min_report_severity'] = [
     '#type' => 'select',
-    '#title' => t('Mininum report severity'),
+    '#title' => t('Minimum report severity'),
     '#default_value' => variable_get('nagios_min_report_severity', NAGIOS_STATUS_WARNING),
-    '#options' => nagios_status(),
+    '#options' => $states_without_ok,
     '#description' => t('Issue an alert only for this minimum severity, not for lower severities.'),
-  );
+  ];
 
   return $form;
 }
-
 
 /**
  * Implements hook_form_FORMID_alter().
@@ -412,36 +494,48 @@ function nagios_nagios_settings() {
  * Modify the module display view by adding a nagios ignore link to every module
  * description.
  */
-function nagios_form_system_modules_alter(&$form, &$form_state, $form_id) {
-  if (!user_access('administer nagios ignore') || isset($form['confirm'])) {
+function nagios_form_system_modules_alter(&$form) {
+  if (isset($form['confirm']) || !user_access('administer nagios ignore')) {
     return;
   }
 
-  $nagios_ignored_modules = variable_get('nagios_ignored_modules', array());
-  $projects_data = update_get_projects();
+  // We need to abort if the Update module is not installed.
+  if (!db_table_exists('cache_update')) {
+    watchdog('nagios', t('The core update module was never installed so we cannot use update check features.'));
+    return;
+  }
+
+  $nagios_ignored_modules = variable_get('nagios_ignored_modules', []);
+  $projects_data = _nagios_update_get_projects();
   foreach ($form['modules'] as $package_name => &$package) {
     if ($package_name[0] != '#') {
       foreach ($package as $module_name => &$module) {
         if ($module_name[0] != '#') {
-          if (isset($module['enable']['#default_value']) && $module['enable']['#default_value'] == TRUE && array_key_exists($module_name, $projects_data)) {
-            $module['links']['nagios_ignore'] = array(
+          if (array_key_exists($module_name, $projects_data) && !empty($module['enable']['#default_value'])) {
+            $tooltip = ['title' => t('If checked, this module’s update status and hook_requirements() implementation is ignored.')];
+            $module['links']['nagios_ignore'] = [
               '#type' => 'checkbox',
               '#title' => t('Ignore from Nagios'),
-              '#default_value' => isset($nagios_ignored_modules[$module_name]) && $nagios_ignored_modules[$module_name] ? TRUE : FALSE,
-            );
+              '#default_value' => !empty($nagios_ignored_modules[$module_name]),
+              '#attributes' => $tooltip,
+            ];
             if (!module_exists('coder_review')) {
               $package['#theme'] = 'nagios_modules_fieldset';
             }
           }
         }
       }
+      unset($module);
     }
   }
+  unset($package);
   $form['#submit'][] = 'nagios_system_modules_form_submit';
 }
 
 /**
  * Additional system modules form submit handler.
+ *
+ * This is for Drupal core's regular modules page, /admin/modules.
  *
  * Saves the modules that have been selected to be ignored from Nagios
  * reporting to the 'nagios_ignored_modules' variable.
@@ -449,12 +543,12 @@ function nagios_form_system_modules_alter(&$form, &$form_state, $form_id) {
  * 'module_machine_name' => TRUE
  */
 function nagios_system_modules_form_submit(&$form, &$form_state) {
-  $nagios_ignored_modules = array();
+  $nagios_ignored_modules = [];
   foreach ($form_state['values']['modules'] as $package_name => $package) {
     if ($package_name[0] != '#') {
       foreach ($package as $module_name => $module) {
         if ($module_name[0] != '#') {
-          if (isset($module['links']['nagios_ignore']) && $module['links']['nagios_ignore']) {
+          if (!empty($module['links']['nagios_ignore'])) {
             $nagios_ignored_modules[$module_name] = TRUE;
           }
         }
@@ -465,15 +559,97 @@ function nagios_system_modules_form_submit(&$form, &$form_state) {
 }
 
 /**
- * Implements hook_nagios().
+ * Implements hook_form_FORMID_alter().
+ *
+ * Modify the module display view by adding a nagios ignore link to every module
+ * description.
  */
-function nagios_nagios() {
-  $status = array();
-  foreach (nagios_functions() as $function => $description) {
-    if (variable_get('nagios_func_' . $function, TRUE)) {
-      $func = 'nagios_check_' . $function;
-      $result = $func();
-      $status[$result['key']] = $result['data'];
+function nagios_form_system_theme_settings_alter(&$form, &$form_state) {
+  if (isset($form['confirm']) || !user_access('administer nagios ignore')) {
+    return;
+  }
+
+  // We need to abort if the Update module is not installed.
+  if (!db_table_exists('cache_update')) {
+    watchdog('nagios', t('The core update module was never installed so we cannot use update check features.'));
+    return;
+  }
+
+  // Grab the name of the theme.
+  if (isset($form_state['build_info']['args'][0]) && !empty($form_state['build_info']['args'][0])) {
+    $theme_name = check_plain($form_state['build_info']['args'][0]);
+
+    $nagios_ignored_themes = variable_get('nagios_ignored_themes', []);
+
+    // Check to see if the theme is provided by core, or if it's contrib/custom.
+    $projects_data = _nagios_update_get_projects();
+    if (array_key_exists($theme_name, $projects_data)) {
+      // This is a settings page for a non-core theme, so add the checkbox.
+
+      $form['nagios'] = [
+        '#type' => 'fieldset',
+        '#title' => t('Nagios Monitoring'),
+        'nagios_ignore' => [
+          '#type' => 'checkbox',
+          '#title' => t('Ignore from Nagios'),
+          '#weight' => 200,
+          '#default_value' => !empty($nagios_ignored_themes[$theme_name]),
+        ],
+      ];
+
+      $form['#submit'][] = 'nagios_system_theme_settings_form_submit';
+    }
+  }
+}
+
+/**
+ * Additional system theme settings form submit handler.
+ *
+ * Saves the Nagios theme ignore status to the 'nagios_ignored_themes' variable.
+ * Variable contains an array of theme names to be ignored in the form
+ * 'theme_machine_name' => TRUE
+ */
+function nagios_system_theme_settings_form_submit(&$form, &$form_state) {
+  // Grab the name of the theme.
+  if (isset($form_state['build_info']['args'][0]) && !empty($form_state['build_info']['args'][0])) {
+    $theme_name = check_plain($form_state['build_info']['args'][0]);
+    $nagios_ignored_themes = variable_get('nagios_ignored_themes', []);
+
+    if (!empty($form_state['values']['nagios_ignore'])) {
+      $nagios_ignored_themes[$theme_name] = TRUE;
+    }
+    else {
+      unset($nagios_ignored_themes[$theme_name]);
+    }
+
+    variable_set('nagios_ignored_themes', $nagios_ignored_themes);
+  }
+}
+
+/**
+ * Implements hook_nagios().
+ *
+ * @param string $id
+ *   Name of the function to call. If $id is empty, all are called.
+ *   The $id can be submitted by appending /nagios/cron to the HTTP status page.
+ *
+ * @return array
+ */
+function nagios_nagios($id = '') {
+  $status = [];
+  /** @var callable $func */
+  if (!empty($id) && variable_get('nagios_func_' . $id, FALSE)) {
+    $func = 'nagios_check_' . $id;
+    $result = $func();
+    $status[$result['key']] = $result['data'];
+  }
+  else {
+    foreach (nagios_functions() as $function => $description) {
+      if (variable_get('nagios_func_' . $function, TRUE)) {
+        $func = 'nagios_check_' . $function;
+        $result = $func();
+        $status[$result['key']] = $result['data'];
+      }
     }
   }
 
@@ -481,11 +657,11 @@ function nagios_nagios() {
 }
 
 /**
- * Check is all Drupal requirenemts are satisfied.
+ * Check all Drupal requirements are satisfied.
  *
  * Calls hook_requirements on all modules to gather info.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_requirements() {
   // Load .install files
@@ -503,42 +679,47 @@ function nagios_check_requirements() {
   // data from other ctools sub-modules that we want to still monitor.
   // The only safe way is to use module_invoke, calling each module in turn.
 
-  $project_data = update_get_projects();
-  $nagios_ignored_modules = variable_get('nagios_ignored_modules', array());
+  $project_data = _nagios_update_get_projects();
+  $nagios_ignored_modules = variable_get('nagios_ignored_modules', []);
+  $nagios_ignored_themes = variable_get('nagios_ignored_themes', []);
 
-  $enabled_modules = array();
+  /** @var array $nagios_ignored_projects */
+  $nagios_ignored_projects = $nagios_ignored_modules + $nagios_ignored_themes;
+
+  $enabled_modules = [];
 
   foreach ($project_data as $project) {
-    foreach($project['includes'] as $key => $val) {
-      if (!isset($nagios_ignored_modules[$key])) {
+    foreach ($project['includes'] as $key => $val) {
+      if (!isset($nagios_ignored_projects[$key])) {
         $enabled_modules[] = $key;
       }
     }
   }
 
   // Copied from update_requirements(). Get available update data for projects.
-  $data = array();
+  $data = [];
   // TODO: The TRUE param should be made configurable when writing a drush
   // command, so we don't rely on cached data.
-  if ($available = update_get_available(TRUE)) {
-    module_load_include('inc', 'update', 'update.compare');
-    $data = update_calculate_project_data($available);
+  if ($available = _nagios_update_get_available(TRUE)) {
+    $data = _nagios_update_calculate_project_data($available);
   }
   // Remove from the update data array the projects ignored.
-  foreach ($nagios_ignored_modules as $key => $value) {
+  foreach ($nagios_ignored_projects as $key => $value) {
     unset($data[$key]);
   }
 
   // Cycle through enabled modules for requirements checks.
-  $reqs = array();
-  $core_modules = array_keys($project_data['drupal']['includes']);
-  foreach ($enabled_modules as $module_name) {
+  $reqs = [];
+  $module_data = [];
+  foreach ($enabled_modules as $module_name_outer) {
 
-    $requirements_data = module_invoke($module_name, 'requirements', 'runtime');
-    if (count($requirements_data)) {
+    $requirements_data = module_invoke($module_name_outer, 'requirements', 'runtime');
+
+    /** @noinspection UnnecessaryEmptinessCheckInspection */
+    if (is_array($requirements_data) && count($requirements_data)) {
       // Intercept the Update Status module to respect our Ignore behaviour.
       // Note, if $data is empty then there's no available update data and Update Status will handle that for us.
-      if ($module_name == 'update' && !empty($data)) {
+      if ($module_name_outer == 'update' && !empty($data)) {
         // Don't want the 'update_contrib' section reported by 'update' module,
         // because that one contains *ALL* modules, even the ones ignored by
         // nagios module.
@@ -546,7 +727,7 @@ function nagios_check_requirements() {
         // Now we need to loop through all modules again to reset 'update_contrib'.
         foreach ($enabled_modules as $module_name) {
           // Double check we're not processing a core module.
-          if (!in_array($module_name, array_keys($project_data['drupal']['includes']))) {
+          if (!array_key_exists($module_name, $project_data['drupal']['includes'])) {
             // If the module is a sub-module (eg views_ui) then we need to set the status key.
             // Without this,  _update_requirement_check() will return severity = 2.
             if (isset($data[$module_name]['status']) && is_numeric($data[$module_name]['status'])) {
@@ -576,15 +757,33 @@ function nagios_check_requirements() {
   }
 
   // Check the requirements as to the most severe status
-  $descriptions = array();
+  $descriptions = [];
   $severity = REQUIREMENT_OK;
   $min_severity = variable_get('nagios_min_report_severity', NAGIOS_STATUS_WARNING);
   foreach ($reqs as $key => $requirement) {
     if (isset($requirement['severity'])) {
-      // Ignore update_core warning if update check is pending
-      if (($key == 'update_core' || $key == 'update_contrib') && $requirement['severity'] == REQUIREMENT_ERROR && $requirement['reason'] == UPDATE_FETCH_PENDING) {
-        continue;
+
+      // Once a day, the update_core cache expires. The update_core requirement severity is
+      // then REQUIREMENT_WARNING and the reason is UPDATE_UNKNOWN. In order to avoid an unnecessary
+      // nagios state change, calculate a grace time that lasts for one planned cron duration. During
+      // grace time, use the requirement info from cache.
+      if ($key == 'update_core' || $key == 'update_contrib') {
+        $grace_time = FALSE;
+        if ($requirement['severity'] == REQUIREMENT_WARNING && $requirement['reason'] == UPDATE_UNKNOWN) {
+          $grace_seconds = 60 * variable_get('nagios_cron_duration', 60);
+          $expire = db_query("SELECT expire FROM {cache_update} WHERE cid = :cid", [':cid' => 'update_available_releases'])->fetchField();
+          if ($expire && time() < ($expire + $grace_seconds)) {
+            $grace_time = TRUE;
+          }
+        }
+        if ($grace_time) {
+          $requirement = cache_get('nagios_update_core_requirement');
+        }
+        else {
+          cache_set('nagios_update_core_requirement', $requirement);
+        }
       }
+
       if ($requirement['severity'] >= $min_severity) {
         if ($requirement['severity'] > $severity) {
           $severity = $requirement['severity'];
@@ -604,173 +803,358 @@ function nagios_check_requirements() {
   switch ($severity) {
     case REQUIREMENT_OK:
     case REQUIREMENT_INFO:
-      $data = array(
+      $data = [
         'status' => NAGIOS_STATUS_OK,
         'type' => 'state',
         'text' => t('No known issues at this time.'),
-      );
+      ];
       break;
     case REQUIREMENT_WARNING:
-      $data = array(
+      $data = [
         'status' => NAGIOS_STATUS_WARNING,
         'type' => 'state',
-        'text' => t('@desc', array('@desc' => $desc)),
-      );
+        'text' => t('@desc', ['@desc' => $desc]),
+      ];
       break;
     case REQUIREMENT_ERROR:
-      $data = array(
+      $data = [
         'status' => NAGIOS_STATUS_CRITICAL,
         'type' => 'state',
-        'text' => t('@desc', array('@desc' => $desc)),
-      );
+        'text' => t('@desc', ['@desc' => $desc]),
+      ];
       break;
     default:
-      $data = array(
+      $data = [
         'status' => NAGIOS_STATUS_UNKNOWN,
         'type' => 'state',
-        'text' => t('severity is @severity', array('@severity' => $severity)),
-      );
+        'text' => t('severity is @severity', ['@severity' => $severity]),
+      ];
       break;
   }
 
-  return array(
+  return [
     'key' => 'ADMIN',
     'data' => $data,
-  );
+  ];
+}
+
+/**
+ * Check Drupal {watchdog} table recent entries.
+ *
+ * @return array
+ */
+function nagios_check_watchdog() {
+  //@TODO Allow LIMIT and OFFSET to be passed in or configurable, or use existing Drupal settings
+  //@TODO Manually count the rows on admin/reports/dblog and match that if nothing else
+  //@TODO Do this more the Drupal Way, whatever that might be
+  //@TODO Allow multi-value 'type' and/or 'severity' inputs for filtering
+  //@TODO Allow datetime ranges
+
+  // Construct base select query.
+  $query = db_select('watchdog', 'w');
+  $query->fields('w', [
+    'wid',
+    'uid',
+    'type',
+    'severity',
+    'message',
+    'variables',
+    'link',
+    'location',
+    'hostname',
+    'timestamp',
+  ]);
+  $query->orderBy('timestamp', 'DESC');
+
+  // Get watchdog result limit.
+  $limit = variable_get('limit_watchdog_results', 50);
+  if (!empty($limit)) {
+    // Get range.
+    $offset = 0;
+    // Set range.
+    $query->range($offset, $limit);
+  }
+
+  // Check if we are limiting to only new logs since last check.
+  $limit_watchdog = variable_get('limit_watchdog_display', FALSE);
+  if (!empty($limit_watchdog)) {
+    // Get timestamp of the last watchdog entry retrieved.
+    $limit_watchdog_timestamp = variable_get('nagios_limit_watchdog_timestamp', FALSE);
+    if ($limit_watchdog_timestamp !== FALSE) {
+      // Ensure we only get entries that are greater then the timestamp.
+      $query->condition('timestamp', $limit_watchdog_timestamp, '>');
+    }
+  }
+
+  // Execute query.
+  $result = $query->execute();
+  if (!$result) {
+    return [
+      'status' => NAGIOS_STATUS_UNKNOWN,
+      'type' => 'state',
+      'text' => t('Unable to SELECT FROM {watchdog}'),
+    ];
+  }
+
+  //RFC3164/Watchdog has 8 levels. Nagios module has 3 (plus UNKNOWN). This maps one to the other.
+  $severity_translation = [
+    //watchdog => nagios
+    WATCHDOG_DEBUG => NAGIOS_STATUS_OK,
+    WATCHDOG_INFO => NAGIOS_STATUS_OK,
+    WATCHDOG_NOTICE => NAGIOS_STATUS_OK,
+    WATCHDOG_WARNING => NAGIOS_STATUS_WARNING,
+    WATCHDOG_ERROR => NAGIOS_STATUS_CRITICAL,
+    WATCHDOG_CRITICAL => NAGIOS_STATUS_CRITICAL,
+    WATCHDOG_ALERT => NAGIOS_STATUS_CRITICAL,
+    WATCHDOG_EMERGENCY => NAGIOS_STATUS_CRITICAL,
+  ];
+
+  $severity = NAGIOS_STATUS_OK; //max this across the result set
+  $min_severity = variable_get('nagios_min_report_severity', NAGIOS_STATUS_WARNING);
+  $messages = [];
+  $descriptions = [];
+  $count = 0;
+  while ($row = $result->fetchAssoc()) {
+    // Set timestamp of the first watchdog error for use when restricting logs to only new entries.
+    if ($count == 0) {
+      variable_set('nagios_limit_watchdog_timestamp', $row['timestamp']);
+      $count++;
+    }
+
+    // Get severity of log entry.
+    $nagios_severity = $severity_translation[$row['severity']];
+
+    // Only continue if severity is greater then the min severity set.
+    if ($nagios_severity < $min_severity) {
+      continue;
+    }
+
+    // If the severity is greater then our current severity level, set it it to new level.
+    if ($nagios_severity > $severity) {
+      $severity = $nagios_severity;
+    }
+
+    // Create error message.
+    $message = "$row[type] $row[message]";
+    //@TODO Untangle l(truncate_utf8(_dblog_format_message($dblog), 56, TRUE, TRUE), 'admin/reports/event/'. $dblog->wid, array('html' => TRUE)) and use it here
+    $variables = unserialize($row['variables']);
+    if (is_array($variables)) {
+      foreach ($variables as $key => $value) {
+        $message = str_replace($key, $value, $message);
+      }
+    }
+
+    // Add message to messages array only if there isn't already an identical entry.
+    if (!in_array($message, $messages, TRUE)) {
+      $messages[] = $message;
+    }
+    else {
+      // We only want to show each message once so continue.
+      continue;
+    }
+
+    // Prepend the timestamp onto the front of the message.
+    $message = date('Y-m-d H:i:s', $row['timestamp']) . " " . $message;
+
+    // Add message to descriptions array.
+    $descriptions[] = $message;
+
+  }
+
+  // Join all descriptions together into a string.
+  $desc = join(', ', $descriptions);
+
+  //why is an extra array wrapped around here?
+  return [
+    'key' => 'WATCHDOG',
+    'data' => [
+      'status' => $severity,
+      'type' => 'state',
+      'text' => t('@desc', ['@desc' => $desc])
+    ],
+  ];
 }
 
 /**
  * Check when the Drupal cron system was last invoked.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_cron() {
   $cron_last = variable_get('cron_last', 0);
-  $mins = variable_get('nagios_cron_duration', 60);
+  $minutes = variable_get('nagios_cron_duration', 60);
 
-  if (REQUEST_TIME > ($cron_last + $mins * 60)) {
-    $data = array(
+  if (REQUEST_TIME > ($cron_last + $minutes * 60)) {
+    $data = [
       'status' => NAGIOS_STATUS_CRITICAL,
       'type' => 'state',
-      'text' => t('cron not running @mins mins', array('@mins' => $mins)),
-    );
+      'text' => t('cron did not run within last @minutes minutes', ['@minutes' => $minutes]),
+    ];
   }
   else {
-    $data = array(
+    $data = [
       'status' => NAGIOS_STATUS_OK,
       'type' => 'state',
       'text' => '',
-    );
+    ];
   }
 
-  return array(
+  return [
     'key' => 'CRON',
     'data' => $data,
-  );
+  ];
+}
+
+/**
+ * Check when the Drupal cron system was last invoked.
+ *
+ * @return array
+ */
+function nagios_check_elysia_cron() {
+  $result = db_query('select * from elysia_cron where last_aborted <> 0');
+  $err_crons = [];
+  foreach ($result as $blocked_cron) {
+    $err_crons[] = $blocked_cron;
+  }
+  $text = '';
+  foreach ($err_crons as $cron) {
+    $text .= t('Elysia cron ":cron" last aborted on ":abort"' . PHP_EOL, [
+      ':cron' => $cron->name,
+      ':abort' => $cron->last_abort_function,
+    ]);
+  }
+  if (!empty($err_crons)) {
+    $data = [
+      'status' => NAGIOS_STATUS_CRITICAL,
+      'type' => 'state',
+      'text' => $text,
+    ];
+  }
+  else {
+    $data = [
+      'status' => NAGIOS_STATUS_OK,
+      'type' => 'state',
+      'text' => '',
+    ];
+  }
+
+  return [
+    'key' => 'ELYSIA_CRON',
+    'data' => $data,
+  ];
 }
 
 /**
  * Report the number of anonymous sessions.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_session_anon() {
   $interval = REQUEST_TIME - 900; // Last 15 minutes
   // sess_count() no longer exists in Drupal 7. Replace with a custom query.
   //$count = (int) sess_count($interval, TRUE);
-  $count = (int) db_query("SELECT COUNT(*) FROM {sessions} WHERE timestamp >= :timestamp AND uid = :uid", array(':timestamp' => $interval, ':uid' => 0))->fetchField();
+  $count = (int) db_query("SELECT COUNT(*) FROM {sessions} WHERE timestamp >= :timestamp AND uid = :uid", [
+    ':timestamp' => $interval,
+    ':uid' => 0,
+  ])->fetchField();
 
-  $data = array(
+  $data = [
     'status' => NAGIOS_STATUS_OK,
     'type' => 'perf',
     'text' => $count,
-  );
+  ];
 
-  return array(
+  return [
     'key' => 'SAN',
     'data' => $data,
-  );
+  ];
 }
 
 /**
  * Report the number of logged in sessions.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_session_auth() {
   $interval = REQUEST_TIME - 900; // Last 15 minutes
 
-  $count = (int) db_query("SELECT COUNT(*) FROM {sessions} WHERE timestamp >= :timestamp AND uid > :uid", array(':timestamp' => $interval, ':uid' => 0))->fetchField();
+  $count = (int) db_query("SELECT COUNT(*) FROM {sessions} WHERE timestamp >= :timestamp AND uid > :uid", [
+    ':timestamp' => $interval,
+    ':uid' => 0,
+  ])->fetchField();
 
-  $data = array(
+  $data = [
     'status' => NAGIOS_STATUS_OK,
     'type' => 'perf',
     'text' => $count,
-  );
+  ];
 
-  return array(
+  return [
     'key' => 'SAU',
     'data' => $data,
-  );
+  ];
 }
 
 /**
  * Report the number of published nodes.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_nodes() {
   // Include number of active nodes in the report
-  $count = (int) db_query("SELECT COUNT(*) FROM {node} WHERE status = :status", array(':status' => 1))->fetchField();
-  $data = array(
+  $count = (int) db_query("SELECT COUNT(*) FROM {node} WHERE status = :status", [':status' => 1])->fetchField();
+  $data = [
     'status' => NAGIOS_STATUS_OK,
     'type' => 'perf',
     'text' => $count,
-  );
+  ];
 
-  return array(
+  return [
     'key' => 'NOD',
     'data' => $data,
-  );
+  ];
 }
 
 /**
  * Report the number of active user accounts.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_users() {
   // Include number of active users in the report
-  $count = (int) db_query("SELECT COUNT(*) FROM {users} WHERE status = :status", array(':status' => 1))->fetchField();
-  $data = array(
+  $count = (int) db_query("SELECT COUNT(*) FROM {users} WHERE status = :status", [':status' => 1])->fetchField();
+  $data = [
     'status' => NAGIOS_STATUS_OK,
     'type' => 'perf',
     'text' => $count,
-  );
+  ];
 
-  return array(
+  return [
     'key' => 'USR',
     'data' => $data,
-  );
+  ];
 }
 
 /**
  * Report the number of enabled modules.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_modules() {
-  $count = (int) db_query("SELECT COUNT(*) FROM {system} WHERE status = :status AND type = :type", array(':status' => 1, ':type' => 'module'))->fetchField();
-  $data = array(
+  $count = (int) db_query("SELECT COUNT(*) FROM {system} WHERE status = :status AND type = :type", [
+    ':status' => 1,
+    ':type' => 'module',
+  ])->fetchField();
+  $data = [
     'status' => NAGIOS_STATUS_OK,
     'type' => 'perf',
     'text' => $count,
-  );
+  ];
 
-  return array(
+  return [
     'key' => 'MOD',
     'data' => $data,
-  );
+  ];
 }
 
 /**
@@ -785,7 +1169,9 @@ function nagios_nagios_checks() {
  */
 function nagios_nagios_check($function) {
   // We don't bother to check if the function has been enabled by the user.
-  // Since this runs via drush, web security is not an issue.
+  // Since this runs via Drush, web security is not an issue.
+
+  /** @var callable $func */
   $func = 'nagios_check_' . $function;
   $result = $func();
   $status[$result['key']] = $result['data'];
@@ -795,20 +1181,23 @@ function nagios_nagios_check($function) {
 /**
  * Report the number of enabled themes.
  *
- * @return Array
+ * @return array
  */
 function nagios_check_themes() {
-  $count = (int) db_query("SELECT COUNT(*) FROM {system} WHERE status = :status AND type = :type", array(':status' => 1, ':type' => 'theme'))->fetchField();
-  $data = array(
+  $count = (int) db_query("SELECT COUNT(*) FROM {system} WHERE status = :status AND type = :type", [
+    ':status' => 1,
+    ':type' => 'theme',
+  ])->fetchField();
+  $data = [
     'status' => NAGIOS_STATUS_OK,
     'type' => 'perf',
     'text' => $count,
-  );
+  ];
 
-  return array(
+  return [
     'key' => 'THM',
     'data' => $data,
-  );
+  ];
 }
 
 /**
@@ -819,11 +1208,11 @@ function nagios_check_themes() {
  * Implements hook_theme().
  */
 function nagios_theme() {
-  return array(
-    'nagios_modules_fieldset' => array(
+  return [
+    'nagios_modules_fieldset' => [
       'render element' => 'form',
-    ),
-  );
+    ],
+  ];
 }
 
 /**
@@ -839,16 +1228,18 @@ function nagios_theme() {
  *
  * @ingroup themeable
  *
+ * @return string
+ * @throws \Exception
  * @todo Create an issue for this and get this function into D8.
  */
 function theme_nagios_modules_fieldset($variables) {
   $form = $variables['form'];
 
   // Individual table headers.
-  $rows = array();
+  $rows = [];
   // Iterate through all of the modules to Determine the available operations.
   $children = element_children($form);
-  $operations = drupal_map_assoc(array('help', 'permissions', 'configure'));
+  $operations = drupal_map_assoc(['help', 'permissions', 'configure']);
   foreach ($children as $key) {
     $links = array_filter(array_keys($form[$key]['links']), function ($var) {
       return $var && $var[0] != '#';
@@ -861,9 +1252,12 @@ function theme_nagios_modules_fieldset($variables) {
   foreach ($children as $key) {
     // Stick it into $module for easier accessing.
     $module = $form[$key];
-    $row = array();
+    $row = [];
     unset($module['enable']['#title']);
-    $row[] = array('class' => array('checkbox'), 'data' => drupal_render($module['enable']));
+    $row[] = [
+      'class' => ['checkbox'],
+      'data' => drupal_render($module['enable']),
+    ];
     $label = '<label';
     if (isset($module['enable']['#id'])) {
       $label .= ' for="' . $module['enable']['#id'] . '"';
@@ -873,32 +1267,113 @@ function theme_nagios_modules_fieldset($variables) {
     // Add the description, along with any modules it requires.
     $description = drupal_render($module['description']);
     if ($module['#requires']) {
-      $description .= '<div class="admin-requirements">' . t('Requires: !module-list', array('!module-list' => implode(', ', $module['#requires']))) . '</div>';
+      $description .= '<div class="admin-requirements">' . t('Requires: !module-list', ['!module-list' => implode(', ', $module['#requires'])]) . '</div>';
     }
     if ($module['#required_by']) {
-      $description .= '<div class="admin-requirements">' . t('Required by: !module-list', array('!module-list' => implode(', ', $module['#required_by']))) . '</div>';
+      $description .= '<div class="admin-requirements">' . t('Required by: !module-list', ['!module-list' => implode(', ', $module['#required_by'])]) . '</div>';
     }
-    $row[] = array('data' => $description, 'class' => array('description'));
+    $row[] = ['data' => $description, 'class' => ['description']];
     // Display links (such as help or permissions) in their own columns.
-    foreach ($operations as $key) {
-      $row[] = array('data' => drupal_render($module['links'][$key]), 'class' => array($key));
+    foreach ($operations as $key_inner) {
+      $row[] = [
+        'data' => drupal_render($module['links'][$key_inner]),
+        'class' => [$key_inner],
+      ];
     }
     $form['#header'][4]['colspan'] = count($operations);
     $rows[] = $row;
   }
 
-  return theme('table', array('header' => $form['#header'], 'rows' => $rows));
+  return theme('table', ['header' => $form['#header'], 'rows' => $rows]);
 }
 
 /**
  * Helper function to sort modules by severity with usort().
  */
 function _nagios_updates_sort_by_severity($a, $b) {
-  if (isset($a['severity']) && isset($b['severity'])) {
+  if (isset($a['severity'], $b['severity'])) {
     if ($a['severity'] == $b['severity']) {
       return 0;
     }
     return ($a['severity'] < $b['severity']) ? -1 : 1;
   }
   return 0;
+}
+
+/**
+ * Wrapper function to ensure update_get_projects() can always be accessed,
+ * even if the core update module is disabled.
+ */
+function _nagios_update_get_projects() {
+  if (module_exists('update')) {
+    return update_get_projects();
+  }
+
+  // We still need to make sure the update.compare file is available to call the
+  // _update_process_info_list(() function below.
+  module_load_include('inc', 'update', 'update.compare');
+  // This code is lifted directly from the core update module to avoid a dependency.
+  // Note: anything cache related has been pulled out.
+  // https://api.drupal.org/api/drupal/modules!update!update.compare.inc/function/update_get_projects/7.x
+  $projects = &drupal_static(__FUNCTION__, []);
+  if (empty($projects)) {
+    // Still empty, so we have to rebuild the cache.
+    $module_data = system_rebuild_module_data();
+    $theme_data = system_rebuild_theme_data();
+    _update_process_info_list($projects, $module_data, 'module', TRUE);
+    _update_process_info_list($projects, $theme_data, 'theme', TRUE);
+    if (variable_get('update_check_disabled', FALSE)) {
+      _update_process_info_list($projects, $module_data, 'module', FALSE);
+      _update_process_info_list($projects, $theme_data, 'theme', FALSE);
+    }
+    // Allow other modules to alter projects before fetching and comparing.
+    drupal_alter('update_projects', $projects);
+  }
+  return $projects;
+}
+
+/**
+ * Wrapper function to ensure update_get_available() can always be accessed,
+ * even if the core update module is disabled.
+ *
+ * @return array
+ *   Array of data about available releases, keyed by project.
+ */
+function _nagios_update_get_available($refresh = FALSE) {
+  if (!module_exists('update')) {
+    // update_get_available() relies on the update module to have been installed, not just the code to be available
+    if (db_table_exists('cache_update')) {
+      drupal_load('module', 'update');
+      return update_get_available($refresh);
+    }
+
+    watchdog('nagios', t('The core update module was never installed so we cannot use update check features.'));
+  }
+  else {
+    return update_get_available($refresh);
+  }
+  return [];
+}
+
+/**
+ * Wrapper function to ensure update_calculate_project_data() can always be
+ * accessed, even if the core update module is disabled.
+ *
+ * @return array
+ *   An array of installed projects with current update status information.
+ */
+function _nagios_update_calculate_project_data($available = []) {
+  if (!module_exists('update')) {
+    // update_calculate_project_data() relies on the update module to have been installed, not just the code to be available
+    if (db_table_exists('cache_update')) {
+      module_load_include('inc', 'update', 'update.compare');
+      return update_calculate_project_data($available);
+    }
+
+    watchdog('nagios', t('The core update module was never installed so we cannot use update check features.'));
+  }
+  else {
+    return update_calculate_project_data($available);
+  }
+  return [];
 }

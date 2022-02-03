@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Javascript for views-accordion.
+ */
 Drupal.behaviors.views_accordion = {
   attach: function(context) {
     if(Drupal.settings.views_accordion){
@@ -15,9 +19,12 @@ Drupal.behaviors.views_accordion = {
           var displaySelector = '.view-id-' + viewname + '.view-display-id-' + display + ' > .view-content';
           var headerSelector = this.header;
 
+          /* The row count to be used if Row to display opened on start is set to random */
+          var row_count = 0;
+
           /* Prepare our markup for jquery ui accordion */
           $(displaySelector + ' ' + headerSelector + ':not(.ui-accordion-header)').each(function(i){
-        	// Hash to use for accordion navigation option.
+            // Hash to use for accordion navigation option.
             var hash = "#" + viewname + "-" + display + "-" + i;
             var $this = $(this);
             var $link = $this.find('a');
@@ -38,19 +45,38 @@ Drupal.behaviors.views_accordion = {
             if (!usegroupheader) {
               $this.siblings().wrapAll('<div></div>');
             }
+            row_count++;
           });
 
+          if (this.rowstartopen == 'random') {
+            this.rowstartopen = Math.floor(Math.random() * row_count);
+          }
+
           var options = {};
+
           if (this.newoptions) {
+            // Slide was removed from jQuery UI easings, provide sensible fallbacks.
+            if (this.animated === 'slide' || this.animated === 'bounceslide') {
+              this.animated = 'swing';
+            }
+
             /* jQuery UI accordion options format changed for jquery >= 1.9 */
             options = {
               header: headerSelector,
-              animated: this.animated,
               active: this.rowstartopen,
               collapsible: this.collapsible,
               event: this.event,
               heightStyle: this.autoheight ? 'auto' : this.fillspace ? 'fill' : 'content',
             };
+            if (this.animated === false) {
+              options.animate = false;
+            }
+            else {
+              options.animate = {
+                easing: this.animated,
+                duration: this.duration,
+              }
+            }
           }
           else {
             options = {

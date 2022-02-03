@@ -11,16 +11,25 @@ function content_access_help($path, $arg) {
   switch ($path) {
     case 'admin/help#content_access':
       $output = '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('Content Access module provides flexible way to control how and who should read or control your site content. Content Access can define custom access control rules for content types and even for every piece of content.') . '</p>';
-      $output .= '<h3>' . t('Uses') . '</h3>';
-      $output .= '<dl>';
-      $output .= '<dt>' . t('Default and custom settings') . '</dt>';
-      $output .= '<dd>' . t("Each <a href='@content-type'>content type</a> can have its own default content access settings configured as: <em>View any content</em> to allow anyone to view content from this content type, <em>View own content</em> to allow only content creators to see their own content, <em>Edit any content</em> to allow anyone to edit content from this content type, <em>Edit own content</em> to allow only content creators to edit their own content, <em>Delete any content</em> to allow anyone to delete content from this content type, <em>Delete own content </em> to allow content creators to delete their own content. This default settings for each content type can be further customized per every piece of content per user if you have <a href='@acl'>ACL</a> module enabled.", array('@content-type' => url('admin/structure/types'), '@acl' => 'http://drupal.org/project/acl/')) . '</dd>';
-      $output .= '</dl>';
+      $output .= '<p>' . t('The <strong>Content Access</strong> module let you content manage access permission in a flexible and transparant way.') . '</p>';
+      $output .= '<h3>' . t('Use') . '</h3>';
+      $output .= '<p>' . t('It provides two new permissions: <em>view all</em> (allows anyone to view the content) and <em>view own</em> (allows  only the content creator to see his/her own content). It also gives access to the existing core permissions <em>edit</em> and <em>delete</em> on the same settings page.') . '</p>';
+      $output .= '<p>' . t('It provides the following modalities:') . '</p><ul>';
+      $output .= '<li>' . t('Each <em>!content-type</em> can have its own default content access settings by role.',  array('!content-type' => l('content type', 'admin/structure/types'))) . '</li>';
+      $output .= '<li>' . t('Optionally you can enable  role based access control settings per <em>content node</em>.') . '</li>';
+      $output .= '<li>' . t('Access control can be further customized per <em>user</em> if you have the <strong>!acl</strong> module enabled.',
+        array('!acl' => l('ACL', 'https://www.drupal.org/project/acl/'))) . '</li></ul>';
+      if (function_exists('advanced_help_hint_docs')) {
+        $output .= '<p>' . advanced_help_hint_docs('content_access', 'https://drupal.org/node/1194974', TRUE) . '</p>';
+      }
+      else {
+        $output .= '<p>' .t('If you install and enable the module <strong>!url</strong>, you will get more help for <strong>Content Access</strong>.',
+          array('!url' => l('Advanced Help Hint', 'https://www.drupal.org/project/advanced_help_hint'))) . '</p>';
+      }
       return $output;
   }
 }
-
+          
 /**
  * Implements hook_admin_paths().
  */
@@ -219,7 +228,7 @@ function content_access_get_settings($setting, $type_name) {
  * Save content_access settings of a content type.
  */
 function content_access_set_settings($settings, $type_name) {
-  // Do not store default values so we do not have to care about synching our
+  // Do not store default values so we do not have to care about syncing our
   // settings with the permissions.
   foreach (content_access_get_setting_defaults($type_name) as $setting => $default_value) {
     if (isset($settings[$setting]) && $settings[$setting] == $default_value) {
@@ -329,7 +338,7 @@ function content_access_proccess_grant($grant, $gid, $node) {
  * @param $any_roles
  *   The roles with which anybody has access (not optimized!)
  * @param $own_roles
- *   The roles with which only the author has acess (optimized!)
+ *   The roles with which only the author has access (optimized!)
  */
 function content_access_own_op($node, $any_roles, $own_roles) {
   static $roles = array();
@@ -385,7 +394,7 @@ function content_access_get_rids_per_node_op($op, $node) {
  * @param $node
  *   The node object.
  * @param $settings
- *    Optional array used to update the settings cache with the given settings.
+ *   Optional array used to update the settings cache with the given settings.
  * @return
  *   An array of role ids which have access.
  */
@@ -587,7 +596,7 @@ function _content_access_get_operations($type = NULL) {
  */
 function content_access_disable_checkboxes($element) {
   $access_roles = content_access_get_permission_access('access content');
-  $admin_roles = content_access_get_permission_access('administer nodes');
+  $admin_roles = content_access_get_permission_access('bypass node access');
 
   foreach (element_children($element) as $key) {
     if (!in_array($key, $access_roles) &&
@@ -600,10 +609,10 @@ function content_access_disable_checkboxes($element) {
     }
     elseif (in_array($key, $admin_roles) ||
             ($key != DRUPAL_ANONYMOUS_RID && in_array(DRUPAL_AUTHENTICATED_RID, $admin_roles))) {
-      // Fix the checkbox to be enabled for users with administer node privileges
+      // Fix the checkbox to be enabled for users with bypass node access privileges
       $element[$key]['#disabled'] = TRUE;
       $element[$key]['#default_value'] = TRUE;
-      $element[$key]['#prefix'] = '<span' . drupal_attributes(array('title' => t("This role has '@perm' permission, so access is granted.", array('@perm' => t('administer nodes'))))) . '>';
+      $element[$key]['#prefix'] = '<span' . drupal_attributes(array('title' => t("This role has '@perm' permission, so access is granted.", array('@perm' => t('bypass node access'))))) . '>';
       $element[$key]['#suffix'] = "</span>";
     }
   }
@@ -637,4 +646,26 @@ function _content_access_remove_acls($type) {
   foreach ($result as $node) {
     acl_node_clear_acls($node->nid, 'content_access');
   }
+}
+
+/**
+ * Implements hook_node_export_alter().
+ */
+function content_access_node_export_alter(array $nodes) {
+  foreach ($nodes as $node) {
+    $node->content_access = content_access_get_per_node_settings($node);
+  }
+}
+
+/**
+ * Implements hook_node_export_after_import_alter().
+ */
+function content_access_node_export_after_import_alter(array $nodes) {
+  foreach ($nodes as $node) {
+    if(empty($node->nid))
+      continue;
+    content_access_save_per_node_settings($node, $node->content_access);
+  }
+  // Rebuild content access permissions
+  node_access_rebuild();
 }

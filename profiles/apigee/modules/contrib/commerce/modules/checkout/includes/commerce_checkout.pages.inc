@@ -13,7 +13,7 @@ function commerce_checkout_router($order, $checkout_page = NULL) {
   // Ensure this function is routing the latest revision of the given order in
   // case some hook invoked before this page callback is executed updated some
   // value on the order that would impact routing.
-  if (FALSE && !commerce_order_is_latest_revision($order)) {
+  if (!commerce_order_is_latest_revision($order)) {
     entity_get_controller('commerce_order')->resetCache(array($order->order_id));
     $order = commerce_order_load($order->order_id);
   }

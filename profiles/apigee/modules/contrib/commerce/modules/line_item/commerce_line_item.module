@@ -1032,6 +1032,8 @@ function commerce_line_item_field_widget_form(&$form, &$form_state, $field, $ins
 
     if (!empty($form_state['line_item_save_warning'])) {
       drupal_set_message(t('New line items on this order will not be saved until the <em>Save order</em> button is clicked.'), 'warning');
+      // Set variable to false to prevent it from showing up in other contexts.
+      $form_state['line_item_save_warning'] = FALSE;
     }
 
     // Add a set of elements to the form for each referenced line item.
@@ -1261,8 +1263,8 @@ function commerce_line_item_manager_validate($element, &$form_state, $form) {
         commerce_line_item_rebase_unit_price($line_item);
       }
 
-      // Only save if values were actually changed.
-      if ($line_item != $element['line_items'][$line_item_id]['line_item']['#value']) {
+      // Only save if no errors and values were actually changed.
+      if (!form_get_errors() && $line_item != $element['line_items'][$line_item_id]['line_item']['#value']) {
         commerce_line_item_save($line_item);
       }
     }
@@ -1521,7 +1523,7 @@ function commerce_line_items_total($line_items, $types = array()) {
 
     $line_item_currency_code = $line_item_wrapper->commerce_total->currency_code->value();
 
-    if (!in_array($line_item_currency_code, array_keys($currencies))) {
+    if (!array_key_exists($line_item_currency_code, $currencies)) {
       $currencies[$line_item_currency_code] = 1;
     }
     else {
@@ -1535,7 +1537,7 @@ function commerce_line_items_total($line_items, $types = array()) {
   if (count($currencies) == 1) {
     $currency_code = key($currencies);
   }
-  elseif (in_array(commerce_default_currency(), array_keys($currencies))) {
+  elseif (array_key_exists(commerce_default_currency(), $currencies)) {
     // Otherwise use the site default currency if it's in the array.
     $currency_code = commerce_default_currency();
   }
@@ -1571,21 +1573,25 @@ function commerce_line_items_total($line_items, $types = array()) {
  * @see hook_commerce_line_item_summary_link_info()
  */
 function commerce_line_item_summary_links() {
-  // Retrieve links defined by the hook and allow other modules to alter them.
-  $links = module_invoke_all('commerce_line_item_summary_link_info');
+  $links = &drupal_static(__FUNCTION__, array());
 
-  // Merge in default values for our custom properties.
-  foreach ($links as $key => &$link) {
-    $link += array(
-      'weight' => 0,
-      'access' => TRUE,
-    );
+  if (empty($links)) {
+    // Retrieve links defined by the hook and allow other modules to alter them.
+    $links = module_invoke_all('commerce_line_item_summary_link_info');
+
+    // Merge in default values for our custom properties.
+    foreach ($links as $key => &$link) {
+      $link += array(
+        'weight' => 0,
+        'access' => TRUE,
+      );
+    }
+
+    drupal_alter('commerce_line_item_summary_link_info', $links);
+
+    // Sort the links by weight and return the array.
+    uasort($links, 'drupal_sort_weight');
   }
-
-  drupal_alter('commerce_line_item_summary_link_info', $links);
-
-  // Sort the links by weight and return the array.
-  uasort($links, 'drupal_sort_weight');
 
   return $links;
 }

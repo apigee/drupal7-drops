@@ -16,7 +16,7 @@ function mimemail_theme_theme() {
       'file' => 'mimemail.theme.inc',
       'mail theme' => TRUE,
       'path' => $path,
-    )
+    ),
   );
 }
 
@@ -24,10 +24,10 @@ function mimemail_theme_theme() {
  * A preprocess function for theme('mimemail_message').
  *
  * The $variables array initially contains the following arguments:
- * - $recipient: The recipient of the message
- * - $key:  The mailkey associated with the message
- * - $subject: The message subject
- * - $body:  The message body
+ * - $recipient: The recipient of the message.
+ * - $key: The mailkey associated with the message.
+ * - $subject: The message subject.
+ * - $body: The message body.
  *
  * @see mimemail-message.tpl.php
  */
@@ -70,7 +70,7 @@ function template_preprocess_mimemail_message(&$variables) {
       $pattern = array(
         '/<([^<>]*)>/', // Remove the style tag.
         '/@import\s+url\("([^"]+)"\);+/', // Remove the import directive.
-        '|' . $GLOBALS['base_url'] . '/([^"?]*)[?"].*|' // Remove the base URL.
+        '|' . $GLOBALS['base_url'] . '/([^"?]*)[?"].*|', // Remove the base URL.
       );
       $replacement = array('', '\1', '\1');
     }
@@ -86,7 +86,7 @@ function template_preprocess_mimemail_message(&$variables) {
       }
     }
 
-    // Wordwrap to adhere to RFC821
+    // Wordwrap to adhere to RFC821.
     $css = wordwrap($css, 700);
   }
 
@@ -96,7 +96,7 @@ function template_preprocess_mimemail_message(&$variables) {
   // Set template alternatives.
   $variables['theme_hook_suggestions'][] = 'mimemail_message__' . str_replace('-', '_', $variables['key']);
 
-   // Process identifiers to be proper CSS classes.
+  // Process identifiers to be proper CSS classes.
   $variables['module'] = str_replace('_', '-', $variables['module']);
   $variables['key'] = str_replace('_', '-', $variables['key']);
 }

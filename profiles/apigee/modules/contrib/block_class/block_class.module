@@ -67,7 +67,12 @@ function block_class_preprocess_panels_pane(&$vars) {
  * Alter block edit form to add configuration field.
  */
 function block_class_form_alter(&$form, &$form_state, $form_id) {
-  if (user_access('administer block classes') && ($form_id == 'block_admin_configure' || $form_id == 'block_add_block_form')) {
+  // Form ids of modules with block creation pages also need to be checked.
+  if (user_access('administer block classes') && (in_array($form_id, array(
+    'block_admin_configure',
+    'block_add_block_form',
+    'menu_block_add_block_form',
+  )))) {
     // Load statically cached block object used to display the form.
     $block = block_load($form['module']['#value'], $form['delta']['#value']);
 
@@ -89,7 +94,12 @@ function block_class_form_alter(&$form, &$form_state, $form_id) {
  * Save supplied CSS classes.
  */
 function block_class_form_submit($form, &$form_state) {
-  if ($form_state['values']['form_id'] == 'block_admin_configure' || $form_state['values']['form_id'] == 'block_add_block_form') {
+  // Form ids of modules with block creation pages also need to be checked.
+  if (in_array($form_state['values']['form_id'], array(
+    'block_admin_configure',
+    'block_add_block_form',
+    'menu_block_add_block_form',
+  ))) {
     // Only save if value has changed.
     if (isset($form_state['values']['css_class']) && $form['settings']['css_class']['#default_value'] != $form_state['values']['css_class'] && user_access('administer blocks')) {
       db_update('block')

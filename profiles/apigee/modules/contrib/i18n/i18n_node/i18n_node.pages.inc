@@ -260,7 +260,7 @@ function i18n_node_nid2autocomplete($nid) {
  *
  * We also handle autocomplete values (title [nid:x]) and validate the form
  */
-function i18n_node_autocomplete2nid($name, $field = NULL, $type, $language) {
+function i18n_node_autocomplete2nid($name, $field, $type, $language) {
   if (!empty($name)) {
     preg_match('/^(?:\s*|(.*) )?\[\s*nid\s*:\s*(\d+)\s*\]$/', $name, $matches);
     if (!empty($matches)) {

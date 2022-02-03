@@ -551,6 +551,28 @@ function commerce_product_load_multiple($product_ids = array(), $conditions = ar
 }
 
 /**
+ * Determines whether or not the given product object represents the latest
+ * revision of the product.
+ *
+ * @param $product
+ *   A fully loaded product object.
+ *
+ * @return
+ *   Boolean indicating whether or not the product object represents the latest
+ *   revision of the product.
+ */
+function commerce_product_is_latest_revision($product) {
+  $query = new EntityFieldQuery();
+  $query
+    ->entityCondition('entity_type', 'commerce_product', '=')
+    ->propertyCondition('product_id', $product->product_id, '=')
+    ->propertyCondition('revision_id', $product->revision_id, '=');
+  $result = $query->execute();
+
+  return (!empty($result)) ? TRUE : FALSE;
+}
+
+/**
  * Determines whether or not the give product can be deleted.
  *
  * @param $product

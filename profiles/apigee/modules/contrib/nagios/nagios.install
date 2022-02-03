@@ -19,6 +19,8 @@ function nagios_uninstall() {
   variable_del('nagios_status_warning_value');
   variable_del('nagios_status_critical_value');
   variable_del('nagios_status_unknown_value');
+  variable_del('nagios_ignored_modules');
+  variable_del('nagios_limit_watchdog_timestamp');
 }
 
 /**
@@ -37,7 +39,33 @@ function nagios_requirements($phase) {
         'severity' => REQUIREMENT_WARNING,
       );
     }
+    // Raise warning if core Update module is not enabled.
+    if (!module_exists('update')) {
+      $requirements['nagios'] = array(
+          'title' => t('Nagios module'),
+          'value' => t('Update module not enabled'),
+          'description' => t('Update notifications are not enabled. Nagios cannot fully complete requirements checks without it. We recommend you enable the update manager module from the <a href="@url">module administration page</a>.', array('@url' => url('admin/modules'))),
+          'severity' => REQUIREMENT_WARNING,
+      );
+    }
   }
 
   return $requirements;
+}
+
+/**
+ * Set variable for altered status page path, if required.
+ */
+function nagios_update_7001() {
+  if (variable_get('nagios_page_path', 'nagios') == 'nagios') {
+    variable_set('nagios_page_path', 'nagios');
+  }
+}
+
+/**
+ * Rename variable for watchdog limit so it is clearly from this module.
+ */
+function nagios_update_7002() {
+  variable_set('nagios_limit_watchdog_timestamp', variable_get('limit_watchdog_timestamp', FALSE));
+  variable_del('limit_watchdog_timestamp');
 }

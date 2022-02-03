@@ -65,6 +65,19 @@ function commerce_order_entity_info() {
 }
 
 /**
+ * Implements hook_theme().
+ */
+function commerce_order_theme() {
+  return array(
+    'commerce_order_mail' => array(
+      'variables' => array('mail' => NULL),
+      'path' => drupal_get_path('module', 'commerce_order') . '/theme',
+      'template' => 'commerce-order-mail',
+    ),
+  );
+}
+
+/**
  * Entity uri callback: gives modules a chance to specify a path for an order.
  */
 function commerce_order_uri($order) {
@@ -421,10 +434,15 @@ function commerce_order_field_attach_form($entity_type, $entity, &$form, &$form_
     // Loop over each child element of the form.
     foreach (element_children($form) as $key) {
       // If the current element is for a customer profile reference field...
-      if (in_array($key, array_keys($fields))) {
+      if (array_key_exists($key, $fields)) {
         // Loop over each of its child items...
         foreach (element_children($form[$key][$form[$key]['#language']]) as $delta) {
           foreach (element_children($form[$key][$form[$key]['#language']][$delta]) as $subdelta) {
+            if (!isset($form[$key][$form[$key]['#language']][$delta][$subdelta]['profile'])) {
+              // There's no profile of this type for this order.
+              continue;
+            }
+
             // Extract the customer profile from the widget form element.
             $profile = $form[$key][$form[$key]['#language']][$delta][$subdelta]['profile']['#value'];
 
@@ -552,7 +570,7 @@ function commerce_order_commerce_customer_profile_presave($profile) {
         // marked as changed.
         if ($field_name == 'commerce_customer_address') {
           foreach ($original_items[$delta] as $key => $value) {
-            if (!in_array($key, array_keys($item)) && !empty($value)) {
+            if (!array_key_exists($key, $item) && !empty($value)) {
               $field_change = TRUE;
               break 2;
             }
@@ -632,7 +650,7 @@ function commerce_order_form_commerce_customer_customer_profile_delete_form_alte
             $order = commerce_order_load($order->order_id);
 
             // Only exit here if the order is in a non-cart status.
-            if (!in_array($order->status, array_keys(commerce_order_statuses(array('cart' => TRUE))))) {
+            if (!array_key_exists($order->status, commerce_order_statuses(array('cart' => TRUE)))) {
               $description = t('This customer profile is referenced by Order @order_number and therefore cannot be deleted. Disable it instead.', array('@order_number' => $order->order_number));
 
               $form['description']['#markup'] .= '<p>' . $description . '</p>';
@@ -1511,4 +1529,76 @@ function commerce_order_preprocess_views_view(&$vars) {
  */
 function commerce_order_mail_validate($element, &$form_state, $form) {
   form_set_value($element, trim($element['#value']), $form_state);
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function commerce_order_field_extra_fields() {
+  $extra = &drupal_static(__FUNCTION__);
+  if (isset($extra)) {
+    return $extra;
+  }
+  $extra = array();
+
+  $extra['commerce_order']['commerce_order']['display']['order_mail'] = array(
+    'label' => t('E-mail address'),
+    'description' => t('The e-mail address entered for this order during checkout.'),
+    'weight' => 50,
+  );
+
+  return $extra;
+ }
+
+/**
+ * Implements hook_field_extra_fields_display_alter().
+ *
+ * This whole implementation is basically a hack because Drupal core does not
+ * allow you to specify default visibility for extra fields. We don't want any
+ * of the Order extra fields to be visible by default in referencing entities,
+ * so we have to alter the display settings at this point until such a time as
+ * the settings have been updated for the given bundle.
+ */
+function commerce_order_field_extra_fields_display_alter(&$displays, $context) {
+  // Load the bundle settings for the current bundle.
+  $bundle_settings = field_bundle_settings($context['entity_type'], $context['bundle']);
+
+  // Loop over the extra fields defined by the Order module.
+  $order_fields = commerce_order_field_extra_fields();
+  // Prevent notices if there are no order types defined.
+  if (empty($order_fields['commerce_order'])) {
+    return;
+  }
+
+  foreach ($order_fields['commerce_order'] as $key => $value) {
+    foreach ($value['display'] as $order_extra_field_name => $order_extra_field) {
+      // If the current extra field is represented in the $displays array...
+      if (!empty($displays[$order_extra_field_name])) {
+        // And no data yet exists for the extra field in the bundle settings...
+        if (empty($bundle_settings['extra_fields']['display'][$order_extra_field_name]) ||
+          (empty($bundle_settings['view_modes'][$context['view_mode']]['custom_settings']) && empty($bundle_settings['extra_fields']['display'][$order_extra_field_name]['default'])) ||
+          (!empty($bundle_settings['view_modes'][$context['view_mode']]['custom_settings']) && empty($bundle_settings['extra_fields']['display'][$order_extra_field_name][$context['view_mode']]))) {
+          // Default the extra field to be invisible.
+          $displays[$order_extra_field_name]['visible'] = FALSE;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_view().
+ */
+function commerce_order_entity_view($entity, $type, $view_mode, $langcode) {
+  if ($type == 'commerce_order' && $entity->type == 'commerce_order') {
+    $extra_fields = field_extra_fields_get_display('commerce_order', $entity->type, $view_mode);
+    // Get extra field visibility.
+    if (!empty($extra_fields['order_mail']) && $extra_fields['order_mail']['visible'] == TRUE) {
+      // Render the field.
+      $entity->content['order_mail'] = array(
+        '#theme' => 'commerce_order_mail',
+        '#mail' => check_plain($entity->mail),
+      );
+    }
+  }
 }

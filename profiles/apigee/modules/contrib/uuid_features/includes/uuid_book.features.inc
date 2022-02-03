@@ -1,7 +1,9 @@
 <?php
+
 /**
  * @file
  * Features hooks for the uuid_book features component.
+ *
  * Select a book adds all book nodes to the pipe so they can be processed as
  * normal nodes with book processing handled by uuid_node_feature hooks.
  * Unfortunately order is not preserved so a little post load processing is
@@ -50,7 +52,7 @@ function uuid_book_features_export_options() {
  * @return array
  *   An array of book node uuids.
  */
-function uuid_book_features_export_traverse($tree) {
+function uuid_book_features_export_traverse(array $tree) {
   $book_uuids = array();
 
   foreach ($tree as $data) {
@@ -75,7 +77,7 @@ function uuid_book_features_export($data, &$export, $module_name = '') {
   $export['dependencies']['uuid_features'] = 'uuid_features';
 
   $book_uuids = array();
-  $nodes = entity_uuid_load('node', $data);
+  $nodes = entity_uuid_load('node', $data, array(), TRUE);
 
   foreach ($nodes as $node) {
     if (isset($node->book)) {

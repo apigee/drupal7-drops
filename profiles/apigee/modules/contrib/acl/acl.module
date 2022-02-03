@@ -88,6 +88,15 @@ function acl_remove_user($acl_id, $uid) {
 }
 
 /**
+ * Remove all users from an ACL.
+ */
+function acl_remove_all_users($acl_id) {
+  db_delete('acl_user')
+    ->condition('acl_id', $acl_id)
+    ->execute();
+}
+
+/**
  * Provide a form to edit the ACL that can be embedded in other forms.
  *
  * Pass $new_acl=TRUE if you have no ACL yet, but do supply a string
@@ -112,9 +121,12 @@ function acl_add_nodes($subselect, $acl_id, $view, $update, $delete, $priority =
   $subselect->addExpression((int) $update, 'grant_update');
   $subselect->addExpression((int) $delete, 'grant_delete');
   $subselect->addExpression($priority, 'priority');
-  db_insert('acl_node')
-    ->from($subselect)
-    ->execute();
+  $query = db_insert('acl_node')
+    ->fields(array('nid', 'acl_id', 'grant_view', 'grant_update', 'grant_delete', 'priority'));
+  foreach ($subselect->execute()->fetchAll(PDO::FETCH_ASSOC) as $record) {
+    $query->values($record);
+  }
+  $query->execute();
 }
 
 /**
@@ -242,6 +254,14 @@ function acl_get_uids($acl_id) {
 }
 
 /**
+ * Get the user names of an ACL.
+ */
+function acl_get_usernames($acl_id) {
+  _acl_module_load_include('admin.inc');
+  return _acl_get_usernames($acl_id);
+}
+
+/**
  * Implements hook_node_access_records().
  */
 function acl_node_access_records($node) {
@@ -308,7 +328,7 @@ function _acl_module_load_include($type) {
   static $loaded = array();
 
   if (!isset($loaded[$type])) {
-    $path = module_load_include($type, 'acl');
+    module_load_include($type, 'acl');
     $loaded[$type] = drupal_get_path('module', 'acl') . "/acl.$type";
   }
   return $loaded[$type];
@@ -335,7 +355,7 @@ function acl_node_access_explain($row) {
         $acl->tag = $acl->name . '-' . $acl->number;
       }
       foreach (user_load_multiple(acl_get_uids($row->gid)) as $account) {
-        $usernames[] = theme('username', array('account' => $account));
+        $usernames[] = _acl_format_username($account);
       }
       if (isset($usernames)) {
         $usernames = implode(', ', $usernames);
@@ -371,5 +391,12 @@ function _acl_get_explanation($text, $acl_id, $module, $name, $number, $username
     return '<span title="' . $hook($acl_id, $name, $number, $usernames) . '">' . $text . '</span>';
   }
   return $text;
+}
+
+/**
+ * Helper function to format a user name.
+ */
+function _acl_format_username($account) {
+  return check_plain(format_username($account));
 }
 

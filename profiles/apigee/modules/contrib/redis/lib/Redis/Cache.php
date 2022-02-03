@@ -469,11 +469,12 @@ class Redis_Cache
     {
         $hash   = $this->createEntryHash($cid, $data, $expire);
         $maxTtl = $this->getMaxTtl();
+        $permTtl = $this->getPermTtl();
 
         switch ($expire) {
 
             case CACHE_PERMANENT:
-                $this->backend->set($cid, $hash, $maxTtl, false);
+                $this->backend->set($cid, $hash, $permTtl, false);
                 break;
 
             case CACHE_TEMPORARY:

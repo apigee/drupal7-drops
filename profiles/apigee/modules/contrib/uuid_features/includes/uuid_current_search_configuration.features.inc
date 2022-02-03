@@ -10,14 +10,16 @@
 function uuid_current_search_configuration_features_export_options() {
   $options = array();
 
-  $current_search_items = db_select('block_current_search', 'b')
-    ->fields('b', array('delta', 'searcher'))
-    ->addTag('uuid_current_search_configuration_features_export_options')
-    ->execute()
-    ->fetchAllAssoc('delta');
+  if(db_table_exists('block_current_search')) {
+    $current_search_items = db_select('block_current_search', 'b')
+      ->fields('b', array('delta', 'searcher'))
+      ->addTag('uuid_current_search_configuration_features_export_options')
+      ->execute()
+      ->fetchAllAssoc('delta');
 
-  foreach ($current_search_items as $config) {
-    $options[$config->delta] = $config->delta;
+    foreach ($current_search_items as $config) {
+      $options[$config->delta] = $config->delta;
+    }
   }
 
   drupal_alter('uuid_current_search_configuration_features_export_options', $options);

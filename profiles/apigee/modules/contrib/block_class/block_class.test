@@ -11,25 +11,29 @@
 class BlockClassTestCase extends DrupalWebTestCase {
 
   /**
-   * User object to perform site browsing
+   * User object to perform site browsing.
+   *
    * @var object
    */
   protected $privilegedUser;
 
   /**
    * Machine name of the module providing the block coupled with delta.
+   *
    * @var string
    */
   protected $module = 'system';
 
   /**
    * Block delta as provided by its module.
+   *
    * @var string
    */
   protected $delta = 'main';
 
   /**
    * Permissions required by the user to perform the tests.
+   *
    * @var array
    */
   protected $permissions = array(
@@ -86,21 +90,20 @@ class BlockClassTestCase extends DrupalWebTestCase {
     $this->drupalPost("admin/structure/block/manage/$module/$delta/configure", array('css_class' => $css_classes), t('Save block'));
     // Check Block configuration was saved successfully.
     $this->assertText(t('The block configuration has been saved.'));
-    // Browse to the homepage.
-    $this->drupalGet('');
     // Log out if the test is for anonymous user.
     if ($anon) {
       $this->drupalLogout();
-      // Browse back to the homepage.
-      $this->drupalGet('');
     }
+    // Browse to the homepage.
+    $this->drupalGet('');
     // Check if the Block CSS classes could be found.
     $this->assertPattern('/class=\"(.*?)' . $css_classes . '(.*?)\"/', format_string('The CSS classes were found: @css_classes', array('@css_classes' => $css_classes)));
-    // Login again after testing with the anonumous user.
+    // Login again after testing with the anonymous user.
     if ($anon) {
       $this->drupalLogin($this->privilegedUser);
     }
   }
+
 }
 
 /**
@@ -123,7 +126,7 @@ class BlockClassUpdateDisplayTestCase extends BlockClassTestCase {
    * Update and display a Block multiple times to ensure CSS class is found.
    *
    * A Block is updated and displayed several times and with logged in or
-   * anonymous user, with Block cache turned enabled or disabled.
+   * anonymous user, with Block cache enabled or disabled.
    */
   public function testUpdateDisplayClass() {
     // Edit the block, change the class and check if the CSS classes are found.
@@ -140,6 +143,7 @@ class BlockClassUpdateDisplayTestCase extends BlockClassTestCase {
     // Edit the block, change the class and check with the anonymous user.
     $this->assertUpdateBlockClass(TRUE);
   }
+
 }
 
 /**
@@ -180,6 +184,7 @@ class BlockClassPermissionTestCase extends BlockClassTestCase {
     // If the field is not found, it can't be submitted through drupalPost.
     $this->assertNoFieldById('css_class', 'The Css classes field was not found on the page.');
   }
+
 }
 
 /**
@@ -252,6 +257,7 @@ class BlockClassContextTestCase extends BlockClassUpdateDisplayTestCase {
     // Save the context.
     context_save($context);
   }
+
 }
 
 /**
@@ -280,7 +286,7 @@ class BlockClassFeaturesTestCase extends BlockClassTestCase {
     $this->module = 'user';
     $this->delta = 'online';
     // Include all Features related modules and Test Helper feature.
-	parent::setUp('block_class_fe_block_test');
+    parent::setUp('block_class_fe_block_test');
   }
 
   /**
@@ -307,7 +313,7 @@ class BlockClassFeaturesTestCase extends BlockClassTestCase {
     // Run a standard Update/Display Test check with Anon.
     $this->assertUpdateBlockClass(TRUE);
 
-    // Ensure Feature's state is overriden for 'fe_block_settings' component.
+    // Ensure Feature's state is overridden for 'fe_block_settings' component.
     module_load_include('inc', 'features', 'features.export');
     $test_feature_state = features_get_storage($test_feature);
     $this->assertFalse(empty($test_feature_state), 'The state of the <em>Block Class FE Block Integration Test Helper</em> feature is <strong>Overridden</strong>.');
@@ -326,4 +332,116 @@ class BlockClassFeaturesTestCase extends BlockClassTestCase {
     $this->drupalGet("admin/structure/block/manage/{$this->module}/{$this->delta}/configure");
     $this->assertFieldByName('css_class', $test_classes, format_string('After reverting the feature, the CSS classes from exported feature were found for the field <em>css_class</em> in the Block\'s configuration page: @css_classes', array('@css_classes' => $test_classes)));
   }
+
+}
+
+/**
+ * Test Block Class integration with Menu Block.
+ */
+class BlockClassMenuBlockTestCase extends BlockClassTestCase {
+
+  /**
+   * Implements DrupalWebTestCase::getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Integration with Menu Block',
+      'description' => 'Test the integration of Block Class with the Menu Block module and the update/display of a Menu Block CSS class.',
+      // We could use Menu Block's API to import a block from code. But part of
+      // this test is about the creation process of a Menu Block.
+      'dependencies' => array('menu_block'),
+      'group' => 'Block Class',
+    );
+  }
+
+  /**
+   * Enable modules and create user with specific permissions.
+   */
+  public function setUp() {
+    // Override default parameters to test with the first Menu Block created.
+    $this->module = 'menu_block';
+    $this->delta = 1;
+    // Add permission required by Menu Block to browse the add menu block page.
+    $this->permissions[] = 'administer menu';
+    // Include the Menu Block module and its dependencies to be loaded.
+    parent::setUp('menu_block');
+  }
+
+  /**
+   * Create, update and display a Menu Block to ensure CSS class is found.
+   *
+   * A Menu Block is added through the user interface. It is then updated and
+   * displayed several times with logged in or anonymous user.
+   */
+  public function testMenuBlockDisplayClass() {
+    // Test with three random class names.
+    $css_classes = implode(' ', array(
+      $this->randomName(8),
+      $this->randomName(8),
+      $this->randomName(8),
+    ));
+    // Start with the creation of a new Menu Block.
+    $this->drupalPost("admin/structure/block/add-menu-block", array(
+      'css_class' => $css_classes,
+      'menu_name' => 'navigation',
+      'regions[bartik]' => 'content',
+    ), t('Save block'));
+    // Check if the Block was successfully created.
+    $this->assertText(t('The block has been created.'));
+    // Browse to the homepage.
+    $this->drupalGet('');
+    // Check if the Block CSS classes could be found.
+    $this->assertPattern('/class=\"(.*?)' . $css_classes . '(.*?)\"/', format_string('The CSS classes were found: @css_classes', array('@css_classes' => $css_classes)));
+    // Run the standard tests on the existing Menu Block created above.
+    // Edit the block, change the class and check with the anonymous user.
+    $this->assertUpdateBlockClass(TRUE);
+  }
+
+}
+
+/**
+ * Test Block Class integration with Views block.
+ */
+class BlockClassViewsTestCase extends BlockClassUpdateDisplayTestCase {
+
+  /**
+   * Implements DrupalWebTestCase::getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Integration with Views block',
+      'description' => 'Test the integration of Block Class with Views blocks and the update/display of a CSS class.',
+      'dependencies' => array('views'),
+      'group' => 'Block Class',
+    );
+  }
+
+  /**
+   * Enable modules and create the data necessary to run the tests.
+   */
+  public function setUp() {
+    // Override default parameters to test with the Views: Archive block.
+    $this->module = 'views';
+    $this->delta = 'archive-block';
+    // Include the Views module and its dependencies to be loaded.
+    parent::setUp('views');
+
+    // Programmatically enable the default Archive View, based on #820110-1.
+    $status = variable_get('views_defaults', array());
+    $status['archive'] = FALSE;
+    variable_set('views_defaults', $status);
+
+    // Note that the Views Archive block is not visible on the Block admin page
+    // unless the registry is rebuilt with: registry_rebuild().
+    // Directly publish the Views Archive Block to the content region.
+    $this->drupalPost("admin/structure/block/manage/{$this->module}/{$this->delta}/configure", array('regions[bartik]' => 'content'), t('Save block'));
+
+    // Create a sample node to have some data to display in Views: Archive.
+    $this->drupalCreateNode(array(
+      'type' => 'page',
+      'status' => 1,
+      'uid' => $this->privilegedUser->uid,
+    ));
+  }
+
 }

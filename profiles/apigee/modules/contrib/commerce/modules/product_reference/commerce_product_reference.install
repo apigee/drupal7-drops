@@ -33,4 +33,7 @@ function commerce_product_reference_uninstall() {
   // Delete any product reference fields.
   module_load_include('module', 'commerce');
   commerce_delete_fields('commerce_product_reference');
+
+  // Delete any variables.
+  variable_del('commerce_product_reference_default_product_behavior');
 }

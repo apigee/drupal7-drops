@@ -4,9 +4,8 @@ core = 7.x
 files[]=tests/autologout.test
 configure = admin/config/people/autologout
 
-; Information added by Drupal.org packaging script on 2017-11-01
-version = "7.x-4.5"
+; Information added by Drupal.org packaging script on 2020-04-08
+version = "7.x-4.6"
 core = "7.x"
 project = "autologout"
-datestamp = "1509524288"
-
+datestamp = "1586345251"

@@ -156,7 +156,7 @@ function linkchecker_admin_settings_form($form_state) {
     '#title' => t('Check interval for links'),
     '#description' => t('This interval setting defines how often cron will re-check the status of links.'),
     '#default_value' => variable_get('linkchecker_check_links_interval', 2419200),
-    '#options' => drupal_map_assoc(array(86400, 172800, 259200, 604800, 1209600, 2419200, 4838400), 'format_interval'),
+    '#options' => drupal_map_assoc(array(86400, 172800, 259200, 604800, 1209600, 2419200, 4838400, 7776000), 'format_interval'),
   );
   $form['check']['linkchecker_disable_link_check_for_urls'] = array(
     '#default_value' => variable_get('linkchecker_disable_link_check_for_urls', LINKCHECKER_RESERVED_DOCUMENTATION_DOMAINS),

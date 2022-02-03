@@ -45,6 +45,7 @@ function drush_commerce_order_update_placed_timestamp($limit = 1000) {
 
   if ($orders_count <= 0) {
     drush_log(dt('There are currently no pending or completed orders that should have their placed timestamp updated.'), 'error');
+    return;
   }
   drush_log(dt('@count orders are about to be processed.', array('@count' => $orders_count)));
 

@@ -11,7 +11,7 @@
  * Mainly relies on the EntityAPIController class provided by the Entity
  * module, just overrides specific features.
  */
-class CommerceProductEntityController extends DrupalCommerceEntityController {
+class CommerceProductEntityController extends DrupalCommerceEntityController implements EntityAPIControllerRevisionableInterface {
 
   /**
    * Create a default product.
@@ -168,6 +168,30 @@ class CommerceProductEntityController extends DrupalCommerceEntityController {
     else {
       return FALSE;
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function deleteRevision($revision_id) {
+    if ($revisions = commerce_product_load_multiple(array(), array('revision_id' => $revision_id))) {
+      $revision = $revisions ? reset($revisions) : FALSE;
+      // Prevent deleting the current revision.
+      if (!$revision || commerce_product_is_latest_revision($revision)) {
+        return FALSE;
+      }
+
+      // Delete product revision.
+      db_delete('commerce_product_revision')
+        ->condition('product_id', $revision->product_id)
+        ->condition('revision_id', $revision->revision_id)
+        ->execute();
+
+      $this->invoke('commerce_product_revision_delete', $revision);
+      field_attach_delete_revision('commerce_product', $revision);
+      return TRUE;
+    }
+    return FALSE;
   }
 
   /**

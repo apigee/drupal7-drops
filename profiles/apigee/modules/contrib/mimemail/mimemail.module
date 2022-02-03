@@ -6,6 +6,29 @@
  */
 
 /**
+ * Implements hook_help().
+ */
+function mimemail_help($path = 'admin/help#mimemail', $arg = NULL) {
+  switch ($path) {
+    case 'admin/config/system/mimemail':
+      return t('<p>This page is used to configure the Mime Mail module for your site.</p>');
+
+    case 'admin/help#mimemail':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('This is a Mime Mail component module (for use by other modules).' . '</p>');
+      $output .= '<ul>';
+      $output .= '<li>' . t('It permits users to receive HTML email and can be used by other modules. The mail functionality accepts an HTML message body, mime-encodes it and sends it.') . '</li>';
+      $output .= '<li>' . t('If the HTML has embedded graphics, these graphics are MIME-encoded and included as a message attachment.') . '</li>';
+      $output .= '<li>' . t("Adopts your site's style by automatically including your theme's stylesheet files in a themeable HTML message format.") . '</li>';
+      $output .= '<li>' . t("If the recipient's preference is available and they prefer plaintext, the HTML will be converted to plain text and sent as-is. Otherwise, the email will be sent in themeable HTML with a plaintext alternative.") . '</li>';
+      $output .= '</ul>';
+      $output .= '<p>' . t('For more information, see the <a href="http://drupal.org/project/mimemail">Mime Mail module.</a>' . '</p>');
+      return $output;
+  }
+}
+
+/**
  * Implements hook_menu().
  */
 function mimemail_menu() {
@@ -147,13 +170,15 @@ function mimemail_mail($key, &$message, $params) {
 
   // Prepare the array of the attachments.
   $attachments = array();
-  $attachments_string = trim($params['attachments']);
-  if (!empty($attachments_string)) {
-    $attachment_lines = array_filter(explode("\n", trim($attachments_string)));
-    foreach ($attachment_lines as $filepath) {
-      $attachments[] = array(
-        'filepath' => trim($filepath),
-      );
+  if (isset($params['attachments'])) {
+    $attachments_string = trim($params['attachments']);
+    if (!empty($attachments_string)) {
+      $attachment_lines = array_filter(explode("\n", trim($attachments_string)));
+      foreach ($attachment_lines as $filepath) {
+        $attachments[] = array(
+          'filepath' => trim($filepath),
+        );
+      }
     }
   }
 
@@ -203,7 +228,7 @@ function mimemail_get_engines() {
  * @param array $message
  *   The message to perform the operation on.
  *
- * @return boolean
+ * @return bool
  *   Returns TRUE if the operation was successful or FALSE if it was not.
  */
 function mimemail_mailengine($op, $message = array()) {
@@ -216,9 +241,11 @@ function mimemail_mailengine($op, $message = array()) {
         'description' => t("Default mailing engine."),
       );
       return $engine;
+
     case 'settings':
       // Not implemented.
       break;
+
     case 'multiple':
     case 'single':
     case 'send':
@@ -228,7 +255,7 @@ function mimemail_mailengine($op, $message = array()) {
         'subject' => '',
         'body' => '',
         'from' => '',
-        'headers' => ''
+        'headers' => '',
       );
       $message = array_merge($default, $message);
 
@@ -252,8 +279,8 @@ function mimemail_mailengine($op, $message = array()) {
 
       $result = TRUE;
       foreach ($recipients as $to) {
-        // We validate the return path, unless it is equal to the site mail, which
-        // we assume to be safe.
+        // We validate the return path, unless it is equal to the site mail,
+        // which we assume to be safe.
         if (isset($return_path) && !empty($return_path) && (variable_get('site_mail', ini_get('sendmail_from')) === $return_path || mimemail_isshellsafe($return_path))) {
           if (isset($_SERVER['WINDIR']) || strpos($_SERVER['SERVER_SOFTWARE'], 'Win32') !== FALSE) {
             // On Windows, PHP will use the value of sendmail_from for the
@@ -264,19 +291,18 @@ function mimemail_mailengine($op, $message = array()) {
             ini_set('sendmail_from', $old_from);
           }
           else {
-            // On most non-Windows systems, the "-f" option to the sendmail command
-            // is used to set the Return-Path.
+            // On most non-Windows systems, the "-f" option to the sendmail
+            // command is used to set the Return-Path.
             $result = @mail($to, $subject, $body, $headers, '-f' . $return_path) && $result;
           }
         }
         else {
-          // The optional $additional_parameters argument to mail() is not allowed
-          // if safe_mode is enabled. Passing any value throws a PHP warning and
-          // makes mail() return FALSE.
+          // The optional $additional_parameters argument to mail() is not
+          // allowed if safe_mode is enabled. Passing any value throws a PHP
+          // warning and makes mail() return FALSE.
           $result = @mail($to, $subject, $body, $headers) && $result;
         }
       }
-
       return $result;
   }
 
@@ -288,13 +314,14 @@ function mimemail_mailengine($op, $message = array()) {
  *
  * @param array $message
  *   An array containing the message data. The optional parameters are:
- *   - plain: Whether to send the message as plaintext only or HTML. If evaluates to TRUE,
- *     then the message will be sent as plaintext.
+ *   - plain: Whether to send the message as plaintext only or HTML. If
+ *     evaluates to TRUE, then the message will be sent as plaintext.
  *   - plaintext: Optional plaintext portion of a multipart email.
  *   - attachments: An array of arrays which describe one or more attachments.
- *     Existing files can be added by path, dinamically-generated files
- *     can be added by content. The internal array contains the following elements:
- *      - filepath: Relative Drupal path to an existing file (filecontent is NULL).
+ *     Existing files can be added by path, dinamically-generated files can be
+ *     added by content. The internal array contains the following elements:
+ *      - filepath: Relative Drupal path to an existing file (filecontent is
+ *        NULL).
  *      - filecontent: The actual content of the file (filepath is NULL).
  *      - filename: The filename of the file.
  *      - filemime: The MIME type of the file.
@@ -375,12 +402,10 @@ function mimemail_prepare_message($message) {
     'recipient' => $to,
     'subject' => $subject,
     'body' => $body,
-    'message' => $message
+    'message' => $message,
   );
 
-  if (!$plain) {
-    $body = theme($hook, $variables);
-  }
+  $body = theme($hook, $variables);
 
   foreach (module_implements('mail_post_process') as $module) {
     $function = $module . '_mail_post_process';

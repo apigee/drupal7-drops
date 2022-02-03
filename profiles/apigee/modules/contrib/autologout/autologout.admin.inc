@@ -44,7 +44,7 @@ function autologout_settings() {
   $form['autologout_padding'] = array(
     '#type' => 'textfield',
     '#title' => t('Timeout padding'),
-    '#default_value' => variable_get('autologout_padding', 10),
+    '#default_value' => variable_get('autologout_padding', 20),
     '#size' => 8,
     '#weight' => -6,
     '#description' => t('How many seconds to give a user to respond to the logout dialog before ending their session.'),
@@ -63,7 +63,7 @@ function autologout_settings() {
     '#title' => t('Redirect URL at logout'),
     '#default_value' => variable_get('autologout_redirect_url', 'user/login'),
     '#size' => 40,
-    '#description' => t('Send users to this internal page when they are logged out.'),
+    '#description' => t('Send users to this internal page when they are logged out. Leave blank to disable redirection and reload the same page instead.'),
   );
 
   $form['autologout_no_dialog'] = array(
@@ -78,12 +78,12 @@ function autologout_settings() {
     '#title' => t('Use alternate logout method'),
     '#default_value' => variable_get('autologout_use_alt_logout_method', FALSE),
     '#description' => t('Normally when auto logout is triggered, it is done via an AJAX service call. Sites that use an SSO provider, such as CAS, are likely to see this request fail with the error "Origin is not allowed by Access-Control-Allow-Origin". The alternate approach is to have the auto logout trigger a page redirect to initiate the logout process instead.'),
-  ); 
+  );
 
   $form['autologout_message']  = array(
     '#type' => 'textarea',
     '#title' => t('Message to display in the logout dialog'),
-    '#default_value' => variable_get('autologout_message', 'Your session is about to expire. Do you want to reset it?'),
+    '#default_value' => variable_get('autologout_message', 'We are about to log you out for inactivity. If we do, you will lose any unsaved work. Do you need more time?'),
     '#size' => 40,
     '#description' => t('This message must be plain text as it might appear in a JavaScript confirm dialog.')
       . ' ' . t('This text will passed through <a href="!url">filter_xss</a>.',
@@ -114,6 +114,14 @@ function autologout_settings() {
     '#description' => t('If checked, then users will be automatically logged out when administering the site.'),
   );
 
+  $form['autologout_whitelisted_ip_addresses'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Whitelisted ip addresses'),
+    '#default_value' => variable_get('autologout_whitelisted_ip_addresses'),
+    '#size' => 40,
+    '#description' => t('Users from these IP addresses will not be logged out.'),
+  );
+
   if (module_exists('jstimer') && module_exists('jst_timer')) {
     $form['autologout_jstimer_format']  = array(
       '#type' => 'textfield',
@@ -128,6 +136,11 @@ function autologout_settings() {
     '#weight' => -2,
     '#title' => t('If Enabled every user in role will be logged out based on that roles timeout, unless the user has an individual timeout set.'),
     '#theme' => 'autologout_render_table',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="autologout_role_logout"]' => array('checked' => TRUE),
+      ),
+    ),
   );
 
   foreach (user_roles(TRUE) as $key => $role) {
@@ -179,4 +192,17 @@ function autologout_settings_validate($form, &$form_state) {
   if (!is_numeric($timeout) || ((int) $timeout != $timeout) || $timeout < 60 || $timeout > $max_timeout) {
     form_set_error('autologout_timeout', t('The timeout must be an integer greater than 60 and less then %max.', array('%max' => $max_timeout)));
   }
+
+  // Validate ip address list
+  $whitelisted_ip_addresses_list = explode("\n",trim($form_state['values']['autologout_whitelisted_ip_addresses']));
+
+  foreach ($whitelisted_ip_addresses_list as $ip_address) {
+    if (!empty($ip_address) && !filter_var(trim($ip_address), FILTER_VALIDATE_IP)) {
+      form_set_error(
+        'whitelisted_ip_addresses',
+        t('Whitelisted IP address list should contain only valid IP addresses, one per row')
+      );
+    }
+  }
+
 }

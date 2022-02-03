@@ -104,7 +104,11 @@ function commerce_line_item_tokens($type, $tokens, array $data = array(), array 
           break;
 
         case 'quantity':
-          $replacements[$original] = $sanitize ? check_plain($line_item->quantity) : $line_item->quantity;
+          $quantity = (string) $line_item->quantity;
+          if (substr($quantity, -3) == ".00") {
+            $quantity = substr($quantity, 0, strlen($quantity) - 3);
+          }
+          $replacements[$original] = $sanitize ? check_plain($quantity) : $quantity;
           break;
 
         // Default values for the chained tokens handled below.

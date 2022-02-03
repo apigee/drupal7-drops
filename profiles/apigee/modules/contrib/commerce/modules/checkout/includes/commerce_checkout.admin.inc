@@ -417,6 +417,22 @@ function commerce_checkout_complete_form($form, &$form_state, $order) {
     '#value' => $order->order_id,
   );
 
+  // If we shouldn't permit multiple completions, ensure this order has not
+  // already had completion invoked.
+  if (!commerce_checkout_permit_multiple_completions() &&
+    !empty($order->data['commerce_checkout_complete_invoked'])) {
+    $form['message'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div>' . t('This order has already invoked checkout completion. Your order settings do not permit checkout completion to be invoked again.') . '</div>',
+    );
+    $form['cancel'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div class="form-actions">' . l(t('Go back'), 'admin/commerce/orders/' . $order->order_id . '/edit') . '</div>',
+    );
+
+    return $form;
+  }
+
   // Build a description of what the user may expect to occur on submission.
   $items = array(
     t('The normal checkout completion process will be invoked on this order.'),

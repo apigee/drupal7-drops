@@ -22,6 +22,6 @@ function content_access_rules_user_acl($settings) {
 /**
  * Implements hook_per_node().
  */
-function content_access_rules_per_node($settings) {
-  rules_invoke_event('content_access_per_node');
+function content_access_rules_per_node($settings, $node) {
+  rules_invoke_event('content_access_per_node', $node);
 }

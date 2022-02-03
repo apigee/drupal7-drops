@@ -8,6 +8,27 @@
  * Implements views_plugin_style().
  */
 class views_accordion_style_plugin extends views_plugin_style {
+
+  /**
+   * Whether or not jquery is higher than 1.9.
+   *
+   * Accordion options format changed for jquery >= 1.9
+   *
+   * @var bool
+   */
+  public $newoptions;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function init(&$view, &$display, $options = NULL) {
+    parent::init($view, $display, $options);
+    $this->newoptions = FALSE;
+    if (module_exists('jquery_update')) {
+      $this->newoptions = version_compare(variable_get('jquery_update_jquery_version', '1.10'), '1.9', '>=');
+    }
+  }
+
   /**
    * Set default options.
    */
@@ -17,6 +38,7 @@ class views_accordion_style_plugin extends views_plugin_style {
     $options['collapsible'] = array('default' => 0);
     $options['row-start-open'] = array('default' => 0);
     $options['animated'] = array('default' => 'slide');
+    $options['animation_time'] = array('default' => 300);
     $options['autoheight'] = array('default' => 1);
     $options['event'] = array('default' => 'click');
     $options['fillspace'] = array('default' => 0);
@@ -43,22 +65,29 @@ class views_accordion_style_plugin extends views_plugin_style {
   public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     $form['grouping']['#prefix'] = '<div class="form-item">' . t('<strong>IMPORTANT:</strong> The <em>first field</em> in order of appearance <em>will</em> be the one used as the "header" or "trigger" of the accordion action.') . '</div>';
-    // Available valid options for grouping (used for use-grouping-header #dependency).
+    // Available valid options for grouping (used for use-grouping-header
+    // #dependency).
+    $options = array();
     foreach ($this->display->handler->get_handlers('field') as $field => $handler) {
       $options[] = $field;
     }
-    // Find out how many items the display is currently configured to show (row-start-open).
+    // Find out how many items the display is currently configured to show
+    // (row-start-open).
     $maxitems = $this->display->handler->get_option('items_per_page');
-    // If items_per_page is set to unlimitted (0), 10 rows will be what the user gets to choose from.
+    // If items_per_page is set to unlimitted (0), 10 rows will be what the user
+    // gets to choose from.
     $maxitems = ($maxitems == 0) ? 10 : $maxitems;
 
-    // Setup our array of options for choosing which row should start opened (row-start-open).
+    // Setup our array of options for choosing which row should start opened
+    // (row-start-open).
     $rsopen_options = array();
     for ($i = 1; $i <= $maxitems; $i++) {
-      $rsopen_options[] = t('Row ') . $i;
+      $rsopen_options[] = t('Row') . $i;
     }
     $rsopen_options['none'] = t('None');
+    $rsopen_options['random'] = t('Random');
 
+    // The easing effects from jQuery UI.
     $animated_options = array(
       'none' => t('None'),
       'slide' => t('Slide'),
@@ -95,11 +124,12 @@ class views_accordion_style_plugin extends views_plugin_style {
       'easeInElastic' => t('easeInElastic'),
       'easeOutElastic' => t('easeOutElastic'),
       'easeInOutElastic' => t('easeInOutElastic'),
-      /*
-       * @TODO: Any other animations core comes with that we can use with the accordion?
-       * We've used all the easing effects form ui effects core.
-       */
     );
+    if ($this->newoptions) {
+      // Slide easing was removed from jQuery UI.
+      unset($animated_options['slide']);
+      unset($animated_options['bounceslide']);
+    }
 
     $form['use-grouping-header'] = array(
       '#type' => 'checkbox',
@@ -128,6 +158,16 @@ class views_accordion_style_plugin extends views_plugin_style {
       '#description' => t('Choose what animation effect you would like to see, or "None" to disable it.'),
       '#options' => $animated_options,
     );
+    // Animate duration only available from jquery >= 1.9.
+    if ($this->newoptions) {
+      $form['animation_time'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Animation time'),
+        '#default_value' => $this->options['animation_time'],
+        '#description' => t('The animation duration in milliseconds'),
+        '#element_validate' => array('views_element_validate_integer'),
+      );
+    }
     $form['autoheight'] = array(
       '#type' => 'checkbox',
       '#title' => t('Autoheight'),
@@ -171,7 +211,7 @@ class views_accordion_style_plugin extends views_plugin_style {
   }
 
   /**
-   * pre_render() necesary to prevent markup mayhem.
+   * Necessary to prevent markup mayhem.
    */
   public function pre_render($result) {
     drupal_add_library('system', 'ui.accordion');
@@ -212,15 +252,7 @@ class views_accordion_style_plugin extends views_plugin_style {
    * Render the display in this style.
    */
   public function render() {
-    $output = '';
-    // Prevent errors if users select content instead of fields as row style.
-    // This forces them to use field as row style, no other way that I can think of.
-    if (parent::uses_fields()) {
-      $output = parent::render();
-    }
-    else {
-      drupal_set_message('Views accordion requires Fields as row style', 'error');
-    }
+    $output = parent::render();
 
     if ($this->options['disableifone'] == '1') {
       if (count($this->rendered_fields) < 2) {
@@ -228,17 +260,16 @@ class views_accordion_style_plugin extends views_plugin_style {
       }
     }
 
-    // dpm($this->display->handler->get_option('fields')); // for dev-troubleshooting
-
-    // Add the appropiate effect library if necessary.
+    // Add the appropriate effect library if necessary.
     $effect = $this->options['animated'];
     if (($effect !== 'none') && ($effect !== 'slide')) {
-      // For now we only use ui core effects library, which provides the easing effects.
-      // This switch is left here in case we actualy need to load any other libraries.
+      // For now we only use ui core effects library, which provides the easing
+      // effects.This switch is left here in case we actualy need to load any
+      // other libraries.
       switch ($effect) {
-          default:
-            $library = 'effects';
-            break;
+        default:
+          $library = 'effects';
+          break;
       }
       if (isset($library)) {
         drupal_add_library('system', 'effects');
@@ -249,9 +280,14 @@ class views_accordion_style_plugin extends views_plugin_style {
     // we do it here so we dont have it run once every group.
     $view_settings['collapsible'] = $this->options['collapsible'];
 
-    // The +0 forces it to add it as an integrer instead of a string - ugly hack?
-    $view_settings['rowstartopen'] = ($this->options['row-start-open'] == 'none') ? FALSE : $this->options['row-start-open'] + 0;
+    if ($this->options['row-start-open'] == 'random') {
+      $view_settings['rowstartopen'] = 'random';
+    }
+    else {
+      $view_settings['rowstartopen'] = ($this->options['row-start-open'] == 'none') ? FALSE : (int) $this->options['row-start-open'];
+    }
     $view_settings['animated'] = ($this->options['animated'] == 'none') ? FALSE : $this->options['animated'];
+    $view_settings['duration'] = (int) $this->options['animation_time'];
     $view_settings['autoheight'] = $this->options['autoheight'];
     $view_settings['event'] = $this->options['event'];
     $view_settings['fillspace'] = $this->options['fillspace'];
@@ -264,7 +300,7 @@ class views_accordion_style_plugin extends views_plugin_style {
     $view_settings['viewname'] = $this->view->name;
     $view_settings['usegroupheader'] = $view_settings['grouping'] ? $this->options['use-grouping-header'] : 0;
 
-    $accordion_id = 'views-accordion-' . $this->view->name .'-' . $this->view->current_display;
+    $accordion_id = 'views-accordion-' . $this->view->name . '-' . $this->view->current_display;
 
     if ($view_settings['usegroupheader'] == 1) {
       $view_settings['header'] = 'h3.' . $accordion_id . '-header';
@@ -276,10 +312,26 @@ class views_accordion_style_plugin extends views_plugin_style {
     }
 
     // Use new options format if jquery_update has installed a version >= 1.9.
-    $view_settings['newoptions'] = version_compare(variable_get('jquery_update_jquery_version', '0.0'), '1.9', '>=');
+    $view_settings['newoptions'] = $this->newoptions;
 
     drupal_add_js(array('views_accordion' => array($accordion_id => $view_settings)), 'setting');
 
     return $output;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validate() {
+    $errors = parent::validate();
+    if ($this->display->handler->get_option('row_plugin') !== 'fields') {
+      $row_plugin = $this->display->handler->get_plugin('row');
+      $errors[] = t('Views accordion requires Fields as row style, but the view <em>@view_name</em> is configured with <em>@row_plugin_title</em> as a row style.', array(
+        '@view_name' => $this->view->name,
+        '@row_plugin_title' => $row_plugin->definition['title'],
+      ));
+    }
+    return $errors;
+  }
+
 }

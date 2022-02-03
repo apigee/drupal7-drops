@@ -110,7 +110,7 @@ class DrupalRemoteStreamWrapper implements DrupalStreamWrapperInterface {
    * Implements realpath().
    */
   function realpath() {
-    return $this->getLocalPath();
+    return FALSE;
   }
 
   /**

@@ -10,9 +10,15 @@
 function uuid_paragraphs_features_export_options() {
   $options = array();
   $all_ids = array();
+  $enabled_bundles = array();
 
-  // Only allow enabled bundles to be exported.
-  $enabled_bundles = variable_get('uuid_features_entity_paragraphs_item', FALSE);
+  $entity_info = entity_get_info('paragraphs_item');
+  foreach ($entity_info['bundles'] as $key => $value) {
+    // Only allow enabled bundles to be exported.
+    if (variable_get("uuid_features_entity_paragraphs_item_${key}", FALSE)) {
+      $enabled_bundles[] = $key;
+    }
+  }
   if ($enabled_bundles) {
     $efq_paragraphs_items = new EntityFieldQuery();
     $efq_paragraphs_items->entityCondition('entity_type', 'paragraphs_item');
@@ -113,7 +119,10 @@ function uuid_paragraphs_features_revert($module) {
  */
 function uuid_paragraphs_features_rebuild($module) {
   // Make sure all referenced entities exist.
-  taxonomy_features_rebuild($module);
+  if (module_exists('taxonomy')) {
+    // This module may not be installed.
+    taxonomy_features_rebuild($module);
+  }
   field_features_rebuild($module);
   uuid_node_features_rebuild($module);
   cache_clear_all();
@@ -123,7 +132,7 @@ function uuid_paragraphs_features_rebuild($module) {
     $entity_type = 'paragraphs_item';
     foreach ($paragraphs as $paragraphs_item) {
       try {
-        $fields = field_info_instances('paragraphs_item', $paragraphs_item['field_name']);
+        $fields = field_info_instances('paragraphs_item', $paragraphs_item['bundle']);
         foreach ($fields as $field_name => $field_instance_config) {
           $field_config = field_info_field($field_name);
           if (isset($paragraphs_item[$field_name])) {
@@ -149,11 +158,22 @@ function uuid_paragraphs_features_rebuild($module) {
           }
         }
 
+        // Create a new paragraphs.
         $paragraphs_item['original'] = TRUE;
         $entity = entity_import('paragraphs_item', json_encode($paragraphs_item));
         // Hack to ignore missing host entities.
         /* @var ParagraphsItemEntity $entity */
         $entity->is_new = FALSE;
+
+        // If this is an update, there will be a by-UUID matching paragraphs
+        // and we'll use that object for further processing.
+        $existing = entity_get_id_by_uuid('paragraphs_item', array($paragraphs_item['uuid']));
+        if (!empty($existing)) {
+          $entity = entity_load_single('paragraphs_item', $existing[$paragraphs_item['uuid']]);
+          foreach ($paragraphs_item as $key => $value) {
+            $entity->$key = $value;
+          }
+        }
 
         drupal_alter('uuid_entity_features_rebuild', $entity_type, $entity, $paragraphs_item, $module);
 

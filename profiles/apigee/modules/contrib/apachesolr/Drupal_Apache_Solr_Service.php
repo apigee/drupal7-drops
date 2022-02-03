@@ -554,6 +554,9 @@ class DrupalApacheSolrService implements DrupalApacheSolrServiceInterface {
     }
 
     $result = drupal_http_request($url, $options);
+    if (empty($result->status_message)) {
+      $result->status_message = '[unknown error]';
+    }
 
     if (!isset($result->code) || $result->code < 0) {
       $result->code = 0;

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Metatag integration for the Metatag:Facebook module.
@@ -10,7 +11,9 @@
 function metatag_facebook_metatag_info() {
   $info['groups']['facebook'] = array(
     'label' => t('Facebook'),
-    'description' => t("Meta tags used to integrate with Facebook's APIs. Most sites do not need to use these, they are primarily of benefit for sites using either the Facebook widgets, the Facebook Connect single-signon system, or are using Facebook's APIs in a custom way. Sites that do need these meta tags usually will only need to set them globally."),
+    'description' => t('Meta tags used to integrate with Facebook APIs. Most sites do not need to use these, they are primarily of benefit for sites using either the Facebook widgets, the Facebook Connect single-signon system, or are using Facebook APIs in a custom way. Sites that do need these meta tags usually will only need to set them globally.<br /><br />The Facebook <a href="@debugger">Sharing Debugger</a> lets you preview how your content will look when shared to Facebook and debug any issues with your Open Graph tags.', array(
+      '@debugger' => 'https://developers.facebook.com/tools/debug/',
+    )),
     'form' => array(
       '#weight' => 55,
     ),

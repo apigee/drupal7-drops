@@ -1,0 +1,24 @@
+/**
+ * @file
+ * Custom CSS for the admin_views_system_display module.
+ */
+
+.admin-views-view .views-exposed-form .form-text {
+  width: 10em;
+}
+
+.admin-views-view .views-exposed-form .views-widget input {
+  width: 100%;
+}
+
+.admin-views-view .views-exposed-form .views-submit-button,
+.admin-views-view .views-exposed-form .views-reset-button {
+  padding-right: 0;
+}
+
+.admin-views-view .form-item-operation {
+  float: left;
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-right: 1em;
+}

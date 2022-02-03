@@ -407,13 +407,20 @@ function commerce_payment_commerce_payment_totals_row_info($totals, $order) {
 
     // Add a row for the remaining balance on the order.
     if ($order) {
-      // @todo Fix for when there's a FALSE $balance.
       $balance = commerce_payment_order_balance($order, $totals);
+
+      // Fix false balances.
+      if (empty($balance)) {
+        $formatted_amount = commerce_currency_format(0, NULL);
+      }
+      else {
+        $formatted_amount = commerce_currency_format($balance['amount'], $balance['currency_code']);
+      }
 
       $rows[] = array(
         'data' => array(
           array('data' => t('Order balance'), 'class' => array('label')),
-          array('data' => commerce_currency_format($balance['amount'], $balance['currency_code']), 'class' => array('balance')),
+          array('data' => $formatted_amount, 'class' => array('balance')),
         ),
         'class' => array('order-balance'),
         'weight' => 10,
@@ -447,7 +454,9 @@ function commerce_payment_commerce_payment_totals_row_info($totals, $order) {
 function commerce_payment_commerce_payment_transaction_insert($transaction) {
   // If the inserted transaction was marked as a success and placed against a
   // valid order...
-  if ($transaction->status == COMMERCE_PAYMENT_STATUS_SUCCESS &&
+  $transaction_statuses = commerce_payment_transaction_statuses();
+
+  if (!empty($transaction_statuses[$transaction->status]['total']) &&
     $order = commerce_order_load($transaction->order_id)) {
     // Then check to make sure the event hasn't been invoked for this order.
     if (empty($order->data['commerce_payment_order_paid_in_full_invoked'])) {
@@ -455,11 +464,18 @@ function commerce_payment_commerce_payment_transaction_insert($transaction) {
       $balance = commerce_payment_order_balance($order);
 
       if (!empty($balance) && $balance['amount'] <= 0) {
+        // If automatic order revisions are enabled site-wide, create a new
+        // revision now with a log message identifying the payment event.
+        if (variable_get('commerce_order_auto_revision', TRUE)) {
+          $order->revision = TRUE;
+          $order->log = t('Order updated to reflect the order has just been paid in full.');
+        }
+
         // Invoke the event including a hook of the same name.
         rules_invoke_all('commerce_payment_order_paid_in_full', $order, $transaction);
 
         // Update the order's data array to indicate this just happened.
-        $order->data['commerce_payment_order_paid_in_full_invoked'] = TRUE;
+        $order->data['commerce_payment_order_paid_in_full_invoked'] = REQUEST_TIME;
 
         // Save the updated order.
         commerce_order_save($order);
@@ -477,6 +493,18 @@ function commerce_payment_commerce_payment_transaction_insert($transaction) {
  */
 function commerce_payment_commerce_payment_transaction_update($transaction) {
   commerce_payment_commerce_payment_transaction_insert($transaction);
+}
+
+/**
+ * Implements hook_commerce_order_delete().
+ *
+ * Make sure all payment transactions are deleted whenever the
+ * order they are associated with is deleted.
+ */
+function commerce_payment_commerce_order_delete($order) {
+  foreach (commerce_payment_transaction_load_multiple(array(), array('order_id' => $order->order_id)) as $transaction) {
+    commerce_payment_transaction_delete($transaction->transaction_id);
+  }
 }
 
 /**
@@ -791,6 +819,13 @@ function commerce_payment_transaction_status_options_list() {
   }
 
   return $options;
+}
+
+/**
+ * Themes the payment transaction entity.
+ */
+function theme_commerce_payment_transaction($variables) {
+  return render($variables['content']);
 }
 
 /**
@@ -1148,6 +1183,59 @@ function commerce_payment_transaction_get_properties($transaction, array $option
 }
 
 /**
+ * Checks if the order has any associated payment transactions.
+ *
+ * @param $order
+ *   A commerce_order object.
+ *
+ * @return bool
+ *   TRUE if payment transactions exist.
+ */
+function commerce_payment_order_has_payments($order) {
+  $query = new EntityFieldQuery();
+
+  $query
+    ->entityCondition('entity_type', 'commerce_payment_transaction')
+    ->propertyCondition('order_id', $order->order_id, '=')
+    ->propertyCondition('status', COMMERCE_PAYMENT_STATUS_FAILURE, '!=')
+    ->count();
+
+  return $query->execute() >= 1;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Makes sure the user deleting an order has permissions to delete
+ * associated payment transactions if they exist on the order
+ * being deleted. Prevents deletion of the order if the user
+ * does not have access.
+ */
+function commerce_payment_form_commerce_order_ui_order_delete_form_alter(&$form, &$form_state) {
+  if (commerce_payment_order_has_payments($form_state['order'])) {
+
+    if (user_access('administer payments')) {
+      // Add a required checkbox to force user to confirm
+      // deletion of attached payments as well.
+      $form['delete_order_payments'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Confirm deletion of order and all of its related payment transactions.'),
+        '#required' => TRUE,
+      );
+      $form['actions']['submit']['#states']['visible'][] = array(
+          ':input[name="delete_order_payments"]' => array('checked' => TRUE),
+      );
+    }
+    else {
+      // Inform the user they cannot delete the order due
+      // to attached payments.
+      $form['description']['#markup'] = '<p>' . t('This order has payment transactions attached to it. You do not have sufficient permissions to delete it.');
+      $form['actions']['submit']['#access'] = FALSE;
+    }
+  }
+}
+
+/**
  * Callback for setting payment transaction properties.
  *
  * @see commerce_payment_entity_property_info()
@@ -1187,7 +1275,7 @@ function commerce_payment_entity_load($entities, $type) {
     // check if we have payment settings override.
     foreach ($entity->actions() as $name => $action) {
       if (is_callable(array($action, 'getElementName')) && strpos($action->getElementName(), 'commerce_payment_enable_') === 0) {
-        if (is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
+        if (isset($action->settings['payment_method']) && is_array($action->settings['payment_method']) && !empty($action->settings['payment_method']['settings'])) {
           $instance_id = commerce_payment_method_instance_id($action->settings['payment_method']['method_id'], $entity);
           $settings = variable_get($instance_id, array());
 

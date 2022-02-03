@@ -5,6 +5,17 @@ CHANGELOG for ACL for Drupal 7
 acl 7.x-1.x-dev:
 
 
+acl 7.x-1.2 (2019-09-14):
+  Enhancement:
+    - #3080658 by salvis: Add acl_edit_form_get_user_list() function.
+    - #3068936 by salvis: Implement acl_get_usernames($acl_id).
+  Fixes:
+    - #1147226 by Sutharsan: Document hook_enabled().
+    - #1815158 by salvis: Fix PDO error under PostgreSQL & MS SQL Server.
+    - #2580207 by mccrodp: Add missing acl_remove_all_users() function.
+    - #2612464 by heykarthikwithu, salvis: Remove of unused variables in the code base.
+
+
 acl 7.x-1.1 (2015-08-27):
   Enhancements:
     - Improve minor coding nits (no functional changes).
@@ -13,7 +24,6 @@ acl 7.x-1.1 (2015-08-27):
     - Make coder happy (no functional change).
     - Enable the tests (no functional change).
     - #1397828: Improve documentation of acl_edit_form() (no functional change).
-
 
 acl 7.x-1.0 (2011-11-26):
   Enhancements:

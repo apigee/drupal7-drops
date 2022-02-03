@@ -77,6 +77,8 @@ class LinkCheckerLinkExtractionTest extends DrupalWebTestCase {
 <a href="http://example.com/foo bar/is_valid-hack.test">URL with space</a>
 <a href="http://example.com/ajax.html#key1=value1&key2=value2">URL with ajax query params</a>
 <a href="http://example.com/test.html#test">URL with standard anchor</a>
+<a href="http://example.com/test.html#test%20ABC">URL with standard anchor and space</a>
+<a name="test ABC">Anchor with space</a>
 
 <!-- object tag: Embed SWF files -->
 <object width="150" height="116"
@@ -231,6 +233,7 @@ EOT;
       'http://example.com/foo bar/is_valid-hack.test',
       'http://example.com/ajax.html#key1=value1&key2=value2',
       'http://example.com/test.html#test',
+      'http://example.com/test.html#test%20ABC',
     );
 
     foreach ($urls_fqdn as $org_url => $check_url) {
@@ -355,6 +358,7 @@ EOT;
       'http://example.com/foo bar/is_valid-hack.test',
       'http://example.com/ajax.html#key1=value1&key2=value2',
       'http://example.com/test.html#test',
+      'http://example.com/test.html#test%20ABC',
     );
 
     foreach ($documentation_urls as $documentation_url) {

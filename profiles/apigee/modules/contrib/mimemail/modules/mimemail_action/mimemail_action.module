@@ -75,7 +75,7 @@ function mimemail_send_email_action_form($context) {
     'body' => '',
     'format' => filter_fallback_format(),
     'plaintext' => '',
-    'attachments' => ''
+    'attachments' => '',
   );
 
   $form['key'] = array(

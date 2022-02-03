@@ -52,7 +52,7 @@ function content_access_page($form, &$form_state, $node) {
     '#value' => t('Reset to defaults'),
     '#weight' => 10,
     '#submit' => array('content_access_page_reset'),
-    '#access' => count(content_access_get_per_node_settings($node)) > 0,
+    '#access' => !empty(content_access_get_per_node_settings($node)),
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -93,10 +93,9 @@ function content_access_page_submit($form, &$form_state) {
 
   // Apply new settings.
   node_access_acquire_grants($node);
-
-  module_invoke_all('per_node', $settings);
-
-  drupal_set_message(t('Your changes have been saved.'));
+  cache_clear_all();
+  module_invoke_all('per_node', $settings, $node);
+  drupal_set_message(t('Your changes have been saved. You may have to !rebuild for your changes to take effect.', array('!rebuild' => l(t('rebuild permissions'), 'admin/reports/status/rebuild'))));
 }
 
 /**
@@ -106,7 +105,7 @@ function content_access_page_reset($form, &$form_state) {
   content_access_delete_per_node_settings($form_state['node']);
   node_access_acquire_grants($form_state['node']);
 
-  drupal_set_message(t('The permissions have been reseted to the content type defaults.'));
+  drupal_set_message(t('The permissions have been reset to the content type defaults.'));
 }
 
 /**
@@ -219,7 +218,7 @@ function content_access_admin_settings_submit($form, &$form_state) {
     }
   }
 
-  drupal_set_message(t('Your changes have been saved.'));
+  drupal_set_message(t('Your changes have been saved. You may have to !rebuild for your changes to take effect.', array('!rebuild' => l(t('rebuild permissions'), 'admin/reports/status/rebuild'))));
 }
 
 /**
@@ -272,8 +271,8 @@ function content_access_role_based_form(&$form, $defaults = array(), $type = NUL
     '#type' => 'fieldset',
     '#title' => t('Role based access control settings'),
     '#collapsible' => TRUE,
-    '#description' => t('Note that users need at least the %access_content permission to be able to deal in any way with content.', array('%access_content' => t('access content'))) .
-      ' ' . t('Furthermore note that content which is not @published is treated in a different way by drupal: It can be viewed only by its author or users with the %administer_nodes permission.', array('@published' => t('published'), '%administer_nodes' => t('administer nodes'))),
+    '#description' => t('Note that users need at least the %view_published_content permission to be able to deal in any way with content.', array('%view_published_content' => t('view published content'))) .
+      ' ' . t('Furthermore note that content which is not @published is treated in a different way by drupal: It can be viewed only by its author or users with the %bypass_node_access permission.', array('@published' => t('published'), '%bypass_node_access' => t('bypass content access control'))),
   );
 
   $operations = _content_access_get_operations($type);

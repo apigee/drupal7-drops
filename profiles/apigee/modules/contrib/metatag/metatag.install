@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Install, update, and uninstall functions for the metatag module.
@@ -9,6 +10,7 @@
  */
 function metatag_requirements($phase) {
   $requirements = array();
+
   // Ensure translations don't break during installation.
   $t = get_t();
 
@@ -54,9 +56,6 @@ function metatag_requirements($phase) {
     }
   }
   elseif ($phase == 'runtime') {
-    // Complete data dump of all installed modules, used later.
-    $module_data = system_rebuild_module_data();
-
     // Work out the release of D7 that is currently running.
     list($major, $minor) = explode('.', VERSION);
     // Strip off any suffixes on the version string, e.g. "17-dev".
@@ -65,7 +64,7 @@ function metatag_requirements($phase) {
     }
 
     // Releases of Drupal older than 7.40 support did not project:module syntax
-    // for dependencies
+    // for dependencies.
     if ($minor < 40) {
       $requirements['metatag'] = array(
         'severity' => REQUIREMENT_WARNING,
@@ -99,9 +98,7 @@ function metatag_requirements($phase) {
 
     // Check that Entity_Translation is current.
     if (module_exists('entity_translation')
-      && !empty($module_data['entity_translation'])
-      && !empty($module_data['entity_translation']->schema_version)
-      && $module_data['entity_translation']->schema_version < 7004) {
+      && drupal_get_installed_schema_version('entity_translation') < 7004) {
       $requirements['metatag_et_version'] = array(
         'severity' => REQUIREMENT_ERROR,
         'title' => 'Metatag',
@@ -132,6 +129,16 @@ function metatag_requirements($phase) {
       );
     }
 
+    // Recommend the Fast Token Browser module.
+    if (!module_exists('fast_token_browser')) {
+      $requirements['metatag_fasttokenbrowser'] = array(
+        'severity' => REQUIREMENT_INFO,
+        'title' => 'Metatag',
+        'value' => $t('The Fast Token Browser module is recommended.'),
+        'description' => $t("Using the !url can help avoid problems with the token browser.", array('!url' => l(t('Fast Token Browser module'), 'https://www.drupal.org/project/fast_token_browser'))),
+      );
+    }
+
     // The Admin Language module can cause problems.
     if (module_exists('admin_language') && variable_get('admin_language_force_neutral', 0)) {
       $requirements['metatag_admin_language'] = array(
@@ -143,21 +150,21 @@ function metatag_requirements($phase) {
     }
 
     // Token v7.x-1.6 is *highly* recommended.
-    $token_module = $module_data['token'];
+    $token_module_info = system_get_info('module', 'token');
     // If the version string is not present then it means the module is running
     // from git, which means it can't be compared against. Alternatively, look
     // for the test file, which was the last commit of the 1.6 release.
-    if (!empty($token_module->info['version'])
-      || empty($token_module->info['files'])) {
+    if (!empty($token_module_info['version'])
+      || empty($token_module_info['files'])) {
       // If there's no test file then this is older than v1.6.
-      if (empty($token_module->info['files'])) {
+      if (empty($token_module_info['files'])) {
         $minor = 5;
       }
       // Otherwise check the version string.
       else {
         // Versions are in the format 7.x-1.y, so split the string up to find
         // the 'y' portion.
-        $version = explode('-', $token_module->info['version']);
+        $version = explode('-', $token_module_info['version']);
         if (isset($version[1])) {
           list($major, $minor) = explode('.', $version[1]);
           // Strip off any suffixes on the version string, e.g. "17-dev".
@@ -185,13 +192,13 @@ function metatag_requirements($phase) {
     // If Workbench Moderation is installed, show a message if it is out of
     // date.
     if (module_exists('workbench_moderation')) {
-      $wm_module = $module_data['workbench_moderation'];
+      $wm_module_info = system_get_info('module', 'workbench_moderation');
       // If the version string is not present then it means the module is
       // running from git, which means it can't be compared against.
-      if (!empty($wm_module->info['version'])) {
+      if (!empty($wm_module_info['version'])) {
         // Versions are in the format 7.x-1.y, so split the string up to find
         // the 'y' portion.
-        $version = explode('-', $wm_module->info['version']);
+        $version = explode('-', $wm_module_info['version']);
         if (isset($version[1])) {
           list($major, $minor) = explode('.', $version[1]);
         }
@@ -210,6 +217,24 @@ function metatag_requirements($phase) {
           'description' => $t('It is recommended to use <a href="https://www.drupal.org/project/workbench_moderation">Workbench Moderation module</a> v7.x-3.0 or newer.'),
         );
       }
+    }
+
+    // Recommend the Schema.org Metatag module.
+    if (!module_exists('schema_metatag')) {
+      $requirements['metatag_schema'] = array(
+        'severity' => REQUIREMENT_INFO,
+        'title' => 'Metatag',
+        'value' => $t('Schema.org Metatag is recommended'),
+        'description' => $t('The <a href="@module">Schema.org Metatag</a> module is highly recommended to add <a href="@jsonld">JSON-LD</a> -formatted <a href="@schema">schema.org</a> compatible data structures to the site.', array('@module' => 'https://www.drupal.org/project/schema_metatag', '@jsonld' => 'https://json-ld.org', '@schema' => 'http://schema.org')),
+      );
+    }
+    else {
+      $requirements['metatag_schema'] = array(
+        'severity' => REQUIREMENT_OK,
+        'title' => 'Metatag',
+        'value' => $t('Schema.org Metatag is installed'),
+        'description' => $t('The <a href="@module">Schema.org Metatag</a> module is installed.', array('@module' => 'https://www.drupal.org/project/schema_metatag')),
+      );
     }
   }
 
@@ -475,6 +500,19 @@ function metatag_uninstall() {
       }
     }
   }
+
+  // Remove all of the maxlength variables.
+  variable_del('metatag_maxlength_title');
+  variable_del('metatag_maxlength_description');
+  variable_del('metatag_maxlength_abstract');
+  variable_del('metatag_maxlength_keywords');
+  variable_del('metatag_maxlength_news_keywords');
+
+  // Whether regular text fields can have summary tokens too.
+  variable_del('metatag_summary_text_field');
+
+  // Length of summaries generated by the custom tokens.
+  variable_del('metatag_summary_length');
 }
 
 /**
@@ -494,7 +532,7 @@ function metatag_enable() {
  * @param string $new_tag
  *   The meta tag that replaces the old one.
  */
-function metatag_update_replace_entity_tag(&$sandbox, $old_tag, $new_tag) {
+function metatag_update_replace_entity_tag(array &$sandbox, $old_tag, $new_tag) {
   if (!isset($sandbox['progress'])) {
     // Count of all {metatag} records that contained an entry for the old meta
     // tag.
@@ -570,7 +608,7 @@ function metatag_update_replace_entity_tag(&$sandbox, $old_tag, $new_tag) {
  * @param string $new_value
  *   The meta tag value that replaces the old one.
  */
-function metatag_update_replace_entity_value(&$sandbox, $meta_tag, $old_value, $new_value) {
+function metatag_update_replace_entity_value(array &$sandbox, $meta_tag, $old_value, $new_value) {
   // The condition used for both queries.
   $db_and = db_and();
   $db_and->condition('m.data', '%' . db_like('"' . $meta_tag . '"') . '%', 'LIKE');
@@ -578,7 +616,7 @@ function metatag_update_replace_entity_value(&$sandbox, $meta_tag, $old_value, $
 
   if (!isset($sandbox['progress'])) {
     // Count of all {metatag} records that contained an entry for the old meta
-    // tag value
+    // tag value.
     $records_count = db_select('metatag', 'm')
       ->condition($db_and)
       ->countQuery()
@@ -761,7 +799,7 @@ function metatag_update_replace_config_value($meta_tag, $old_value, $new_value) 
 /**
  * Remove a specific meta tag from all configs.
  *
- * @param string $$tag_name
+ * @param string $tag_name
  *   The meta tag that is to be removed.
  */
 function metatag_update_delete_config($tag_name) {
@@ -852,8 +890,7 @@ function metatag_update_7001() {
 }
 
 /**
- * Disable the deprecated metatag_ui module which has been merged into metatag,
- * again.
+ * Uninstall the deprecated metatag_ui module, the UI is now in the main module.
  */
 function metatag_update_7002() {
   if (module_exists('metatag_ui')) {
@@ -897,8 +934,7 @@ function metatag_update_7004() {
 }
 
 /**
- * Removing wrong metatag watchdog entries that break the admin/reports/dblog
- * page.
+ * Removing wrong metatag watchdog entries that break the dblog page.
  */
 function metatag_update_7005() {
   if (db_table_exists('watchdog')) {
@@ -910,10 +946,11 @@ function metatag_update_7005() {
 }
 
 /**
- * Remove {metatag} records that were added by old versions of the module for
- * entities that don't actually support Metatag. A more complete version of
- * this will be added later on after it's (hopefully) guaranteed that all
- * modules have updated to the correct API usage.
+ * Remove {metatag} records that were added by old versions of the module.
+ *
+ * This is for entities that don't actually support Metatag. A more complete
+ * version of this will be added later on after it's (hopefully) guaranteed that
+ * all modules have updated to the correct API usage.
  */
 function metatag_update_7006() {
   $entity_types = array(
@@ -940,8 +977,9 @@ function metatag_update_7006() {
 }
 
 /**
- * Remove {metatag} records for nodes, users and taxonomy terms that have been
- * deleted; older versions of Metatag may have failed to purge these.
+ * Remove {metatag} records for entities that have been deleted.
+ *
+ * Older versions of Metatag may have failed to purge these.
  */
 function metatag_update_7007() {
   $nodes = db_query("SELECT m.entity_id
@@ -1064,7 +1102,7 @@ function metatag_update_7010() {
 /**
  * Fix {metatag} records for nodes.
  */
-function metatag_update_7011(&$sandbox) {
+function metatag_update_7011(array &$sandbox) {
   // Fix the {metatag} table first.
   metatag_update_7015();
 
@@ -1211,10 +1249,11 @@ function metatag_update_7012() {
 }
 
 /**
- * Fix the {metatag} language value for all non-core entity records. This might
- * take a while, depending on how much data needs to be converted.
+ * Fix the {metatag} language value for all non-core entity records.
+ *
+ * This might take a while, depending on how much data needs to be converted.
  */
-function metatag_update_7013(&$sandbox) {
+function metatag_update_7013(array &$sandbox) {
   // Fix the {metatag} table first.
   metatag_update_7015();
 
@@ -1347,7 +1386,7 @@ function metatag_update_7013(&$sandbox) {
  * It should be OK to run this without doing a separate batch process as there
  * shouldn't be many records that have this problem. Hopefully.
  *
- * @param $entity_type
+ * @param string $entity_type
  *   The name of an entity type to check for.
  */
 function _metatag_remove_dupes($entity_type) {
@@ -1510,8 +1549,9 @@ function metatag_update_7014() {
 }
 
 /**
- * Add the revision_id from the entity into metatag schema, adjust the primary
- * keys accordingly.
+ * Add the revision_id from the entity into metatag schema.
+ *
+ * Also adjust the primary keys accordingly.
  */
 function metatag_update_7015() {
   if (!db_field_exists('metatag', 'revision_id')) {
@@ -1524,12 +1564,12 @@ function metatag_update_7015() {
 
     // Add the new field.
     db_add_field('metatag', 'revision_id', array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'The revision_id for the entity object this data is attached to.',
-      ));
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+      'description' => 'The revision_id for the entity object this data is attached to.',
+    ));
 
     // Remove the existing primary key. This may take some work so it can be
     // database agnostic, i.e. some databases will not like it.
@@ -1546,8 +1586,9 @@ function metatag_update_7015() {
 }
 
 /**
- * Update the revision ID to fix the NULL values, help avoid problems with
- * update 7017.
+ * Update the revision ID to fix the NULL values.
+ *
+ * Help avoid problems with update 7017.
  */
 function metatag_update_7016() {
   // It's possible that 7015 was not executed if the site had been updated to
@@ -1595,13 +1636,14 @@ function metatag_update_7017() {
 }
 
 /**
- * Update the revision ID for each record. This may take some time. Should any
- * nodes be discovered with a meta tag record for both revision_id 0 and the
- * correct revision_id, the "0" value will be deleted; if this is not the
- * desired result the {metatag} table must be manually pruned to have the
+ * Update the revision ID for each record. This may take some time.
+ *
+ * Should any nodes be discovered with a meta tag record for both revision_id 0
+ * and the correct revision_id, the "0" value will be deleted; if this is not
+ * the desired result the {metatag} table must be manually pruned to have the
  * correct records prior to letting this update run.
  */
-function metatag_update_7018(&$sandbox) {
+function metatag_update_7018(array &$sandbox) {
   // Process records in small groups.
   // When a group is processed, the batch update engine determines whether it
   // should continue processing in the same request or provide progress
@@ -1736,7 +1778,7 @@ function metatag_update_7018(&$sandbox) {
         // let the site maintainer/builder choose which of the two records to
         // keep, we're stuck with a bad scenario. Thankfully this should not
         // happen very often and would only affect sites that were running a
-        // dev release. Also, sorry :(
+        // dev release. Also, sorry :( .
         else {
           db_delete('metatag')
             ->condition('entity_type', $entity_type)
@@ -1857,8 +1899,7 @@ function metatag_update_7020() {
 }
 
 /**
- * Clear the existing Metatag cache so all unwanted 403/404 paths can be
- * purged.
+ * Clear the Metatag cache so all unwanted 403/404 paths can be purged.
  */
 function metatag_update_7021() {
   cache_clear_all('*', 'cache_metatag', TRUE);
@@ -1897,7 +1938,7 @@ function metatag_update_7025() {
 /**
  * Rename the 'copyright' meta tag to 'rights', part 1.
  */
-function metatag_update_7026(&$sandbox) {
+function metatag_update_7026(array &$sandbox) {
   $old_tag = 'copyright';
   $new_tag = 'rights';
   return metatag_update_replace_entity_tag($sandbox, $old_tag, $new_tag);
@@ -1955,16 +1996,25 @@ function metatag_update_7032() {
 }
 
 /**
- * These originally removed the 'author' meta tag, but it was subsequently
- * decided that this was not the correct approach, that the meta tag should not
- * be removed after all.
+ * These originally removed the 'author' meta tag but are now skipped.
+ *
+ * It was subsequently decided that this was not the correct approach, that the
+ * meta tag should not be removed after all.
  *
  * @see https://www.drupal.org/node/2330823
  */
 function metatag_update_7033() {
 }
+
+/**
+ * Skipped.
+ */
 function metatag_update_7034() {
 }
+
+/**
+ * Skipped.
+ */
 function metatag_update_7035() {
 }
 
@@ -2047,8 +2097,7 @@ function metatag_update_7037() {
 }
 
 /**
- * Manually enable all content types, vocabularies and the user entity to help
- * resolve issues from 1.5's architecture change.
+ * Manually enable all core entity types to resolve issues from 1.5's changes.
  */
 function metatag_update_7038() {
   foreach (array('node', 'taxonomy_term', 'user') as $entity_type) {
@@ -2077,10 +2126,9 @@ function metatag_update_7039() {
 }
 
 /**
- * Fix robots meta tags that might have been broken when they were imported
- * from Nodewords.
+ * Fix any robots meta tags that were broken during importing from Nodewords.
  */
-function metatag_update_7040(&$sandbox) {
+function metatag_update_7040(array &$sandbox) {
   // Process records by groups of 10 (arbitrary value).
   // When a group is processed, the batch update engine determines whether it
   // should continue processing in the same request or provide progress
@@ -2206,10 +2254,12 @@ function metatag_update_7040(&$sandbox) {
 }
 
 /**
- * Rerun update 7018 that was fixed to run correctly when using Entity
- * Translation. This may take some time.
+ * Rerun update 7018. This may take some time.
+ *
+ * The original did not run correctly when using Entity Translation. This was
+ * fixed.
  */
-function metatag_update_7041(&$sandbox) {
+function metatag_update_7041(array &$sandbox) {
   metatag_update_7018($sandbox);
 }
 
@@ -2285,7 +2335,7 @@ function metatag_update_7103() {
 /**
  * Remove the entity revision ID from the translation strings.
  */
-function metatag_update_7104(&$sandbox) {
+function metatag_update_7104(array &$sandbox) {
   // Verify that locales are being used in the first place.
   if (!module_exists('locale') || !db_table_exists('locales_source')) {
     return t('Metatag: No translations to fix as the locale system is not enabled.');
@@ -2403,10 +2453,10 @@ function metatag_update_7105() {
   return t('Fixed the Metatag output strings.');
 }
 
-
 /**
- * The output translation strings were renamed to something shorter, so rerun
- * update 7105.
+ * Rerun update 7105.
+ *
+ * The output translation strings were renamed to something shorter.
  */
 function metatag_update_7106() {
   return metatag_update_7105();
@@ -2432,7 +2482,7 @@ function metatag_update_7107() {
 /**
  * Delete output translations if it's disabled.
  */
-function metatag_update_7108(&$sandbox) {
+function metatag_update_7108(array &$sandbox) {
   if (!module_exists('locale') || !db_table_exists('locales_source')) {
     return t('No translations to fix as the locale system is not enabled.');
   }
@@ -2527,7 +2577,7 @@ function metatag_update_7108(&$sandbox) {
 /**
  * Rename the 'icon_any' meta tag to 'mask-icon' in the entity records.
  */
-function metatag_update_7109(&$sandbox) {
+function metatag_update_7109(array &$sandbox) {
   module_load_include('install', 'metatag');
   $old_tag = 'icon_any';
   $new_tag = 'mask-icon';
@@ -2583,4 +2633,11 @@ function metatag_update_7114() {
  */
 function metatag_update_7115() {
   cache_clear_all('output:', 'cache_metatag', TRUE);
+}
+
+/**
+ * Trigger a cache clear so the Views integration can be loaded.
+ */
+function metatag_update_7116() {
+  // Nothing to see here.
 }

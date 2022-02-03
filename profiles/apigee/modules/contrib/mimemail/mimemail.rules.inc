@@ -248,9 +248,11 @@ function mimemail_rules_action_mail_to_user_upgrade($element, RulesPlugin $targe
     case 'author':
       $token = 'node:author';
       break;
+
     case 'author_unchanged':
       $token = 'node-unchanged:author';
       break;
+
     case 'user':
       $token = 'site:current-user';
       break;
@@ -270,7 +272,7 @@ function mimemail_rules_action_mail_to_users_of_role_upgrade($element, RulesPlug
 /**
  * Action Implementation: Send HTML mail.
  */
-function rules_action_mimemail($key, $to, $cc = NULL, $bcc = NULL, $from_name = NULL, $from_mail = NULL, $reply_to = NULL, $list_unsubscribe = NULL, $subject, $body, $plaintext = NULL, $attachments = array(), $langcode, $settings, RulesState $state, RulesPlugin $element) {
+function rules_action_mimemail($key, $to, $cc, $bcc, $from_name, $from_mail, $reply_to, $list_unsubscribe, $subject, $body, $plaintext, $attachments, $langcode, $settings, RulesState $state, RulesPlugin $element) {
   module_load_include('inc', 'mimemail');
 
   // Set the sender name and from address.
@@ -313,7 +315,7 @@ function rules_action_mimemail($key, $to, $cc = NULL, $bcc = NULL, $from_name = 
 /**
  * Action: Send HTML mail to all users of a specific role group(s).
  */
-function rules_action_mimemail_to_users_of_role($key, $roles, $active, $from_name = NULL, $from_mail = NULL, $reply_to = NULL, $subject, $body, $plaintext = NULL, $attachments = array(), $use_userlang = FALSE, $langcode= NULL, $settings, RulesState $state, RulesPlugin $element) {
+function rules_action_mimemail_to_users_of_role($key, $roles, $active, $from_name, $from_mail, $reply_to, $subject, $body, $plaintext, $attachments, $use_userlang, $langcode, $settings, RulesState $state, RulesPlugin $element) {
   module_load_include('inc', 'mimemail');
 
   // Set the sender name and from address.
@@ -388,4 +390,3 @@ function rules_action_mimemail_to_users_of_role($key, $roles, $active, $from_nam
 /**
  * @}
  */
-

@@ -81,6 +81,22 @@ function commerce_system_info_alter(&$info, $file, $type) {
 }
 
 /**
+ * Implements hook_html_head_alter().
+ */
+function commerce_html_head_alter(&$head_elements) {
+  if (isset($head_elements['system_meta_generator'])) {
+    $head_elements['system_meta_generator']['#attributes']['content'] .= '; Commerce 1';
+  }
+}
+
+/**
+ * Implements hook_init().
+ */
+function commerce_init() {
+  drupal_add_http_header('X-Commerce-Core', '1');
+}
+
+/**
  * Finds all fields of a particular field type.
  *
  * @param $field_type
@@ -99,7 +115,7 @@ function commerce_info_fields($field_type, $entity_type = NULL) {
     if ($field_stub['type'] == $field_type) {
       // Add this field to the return array if no entity type was specified or
       // if the specified type exists in the field's bundles array.
-      if (empty($entity_type) || in_array($entity_type, array_keys($field_stub['bundles']))) {
+      if (empty($entity_type) || array_key_exists($entity_type, $field_stub['bundles'])) {
         $field = field_info_field($field_name);
         $fields[$field_name] = $field;
       }
@@ -529,9 +545,9 @@ function commerce_currencies($enabled = FALSE, $reset = FALSE) {
         'thousands_separator' => ',',
         'decimal_separator' => '.',
         'symbol_placement' => 'hidden',
-        'symbol_spacer' => ' ',
+        'symbol_spacer' => "\xC2\xA0",
         'code_placement' => 'after',
-        'code_spacer' => ' ',
+        'code_spacer' => "\xC2\xA0",
         'format_callback' => '',
         'conversion_callback' => '',
         'conversion_rate' => 1,
@@ -652,11 +668,19 @@ function commerce_currency_format($amount, $currency_code, $object = NULL, $conv
     '@symbol_after' => $currency['symbol_placement'] == 'after' ? $currency['symbol'] : '',
     '@code_after' => $currency['code_placement'] == 'after' ? $currency['code'] : '',
     '@negative' => $amount < 0 ? '-' : '',
-    '@symbol_spacer' => $currency['symbol_spacer'],
+    '@symbol_spacer_before' => $currency['symbol_placement'] == 'before' ? $currency['symbol_spacer'] : '',
+    '@symbol_spacer' => $currency['symbol_placement'] == 'after' ? $currency['symbol_spacer'] : '',
     '@code_spacer' => $currency['code_spacer'],
   );
 
-  return trim(t('@code_before@code_spacer@negative@symbol_before@price@symbol_spacer@symbol_after@code_spacer@code_after', $replacements));
+  // We switched from using trim() after token replacement because it couldn't
+  // adequately trim non-breaking space characters while supporting certain
+  // currency symbols like the GBP £. preg_replace() it slightly slower, but
+  // the difference should be negligible on almost any site. If it becomes an
+  // issue, we can introduce an if statement here to use trim() by default and
+  // maintain an array of currency codes for which we must use preg_replace().
+  $pattern = '/^\s+|\s+$/us';
+  return preg_replace($pattern, '', check_plain(strtr('@code_before@code_spacer@negative@symbol_before@symbol_spacer_before@price@symbol_spacer@symbol_after@code_spacer@code_after', $replacements)));
 }
 
 /**
@@ -789,7 +813,7 @@ function commerce_currency_amount_to_decimal($amount, $currency_code) {
     $divisors[$currency_code] = pow(10, $currency['decimals']);
   }
 
-  return ((float) $amount) / $divisors[$currency_code];
+  return $amount / $divisors[$currency_code];
 }
 
 /**

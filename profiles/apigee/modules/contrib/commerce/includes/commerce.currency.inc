@@ -1049,7 +1049,7 @@ function commerce_commerce_currency_info() {
       'name' => t('Maldivian Rufiyaa'),
       'symbol_placement' => 'before',
       'code_placement' => 'hidden',
-      'minor_unit' => t('Laari'), 
+      'minor_unit' => t('Laari'),
       'major_unit' => t('Rufiyaa'),
     ),
     'MWK' => array(
@@ -1133,7 +1133,7 @@ function commerce_commerce_currency_info() {
     'NOK' => array(
       'code' => 'NOK',
       'numeric_code' => '578',
-      'symbol' => 'NOK',
+      'symbol' => 'kr',
       'name' => t('Norwegian Krone'),
       'symbol_placement' => 'before',
       'code_placement' => 'hidden',

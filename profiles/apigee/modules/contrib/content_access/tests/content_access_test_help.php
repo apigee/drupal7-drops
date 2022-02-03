@@ -34,22 +34,19 @@ class ContentAccessTestCase extends DrupalWebTestCase {
       }
     }
 
-    // Create test user with seperate role
-    $this->test_user = $this->drupalCreateUser();
+    // Create test user with separate role.
+    $this->test_user = $this->drupalCreateUser(array('access content'));
 
-    // Get the value of the new role
-    // Needed in D7 because it's by default create two roles for new users
-    // one role is Authenticated and the second is new default one
+    // Get the value of the new role.
+    // Needed in D7 because drupalCreateUser() creates two roles for new users:
+    // one role is Authenticated and the second has the given permissions.
     // @see drupalCreateUser()
-    foreach ($this->test_user->roles as $rid => $role) {
-      if (!in_array($rid, array(DRUPAL_AUTHENTICATED_RID))) {
-        $this->rid = $rid;
-        break;
-      }
-    }
+    $roles = $this->test_user->roles;
+    unset($roles[DRUPAL_AUTHENTICATED_RID]);
+    $this->rid = key($roles);
 
     // Create admin user
-    $this->admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'grant content access', 'grant own content access', 'administer nodes', 'access administration pages'));
+    $this->admin_user = $this->drupalCreateUser(array('access content', 'administer content types', 'grant content access', 'grant own content access', 'bypass node access', 'administer nodes', 'access administration pages'));
     $this->drupalLogin($this->admin_user);
 
     // Rebuild content access permissions

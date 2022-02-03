@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * block_class_fe_block_test.features.fe_block_settings.inc

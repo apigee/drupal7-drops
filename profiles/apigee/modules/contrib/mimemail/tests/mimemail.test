@@ -7,12 +7,13 @@
  * @ingroup mimemail
  */
 
-require_once(dirname(__FILE__) . '/../mimemail.inc');
+require_once dirname(__FILE__) . '/../mimemail.inc';
 
 /**
  * Tests helper functions from the Mime Mail module.
  */
 class MimeMailUnitTestCase extends DrupalUnitTestCase {
+
   public static function getInfo() {
     return array(
       'name' => 'Mime Mail unit tests',
@@ -21,12 +22,12 @@ class MimeMailUnitTestCase extends DrupalUnitTestCase {
     );
   }
 
-  function setUp() {
+  protected function setUp() {
     drupal_load('module', 'mimemail');
     parent::setUp();
   }
 
-  function testHeaders() {
+  public function testHeaders() {
     // Test the regular expression for extracting the mail address.
     $chars = array('-', '.', '+', '_');
     $name = $this->randomString();
@@ -38,7 +39,7 @@ class MimeMailUnitTestCase extends DrupalUnitTestCase {
     $this->assertIdentical($result, $expected, 'Return-Path header field correctly set.');
   }
 
-  function testUrl() {
+  public function testUrl() {
     $result = _mimemail_url('#');
     $this->assertIdentical($result, '#', 'Hash mark URL without fragment left intact.');
 
@@ -68,7 +69,7 @@ class MimeMailWebTestCase extends DrupalWebTestCase {
     );
   }
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp('mailsystem', 'mimemail');
 
     $permissions = array(
@@ -84,6 +85,49 @@ class MimeMailWebTestCase extends DrupalWebTestCase {
     $this->drupalLogin($this->adminUser);
   }
 
+  public function testMailPreparationPlaintextBodyConversion() {
+    // Test the html body to plaintext conversion handling without dedicated
+    // plaintext set.
+    $message = array(
+      'module' => 'mimemail_test',
+      'key' => 'mimemail_test',
+      'to' => 'test@example.org',
+      'from' => 'test@example.org',
+      'subject' => 'Testing body to plain conversion',
+      'body' => 'Link: &quot;<a href="http://example.org">example.org</a>&quot; <b>Important stuff</b>, <h1>Title Heading</h1>, <ul><li>List Item One</li><li>List Item Two</li></ul>',
+      'params' => array('plain' => TRUE),
+      'headers' => array(),
+    );
+    $prepared_message = mimemail_prepare_message($message);
+    $expected_plaintext = <<<EOF
+Link: "example.org [1]" *Important stuff*,
+======== TITLE HEADING =======================================================
+
+,
+ * List Item One
+ * List Item Two
+
+
+[1] http://example.org
+
+EOF;
+    $this->assertIdentical($prepared_message['body'], $expected_plaintext, 'Body to plaintext conversion without dedicated plaintext works properly');
+
+    // Test that dedicated plaintext is respected.
+    $message = array(
+      'module' => 'mimemail_test',
+      'key' => 'mimemail_test',
+      'to' => 'test@example.org',
+      'from' => 'test@example.org',
+      'subject' => 'Testing body to plain conversion',
+      'body' => 'Link: &quot;<a href="http://example.org">example.org</a>&quot; <b>Important stuff</b>, <h1>Title Heading</h1>, <ul><li>List Item One</li><li>List Item Two</li></ul>',
+      'params' => array('plain' => TRUE, 'plaintext' => 'This is the actual plaintext'),
+      'headers' => array(),
+    );
+    $prepared_message = mimemail_prepare_message($message);
+    $this->assertIdentical($prepared_message['body'], $message['params']['plaintext'], 'Dedicated plaintext is preferred.');
+  }
+
   public function testUrl() {
     $this->drupalPost('admin/config/system/mimemail',
       array('mimemail_linkonly' => TRUE),
@@ -94,6 +138,6 @@ class MimeMailWebTestCase extends DrupalWebTestCase {
     $expected = str_replace(' ', '%20', file_create_url($url));
     $message = 'Stream wrapper converted to web accessible URL for linked image.';
     $this->assertIdentical($result, $expected, $message);
-   }
+  }
 
 }

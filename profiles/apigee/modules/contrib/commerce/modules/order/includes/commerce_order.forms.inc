@@ -42,7 +42,11 @@ function commerce_order_order_form($form, &$form_state, $order) {
 
   foreach (commerce_order_state_get_title() as $name => $title) {
     foreach (commerce_order_statuses(array('state' => $name)) as $order_status) {
-      $options[check_plain($title)][$order_status['name']] = check_plain($order_status['title']);
+
+      // Only include enabled statues and the current order status.
+      if (!empty($order_status['status']) || $order->status == $order_status['name']) {
+        $options[check_plain($title)][$order_status['name']] = check_plain($order_status['title']);
+      }
     }
   }
 

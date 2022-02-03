@@ -312,3 +312,20 @@ function hook_commerce_checkout_pane_info_alter(&$checkout_panes) {
 function hook_commerce_checkout_first_checkout_page() {
   return 'checkout';
 }
+
+/**
+ * Allows modules to alter checkout access resolution for an order / account.
+ *
+ * @param $access
+ *   Boolean indicating whether or not access will be granted.
+ * @param $order
+ *   The order object.
+ * @param $account
+ *   The account whose access is being checked.
+ */
+function hook_commerce_checkout_access_alter(&$access, $order, $account) {
+  // Prevent access to checkout for an order that is deemed to be fraudulent.
+  if ($access && example_fraud_check_fails()) {
+    $access = FALSE;
+  }
+}

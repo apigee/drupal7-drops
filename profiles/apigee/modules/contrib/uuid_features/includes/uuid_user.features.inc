@@ -126,6 +126,7 @@ function uuid_user_features_rebuild($module) {
     $entity_type = 'user';
 
     foreach ($users as $data) {
+      $uid = NULL;
       $account = (object) $data;
       $existing = new stdClass();
 

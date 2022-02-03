@@ -914,6 +914,7 @@ function file_entity_theme() {
           'remote_playback' => 'remote_playback',
         ),
         'autoplay' => FALSE,
+        'playsinline' => FALSE,
         'loop' => FALSE,
         'muted' => FALSE,
         'width' => NULL,
@@ -1232,21 +1233,109 @@ function file_entity_file_formatter_file_field_settings($form, &$form_state, $se
     // formatter functions, but we are not working with a Field API field, so
     // set $field accordingly. Unfortunately, the API is for $settings to be
     // transferred via the $instance parameter, so we must mock it.
-    if (isset($field_formatter_info['module']) && ($function = ($field_formatter_info['module'] . '_field_formatter_settings_form')) && function_exists($function)) {
-      $field = NULL;
-      $mock_instance = array(
-        'display' => array(
-          $view_mode => array(
-            'type' => $field_formatter_type,
-            'settings' => $settings,
+    if (isset($field_formatter_info['module'])) {
+      $function = $field_formatter_info['module'] . '_field_formatter_settings_form';
+      if (function_exists($function)) {
+        // The formatter's first argument is expected to be a field definition
+        // with at least "type" and "bundles" elements.
+        $mock_field = array(
+          'type' => NULL,
+          'bundles' => array(),
+        );
+        $mock_instance = array(
+          'display' => array(
+            $view_mode => array(
+              'type' => $field_formatter_type,
+              'settings' => $settings,
+            ),
           ),
-        ),
-        'entity_type' => 'file',
-        'bundle' => $file_type,
-      );
-      return $function($field, $mock_instance, $view_mode, $form, $form_state);
+          'entity_type' => 'file',
+          'bundle' => $file_type,
+        );
+        return $function($mock_field, $mock_instance, $view_mode, $form, $form_state);
+      }
     }
   }
+}
+
+/**
+ * Replace file entity title text.
+ *
+ * @param $file
+ *   The file entity.
+ * @param $replace_options
+ *   (Optional) Options to pass to token_replace().
+ * @param $title
+ *   (Optional) The title text to use.
+ * @param string $langcode
+ *   (Optional) Language code
+ *
+ * @return string
+ *   Returns the replaced title text.
+ */
+function file_entity_replace_title($file, $replace_options = array(), $title = NULL, $langcode = NULL) {
+  $replace_options += array(
+    'clear' => TRUE,
+    'sanitize' => FALSE,
+  );
+
+  $title_default = '[file:field_file_image_title_text]';
+  if (!isset($title)) {
+    $title = variable_get('file_entity_title', $title_default);
+  }
+  // If the defaults are not changed then inlining replacement is much faster
+  // than dealing with the token system.
+  if ($title === $title_default) {
+    $title_items = field_get_items('file', $file, 'field_file_image_title_text', $langcode);
+    return $title_items ? $title_items[0]['value'] : '';
+  }
+  elseif (!empty($title)) {
+    $token_replaced = token_replace($title, array('file' => $file), $replace_options);
+    return decode_entities($token_replaced); // Filter out possible XSS.
+  }
+
+  return '';
+}
+
+/**
+ * Replace file entity alt.
+ *
+ * @param $file
+ *   The file entity.
+ * @param array $replace_options
+ *   (Optional) Options to pass to token_replace().
+ * @param $alt
+ *   (Optional) The alt text to use.
+ * @param string $langcode
+ *   (Optional) Language code
+ *
+ * @return string
+ *   Returns the replaced alt text.
+ */
+function file_entity_replace_alt($file, $replace_options = array(), $alt = NULL, $langcode = NULL) {
+  $replace_options += array(
+    'clear' => TRUE,
+    'sanitize' => FALSE,
+  );
+
+  $alt_default = '[file:field_file_image_alt_text]';
+
+  if (!isset($alt)) {
+    $alt = variable_get('file_entity_alt', $alt_default);
+  }
+
+  // If the defaults are not changed then inlining replacement is much faster
+  // than dealing with the token system.
+  if ($alt === $alt_default) {
+    $alt_items = field_get_items('file', $file, 'field_file_image_alt_text', $langcode);
+    return $alt_items ? $alt_items[0]['value'] : '';
+  }
+  elseif (!empty($alt)) {
+    $token_replaced = token_replace($alt, array('file' => $file), $replace_options);
+    return decode_entities($token_replaced); // Filter out possible XSS.
+  }
+
+  return '';
 }
 
 /**
@@ -1289,8 +1378,8 @@ function file_entity_file_formatter_file_image_view($file, $display, $langcode) 
         '#path' => $file->uri,
         '#width' => isset($file->override['attributes']['width']) ? $file->override['attributes']['width'] : $file->metadata['width'],
         '#height' => isset($file->override['attributes']['height']) ? $file->override['attributes']['height'] : $file->metadata['height'],
-        '#alt' => token_replace($display['settings']['alt'], array('file' => $file), $replace_options),
-        '#title' => token_replace($display['settings']['title'], array('file' => $file), $replace_options),
+        '#alt' => file_entity_replace_alt($file, $replace_options, $display['settings']['alt'], $langcode),
+        '#title' => file_entity_replace_title($file, $replace_options, $display['settings']['title'], $langcode),
       );
     }
     else {
@@ -1299,8 +1388,8 @@ function file_entity_file_formatter_file_image_view($file, $display, $langcode) 
         '#path' => $file->uri,
         '#width' => isset($file->override['attributes']['width']) ? $file->override['attributes']['width'] : $file->metadata['width'],
         '#height' => isset($file->override['attributes']['height']) ? $file->override['attributes']['height'] : $file->metadata['height'],
-        '#alt' => token_replace($display['settings']['alt'], array('file' => $file), $replace_options),
-        '#title' => token_replace($display['settings']['title'], array('file' => $file), $replace_options),
+        '#alt' => file_entity_replace_alt($file, $replace_options, $display['settings']['alt'], $langcode),
+        '#title' => file_entity_replace_title($file, $replace_options, $display['settings']['title'], $langcode),
       );
     }
     return $element;

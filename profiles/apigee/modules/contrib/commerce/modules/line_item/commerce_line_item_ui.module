@@ -19,6 +19,15 @@ function commerce_line_item_ui_menu() {
     'file' => 'includes/commerce_line_item_ui.types.inc',
   );
 
+  $items['admin/commerce/config/orphaned-line-items'] = array(
+    'title' => 'Orphaned line items',
+    'description' => 'Delete line items that are not attached to any order.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_line_item_ui_orphaned_line_items_form'),
+    'access arguments' => array('administer line items'),
+    'file' => 'includes/commerce_line_item_ui.admin.inc',
+  );
+
   foreach (commerce_line_item_types() as $type => $line_item_type) {
     // Convert underscores to hyphens for the menu item argument.
     $type_arg = strtr($type, '_', '-');

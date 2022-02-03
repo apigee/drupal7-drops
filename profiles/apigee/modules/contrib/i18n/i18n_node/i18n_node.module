@@ -260,7 +260,7 @@ function i18n_node_permission() {
 function i18n_node_node_view($node, $view_mode, $langcode) {
   if (i18n_node_type_enabled($node)) {
     $extra_fields_display_settings = field_extra_fields_get_display('node', $node->type, $view_mode);
-    if ($extra_fields_display_settings['language']['visible']) {
+    if (isset($extra_fields_display_settings['language']['visible']) && $extra_fields_display_settings['language']['visible']) {
       $node->content['language'] = array(
         '#type' => 'item',
         '#title' => t('Language'),

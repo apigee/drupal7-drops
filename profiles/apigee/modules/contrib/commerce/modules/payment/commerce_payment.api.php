@@ -507,3 +507,27 @@ function hook_commerce_payment_transaction_load($transactions) {
     $transactions[$record->transaction_id]->foo = $record->foo;
   }
 }
+
+/**
+ * Alter the card types defined by the Payment module.
+ *
+ * This function is run after the known global card types are defined so a site
+ * can include non-standard card types. Card type definitions are associative
+ * arrays with the following keys:
+ * - id: the machine-name for the card type.
+ * - label: the label to use for the card type in the user interface.
+ * - number_prefixes: an array of the number patterns and ranges at the start
+ *   of numbers for this card type that identify valid card numbers.
+ * - number_lengths: an array of the card number lengths this type supports.
+ * - security_code_length: the length of this card type's security codes.
+ * - uses_luhn: boolean indicating whether or not to attempt Luhn algorithm
+ *   based number valiation on cards of this type.
+ *
+ * @param $card_types
+ *   An array of card type definitions, keyed by card type id.
+ *
+ * @see CommercePaymentCreditCard::getTypes()
+ */
+function hook_commerce_card_type_info_alter(&$card_types) {
+  // No example.
+}

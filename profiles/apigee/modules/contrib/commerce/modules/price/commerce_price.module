@@ -469,6 +469,14 @@ function commerce_price_field_formatter_view($entity_type, $entity, $field, $ins
         foreach ($item['data']['components'] as $key => $component) {
           $component_type = commerce_price_component_type_load($component['name']);
 
+          // Initialize an empty component type array if the load failed.
+          if (!$component_type) {
+            $component_type = array(
+              'display_title' => '',
+              'weight' => NULL,
+            );
+          }
+
           if (empty($components[$component['name']])) {
             $components[$component['name']] = array(
               'title' => check_plain($component_type['display_title']),
@@ -482,7 +490,7 @@ function commerce_price_field_formatter_view($entity_type, $entity, $field, $ins
 
         // If there is only a single component and its price equals the field's,
         // then remove it and just show the actual price amount.
-        if (count($components) == 1 && in_array('base_price', array_keys($components))) {
+        if (count($components) == 1 && array_key_exists('base_price', $components)) {
           $components = array();
         }
 
@@ -611,7 +619,7 @@ function commerce_price_field_widget_form(&$form, &$form_state, $field, $instanc
   }
 
   // If a price has already been set for this instance prepare default values.
-  if (isset($items[$delta]['amount'])) {
+  if (isset($items[$delta]['amount']) && $items[$delta]['amount'] !== '') {
     $currency = commerce_currency_load($items[$delta]['currency_code']);
 
     // Convert the price amount to a user friendly decimal value.
@@ -817,7 +825,7 @@ function commerce_price_field_data_property_info($name = NULL) {
 }
 
 /**
- * Property getter callback returing the amount (as a decimal).
+ * Property getter callback returning the amount (as a decimal).
  */
 function commerce_price_amount_decimal_get($data, array $options, $name, $type, $info) {
   return commerce_currency_amount_to_decimal($data['amount'], $data['currency_code']);

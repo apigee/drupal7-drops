@@ -6,6 +6,19 @@
  */
 
 /**
+ * Implementation of acl_get_usernames().
+ */
+function _acl_get_usernames($acl_id) {
+  $users = array();
+  $result = db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {acl_user} aclu ON aclu.uid = u.uid WHERE acl_id = :acl_id", array(
+    'acl_id' => $acl_id));
+  foreach ($result as $user) {
+    $users[$user->uid] = _acl_format_username($user);
+  }
+  return $users;
+}
+
+/**
  * Implementation of acl_edit_form().
  */
 function _acl_edit_form($acl_id, $label = NULL, $new_acl = FALSE) {
@@ -17,11 +30,7 @@ function _acl_edit_form($acl_id, $label = NULL, $new_acl = FALSE) {
     ))->fetchAssoc())) {
       return array();
     }
-    $result = db_query("SELECT u.uid, u.name FROM {users} u LEFT JOIN {acl_user} aclu ON aclu.uid = u.uid WHERE acl_id = :acl_id", array(
-      'acl_id' => $acl_id));
-    foreach ($result as $user) {
-      $users[$user->uid] = $user->name;
-    }
+    $users = _acl_get_usernames($acl_id);
   }
   if (!isset($label)) {
     $label = (isset($record['name']) ? $record['name'] : (isset($record['number']) ? $record['number'] : $acl_id));
@@ -81,8 +90,7 @@ function _acl_edit_form_after_build($form, &$form_state) {
   // We can't use the form values because it's the entire structure
   // and we have no clue where our values actually are. That's
   // ok tho cause #value still works for us.
-  $user_list = unserialize($form['user_list']['#value']);
-  $button_name = 'acl_' . $form['acl_id']['#value'];
+  $user_list = acl_edit_form_get_user_list($form);
 
   if (isset($form_state['triggering_element']) && $form_state['triggering_element']['#value'] == $form['delete_button']['#value']) {
     $deletions = $form['deletions']['#value'];
@@ -99,7 +107,7 @@ function _acl_edit_form_after_build($form, &$form_state) {
       form_error($form['add'], t("Invalid user specified."));
     }
     else {
-      $user_list[$user->uid] = $user->name;
+      $user_list[$user->uid] = _acl_format_username($user);
       $form['add']['#value'] = NULL;
     }
   }
@@ -125,7 +133,7 @@ function _acl_edit_form_after_build($form, &$form_state) {
  * The module that embedded our form must call this function!
  */
 function acl_save_form($form, $priority = NULL) {
-  $users = unserialize($form['user_list']);
+  $users = acl_edit_form_get_user_list($form);
   db_delete('acl_user')
     ->condition('acl_id', $form['acl_id'])
     ->execute();
@@ -145,5 +153,24 @@ function acl_save_form($form, $priority = NULL) {
       ->condition('acl_id', $form['acl_id'])
       ->execute();
   }
+}
+
+/**
+ * Decode and return the list of users.
+ *
+ * @param array $form
+ *   The ACL form or form_state array.
+ * @param bool $get_default
+ *   (optional) In the case of a form array, whether to return the
+ *   '#default_value' (or the '#value').
+ *
+ * @return array
+ *   An array of $uid => $username.
+ */
+function acl_edit_form_get_user_list($form, $get_default = FALSE) {
+  if (is_array($form['user_list'])) {
+    return unserialize($form['user_list'][$get_default ? '#default_value' : '#value']);
+  }
+  return unserialize($form['user_list']);
 }
 

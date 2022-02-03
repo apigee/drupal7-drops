@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- * uuid features hooks on behalf of the file entity module.
+ * Hooks for uuid_features on behalf of the file_entity module.
  */
 
 /**
@@ -68,7 +69,7 @@ function file_entity_uuid_entity_features_export_render_alter($entity_type, &$ex
             // on the file object - if not we're better off with the inline file
             // handling.
             if (!empty($enabled_types[$file_entity->type]) && !empty($file_entity->uuid)) {
-              $files_loaded = entity_uuid_load('file', array($file_entity->uuid));
+              $files_loaded = entity_uuid_load('file', array($file_entity->uuid), array(), TRUE);
               // Ensure additional keys added to the field value are preserved
               // but all the other properties are removed in favor of the uuid.
               $file_export = array(

@@ -211,8 +211,14 @@ function commerce_payment_credit_card_validate($details, $settings) {
   $prefix = implode('][', $settings['form_parents']) . '][';
   $valid = TRUE;
 
-  // Validate the credit card type.
-  if (!empty($details['valid_types'])) {
+  // Validate the credit card number.
+  if (!commerce_payment_validate_credit_card_number($details['number'])) {
+    form_set_error($prefix . 'number', t('You have entered an invalid credit card number.'));
+    $valid = FALSE;
+  }
+
+  // Validate the credit card type if the credit card number is valid.
+  elseif (!empty($details['valid_types'])) {
     $type = commerce_payment_validate_credit_card_type($details['number'], $details['valid_types']);
 
     if ($type === FALSE) {
@@ -223,12 +229,6 @@ function commerce_payment_credit_card_validate($details, $settings) {
       form_set_error($prefix . 'number', t('You have entered a credit card number that does not match the type selected.'));
       $valid = FALSE;
     }
-  }
-
-  // Validate the credit card number.
-  if (!commerce_payment_validate_credit_card_number($details['number'])) {
-    form_set_error($prefix . 'number', t('You have entered an invalid credit card number.'));
-    $valid = FALSE;
   }
 
   // Validate the expiration date.
@@ -300,6 +300,11 @@ function commerce_payment_validate_credit_card_type($number, array $card_types =
  */
 function commerce_payment_validate_credit_card_number($number) {
   $type = CommercePaymentCreditCard::detectType($number);
+
+  if (!$type || !is_array($type)) {
+    return FALSE;
+  }
+
   return CommercePaymentCreditCard::validateNumber($number, $type);
 }
 
@@ -381,6 +386,11 @@ function commerce_payment_validate_credit_card_issue($issue) {
  */
 function commerce_payment_validate_credit_card_security_code($number, $code) {
   $type = CommercePaymentCreditCard::detectType($number);
+
+  if (!$type || !is_array($type)) {
+    return FALSE;
+  }
+
   return CommercePaymentCreditCard::validateSecurityCode($code, $type);
 }
 
@@ -404,10 +414,10 @@ function commerce_payment_credit_card_types() {
 final class CommercePaymentCreditCard {
 
   /**
-   * Gets all available credit card types.
+   * Gets all available card types.
    *
    * @return array
-   *   The credit card types.
+   *   The array of card types, keyed by card type ID.
    */
   public static function getTypes() {
     $definitions = array(
@@ -415,18 +425,18 @@ final class CommercePaymentCreditCard {
         'id' => 'visa',
         'label' => t('Visa'),
         'number_prefixes' => array('4'),
+        'number_lengths' => array(16, 18, 19),
       ),
       'mastercard' => array(
         'id' => 'mastercard',
-        'label' => t('MasterCard'),
+        'label' => t('Mastercard'),
         'number_prefixes' => array('51-55', '222100-272099'),
       ),
       'maestro' => array(
         'id' => 'maestro',
         'label' => t('Maestro'),
         'number_prefixes' => array(
-          '5018', '5020', '5038', '5612', '5893', '6304',
-          '6759', '6761', '6762', '6763', '0604', '6390',
+          '5018', '502', '503', '506', '56', '58', '639', '6220', '67',
         ),
         'number_lengths' => array(12, 13, 14, 15, 16, 17, 18, 19),
       ),
@@ -441,7 +451,7 @@ final class CommercePaymentCreditCard {
         'id' => 'dc',
         'label' => t('Diners Club'),
         'number_prefixes' => array('300-305', '309', '36', '38', '39'),
-        'number_lengths' => array(14),
+        'number_lengths' => array(14, 16, 19),
       ),
       'discover' => array(
         'id' => 'discover',
@@ -453,6 +463,7 @@ final class CommercePaymentCreditCard {
         'id' => 'jcb',
         'label' => t('JCB'),
         'number_prefixes' => array('3528-3589'),
+        'number_lengths' => array(16, 17, 18, 19),
       ),
       'unionpay' => array(
         'id' => 'unionpay',
@@ -462,6 +473,8 @@ final class CommercePaymentCreditCard {
         'uses_luhn' => FALSE,
       ),
     );
+
+    drupal_alter('commerce_card_type_info', $definitions);
 
     foreach ($definitions as &$definition) {
       $definition += array(

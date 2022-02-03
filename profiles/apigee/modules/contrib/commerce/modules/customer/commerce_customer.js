@@ -9,7 +9,7 @@ Drupal.behaviors.customerFieldsetSummaries = {
     });
 
     $('fieldset#edit-profile-status', context).drupalSetSummary(function (context) {
-      return ($('input[@name=status]:checked').val() == 0) ?
+      return ($('input[name=status]:checked').val() === 0) ?
         Drupal.t('Disabled') :
         Drupal.t('Active');
     });

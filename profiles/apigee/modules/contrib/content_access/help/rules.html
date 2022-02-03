@@ -1,0 +1,87 @@
+<h2>Introduction</h2>
+
+<p>This section contains notes about how to
+integrate with <strong>Rules</strong>.</p>
+
+<p><strong>Note</strong>: This only work on individual nodes.  The
+rules for access control that you set up will not be
+executed <em>unless</em> you have enabled per content node access
+control settings.</p>
+
+<h2>Rules integrations example</h2>
+
+<p>In this example, there will be two user roles: “writer” and
+“editor”. There will also be two users: A writer named “Bob” and an
+editor named “Ben”.  There will also be a third user named “Alice”
+that will not belong to any of there roles. We shall set up a workflow
+where “Bob” creates content, and when that content is saved, only
+users with the “editor” user role (e.g. “Ben”) will be allowed to see
+it.</p>
+
+<p>Set up:</p>
+
+<ul>
+<li>Ensure <strong>Content Access</strong> is enabled (if you can read this in the browser, it is).</li>
+<li>Enable both the <strong>Rules</strong> and <strong>Rules UI</strong> modules.</li>
+<li>Enable the <strong>Content Access Rules Integrations</strong> module.</li>
+<li>Create the roles: “writer” and “editor” and the users “Bob”, “Ben” and “Alice”. Assign roles.</li>
+<li>Set up default role based access control settings.  Give the “anonymous user” role and the “authenticated user” role access to “View any article content” and “View own article content”.</li>
+<li>Check “Enable per content node access control settings”. You find this checkbox under the “Access Control” tab located on the settings page for the content type.</li>
+</ul>
+
+<p>Create the rules:</p>
+
+<ul>
+<li>Navigate to <span class="nav">Configuration » Workflow » Rules<span>.</li>
+<li>Click “Add new rule”.</li>
+<li>Name the rule “editor oversight”.</li>
+<li>Leave the field “Tags” empty.</li>
+<li>In the pulldown menu for “React on event”, select “After saving new contents”.</li>
+<li>Leave “Restrict by type” set to “- None -”.</li>
+<li>Click “Save”.</li>
+</ul>
+
+<div class="help-imgpos-center" style="max-width:620px">
+<img class="help-img" alt="ahelp_tab.png" title="New rule: Editor oversight" src="&path&rules01.png" width="620" />
+<div class="help-img-caption" style="max-width:620px">Adding a new rule</div>
+</div>
+
+<p>This sets up a new rule named “editor oversight” that triggers when
+a new node is saved.</p>
+
+
+<ul>
+  <li>Under “Conditions”, click “Add condition”,</li>
+  <li>From the pulldown menu  “Select <em>condition</em> to add”, select “User has role(s)”.</li>
+  <li>After making the selection, you automatically continue to a new page to set up a data selector.</li>
+  <li>For the “Data selector” field, choose “node:author”.</li>
+  <li>Under “Roles”, for “Value”, select “writer”.</li>
+<li>Click “Save”.</li>
+</ul>
+
+<p>This sets up a contition for following the rule. The rule is only
+followed when the user with the role “writer” triggers an event that
+matches “After saving new contents”.</p>
+
+<p>The final step adds an action that happens when the rule is
+triggered and the conditions are met.</p>
+
+<ul>
+  <li>Under “Actions”, click “Add action”,</li>
+  <li>From the pulldown menu “Select <em>action</em> to add”, select “Grant Access by role”.</li>
+  <li>After making the selection, you automatically continue to a new page to set up role based access settings.</li>
+  <li>Look under “Role-based access control settings”. Give the “editor” the right to “View any content” “View own content”. Checking a box grants the access.</li>
+  <li>Under “Actions”, again click “Add action”,</li>
+  <li>From the pulldown menu “Select <em>action</em> to add”, select “Revoke Access by role”.</li>
+  <li>After making the selection, you automatically continue to a new page to set up role based access settings.</li>
+  <li>Look under “Role-based access control settings”. Revoke “View any content” “View own content” for the “anonymous user” role and the the “authenticated user” role.  Checking a box revokes the access.</li>
+  <li>Click “Save”.</li>
+</ul>
+
+<p>Verify that it works:</p>
+
+<ul>
+<li>Create an artcle as “Alice” (no special role). Verify that is viewable by everyone.</li>
+<li>Create an artcle as “Bob” (the writer). Verify that is viewable by “Ben” (the editor), but not by “Alice”.</li>
+</ul>
+

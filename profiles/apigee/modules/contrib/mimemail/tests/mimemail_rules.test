@@ -21,7 +21,7 @@ class MimeMailRulesTestCase extends DrupalWebTestCase {
     );
   }
 
-  public function setUp() {
+  protected function setUp() {
     parent::setUp('mailsystem', 'locale', 'entity', 'entity_token', 'rules', 'mimemail');
 
     $permissions = array(
@@ -222,4 +222,5 @@ class MimeMailRulesTestCase extends DrupalWebTestCase {
     // One user is disabled but it should be ignored.
     $this->assertEqual(count($mails), count($users));
   }
+
 }

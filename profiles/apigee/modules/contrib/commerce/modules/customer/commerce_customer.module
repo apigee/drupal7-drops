@@ -998,11 +998,17 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
     $profiles = commerce_customer_profile_load_multiple($profile_ids);
 
     if (empty($profiles)) {
-      $profiles[0] = commerce_customer_profile_new($profile_type['type']);
+      if (!empty($form_state['add_profile_' . $profile_type['type']])) {
+        // If the "Add profile" button is clicked, create a new profile.
+        array_push($profiles, commerce_customer_profile_new($profile_type['type']));
+      }
+      else {
+        // Otherwise add an empty array to make the "Add profile" button show up.
+        array_push($profiles, array());
+      }
     }
 
-    // Update the base form element array to use the proper theme and validate
-    // functions and to include header information for the line item table.
+    // Update the base form element array to use the proper validate function.
     $element += array(
       '#element_validate' => array('commerce_customer_profile_manager_validate'),
       'profiles' => array('#tree' => TRUE),
@@ -1012,11 +1018,34 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
     $key = 0;
 
     foreach ($profiles as $profile) {
+      $wrapper_id = 'replace_' . $key . '_' . $profile_type['type'];
       $element['profiles'][$key] = array(
         '#type' => 'fieldset',
         '#title' => check_plain($profile_type['name']),
         '#parents' => array_merge($element['#field_parents'], array($element['#field_name'], $langcode, 'profiles', $key)),
+        '#prefix' => '<div id="' . $wrapper_id . '">',
+        '#suffix' => '</div>',
       );
+
+      if (empty($profile)) {
+        // There's no profile of this type for this order, show an "add
+        // profile" button.
+        $element['profiles'][$key]['actions']['add_' . $profile_type['type']] = array(
+          '#type' => 'submit',
+          '#value' => t('Add @type', array(
+            '@type' => strtolower($profile_type['name']),
+          )),
+          '#submit' => array('commerce_customer_add_profile'),
+          '#limit_validation_errors' => array(array_merge($element['#field_parents'], array($element['#field_name']))),
+          '#ajax' => array(
+            'callback' => 'commerce_customer_add_profile_callback',
+            'method' => 'replace',
+            'wrapper' => $wrapper_id,
+          ),
+          '#commerce_customer_profile_type' => $profile_type['type'],
+        );
+        continue;
+      }
 
       // Store the original customer profile for later comparison.
       $element['profiles'][$key]['profile'] = array(
@@ -1076,6 +1105,21 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
           '#weight' => 100,
         );
       }
+      else {
+        // Entity is not saved yet, show a "cancel" button.
+        $element['profiles'][$key]['actions']['cancel_' . $profile_type['type']] = array(
+          '#type' => 'submit',
+          '#value' => t('Cancel'),
+          '#submit' => array('commerce_customer_cancel_profile'),
+          '#limit_validation_errors' => array(array_merge($element['#field_parents'], array($element['#field_name']))),
+          '#ajax' => array(
+            'callback' => 'commerce_customer_add_profile_callback',
+            'method' => 'replace',
+            'wrapper' => $wrapper_id,
+          ),
+          '#commerce_customer_profile_type' => $profile_type['type'],
+        );
+      }
 
       $key += 1;
     }
@@ -1091,6 +1135,37 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
 }
 
 /**
+ * Submit callback to add a new customer profile to the order.
+ */
+function commerce_customer_add_profile($form, &$form_state) {
+  $profile_type = $form_state['triggering_element']['#commerce_customer_profile_type'];
+  $form_state['add_profile_' . $profile_type] = TRUE;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Submit callback to cancel adding a new customer profile to the order.
+ */
+function commerce_customer_cancel_profile($form, &$form_state) {
+  $profile_type = $form_state['triggering_element']['#commerce_customer_profile_type'];
+  $form_state['add_profile_' . $profile_type] = FALSE;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Ajax callback to select and return only the form elements that will replace
+ * the add profile button.
+ */
+function commerce_customer_add_profile_callback($form, &$form_state) {
+  // Reverse the array parents of the triggering element, because we know the
+  // field name is 5 elements up from the triggering element.
+  $parents = array_reverse($form_state['triggering_element']['#array_parents']);
+  $field_name = $parents[5];
+  $langcode = $form[$field_name]['#language'];
+  return $form[$field_name][$langcode];
+}
+
+/**
  * Validation callback for a commerce_customer_profile_manager element.
  *
  * When the form is submitted, the profile reference field stores the profile
@@ -1099,15 +1174,16 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
  */
 function commerce_customer_profile_manager_validate($element, &$form_state, $form) {
   $value = array();
+  $triggering_element = $form_state['triggering_element'];
 
-  // If the triggering element wants to limit validation errors and the form is
-  // not going to be submitted...
-  if (isset($form_state['triggering_element']['#limit_validation_errors']) && ($form_state['triggering_element']['#limit_validation_errors'] !== FALSE) && !($form_state['submitted'] && !isset($form_state['triggering_element']['#submit']))) {
+  // If the triggering element is not the "add profile" button and it wants to
+  // limit validation errors and the form is not going to be submitted...
+  if (!isset($triggering_element['#commerce_customer_profile_type']) && isset($triggering_element['#limit_validation_errors']) && ($triggering_element['#limit_validation_errors'] !== FALSE) && !($form_state['submitted'] && !isset($triggering_element['#submit']))) {
     // Ensure this element wasn't specifically marked for validation in the
     // #limit_validation_errors sections array.
     $section_match = FALSE;
 
-    foreach ($form_state['triggering_element']['#limit_validation_errors'] as $section) {
+    foreach ($triggering_element['#limit_validation_errors'] as $section) {
       // Because #limit_validation_errors sections force validation for any
       // element that matches the section or is a child of it, we can consider
       // it a match if the section completely matches the beginning of this
@@ -1127,11 +1203,18 @@ function commerce_customer_profile_manager_validate($element, &$form_state, $for
 
   // Loop through the profiles in the manager table.
   foreach (element_children($element['profiles']) as $key) {
+    if (!isset($element['profiles'][$key]['profile'])) {
+      // There's no profile of this type.
+      continue;
+    }
+
     // Update the profile based on the values in the additional elements.
     $profile = clone($element['profiles'][$key]['profile']['#value']);
 
-    // If the profile has been marked for deletion...
-    if ($profile->profile_id && $element['profiles'][$key]['remove']['#value']) {
+    $cancel = $triggering_element['#parents'][count($triggering_element['#parents']) - 1] === 'cancel_' . $profile->type;
+
+    // If the profile adding was canceled or it has been marked for deletion...
+    if ($cancel || ($profile->profile_id && $element['profiles'][$key]['remove']['#value'])) {
       // Delete the profile now if we can and don't include it in the $value array.
       if (commerce_customer_profile_can_delete($profile)) {
         // If another module altered in an entity context, be sure to pass it to
@@ -1313,22 +1396,32 @@ function commerce_customer_profile_copy_validate($element, &$form_state, $form) 
   $triggering_element = end($form_state['triggering_element']['#array_parents']);
   $pane_id = reset($element['#array_parents']);
 
-  // Checkbox: Off - Only invoked for the corresponding trigger element.
+  // If this profile copying checkbox was unchecked, update and save the order.
   if ($triggering_element == 'commerce_customer_profile_copy' && $form_state['triggering_element']['#id'] == $element['#id'] && empty($element['#value'])) {
     $form_state['order']->data['profile_copy'][$pane_id]['status'] = FALSE;
     unset($form_state['order']->data['profile_copy'][$pane_id]['elements']);
     commerce_order_save($form_state['order']);
   }
 
-  // Checkbox: On - Only invoked for the corresponding trigger element, or the
-  // "continue" checkout form button.
-  elseif ((($triggering_element == 'commerce_customer_profile_copy' && $form_state['triggering_element']['#id'] == $element['#id']) || $triggering_element == 'continue') && !empty($element['#value'])) {
+  // Otherwise, if this profile copying checkbox is checked for any reason,
+  // attempt to copy now if there are no errors in the source profile.
+  elseif (!empty($element['#value'])) {
     $type = substr($pane_id, 17);  // Removes 'customer_profile_'
     $source_id = 'customer_profile_' . variable_get('commerce_' . $pane_id . '_profile_copy_source', '');
     $info = array('commerce_customer_profile', $type, $pane_id);
 
     // Try getting the source profile from the form_state values, if it is present on the form..
     if (isset($form_state['values'][$source_id])) {
+      // If there were errors in the source profile pane, there's no need
+      // to copy the profile fields, we should therefore stop here.
+      if ($errors = form_get_errors()) {
+        foreach ($errors as $field => $error) {
+          if (strpos($field, $source_id . '][') === 0) {
+            return;
+          }
+        }
+      }
+
       commerce_customer_profile_copy_fields($info, $form_state['input'][$pane_id], $form_state['input'][$source_id], $form_state);
       commerce_customer_profile_copy_fields($info, $form_state['values'][$pane_id], $form_state['values'][$source_id], $form_state);
     }

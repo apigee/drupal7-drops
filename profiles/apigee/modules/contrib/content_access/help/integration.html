@@ -1,0 +1,59 @@
+<h2>Introduction</h2>
+
+<p>This section contains notes about how to integrate <strong>Content
+Access</strong> with other modules.</p>
+
+<p>I have not tested these myself, so I do not guarantee that the
+suggestion collected below actually work.  They are just to keep the
+links to the workarounds posted somewhere on the web in a single
+file.</p>
+
+<p>If you spot link rot, or wrong information, on this page, please
+report it using the project's
+<a href="https://drupal.org/project/issues/content_access">issue queue</a>.</p>
+
+  
+<h2>Varnish, Cachewall</h2>
+
+<p><em>Varnish</em> and other cache systems such as <em>Cachewall</em>
+by default will delete cookies before they reach Drupal, so everybody
+becomes an anonymous user. This precludes access to private file
+attachments.</p>
+
+<p>Below are settings for <em>Varnish</em> to prevent this for some
+file types:</p>
+
+<pre>
+# Always cache the following file types for all users. This list of extensions
+# appears twice, once here and again in vcl_fetch so make sure you edit both
+# and keep them equal.
+
+if (req.url ~ "(?i)\.(pdf|txt|csv|png|gif|jpg|ico|swf|css|js)(\?.*)?$") {
+  unset req.http.Cookie;
+}
+</pre>
+
+<ul>
+<li>Drupal.org: <a href="https://www.drupal.org/project/content_access/issues/2682635">Issue #2682635</a></li>
+<li>Drupal.org: <a href="https://www.drupal.org/project/webform/issues/2421429#comment-9667677">Issue #2421429, comment #4</a></li>
+</ul>
+
+
+<h2>Views and Workbench</h2>
+
+<p>If you have problems intgrating <strong>Views</strong> and/or <strong>Workbench</strong>,
+in particular in connection with the  “<em>View own unpublished content</em>” permission,
+one of these links may help:</p>
+
+<ul>
+<li>Drupal.org: <a href="https://www.drupal.org/project/content_access/issues/2204609">Issue #2205609</a></li>
+<li>Drupal Answers: <a href="https://drupal.stackexchange.com/q/41997/12076">Problem with “Content Access” and permission “View own unpublished content”</a>.</li>
+<li>Drupalprimer: <a href="http://drupalprimer.com/node/2">Drupal 7's Access Control module prevents view of user's own unpublished content</a>.</li>
+</ul>
+
+<p>Problems using relationships in <strong>Views</strong> may be solved by patching core:</p>
+
+<ul>
+<li>Drupal.org: <a href="https://www.drupal.org/project/content_access/issues/2020453">Issue #2020453</a></li>
+<li>Drupal.org: <a href="https://www.drupal.org/project/drupal/issues/1349080#comment-10953027">Issue #1349080, comment #332</a></li>
+</ul>

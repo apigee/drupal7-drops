@@ -34,7 +34,7 @@ function commerce_payment_order_transaction_add_form($form, &$form_state, $order
 
     // Establish defaults for the amount if possible.
     if ($balance = commerce_payment_order_balance($order)) {
-      $default_amount = $balance['amount'] > 0 ? $balance['amount'] : '';
+      $default_amount = $balance['amount'] > 0 ? $balance['amount'] : 0;
       $default_currency_code = $balance['currency_code'];
 
       // Convert the default amount to an acceptable textfield value.

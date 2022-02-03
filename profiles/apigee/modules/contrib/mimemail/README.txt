@@ -2,8 +2,8 @@
 -- SUMMARY --
 
   This is a Mime Mail component module (for use by other modules).
-    * It permits users to receieve HTML email and can be used by other modules. The mail
-      functionality accepts an HTML message body, mime-endcodes it and sends it.
+    * It permits users to receive HTML email and can be used by other modules. The mail
+      functionality accepts an HTML message body, mime-encodes it and sends it.
     * If the HTML has embedded graphics, these graphics are MIME-encoded and included
       as a message attachment.
     * Adopts your site's style by automatically including your theme's stylesheet files in a
@@ -43,7 +43,7 @@
   This module may be required by other modules, but in favor of the recently
   added system actions and Rules integration, it can be useful by itself too.
 
-  Once installed, any module can send MIME-encoded messages by specifing
+  Once installed, any module can send MIME-encoded messages by specifying
   MimeMailSystem as the responsible mail system for a particular message
   or all mail sent by one module.
 
@@ -133,4 +133,3 @@
 
   * Robert Castelo
     HTML to Text and other functionality
-

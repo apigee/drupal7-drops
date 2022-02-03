@@ -168,3 +168,13 @@ function hook_commerce_product_can_delete($product) {
 
   return $query->execute() > 0 ? FALSE : TRUE;
 }
+
+/**
+ * Respond to product revision deletion.
+ *
+ * @param $product
+ *   The product revision (product object) that is being deleted.
+ */
+function hook_commerce_product_revision_delete($product) {
+  // No example.
+}

@@ -188,7 +188,16 @@
             window.location = localSettings.redirect_url;
           }
 
-          callback(response[2].settings.time);
+          response.forEach(
+              function(element) {
+                  if(element.command == 'settings')
+                  {
+                      if (typeof element.settings.time !== 'undefined') {
+                          callback(element.settings.time);
+                      }
+                  }
+              }
+          );
 
           // Let Drupal.ajax handle the JSON response.
           return ajax.success(response, status);
@@ -206,6 +215,9 @@
       Drupal.ajax['autologout.getTimeLeft'] = new Drupal.ajax(null, $(document.body), {
         url: Drupal.settings.basePath  + '?q=autologout_ajax_get_time_left',
         event: 'autologout.getTimeLeft',
+        submit: {
+          'ajax_page_state': Drupal.settings.ajaxPageState
+        },
         error: function(XMLHttpRequest, textStatus) {
           // Disable error reporting to the screen.
         }
@@ -257,6 +269,9 @@
       Drupal.ajax['autologout.refresh'] = new Drupal.ajax(null, $(document.body), {
         url: Drupal.settings.basePath  + '?q=autologout_ahah_set_last',
         event: 'autologout.refresh',
+        submit: {
+          'ajax_page_state': Drupal.settings.ajaxPageState
+        },
         error: function(XMLHttpRequest, textStatus) {
           // Disable error reporting to the screen.
         }

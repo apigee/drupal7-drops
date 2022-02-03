@@ -115,7 +115,7 @@ function commerce_tax_remove_taxes($line_item_wrapper, $increase_base_price, $ta
 
   foreach ($price['data']['components'] as $key => $component) {
     // Look for components that match one of the defined tax price components.
-    if (in_array($component['name'], array_keys($component_types))) {
+    if (array_key_exists($component['name'], $component_types)) {
       // Remove it from the components array.
       unset($price['data']['components'][$key]);
 

@@ -48,7 +48,15 @@ class commerce_line_item_handler_field_edit_quantity extends views_handler_field
         '#datatype' => 'integer',
         '#default_value' => round($quantity),
         '#size' => 4,
-        '#maxlength' => max(4, strlen($quantity)),
+        // The line item database schema limits the quantity to 8 numerals for
+        // integer quantities. For fractional quantities, we'd support decimal
+        // places, but without knowing if a site supports them or not, the
+        // safest option for this field's supported input length is 8; but a
+        // malicious user could still create a problem insert by using the max
+        // quantity on a price so it breaks the total allowed amount. If a site
+        // has been customized to support larger quantity values, this property
+        // can still be overridden via a form alter.
+        '#maxlength' => 6,
         '#line_item_id' => $line_item_id,
         '#attributes' => array(
           'title' => $this->options['label'],

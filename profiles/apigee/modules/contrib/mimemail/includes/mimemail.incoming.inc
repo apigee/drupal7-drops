@@ -153,7 +153,7 @@ function mimemail_parse_headers($message) {
   foreach (explode("\n", trim($hdr)) as $row) {
     $split = strpos($row, ':');
     $name = trim(drupal_substr($row, 0, $split));
-    $val = trim(drupal_substr($row, $split+1));
+    $val = trim(drupal_substr($row, $split + 1));
     $headers[$name] = $val;
   }
 
@@ -174,9 +174,11 @@ function mimemail_parse_content($part) {
       case 'base64':
         $content = base64_decode($content);
         break;
+
       case 'quoted-printable':
         $content = quoted_printable_decode($content);
         break;
+
       // 7bit is the RFC default.
       case '7bit':
         break;

@@ -14,9 +14,8 @@ files[] = includes/views/me.views.inc
 ; Views handlers
 files[] = includes/views/handlers/me_plugin_argument_validate_me_alias.inc
 
-; Information added by Drupal.org packaging script on 2017-12-22
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2019-06-08
+version = "7.x-1.5"
 core = "7.x"
 project = "me"
-datestamp = "1513977487"
-
+datestamp = "1560012788"

@@ -96,6 +96,17 @@ function commerce_product_reference_views_data_alter(&$data) {
         'label' => t('@entity_type referencing products from !field_name', $replacements),
         'title' => t('Referencing @entity_type', $replacements),
         'help' => t('Relate a product to the @entity_type referencing it through !field_name.', $replacements),
+        'join_extra' => array(
+          0 => array(
+            'field' => 'entity_type',
+            'value' => $entity_type,
+          ),
+          1 => array(
+            'field' => 'deleted',
+            'value' => 0,
+            'numeric' => TRUE,
+          ),
+        ),
       );
     }
   }

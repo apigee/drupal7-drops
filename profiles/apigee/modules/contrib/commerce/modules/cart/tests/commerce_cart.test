@@ -138,7 +138,7 @@ class CommerceCartTestCaseSimpleProduct extends CommerceCartTestCase {
        }
     }
     // Check if the product is in the products array for the order.
-    $this->assertTrue(in_array($this->product->product_id, array_keys($products)), t('Product is actually in the cart'));
+    $this->assertTrue(array_key_exists($this->product->product_id, $products), t('Product is actually in the cart'));
   }
 
 	/**
@@ -309,7 +309,7 @@ class CommerceCartTestCaseMultiProducts extends CommerceCartTestCase {
     }
 
     // Check if the product is in the products array for the order.
-    $this->assertTrue(in_array($this->products[2]->product_id, array_keys($products_in_cart)), t('Product is actually in the cart'));
+    $this->assertTrue(array_key_exists($this->products[2]->product_id, $products_in_cart), t('Product is actually in the cart'));
   }
 }
 

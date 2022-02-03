@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Features hooks for the uuid_term features component.
@@ -50,7 +51,7 @@ function uuid_term_features_export($data, &$export, $module_name = '') {
 
   $entity_type = 'taxonomy_term';
   // Load all the terms at once by their uuid.
-  $terms = entity_uuid_load($entity_type, $data);
+  $terms = entity_uuid_load($entity_type, $data, array(), TRUE);
 
   foreach ($terms as $term) {
     uuid_term_features_get_dependencies($export, $term->uuid, $module_name);
@@ -72,7 +73,7 @@ function uuid_term_features_export($data, &$export, $module_name = '') {
  */
 function uuid_term_features_get_dependencies(&$export, $uuid, $module_name = '') {
   $map = features_get_default_map('taxonomy');
-  $terms = entity_uuid_load('taxonomy_term', array($uuid));
+  $terms = entity_uuid_load('taxonomy_term', array($uuid), array(), TRUE);
   if (!isset($export['features']['uuid_term'])) {
     $export['features']['uuid_term'] = array();
   }
@@ -124,7 +125,7 @@ function uuid_term_features_export_render($module, $data) {
   $code[] = '  $terms = array();';
   $code[] = '';
   foreach ($data as $uuid) {
-    $terms = entity_uuid_load('taxonomy_term', array($uuid));
+    $terms = entity_uuid_load('taxonomy_term', array($uuid), array(), TRUE);
     if (!count($terms)) {
       continue;
     }

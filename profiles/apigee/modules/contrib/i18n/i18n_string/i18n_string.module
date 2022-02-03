@@ -153,6 +153,15 @@ function i18n_string_menu_alter(&$items) {
     'file' => 'i18n_string.pages.inc',
     'file path' => drupal_get_path('module', 'i18n_string'),
   );
+  $items['admin/config/regional/translate/translate'] = array(
+    'title' => 'Translate',
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'i18n_string_locale_translate_seek_screen',
+    'access arguments' => array('translate interface'),
+    'file' => 'i18n_string.pages.inc',
+    'file path' => drupal_get_path('module', 'i18n_string'),
+  );
 }
 
 /**

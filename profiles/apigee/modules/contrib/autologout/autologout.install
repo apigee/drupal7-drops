@@ -19,6 +19,7 @@ function autologout_uninstall() {
   variable_del('autologout_role_logout');
   variable_del('autologout_max_timeout');
   variable_del('autologout_no_dialog');
+  variable_del('autologout_whitelisted_ip_addresses');
 
   foreach (user_roles(TRUE) as $key => $role) {
     variable_del('autologout_role_' . $key);
