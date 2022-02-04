@@ -7,6 +7,8 @@
 
 /**
  * Implements hook_form().
+ *
+ * @todo.
  */
 function date_tools_wizard_form() {
   $form = array();
@@ -110,12 +112,6 @@ function date_tools_wizard_form() {
     '#title' => t('Date timezone handling'),
     '#description' => t("Timezone handling should be set to 'none' for granularity without time elements."),
   );
-  $form['field']['advanced']['weight'] = array(
-    '#type' => 'textfield',
-    '#default_value' => '-4',
-    '#title' => t('Weight'),
-    '#description' => t("Set the field weight."),
-  );
   $form['calendar'] = array(
     '#type' => 'select',
     '#default_value' => module_exists('calendar'),
@@ -135,7 +131,9 @@ function date_tools_wizard_form() {
 }
 
 /**
- * Form validation.
+ * Form validate.
+ *
+ * @todo.
  */
 function date_tools_wizard_form_validate(&$form, &$form_state) {
   $bundle = $form_state['values']['bundle'];
@@ -175,6 +173,8 @@ function date_tools_wizard_form_validate(&$form, &$form_state) {
 
 /**
  * Form submit.
+ *
+ * @todo.
  */
 function date_tools_wizard_form_submit(&$form, &$form_state) {
   $view_name = date_tools_wizard_build($form_state['values']);
@@ -189,6 +189,8 @@ function date_tools_wizard_form_submit(&$form, &$form_state) {
 
 /**
  * Wizard build.
+ *
+ * @todo.
  */
 function date_tools_wizard_build($form_values) {
   extract($form_values);
@@ -196,8 +198,9 @@ function date_tools_wizard_build($form_values) {
   $field_name = 'field_' . $field_name;
   $base_table = 'node';
 
-  // Create a node type if it doesn't already exist. This makes it possible to
-  // add additional date fields to an existing type.
+  // Create a node type if it doesn't already exist.
+  // This makes it possible to add additional date fields to
+  // an existing type.
   $types = node_type_get_names();
   $type_settings = array();
   if (!array_key_exists($bundle, $types)) {
@@ -235,7 +238,7 @@ function date_tools_wizard_build($form_values) {
     'label' => $label,
     'bundle' => $bundle,
     // Move the date right below the title.
-    'weight' => $weight,
+    'weight' => -4,
     'widget' => array(
       'type' => $widget_type,
       // Increment for minutes and seconds, can be 1, 5, 10, 15, or 30.
@@ -249,7 +252,7 @@ function date_tools_wizard_build($form_values) {
         'label_position' => 'above',
         'repeat_collapsed' => 0,
       ),
-      'weight' => $weight,
+      'weight' => -4,
     ),
     'settings' => array(
       'default_value' => 'now',
@@ -292,8 +295,8 @@ function date_tools_wizard_build($form_values) {
   $instance = field_create_instance($instance);
   $view_name = 'calendar_node_' . $field_name;
 
-  field_info_cache_clear();
-  field_cache_clear();
+  field_info_cache_clear(TRUE);
+  field_cache_clear(TRUE);
 
   drupal_set_message(t('Your date field @name has been created.', array('@name' => $label)));
 
@@ -302,6 +305,8 @@ function date_tools_wizard_build($form_values) {
 
 /**
  * Includes handler.
+ *
+ * @todo.
  */
 function date_tools_wizard_include() {
   module_load_include('inc', 'node', 'content_types');
@@ -312,6 +317,8 @@ function date_tools_wizard_include() {
 
 /**
  * Implements hook_field_types().
+ *
+ * @todo.
  */
 function date_tools_wizard_field_types() {
   $field_types = array();
@@ -323,6 +330,7 @@ function date_tools_wizard_field_types() {
 
 /**
  * Implements hook_widget_types().
+ * @todo.
  */
 function date_tools_wizard_widget_types() {
   $widget_types = array();
@@ -336,6 +344,8 @@ function date_tools_wizard_widget_types() {
 
 /**
  * Tz handler.
+ *
+ * @todo.
  */
 function date_tools_wizard_tz_handling() {
   include_once drupal_get_path('module', 'date') . '/date_admin.inc';
@@ -344,12 +354,15 @@ function date_tools_wizard_tz_handling() {
 
 /**
  * Create date tools wizard content type.
+ *
+ * @todo.
  */
 function date_tools_wizard_create_content_type($name, $bundle, $description, $type_settings = array()) {
+
   date_tools_wizard_include();
 
   // Create the content type.
-  $values = array(
+  $values  = array(
     'name' => $name,
     'type' => $bundle,
     'description' => $description,
@@ -414,4 +427,5 @@ function date_tools_wizard_create_content_type($name, $bundle, $description, $ty
     ),
   );
   field_create_instance($instance);
+
 }

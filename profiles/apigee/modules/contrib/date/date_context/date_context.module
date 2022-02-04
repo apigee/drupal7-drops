@@ -1,13 +1,14 @@
 <?php
-
 /**
  * @file
  * Add an option to set/not set the context on forms vs views.
  *
- * @todo Currently only implemented for nodes. Need to add $plugin->execute()
+ * @TODO
+ *
+ * Currently only implemented for nodes. Need to add $plugin->execute()
  * for any other entities that might be supported.
  *
- * @todo Cache the date processing, perhaps cache the formatted, tz-adjusted
+ * Cache the date processing, perhaps cache the formatted, timezone-adjusted
  * date strings for each entity (would have to be cached differently for each
  * timezone, based on the tz_handling method for the date).
  */

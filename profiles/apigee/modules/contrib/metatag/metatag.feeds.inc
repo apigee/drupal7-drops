@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Feeds mapping implementation for the Metatag module.

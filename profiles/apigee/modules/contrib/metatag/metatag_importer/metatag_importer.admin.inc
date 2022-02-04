@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Starter page.

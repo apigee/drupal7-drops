@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Metatag integration for the Metatag:favicons module.
@@ -27,7 +26,7 @@ function metatag_favicons_metatag_info() {
     ),
   );
 
-  // Favicons meta tags stack after the simple tags.
+  // favicons meta tags stack after the simple tags.
   $weight = 100;
 
   // Default values for each meta tag.

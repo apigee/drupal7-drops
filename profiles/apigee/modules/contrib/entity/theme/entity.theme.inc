@@ -106,7 +106,6 @@ function entity_property_default_render_value_by_type(EntityMetadataWrapper $pro
   switch ($property->type()) {
     case 'boolean':
       return $property->value() ? t('yes') : t('no');
-
     default:
       return check_plain($property->value());
   }
@@ -202,12 +201,8 @@ function template_preprocess_entity(&$variables) {
 
   // Add RDF type and about URI.
   if (module_exists('rdf')) {
-    if (!empty($uri['path'])) {
-      $variables['attributes_array']['about'] = url($uri['path']);
-    }
-    if (!empty($entity->rdf_mapping['rdftype'])) {
-      $variables['attributes_array']['typeof'] = $entity->rdf_mapping['rdftype'];
-    }
+    $variables['attributes_array']['about'] = empty($uri['path']) ? NULL: url($uri['path']);
+    $variables['attributes_array']['typeof'] = empty($entity->rdf_mapping['rdftype']) ? NULL : $entity->rdf_mapping['rdftype'];
   }
 
   // Add suggestions.

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Metatag integration for the Metatag:App Links module.
@@ -47,7 +46,7 @@ function metatag_app_links_metatag_info() {
 
   $info['tags']['al:android:app_name'] = array(
     'label' => t('Android app name'),
-    'description' => t('The name of the app (suitable for display).'),
+    'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:ios:url'] = array(
@@ -65,7 +64,7 @@ function metatag_app_links_metatag_info() {
 
   $info['tags']['al:ios:app_name'] = array(
     'label' => t('iOS app name'),
-    'description' => t('The name of the app (suitable for display).'),
+    'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:ipad:url'] = array(
@@ -83,7 +82,7 @@ function metatag_app_links_metatag_info() {
 
   $info['tags']['al:ipad:app_name'] = array(
     'label' => t('iPad app name'),
-    'description' => t('The name of the app (suitable for display).'),
+    'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:iphone:url'] = array(
@@ -101,7 +100,7 @@ function metatag_app_links_metatag_info() {
 
   $info['tags']['al:iphone:app_name'] = array(
     'label' => t('iPhone app name'),
-    'description' => t('The name of the app (suitable for display).'),
+    'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:windows_phone:url'] = array(
@@ -116,7 +115,7 @@ function metatag_app_links_metatag_info() {
 
   $info['tags']['al:windows_phone:app_name'] = array(
     'label' => t('Windows Phone app name'),
-    'description' => t('The name of the app (suitable for display).'),
+    'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:windows:url'] = array(
@@ -131,7 +130,7 @@ function metatag_app_links_metatag_info() {
 
   $info['tags']['al:windows:app_name'] = array(
     'label' => t('Windows app name'),
-    'description' => t('The name of the app (suitable for display).'),
+    'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:windows_universal:url'] = array(
@@ -146,7 +145,7 @@ function metatag_app_links_metatag_info() {
 
   $info['tags']['al:windows_universal:app_name'] = array(
     'label' => t('Windows Universal app name'),
-    'description' => t('The name of the app (suitable for display).'),
+    'description' => t('The name of the app (suitable for display)'),
   ) + $defaults;
 
   $info['tags']['al:web:url'] = array(

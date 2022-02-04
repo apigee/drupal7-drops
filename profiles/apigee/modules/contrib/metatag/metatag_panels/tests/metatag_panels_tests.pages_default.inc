@@ -1,8 +1,7 @@
 <?php
-
 /**
  * @file
- * Metatag_panels_tests.pages_default.inc.
+ * metatag_panels_tests.pages_default.inc
  */
 
 /**

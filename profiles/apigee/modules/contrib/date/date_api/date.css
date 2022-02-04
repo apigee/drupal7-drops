@@ -3,8 +3,7 @@
  * Main stylesheet for Date module.
  */
 
-/* Force start/end dates to float using inline-block, where it works, */
-/* otherwise inline. */
+/* Force start/end dates to float using inline-block, where it works, otherwise inline. */
 .container-inline-date {
   clear: both;
 }
@@ -53,7 +52,7 @@ fieldset.date-combo .container-inline-date > .form-item {
   width: auto;
 }
 
-/* The exposed Views form doesn't need some of these styles. */
+/* The exposed Views form doesn't need some of these styles */
 .container-inline-date .date-padding {
   float: left;
 }
@@ -64,7 +63,7 @@ fieldset.date-combo .container-inline-date .date-padding {
   padding: 0;
 }
 
-/* Fixes for date popup css so it will behave in Drupal. */
+/* Fixes for date popup css so it will behave in Drupal */
 #calendar_div,
 #calendar_div td,
 #calendar_div th {
@@ -85,7 +84,7 @@ fieldset.date-combo .container-inline-date .date-padding {
   padding: 0;
 }
 
-/* Formatting for start/end dates in nodes and views. */
+/* formatting for start/end dates in nodes and views */
 span.date-display-single {
 }
 span.date-display-start {
@@ -115,8 +114,8 @@ span.date-display-end {
   width: auto;
 }
 
-/* Add space between date option checkboxes ('All day' & 'Collect End Date'). */
-.date-float .form-type-checkbox {
+/* Add space between date option checkboxes ('All day' & 'Collect End Date') */
+.date-float .form-type-checkbox{
   padding-right: 1em;
 }
 
@@ -143,13 +142,13 @@ span.date-display-end {
   float: left;
 }
 
-/* Calendar day CSS. */
+/* Calendar day css */
 div.date-calendar-day {
-  background: #f3f3f3;
-  border-top: 1px solid #eee;
-  border-left: 1px solid #eee;
-  border-right: 1px solid #bbb;
-  border-bottom: 1px solid #bbb;
+  background: #F3F3F3;
+  border-top: 1px solid #EEE;
+  border-left: 1px solid #EEE;
+  border-right: 1px solid #BBB;
+  border-bottom: 1px solid #BBB;
   color: #999;
   float: left;
   line-height: 1;
@@ -163,7 +162,7 @@ div.date-calendar-day span {
   text-align: center;
 }
 div.date-calendar-day span.month {
-  background-color: #b5bebe;
+  background-color: #B5BEBE;
   color: white;
   font-size: .9em;
   padding: 2px;
@@ -180,10 +179,9 @@ div.date-calendar-day span.year {
 
 .date-form-element-content-multiline {
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #CCC;
 }
-
-/* Admin styling. */
+/* Admin styling */
 .form-item.form-item-instance-widget-settings-input-format-custom,
 .form-item.form-item-field-settings-enddate-required {
   margin-left: 1.3em;

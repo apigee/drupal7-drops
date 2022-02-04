@@ -16,11 +16,11 @@ interface RulesPluginUIInterface {
    * For rule elements that are part of a configuration this method just adds
    * the elements configuration form.
    *
-   * @param array $form
+   * @param $form
    *   The form array where to add the form.
-   * @param array $form_state
+   * @param $form_state
    *   The current form state.
-   * @param array $options
+   * @param $options
    *   An optional array of options with the known keys:
    *    - 'show settings': Whether to include the 'settings' fieldset for
    *      editing configuration settings like the label or categories. Defaults
@@ -46,10 +46,8 @@ interface RulesPluginUIInterface {
   /**
    * Validate the configuration form of this rule element.
    *
-   * @param array $form
-   *   The form array.
-   * @param array $form_state
-   *   The current form state.
+   * @param $form
+   * @param $form_state
    */
   public function form_validate($form, &$form_state);
 
@@ -60,10 +58,8 @@ interface RulesPluginUIInterface {
    * put the updated configuration in the form state. For saving changes
    * permanently, just call $config->save() afterwards.
    *
-   * @param array $form
-   *   The form array.
-   * @param array $form_state
-   *   The current form state.
+   * @param $form
+   * @param $form_state
    */
   public function form_submit($form, &$form_state);
 
@@ -96,9 +92,6 @@ class RulesElementMap {
   protected $index = array();
   protected $counter = 0;
 
-  /**
-   * Constructor.
-   */
   public function __construct(RulesPlugin $config) {
     $this->configuration = $config->root();
   }
@@ -165,8 +158,7 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
    *
    * All forms that want to display Rules (overview) forms need to set this
    * variable. This is necessary in order to get correct operation links,
-   * paths, redirects, breadcrumbs, etc. for the form() and overviewTable()
-   * methods.
+   * paths, redirects, breadcrumbs etc. for the form() and overviewTable() methods.
    *
    * @see RulesUIController
    * @see rules_admin_reaction_overview()
@@ -183,14 +175,14 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
   }
 
   /**
-   * Returns the state values for $form, possibly only a part of the whole form.
+   * Returns the form values for the given form, possible being only a part of the whole form.
    *
    * In case the form is embedded somewhere, this function figures out the
    * location of its form values and returns them for further use.
    *
-   * @param array $form
+   * @param $form
    *   A form array, or an array of form elements to get the value for.
-   * @param array $form_state
+   * @param $form_state
    *   The form state as usual.
    */
   public static function &getFormStateValues($form, &$form_state) {
@@ -207,9 +199,8 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
   }
 
   /**
-   * Implements RulesPluginUIInterface::form().
+   * Implements RulesPluginUIInterface. Generates the element edit form.
    *
-   * Generates the element edit form.
    * Note: Make sure that you set RulesPluginUI::$basePath before using this
    * method, otherwise paths, links, redirects etc. won't be correct.
    */
@@ -407,19 +398,14 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
    * Implements RulesPluginUIInterface.
    */
   public function form_submit($form, &$form_state) {
-    // Need to save the element first, before trying to set the component
-    // permissions in settingsFormSubmit(), because hook_permission() needs
-    // to be able to load the modified element from the DB in order to work
-    // properly.
-    // @see https://www.drupal.org/project/rules/issues/2340505
-    $this->element->save();
     if (!empty($form['settings'])) {
       $this->settingsFormSubmit($form, $form_state);
     }
+    $this->element->save();
   }
 
   /**
-   * Adds the configuration settings form (label, tags, description, ...).
+   * Adds the configuration settings form (label, tags, description, ..).
    */
   public function settingsForm(&$form, &$form_state) {
     $form_values = RulesPluginUI::getFormStateValues($form, $form_state);
@@ -495,21 +481,19 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
       $weight = 0;
       $provides = $this->element->providesVariables();
       foreach ($this->element->componentVariables() as $name => $var_info) {
-        $form['settings']['vars']['items'][$name] = array(
-          'weight' => array('#default_value' => $weight++),
-        ) + RulesPluginUI::getVariableForm($name, $var_info, isset($provides[$name]));
+        $form['settings']['vars']['items'][$name] = RulesPluginUI::getVariableForm($name, $var_info, isset($provides[$name]));
+        $form['settings']['vars']['items'][$name]['weight']['#default_value'] = $weight++;
       }
-      // Add one empty row in case user wants to add an additional variable.
-      $form['settings']['vars']['items'][] = array(
-        'weight' => array('#default_value' => $weight++),
-      ) + RulesPluginUI::getVariableForm();
-
-      // Submit button will cause a form rebuild using the currently-entered
-      // values. If a variable has been added, a new empty row will also appear.
+      // Always add three empty forms.
+      for ($i = 0; $i < 3; $i++) {
+        $form['settings']['vars']['items'][$i] = RulesPluginUI::getVariableForm();
+        $form['settings']['vars']['items'][$i]['weight']['#default_value'] = $weight++;
+      }
       $form['settings']['vars']['more'] = array(
         '#type' => 'submit',
         '#value' => t('Add more'),
-        '#ajax' => rules_ui_form_default_ajax('none'),
+        // Enable AJAX once #756762 is fixed.
+        // '#ajax' => rules_ui_form_default_ajax('none'),
         '#limit_validation_errors' => array(array('vars')),
         '#submit' => array('rules_form_submit_rebuild'),
       );
@@ -543,7 +527,7 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
   /**
    * Provides a matrix permission for the component based in the existing roles.
    *
-   * @return array
+   * @return
    *   Form elements with the matrix of permissions for a component.
    */
   protected function settingsFormPermissionMatrix() {
@@ -584,12 +568,6 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
     return $form;
   }
 
-  /**
-   * @param array $form
-   *   The form array where to add the form.
-   * @param array $form_state
-   *   The current form state.
-   */
   public function settingsFormExtractValues($form, &$form_state) {
     $form_values = RulesPluginUI::getFormStateValues($form['settings'], $form_state);
     $this->element->label = $form_values['label'];
@@ -632,12 +610,6 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
     $this->element->access_exposed = isset($form_values['access']['access_exposed']) ? $form_values['access']['access_exposed'] : FALSE;
   }
 
-  /**
-   * @param array $form
-   *   The form array where to add the form.
-   * @param array $form_state
-   *   The current form state.
-   */
   public function settingsFormValidate($form, &$form_state) {
     $form_values = RulesPluginUI::getFormStateValues($form['settings'], $form_state);
     if ($form['settings']['name']['#default_value'] != $form_values['name'] && rules_config_load($this->element->name)) {
@@ -645,23 +617,11 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
     }
   }
 
-  /**
-   * @param array $form
-   *   The form array where to add the form.
-   * @param array $form_state
-   *   The current form state.
-   */
   public function settingsFormSubmit($form, &$form_state) {
     if (isset($form_state['values']['settings']['access']) && !empty($this->element->access_exposed)) {
       // Save the permission matrix.
       foreach ($form_state['values']['settings']['access']['permissions']['matrix']['checkboxes'] as $rid => $value) {
-        // Need to account for the case where the machine name has been changed,
-        // because then the $value array variable will be keyed with the wrong
-        // permission name. So here we recompute the permission name to use as
-        // a key and extract the value from the $value array.
-        $component_permission = rules_permissions_by_component(array($this->element));
-        $component_permission_name = key($component_permission);
-        user_role_change_permissions($rid, array($component_permission_name => current($value)));
+        user_role_change_permissions($rid, $value);
       }
     }
   }
@@ -713,9 +673,9 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
   /**
    * Returns the name of class for the given data type.
    *
-   * @param string $data_type
+   * @param $data_type
    *   The name of the data type
-   * @param array $parameter_info
+   * @param $parameter_info
    *   (optional) An array of info about the to be configured parameter. If
    *   given, this array is complemented with data type defaults also.
    */
@@ -761,7 +721,7 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
           '#markup' => '[' . $this->element->settings[$name . ':select'] . ']',
         );
       }
-      elseif (isset($this->element->settings[$name])) {
+      elseif (isset($this->element->settings[$name]) && (!isset($parameter['default value']) || $parameter['default value'] != $this->element->settings[$name])) {
         $class = $this->getDataTypeClass($parameter['type'], $parameter);
         $method = empty($parameter['options list']) ? 'render' : 'renderOptionsLabel';
         // We cannot use method_exists() here as it would trigger a PHP bug.
@@ -902,12 +862,6 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
     return RulesUICategory::getOptions($item_type, $items = NULL);
   }
 
-  /**
-   * @param array $form
-   *   The form array where to add the form.
-   * @param array $form_state
-   *   The current form state.
-   */
   public static function formDefaults(&$form, &$form_state) {
     form_load_include($form_state, 'inc', 'rules', 'ui/ui.forms');
     // Add our own css.
@@ -936,7 +890,7 @@ class RulesPluginUI extends FacesExtender implements RulesPluginUIInterface {
       ->fields('rules_tags', array('tag'))
       ->groupBy('tag')
       ->execute()
-      ->fetchCol();
+      ->fetchCol('tag');
     return drupal_map_assoc($result);
   }
 
@@ -968,12 +922,6 @@ class RulesAbstractPluginUI extends RulesPluginUI {
     $this->element->call('form_alter', array(&$form, &$form_state, $options));
   }
 
-  /**
-   * @param array $form
-   *   The form array where to add the form.
-   * @param array $form_state
-   *   The current form state.
-   */
   public function form_extract_values($form, &$form_state) {
     parent::form_extract_values($form, $form_state);
     $form_values = RulesPluginUI::getFormStateValues($form, $form_state);
@@ -982,12 +930,6 @@ class RulesAbstractPluginUI extends RulesPluginUI {
     }
   }
 
-  /**
-   * @param array $form
-   *   The form array where to add the form.
-   * @param array $form_state
-   *   The current form state.
-   */
   public function form_validate($form, &$form_state) {
     parent::form_validate($form, $form_state);
     // Validate the edited element and throw validation errors if it fails.
@@ -1111,9 +1053,6 @@ class RulesContainerPluginUI extends RulesPluginUI {
     $content = parent::buildContent();
     // Don't link the title for embedded container plugins, except for rules.
     if (!$this->element->isRoot() && !($this->element instanceof Rule)) {
-      // $content['label']['#type'] is currently set to 'link', but in this
-      // case we don't want a link, we just want 'markup' text.
-      $content['label']['#type'] = 'markup';
       $content['label']['#markup'] = check_plain($content['label']['#title']);
       unset($content['label']['#title']);
     }
@@ -1134,7 +1073,7 @@ class RulesContainerPluginUI extends RulesPluginUI {
           '#theme' => 'rules_content_group',
           '#caption' => t('Tags'),
           'tags' => array(
-            '#markup' => implode(', ', array_map(function($entry) { return l($entry, '/admin/config/workflow/rules', array('query' => array('event' => '0', 'tag' => $entry))); }, $this->element->tags)),
+            '#markup' => check_plain(drupal_implode_tags($this->element->tags)),
           ),
         );
       }
@@ -1164,9 +1103,6 @@ class RulesContainerPluginUI extends RulesPluginUI {
  */
 class RulesConditionContainerUI extends RulesContainerPluginUI {
 
-  /**
-   * Implements RulesPluginUIInterface::form().
-   */
   public function form(&$form, &$form_state, $options = array(), $iterator = NULL) {
     parent::form($form, $form_state, $options, $iterator);
     // Add the add-* operation links.
@@ -1198,12 +1134,6 @@ class RulesConditionContainerUI extends RulesContainerPluginUI {
     );
   }
 
-  /**
-   * @param array $form
-   *   The form array where to add the form.
-   * @param array $form_state
-   *   The current form state.
-   */
   public function form_extract_values($form, &$form_state) {
     parent::form_extract_values($form, $form_state);
     $form_values = RulesPluginUI::getFormStateValues($form, $form_state);
@@ -1219,9 +1149,6 @@ class RulesConditionContainerUI extends RulesContainerPluginUI {
  */
 class RulesActionContainerUI extends RulesContainerPluginUI {
 
-  /**
-   * Implements RulesPluginUIInterface::form().
-   */
   public function form(&$form, &$form_state, $options = array(), $iterator = NULL) {
     parent::form($form, $form_state, $options, $iterator);
     // Add the add-* operation links.
@@ -1299,10 +1226,10 @@ class RulesUICategory {
    * Returns an array of options to use with a selectfor the items specified
    * in the given hook.
    *
-   * @param string $item_type
+   * @param $item_type
    *   The item type to get options for. One of 'data', 'event', 'condition' and
    *   'action'.
-   * @param array|null $items
+   * @param $items
    *   (optional) An array of items to restrict the options to.
    *
    * @return array

@@ -1,38 +1,27 @@
 <?php
-
 /**
  * @file
  * Custom display extender plugin for Views.
  */
 
-/**
- * Custom display extender plugin for Views.
- */
 class metatag_views_plugin_display_extender_metatags extends views_plugin_display_extender {
 
   /**
-   * {@inheritdoc}
+   * Default values.
    */
-  public function options_definition() {
+  function options_definition() {
     $options = parent::option_definition();
     $options['metatags'] = array('default' => '');
-    $options['metatags_tokenize'] = array('bool' => TRUE, 'default' => FALSE);
     return $options;
   }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function options_definition_alter(&$options) {
+  function options_definition_alter(&$options) {
     $options['metatags'] = array('default' => array());
-    $options['metatags_tokenize'] = array('bool' => TRUE, 'default' => FALSE);
   }
 
   /**
-   * {@inheritdoc}
+   * Defines where within the Views admin UI the new settings will be visible.
    */
-  public function options_summary(&$categories, &$options) {
-    // Defines where within the Views admin UI the new settings will be visible.
+  function options_summary(&$categories, &$options) {
     $categories['metatags'] = array(
       'title' => t('Meta tags'),
       'column' => 'second',
@@ -45,10 +34,9 @@ class metatag_views_plugin_display_extender_metatags extends views_plugin_displa
   }
 
   /**
-   * {@inheritdoc}
+   * Defines the form.
    */
-  public function options_form(&$form, &$form_state) {
-    // Defines the form.
+  function options_form(&$form, &$form_state) {
     if ($form_state['section'] == 'metatags') {
       $form['#title'] .= t('The meta tags for this display');
       $metatags = $this->get_metatags();
@@ -61,59 +49,6 @@ class metatag_views_plugin_display_extender_metatags extends views_plugin_displa
 
       $form['metatags']['#type'] = 'container';
 
-      // Code for replacement tokens from first row taken from
-      // views_handler_area_text::options_form().
-      $form['tokenize'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Use replacement tokens from the first row'),
-        '#default_value' => $this->display->get_option('metatags_tokenize'),
-        '#weight' => 50,
-      );
-
-      // Get a list of the available fields and arguments for token replacement.
-      $options = array();
-      foreach ($this->view->display_handler->get_handlers('field') as $field => $handler) {
-        $options[t('Fields')]["[$field]"] = $handler->ui_name();
-      }
-
-      $count = 0;
-      // This lets us prepare the key as we want it printed.
-      foreach ($this->view->display_handler->get_handlers('argument') as $arg => $handler) {
-        $options[t('Arguments')]['%' . ++$count] = t('@argument title', array('@argument' => $handler->ui_name()));
-        $options[t('Arguments')]['!' . $count] = t('@argument input', array('@argument' => $handler->ui_name()));
-      }
-
-      if (!empty($options)) {
-        $output = '<p>' . t("The following tokens are available. If you would like to have the characters '[' and ']' please use the html entity codes '%5B' or '%5D' or they will get replaced with empty space.") . '</p>';
-        foreach (array_keys($options) as $type) {
-          if (!empty($options[$type])) {
-            $items = array();
-            foreach ($options[$type] as $key => $value) {
-              $items[] = $key . ' == ' . check_plain($value);
-            }
-            $output .= theme('item_list',
-              array(
-                'items' => $items,
-                'type' => $type,
-              ));
-          }
-        }
-
-        $form['token_help'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Replacement patterns'),
-          '#collapsible' => TRUE,
-          '#collapsed' => TRUE,
-          '#value' => $output,
-          '#id' => 'edit-options-token-help',
-          '#dependency' => array(
-            'edit-options-tokenize' => array(1),
-          ),
-          '#prefix' => '<div>',
-          '#suffix' => '</div>',
-          '#weight' => 51,
-        );
-      }
       // Basic tags fieldset should not collapse to display in a larger popup.
       // @see https://www.drupal.org/node/1294478
       // @see https://www.drupal.org/node/2624020
@@ -122,10 +57,9 @@ class metatag_views_plugin_display_extender_metatags extends views_plugin_displa
   }
 
   /**
-   * {@inheritdoc}
+   * Saves the form values.
    */
-  public function options_submit(&$form, &$form_state) {
-    // Save the form values.
+  function options_submit(&$form, &$form_state) {
     if ($form_state['section'] == 'metatags') {
       $metatags = $form_state['values']['metatags'];
 
@@ -137,20 +71,16 @@ class metatag_views_plugin_display_extender_metatags extends views_plugin_displa
       }
 
       $this->display->set_option('metatags', $metatags);
-      $this->display->set_option('metatags_tokenize', $form_state['values']['tokenize']);
 
       // Update the i18n strings.
       if (!empty($metatags[LANGUAGE_NONE]) && $this->definition['enabled'] && module_exists('i18n_string') && !variable_get('metatag_i18n_disabled', FALSE)) {
-        metatag_translations_update($metatags[LANGUAGE_NONE], 'metatag_views:' . $this->view->name . METATAG_VIEWS_CONTEXT_SEPARATOR . $this->view->current_display);
+        metatag_translations_update($metatags[LANGUAGE_NONE], 'metatag_views:' . $this->view->name . '_' . $this->display->plugin_name);
       }
     }
   }
 
   /**
    * Identify whether or not the current display has custom meta tags defined.
-   *
-   * @return bool
-   *   Indicates whether the current display has custom meta tags defined.
    */
   protected function has_metatags() {
     $metatags = $this->get_metatags();
@@ -176,5 +106,4 @@ class metatag_views_plugin_display_extender_metatags extends views_plugin_displa
 
     return $metatags;
   }
-
 }

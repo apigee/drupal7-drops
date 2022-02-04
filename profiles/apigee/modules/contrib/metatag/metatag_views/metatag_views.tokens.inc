@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Token integration for the metatag_views module.

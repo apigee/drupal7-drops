@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Internationalization (i18n) hooks.
@@ -80,6 +79,7 @@ function metatag_i18n_object_info() {
     // 'class' => 'metatag_i18n_metatag',
     // @todo Is this needed? What does it do?
     // 'translation set' => TRUE,
+
     // The object key field.
     'key' => 'instance',
     // Placeholders for automatic paths. This connects the 'key' to strings in

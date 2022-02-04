@@ -16,7 +16,6 @@
  * selection.
  *
  * @see entity_views_field_definition()
- *
  * @ingroup views_field_handlers
  */
 class entity_views_handler_field_uri extends views_handler_field_url {

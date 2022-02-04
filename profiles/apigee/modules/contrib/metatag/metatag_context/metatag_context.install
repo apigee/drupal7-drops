@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Installation and update hooks for Metatag:Context.

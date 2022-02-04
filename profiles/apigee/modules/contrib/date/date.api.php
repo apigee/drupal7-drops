@@ -40,7 +40,7 @@ function hook_date_default_argument_alter(&$argument, &$value) {
  *   - rdf_mapping: The RDF mapping array.
  *   - add_rdf: If module_exists('rdf').
  */
-function hook_date_formatter_pre_view_alter(&$entity, array &$variables) {
+function hook_date_formatter_pre_view_alter(&$entity, &$variables) {
   if (!empty($entity->view)) {
     $field = $variables['field'];
     $date_id = 'date_id_' . $field['field_name'];
@@ -68,7 +68,7 @@ function hook_date_formatter_pre_view_alter(&$entity, array &$variables) {
  *   - item: The $item array.
  *   - display: The $display array.
  */
-function hook_date_formatter_dates_alter(array &$dates, array $context) {
+function hook_date_formatter_dates_alter(&$dates, $context) {
   $field = $context['field'];
   $instance = $context['instance'];
   $format = $context['format'];
@@ -90,8 +90,7 @@ function hook_date_formatter_dates_alter(array &$dates, array $context) {
       'date2' => $date2,
       'format' => $format,
       'entity_type' => $entity_type,
-      'entity' => $entity,
-    ));
+      'entity' => $entity));
     $all_day2 = theme('date_all_day', array(
       'field' => $field,
       'instance' => $instance,
@@ -100,8 +99,7 @@ function hook_date_formatter_dates_alter(array &$dates, array $context) {
       'date2' => $date2,
       'format' => $format,
       'entity_type' => $entity_type,
-      'entity' => $entity,
-    ));
+      'entity' => $entity));
     $dates['value']['formatted_time'] = theme('date_all_day_label');
     $dates['value2']['formatted_time'] = theme('date_all_day_label');
     $dates['value']['formatted'] = $all_day1;
@@ -119,7 +117,7 @@ function hook_date_formatter_dates_alter(array &$dates, array $context) {
  * @param array $input
  *   The array of input values to be validated.
  */
-function hook_date_text_pre_validate_alter(array &$element, array &$form_state, array &$input) {
+function hook_date_text_pre_validate_alter(&$element, &$form_state, &$input) {
   // Let Date module massage the format for all day values so they will pass
   // validation. The All day flag, if used, actually exists on the parent
   // element.
@@ -136,7 +134,7 @@ function hook_date_text_pre_validate_alter(array &$element, array &$form_state, 
  * @param array $input
  *   The array of input values to be validated.
  */
-function hook_date_select_pre_validate_alter(array &$element, array &$form_state, array &$input) {
+function hook_date_select_pre_validate_alter(&$element, &$form_state, &$input) {
   // Let Date module massage the format for all day values so they will pass
   // validation. The All day flag, if used, actually exists on the parent
   // element.
@@ -153,7 +151,7 @@ function hook_date_select_pre_validate_alter(array &$element, array &$form_state
  * @param array $input
  *   The array of input values to be validated.
  */
-function hook_date_popup_pre_validate_alter(array &$element, array &$form_state, array &$input) {
+function hook_date_popup_pre_validate_alter(&$element, &$form_state, &$input) {
   // Let Date module massage the format for all day values so they will pass
   // validation. The All day flag, if used, actually exists on the parent
   // element.
@@ -175,8 +173,9 @@ function hook_date_popup_pre_validate_alter(array &$element, array &$form_state,
  *
  * @see date_combo_element_process()
  */
-function hook_date_combo_pre_validate_alter(array &$element, array &$form_state, array $context) {
+function hook_date_combo_pre_validate_alter(&$element, &$form_state, $context) {
   if (!empty($context['item']['all_day'])) {
+
     $field = $context['field'];
 
     // If we have an all day flag on this date and the time is empty, change the
@@ -201,12 +200,12 @@ function hook_date_combo_pre_validate_alter(array &$element, array &$form_state,
  *   A keyed array containing the current state of the form.
  * @param array $context
  *   An associative array containing the following keys:
- *   - field: The $field array.
- *   - instance: The $instance array.
- *   - item: The $item array.
- *   - element: The $element array.
+ *  - field: The $field array.
+ *  - instance: The $instance array.
+ *  - item: The $item array.
+ *  - element: The $element array.
  */
-function hook_date_combo_validate_date_start_alter(object &$date, array &$form_state, array $context) {
+function hook_date_combo_validate_date_start_alter(&$date, &$form_state, $context) {
   // If this is an 'All day' value, set the time to midnight.
   if (!empty($context['element']['#date_is_all_day'])) {
     $date->setTime(0, 0, 0);
@@ -225,12 +224,12 @@ function hook_date_combo_validate_date_start_alter(object &$date, array &$form_s
  *   A keyed array containing the current state of the form.
  * @param array $context
  *   An associative array containing the following keys:
- *   - field: The $field array.
- *   - instance: The $instance array.
- *   - item: The $item array.
- *   - element: The $element array.
+ *  - field: The $field array.
+ *  - instance: The $instance array.
+ *  - item: The $item array.
+ *  - element: The $element array.
  */
-function hook_date_combo_validate_date_end_alter(object &$date, array &$form_state, array $context) {
+function hook_date_combo_validate_date_end_alter(&$date, &$form_state, $context) {
   // If this is an 'All day' value, set the time to midnight.
   if (!empty($context['element']['#date_is_all_day'])) {
     $date->setTime(0, 0, 0);
@@ -250,7 +249,7 @@ function hook_date_combo_validate_date_end_alter(object &$date, array &$form_sta
  *
  * @see date_text_element_process()
  */
-function hook_date_text_process_alter(array &$element, array &$form_state, array $context) {
+function hook_date_text_process_alter(&$element, &$form_state, $context) {
   $all_day_id = !empty($element['#date_all_day_id']) ? $element['#date_all_day_id'] : '';
   if ($all_day_id != '') {
     // All Day handling on text dates works only if the user leaves the time out
@@ -271,7 +270,7 @@ function hook_date_text_process_alter(array &$element, array &$form_state, array
  *
  * @see date_select_element_process()
  */
-function hook_date_select_process_alter(array &$element, array &$form_state, array $context) {
+function hook_date_select_process_alter(&$element, &$form_state, $context) {
   // Hide or show the element in reaction to the all_day status for the element.
   $all_day_id = !empty($element['#date_all_day_id']) ? $element['#date_all_day_id'] : '';
   if ($all_day_id != '') {
@@ -300,7 +299,7 @@ function hook_date_select_process_alter(array &$element, array &$form_state, arr
  *
  * @see date_popup_element_process()
  */
-function hook_date_popup_process_alter(array &$element, array &$form_state, array $context) {
+function hook_date_popup_process_alter(&$element, &$form_state, $context) {
   // Hide or show the element in reaction to the all_day status for the element.
   $all_day_id = !empty($element['#date_all_day_id']) ? $element['#date_all_day_id'] : '';
   if ($all_day_id != '' && array_key_exists('time', $element)) {
@@ -325,7 +324,7 @@ function hook_date_popup_process_alter(array &$element, array &$form_state, arra
  *   - instance: The $instance array.
  *   - form: Nested array of form elements that comprise the form.
  */
-function hook_date_combo_process_alter(array &$element, array &$form_state, array $context) {
+function hook_date_combo_process_alter(&$element, &$form_state, $context) {
   $field = $context['field'];
   $instance = $context['instance'];
   $field_name = $element['#field_name'];
@@ -366,8 +365,8 @@ function hook_date_combo_process_alter(array &$element, array &$form_state, arra
  *
  * @see date_timezone_element_process()
  */
-function hook_date_timezone_process_alter(array &$element, array &$form_state, array $context) {
-  // @todo Document this.
+function hook_date_timezone_process_alter(&$element, &$form_state, $context) {
+  // @todo.
 }
 
 /**
@@ -383,8 +382,8 @@ function hook_date_timezone_process_alter(array &$element, array &$form_state, a
  *
  * @see date_year_range_element_process()
  */
-function hook_date_year_range_process_alter(array &$element, array &$form_state, array $context) {
-  // @todo Document this.
+function hook_date_year_range_process_alter(&$element, &$form_state, $context) {
+  // @todo.
 }
 
 /**
@@ -400,7 +399,7 @@ function hook_date_year_range_process_alter(array &$element, array &$form_state,
  *
  * @see hook_field_settings_form()
  */
-function hook_date_field_settings_form_alter(array &$form, array $context) {
+function hook_date_field_settings_form_alter(&$form, $context) {
   $field = $context['field'];
   $instance = $context['instance'];
   $has_data = $context['has_data'];
@@ -428,7 +427,7 @@ function hook_date_field_settings_form_alter(array &$form, array $context) {
  *
  * @see hook_field_instance_settings_form()
  */
-function hook_date_field_instance_settings_form_alter(array &$form, array $context) {
+function hook_date_field_instance_settings_form_alter(&$form, $context) {
   $field = $context['field'];
   $instance = $context['instance'];
   $form['new_setting'] = array(
@@ -450,7 +449,7 @@ function hook_date_field_instance_settings_form_alter(array &$form, array $conte
  *
  * @see hook_field_widget_settings_form()
  */
-function hook_date_field_widget_settings_form_alter(array &$form, array $context) {
+function hook_date_field_widget_settings_form_alter(&$form, $context) {
   $field = $context['field'];
   $instance = $context['instance'];
   $form['new_setting'] = array(
@@ -475,7 +474,7 @@ function hook_date_field_widget_settings_form_alter(array &$form, array $context
  *
  * @see hook_field_formatter_settings_form()
  */
-function hook_date_field_formatter_settings_form_alter(array &$form, array &$form_state, array $context) {
+function hook_date_field_formatter_settings_form_alter(&$form, &$form_state, $context) {
   $field = $context['field'];
   $instance = $context['instance'];
   $view_mode = $context['view_mode'];
@@ -487,8 +486,7 @@ function hook_date_field_formatter_settings_form_alter(array &$form, array &$for
       '#type' => 'select',
       '#options' => array(
         'show' => t('Show repeat rule'),
-        'hide' => t('Hide repeat rule'),
-      ),
+        'hide' => t('Hide repeat rule')),
       '#default_value' => $settings['show_repeat_rule'],
       '#access' => $field['settings']['repeat'],
       '#weight' => 5,
@@ -510,7 +508,7 @@ function hook_date_field_formatter_settings_form_alter(array &$form, array &$for
  *
  * @see hook_field_formatter_settings_summary()
  */
-function hook_date_field_formatter_settings_summary_alter(array &$summary, array $context) {
+function hook_date_field_formatter_settings_summary_alter(&$summary, $context) {
   $field = $context['field'];
   $instance = $context['instance'];
   $view_mode = $context['view_mode'];

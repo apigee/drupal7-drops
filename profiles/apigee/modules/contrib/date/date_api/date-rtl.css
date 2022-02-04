@@ -2,8 +2,7 @@
   margin-left: 0.5em;
   margin-right: 0;
 }
-.container-inline-date .form-item .form-item,
-.date-float {
+.container-inline-date .form-item .form-item {
   float: right;
 }
 

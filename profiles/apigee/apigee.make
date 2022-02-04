@@ -123,7 +123,7 @@ projects[ctools][version] = "1.20"
 ; Deprecated
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
-projects[date][version] = "2.12"
+projects[date][version] = "2.10"
 
 projects[devel][type] = "module"
 projects[devel][subdir] = "contrib"
@@ -151,7 +151,7 @@ projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues
 ; Enabled during profile install.
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
-projects[entity][version] = "1.10"
+projects[entity][version] = "1.9"
 
 ; Disabled on OPDK builds
 projects[environment_indicator][type] = "module"
@@ -262,7 +262,7 @@ projects[linkchecker][version] = "1.4"
 ; Enabled during profile install.
 projects[link][type] = "module"
 projects[link][subdir] = "contrib"
-projects[link][version] = "1.9"
+projects[link][version] = "1.6"
 
 ; Enabled during profile install.
 projects[logintoboggan][type] = "module"
@@ -299,11 +299,11 @@ projects[media_youtube][version] = "3.10"
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
 projects[menu_attributes][subdir] = "contrib"
-projects[menu_attributes][version] = "1.1"
+projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.28"
+projects[metatag][version] = "1.22"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -376,7 +376,7 @@ projects[remote_stream_wrapper][version] = "1.0"
 
 projects[rules][type] = "module"
 projects[rules][subdir] = "contrib"
-projects[rules][version] = "2.13"
+projects[rules][version] = "2.12"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"

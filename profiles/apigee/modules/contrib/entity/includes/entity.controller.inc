@@ -35,7 +35,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    * @param $entity
    *   The entity to save.
    *
-   * @return int
+   * @return
    *   SAVED_NEW or SAVED_UPDATED is returned depending on the operation
    *   performed.
    */
@@ -46,8 +46,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    *
    * @param array $values
    *   An array of values to set, keyed by property name.
-   *
-   * @return object
+   * @return
    *   A new instance of the entity type.
    */
   public function create(array $values = array());
@@ -60,7 +59,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    * @param $prefix
    *   An optional prefix for each line.
    *
-   * @return string
+   * @return
    *   The exported entity as serialized string. The format is determined by
    *   the controller and has to be compatible with the format that is accepted
    *   by the import() method.
@@ -73,7 +72,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    * @param string $export
    *   An exported entity as serialized string.
    *
-   * @return object
+   * @return
    *   An entity object not yet saved.
    */
   public function import($export);
@@ -91,8 +90,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    * @param $langcode
    *   (optional) A language code to use for rendering. Defaults to the global
    *   content language of the current request.
-   *
-   * @return array
+   * @return
    *   The renderable array.
    */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL);
@@ -116,12 +114,10 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    *   of the entity, as returned by entity_uri().
    *   This parameter is only supported for entities which controller is a
    *   EntityAPIControllerInterface.
-   *
-   * @return array
+   * @return
    *   The renderable array, keyed by entity name or numeric id.
    */
   public function view($entities, $view_mode = 'full', $langcode = NULL, $page = NULL);
-
 }
 
 /**
@@ -137,7 +133,7 @@ interface EntityAPIControllerRevisionableInterface extends EntityAPIControllerIn
    * @param $revision_id
    *   The ID of the revision to delete.
    *
-   * @return bool
+   * @return boolean
    *   TRUE if the entity revision could be deleted, FALSE otherwise.
    */
   public function deleteRevision($revision_id);
@@ -155,7 +151,6 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   /**
    * Overridden.
-   *
    * @see DrupalDefaultEntityController#__construct()
    */
   public function __construct($entityType) {
@@ -184,8 +179,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   /**
    * Builds and executes the query for loading.
    *
-   * @return Traversable
-   *   The results in a Traversable object.
+   * @return The results in a Traversable object.
    */
   public function query($ids, $conditions, $revision_id = FALSE) {
     // Build the query.
@@ -199,7 +193,6 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   /**
    * Overridden.
-   *
    * @see DrupalDefaultEntityController#load($ids, $conditions)
    *
    * In contrast to the parent implementation we factor out query execution, so
@@ -508,6 +501,8 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     $entity->revision = &$entity->is_new_revision;
     $entity->{$this->defaultRevisionKey} = !empty($entity->{$this->defaultRevisionKey}) || $entity->is_new;
 
+
+
     // When saving a new revision, set any existing revision ID to NULL so as to
     // ensure that a new revision will actually be created.
     if ($entity->is_new_revision && isset($record[$this->revisionKey])) {
@@ -520,7 +515,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     }
     else {
       drupal_write_record($this->revisionTable, $record, $this->revisionKey);
-      // @todo Fix original entity to be of the same revision and check whether
+      // @todo: Fix original entity to be of the same revision and check whether
       // the default revision key has been set.
       $update_default_revision = $entity->{$this->defaultRevisionKey} && $entity->{$this->revisionKey} != $entity->original->{$this->revisionKey};
     }
@@ -552,7 +547,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   /**
    * Implements EntityAPIControllerInterface.
    *
-   * @return string
+   * @return
    *   A serialized string in JSON format suitable for the import() method.
    */
   public function export($entity, $prefix = '') {
@@ -579,7 +574,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
    * Implements EntityAPIControllerInterface.
    *
    * @param $content
-   *   Optionally. Allows pre-populating the built content to ease overriding
+   *   Optionally. Allows pre-populating the built content to ease overridding
    *   this method.
    */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
@@ -684,7 +679,6 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     }
     return $view;
   }
-
 }
 
 /**
@@ -772,7 +766,6 @@ class EntityAPIControllerExportable extends EntityAPIController {
 
   /**
    * Overridden.
-   *
    * @see DrupalDefaultEntityController::cacheGet()
    */
   protected function cacheGet($ids, $conditions = array()) {
@@ -802,7 +795,7 @@ class EntityAPIControllerExportable extends EntityAPIController {
       foreach ($entities as $key => $entity) {
         $entity_values = (array) $entity;
         // We cannot use array_diff_assoc() here because condition values can
-        // also be arrays, e.g. '$conditions = array('status' => array(1, 2))'.
+        // also be arrays, e.g. '$conditions = array('status' => array(1, 2))'
         foreach ($conditions as $condition_key => $condition_value) {
           if (is_array($condition_value)) {
             if (!isset($entity_values[$condition_key]) || !in_array($entity_values[$condition_key], $condition_value)) {
@@ -820,7 +813,6 @@ class EntityAPIControllerExportable extends EntityAPIController {
 
   /**
    * Overridden.
-   *
    * @see DrupalDefaultEntityController::cacheSet()
    */
   protected function cacheSet($entities) {
@@ -833,11 +825,10 @@ class EntityAPIControllerExportable extends EntityAPIController {
 
   /**
    * Overridden.
+   * @see DrupalDefaultEntityController::attachLoad()
    *
    * Changed to call type-specific hook with the entities keyed by name if they
    * have one.
-   *
-   * @see DrupalDefaultEntityController::attachLoad()
    */
   protected function attachLoad(&$queried_entities, $revision_id = FALSE) {
     // Attach fields.
@@ -987,5 +978,4 @@ class EntityAPIControllerExportable extends EntityAPIController {
     }
     return $view;
   }
-
 }

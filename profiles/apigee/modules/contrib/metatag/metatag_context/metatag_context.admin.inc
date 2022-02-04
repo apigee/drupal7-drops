@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Admin settings page for Metatag Context.
@@ -11,8 +10,7 @@
 function metatag_context_context_overview() {
   $contexts = context_enabled_contexts(TRUE);
 
-  $header = array(t('Name'), t('Paths'), t('Weight'), t('Operations'));
-  $rows = array();
+  $header = array(t('Name'), t('Paths'), t('Weight'), t('Operations'));  $rows = array();
 
   $caption = t('Values assigned here inherit from the <a href="@url" title="Edit the global default meta tags.">global defaults</a>. Use the weight to specify the order the context meta tags run.', array('@url' => url('admin/config/search/metatags/config/global')));
 
@@ -34,11 +32,7 @@ function metatag_context_context_overview() {
   }
   uasort($rows, 'drupal_sort_weight');
 
-  return theme('table', array(
-    'header' => $header,
-    'rows' => $rows,
-    'caption' => $caption,
-  ));
+  return theme('table', array('header' => $header, 'rows' => $rows, 'caption' => $caption));
 }
 
 /**
@@ -205,7 +199,7 @@ function metatag_context_delete_form($form, &$form_state, $context) {
   $form_state['metatag_context']['context'] = $context;
 
   $form['delete'] = array(
-    '#value' => 'This action will permanently remove this item from your database.',
+    '#value' => 'This action will permanently remove this item from your database.'
   );
 
   $form['actions']['#type'] = 'actions';
@@ -247,7 +241,8 @@ function metatag_context_load_default_context() {
   $context->metatag = TRUE;
   $context->conditions = array(
     'path' => array(
-      'values' => array(),
+      'values' => array(
+      ),
     ),
   );
   $context->reactions = array(

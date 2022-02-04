@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Internationalization (i18n) integration.
@@ -208,5 +207,4 @@ class EntityDefaultI18nStringController {
   public function hook_string_objects() {
     return entity_load_multiple_by_name($this->entityType, FALSE);
   }
-
 }

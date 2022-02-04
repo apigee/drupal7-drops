@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Features integration for the Metatag module.

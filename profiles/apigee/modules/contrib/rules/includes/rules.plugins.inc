@@ -19,9 +19,7 @@ class RulesAction extends RulesAbstractPlugin implements RulesActionInterface {
    * Execute the callback and update/save data as specified by the action.
    */
   protected function executeCallback(array $args, RulesState $state = NULL) {
-    rules_log('Evaluating the action %name.', array(
-      '%name' => $this->label($this->elementName),
-    ), RulesLog::INFO, $this);
+    rules_log('Evaluating the action %name.', array('%name' => $this->elementName), RulesLog::INFO, $this);
     $return = $this->__call('execute', empty($this->info['named parameter']) ? $args : array($args));
     // Get the (partially) wrapped arguments.
     $args = $state->currentArguments;
@@ -107,12 +105,8 @@ class RulesCondition extends RulesAbstractPlugin implements RulesConditionInterf
 
   protected function executeCallback(array $args, RulesState $state = NULL) {
     $return = (bool) $this->__call('execute', empty($this->info['named parameter']) ? $args : array($args));
-    $return = $this->negate ? !$return : $return;
-    rules_log('The condition %name evaluated to %bool', array(
-      '%name' => $this->label($this->elementName),
-      '%bool' => $return ? 'TRUE' : 'FALSE',
-    ), RulesLog::INFO, $this);
-    return $return;
+    rules_log('The condition %name evaluated to %bool', array('%name' => $this->elementName, '%bool' => $return ? 'TRUE' : 'FALSE'), RulesLog::INFO, $this);
+    return $this->negate ? !$return : $return;
   }
 
   public function __sleep() {
@@ -533,7 +527,6 @@ class RulesReactionRule extends Rule implements RulesTriggerableInterface {
   }
 
   protected function exportChildren($key = 'ON') {
-    $export = array();
     foreach ($this->events as $event_name) {
       $export[$key][$event_name] = (array) $this->getEventSettings($event_name);
     }
@@ -543,14 +536,12 @@ class RulesReactionRule extends Rule implements RulesTriggerableInterface {
   protected function importChildren($export, $key = 'ON') {
     // Detect and support old-style exports: a numerically indexed array of
     // event names.
-    if (isset($export[$key])) {
-      if (is_string(reset($export[$key])) && is_numeric(key($export[$key]))) {
-        $this->events = $export[$key];
-      }
-      else {
-        $this->events = array_keys($export[$key]);
-        $this->eventSettings = array_filter($export[$key]);
-      }
+    if (is_string(reset($export[$key])) && is_numeric(key($export[$key]))) {
+      $this->events = $export[$key];
+    }
+    else {
+      $this->events = array_keys($export[$key]);
+      $this->eventSettings = array_filter($export[$key]);
     }
     parent::importChildren($export);
   }
@@ -579,17 +570,11 @@ class RulesAnd extends RulesConditionContainer {
   public function evaluate(RulesState $state) {
     foreach ($this->children as $condition) {
       if (!$condition->evaluate($state)) {
-        rules_log('%condition evaluated to %bool.', array(
-          '%condition' => $this->label(),
-          '%bool' => 'FALSE',
-        ));
+        rules_log('AND evaluated to FALSE.');
         return $this->negate;
       }
     }
-    rules_log('%condition evaluated to %bool.', array(
-      '%condition' => $this->label(),
-      '%bool' => 'TRUE',
-    ));
+    rules_log('AND evaluated to TRUE.');
     return !$this->negate;
   }
 
@@ -612,17 +597,11 @@ class RulesOr extends RulesConditionContainer {
   public function evaluate(RulesState $state) {
     foreach ($this->children as $condition) {
       if ($condition->evaluate($state)) {
-        rules_log('%condition evaluated to %bool.', array(
-          '%condition' => $this->label(),
-          '%bool' => 'TRUE',
-        ));
+        rules_log('OR evaluated to TRUE.');
         return !$this->negate;
       }
     }
-    rules_log('%condition evaluated to %bool.', array(
-      '%condition' => $this->label(),
-      '%bool' => 'FALSE',
-    ));
+    rules_log('OR evaluated to FALSE.');
     return $this->negate;
   }
 

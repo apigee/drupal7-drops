@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Metatag integration for the Metatag:Facebook module.
@@ -129,7 +128,7 @@ function metatag_mobile_metatag_info() {
   $info['tags']['apple-mobile-web-app-title'] = array(
     'label' => t('Apple Mobile Web App Title'),
     'description' => t('Overrides the long site title when using the Apple Add to Home Screen.'),
-    'weight' => ++$weight,
+    'weight' => ++$weight
   ) + $defaults;
 
   $info['tags']['format-detection'] = array(

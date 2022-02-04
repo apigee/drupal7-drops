@@ -2,12 +2,13 @@
 
 /**
  * @file
- * Context condition plugin for date values.
+ * Context date condition plugin.
  */
 
 /**
- * Context condition plugin for date values.
+ * Expose term views/term forms by vocabulary as a context condition.
  */
+// @codingStandardsIgnoreStart
 class date_context_date_condition extends context_condition_node {
 
   /**
@@ -70,6 +71,7 @@ class date_context_date_condition extends context_condition_node {
         $fields = $this->fetch_from_context($context, 'values');
 
         foreach ($fields as $field_name => $label) {
+
           // If this field does not exist on this entity, just move along.
           if (empty($entity->{$field_name})) {
             continue;
@@ -77,22 +79,19 @@ class date_context_date_condition extends context_condition_node {
 
           $items = field_get_items('node', $entity, $field_name);
 
-          // If there are no values, nothing to do unless we were looking for
-          // 'empty' or '!='.
+          // If there are no values, nothing to do unless we were looking for 'empty' or '!='.
           if (empty($items)) {
             if ($options['operation'] == '!=' || $options['operation'] == 'empty') {
               $this->condition_met($context, $field_name);
             }
           }
 
-          // We don't have to construct the date values if we're just testing
-          // for 'not empty'.
+          // We don't have to construct the date values if we're just testing for 'not empty'.
           elseif ($options['operation'] == 'not empty') {
             $this->condition_met($context, $field_name);
           }
 
-          // All other operations need to retrieve the date values for
-          // comparision.
+          // All other operations need to retrieve the date values for comparision.
           else {
             $field = field_info_field($field_name);
             $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
@@ -153,5 +152,5 @@ class date_context_date_condition extends context_condition_node {
       }
     }
   }
-
 }
+// @codingStandardsIgnoreEnd

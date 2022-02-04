@@ -1,11 +1,6 @@
 <?php
 
 /**
- * @file
- * Primary hook implementations for the Metatag Test module.
- */
-
-/**
  * Implements hook_ctools_plugin_api().
  */
 function metatag_test_ctools_plugin_api($owner, $api) {

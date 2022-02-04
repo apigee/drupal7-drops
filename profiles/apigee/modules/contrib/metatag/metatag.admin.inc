@@ -5,17 +5,6 @@
  * Administration page callbacks for the metatag module.
  */
 
-/**
- * Indent the output for a given overview item.
- *
- * @param string $text
- *   The text that needs to be indented.
- * @param object $instance
- *   The configuration object being processed.
- *
- * @return string
- *   The appropriately-indented configuration overview.
- */
 function _metatag_config_overview_indent($text, $instance) {
   $parents = metatag_config_get_parent_instances($instance);
   array_shift($parents);
@@ -30,12 +19,6 @@ function _metatag_config_overview_indent($text, $instance) {
   return $text;
 }
 
-/**
- * Menu callback for the main Metatag configuration page.
- *
- * @return array
- *   A render array with all of the configuration items.
- */
 function metatag_config_overview() {
   ctools_include('export');
 
@@ -76,11 +59,7 @@ function metatag_config_overview() {
 
     // Show how this config inherits from its parents.
     if (!empty($inherits)) {
-      $details .= '<div class="inheritance">';
-      $details .= '<p>';
-      $details .= t('Inherits meta tags from: @parents', array('@parents' => implode(', ', $inherits)));
-      $details .= '</p>';
-      $details .= '</div>';
+      $details .= '<div class="inheritance"><p>' . t('Inherits meta tags from: @parents', array('@parents' => implode(', ', $inherits))) . '</p></div>';
     }
 
     // Add a summary of the configuration's defaults.
@@ -106,11 +85,10 @@ function metatag_config_overview() {
       $row['class'][] = 'warning';
     }
 
-    // Close the details div.
+    // Close the details div
     $details .= '</div>';
 
-    // Add indentation to the leading cell based on how many parents the config
-    // has.
+    // Add indentation to the leading cell based on how many parents the config has.
     $details = _metatag_config_overview_indent($details, $config->instance);
 
     $row['data']['details'] = $details;
@@ -231,9 +209,6 @@ function _metatag_config_instance_get_available_options() {
   return $options;
 }
 
-/**
- * Form API callback for adding a default configuration.
- */
 function metatag_config_add_form($form, &$form_state) {
   $form['instance'] = array(
     '#type' => 'select',
@@ -261,9 +236,6 @@ function metatag_config_add_form($form, &$form_state) {
   return $form;
 }
 
-/**
- * Form API submission callback for metatag_config_add_form().
- */
 function metatag_config_add_form_submit($form, &$form_state) {
   form_state_values_clean($form_state);
   $config = (object) $form_state['values'];
@@ -271,9 +243,6 @@ function metatag_config_add_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/config/search/metatags/config/' . $config->instance;
 }
 
-/**
- * Form API callback for editing a default configuration.
- */
 function metatag_config_edit_form($form, &$form_state, $config) {
   $form['cid'] = array(
     '#type' => 'value',
@@ -338,9 +307,6 @@ function metatag_config_edit_form($form, &$form_state, $config) {
   return $form;
 }
 
-/**
- * Form API submission callback for metatag_config_edit_form().
- */
 function metatag_config_edit_form_submit($form, &$form_state) {
   // Build the configuration object and save it.
   form_state_values_clean($form_state);
@@ -356,12 +322,6 @@ function metatag_config_edit_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/config/search/metatags';
 }
 
-/**
- * Menu callback for enabling a default configuration.
- *
- * @param object $config
- *   The default configuration object to enable.
- */
 function metatag_config_enable($config) {
   if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'enable-' . $config->instance)) {
     return MENU_ACCESS_DENIED;
@@ -374,12 +334,6 @@ function metatag_config_enable($config) {
   drupal_goto();
 }
 
-/**
- * Menu callback for disabling a default configuration.
- *
- * @param object $config
- *   The default configuration object to disable.
- */
 function metatag_config_disable($config) {
   if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'disable-' . $config->instance)) {
     return MENU_ACCESS_DENIED;
@@ -392,9 +346,6 @@ function metatag_config_disable($config) {
   drupal_goto();
 }
 
-/**
- * Form API callback for deleting a default configuration.
- */
 function metatag_config_delete_form($form, &$form_state, $config) {
   $form['cid'] = array('#type' => 'value', '#value' => $config->cid);
   $form['instance'] = array('#type' => 'value', '#value' => $config->instance);
@@ -411,9 +362,6 @@ function metatag_config_delete_form($form, &$form_state, $config) {
   );
 }
 
-/**
- * Form API submission callback for metatag_config_delete_form().
- */
 function metatag_config_delete_form_submit($form, &$form_state) {
   $config = metatag_config_load($form_state['values']['instance']);
   metatag_config_delete($config);
@@ -426,9 +374,6 @@ function metatag_config_delete_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/config/search/metatags';
 }
 
-/**
- * Form API callback for exporting a default configuration.
- */
 function metatag_config_export_form($config) {
   ctools_include('export');
   return drupal_get_form('ctools_export_form', ctools_export_crud_export('metatag_config', $config), t('Export'));
@@ -438,11 +383,10 @@ function metatag_config_export_form($config) {
  * Form constructor to revert nodes to their default metatags.
  *
  * @see metatag_bulk_revert_form_submit()
- *
  * @ingroup forms
  */
 function metatag_bulk_revert_form() {
-  // Get the list of entity:bundle options.
+  // Get the list of entity:bundle options
   $options = array();
   foreach (entity_get_info() as $entity_type => $entity_info) {
     foreach (array_keys($entity_info['bundles']) as $bundle) {
@@ -518,22 +462,13 @@ function metatag_bulk_revert_form_submit($form, &$form_state) {
     'file' => drupal_get_path('module', 'metatag') . '/metatag.admin.inc',
   );
 
-  $tags = array();
-  if (isset($form_state['values']['tags'])) {
-    $tags = array_filter($form_state['values']['tags']);
-  }
-  $languages = array();
-  if (isset($form_state['values']['languages'])) {
-    $languages = array_filter($form_state['values']['languages']);
-  }
+  $tags = isset($form_state['values']['tags']) ? array_filter($form_state['values']['tags']) : array();
+  $languages = isset($form_state['values']['languages']) ? array_filter($form_state['values']['languages']) : array();
 
   // Set a batch operation per entity:bundle.
   foreach (array_filter($form_state['values']['update']) as $option) {
     list($entity_type, $bundle) = explode(':', $option);
-    $batch['operations'][] = array(
-      'metatag_bulk_revert_batch_operation',
-      array($entity_type, $bundle, $tags, $languages),
-    );
+    $batch['operations'][] = array('metatag_bulk_revert_batch_operation', array($entity_type, $bundle, $tags, $languages));
   }
 
   batch_set($batch);
@@ -555,12 +490,12 @@ function metatag_bulk_revert_batch_operation($entity_type, $bundle, $tags, $lang
     ->propertyCondition($entity_info['entity keys']['id'], $context['sandbox']['current'], '>')
     ->propertyOrderBy($entity_info['entity keys']['id']);
   if ($entity_type != 'user') {
-    // Entities which do not define a bundle such as User fail returning no
-    // results.
-    // @see https://www.drupal.org/node/1054168#comment-5266208
+    /**
+     * Entities which do not define a bundle such as User fail returning no results.
+     * @see https://www.drupal.org/node/1054168#comment-5266208
+     */
     $query->entityCondition('bundle', $bundle);
   }
-
   // Get the total amount of entities to process.
   if (!isset($context['sandbox']['total'])) {
     $context['sandbox']['total'] = $query->count()->execute();
@@ -615,7 +550,7 @@ function metatag_bulk_revert_batch_operation($entity_type, $bundle, $tags, $lang
           $entities = entity_load($entity_type, array($entity_id));
           if (!empty($entities[$entity_id])) {
             // We only care about the revision_id.
-            list(, $revision_id,) = entity_extract_ids($entity_type, $entities[$entity_id]);
+            list(, $revision_id, ) = entity_extract_ids($entity_type, $entities[$entity_id]);
           }
           metatag_metatags_save($entity_type, $entity_id, $revision_id, $metatags, $bundle);
           $reset = TRUE;
@@ -654,10 +589,7 @@ function metatag_bulk_revert_batch_finished($success, $results, $operations) {
   else {
     $error_operation = reset($operations);
     drupal_set_message(t('An error occurred while processing @operation with arguments : @args',
-      array(
-        '@operation' => $error_operation[0],
-        '@args' => print_r($error_operation[0], TRUE),
-      )));
+      array('@operation' => $error_operation[0], '@args' => print_r($error_operation[0], TRUE))));
   }
 }
 
@@ -679,7 +611,7 @@ function metatag_admin_settings_form() {
   $form['entities'] = array(
     '#type' => 'fieldset',
     '#title' => t('Master controls for all entities'),
-    '#description' => t("By enabling and disabling items here, it is possible to control which entities (e.g. nodes, taxonomy terms) and bundles (e.g. content types, vocabularies) will have the meta tag form available on their respective edit pages. If an entity type is disabled it also disables it for <em>all</em> of that entity type's bundles.<br />Technical note: Entity types must not be configuration entities and must have view modes in order to be compatible."),
+    '#description' => t('By enabling and disabling items here, it is possible to control which entities (e.g. nodes, taxonomy terms) and bundles (e.g. content types, vocabularies) will have the meta tag form available on their respective edit pages. If an entity type is disabled it also disables it for <em>all</em> of that entity type\'s bundles.<br />Technical note: Entity types must not be configuration entities and must have view modes in order to be compatible.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
@@ -692,6 +624,7 @@ function metatag_admin_settings_form() {
         '#type' => 'checkbox',
         '#title' => t($entity_info['label']),
         '#default_value' => $entity_enabled,
+        // '#description' => t('Enable meta tags for all pages of this entity type.'),
       );
 
       // Some entities, e.g. User, (core) File, have a single bundle with the
@@ -738,19 +671,6 @@ function metatag_admin_settings_form() {
     '#type' => 'textfield',
     '#description' => t('When the current page includes a pager, e.g. the URL contains "?page=42", the [current-page:pager] token may be added to a meta tag to differentiate between two pages that would otherwise have the same meta tags. The value "PAGER" (must be in uppercase) will be replaced by the actual page count. Note: the pager will only output if the page number is 2 or above and the string "page=NUMBER" is in the URL.<br />For best use, it may be worthwhile to add the [current-page:pager] to the page title to the left of the site name, to the start of description tags, etc.'),
     '#default_value' => variable_get('metatag_pager_string', 'Page PAGER | '),
-  );
-
-  $form['additional']['metatag_summary_text_field'] = array(
-    '#title' => t('Add summary tokens for regular text fields'),
-    '#type' => 'checkbox',
-    '#description' => t("By default Metatag's summary tokens are added to long text fields. Enabling this option will also add summary tokens for all plain text fields."),
-    '#default_value' => variable_get('metatag_summary_text_field', FALSE),
-  );
-  $form['additional']['metatag_summary_length'] = array(
-    '#title' => t('Length of summary'),
-    '#type' => 'textfield',
-    '#description' => t("How long each of the summary tokens will be after it is truncated."),
-    '#default_value' => variable_get('metatag_summary_length', 200),
   );
 
   $form['i18n'] = array(
@@ -856,32 +776,6 @@ function metatag_admin_settings_form() {
     '#default_value' => variable_get('metatag_token_sanitize', FALSE),
   );
 
-  $form['lengths'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Maximum meta tag lengths'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-    '#description' => t('Many meta tags may be shortened to a certain length. To reset to the default, leave the field blank. To keep the entire meta tag, regardless of length, set the value to zero (0). Note: the meta tag will be shortened <em>after</em> the tokens have been replaced, not before.'),
-  );
-  $info = metatag_get_info();
-  $groups = $info['groups'];
-  $tags = $info['tags'];
-  foreach ($tags as $tag => $info) {
-    if (isset($info['maxlength'])) {
-      $default = $info['maxlength'];
-      $var_name = 'metatag_maxlength_' . $tag;
-      $title = $info['label'];
-      if (!empty($info['group']) && isset($groups[$info['group']])) {
-        $title = $groups[$info['group']]['label'] . ': ' . $title;
-      }
-      $form['lengths'][$var_name] = array(
-        '#type' => 'textfield',
-        '#title' => $title,
-        '#default_value' => intval(variable_get($var_name, $default)),
-      );
-    }
-  }
-
   // Extra submission logic.
   $form['#submit'][] = 'metatag_admin_settings_form_submit';
 
@@ -891,34 +785,8 @@ function metatag_admin_settings_form() {
 /**
  * Form API submission callback for metatag_admin_settings_form().
  */
-function metatag_admin_settings_form_submit($form, &$form_state) {
-  // Only keep maxlength values that are numeric. Any empty, non-zero values
-  // will be removed.
-  foreach ($form_state['values'] as $name => $value) {
-    if (strpos($name, 'metatag_maxlength_') !== FALSE) {
-      if ((empty($value) && $value !== 0 && $value !== '0') || !is_numeric($value)) {
-        unset($form_state['values'][$name]);
-        variable_del($name);
-      }
-      else {
-        $form_state['values'][$name] = intval($value);
-      }
-    }
-  }
-
-  // If the token option was disabled, clear the token cache too.
-  $old_var = (bool) variable_get('metatag_summary_text_field', FALSE);
-  $new_var = !empty($form_state['values']['metatag_summary_text_field']);
-  if ($old_var != $new_var) {
-    token_clear_cache();
-  }
-
-  // Make sure the metatag_summary_length value is a number.
-  if (!empty($form_state['values']['metatag_summary_length'])) {
-    $form_state['values']['metatag_summary_length'] = intval($form_state['values']['metatag_summary_length']);
-  }
-
-  // Clear the Metatag caches so any settings changes will be available.
+function metatag_admin_settings_form_submit() {
+  cache_clear_all('entity_info:', 'cache', TRUE);
   cache_clear_all('*', 'cache_metatag', TRUE);
-  drupal_set_message(t('The Metatag cache has been cleared so all meta tags can be reloaded.'));
+  drupal_set_message(t('The Metatag cache has been cleared, so all meta tags can be reloaded.'));
 }

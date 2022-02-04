@@ -6,16 +6,16 @@
  */
 
 // The Nodwords record types.
-define('NODEWORDS_TYPE_DEFAULT', 1);
-define('NODEWORDS_TYPE_ERRORPAGE', 2);
-define('NODEWORDS_TYPE_FRONTPAGE', 3);
-define('NODEWORDS_TYPE_NONE', 0);
-define('NODEWORDS_TYPE_NODE', 5);
-define('NODEWORDS_TYPE_PAGE', 10);
-define('NODEWORDS_TYPE_PAGER', 4);
-define('NODEWORDS_TYPE_TERM', 6);
-define('NODEWORDS_TYPE_TRACKER', 7);
-define('NODEWORDS_TYPE_USER', 8);
+define('NODEWORDS_TYPE_DEFAULT',    1);
+define('NODEWORDS_TYPE_ERRORPAGE',  2);
+define('NODEWORDS_TYPE_FRONTPAGE',  3);
+define('NODEWORDS_TYPE_NONE',       0);
+define('NODEWORDS_TYPE_NODE',       5);
+define('NODEWORDS_TYPE_PAGE',      10);
+define('NODEWORDS_TYPE_PAGER',      4);
+define('NODEWORDS_TYPE_TERM',       6);
+define('NODEWORDS_TYPE_TRACKER',    7);
+define('NODEWORDS_TYPE_USER',       8);
 define('NODEWORDS_TYPE_VOCABULARY', 9);
 
 /**
@@ -32,19 +32,20 @@ function metatag_importer_nodewords_form($form, &$form_state) {
       '#type' => 'checkboxes',
       '#title' => t('Records to import'),
       '#options' => $types,
+      '#disabled' => TRUE,
     );
 
     $form['notes'] = array(
       '#markup' => '<p>' . t('Notes') . ':' . '</p>'
-      . '<ul>'
-      . '  <li>' . t('All compatible records will be imported.') . '</li>'
-      . '  <li>' . t('Records <strong>will be removed</strong> from the {nodewords} table upon completion, make sure to keep a backup of the table in case needed.') . '</li>'
-      . '  <li>' . t('The import process may take some time, please be patient.') . '</li>'
-      . '  <li>' . t('Nodewords stored each meta tag as a separate record, so there were many records for each entity or configuration.') . '</li>'
-      . '  <li>' . t('Empty values will be removed, no additional logic is added to verify them.') . '</li>'
-      . '  <li>' . t('Only node, taxonomy term, user, global, front page and error page records will be converted.') . '</li>'
-      . '  <li>' . t('Custom paths, trackers, pagers and vocabularies are not supported yet.') . '</li>'
-      . '</ul>',
+        . '<ul>'
+        . '  <li>' . t('All compatible records will be imported.') . '</li>'
+        . '  <li>' . t('Records <strong>will be removed</strong> from the {nodewords} table upon completion, make sure to keep a backup of the table in case needed.') . '</li>'
+        . '  <li>' . t('The import process may take some time, please be patient.') . '</li>'
+        . '  <li>' . t('Nodewords stored each meta tag as a separate record, so there were many records for each entity or configuration.') . '</li>'
+        . '  <li>' . t('Empty values will be removed, no additional logic is added to verify them.') . '</li>'
+        . '  <li>' . t('Only node, taxonomy term, user, global, front page and error page records will be converted.') . '</li>'
+        . '  <li>' . t('Custom paths, trackers, pagers and vocabularies are not supported yet.') . '</li>'
+        . '</ul>',
     );
 
     $form['actions']['migrate'] = array(
@@ -71,12 +72,6 @@ function metatag_importer_nodewords_form_submit($form, &$form_state) {
   _metatag_importer_import($types);
 }
 
-/**
- * List all Nodewords data.
- *
- * @return array
- *   A list of Nodewords data keyed by the type of record.
- */
 function _metatag_importer_list_nodewords() {
   $keys = array(
     NODEWORDS_TYPE_DEFAULT => t('Default'),
@@ -129,39 +124,24 @@ function _metatag_importer_list_nodewords() {
 
 /**
  * Migrates Nodewords data to the Metatag module.
- *
- * @param array $types
- *   The types of Nodewords data to convert.
  */
 function _metatag_importer_import(array $types = array()) {
   $batch = array(
     'title' => t('Importing Nodewords data..'),
-    'init_message' => t('Nodewords import is starting.'),
-    'progress_message' => t('Processed @current out of @total.'),
-    'error_message' => t('Nodewords import has encountered an error.'),
     'operations' => array(
       array('_metatag_importer_migrate', array($types)),
     ),
     'finished' => '_metatag_importer_finished',
     'file' => drupal_get_path('module', 'metatag_importer') . '/metatag_importer.nodewords.inc',
   );
+  batch_set($batch);
 
-  // Kick off the batch, using Drush if available.
-  if (drupal_is_cli() && function_exists('drush_backend_batch_process')) {
-    // Add some special magic for CLI before setting the batch.
-    $batch['progressive'] = FALSE;
-    batch_set($batch);
-    // Process the batch.
-    drush_backend_batch_process();
-  }
-  else {
-    batch_set($batch);
-    batch_process();
-  }
+  // Kick off the batch.
+  batch_process();
 }
 
 /**
- * Batch API callback to convert Nodewords data to the Metatag module.
+ * Migrates Nodewords data to the Metatag module.
  */
 function _metatag_importer_migrate(array $types = array(), &$context = array()) {
   // Process this number of {nodewords} records at a time.
@@ -195,11 +175,9 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
     ->condition('nw.mtid', $context['sandbox']['current'], '>')
     ->orderBy('nw.mtid');
   // @todo Finish off / test the $types handling.
-  // @code
   // if (!empty($types)) {
   //   $query->condition('nw.type', $types, 'IN');
   // }
-  // @endcode
   $query->range(0, $limit);
   $results = $query->execute();
 
@@ -238,10 +216,7 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
       $entity = entity_load($type, array($record_id));
       if (empty($entity)) {
         $context['sandbox']['skipped'][$type][$record_id] = $record_id;
-        watchdog('metatag_importer', 'Unable to load @entity_type ID @id', array(
-          '@entity_type' => $type,
-          '@id' => $record_id,
-        ), WATCHDOG_WARNING);
+        watchdog('metatag_importer', 'Unable to load @entity_type ID @id', array('@entity_type' => $type, '@id' => $record_id), WATCHDOG_WARNING);
 
         // Delete this record anyway.
         $to_delete[] = $result->mtid;
@@ -252,6 +227,7 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
     // Process the meta tag value, possibly also rename the meta tag name
     // itself.
     list($meta_tag, $value) = _metatag_importer_convert_data($result->name, unserialize($result->content));
+
     // Don't import empty values.
     if (!empty($value)) {
       // Add the value to the stack.
@@ -271,9 +247,7 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
         case 'node':
         case 'taxonomy_term':
         case 'user':
-          // @code
           // watchdog('metatag_importer', 'Importing meta tags for @entity_type ID @id..', array('@entity_type' => $type, '@id' => $record_id), WATCHDOG_INFO);
-          // @endcode
           $entity = entity_load($type, array($record_id));
           $entity = reset($entity);
           $langcode = metatag_entity_get_language($type, $entity);
@@ -286,9 +260,7 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
           }
 
           metatag_metatags_save($type, $entity_id, $revision_id, $entity->metatags);
-          // @code
           // watchdog('metatag_importer', 'Imported meta tags for @entity_type ID @id.', array('@entity_type' => $type, '@id' => $record_id), WATCHDOG_INFO);
-          // @endcode
           break;
 
         // Other Nodewords settings are converted to {metatag_config} records
@@ -315,15 +287,13 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
           metatag_config_save($config);
           break;
 
-        // @todo A 'vocabulary' setting becomes a default configuration?
-        case 'vocabulary':
-          // @code
-          // $metatags = metatag_metatags_load($record->entity_type, $record->entity_id);
-          // $metatags = array_merge($metatags, $record->data);
-          // $vocabulary = taxonomy_vocabulary_load($record->entity_id);
-          // metatag_metatags_save($record->entity_type, $record->entity_id, $vocabulary->vid, $metatags);
-          // @endcode
-          break;
+        // // A 'vocabulary' setting becomes a default configuration.
+        // case 'vocabulary':
+        //   $metatags = metatag_metatags_load($record->entity_type, $record->entity_id);
+        //   $metatags = array_merge($metatags, $record->data);
+        //   $vocabulary = taxonomy_vocabulary_load($record->entity_id);
+        //   metatag_metatags_save($record->entity_type, $record->entity_id, $vocabulary->vid, $metatags);
+        //   break;
       }
     }
   }
@@ -338,26 +308,9 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
   $context['finished'] = (empty($context['sandbox']['max']) || $context['sandbox']['progress'] >= $context['sandbox']['max']) ? TRUE : ($context['sandbox']['progress'] / $context['sandbox']['max']);
 
   if ($context['finished'] === TRUE) {
-    $message = 'Imported @imported Nodewords records.';
-    $vars = array('@imported' => $context['sandbox']['progress']);
-
-    if (drupal_is_cli() && function_exists('drush_print')) {
-      drush_print(dt($message, $vars));
-    }
-    else {
-      drupal_set_message(t($message, $vars));
-    }
-
+    drupal_set_message(t('Imported @imported Nodewords records.', array('@imported' => $context['sandbox']['progress'])));
     if (!empty($context['sandbox']['skipped'])) {
-      $message = '@skipped records were skipped because the corresponding entities were previously deleted.';
-      $vars = array('@skipped' => count($context['sandbox']['skipped']));
-
-      if (drupal_is_cli() && function_exists('drush_print')) {
-        drush_print(dt($message, $vars));
-      }
-      else {
-        drupal_set_message(t($message, $vars));
-      }
+      drupal_set_message(t('@skipped records were skipped because the corresponding entities were previously deleted.', array('@skipped' => count($context['sandbox']['skipped']))));
     }
   }
 }
@@ -367,49 +320,35 @@ function _metatag_importer_migrate(array $types = array(), &$context = array()) 
  */
 function _metatag_importer_finished($success, $results, $operations) {
   if ($success) {
-    if (drupal_is_cli() && function_exists('drush_print')) {
-      // Make a bulleted list of messages for the command line.
-      foreach ($results as $result) {
-        drush_print(dt('* ' . $result));
-      }
-    }
-    else {
-      // Make a bulleted list of messages for the browser.
-      $message = theme('item_list', array('items' => $results));
-      drupal_set_message(t($message));
-    }
+    // Here we do something meaningful with the results.
+    $message = t("!count items were processed.", array(
+      '!count' => count($results),
+    ));
+    $message .= theme('item_list', array('items' => $results));
+    drupal_set_message($message);
   }
   else {
     // An error occurred.
     // $operations contains the operations that remained unprocessed.
     $error_operation = reset($operations);
-    $message = 'An error occurred while processing %error_operation';
-    $vars = array(
+    $message = t('An error occurred while processing %error_operation with arguments: @arguments', array(
       '%error_operation' => $error_operation[0],
-    );
-
-    if (drupal_is_cli() && function_exists('drush_print')) {
-      drush_set_error('metatag_importer', dt($message, $vars));
-    }
-    else {
-      $message .= ' with arguments: @arguments';
-      $vars[] = array('@arguments' => print_r($error_operation[1], TRUE));
-      drupal_set_message(t($message, $vars), 'error');
-    }
+      '@arguments' => print_r($error_operation[1], TRUE),
+    ));
+    drupal_set_message($message, 'error');
   }
 }
 
 /**
  * Converts the Nodewords type to a Metatag entity or Metatag config instance.
  *
- * @param string $type
+ * @param $type
  *   Nodewords type.
  *
  * @return
  *   Metatag entity type or configuration instance.
  */
 function _metatag_importer_convert_type($type) {
-  // @code
   // define('NODEWORDS_TYPE_DEFAULT',    1);
   // define('NODEWORDS_TYPE_ERRORPAGE',  2);
   // define('NODEWORDS_TYPE_FRONTPAGE',  3);
@@ -420,8 +359,7 @@ function _metatag_importer_convert_type($type) {
   // define('NODEWORDS_TYPE_TERM',       6);
   // define('NODEWORDS_TYPE_TRACKER',    7);
   // define('NODEWORDS_TYPE_USER',       8);
-  // define('NODEWORDS_TYPE_VOCABULARY', 9);.
-  // @endcode
+  // define('NODEWORDS_TYPE_VOCABULARY', 9);
   switch ($type) {
     case 1:
       return 'global';
@@ -433,10 +371,9 @@ function _metatag_importer_convert_type($type) {
       return 'global:frontpage';
 
     // @todo Not yet sure how to handle pager items?
-    // @code
     // case 4:
     //   return 'pager';
-    // @endcode
+
     case 5:
       return 'node';
 
@@ -444,22 +381,20 @@ function _metatag_importer_convert_type($type) {
       return 'taxonomy_term';
 
     // @todo Not sure what to do with tracker pages.
-    // @code
     // case 7:
     //   return 'tracker';
-    // @endcode
+
     case 8:
       return 'user';
 
-    // Vocabulary records convert into a config for that entity bundle.
-    case 9:
-      return 'vocabulary';
+    // @todo Vocabulary records need to be converted to a config for that entity
+    // bundle.
+    // case 9:
+    //   return 'vocabulary';
 
     // @todo Page records need to be converted to Context definitions.
-    // @code
     // case 10:
     //   return 'page';
-    // @endcode
   }
 
   return FALSE;
@@ -468,13 +403,13 @@ function _metatag_importer_convert_type($type) {
 /**
  * Converts a meta tag's name and value from Nodewords to Metatag format.
  *
- * @param string $name
+ * @param $name
  *   Meta tag name.
- * @param string $value
+ * @param $value
  *   Meta tag value in Nodewords format.
  *
- * @return array
- *   The two arguments returned after being converted.
+ * @return
+ *   The two arguments returned after being converted, in an array.
  */
 function _metatag_importer_convert_data($name, $value) {
   // Initial simplification of simple values.
@@ -527,7 +462,6 @@ function _metatag_importer_convert_data($name, $value) {
       if (isset($value['value']) && intval($value['value']) === 1) {
         $value = FALSE;
       }
-      break;
 
     // Robots needs some extra processing.
     case 'robots':
@@ -591,6 +525,7 @@ function _metatag_importer_convert_data($name, $value) {
   return array($name, $value);
 }
 
+
 /**
  * The following will not be converted because they refer to site-wide defaults
  * that should be customized appropriately based on the D7 site's content type
@@ -601,6 +536,7 @@ function _metatag_importer_convert_data($name, $value) {
 // 0 - NODEWORDS_GENERATION_NEVER - never auto-generate the string.
 // 1 - NODEWORDS_GENERATION_WHEN_EMPTY - when the field is empty. Default.
 // 2 - NODEWORDS_GENERATION_ALWAYS - always use the generated string.
+
 // 'nodewords_metatags_generation_method_' . $type:
 // 1 - NODEWORDS_GENERATION_BODY - use the body field.
 // 2 - NODEWORDS_GENERATION_TEASER - use the node teaser. Default.

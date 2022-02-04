@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Functionality for migrating data from the Page Title module.
@@ -39,20 +38,12 @@ function metatag_importer_for_page_title() {
   $skipped = array();
 
   // Loop over each of the page_title records.
-  $entity_info = entity_get_info();
   while ($pt_data = $page_titles->fetchObject()) {
     $entity_type = $pt_data->type;
     $entity_id = $pt_data->id;
 
-    if ($entity_type == 'term') {
-      // Use the proper class name instead of what's in the page_title table.
-      $entity_type = 'taxonomy_term';
-    }
-
-    $entity = array();
-    if (array_key_exists($entity_type, $entity_info)) {
-      $entity = entity_load($entity_type, array($entity_id));
-    }
+    // Load the entity.
+    $entity = entity_load($entity_type, array($entity_id));
     if (empty($entity)) {
       $skipped[] = $entity_type . ':' . $entity_id;
       continue;
@@ -128,7 +119,7 @@ function metatag_importer_for_page_title() {
     $converted += db_delete('page_title')
       ->condition('type', $entity_type)
       ->condition('id', $entity_id)
-      ->execute();
+        ->execute();
   }
 
   // Log any records that were skipped.

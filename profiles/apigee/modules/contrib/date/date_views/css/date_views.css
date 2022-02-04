@@ -1,9 +1,4 @@
-/**
- * @file
- * Custom CSS for the Date Views module.
- */
-
-/* Pager plugin. */
+/* Pager plugin css */
 div.date-views-pager {
   margin-left: auto;
   margin-right: auto;
@@ -24,7 +19,7 @@ div.date-views-pager div.next-year {
 }
 
 
-/* Views filter form. */
+/* Views filter form css */
 .views-group-box div.date-views-filter-fieldset {
   margin-left: 0;
 }
@@ -52,10 +47,9 @@ div.date-views-pager div.next-year {
 }
 
 /**
- * Style Header.
- * Give the navigation bar a little extra padding below so it will clear the
- * new contextual links overlay of the teasers below it.
+ * Style Header
  */
+/* Give the navigation bar a little extra padding below so it will clear the new contextual links overlay of the teasers below it. */
 .date-nav {
   clear: both;
   padding-bottom: 1.5em;
@@ -70,7 +64,7 @@ div.date-views-pager div.next-year {
   margin-bottom: 10px;
 }
 
-.date-nav-wrapper {
+.date-nav-wrapper  {
   position: relative;
   margin-top: 5px;
   width: 100%;

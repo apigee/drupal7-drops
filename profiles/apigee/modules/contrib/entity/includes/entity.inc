@@ -23,7 +23,7 @@ interface EntityInterface {
   /**
    * Returns the entity identifier, i.e. the entities name or numeric id.
    *
-   * @return string|int
+   * @return
    *   The identifier of the entity. If the entity type makes use of a name key,
    *   the name is returned, else the numeric id.
    *
@@ -46,7 +46,7 @@ interface EntityInterface {
   /**
    * Returns the bundle of the entity.
    *
-   * @return string
+   * @return
    *   The bundle of the entity. Defaults to the entity type if the entity type
    *   does not make use of different bundles.
    */
@@ -148,7 +148,7 @@ interface EntityInterface {
    *   be translated. If set to NULL, the default display language is being
    *   used.
    *
-   * @return string
+   * @return
    *   The raw, translated property value; or the raw, un-translated value if no
    *   translation is available.
    *
@@ -159,8 +159,7 @@ interface EntityInterface {
   /**
    * Checks whether the entity is the default revision.
    *
-   * @return bool
-   *   TRUE if it is the default revision, FALSE otherwise.
+   * @return Boolean
    *
    * @see entity_revision_is_default()
    */
@@ -413,7 +412,6 @@ class Entity implements EntityInterface {
   public function __wakeup() {
     $this->setUp();
   }
-
 }
 
 /**

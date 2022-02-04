@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Helper for identifying Date API fields for views.
@@ -10,10 +9,10 @@
  *
  * @return array
  *   An array with fieldname, type, and table.
- *
  * @see date_views_date_views_fields()
  */
 function _date_views_fields($base = 'node') {
+
   // Make sure $base is never empty.
   if (empty($base)) {
     $base = 'node';
@@ -84,14 +83,14 @@ function _date_views_fields($base = 'node') {
 
         default:
           // If this is not a date field, nothing more to do.
-          continue 2;
+          continue;
       }
 
       $revision = in_array($base, array('node_revision')) ? FIELD_LOAD_REVISION : FIELD_LOAD_CURRENT;
       $db_info = date_api_database_info($field, $revision);
       $name = $table_name . "." . $field_name;
       $grans = array('year', 'month', 'day', 'hour', 'minute', 'second');
-      $granularity = !empty($field['settings']['granularity']) ? $field['settings']['granularity'] : $grans;
+      $granularity = !empty($field['granularity']) ? $field['granularity'] : $grans;
 
       $fromto = array(
         $table_name . '.' . $db_info['columns'][$table_name]['value'],
@@ -105,7 +104,7 @@ function _date_views_fields($base = 'node') {
           $offset_field = $table_name . '.' . $db_info['columns'][$table_name]['offset'];
         }
         $related_fields = array(
-          $table_name . '.' . $db_info['columns'][$table_name]['value'],
+          $table_name . '.' . $db_info['columns'][$table_name]['value']
         );
         if (isset($db_info['columns'][$table_name]['value2'])) {
           $related_fields = array_merge($related_fields, array($table_name . '.' . $db_info['columns'][$table_name]['value2']));
@@ -128,7 +127,6 @@ function _date_views_fields($base = 'node') {
 
     // Allow custom modules to provide date fields.
     else {
-      // Trigger hook_date_views_fields().
       foreach (module_implements('date_views_fields') as $module) {
         $function = $module . '_date_views_fields';
         if ($custom = $function("$table_name.$field_name")) {

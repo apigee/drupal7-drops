@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Metatag integration for the metatag_dc module.
@@ -49,7 +48,6 @@ function metatag_dc_advanced_metatag_info() {
   $info['tags']['dcterms.abstract'] = array(
     'label' => t('Abstract'),
     'description' => t('A summary of the resource.'),
-    'maxlength' => 0,
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['dcterms.accessRights'] = array(
@@ -75,7 +73,6 @@ function metatag_dc_advanced_metatag_info() {
   $info['tags']['dcterms.alternative'] = array(
     'label' => t('Alternative Title'),
     'description' => t('An alternative name for the resource.'),
-    'maxlength' => 0,
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['dcterms.audience'] = array(

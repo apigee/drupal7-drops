@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Custom class for the mask-icon meta tag's custom data.
