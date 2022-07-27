@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Metatag integration for the metatag_opengraph_product module.
@@ -11,7 +12,10 @@ function metatag_opengraph_products_metatag_info() {
   // Open Graph products.
   $info['groups']['open-graph-products'] = array(
     'label' => t('Open Graph - Products'),
-    'description' => t("These Open Graph meta tags for describing products."),
+    'description' => t('These Open Graph meta tags for describing products.<br /><br />The Facebook <a href="@debugger">Sharing Debugger</a> lets you preview how your content will look when it is shared to Facebook and debug any issues with your Open Graph tags. It may also be useful to review the official Facebook documentation on <a href="@apireference">how to describe products</a> using these meta tags.', array(
+      '@debugger' => 'https://developers.facebook.com/tools/debug/',
+      '@apireference' => 'https://developers.facebook.com/docs/marketing-api/catalog/reference',
+    )),
     'form' => array(
       '#weight' => 51,
     ),
@@ -31,22 +35,22 @@ function metatag_opengraph_products_metatag_info() {
 
   $info['tags']['product:price:amount'] = array(
     'label' => t('Price'),
-    'description' => t("The numeric price with decimal point, without currency indicator. Values below 0.01 may not be supported by clients."),
+    'description' => t("The numeric price with decimal point, without currency indicator. Values below 0.01 may not be supported by clients. (Required)"),
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['product:price:currency'] = array(
     'label' => t('Currency'),
-    'description' => t("The currency for the price (if any)."),
+    'description' => t("The currency for the price. (Required)"),
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['product:availability'] = array(
     'label' => t('Availability'),
-    'description' => t('Case-insensitive string, possible values: "instock", "pending", "oos"; per <a href="@url">Facebook\' documentation</a>.', array('@url' => 'https://developers.facebook.com/docs/reference/opengraph/object-type/product')),
+    'description' => t('Case-insensitive string, possible values: "instock", "pending", "oos". (Required)'),
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['product:brand'] = array(
     'label' => t('Brand'),
-    'description' => '',
+    'description' => '(Required)',
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['product:upc'] = array(
@@ -71,7 +75,12 @@ function metatag_opengraph_products_metatag_info() {
   ) + $defaults;
   $info['tags']['product:retailer'] = array(
     'label' => t('Retailer ID'),
-    'description' => 'A Facebook ID (or reference to the profile) of the retailer.',
+    'description' => 'A Facebook ID (or reference to the profile) of the retailer. (Required)',
+    'weight' => ++$weight,
+  ) + $defaults;
+  $info['tags']['product:retailer_item_id'] = array(
+    'label' => t('Retailer item ID'),
+    'description' => 'The unique ID of the product. (Required)',
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['product:retailer_title'] = array(

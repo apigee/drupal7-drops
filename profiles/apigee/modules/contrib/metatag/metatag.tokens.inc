@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Custom tokens for Metatag.
@@ -22,11 +23,11 @@ function metatag_token_info() {
       $label = $metatag_info['groups'][$value['group']]['label'] . ': ' . $value['label'];
     }
     else {
-      $label = t('Basic tags') . ': ' . $value['label'];
+      $label = t('Basic tags: @label', array('@label' => $value['label']));
     }
     $info['tokens']['metatag'][$value['name']] = array(
       'name' => $label,
-      'description' => $value['description'],
+      'description' => isset($value['description']) ? $value['description'] : '',
     );
   }
 
@@ -59,8 +60,36 @@ function metatag_token_info() {
   $page = str_replace('PAGER', 12, $pager);
   $info['tokens']['current-page']['pager'] = array(
     'name' => t('Custom pager'),
-    'description' => t('A custom pager (from the Metatag module). Currently set to "@pager" which would be output as e.g. "@page".', array('@pager' => $pager, '@page' => $page)),
+    'description' => t('A custom pager (from the Metatag module). Currently set to "@pager" which would be output as e.g. "@page".', array(
+      '@pager' => $pager,
+      '@page' => $page,
+    )),
   );
+
+  // Custom summary tokens for each long text field.
+  $supported_types = array('text_long', 'text_with_summary');
+  if (variable_get('metatag_summary_text_field', FALSE)) {
+    $supported_types[] = 'text';
+  }
+  $trim_length = variable_get('metatag_summary_length', 200);
+  foreach (field_read_fields() as $field_name => $field) {
+    if (!empty($field['module'])) {
+      if (in_array($field['type'], $supported_types)) {
+        $instances = field_read_instances(array('field_name' => $field_name));
+        foreach ($instances as $instance) {
+          if (!empty($instance['entity_type']) && !empty($instance['label'])) {
+            $info['tokens'][$instance['entity_type']][$field_name . '-summary'] = array(
+              'name' => t('@label (summary)', array('@label' => $instance['label'])),
+              'description' => t('A summary of the @label field, trimmed to @length characters.', array(
+                '@label' => $instance['label'],
+                '@length' => $trim_length,
+              )),
+            );
+          }
+        }
+      }
+    }
+  }
 
   return $info;
 }
@@ -127,6 +156,50 @@ function metatag_tokens($type, $tokens, array $data = array(), array $options = 
     }
   }
 
+  // Summary tokens. It is safe to rely upon an "entity" token type here because
+  // it is added by the Token module.
+  if ($type == 'entity' && isset($options['entity'], $options['entity_type'])) {
+    $trim_length = variable_get('metatag_summary_length', 200);
+    foreach ($tokens as $name => $original) {
+      if (substr($name, -8) == '-summary') {
+        // The field name is the token name minus "-summary".
+        $field_name = substr($name, 0, -8);
+
+        // Work out the requested language, if appropriate.
+        if (isset($options['language'])) {
+          $language_code = $options['language']->language;
+        }
+        else {
+          $language_code = NULL;
+        }
+        $entity = $options['entity'];
+        $entity_type = $options['entity_type'];
+        list($entity_id, $revision_id, $bundle) = entity_extract_ids($entity_type, $entity);
+        $items = field_get_items($entity_type, $entity, $field_name, $language_code);
+        if (!empty($items)) {
+          $instance = field_info_instance($entity_type, $field_name, $bundle);
+          $field_langcode = field_language($entity_type, $entity, $field_name, $language_code);
+
+          // If the summary was filled in it is not empty, use it.
+          if (!empty($items[0]['summary'])) {
+            $output = $sanitize ? _text_sanitize($instance, $field_langcode, $items[0], 'summary') : $items[0]['summary'];
+          }
+          // Attempt to provide a suitable version of the 'body' field.
+          else {
+            $output = $sanitize ? _text_sanitize($instance, $field_langcode, $items[0], 'value') : $items[0]['value'];
+          }
+          if (!empty($output)) {
+            // Trim the summary.
+            $output = text_summary($output, $instance['settings']['text_processing'] ? $items[0]['format'] : NULL, $trim_length);
+            if (!empty($output)) {
+              $replacements[$original] = $output;
+            }
+          }
+        }
+      }
+    }
+  }
+
   return $replacements;
 }
 
@@ -166,8 +239,10 @@ function metatag_token_generate_array($entity, $entity_type, $bundle) {
 }
 
 /**
- * Loop through metatags to avoid recursion on entity tokens. It will replace
- * entity metatag token to its actual entity metatag field value.
+ * Loop through metatags to avoid recursion on entity tokens.
+ *
+ * It will replace entity metatag token to its actual entity metatag field
+ * value.
  *
  * @param array $metatags
  *   An array of entity metatag tokens.
@@ -177,7 +252,7 @@ function metatag_token_generate_array($entity, $entity_type, $bundle) {
  * @return array
  *   Return metatags array with entity metatag tokens replaced.
  */
-function _metatag_token_process_metatag($metatags, $token_type) {
+function _metatag_token_process_metatag(array $metatags, $token_type) {
   foreach ($metatags as $metatag => $data) {
     // Skip values that are not strings.
     if (!is_string($data['value'])) {
@@ -227,7 +302,7 @@ function _metatag_token_process_metatag($metatags, $token_type) {
  * @return string
  *   The replaced value of $token.
  */
-function metatag_token_entitymetatagtoken_replace($metatags, $token, $token_type, $search_tokens = array(), $replace_tokens = array()) {
+function metatag_token_entitymetatagtoken_replace(array $metatags, $token, $token_type, array $search_tokens = array(), array $replace_tokens = array()) {
   $data_tokens = token_scan($token);
   // Check field has tokens.
   if (isset($data_tokens[$token_type])) {

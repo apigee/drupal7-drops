@@ -1,22 +1,22 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-22.05.13.00',
-        'version' => '22.05.13.00-dev',
+        'name' => 'apigee/edge',
+        'pretty_version' => 'dev-22.07.27.00',
+        'version' => '22.07.27.00-dev',
+        'reference' => '97ac8040603fe36712aaff3650b51abc54ea1ed1',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'f34d19fa892a58d9ffd7791a70b19173cd13ae76',
-        'name' => 'apigee/edge',
         'dev' => false,
     ),
     'versions' => array(
         'apigee/edge' => array(
-            'pretty_version' => 'dev-22.05.13.00',
-            'version' => '22.05.13.00-dev',
+            'pretty_version' => 'dev-22.07.27.00',
+            'version' => '22.07.27.00-dev',
+            'reference' => '97ac8040603fe36712aaff3650b51abc54ea1ed1',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'f34d19fa892a58d9ffd7791a70b19173cd13ae76',
             'dev_requirement' => false,
         ),
         'guzzle/batch' => array(
@@ -40,10 +40,10 @@
         'guzzle/guzzle' => array(
             'pretty_version' => 'v3.9.3',
             'version' => '3.9.3.0',
+            'reference' => '0645b70d953bc1c067bbc8d5bc53194706b628d9',
             'type' => 'library',
             'install_path' => __DIR__ . '/../guzzle/guzzle',
             'aliases' => array(),
-            'reference' => '0645b70d953bc1c067bbc8d5bc53194706b628d9',
             'dev_requirement' => false,
         ),
         'guzzle/http' => array(
@@ -163,19 +163,19 @@
         'psr/log' => array(
             'pretty_version' => '1.0.2',
             'version' => '1.0.2.0',
+            'reference' => '4ebe3a8bf773a19edfe0a84b6585ba3d401b724d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../psr/log',
             'aliases' => array(),
-            'reference' => '4ebe3a8bf773a19edfe0a84b6585ba3d401b724d',
             'dev_requirement' => false,
         ),
         'symfony/event-dispatcher' => array(
             'pretty_version' => 'v2.8.20',
             'version' => '2.8.20.0',
+            'reference' => '7fc8e2b4118ff316550596357325dfd92a51f531',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/event-dispatcher',
             'aliases' => array(),
-            'reference' => '7fc8e2b4118ff316550596357325dfd92a51f531',
             'dev_requirement' => false,
         ),
     ),

@@ -5,12 +5,10 @@ core = 7.x
 dependencies[] = metatag:metatag
 
 ; Tests.
-files[] = tests/metatag_google_cse.test
-files[] = tests/metatag_google_cse.tags.test
+files[] = tests/MetatagGoogleCseTagsTest.test
 
-; Information added by Drupal.org packaging script on 2017-07-03
-version = "7.x-1.22"
+; Information added by Drupal.org packaging script on 2022-07-26
+version = "7.x-1.29"
 core = "7.x"
 project = "metatag"
-datestamp = "1499110746"
-
+datestamp = "1658848674"

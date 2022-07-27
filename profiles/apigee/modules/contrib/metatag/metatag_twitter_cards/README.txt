@@ -9,6 +9,7 @@ tags are provided:
 * twitter:url
 * twitter:title
 * twitter:description
+* twitter:dnt
 * twitter:image
 * twitter:image:width
 * twitter:image:height
@@ -41,5 +42,5 @@ References
 1: https://dev.twitter.com/docs/cards
 2: https://dev.twitter.com/docs/cards/preview
 3: https://www.drupal.org/u/marty2081
-4: http://www.gemeentemuseum.nl/
+4: https://www.gemeentemuseum.nl/
 5: https://www.drupal.org/node/1664322

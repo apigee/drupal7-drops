@@ -11,15 +11,78 @@
 function jquery_update_requirements($phase) {
   $requirements = array();
 
+  $jquery_supported_versions = array(
+    '1.4.4',
+    '1.12.4',
+    '2.2.4',
+  );
+  $jquery_ui_supported_versions = array(
+    '1.8.7',
+    '1.10.2',
+  );
+
   if ($phase == 'runtime') {
     $t = get_t();
+    $versions = array();
+    $themes = list_themes();
+
     $jquery = drupal_get_library('system', 'jquery');
     $ui = drupal_get_library('system', 'ui');
-    $requirements['jquery_update'] = array(
-      'title' => $t('jQuery Update'),
-      'severity' => REQUIREMENT_OK,
-      'value' => t('jQuery %jquery (<a href="@link">configure</a>) and jQuery UI %ui', array('%jquery' => $jquery['version'], '%ui' => $ui['version'], '@link' => url('admin/config/development/jquery_update'))),
-    );
+
+    $versions['admin_theme']['jquery'] = $jquery['version'];
+    $versions['admin_theme']['ui'] = $ui['version'];
+
+    // Try to retrieve versions for the default theme too. This seems a hacky
+    // way to do it, but we cannot rely on theme_get_setting() to reflect what
+    // the alter hook will actually set for the jquery libraries.
+    $default_theme = variable_get('theme_default', NULL);
+    if (!is_null($default_theme)) {
+      $backup_theme_key = $GLOBALS['theme_key'];
+      $GLOBALS['theme_key'] = $default_theme;
+      $libraries = array($jquery, $ui);
+      jquery_update_library_alter($libraries, 'system');
+      $versions['theme_default']['jquery'] = $libraries['jquery']['version'];
+      $versions['theme_default']['ui'] = $libraries['ui']['version'];
+      $GLOBALS['theme_key'] = $backup_theme_key;
+    }
+
+    foreach ($versions as $theme => $library_version) {
+      $jquery_supported = in_array($library_version['jquery'], $jquery_supported_versions);
+      $jquery_ui_supported = in_array($library_version['ui'], $jquery_ui_supported_versions);
+
+      if ($jquery_supported && $jquery_ui_supported) {
+        $severity = REQUIREMENT_OK;
+        $message = t('The installed versions of jQuery and jQuery UI have Security Coverage.');
+      }
+      else {
+        $severity = REQUIREMENT_WARNING;
+        $message = t('The installed versions of jQuery and jQuery UI may not have Security Coverage.') . ' ' .
+          t('Check the <a href="@drupal-jquery_update">jQuery Update project page</a> for more details.', array(
+              '@drupal-jquery_update' => 'https://drupal.org/project/jquery_update'
+            )
+          );
+      }
+
+      $theme_key = variable_get($theme, FALSE);
+      $theme_name = $themes[$theme_key]->info['name'];
+
+      $requirements['jquery_update_' . $theme] = array(
+        'title' => $t('jQuery Update') . ' (' .
+          format_string('@theme: %theme_name', array(
+              '@theme' => $theme,
+              '%theme_name' => $theme_name
+            )
+          ) . ')',
+        'severity' => $severity,
+        'value' => t('jQuery %jquery (<a href="@link">configure</a>) and jQuery UI %ui', array(
+            '%jquery' => $library_version['jquery'],
+            '%ui' => $library_version['ui'],
+            '@link' => url('admin/config/development/jquery_update')
+          )
+        ),
+        'description' => $message,
+      );
+    }
   }
 
   return $requirements;

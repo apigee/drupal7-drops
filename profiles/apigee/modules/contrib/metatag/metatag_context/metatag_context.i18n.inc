@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Internationalization (i18n) hooks.
@@ -13,24 +14,34 @@ function metatag_context_i18n_object_info() {
     // Callback to load all config objects.
     'list callback' => 'metatag_context_i18n_list_contexts',
     // The object load callback.
+    // @code
     // 'load callback' => 'metatag_context_i18n_load',
+    // @endcode
     // @todo Custom i18n object overrides.
-    // 'class' => 'metatag_context_i18n_metatag',
+    // @code
+    // 'class' => 'metatag_context_i18n_metatag'
+    // @endcode
     // @todo Is this needed? What does it do?
-    // 'translation set' => TRUE,
-
+    // @code
+    // 'translation set' => TRUE
+    // @endcode
     // The object key field.
     'key' => 'name',
     // Placeholders for automatic paths. This connects the 'key' to strings in
     // the paths listed below.
+    // @code
     // 'placeholders' => array(
     //   '%name' => 'name',
     // ),
+    // @endcode
     // To produce edit links automatically.
+    // @code
     // 'edit path' => 'admin/config/search/metatags/config/%instance',
+    // @endcode
     // Auto-generate a 'translate' tab.
+    // @code
     // 'translate tab' => 'admin/config/search/metatags/config/%instance/translate',
-
+    // @endcode
     // Properties for string translation.
     'string translation' => array(
       // The textgroup, type and (below) name will be concatenated into a single
@@ -42,7 +53,9 @@ function metatag_context_i18n_object_info() {
       // Translatable properties of these objects, this will be added later.
       'properties' => array(),
       // The path to translate individual strings.
+      // @code
       // 'translate path' => 'admin/config/search/metatags/config/%instance/translate/%i18n_language',
+      // @endcode
     ),
   );
 
@@ -67,8 +80,10 @@ function metatag_context_i18n_object_info() {
     $title = $tag_info['label'];
     if (!empty($tag_info['group'])) {
       $tag_group = $tag_info['group'];
-      $group_label = !empty($groups[$tag_group]['label']) ? $groups[$tag_group]['label'] : $tag_group;
-      $title = $group_label . ': '. $title;
+      if (empty($groups[$tag_group]['label'])) {
+        $tag_group = $groups[$tag_group]['label'];
+      }
+      $title = $tag_group . ': ' . $title;
     }
 
     $info['metatag_context']['string translation']['properties'][$tag_name] = array(
@@ -82,10 +97,9 @@ function metatag_context_i18n_object_info() {
 
 /**
  * Implements hook_i18n_string_list().
- *
- * @todo Functionality to delete translation records when Panels are deleted.
  */
 function metatag_context_i18n_string_list($group) {
+  // @todo Functionality to delete translation records when Panels are deleted.
   if ($group == 'metatag' || $group == 'all') {
     $strings = array();
 

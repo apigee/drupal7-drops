@@ -88,6 +88,6 @@ dependencies[] = views_ui
 dependencies[] = wysiwyg_filter
 
 
-; Added by build script on 20220513.1524
-version = "22.05.13.00"
+; Added by build script on 20220727.1506
+version = "22.07.27.00"
     

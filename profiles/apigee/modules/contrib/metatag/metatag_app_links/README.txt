@@ -36,5 +36,5 @@ The initial development was by Andrew Berry [2].
 
 References
 ------------------------------------------------------------------------------
-1: http://applinks.org/
+1: https://applinks.org/
 2: https://www.drupal.org/u/deviantintegral

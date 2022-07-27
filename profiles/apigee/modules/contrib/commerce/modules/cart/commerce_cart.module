@@ -1770,7 +1770,12 @@ function _commerce_cart_matching_products($products, &$form_state) {
       // Store which attributes this product is associated with.
       foreach ($attributes as $attribute_name => $attribute_value) {
         $product_attribute_items = field_get_items('commerce_product', $product, $attribute_name);
-        $product_attribute_value = reset($product_attribute_items[0]);
+        if (!empty($product_attribute_items[0])) {
+          $product_attribute_value = reset($product_attribute_items[0]);
+        }
+        else {
+          $product_attribute_value = NULL;
+        }
 
         if ($product_attribute_value == $attribute_value) {
           $attributes_products[$attribute_name][$product_id] = $product;

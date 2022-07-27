@@ -5,8 +5,8 @@ core = 7.x
 dependencies[] = content_access
 dependencies[] = rules
 
-; Information added by Drupal.org packaging script on 2020-06-25
-version = "7.x-1.2-beta3"
+; Information added by Drupal.org packaging script on 2022-06-01
+version = "7.x-1.2-beta4"
 core = "7.x"
 project = "content_access"
-datestamp = "1593095998"
+datestamp = "1654071308"

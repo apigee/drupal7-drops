@@ -20,7 +20,7 @@ function content_access_help($path, $arg) {
       $output .= '<li>' . t('Access control can be further customized per <em>user</em> if you have the <strong>!acl</strong> module enabled.',
         array('!acl' => l('ACL', 'https://www.drupal.org/project/acl/'))) . '</li></ul>';
       if (function_exists('advanced_help_hint_docs')) {
-        $output .= '<p>' . advanced_help_hint_docs('content_access', 'https://drupal.org/node/1194974', TRUE) . '</p>';
+        $output .= '<p>' . advanced_help_hint_docs('content_access', 'https://www.drupal.org/docs/7/modules/content-access', TRUE) . '</p>';
       }
       else {
         $output .= '<p>' .t('If you install and enable the module <strong>!url</strong>, you will get more help for <strong>Content Access</strong>.',
@@ -53,7 +53,6 @@ function content_access_menu() {
     'access callback' => 'content_access_node_page_access',
     'access arguments' => array(1),
     'file' => 'content_access.admin.inc',
-    'theme callback' => '_node_custom_theme',
     'type' => MENU_LOCAL_TASK,
     'weight' => 3,
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
@@ -68,7 +67,6 @@ function content_access_menu() {
     'access arguments' => array(),
     'type' => MENU_LOCAL_TASK,
     'file' => 'content_access.admin.inc',
-    'theme callback' => '_node_custom_theme',
     'weight' => 1,
   );
 
@@ -112,6 +110,7 @@ function content_access_admin_settings_access() {
  */
 function content_access_node_grants($account, $op) {
   return array(
+    'content_access_author_unpublished' => $account->uid && user_access('view own unpublished content', $account) ? array($account->uid) : array(),
     'content_access_author' => array($account->uid),
     'content_access_rid' => array_keys($account->roles),
   );
@@ -121,8 +120,22 @@ function content_access_node_grants($account, $op) {
  * Implements hook_node_access_records().
  */
 function content_access_node_access_records($node) {
-  if (content_access_disabling() || !$node->status) {
+  if (content_access_disabling()) {
     return;
+  }
+  if (!$node->status) {
+    $grants = array();
+    if ($node->uid) {
+      $grants[] = array(
+        'realm' => 'content_access_author_unpublished',
+        'gid' => $node->uid,
+        'grant_view' => 1,
+        'grant_update' => 0,
+        'grant_delete' => 0,
+        'priority' => 0,
+      );
+    }
+    return $grants;
   }
 
   // Apply per node settings if necessary.
@@ -498,9 +511,16 @@ function content_access_optimize_grants(&$grants, $node) {
   // Detect if all are allowed to view
   $all = array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID);
   if (count(array_diff($all, $rids['view'])) == 0) {
-    //grant view access to all instead of single roles
+    // Grant view access to all instead of single roles.
     $rids['view'] = array('all');
-    $grants['all'] = array('realm' => 'all', 'gid' => 0, 'grant_view' => 1, 'grant_update' => 0, 'grant_delete' => 0, 'priority' => content_access_get_settings('priority', $node->type));
+    $grants['all'] = array(
+      'realm' => 'all',
+      'gid' => 0,
+      'grant_view' => 1,
+      'grant_update' => 0,
+      'grant_delete' => 0,
+      'priority' => content_access_get_settings('priority', $node->type)
+    );
   }
 
   // If authenticated users are involved, remove unnecessary other roles.

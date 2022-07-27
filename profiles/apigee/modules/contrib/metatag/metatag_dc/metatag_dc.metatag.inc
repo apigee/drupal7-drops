@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Metatag integration for the metatag_dc module.
@@ -66,12 +67,12 @@ function metatag_dc_metatag_bundled_config_alter(array &$configs) {
 
 /**
  * Implements hook_metatag_info().
- * Dublin Core Elements taken from http://purl.org/dc/elements/1.1/.
+ * Dublin Core Elements taken from https://purl.org/dc/elements/1.1/.
  */
 function metatag_dc_metatag_info() {
   $info['groups']['dublin-core'] = array(
     'label' => t('Dublin Core Basic Tags'),
-    'description' => t('The Dublin Core Metadata Element Set, aka "Dublin Core meta tags", are a set of internationally standardized metadata tags used to describe content to make identification and classification of content easier; the standards are controlled by the <a href="@url">Dublin Core Metadata Initiative (DCMI)</a>.', array('@url' => 'http://dublincore.org/')),
+    'description' => t('The Dublin Core Metadata Element Set, aka "Dublin Core meta tags", are a set of internationally standardized metadata tags used to describe content to make identification and classification of content easier; the standards are controlled by the <a href="@url">Dublin Core Metadata Initiative (DCMI)</a>.', array('@url' => 'https://dublincore.org/')),
     'form' => array(
       '#weight' => 70,
     ),
@@ -107,11 +108,13 @@ function metatag_dc_metatag_info() {
   $info['tags']['dcterms.subject'] = array(
     'label' => t('Subject'),
     'description' => t('The topic of the resource. Typically, the subject will be represented using keywords, key phrases, or classification codes. Recommended best practice is to use a controlled vocabulary. To describe the spatial or temporal topic of the resource, use the Coverage element.'),
+    'maxlength' => 0,
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['dcterms.description'] = array(
     'label' => t('Description'),
     'description' => t('An account of the resource. Description may include but is not limited to: an abstract, a table of contents, a graphical representation, or a free-text account of the resource.'),
+    'maxlength' => 0,
     'weight' => ++$weight,
   ) + $defaults;
   $info['tags']['dcterms.publisher'] = array(
@@ -191,7 +194,7 @@ function metatag_dc_metatag_info() {
 /**
  * List the DCMI 'type' options.
  *
- * Types taken from http://dublincore.org/documents/dcmi-type-vocabulary/.
+ * Types taken from https://dublincore.org/documents/dcmi-type-vocabulary/.
  */
 function _metatag_dc_dcmi_type_vocabulary_options() {
   $options = array(

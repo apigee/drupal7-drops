@@ -23,7 +23,7 @@ class Redis_Queue_PhpRedis extends Redis_Queue_Base
         $record->data = $data;
         $record->timestamp = time();
 
-        $pipe = $client->multi(Redis::PIPELINE);
+        $pipe = $client->multi();
         // Thanks to the redis_queue standalone module maintainers for
         // this piece of code, very effective. Note that we added the
         // pipeline thought.
@@ -73,7 +73,7 @@ class Redis_Queue_PhpRedis extends Redis_Queue_Base
 
     public function deleteItem($item)
     {
-        $pipe = $this->getClient()->multi(Redis::PIPELINE);
+        $pipe = $this->getClient()->multi();
         $pipe->lrem($this->getKeyForQueue(), $item->qid);
         $pipe->lrem($this->getKeyForClaimed(), $item->qid);
         $pipe->hdel($this->getKeyForData(), $item->qid);
@@ -82,7 +82,7 @@ class Redis_Queue_PhpRedis extends Redis_Queue_Base
 
     public function releaseItem($item)
     {
-        $pipe = $this->getClient()->multi(Redis::PIPELINE);
+        $pipe = $this->getClient()->multi();
         $pipe->lrem($this->getKeyForClaimed(), $item->qid, -1);
         $pipe->lpush($this->getKeyForQueue(), $item->qid);
         $ret = $pipe->exec();

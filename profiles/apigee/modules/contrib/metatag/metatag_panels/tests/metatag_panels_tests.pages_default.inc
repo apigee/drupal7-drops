@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- * metatag_panels_tests.pages_default.inc
+ * Metatag_panels_tests.pages_default.inc.
  */
 
 /**
@@ -75,7 +76,7 @@ function metatag_panels_tests_default_page_manager_pages() {
           'value' => 'Test, page, keywords',
         ),
         'abstract' => array(
-          'value' => 'http://www.example.com/user/%user:uid/full-bio-%281%29.pdf',
+          'value' => 'https://www.example.com/user/%user:uid/full-bio-%281%29.pdf',
         ),
       ),
     ),

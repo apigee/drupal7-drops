@@ -1,49 +1,51 @@
 Redis cache backends
 ====================
 
-This package provides two different Redis cache backends. If you want to use
-Redis as cache backend, you have to choose one of the two, but you cannot use
-both at the same time. Well, it will be technically possible, but it would be
-quite a dumb thing to do.
+This package provides two different Redis cache backends.
+
+If you want to use Redis as cache backend, choose one of the two cache backends.
+Unexpected bugs and issues may arise if you enable both cache backends.
 
 Predis
 ------
 
-This implementation uses the Predis PHP library. It is compatible PHP 5.3
+This implementation uses the Predis PHP library. It is compatible with PHP 5.3
 only.
 
 PhpRedis
 --------
 
-This implementation uses the PhpRedis PHP extention. In order to use it, you
-probably will need to compile the extension yourself.
+This implementation uses the PhpRedis PHP extension. In order to use it, you
+will need to compile the extension.
 
 Redis version
 -------------
 
-This module requires Redis version to be 2.6.0 or later with LUA scrpting
+This module requires Redis version to be 2.6.0 or later with LUA scripting
 enabled due to the EVAL command usage.
 
-If you can't upgrade you Redis server:
+If you cannot upgrade your Redis server, use the module versions as defined
+below:
 
-  - 3.x release will only officially support Redis server <= 2.8 and 3.x
-    nevertheless you may use it with Redis 2.4 if you configure your cache
-    backend to operate in sharding mode.
+ * 3.x release will only officially support Redis server >= 2.8 and 3.x.
+   This branch will work with Redis 2.4 if you configure your cache backend to
+   operate in sharding mode.
 
-  - For Redis 2.4 use the latest 2.x release of this module or use the
-    3.x release with sharding mode enabled.
+ * For Redis 2.4, use the latest 2.x release of this module or use the
+   3.x release with sharding mode enabled.
 
-  - For Redis <=2.3 use any version of this module <=2.6
+ * For Redis <=2.3, use any version of this module <=2.6.
 
 Notes
 -----
 
 Both backends provide the exact same functionalities. The major difference is
-because PhpRedis uses a PHP extension, and not PHP code, it will performe a
+because PhpRedis uses a PHP extension, and not PHP code, it will perform a
 lot better (Predis needs PHP userland code to be loaded).
 
-Difference is not that visible, it's really a few millisec on my testing box,
-in case you attempt to profile the code, traces will be a lot bigger.
+The difference between the two backends was tested to a few milliseconds on
+local author testing. In case you attempt to profile the code, traces will be a
+lot bigger.
 
 Note that most of the settings are shared. See next sections.
 
@@ -53,9 +55,9 @@ Getting started
 Quick setup
 -----------
 
-Here is a simple yet working easy way to setup the module.
-This method will allow Drupal to use Redis for all caches and locks
-and path alias cache replacement.
+Here is a simple yet working easy way to setup the module. This method will
+allow Drupal to use Redis for all caches, locks, and path alias cache
+replacement.
 
   $conf['redis_client_interface'] = 'PhpRedis'; // Can be "Predis".
   $conf['redis_client_host']      = '1.2.3.4';  // Your Redis instance hostname.
@@ -64,15 +66,15 @@ and path alias cache replacement.
   $conf['cache_backends'][]       = 'sites/all/modules/redis/redis.autoload.inc';
   $conf['cache_default_class']    = 'Redis_Cache';
 
-See next chapters for more information.
+For more detailed setup, see the below sections.
 
 Is there any cache bins that should *never* go into Redis?
 ----------------------------------------------------------
 
-TL;DR: No. Except for 'cache_form' if you use Redis with LRU eviction.
+No, except for 'cache_form' if you use Redis with LRU eviction.
 
 Redis has been maturing a lot over time, and will apply different sensible
-settings for different bins; It's today very stable.
+settings for different bins.
 
 Advanced configuration
 ======================
@@ -80,7 +82,7 @@ Advanced configuration
 Use the compressed cache
 ------------------------
 
-Please note this is for now an experimental feature. As a personnal note
+Please note this is (for now) an experimental feature. As a personal note
 from the module author, it should be safe to use.
 
 Use this cache class setting to enable compression. This will save usually
@@ -88,7 +90,7 @@ about 80% RAM at the cost of some milliseconds server time.
 
   $conf['cache_default_class'] = 'Redis_CacheCompressed';
 
-Additionnaly, you can alter the default size compression threshold, under which
+Additionally, you can alter the default size compression threshold, under which
 entries will not be compressed (size is in bytes, set 0 to always compress):
 
   $conf['cache_compression_size_threshold'] = 100;
@@ -120,15 +122,15 @@ Add into your settings.php file:
 
 You can replace 'PhpRedis' with 'Predis', depending on the library you chose.
 
-Note that this is optional but recommended. If you don't set this variable the
+Note that this is optional but recommended. If you do not set this variable, the
 module will proceed to class lookups and attempt to choose the best client
-available, having always a preference for the Predis one.
+available (with a preference for the Predis client library).
 
 Tell Drupal to use the cache backend
 ------------------------------------
 
-Usual cache backend configuration, as follows, to add into your settings.php
-file like any other backend:
+To use the standard cache backend configuration, update your settings.php file
+with:
 
   $conf['cache_backends'][]            = 'sites/all/modules/redis/redis.autoload.inc';
   $conf['cache_class_cache']           = 'Redis_Cache';
@@ -139,20 +141,21 @@ file like any other backend:
 Tell Drupal to use the lock backend
 -----------------------------------
 
-Usual lock backend override, update you settings.php file as this:
+To use the standard lock backend override, update your settings.php file with:
 
   $conf['lock_inc'] = 'sites/all/modules/redis/redis.lock.inc';
 
 Tell Drupal to use the path alias backend
 -----------------------------------------
 
-Usual path backend override, update you settings.php file as this:
+Too use the standard path backend override, update your settings.php file
+with:
 
   $conf['path_inc'] = 'sites/all/modules/redis/redis.path.inc';
 
 Notice that there is an additional variable for path handling that is set
-per default which will ignore any path that is an admin path, gaining a few
-SQL queries. If you want to be able to set aliases on admin path and restore
+per default, which will ignore any path that is an admin path (which gains a few
+SQL queries). If you want to be able to set aliases on admin path and restore
 an almost default Drupal core behavior, you should add this line into your
 settings.php file:
 
@@ -173,7 +176,7 @@ greatly appreciated).
 Common settings
 ===============
 
-Connect throught a UNIX socket
+Connect through a UNIX socket
 ------------------------------
 
 All you have to do is specify this line:
@@ -198,7 +201,7 @@ Using a specific database
 Per default, Redis ships the database "0". All default connections will be use
 this one if nothing is specified.
 
-Depending on you OS or OS distribution, you might have numerous database. To
+Depending on you OS or OS distribution, you might have numerous databases. To
 use one in particular, just add to your settings.php file:
 
   $conf['redis_client_base'] = 12;
@@ -224,15 +227,15 @@ Depending on the backend, using a wrong auth will behave differently:
 Prefixing site cache entries (avoiding sites name collision)
 ------------------------------------------------------------
 
-If you need to differenciate multiple sites using the same Redis instance and
+If you need to differentiate multiple sites using the same Redis instance and
 database, you will need to specify a prefix for your site cache entries.
 
-Important note: most people don't need that feature since that when no prefix
+Important note: most people do not need that feature since that when no prefix
 is specified, the Redis module will attempt to use the a hash of the database
 credentials in order to provide a multisite safe default behavior. This means
 that the module will also safely work in CLI scripts.
 
-Cache prefix configuration attemps to use a unified variable accross contrib
+Cache prefix configuration attempts to use a unified variable accross contrib
 backends that support this feature. This variable name is 'cache_prefix'.
 
 This variable is polymorphic, the simplest version is to provide a raw string
@@ -247,7 +250,7 @@ as an array:
 
 This allows you to provide different prefix depending on the bin name. Common
 usage is that each key inside the 'cache_prefix' array is a bin name, the value
-the associated prefix. If the value is explicitely FALSE, then no prefix is
+the associated prefix. If the value is explicitly FALSE, then no prefix is
 used for this bin.
 
 The 'default' meta bin name is provided to define the default prefix for non
@@ -304,7 +307,7 @@ work as of now.
 Sharding and pipelining
 -----------------------
 
-Whe using this module with sharding mode you may have a sharding proxy able to
+When using this module with sharding mode you may have a sharding proxy able to
 do command pipelining. If that is the case, you should switch to "sharding with
 pipelining" mode instead:
 
@@ -321,27 +324,27 @@ storage engine: this is a feature that avoid the Redis server crashing when
 there is no memory left on the machine.
 
 As a workaround, Redis can be configured as a LRU cache for both volatile or
-permanent items, which means it can behave like Memcache; Problem is that if
-you use Redis as a permanent storage for other business matters than this
-module you cannot possibly configure it to drop permanent items or you'll
-loose data.
+permanent items, which means it can behave like Memcache. Problems arise if
+you use Redis as a permanent storage for other business matters beyond this
+module, you cannot possibly configure it to drop permanent items or you will
+risk losing data.
 
-This workaround allows you to explicity set a very long or configured default
+This workaround allows you to explicitly set a very long or configured default
 lifetime for CACHE_PERMANENT items (that would normally be permanent) which
-will mark them as being volatile in Redis storage engine: this then allows you
-to configure a LRU behavior for volatile keys without engaging the permenent
-business stuff in a dangerous LRU mechanism; Cache items even if permament will
-be dropped when unused using this.
+will mark them as being volatile in Redis storage engine. This then allows you
+to configure a LRU behavior for volatile keys without engaging the permanent
+business stuff in a dangerous LRU mechanism. Unused cache items, even if
+permanent, will be dropped using this workaround.
 
-Per default the TTL for permanent items will set to safe-enough value which is
+Per default, the TTL for permanent items will set to safe-enough value which is
 one year; No matter how Redis will be configured default configuration or lazy
 admin will inherit from a safe module behavior with zero-conf.
 
-For advanturous people, you can manage the TTL on a per bin basis and change
+For adventurous users, you can manage the TTL on a per bin basis and change
 the default one:
 
     // Make CACHE_PERMANENT items being permanent once again
-    // 0 is a special value usable for all bins to explicitely tell the
+    // 0 is a special value usable for all bins to explicitly tell the
     // cache items will not be volatile in Redis.
     $conf['redis_perm_ttl'] = 0;
 
@@ -349,19 +352,19 @@ the default one:
     $conf['redis_perm_ttl'] = "1 year";
 
     // You can override on a per-bin basis;
-    // For example make cached field values live only 3 monthes:
+    // For example make cached field values live only 3 months:
     $conf['redis_perm_ttl_cache_field'] = "3 months";
 
     // But you can also put a timestamp in there; In this case the
     // value must be a STRICTLY TYPED integer:
     $conf['redis_perm_ttl_cache_field'] = 2592000; // 30 days.
 
-Time interval string will be parsed using DateInterval::createFromDateString
-please refer to its documentation:
+The time interval string is parsed using DateInterval::createFromDateString.
+For more information, please refer to its documentation:
 
-    http://www.php.net/manual/en/dateinterval.createfromdatestring.php
+ * http://www.php.net/manual/en/dateinterval.createfromdatestring.php
 
-Please also be careful about the fact that those settings are overriden by
+Please also be careful about the fact that those settings are overridden by
 the 'cache_lifetime' Drupal variable, which should always be set to 0.
 Moreover, this setting will affect all cache entries without exception so
 be careful and never set values too low if you don't want this setting to
@@ -370,10 +373,11 @@ override default expire value given by modules on temporary cache entries.
 Lock backends
 -------------
 
-Both implementations provides a Redis lock backend. Redis lock backend proved to
-be faster than the default SQL based one when using both servers on the same box.
+Both implementations provide a Redis lock backend. Redis lock backend proved to
+be faster than the default SQL based one when using both servers on the same
+box.
 
-Both backends, thanks to the Redis WATCH, MULTI and EXEC commands provides a
+Both backends, thanks to the Redis WATCH, MULTI and EXEC commands, provide
 real race condition free mutexes by using Redis transactions.
 
 Queue backend
@@ -389,7 +393,7 @@ setting.php file:
     $conf['queue_default_class'] = 'Redis_Queue';
     $conf['queue_default_reliable_class'] = 'Redis_Queue';
 
-Note that some queue implementations such as the batch queue are hardcoded
+Note that some queue implementations, such as the batch queue, are hardcoded
 within Drupal and will always use a database dependent implementation.
 
 If you need to proceed with finer tuning, you can set a per-queue class in
@@ -406,7 +410,7 @@ items that are too long to process won't be released back and forth but will
 block the thread processing it instead. This is the only side effect I am
 aware of at the current time.
 
-Failover, sharding and partionning
+Failover, sharding and partitioning
 ==================================
 
 Important notice
@@ -420,32 +424,32 @@ you cannot use the MULTI/EXEC command using more than one key, and that you
 cannot use complex UNION and intersection features anymore.
 
 This module does not implement any kind of client side key hashing or sharding
-and never intended to; We recommend that you read the official Redis
-documentation page about partionning.
+and never intended to. We recommend that you read the official Redis
+documentation page about partitioning.
 
 The best solution for clustering and sharding today seems to be the proxy
-assisted partionning using tools such as Twemproxy.
+assisted partitioning using tools such as Twemproxy.
 
 Current components state
 ------------------------
 
 As of now, provided components are simple enough so they never use WATCH or
-MULTI/EXEC transaction blocks on multiple keys : this means that you can use
-them in an environment doing data sharding/partionning. This remains true
+MULTI/EXEC transaction blocks on multiple keys. This means that you can use
+them in an environment doing data sharding/partitioning. This remains true
 except when you use a proxy that blocks those commands such as Twemproxy.
 
 Lock
 ----
 
-Lock backend works on a single key per lock, it theorically guarantees the
-atomicity of operations therefore is usable in a sharded environement. Sadly
+Lock backend works on a single key per lock, it theoretically guarantees the
+atomicity of operations therefore is usable in a sharded environment. Sadly
 if you use proxy assisted sharding such as Twemproxy, WATCH, MULTI and EXEC
 commands won't pass making it non shardable.
 
 Path
 ----
 
-Path backend does not use on transactions, it is safe to use in a sharded
+Path backend is not used on transactions, it is safe to use in a sharded
 environment. Note that this backend uses a single HASH key per language
 and per way (alias to source or source to alias) and therefore won't benefit
 greatly if not at all from being sharded.
@@ -455,7 +459,7 @@ Cache
 
 Cache uses pipelined transactions but does not uses it to guarantee any kind
 of data consistency. If you use a smart sharding proxy it is supposed to work
-transparently without any hickups.
+transparently without any hiccups.
 
 Queue
 -----
@@ -466,9 +470,9 @@ this component in sharded environments.
 Testing
 =======
 
-Due to Drupal unit testing API being incredibly stupid, the unit tests can only
-work with PHP >=5.3 while the module will work gracefully with PHP 5.2 (at least
-using the PhpRedis client).
+Due to Drupal unit testing API, the unit tests can only work with PHP >=5.3
+while the module will work gracefully with PHP 5.2 (at least using the PhpRedis
+client).
 
-I did not find any hint about making tests being configurable, so per default
+I did not find any hints about making tests being configurable, so per default
 the tested Redis server must always be on localhost with default configuration.

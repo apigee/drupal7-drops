@@ -49,4 +49,4 @@ Additional DCMI Metadata Terms meta tags:
 
 References
 ------------------------------------------------------------------------------
-1: http://www.dublincore.org/
+1: https://www.dublincore.org/

@@ -18,5 +18,5 @@ The initial development was by Carlos E Basqueira [3].
 
 References
 ------------------------------------------------------------------------------
-1: http://www.dublincore.org/documents/dces/
+1: https://www.dublincore.org/documents/dces/
 2: https://www.drupal.org/u/cebasqueira

@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * @file
+ * Test the test meta tags from the Metatag Test module.
+ */
+
+/**
+ * Test the test meta tags from the Metatag Test module.
+ */
+class MetatagTestTestTestMetatags extends MetatagTagsTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Test metatags',
+      'description' => "Tests the test meta tags from the metatag_test module.",
+      'group' => 'Metatag',
+      'dependencies' => array('ctools', 'devel', 'token'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public $tags = array(
+    'test:foo',
+    'test:multifoo',
+  );
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTestTagName($tag_name) {
+    return str_replace('_', ':', $tag_name);
+  }
+
+}

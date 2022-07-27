@@ -36,8 +36,8 @@ files[] = lib/Redis/Tests/Queue/QueueUnitTestCase.php
 files[] = lib/Redis/Tests/Queue/PhpRedisQueueUnitTestCase.test
 files[] = lib/Redis/Tests/Queue/PredisQueueUnitTestCase.test
 
-; Information added by Drupal.org packaging script on 2019-10-30
-version = "7.x-3.18"
+; Information added by Drupal.org packaging script on 2022-05-31
+version = "7.x-3.19"
 core = "7.x"
 project = "redis"
-datestamp = "1572430106"
+datestamp = "1654035574"

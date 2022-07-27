@@ -23,8 +23,8 @@ files[] = includes/views/handlers/commerce_line_item_handler_field_edit_delete.i
 ; Simple tests
 ; files[] = tests/commerce_line_item.test
 
-; Information added by Drupal.org packaging script on 2021-10-30
-version = "7.x-1.16"
+; Information added by Drupal.org packaging script on 2022-03-05
+version = "7.x-1.17"
 core = "7.x"
 project = "commerce"
-datestamp = "1635577160"
+datestamp = "1646502150"

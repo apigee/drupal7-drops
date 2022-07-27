@@ -991,6 +991,11 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
     $profile_ids = array();
 
     foreach ($items as $item) {
+      // Skip null values that may be present in the items array from a profile
+      // add in progress.
+      if (is_null($item['profile_id'])) {
+        continue;
+      }
       $profile_ids[] = $item['profile_id'];
     }
 
@@ -1032,9 +1037,7 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
         // profile" button.
         $element['profiles'][$key]['actions']['add_' . $profile_type['type']] = array(
           '#type' => 'submit',
-          '#value' => t('Add @type', array(
-            '@type' => strtolower($profile_type['name']),
-          )),
+          '#value' => t('Add @type', array('@type' => strtolower($profile_type['name']))),
           '#submit' => array('commerce_customer_add_profile'),
           '#limit_validation_errors' => array(array_merge($element['#field_parents'], array($element['#field_name']))),
           '#ajax' => array(
@@ -1109,7 +1112,7 @@ function commerce_customer_field_widget_form(&$form, &$form_state, $field, $inst
         // Entity is not saved yet, show a "cancel" button.
         $element['profiles'][$key]['actions']['cancel_' . $profile_type['type']] = array(
           '#type' => 'submit',
-          '#value' => t('Cancel'),
+          '#value' => t('Cancel @type', array('@type' => strtolower($profile_type['name']))),
           '#submit' => array('commerce_customer_cancel_profile'),
           '#limit_validation_errors' => array(array_merge($element['#field_parents'], array($element['#field_name']))),
           '#ajax' => array(
@@ -1178,7 +1181,11 @@ function commerce_customer_profile_manager_validate($element, &$form_state, $for
 
   // If the triggering element is not the "add profile" button and it wants to
   // limit validation errors and the form is not going to be submitted...
-  if (!isset($triggering_element['#commerce_customer_profile_type']) && isset($triggering_element['#limit_validation_errors']) && ($triggering_element['#limit_validation_errors'] !== FALSE) && !($form_state['submitted'] && !isset($triggering_element['#submit']))) {
+  if ((!isset($triggering_element['#commerce_customer_profile_type']) || array_intersect_assoc($triggering_element['#parents'], $element['#parents']) !== $element['#parents']) &&
+    isset($triggering_element['#limit_validation_errors']) &&
+    ($triggering_element['#limit_validation_errors'] !== FALSE) &&
+    !($form_state['submitted'] && !isset($triggering_element['#submit']))) {
+
     // Ensure this element wasn't specifically marked for validation in the
     // #limit_validation_errors sections array.
     $section_match = FALSE;
@@ -1196,7 +1203,21 @@ function commerce_customer_profile_manager_validate($element, &$form_state, $for
     // Exit this validate function, because the form is going to be rebuilt and
     // the data submitted may very well be incomplete.
     if (!$section_match) {
-      form_set_value($element, array(), $form_state);
+      // Build an array of element values that matches any currently referenced
+      // profile IDs, so we do not lose the reference field value even if the
+      // input is not being fully validated this page request.
+      foreach (element_children($element['profiles']) as $key) {
+        if (!isset($element['profiles'][$key]['profile'])) {
+          // There's no profile of this type.
+          continue;
+        }
+
+        // Add the profile ID to the current value of the reference field,
+        // even if it is still null as the result of a profile add in progress.
+        $value[] = array('profile_id' => $element['profiles'][$key]['profile']['#value']->profile_id);
+      }
+
+      form_set_value($element, $value, $form_state);
       return;
     }
   }

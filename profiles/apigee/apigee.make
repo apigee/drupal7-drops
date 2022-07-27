@@ -79,7 +79,7 @@ projects[ckeditor_link][version] = "2.4"
 
 projects[commerce][type] = "module"
 projects[commerce][subdir] = "contrib"
-projects[commerce][version] = "1.16"
+projects[commerce][version] = "1.17"
 ; see https://www.drupal.org/node/3021095
 projects[commerce][patch][3021095] = "https://www.drupal.org/files/issues/2018-12-17/line-item-argumentcounterror-3021095-3.patch"
 
@@ -103,7 +103,7 @@ projects[contentapi][version] = "1.0-alpha3"
 
 projects[content_access][type] = "module"
 projects[content_access][subdir] = "contrib"
-projects[content_access][version] = "1.2-beta3"
+projects[content_access][version] = "1.2-beta4"
 
 ; Enabled during profile install.
 projects[context][type] = "module"
@@ -123,7 +123,7 @@ projects[ctools][version] = "1.20"
 ; Deprecated
 projects[date][type] = "module"
 projects[date][subdir] = "contrib"
-projects[date][version] = "2.10"
+projects[date][version] = "2.12"
 
 projects[devel][type] = "module"
 projects[devel][subdir] = "contrib"
@@ -151,6 +151,7 @@ projects[entityreference][patch][2170193] = "https://www.drupal.org/files/issues
 ; Enabled during profile install.
 projects[entity][type] = "module"
 projects[entity][subdir] = "contrib"
+; Update with care, when updated to 1.10 there was an installation issue
 projects[entity][version] = "1.9"
 
 ; Disabled on OPDK builds
@@ -166,7 +167,7 @@ projects[faq][version] = "1.3"
 ; Enabled during profile install.
 projects[features][type] = "module"
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.13"
+projects[features][version] = "2.14"
 
 ; Deprecated
 projects[features_extra][type] = "module"
@@ -183,7 +184,7 @@ projects[field_group][patch][3016503] = "https://www.drupal.org/files/issues/201
 ; Enabled during profile install.
 projects[file_entity][type] = "module"
 projects[file_entity][subdir] = "contrib"
-projects[file_entity][version] = "2.35"
+projects[file_entity][version] = "2.36"
 
 ; Enabled during profile install.
 projects[flood_control][type] = "module"
@@ -239,7 +240,7 @@ projects[i18n][version] = "1.31"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
-projects[jquery_update][version] = "3.0-alpha5"
+projects[jquery_update][version] = "4.0-alpha1"
 
 ; Required for OPDK
 projects[ldap][type] = "module"
@@ -284,7 +285,7 @@ projects[mediaelement][version] = "1.3"
 ; Enabled during profile install.
 projects[media][type] = "module"
 projects[media][subdir] = "contrib"
-projects[media][version] = "2.27"
+projects[media][version] = "2.28"
 
 ; Enabled during profile install.
 projects[media_ckeditor][type] = "module"
@@ -294,16 +295,17 @@ projects[media_ckeditor][version] = "2.14"
 ; Enabled during profile install.
 projects[media_youtube][type] = "module"
 projects[media_youtube][subdir] = "contrib"
-projects[media_youtube][version] = "3.10"
+projects[media_youtube][version] = "3.11"
 
 ; Enabled during profile install.
 projects[menu_attributes][type] = "module"
 projects[menu_attributes][subdir] = "contrib"
+; Update with care, when updated to 1.1 there was an installation issue
 projects[menu_attributes][version] = "1.0"
 
 projects[metatag][type] = "module"
 projects[metatag][subdir] = "contrib"
-projects[metatag][version] = "1.22"
+projects[metatag][version] = "1.29"
 
 ; Enabled during profile install.
 projects[me][type] = "module"
@@ -367,7 +369,7 @@ projects[redirect][download][branch] = 7.x-1.x
 
 projects[redis][type] = "module"
 projects[redis][subdir] = "contrib"
-projects[redis][version] = "3.18"
+projects[redis][version] = "3.19"
 
 ; Enabled on install.
 projects[remote_stream_wrapper][type] = "module"
@@ -376,11 +378,11 @@ projects[remote_stream_wrapper][version] = "1.0"
 
 projects[rules][type] = "module"
 projects[rules][subdir] = "contrib"
-projects[rules][version] = "2.12"
+projects[rules][version] = "2.13"
 
 projects[services][type] = "module"
 projects[services][subdir] = "contrib"
-projects[services][version] = "3.27"
+projects[services][version] = "3.28"
 
 projects[services_views][type] = "module"
 projects[services_views][subdir] = "contrib"
@@ -400,6 +402,7 @@ projects[smtp][download][branch] = 7.x-1.x
 ; Required by Monetization
 projects[special_menu_items][type] = "module"
 projects[special_menu_items][subdir] = "contrib"
+; Update with care, patch is failing for 2.1
 projects[special_menu_items][version] = "2.0"
 ; see https://www.drupal.org/node/3024643
 projects[special_menu_items][patch][3024643] = "https://www.drupal.org/files/issues/2019-01-08/initialize-variables-array-3024643-2.patch"
@@ -491,7 +494,7 @@ projects[xautoload][version] = "5.8"
 
 ; Enabled during profile install for admin screens.
 projects[adminimal_theme][type] = "theme"
-projects[adminimal_theme][version] = "1.25"
+projects[adminimal_theme][version] = "1.26"
 
 ; Not enabled, but used by Apigee Responsive theme.
 projects[bootstrap][type] = "theme"

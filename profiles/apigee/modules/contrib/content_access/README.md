@@ -196,7 +196,7 @@ about "Advanced access control".
 
 
 [1]: https://drupal.org/project/content_access
-[2]: https://drupal.org/node/1194974
+[2]: https://www.drupal.org/docs/7/modules/content-access
 [3]: https://drupal.org/project/issues/content_access
 [4]: https://www.drupal.org/project/acl
 [5]: https://www.drupal.org/project/rules

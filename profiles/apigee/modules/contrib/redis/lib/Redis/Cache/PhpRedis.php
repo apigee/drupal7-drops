@@ -63,7 +63,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base
 
         $ret = array();
 
-        $pipe = $client->multi(Redis::PIPELINE);
+        $pipe = $client->multi();
         foreach ($idList as $id) {
             $pipe->hgetall($this->getKey($id));
         }
@@ -94,7 +94,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base
         $client = $this->getClient();
         $key    = $this->getKey($id);
 
-        $pipe = $client->multi(Redis::PIPELINE);
+        $pipe = $client->multi();
         $pipe->hmset($key, $data);
 
         if (null !== $ttl) {
@@ -112,7 +112,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base
     {
         $client = $this->getClient();
 
-        $pipe = $client->multi(Redis::PIPELINE);
+        $pipe = $client->multi();
         foreach ($idList as $id) {
             $pipe->del($this->getKey($id));
         }

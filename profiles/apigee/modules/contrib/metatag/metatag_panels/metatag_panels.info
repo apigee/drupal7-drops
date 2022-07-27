@@ -7,12 +7,11 @@ dependencies[] = metatag:metatag
 dependencies[] = panels:panels
 
 ; Tests.
-files[] = tests/metatag_panels.test
-files[] = tests/metatag_panels.i18n.test
+files[] = tests/MetatagPanelsTest.test
+files[] = tests/MetatagPanelsI18nTest.test
 
-; Information added by Drupal.org packaging script on 2017-07-03
-version = "7.x-1.22"
+; Information added by Drupal.org packaging script on 2022-07-26
+version = "7.x-1.29"
 core = "7.x"
 project = "metatag"
-datestamp = "1499110746"
-
+datestamp = "1658848674"

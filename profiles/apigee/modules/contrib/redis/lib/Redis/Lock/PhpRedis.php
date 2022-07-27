@@ -108,7 +108,7 @@ class Redis_Lock_PhpRedis extends Redis_Lock_DefaultBackend {
 
     if ($client->get($key) == $id) {
       $client->multi();
-      $client->delete($key);
+      $this->doDelete($client, $key);
       $client->exec();
     }
     else {
@@ -131,8 +131,28 @@ class Redis_Lock_PhpRedis extends Redis_Lock_DefaultBackend {
       $owner = $client->get($key);
 
       if (empty($owner) || $owner == $id) {
-        $client->delete($key);
+        $this->doDelete($client, $key);
       }
     }
   }
+
+  /**
+   * Wrapper for deleting items.
+   *
+   * This is necessary because of API changes in Redis.
+   *
+   * @param object $client
+   *   The client object to work with.
+   * @param string $key
+   *   The item that needs to be deleted.
+   */
+  protected function doDelete($client, $key) {
+    if (method_exists($client, 'del')) {
+      $client->del($key);
+    }
+    else {
+      $client->delete($key);
+    }
+  }
+
 }

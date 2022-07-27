@@ -47,6 +47,11 @@ class commerce_payment_handler_field_balance extends views_handler_field {
     if (!empty($order_id) && $order = commerce_order_load($order_id)) {
       $balance = commerce_payment_order_balance($order);
 
+      // Render a placeholder if balance is indeterminate due to currency.
+      if ($balance === FALSE) {
+        return '-';
+      }
+
       // Output according to the format selected as with price fields.
       switch ($this->options['display_format']) {
         case 'formatted':

@@ -7,12 +7,11 @@ The following Google+ tags are provided:
 * itemprop:name
 * itemprop:description
 * itemprop:image
-* author
 * publisher
 
 Also itemtype is provided to add schema in the HTML markup as follows:
 
-<html itemscope itemtype="http://schema.org/Article">
+<html itemscope itemtype="https://schema.org/Article">
 
 
 Usage
@@ -28,7 +27,7 @@ The $schemaorg variable must be appended to the <html> tag in the html.tpl.php
 file being used on the site, and it must be added after the $rdf_namespaces
 variable, e.g.:
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="<?php print
   $language->language; ?>" version="XHTML+RDFa 1.0" dir="<?php print
   $language->dir; ?>"<?php print $rdf_namespaces; ?><?php print $schemaorg; ?>>
 
@@ -43,4 +42,4 @@ References
 1: https://developers.google.com/+/web/snippet/
 2. https://drupal.org/project/select_or_other
 3: https://drupal.org/user/265729
-4: http://monkii.com
+4: https://monkii.com

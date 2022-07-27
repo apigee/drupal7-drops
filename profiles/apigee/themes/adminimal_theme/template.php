@@ -22,43 +22,6 @@ function adminimal_preprocess_maintenance_page(&$vars) {
  */
 function adminimal_preprocess_html(&$vars) {
 
-  // watchdog('Emergency', 'This is a test emergency watchdog mesage' , NULL , WATCHDOG_EMERGENCY);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Debug', 'This is a test debug watchdog mesage' , NULL , WATCHDOG_DEBUG);
-  // watchdog('Notice', 'This is a test notice watchdog mesage' , NULL , WATCHDOG_NOTICE);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Warning', 'This is a test warning watchdog mesage' , NULL , WATCHDOG_WARNING);
-  // watchdog('Debug', 'This is a test debug watchdog mesage' , NULL , WATCHDOG_DEBUG);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Error', 'This is a test error watchdog mesage' , NULL , WATCHDOG_ERROR);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Notice', 'This is a test notice watchdog mesage' , NULL , WATCHDOG_NOTICE);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Debug', 'This is a test debug watchdog mesage' , NULL , WATCHDOG_DEBUG);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Notice', 'This is a test notice watchdog mesage' , NULL , WATCHDOG_NOTICE);
-  // watchdog('Critical', 'This is a test critical watchdog mesage' , NULL , WATCHDOG_CRITICAL);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Alert', 'This is a test alert watchdog mesage' , NULL , WATCHDOG_ALERT);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Debug', 'This is a test debug watchdog mesage' , NULL , WATCHDOG_DEBUG);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-  // watchdog('Notice', 'This is a test notice watchdog mesage' , NULL , WATCHDOG_NOTICE);
-  // watchdog('Debug', 'This is a test debug watchdog mesage' , NULL , WATCHDOG_DEBUG);
-  // watchdog('Info', 'This is a test info watchdog mesage' , NULL , WATCHDOG_INFO);
-
-
   // Get adminimal folder path.
   $adminimal_path = drupal_get_path('theme', 'adminimal');
 
@@ -150,9 +113,18 @@ function adminimal_preprocess_html(&$vars) {
   drupal_add_css($adminimal_path . '/css/tablet.css', array('group' => CSS_THEME, 'media' => $media_query_tablet, 'weight' => 1000));
 
   // Add custom CSS.
-  $custom_css_path = 'public://adminimal-custom.css';
-  if (theme_get_setting('custom_css') && file_exists($custom_css_path)) {
-    drupal_add_css($custom_css_path, array('group' => CSS_THEME, 'weight' => 9999, 'preprocess' => TRUE));
+  if (theme_get_setting('custom_css')) {
+    $custom_css_path = theme_get_setting('custom_css_path');
+    if (empty($custom_css_path)) {
+      $custom_css_path = 'public://adminimal-custom.css';
+    }
+    if (file_exists($custom_css_path)) {
+      drupal_add_css($custom_css_path, array(
+        'group' => CSS_THEME,
+        'weight' => 9999,
+        'preprocess' => TRUE,
+      ));
+    }
   }
 
   // Fix the viewport and zooming in mobile devices.

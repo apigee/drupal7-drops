@@ -30,8 +30,8 @@ Haag. [4]), with contributions by many in the community [5].
 
 References
 ------------------------------------------------------------------------------
-1: http://www.dublincore.org/documents/dces/
-2: http://www.dublincore.org/
+1: https://www.dublincore.org/documents/dces/
+2: https://www.dublincore.org/
 3: https://www.drupal.org/u/marty2081
-4: http://www.gemeentemuseum.nl/
+4: https://www.gemeentemuseum.nl/
 5: https://www.drupal.org/node/1491616

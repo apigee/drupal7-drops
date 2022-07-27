@@ -10,7 +10,15 @@
  */
 function metatag_help($path, $arg) {
   if ($path == 'admin/config/search/metatags') {
-    return '<p>' . t('To view a summary of the default meta tags and the inheritance, click on a meta tag type.') . '</p>';
+    return '<p>' . t('Configure global meta tag default values below. Meta tags may be left as the default.') . '</p>'
+      . '<p>' . t('Meta tag patterns are passed down from one level to the next unless they are overridden. To view a summary of the individual meta tags and the pattern for a specific configuration, click on its name below.') . '</p>'
+      . '<p>' . t('If the top-level configuration is not specific enough, additional default meta tag configurations can be added for a specific entity type or entity bundle, e.g. for a specific content type, using the "Add default meta tags" form.') . '</p>'
+      . '<p>' . t('Meta tags can be further refined on a per-entity basis, e.g. for individual nodes, from the "Meta tags" fields that show on those edit forms.')
+      . '<p>' . t('To view a summary of the default meta tags and the inheritance, click on a meta tag type.') . '</p>';
+  }
+  elseif ($path == 'admin/config/search/metatags/config/add') {
+    return '<p>' . t('Use the following form to override the global default meta tags for a specific entity type or entity bundle. In practical terms, this allows the meta tags to be customized for a specific content type or taxonomy vocabulary, so that its content will have different meta tags <em>default values</em> than others.') . '</p>'
+      . '<p>' . t('As a reminder, the meta tags can be further refined on a per entity basis using the "Meta tags" field, but it is recommended to set reasonable defaults for each entity type or bundle (e.g. content types).') . '</p>';
   }
   elseif ($path == 'admin/help#metatag') {
     return '<p>' . t('The Metatag module provides a options to let each page have customized meta data added to the "meta" tags in the HEAD section of the document.') . '</p>';
@@ -248,6 +256,146 @@ function metatag_flush_caches() {
 }
 
 /**
+ * Implements hook_action_info().
+ */
+function metatag_action_info() {
+  // Provides integration with Views bulk operations.
+  return array(
+    'metatag_modify_metatags_action' => array(
+      'type' => 'entity',
+      'label' => t('Modify entity metatags'),
+      'configurable' => FALSE,
+      'vbo_configurable' => TRUE,
+      'behavior' => array('changes_property'),
+      'triggers' => array('any'),
+      'permissions' => array('edit meta tags'),
+    ),
+  );
+}
+
+/**
+ * Updates entity metatags with values from the action form.
+ *
+ * @param object $entity
+ *   The entity housing the metatags to modify.
+ * @param array $context
+ *   Contextual information passed from the View bulk operation configuration
+ *   form. The updated metatag values for the entity are stored in
+ *   $context['updates'].
+ */
+function metatag_modify_metatags_action($entity, array $context) {
+  if (empty($entity)) {
+    drupal_set_message(t("Error while trying to update an entity's metatags."),
+      'warning', FALSE);
+    return;
+  }
+
+  $updates = $context['updates'];
+  $language = $entity->language;
+
+  // Reset metatags to the entity default configs.
+  if ($context['reset_default']) {
+    $instance = $context['entity_type'] . ':' . $entity->type;
+    $entity_defaults = metatag_config_load_with_defaults($instance);
+
+    // Clean up empty values.
+    foreach ($entity_defaults as $name => $tag) {
+      if (empty($tag['value'])) {
+        unset($entity_defaults[$name]);
+      }
+    }
+
+    $entity->metatags[$language] = $entity_defaults;
+  }
+  // Otherwise, we're updating existing values. Ensure that the entity has any
+  // metatags already set. If so then merge the updates to avoid overwriting
+  // existing values that may exist as an array. E.g. robots.
+  elseif (!empty($entity->metatags) && !empty($entity->metatags[$language])) {
+    foreach ($updates as $tag => $value_array) {
+      if (is_array($updates[$tag]['value']) && !empty($entity->metatags[$language][$tag]['value'])) {
+        $entity->metatags[$language][$tag]['value'] = array_merge($entity->metatags[$language][$tag]['value'],
+          array_filter($updates[$tag]['value']));
+      }
+      elseif (!empty($updates[$tag]['value'])) {
+        $entity->metatags[$language][$tag]['value'] = $updates[$tag]['value'];
+      }
+    }
+  }
+  // Otherwise just set the net new tags.
+  else {
+    $entity->metatags[$language] = $updates;
+  }
+
+  entity_save($context['entity_type'], $entity);
+}
+
+/**
+ * The Views bulk operation configuration form for modifying metatags.
+ *
+ * @param array $context
+ *   Contextual information passed from the View bulk operation configuration
+ *   form.
+ *
+ * @return array
+ *   A form API compatible array.
+ */
+function metatag_modify_metatags_action_form(array $context) {
+  $form = array(
+    '#entity_type' => $context['entity_type'],
+  );
+
+  // There can be multiple instances being edited here. So the 2nd param passed
+  // here is as generic as possible.
+  metatag_metatags_form($form, 'global');
+
+  // Force the metatags tab to be fully visible and save a click from the user.
+  $form['metatags']['#collapsed'] = FALSE;
+  $form['metatags']['#collapsible'] = FALSE;
+
+  // If we're reseting to the entity default, then we don't need to show the
+  // form fields.
+  $form['metatags']['#states'] = array(
+    'visible' => array(
+      ':input[name="reset_default"]' => array('checked' => FALSE),
+    ),
+  );
+
+  // Add an option to reset selected entities to the default configuration.
+  $form['reset_default'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Reset to metatag defaults'),
+    '#default_value' => FALSE,
+    '#description' => t('Check to <strong>fully reset all metatags</strong> on the entities being modified to their <a href="@settings">default configuration</a>.', array(
+      '@settings' => url('admin/config/search/metatags'),
+    )),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for metatag_modify_metatags_action_form().
+ *
+ * Filters out the user entered values from the defaults and returns the
+ * updated values to the $context array.
+ *
+ * @return array
+ *   The updated metatag values that is ultimately keyed at $context['updates'].
+ */
+function metatag_modify_metatags_action_submit(array $form, array &$form_state) {
+  $updates = $form_state['values']['metatags'][LANGUAGE_NONE];
+  $defaults = metatag_config_load_with_defaults($form['#entity_type']);
+
+  // Filter out the true updates.
+  metatag_filter_values_from_defaults($updates, $defaults);
+
+  return array(
+    'updates' => $updates,
+    'reset_default' => $form_state['values']['reset_default'],
+  );
+}
+
+/**
  * Load a metatag configuration record with all the defaults merged in.
  *
  * For example, given the configuration instance 'node:article', this function
@@ -373,7 +521,7 @@ function metatag_config_get_replacements() {
 /**
  * Save a metatag configuration record to the database.
  */
-function metatag_config_save($config) {
+function metatag_config_save(object $config) {
   $config->is_new = empty($config->cid);
 
   // Allow modules to alter the configuration before it is saved using
@@ -566,9 +714,10 @@ function metatag_metatags_load_multiple($entity_type, array $entity_ids, array $
  *   The entity's primary ID.
  * @param int $revision_id
  *   The entity's revision ID.
- * @param array $metatags
+ * @param mixed $metatags
  *   All of the tag information, keyed by the language code. Most meta tags use
  *   the 'value' element, so the structure should look like:
+ *   @code
  *   array(
  *     LANGUAGE_NONE => array(
  *       'title' => array(
@@ -581,11 +730,12 @@ function metatag_metatags_load_multiple($entity_type, array $entity_ids, array $
  *         'value' => "[node:field_thumbnail]",
  *       ),
  *     ),
- *   );.
+ *   );
+ *   @endcode
  * @param string|null $bundle
  *   The bundle of the entity that is being saved. Optional.
  */
-function metatag_metatags_save($entity_type, $entity_id, $revision_id, $metatags, $bundle = NULL) {
+function metatag_metatags_save($entity_type, $entity_id, $revision_id, array $metatags, $bundle = NULL) {
   // Check that $entity_id is numeric because of Entity API and string IDs.
   if (!is_numeric($entity_id)) {
     return;
@@ -1255,6 +1405,10 @@ function metatag_metatags_view($instance, array $metatags = array(), array $opti
 
   $options['instance'] = $instance;
 
+  // Trigger hook_metatag_metatags_alter(). Allow the raw meta tags to be
+  // modified prior to rendering.
+  drupal_alter('metatag_metatags', $metatags, $instance, $options);
+
   // Don't output meta tags that only contain the pager.
   $current_pager = metatag_get_current_pager();
 
@@ -1435,9 +1589,16 @@ function metatag_metatags_form(array &$form, $instance, array $metatags = array(
 
     // Get the form element from the meta tag class.
     $metatag_form = $metatag_instance->getForm($options);
+    if (isset($metatag_form['value']['#default_value']) && is_array($metatag_form['value']['#default_value'])) {
+      $metatag_form['value']['#default_value'] = array_filter($metatag_form['value']['#default_value']);
+    }
 
     // Add a default value form element.
     if (isset($options['defaults'][$metatag]['value'])) {
+      if (is_array($options['defaults'][$metatag]['value'])) {
+        $options['defaults'][$metatag]['value'] = array_filter($options['defaults'][$metatag]['value']);
+      }
+
       $metatag_form['default'] = array(
         '#type' => 'hidden',
         '#value' => $options['defaults'][$metatag]['value'],
@@ -1455,7 +1616,10 @@ function metatag_metatags_form(array &$form, $instance, array $metatags = array(
     if (!empty($metatag_info['group'])) {
       $group_key = $metatag_info['group'];
       if (isset($info['groups'][$group_key]['label']) && !isset($form['metatags'][$langcode][$group_key])) {
-        $group = $info['groups'][$group_key] + array('form' => array(), 'description' => NULL);
+        $group = $info['groups'][$group_key] + array(
+          'form' => array(),
+          'description' => NULL,
+        );
         $form['metatags'][$langcode][$group_key] = $group['form'] + array(
           '#type' => 'fieldset',
           '#title' => $group['label'],
@@ -1636,10 +1800,10 @@ function metatag_entity_supports_metatags($entity_type = NULL, $bundle = NULL) {
         // Entiy types are enabled by default.
         // Allow entities to be disabled by assigning a variable
         // 'metatag_enable_{$entity_type}' the value FALSE, e.g.:
-        //
-        // // Disable metatags for file_entity.
-        // $conf['metatag_enable_file'] = FALSE;.
-        //
+        // @code
+        //   // Disable metatags for file_entity.
+        //   $conf['metatag_enable_file'] = FALSE;
+        // @endcode
         // @see Settings page.
         if (variable_get('metatag_enable_' . $entity_name, FALSE) == FALSE) {
           $entity_types[$entity_name] = FALSE;
@@ -1658,10 +1822,10 @@ function metatag_entity_supports_metatags($entity_type = NULL, $bundle = NULL) {
 
             // Allow bundles to be disabled by assigning a variable
             // 'metatag_enable_{$entity_type}__{$bundle}' the value FALSE, e.g.:
-            //
-            // // Disable metatags for carousel nodes.
-            // $conf['metatag_enable_node__carousel'] = FALSE;.
-            //
+            // @code
+            //   // Disable metatags for carousel nodes.
+            //   $conf['metatag_enable_node__carousel'] = FALSE;
+            // @endcode
             // @see Settings page.
             if (variable_get('metatag_enable_' . $entity_name . '__' . $bundle_name, TRUE) == FALSE) {
               $entity_types[$entity_name][$bundle_name] = FALSE;
@@ -1699,9 +1863,9 @@ function metatag_entity_supports_metatags($entity_type = NULL, $bundle = NULL) {
  * Enable support for a specific entity type if setting does not exist.
  *
  * @param string $entity_type
- *    The entity type.
+ *   The entity type.
  * @param string $bundle
- *    The bundle of the entity.
+ *   The bundle of the entity.
  * @param bool $force_enable
  *   If TRUE, then the type is enabled regardless of any stored variables.
  *
@@ -1738,9 +1902,9 @@ function metatag_entity_type_enable($entity_type, $bundle = NULL, $force_enable 
  * Disable support for a specific entity type.
  *
  * @param string $entity_type
- *    The entity type.
+ *   The entity type.
  * @param string $bundle
- *    The bundle of the entity.
+ *   The bundle of the entity.
  */
 function metatag_entity_type_disable($entity_type, $bundle = NULL) {
   // The bundle was defined.
@@ -1761,10 +1925,10 @@ function metatag_entity_type_disable($entity_type, $bundle = NULL) {
  *
  * @param string $instance
  *   The configuration instance key of the meta tags, e.g. "node:article".
- * @param array $metatags
+ * @param mixed $metatags
  *   An array of meta tags from metatag_metatags_view().
  */
-function metatag_page_set_metatags($instance, $metatags) {
+function metatag_page_set_metatags($instance, array $metatags) {
   $page_metatags = &drupal_static(__FUNCTION__, array());
   $page_metatags[$instance] = $metatags;
 }
@@ -1780,7 +1944,7 @@ function metatag_page_get_metatags() {
 /**
  * Implements hook_page_build().
  */
-function metatag_page_build(&$page) {
+function metatag_page_build(array &$page) {
   // By default do not add meta tags to admin pages. To enable meta tags on
   // admin pages set the 'metatag_tag_admin_pages' variable to TRUE.
   if (path_is_admin(current_path()) && !variable_get('metatag_tag_admin_pages', FALSE)) {
@@ -1816,15 +1980,17 @@ function metatag_page_build(&$page) {
     );
     $cid = metatag_cache_default_cid_parts($cid_parts);
 
-    if ($cache = metatag_cache_get($cid)) {
-      $metatags = $cache->data;
+    if (variable_get('metatag_cache_output', FALSE)) {
+      if ($cache = metatag_cache_get($cid)) {
+        $metatags = $cache->data;
+      }
+      else {
+        $metatags = metatag_metatags_view($instance, array());
+        metatag_cache_set($cid, $metatags);
+      }
     }
     else {
       $metatags = metatag_metatags_view($instance, array());
-      // If output caching is enabled, save this for later.
-      if (variable_get('metatag_cache_output', FALSE)) {
-        metatag_cache_set($cid, $metatags);
-      }
     }
 
     $page[$region]['metatags'][$instance] = $metatags;
@@ -1866,9 +2032,9 @@ function metatag_page_build(&$page) {
  * Returns whether the current page is the page of the passed in entity.
  *
  * @param string $entity_type
- *    The entity type; e.g. 'node' or 'user'.
+ *   The entity type; e.g. 'node' or 'user'.
  * @param object $entity
- *    The entity object.
+ *   The entity object.
  *
  * @return mixed
  *   TRUE if the current page is the page of the specified entity, or FALSE
@@ -1891,6 +2057,12 @@ function _metatag_entity_is_page($entity_type, $entity) {
 
   // Support for core node revisions.
   elseif (!empty($uri['path']) && strpos($current_path, $uri['path']) === 0 && strpos($current_path, '/revisions/') && strpos($current_path, '/view')) {
+    return TRUE;
+  }
+
+  // Support for Views' taxonomy_term pages with depth specifier, e.g.
+  // "taxonomy_term/123/1/all".
+  elseif ($entity_type == 'taxonomy_term' && strpos($current_path, $uri['path']) === 0 && count(explode('/', $current_path)) == 4) {
     return TRUE;
   }
 
@@ -2201,7 +2373,9 @@ function metatag_html_head_alter(&$elements) {
       'canonical',
       'shortlink',
       // Leave the shortcut icon, that's more of a theming thing.
-      // 'shortcut icon',.
+      // @code
+      // 'shortcut icon',
+      // @endcode
     );
     foreach ($elements as $name => &$element) {
       // Ignore meta tags provided by Metatag.
@@ -2598,8 +2772,7 @@ function _metatag_isdefaultrevision($entity) {
   // - https://www.drupal.org/node/1522154
   //
   // Every moderation module saving a forward revision needs to return FALSE.
-  // @todo: Refactor this workaround under D8.
-
+  // @todo Refactor this workaround under D8.
   // Workbench Moderation v1 uses the hook_node_presave() for some custom logic.
   // This was replaced with hook_entity_presave() in v3, so only proceed if the
   // old hook implementation is present.
@@ -2647,8 +2820,8 @@ function metatag_cache_default_cid_parts(array $cid_parts = array()) {
   }
 
   // Allow each page in a sequence to have different values.
-  if (isset($_GET['page'])) {
-    $cid_parts['page'] = $_GET['page'];
+  if (isset($_GET['page']) && is_numeric($_GET['page'])) {
+    $cid_parts['page'] = intval($_GET['page']);
   }
 
   // Allow other modules to customize the data using
@@ -2726,14 +2899,14 @@ function metatag_admin_menu_cache_info() {
  * modes, must be fieldable, and may not be a configuration entity.
  *
  * @param string $entity_type
- *    The entity type.
+ *   The entity type.
  * @param array $entity_info
- *    Entity information.
+ *   Entity information.
  *
  * @return bool
- *    Return TRUE if suitable.
+ *   Return TRUE if suitable.
  */
-function metatag_entity_type_is_suitable($entity_type, $entity_info = array()) {
+function metatag_entity_type_is_suitable($entity_type, array $entity_info = array()) {
   $suitable = TRUE;
 
   // If the entity info was not passed along, load it.
@@ -2792,10 +2965,9 @@ function metatag_entity_type_is_suitable($entity_type, $entity_info = array()) {
 
 /**
  * Implements hook_node_type_insert().
- *
- * When a content type is created, enable it for use with Metatag.
  */
 function metatag_node_type_insert($info) {
+  // When a content type is created, enable it for use with Metatag.
   if (metatag_entity_supports_metatags('node')) {
     if (metatag_entity_type_enable('node', $info->type)) {
       drupal_set_message(t('Metatag support has been enabled for the @label content type.', array('@label' => $info->name)));
@@ -2805,19 +2977,17 @@ function metatag_node_type_insert($info) {
 
 /**
  * Implements hook_node_type_delete().
- *
- * When a content type is deleted, remove the corresponding Metatag variable.
  */
 function metatag_node_type_delete($info) {
+  // When a content type is deleted, remove the corresponding Metatag variable.
   variable_del('metatag_enable_node__' . $info->type);
 }
 
 /**
  * Implements hook_taxonomy_vocabulary_insert().
- *
- * When a vocabulary is created, enable it for use with Metatag.
  */
 function metatag_taxonomy_vocabulary_insert($vocabulary) {
+  // When a vocabulary is created, enable it for use with Metatag.
   if (metatag_entity_supports_metatags('taxonomy_term')) {
     if (metatag_entity_type_enable('taxonomy_term', $vocabulary->machine_name)) {
       drupal_set_message(t('Metatag support has been enabled for the @label vocabulary.', array('@label' => $vocabulary->name)));
@@ -2827,10 +2997,9 @@ function metatag_taxonomy_vocabulary_insert($vocabulary) {
 
 /**
  * Implements hook_taxonomy_vocabulary_delete().
- *
- * When a vocabulary is deleted, remove the corresponding Metatag variable.
  */
 function metatag_taxonomy_vocabulary_delete($info) {
+  // When a vocabulary is deleted, remove the corresponding Metatag variable.
   variable_del('metatag_enable_taxonomy_term__' . $info->machine_name);
 }
 
@@ -2876,12 +3045,11 @@ function _metatag_config_instance_sort($a, $b) {
 
 /**
  * Implements hook_entity_translation_delete().
- *
- * Required for content translations being handled via Entity_Translation to
- * remove the appropriate record when a translation is removed without the
- * corresponding entity record also being removed.
  */
 function metatag_entity_translation_delete($entity_type, $entity, $langcode) {
+  // Required for content translations being handled via Entity_Translation to
+  // remove the appropriate record when a translation is removed without the
+  // corresponding entity record also being removed.
   // Get the entity's ID.
   list($entity_id, $revision_id) = entity_extract_ids($entity_type, $entity);
   $revision_id = intval($revision_id);
@@ -3006,7 +3174,7 @@ function metatag_translate_metatag($string, $tag_name, $context, $langcode = NUL
 /**
  * Translate a set of metatags to the current language.
  *
- * @param array $metatags
+ * @param mixed $metatags
  *   List of meta tags to be translated.
  * @param string $context
  *   An optional context to use with i18n.
@@ -3015,7 +3183,7 @@ function metatag_translate_metatag($string, $tag_name, $context, $langcode = NUL
  * @param bool $update
  *   Whether or not to create/update records in {locales_source}.
  */
-function metatag_translate_metatags(&$metatags, $context = NULL, $langcode = NULL, $update = TRUE) {
+function metatag_translate_metatags(array &$metatags, $context = NULL, $langcode = NULL, $update = TRUE) {
   if (!empty($metatags)) {
     foreach ($metatags as $key => $data) {
       if (!empty($data['value']) && is_string($data['value'])) {
@@ -3030,12 +3198,12 @@ function metatag_translate_metatags(&$metatags, $context = NULL, $langcode = NUL
 /**
  * Update the translated definitions of meta tags.
  *
- * @param array $metatags
+ * @param mixed $metatags
  *   List of meta tags to have their translations updated.
  * @param string $context
  *   The string that will be used to group strings in the translation UI.
  */
-function metatag_translations_update($metatags, $context) {
+function metatag_translations_update(array $metatags, $context) {
   // Store the context as it was originally provided.
   $original_context = $context;
 
@@ -3071,12 +3239,12 @@ function metatag_translations_update($metatags, $context) {
 /**
  * Remove the translated definitions of meta tags.
  *
- * @param array $metatags
+ * @param mixed $metatags
  *   List of meta tags to have their translations updated.
  * @param string $context
  *   The string that will be used to group strings in the translation UI.
  */
-function metatag_translations_delete($metatags, $context) {
+function metatag_translations_delete(array $metatags, $context) {
   // Store the context as it was originally provided.
   $original_context = $context;
 
@@ -3111,30 +3279,34 @@ function metatag_translations_delete($metatags, $context) {
 
 /**
  * Implements hook_config_insert().
- *
- * Implements hook_metatag_config_insert() on behalf of i18n_string.
  */
 function i18n_string_metatag_config_insert($config) {
+  // Implements hook_metatag_config_insert() on behalf of i18n_string.
   $context = 'metatag_config:' . $config->instance;
   metatag_translations_update($config->config, $context);
 }
 
 /**
  * Implements hook_config_update().
- *
- * Implements hook_metatag_config_update() on behalf of i18n_string.
  */
 function i18n_string_metatag_config_update($config) {
+  // Implements hook_metatag_config_update() on behalf of i18n_string.
   // Defer to the 'insert' function.
   i18n_string_metatag_config_insert($config);
 }
 
 /**
  * Implements hook_config_delete().
- *
- * Implements hook_metatag_config_delete() on behalf of i18n_string.
  */
 function i18n_string_metatag_config_delete($config) {
+  // Implements hook_metatag_config_delete() on behalf of i18n_string.
   $context = 'metatag_config:' . $config->instance;
   metatag_translations_delete($config->config, $context);
+}
+
+/**
+ * Implements hook_views_data().
+ */
+function metatag_views_api() {
+  return array('api' => 3);
 }

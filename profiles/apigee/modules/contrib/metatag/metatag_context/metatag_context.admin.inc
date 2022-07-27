@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Admin settings page for Metatag Context.
@@ -10,9 +11,10 @@
 function metatag_context_context_overview() {
   $contexts = context_enabled_contexts(TRUE);
 
-  $header = array(t('Name'), t('Paths'), t('Weight'), t('Operations'));  $rows = array();
+  $header = array(t('Name'), t('Paths'), t('Weight'), t('Operations'));
+  $rows = array();
 
-  $caption = t('Values assigned here inherit from the <a href="@url" title="Edit the global default meta tags.">global defaults</a>. Use the weight to specify the order the context meta tags run.', array('@url' => url('admin/config/search/metatags/config/global')));
+  $caption = t('Values assigned here inherit from the <a href="@url" aria-label="Edit the global default meta tags.">global defaults</a>. Use the weight to specify the order the context meta tags run.', array('@url' => url('admin/config/search/metatags/config/global')));
 
   foreach ($contexts as $name => $context) {
     // Only show context items that are specifically selected to be "Shown on
@@ -32,7 +34,11 @@ function metatag_context_context_overview() {
   }
   uasort($rows, 'drupal_sort_weight');
 
-  return theme('table', array('header' => $header, 'rows' => $rows, 'caption' => $caption));
+  return theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'caption' => $caption,
+  ));
 }
 
 /**
@@ -124,7 +130,7 @@ function metatag_context_config_edit_form($form, &$form_state, $context) {
 
   $form['paths'] = array(
     '#title' => 'Path',
-    '#description' => t('Set this metatag context when any of the paths above match the page path. Put each path on a separate line. You can use the <code>*</code> character (asterisk) as a wildcard and the <code>~</code> character (tilde) to exclude one or more paths. Use <code>&lt;front&gt;</code> for the site front page. Only local paths (e.g. "example/page") will work, do not use relative URLs ("/example/page") or absolute URLs ("http://example.com/example/page").'),
+    '#description' => t('Set this metatag context when any of the paths above match the page path. Put each path on a separate line. You can use the <code>*</code> character (asterisk) as a wildcard and the <code>~</code> character (tilde) to exclude one or more paths. Use <code>&lt;front&gt;</code> for the site front page. Only local paths (e.g. "example/page") will work, do not use relative URLs ("/example/page") or absolute URLs ("https://example.com/example/page").'),
     '#type' => 'textarea',
     '#default_value' => isset($context->conditions['path']['values']) ? html_entity_decode(implode('&#13;&#10;', $context->conditions['path']['values'])) : '',
     '#required' => 1,
@@ -149,7 +155,7 @@ function metatag_context_config_edit_form($form, &$form_state, $context) {
 
   $form['help'] = array(
     '#prefix' => '<hr /><p><em>',
-    '#markup' => t('Values assigned here inherit from the <a href="@url" title="Edit the global default meta tags.">global defaults</a>.', array('@url' => url('admin/config/search/metatags/config/global'))),
+    '#markup' => t('Values assigned here inherit from the <a href="@url" aria-label="Edit the global default meta tags.">global defaults</a>.', array('@url' => url('admin/config/search/metatags/config/global'))),
     '#suffix' => '</em></p>',
     '#weight' => -99,
   );
@@ -199,7 +205,7 @@ function metatag_context_delete_form($form, &$form_state, $context) {
   $form_state['metatag_context']['context'] = $context;
 
   $form['delete'] = array(
-    '#value' => 'This action will permanently remove this item from your database.'
+    '#value' => 'This action will permanently remove this item from your database.',
   );
 
   $form['actions']['#type'] = 'actions';
@@ -241,8 +247,7 @@ function metatag_context_load_default_context() {
   $context->metatag = TRUE;
   $context->conditions = array(
     'path' => array(
-      'values' => array(
-      ),
+      'values' => array(),
     ),
   );
   $context->reactions = array(

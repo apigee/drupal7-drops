@@ -28,4 +28,4 @@ References
 1: https://www.drupal.org/project/context
 2: https://www.drupal.org/project/context_metadata
 3: https://www.drupal.org/u/marcin-pajdzik
-4: http://www.dennis.co.uk/
+4: https://www.dennis.co.uk/

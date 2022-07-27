@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Primary hook implementations for Metatag:Facebook.
@@ -22,12 +23,12 @@ function metatag_facebook_preprocess_html(&$variables) {
     return;
   }
 
-  $variables['rdf_namespaces'] .= "\n  xmlns:fb=\"http://ogp.me/ns/fb#\"";
+  $variables['rdf_namespaces'] .= "\n  xmlns:fb=\"https://ogp.me/ns/fb#\"";
 }
 
 /**
  * Implements hook_rdf_namespaces().
  */
 function metatag_facebook_hook_rdf_namespaces() {
-  return array('fb' => 'http://ogp.me/ns/fb#');
+  return array('fb' => 'https://ogp.me/ns/fb#');
 }
