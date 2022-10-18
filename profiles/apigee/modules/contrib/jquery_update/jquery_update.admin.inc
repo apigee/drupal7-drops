@@ -18,7 +18,7 @@ function jquery_update_settings_form() {
   );
 
   // Provide the form item to choose which jQuery version to use.
-  $default_version = variable_get('jquery_update_jquery_version', '1.10');
+  $default_version = variable_get('jquery_update_jquery_version', JQUERY_UPDATE_DEFAULT_JQUERY_VERSION);
   $custom_jquery = variable_get('jquery_update_custom_version_jquery', FALSE);
   if (!empty($custom_jquery)) {
     $default_version = $custom_jquery;
@@ -163,6 +163,9 @@ function jquery_update_settings_form() {
       '!url' => 'http://github.com/jquery/jquery-migrate/#readme',
     )),
   );
+  if (!empty($custom_jquery) && version_compare($custom_jquery, 3, '>=')) {
+    $form['jquery_migrate']['#description'] .= '<br /><strong>' . t('Note that the jQuery Update module only provides jQuery Migrate for jQuery versions before 3.x. A newer version of jQuery Migrate for the current version of jQuery can be configured via a Custom path.') . '</strong>';
+  }
 
   $form['jquery_migrate']['jquery_update_jquery_migrate_enable'] = array(
     '#type' => 'checkbox',
@@ -299,5 +302,164 @@ function jquery_update_settings_form() {
     '#description' => t('Example: %version', array('%version' => '3.3.2')),
   );
 
+  jquery_update_add_latest_version_info($form);
+
   return system_settings_form($form);
+}
+
+/**
+ * Validate handler for settings form.
+ */
+function jquery_update_settings_form_validate($form, &$form_state) {
+  // Handle empty custom paths / versions
+  if (!empty($form_state['values']['jquery_update_custom_path_jquery'])) {
+    if (empty($form_state['values']['jquery_update_custom_version_jquery'])) {
+      form_set_error('jquery_update_custom_version_jquery', 'Please provide a version for the custom jQuery path');
+    }
+  }
+  if (!empty($form_state['values']['jquery_update_custom_path_jqueryui'])) {
+    if (empty($form_state['values']['jquery_update_custom_version_jqueryui'])) {
+      form_set_error('jquery_update_custom_version_jqueryui', 'Please provide a version for the custom jQuery UI path');
+    }
+  }
+  if (!empty($form_state['values']['jquery_update_custom_path_cookie'])) {
+    if (empty($form_state['values']['jquery_update_custom_version_jquery_cookie'])) {
+      form_set_error('jquery_update_custom_version_jquery_cookie', 'Please provide a version for the custom jQuery Cookie path');
+    }
+  }
+  if (!empty($form_state['values']['jquery_update_custom_path_form'])) {
+    if (empty($form_state['values']['jquery_update_custom_version_jquery_form'])) {
+      form_set_error('jquery_update_custom_version_jquery_form', 'Please provide a version for the custom jQuery Form path');
+    }
+  }
+  if (!empty($form_state['values']['jquery_update_custom_path_migrate'])) {
+    if (empty($form_state['values']['jquery_update_custom_version_jquery_migrate'])) {
+      form_set_error('jquery_update_custom_version_jquery_migrate', 'Please provide a version for the custom jQuery Migrate path');
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function jquery_update_form_jquery_update_settings_form_alter(&$form, &$form_state, $form_id) {
+  array_unshift($form['#submit'], 'jquery_update_settings_form_submit');
+}
+
+/**
+ * Submit handler for settings form.
+ */
+function jquery_update_settings_form_submit($form, &$form_state) {
+  // Handle empty custom paths / versions
+  $variables = array(
+    'jquery_update_custom_path_cookie',
+    'jquery_update_custom_path_form',
+    'jquery_update_custom_path_jquery',
+    'jquery_update_custom_path_jqueryui',
+    'jquery_update_custom_path_migrate',
+    'jquery_update_custom_version_jquery',
+    'jquery_update_custom_version_jquery_cookie',
+    'jquery_update_custom_version_jquery_form',
+    'jquery_update_custom_version_jquery_migrate',
+    'jquery_update_custom_version_jqueryui',
+  );
+  foreach ($variables as $variable) {
+    if (empty($form_state['values'][$variable])) {
+      unset($form_state['values'][$variable]);
+      variable_del($variable);
+    }
+  }
+}
+
+function jquery_update_add_latest_version_info(&$form) {
+
+  $form['jquery_latest_versions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Latest versions'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#tree' => FALSE,
+    '#group' => 'jquery_update',
+    '#description' => t('Information about the latest available versions of the jQuery libraries the jQuery Update module integrates.'),
+  );
+
+  $last_update = variable_get('jquery_update_latest_versions_checked', FALSE);
+  if ($last_update) {
+    $message = t('Version info last updated %datetime', array('%datetime' => format_date($last_update)));
+    $form['jquery_latest_versions']['#description'] .= '<br />' . $message;
+  }
+
+  $refresh_url = url('admin/config/development/jquery_update/refresh-version-info',
+    array(
+      'query' => array(
+        'token' => drupal_get_token('refresh-version-info')
+      )
+    )
+  );
+  $form['jquery_latest_versions']['refresh_version_info'] = array(
+    '#type' => 'item',
+    '#markup' => '<a href="' . $refresh_url . '">' . t('Refresh version info manually') . '</a>',
+  );
+
+  $updates_available = _jquery_update_check_available_updates();
+  $libraries = array(
+    'jquery',
+    'jqueryui',
+    'jquery-migrate',
+    'jquery.form',
+    'jquery-cookie',
+  );
+  foreach ($libraries as $library) {
+    $version = jquery_update_latest_version($library);
+    $form['jquery_latest_versions']['latest_version_' . $library] = array(
+      '#type' => 'item',
+      '#title' => t('Library: %library', array('%library' => $library)),
+      '#markup' => t('Latest version: %version', array('%version' => $version)),
+    );
+    if (in_array($library, $updates_available)) {
+      $custom_version = variable_get('jquery_update_custom_version_' . _jquery_update_clean_library_name($library), 'error');
+      $message = t('An update (%update) is available for the current custom version (%current) of the %library library.',
+        array(
+          '%update' => $version,
+          '%current' => $custom_version,
+          '%library' => $library,
+        )
+      );
+      $form['jquery_latest_versions']['latest_version_' . $library]['#description'] = '<strong>' . $message . '</strong>';
+      if (variable_get('jquery_update_warning_available_update', TRUE)) {
+        drupal_set_message($message, 'warning');
+      }
+    }
+  }
+
+  $form['jquery_latest_versions']['jquery_update_check_latest_versions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Check latest version info?'),
+    '#default_value' => variable_get('jquery_update_check_latest_versions', TRUE),
+    '#description' => t('If enabled, jQuery Update checks %cdnjs for latest version info no more than once a day via cron.', array(
+      '%cdnjs' => 'api.cdnjs.com',
+    )),
+  );
+  $form['jquery_latest_versions']['jquery_update_warning_available_update'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Warn about available updates?'),
+    '#default_value' => variable_get('jquery_update_warning_available_update', TRUE),
+    '#description' => t("If enabled, jQuery Update will warn about available updates via messages in its admin UI and the main Status report.")
+  );
+}
+
+/**
+ * Menu callback to refresh jQuery libraries latest version info.
+ *
+ * @see system_run_cron()
+ */
+function jquery_update_refresh_version_info() {
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'refresh-version-info')) {
+    return MENU_ACCESS_DENIED;
+  }
+
+  _jquery_update_refresh_version_info(TRUE);
+  drupal_set_message(t('Attempted to refresh latest version info.'));
+
+  drupal_goto('admin/config/development/jquery_update', array('fragment' => 'edit-jquery-latest-versions'));
 }

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'apigee/edge',
-        'pretty_version' => 'dev-22.07.27.00',
-        'version' => '22.07.27.00-dev',
-        'reference' => '97ac8040603fe36712aaff3650b51abc54ea1ed1',
+        'pretty_version' => 'dev-22.10.18.00',
+        'version' => '22.10.18.00-dev',
+        'reference' => '4e15dc0b1ea8bb66b1b14ba07d2aefce7cd3201e',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'apigee/edge' => array(
-            'pretty_version' => 'dev-22.07.27.00',
-            'version' => '22.07.27.00-dev',
-            'reference' => '97ac8040603fe36712aaff3650b51abc54ea1ed1',
+            'pretty_version' => 'dev-22.10.18.00',
+            'version' => '22.10.18.00-dev',
+            'reference' => '4e15dc0b1ea8bb66b1b14ba07d2aefce7cd3201e',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

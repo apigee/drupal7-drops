@@ -108,7 +108,7 @@ projects[content_access][version] = "1.2-beta4"
 ; Enabled during profile install.
 projects[context][type] = "module"
 projects[context][subdir] = "contrib"
-projects[context][version] = "3.10"
+projects[context][version] = "3.11"
 
 ; Enabled during profile install.
 projects[context_condition_theme][type] = "module"
@@ -240,7 +240,7 @@ projects[i18n][version] = "1.31"
 
 projects[jquery_update][type] = "module"
 projects[jquery_update][subdir] = "contrib"
-projects[jquery_update][version] = "4.0-alpha1"
+projects[jquery_update][version] = "4.0-rc1"
 
 ; Required for OPDK
 projects[ldap][type] = "module"
